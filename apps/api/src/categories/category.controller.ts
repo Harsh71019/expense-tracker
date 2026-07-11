@@ -1,12 +1,11 @@
-import { Body, Controller, Get, HttpCode, Param, Patch, Post, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, Param, Patch, Post } from "@nestjs/common";
 import { CategoryIdSchema, CreateCategorySchema, type Category } from "@vyaya/shared";
 
-import { AuthGuard, type AuthenticatedUser } from "../auth/auth.guard.js";
+import type { AuthenticatedUser } from "../auth/auth.guard.js";
 import { CurrentUser } from "../auth/current-user.decorator.js";
 import { CategoryService } from "./category.service.js";
 
 @Controller("v1/categories")
-@UseGuards(AuthGuard)
 export class CategoryController {
   constructor(private readonly categories: CategoryService) {}
   @Post()

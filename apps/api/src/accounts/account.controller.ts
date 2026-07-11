@@ -1,12 +1,11 @@
-import { Body, Controller, Get, HttpCode, Param, Patch, Post, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, Param, Patch, Post } from "@nestjs/common";
 import { AccountIdSchema, CreateAccountSchema, type Account } from "@vyaya/shared";
 
-import { AuthGuard, type AuthenticatedUser } from "../auth/auth.guard.js";
+import type { AuthenticatedUser } from "../auth/auth.guard.js";
 import { CurrentUser } from "../auth/current-user.decorator.js";
 import { AccountService } from "./account.service.js";
 
 @Controller("v1/accounts")
-@UseGuards(AuthGuard)
 export class AccountController {
   constructor(private readonly accounts: AccountService) {}
 

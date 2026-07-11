@@ -1,5 +1,6 @@
 import { Controller, Get } from "@nestjs/common";
 
+import { Public } from "../auth/public.decorator.js";
 import { RuntimeConfigService } from "../common/config/runtime-config.service.js";
 import { HealthService, type ReadinessResponse } from "./health.service.js";
 
@@ -9,6 +10,7 @@ export type HealthResponse = Readonly<{
 }>;
 
 @Controller()
+@Public()
 export class HealthController {
   constructor(
     private readonly config: RuntimeConfigService,

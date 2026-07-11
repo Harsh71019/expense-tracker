@@ -10,7 +10,7 @@ async function verifyMigrations(): Promise<void> {
   try {
     const environment = {
       ...process.env,
-      MONGODB_URI: `${replicaSet.getUri()}vyaya_migrations`
+      MONGODB_URI: replicaSet.getUri("vyaya_migrations")
     };
     await execFileAsync("pnpm", ["--filter", "@vyaya/api", "migrate"], {
       cwd: process.cwd(),

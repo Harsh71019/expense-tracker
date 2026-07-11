@@ -17,7 +17,7 @@ async function bootstrap(): Promise<void> {
   app.useLogger(app.get(Logger));
   const config = app.get(RuntimeConfigService);
   const auth = app.get(AuthService);
-  app.getHttpAdapter().getInstance().all("/api/auth/{*any}", toNodeHandler(auth.auth));
+  app.getHttpAdapter().getInstance().all("/api/auth/*any", toNodeHandler(auth.auth));
   app.enableShutdownHooks();
   app.useGlobalFilters(new ProblemJsonFilter());
   app.setGlobalPrefix("api");

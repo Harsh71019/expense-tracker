@@ -17,7 +17,7 @@ Drop-in section for `DEPLOYMENT.md`. Same LXC, same conventions, port **3006**.
 | Frontend     | Vite static build served by nginx | Next.js **server** — nginx proxies to it, doesn't serve files                              |
 | Exposed port | nginx :80 → host                  | same, nginx :80 → host **3006** (only exposed container)                                   |
 | Deploy       | `git pull && up -d --build`       | same, **plus** one-shot `migrate` container runs before restart, **plus** smoke test after |
-| State        | none local                        | `redis-data` volume (queues). Mongo stays on Atlas as usual                                |
+| State        | none local                        | shared Redis volume (queues) + MongoDB Atlas                                               |
 
 ### Container map
 
@@ -26,7 +26,7 @@ Browser → nginx:3006
              ├── /api/*         → api:4000   (NestJS — includes /api/auth/* Better Auth)
              ├── /admin/queues  → api:4000   (Bull Board, auth-guarded)
              └── /*             → web:3000   (Next.js SSR)
-worker  → redis + Atlas   (crons, CSV parsing, notifications — no exposed port)
+worker  → shared Redis + Atlas   (crons, CSV parsing, notifications — no exposed port)
 migrate → runs `migrate-mongo up`, exits    (gates api/worker startup)
 ```
 
@@ -59,13 +59,26 @@ ssh root@192.168.0.226 "sed -i 's/DISABLE_SIGNUP=false/DISABLE_SIGNUP=true/' /op
 
 ### Local foundation check
 
-Copy `.env.example` to `.env`, set a development-safe `MONGODB_URI` and `REDIS_URL`, then run:
+Copy `.env.example` to `.env`, then set `MONGODB_URI` to the Atlas **`vyaya-stg`** URI and `REDIS_URL=redis://host.docker.internal:6379/2` to use the Homebrew Redis service running on your Mac. If your local Redis requires authentication, add its URL-encoded password to that URL.
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+docker compose up --build
 ```
 
-The development overlay starts a one-member MongoDB replica set so transaction-capable migrations and the API readiness check use the same topology as Atlas.
+Local Compose deliberately uses Atlas staging rather than a local MongoDB container. Never use the production `vyaya` URI for development or test data.
+
+### Shared Redis infrastructure
+
+Redis is intentionally deployed separately from Vyaya so other applications can reuse it. On the Redis host:
+
+```bash
+cd infra/redis
+cp .env.example .env
+# Set a long, URL-safe REDIS_PASSWORD in .env.
+docker compose up -d
+```
+
+The Compose definition binds Redis to loopback only. For a separate application LXC, change the bind address deliberately and firewall port 6379 to only the application hosts. Give each application a distinct Redis database and key prefix; Vyaya uses database `2` and the `vyaya:` key namespace.
 
 ### Update
 
@@ -84,6 +97,8 @@ health check ×12 (60s)               # /api/healthz + /
 smoke test                           # write + reverse on canary account
 on failure: prints exact rollback command with the previous git SHA
 ```
+
+`deploy.sh` exports the checked-out commit as `GIT_SHA` before Compose starts the API, so `/api/healthz` reports the actual deployed revision.
 
 ### Useful commands
 

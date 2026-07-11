@@ -1,0 +1,30 @@
+services:
+  redis:
+    image: redis:latest
+    container_name: shared-redis
+    restart: unless-stopped
+    env_file: .env
+    command:
+      [
+        "redis-server",
+        "--appendonly",
+        "yes",
+        "--maxmemory",
+        "512mb",
+        "--maxmemory-policy",
+        "noeviction",
+        "--requirepass",
+        "${REDIS_PASSWORD:?Set REDIS_PASSWORD in infra/redis/.env}"
+      ]
+    ports:
+      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
+    volumes:
+      - shared-redis-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", 'redis-cli --no-auth-warning -a "$$REDIS_PASSWORD" ping | grep PONG']
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  shared-redis-data:

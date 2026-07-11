@@ -10,6 +10,7 @@ echo "==> Current version: ${PREV_SHA}"
 echo "==> Pulling latest code..."
 git pull
 NEW_SHA="$(git rev-parse --short HEAD)"
+export GIT_SHA="${NEW_SHA}"
 
 if [ "${PREV_SHA}" = "${NEW_SHA}" ]; then
   echo "==> No new commits. Rebuilding anyway (env/Dockerfile changes)..."

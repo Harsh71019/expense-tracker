@@ -1,6 +1,6 @@
 # Vyaya — Personal Expense Tracker: Backend Architecture
 
-> **Stack:** Next.js (frontend) · NestJS + Node.js 22 (API) · MongoDB Atlas (M0 → M10) · Mongoose · Better Auth · BullMQ + node-cron · Deployed on Proxmox LXC behind NPMplus
+> **Stack:** Next.js (frontend) · NestJS + Node.js 24.18 LTS (API) · MongoDB Atlas (M0 → M10) · Mongoose · Better Auth · BullMQ + node-cron · Deployed on Proxmox LXC behind NPMplus
 >
 > **Design goals:** atomic & revertible money operations, CSV/manual/API ingestion, single-user today but multi-user-ready, boring-reliable crons, portfolio-grade code quality.
 
@@ -470,7 +470,7 @@ Conventions: controllers do HTTP only; services own business rules and transacti
 
 ## 9. Deployment & Ops (Proxmox)
 
-- **LXC (Debian 12, 2 vCPU / 2GB)** running Docker Compose: `api`, `web`, `worker`, `redis`. One `compose.yml`, images built by a GitHub Action, pulled via `docker compose pull && up -d` (or Watchtower, which you already know from the arr-stack).
+- **LXC (Debian 12, 2 vCPU / 2GB)** running Docker Compose: `api`, `web`, `worker`. Redis runs as separately managed shared infrastructure; each application receives its own authenticated URL, database number, and key prefix. Images are built by a GitHub Action, pulled via `docker compose pull && up -d` (or Watchtower, which you already know from the arr-stack).
 - **NPMplus** vhost `vyaya.yourdomain.tld` → web:3000, `/api` → api:4000; CrowdSec in front if internet-exposed, otherwise Tailscale-only and skip the drama.
 - **Config:** `.env` in the LXC (Atlas URI, Better Auth secret, ntfy topic); never in the repo. Atlas network access: allow only your home IP / use a static egress via your router, plus a dedicated DB user scoped to this database.
 - **Observability you already run:** Beszel (container metrics + healthz), GlitchTip (API + worker error tracking), Bull Board mounted at `/admin/queues` behind auth.

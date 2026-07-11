@@ -17,7 +17,7 @@ deploy/         nginx.conf, backup.sh (Proxmox LXC deployment)
 migrations/     migrate-mongo files (ordered, additive-only)
 ```
 
-Runtime: Node 22, pnpm workspaces, MongoDB Atlas (replica set — transactions available), Redis (BullMQ). Deployed via `deploy.sh` on a home LXC; port 3006 behind nginx.
+Runtime: Node 24.18 LTS, pnpm workspaces, MongoDB Atlas (replica set — transactions available), Redis (BullMQ). Deployed via `deploy.sh` on a home LXC; port 3006 behind nginx.
 
 ---
 

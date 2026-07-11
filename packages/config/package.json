@@ -1,0 +1,14 @@
+{
+  "name": "@vyaya/config",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./tsconfig/base.json": "./tsconfig/base.json"
+  },
+  "scripts": {
+    "lint": "echo 'No lintable sources in @vyaya/config'",
+    "typecheck": "echo 'No TypeScript sources in @vyaya/config'",
+    "test": "vitest run --passWithNoTests"
+  },
+  "devDependencies": {}
+}

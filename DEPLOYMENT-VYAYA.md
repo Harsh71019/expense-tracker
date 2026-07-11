@@ -1,0 +1,133 @@
+# Vyaya — Deployment (matches the /opt/apps pattern)
+
+Drop-in section for `DEPLOYMENT.md`. Same LXC, same conventions, port **3006**.
+
+---
+
+## App 3: Vyaya (Expense Tracker)
+
+**Path on server:** `/opt/apps/vyaya/`
+**URL:** http://192.168.0.226:3006
+
+### How it differs from Taskflow / JS Mastery
+
+|              | Taskflow / JS Mastery             | Vyaya                                                                                      |
+| ------------ | --------------------------------- | ------------------------------------------------------------------------------------------ |
+| Containers   | 2 (nginx SPA + Express)           | 5 (nginx proxy + Next.js SSR + NestJS API + BullMQ worker + Redis)                         |
+| Frontend     | Vite static build served by nginx | Next.js **server** — nginx proxies to it, doesn't serve files                              |
+| Exposed port | nginx :80 → host                  | same, nginx :80 → host **3006** (only exposed container)                                   |
+| Deploy       | `git pull && up -d --build`       | same, **plus** one-shot `migrate` container runs before restart, **plus** smoke test after |
+| State        | none local                        | `redis-data` volume (queues). Mongo stays on Atlas as usual                                |
+
+### Container map
+
+```
+Browser → nginx:3006
+             ├── /api/*         → api:4000   (NestJS — includes /api/auth/* Better Auth)
+             ├── /admin/queues  → api:4000   (Bull Board, auth-guarded)
+             └── /*             → web:3000   (Next.js SSR)
+worker  → redis + Atlas   (crons, CSV parsing, notifications — no exposed port)
+migrate → runs `migrate-mongo up`, exits    (gates api/worker startup)
+```
+
+### `.env` (at `/opt/apps/vyaya/.env`)
+
+See `.env.example` in the repo. The two footguns:
+
+```
+AUTH_COOKIE_SECURE=false      # same reason as Taskflow's COOKIE_SECURE=false —
+                              # plain HTTP on LAN, browsers drop Secure cookies
+TRUSTED_ORIGINS=http://192.168.0.226:3006   # Better Auth CSRF origin check;
+                                            # wrong value = login silently fails
+```
+
+### First deploy
+
+```bash
+# Clone
+ssh root@192.168.0.226 "git clone https://github.com/Harsh71019/vyaya.git /opt/apps/vyaya"
+
+# Write .env (copy from .env.example, fill secrets)
+ssh root@192.168.0.226 "vim /opt/apps/vyaya/.env && chmod 600 /opt/apps/vyaya/.env"
+
+# Deploy (builds, migrates, starts, health-checks, smoke-tests)
+ssh root@192.168.0.226 "chmod +x /opt/apps/vyaya/deploy.sh && cd /opt/apps/vyaya && bash deploy.sh"
+
+# Create your account at http://192.168.0.226:3006, then lock the door:
+ssh root@192.168.0.226 "sed -i 's/DISABLE_SIGNUP=false/DISABLE_SIGNUP=true/' /opt/apps/vyaya/.env && cd /opt/apps/vyaya && docker compose --env-file .env up -d api"
+```
+
+### Local foundation check
+
+Copy `.env.example` to `.env`, set a development-safe `MONGODB_URI` and `REDIS_URL`, then run:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+```
+
+The development overlay starts a one-member MongoDB replica set so transaction-capable migrations and the API readiness check use the same topology as Atlas.
+
+### Update
+
+```bash
+ssh root@192.168.0.226 "cd /opt/apps/vyaya && bash deploy.sh"
+```
+
+`deploy.sh` here does more than the others — order matters:
+
+```
+git pull
+docker compose build                 # build BEFORE touching running containers
+docker compose run --rm migrate      # migrations gate the deploy; failure aborts
+docker compose up -d                 # restart onto new images
+health check ×12 (60s)               # /api/healthz + /
+smoke test                           # write + reverse on canary account
+on failure: prints exact rollback command with the previous git SHA
+```
+
+### Useful commands
+
+```bash
+# All Vyaya containers
+ssh root@192.168.0.226 "docker ps --filter name=vyaya"
+
+# Live logs
+ssh root@192.168.0.226 "docker logs -f vyaya-api-1"
+ssh root@192.168.0.226 "docker logs -f vyaya-worker-1"     # cron/import issues live here
+
+# Health
+curl http://192.168.0.226:3006/api/healthz                  # returns git SHA too
+
+# Queue dashboard (login first)
+open http://192.168.0.226:3006/admin/queues
+
+# Restart without rebuild
+ssh root@192.168.0.226 "docker compose -f /opt/apps/vyaya/docker-compose.yml restart api worker web"
+
+# Run migrations manually
+ssh root@192.168.0.226 "cd /opt/apps/vyaya && docker compose --env-file .env run --rm migrate"
+
+# Shell into API container
+ssh root@192.168.0.226 "docker exec -it vyaya-api-1 sh"
+
+# Rollback to a known-good SHA
+ssh root@192.168.0.226 "cd /opt/apps/vyaya && git checkout <sha> && docker compose --env-file .env up -d --build"
+```
+
+### Host crontab additions (LXC, `crontab -e`)
+
+The app's business crons (recurring txns, rollups, alerts) run **inside the worker** via BullMQ — nothing needed on the host. Only the backup lives at host level so it works even if the app is down:
+
+```cron
+# Nightly Atlas dump → NAS (04:00 IST)
+0 4 * * * /opt/apps/vyaya/deploy/backup.sh >> /var/log/vyaya-backup.log 2>&1
+```
+
+`backup.sh`: `mongodump --uri="$MONGODB_URI" --archive | gzip > /mnt/nas/backups/vyaya/$(date +\%F).gz` + retention prune (30 daily / 12 monthly) + weekly `rclone` offsite.
+
+### Notes
+
+- **Port registry is now:** 3000 Taskflow · 3001 JS Mastery · 3003 Books · **3006 Vyaya**
+- Redis is deliberately `noeviction` — evicting queue data corrupts jobs; 256mb is generous for this workload
+- Migrations are **additive-only by policy**, which is what makes the printed rollback command safe
+- When NPMplus + TLS eventually fronts this: flip `AUTH_COOKIE_SECURE=true`, update `BETTER_AUTH_URL`/`TRUSTED_ORIGINS` to the https hostname, and passkeys will start working (WebAuthn requires a secure context — over plain HTTP, Face ID login is unavailable; everything else works)

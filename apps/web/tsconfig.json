@@ -1,0 +1,14 @@
+{
+  "extends": "@vyaya/config/tsconfig/base.json",
+  "compilerOptions": {
+    "composite": true,
+    "jsx": "react-jsx",
+    "plugins": [{ "name": "next" }],
+    "allowJs": false,
+    "incremental": true,
+    "noEmit": true,
+    "isolatedModules": true
+  },
+  "include": ["next-env.d.ts", ".next/types/**/*.ts", "**/*.ts", "**/*.tsx"],
+  "exclude": ["node_modules"]
+}

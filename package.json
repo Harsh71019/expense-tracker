@@ -1,0 +1,44 @@
+{
+  "name": "vyaya",
+  "private": true,
+  "scripts": {
+    "build": "pnpm --filter @vyaya/api build && pnpm --filter @vyaya/web build",
+    "dev": "pnpm --parallel --filter @vyaya/api --filter @vyaya/web dev",
+    "lint": "pnpm --recursive lint",
+    "typecheck": "pnpm --recursive typecheck",
+    "test": "pnpm --recursive test",
+    "test:integration": "pnpm --filter @vyaya/api test:integration",
+    "migrate": "pnpm --filter @vyaya/api migrate",
+    "verify:migrations": "tsx scripts/verify-migrations.ts",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "prepare": "husky",
+    "lint-staged": "lint-staged"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "latest",
+    "@commitlint/config-conventional": "latest",
+    "@eslint/js": "latest",
+    "@nestjs/cli": "latest",
+    "@types/node": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "@typescript/typescript6": "latest",
+    "eslint": "latest",
+    "eslint-config-next": "latest",
+    "husky": "latest",
+    "lint-staged": "latest",
+    "mongodb-memory-server": "latest",
+    "prettier": "latest",
+    "tsx": "latest",
+    "typescript": "beta",
+    "typescript-eslint": "latest",
+    "vitest": "latest",
+    "zod": "latest"
+  },
+  "pnpm": {
+    "overrides": {
+      "@typescript-eslint/typescript-estree>typescript": "npm:@typescript/typescript6@*"
+    }
+  }
+}

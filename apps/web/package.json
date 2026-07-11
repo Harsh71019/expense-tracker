@@ -1,0 +1,23 @@
+{
+  "name": "@vyaya/web",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "next build",
+    "dev": "next dev",
+    "lint": "eslint --config ../../eslint.config.mjs --no-warn-ignored --max-warnings=0 app/ src/",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@vyaya/shared": "workspace:*",
+    "better-auth": "latest",
+    "next": "latest",
+    "react": "latest",
+    "react-dom": "latest"
+  },
+  "devDependencies": {
+    "@vyaya/config": "workspace:*",
+    "typescript": "beta"
+  }
+}

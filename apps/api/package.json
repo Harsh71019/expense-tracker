@@ -1,0 +1,41 @@
+{
+  "name": "@vyaya/api",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx watch src/main.ts",
+    "lint": "eslint --config ../../eslint.config.mjs --no-warn-ignored --max-warnings=0 src/ test/",
+    "typecheck": "tsc --noEmit -p tsconfig.test.json",
+    "test": "vitest run --passWithNoTests",
+    "test:integration": "vitest run --passWithNoTests --config vitest.integration.config.ts",
+    "migrate": "migrate-mongo up -f ../../migrate-mongo-config.cjs",
+    "migrate:status": "migrate-mongo status -f ../../migrate-mongo-config.cjs"
+  },
+  "dependencies": {
+    "@better-auth/mongo-adapter": "latest",
+    "@nestjs/common": "latest",
+    "@nestjs/config": "latest",
+    "@nestjs/core": "latest",
+    "@nestjs/mongoose": "latest",
+    "@nestjs/platform-express": "latest",
+    "better-auth": "latest",
+    "cookie-parser": "latest",
+    "express": "latest",
+    "helmet": "latest",
+    "ioredis": "latest",
+    "migrate-mongo": "latest",
+    "mongoose": "latest",
+    "nestjs-pino": "latest",
+    "pino": "latest",
+    "reflect-metadata": "latest",
+    "rxjs": "latest",
+    "zod": "latest"
+  },
+  "devDependencies": {
+    "@types/cookie-parser": "latest",
+    "@types/express": "latest",
+    "@vyaya/config": "workspace:*",
+    "mongodb-memory-server": "latest"
+  }
+}

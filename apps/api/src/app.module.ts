@@ -7,9 +7,11 @@ import { RuntimeConfigService } from "./common/config/runtime-config.service.js"
 import { RedisModule } from "./common/redis/redis.module.js";
 import { AuthModule } from "./auth/auth.module.js";
 import { AccountsModule } from "./accounts/accounts.module.js";
+import { AuditModule } from "./audit/audit.module.js";
 import { CategoriesModule } from "./categories/categories.module.js";
 import { HealthModule } from "./health/health.module.js";
 import { UserProfilesModule } from "./user-profiles/user-profiles.module.js";
+import { TransactionsModule } from "./transactions/transactions.module.js";
 
 @Module({
   imports: [
@@ -27,6 +29,8 @@ import { UserProfilesModule } from "./user-profiles/user-profiles.module.js";
     AuthModule,
     AccountsModule,
     CategoriesModule,
+    AuditModule,
+    TransactionsModule,
     LoggerModule.forRoot({
       pinoHttp: {
         redact: ["req.headers.authorization", "req.headers.cookie"],

@@ -15,6 +15,20 @@ export type { Category, CategoryId, CategoryKind, CreateCategory } from "./categ
 export { formatMinor, isMinorAmount, parseMinor } from "./money.js";
 export type { MinorAmount } from "./money.js";
 export {
+  CreateTransactionSchema,
+  TransactionIdSchema,
+  TransactionSchema,
+  TransactionSourceSchema,
+  TransactionStatusSchema,
+  TransactionTypeSchema
+} from "./transaction.js";
+export type {
+  CreateTransaction,
+  Transaction,
+  TransactionId,
+  TransactionType
+} from "./transaction.js";
+export {
   DEFAULT_USER_PROFILE,
   UserProfileSchema,
   UserProfileUpdateSchema

@@ -53,6 +53,22 @@ export class AccountRepository {
     return result.modifiedCount === 1;
   }
 
+  async applyBalanceDelta(
+    userId: string,
+    accountId: AccountId,
+    deltaMinor: number,
+    session: MongoSession
+  ): Promise<boolean> {
+    const result = await this.database()
+      .collection(ACCOUNTS_COLLECTION)
+      .updateOne(
+        { _id: new Types.ObjectId(accountId), userId, isArchived: false },
+        { $inc: { balanceMinor: deltaMinor }, $set: { updatedAt: new Date() } },
+        { session }
+      );
+    return result.modifiedCount === 1;
+  }
+
   private database(): NonNullable<Connection["db"]> {
     const database = this.connection.db;
     if (database === undefined) {

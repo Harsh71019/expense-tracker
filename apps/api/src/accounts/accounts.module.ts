@@ -6,6 +6,7 @@ import { AccountService } from "./account.service.js";
 
 @Module({
   controllers: [AccountController],
-  providers: [AccountRepository, AccountService]
+  providers: [AccountRepository, AccountService],
+  exports: [AccountRepository]
 })
 export class AccountsModule {}

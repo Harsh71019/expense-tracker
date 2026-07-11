@@ -4,6 +4,8 @@ import { CategorySchema, type Category, type CategoryId, type CreateCategory } f
 import { Types } from "mongoose";
 import type { Connection } from "mongoose";
 
+import type { MongoSession } from "../common/mongo-txn.js";
+
 const CATEGORIES_COLLECTION = "categories";
 
 @Injectable()
@@ -36,6 +38,16 @@ export class CategoryRepository {
         { $set: { isArchived: true, updatedAt: new Date() } }
       );
     return result.modifiedCount === 1;
+  }
+
+  async exists(userId: string, categoryId: CategoryId, session: MongoSession): Promise<boolean> {
+    const category = await this.database()
+      .collection(CATEGORIES_COLLECTION)
+      .findOne(
+        { _id: new Types.ObjectId(categoryId), userId, isArchived: false },
+        { session, projection: { _id: 1 } }
+      );
+    return category !== null;
   }
 
   private database(): NonNullable<Connection["db"]> {

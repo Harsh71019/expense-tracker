@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "dev": "tsx watch src/main.ts",
+    "dev": "tsc -p tsconfig.json && concurrently -k -n tsc,node -c blue,green \"tsc --watch -p tsconfig.json --preserveWatchOutput\" \"node --watch --watch-path=dist --watch-path=../../packages/shared/dist dist/main.js\"",
     "lint": "eslint --config ../../eslint.config.mjs --no-warn-ignored --max-warnings=0 src/ test/",
     "typecheck": "tsc --noEmit -p tsconfig.test.json",
     "test": "vitest run --passWithNoTests",
@@ -37,6 +37,7 @@
     "@types/cookie-parser": "latest",
     "@types/express": "latest",
     "@vyaya/config": "workspace:*",
+    "concurrently": "latest",
     "mongodb-memory-server": "latest"
   }
 }

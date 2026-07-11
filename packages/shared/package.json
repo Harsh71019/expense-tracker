@@ -2,12 +2,25 @@
   "name": "@vyaya/shared",
   "private": true,
   "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./money": "./src/money.ts",
-    "./user-profile": "./src/user-profile.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./money": {
+      "types": "./dist/money.d.ts",
+      "default": "./dist/money.js"
+    },
+    "./user-profile": {
+      "types": "./dist/user-profile.d.ts",
+      "default": "./dist/user-profile.js"
+    }
   },
   "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsc --watch -p tsconfig.build.json --preserveWatchOutput",
     "lint": "eslint --config ../../eslint.config.mjs --no-warn-ignored --max-warnings=0 src/",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests"

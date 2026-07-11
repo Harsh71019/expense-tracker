@@ -6,8 +6,8 @@
   },
   "packageManager": "pnpm@10.28.1",
   "scripts": {
-    "build": "pnpm --filter @vyaya/api build && pnpm --filter @vyaya/web build",
-    "dev": "pnpm --parallel --filter @vyaya/api --filter @vyaya/web dev",
+    "build": "pnpm --filter @vyaya/shared build && pnpm --filter @vyaya/api build && pnpm --filter @vyaya/web build",
+    "dev": "pnpm --filter @vyaya/shared build && pnpm --parallel --filter @vyaya/shared --filter @vyaya/api --filter @vyaya/web dev",
     "lint": "pnpm --recursive lint",
     "typecheck": "pnpm --recursive typecheck",
     "test": "pnpm --recursive test",

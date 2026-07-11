@@ -4,12 +4,16 @@ import { fromNodeHeaders } from "better-auth/node";
 import type { Request } from "express";
 
 import { AuthService } from "./auth.service.js";
+import { UserProfileService } from "../user-profiles/user-profile.service.js";
 
 export type AuthenticatedUser = Readonly<{ id: string }>;
 
 @Injectable()
 export class AuthGuard implements CanActivate {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly profiles: UserProfileService
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
@@ -21,6 +25,7 @@ export class AuthGuard implements CanActivate {
       throw new UnauthorizedException();
     }
 
+    await this.profiles.ensure(session.user.id, session.user.name);
     request.authUser = { id: session.user.id };
     return true;
   }

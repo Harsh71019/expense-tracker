@@ -67,6 +67,7 @@ services:
       args:
         # Baked at build time into the Next.js client bundle
         NEXT_PUBLIC_API_URL: /api
+        INTERNAL_API_URL: http://api:4000/api
     restart: unless-stopped
     env_file: .env
     environment:

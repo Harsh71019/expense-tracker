@@ -49,6 +49,8 @@ All money is stored as **integer paise** (`amountMinor: 125050` = ₹1,250.50). 
 
 #### `users` (managed by Better Auth) + `user_profiles`
 
+Better Auth commits users in its own transaction. Profile provisioning is therefore an idempotent post-signup upsert keyed by `userId`; `AuthGuard` repeats the same upsert on an authenticated request if a transient failure prevented the signup hook from completing.
+
 ```ts
 // user_profiles — app-owned extension of the auth user
 {
@@ -190,6 +192,57 @@ All money is stored as **integer paise** (`amountMinor: 125050` = ₹1,250.50). 
   isPaused: boolean
 }
 ```
+
+#### `net_worth_assets` + `asset_valuations`
+
+Loans given are receivables; loans taken are liabilities. Fixed deposits, gold, silver, and other investments are assets. The asset record stores stable metadata while every current-value change is an append-only valuation snapshot — never overwrite history.
+
+```ts
+// net_worth_assets
+{
+  _id: ObjectId,
+  userId: string,
+  kind: 'loan_receivable' | 'loan_liability' | 'fixed_deposit' | 'gold' | 'silver' | 'investment',
+  name: string,
+  openedAt: Date,
+  maturityAt?: Date,              // FDs only
+  annualRateBps?: number,         // FDs only; 650 = 6.50%
+  quantityMilliUnits?: number,    // gold/silver quantity without floats
+  isClosed: boolean,
+  createdAt: Date, updatedAt: Date
+}
+
+// asset_valuations
+{
+  _id: ObjectId,
+  userId: string,
+  assetId: ObjectId,
+  valueMinor: number,
+  valuedAt: Date,
+  source: 'manual' | 'maturity_projection',
+  createdAt: Date
+}
+```
+
+`netWorth = accounts + latest asset valuations`, where liabilities are stored as a negative valuation. Gold and silver start with manual valuations; no external price-feed dependency is required.
+
+#### `goals`
+
+```ts
+{
+  _id: ObjectId,
+  userId: string,
+  name: string,
+  targetMinor: number,
+  targetDate: Date,
+  linkedAccountId?: ObjectId,
+  allocatedMinor: number,
+  isCompleted: boolean,
+  createdAt: Date, updatedAt: Date
+}
+```
+
+Required monthly saving is projected from the remaining target, current allocation, and complete calendar months until `targetDate` in `Asia/Kolkata`.
 
 #### `budgets`
 

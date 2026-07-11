@@ -1,6 +1,7 @@
 import { Catch, HttpException, HttpStatus } from "@nestjs/common";
 import type { ArgumentsHost, ExceptionFilter } from "@nestjs/common";
 import type { Request, Response } from "express";
+import { ZodError } from "zod";
 
 import { DomainError } from "./domain-error.js";
 
@@ -24,6 +25,16 @@ export class ProblemJsonFilter implements ExceptionFilter {
   }
 
   private toProblemDetails(exception: unknown, instance: string): ProblemDetails {
+    if (exception instanceof ZodError) {
+      return {
+        type: "https://vyaya.dev/problems/validation-failed",
+        title: "Bad Request",
+        status: HttpStatus.BAD_REQUEST,
+        detail: "Request validation failed.",
+        instance
+      };
+    }
+
     if (exception instanceof DomainError) {
       return {
         type: `https://vyaya.dev/problems/${exception.code}`,

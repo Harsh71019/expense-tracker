@@ -13,6 +13,7 @@
     "migrate:status": "migrate-mongo status -f ../../migrate-mongo-config.cjs"
   },
   "dependencies": {
+    "@vyaya/shared": "workspace:*",
     "@better-auth/mongo-adapter": "latest",
     "@nestjs/common": "latest",
     "@nestjs/config": "latest",

@@ -4,6 +4,9 @@ FROM node:24.18.0-alpine AS build
 RUN corepack enable && corepack prepare pnpm@10.28.1 --activate
 WORKDIR /workspace
 
+ARG INTERNAL_API_URL=http://api:4000/api
+ENV INTERNAL_API_URL=$INTERNAL_API_URL
+
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.json ./
 COPY apps/web/package.json apps/web/package.json
 COPY packages/config/package.json packages/config/package.json

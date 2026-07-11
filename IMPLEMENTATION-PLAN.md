@@ -58,6 +58,7 @@ The heart. Everything else decorates this.
 8. Non-monetary PATCH (description/tags/category) with audit before/after snapshot.
 9. Cursor pagination + filters on `GET /v1/transactions`; migration `002` with all §2.1 indexes.
 10. Next.js: transaction list + quick-add form (mobile-first — this is the Metro screen; idempotency UUID generated on mount).
+11. Net-worth assets: loans given/taken, fixed deposits, gold/silver, and manually valued investment holdings; all values are integer paise and valuation changes are append-only snapshots.
 
 **Gate 2 ✅** — On your phone: add chai ₹20 → balance moves → undo → balance restores → both entries visible in history with linkage. Double-tap the submit button on throttled 3G devtools → exactly one transaction. Kill the API mid-request in a chaos test → no partial writes.
 
@@ -96,6 +97,8 @@ The heart. Everything else decorates this.
 6. Backup cron: mongodump → NAS (30d/12m retention) + weekly rclone offsite; **do one restore drill now**, document the runbook.
 7. Graceful shutdown wired and chaos-tested (SIGTERM during job + during request).
 8. Staging LXC deployed from CI; prod deploy job with manual approval + smoke test + documented rollback.
+9. Subscription view over recurring expense rules: next charge, monthly cost, cancellation reminder.
+10. Goals: target value/date, optional linked account, progress, and required monthly saving projection.
 
 **Gate 4 ✅** — Rent posts itself on the 1st exactly once (verified by forcing a double cron fire); phone pings at 80% food budget; you have personally restored a dump to `vyaya-drill` and the verify job passed on it.
 
@@ -105,7 +108,7 @@ The heart. Everything else decorates this.
 
 **Tasks**
 
-1. Reports: monthly summary, cashflow range, category drill-down; Redis read cache with write-time busting.
+1. Reports: monthly summary, cashflow range, category drill-down, and net worth history; Redis read cache with write-time busting.
 2. OpenTelemetry auto-instrumentation → Grafana LGTM LXC; `/metrics` Prometheus endpoint; dashboards for RED + queue depth + drift gauge.
 3. k6 load suite: 200 writes/sec sustained 5 min, import of 5k rows — record p95s against SLOs, fix the worst offender.
 4. `explain()` query-budget test in CI (fail on COLLSCAN in hot paths).

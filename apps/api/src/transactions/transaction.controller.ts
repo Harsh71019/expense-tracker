@@ -1,5 +1,5 @@
-import { Body, Controller, Headers, Post } from "@nestjs/common";
-import { CreateTransactionSchema } from "@vyaya/shared";
+import { Body, Controller, Headers, Param, Post } from "@nestjs/common";
+import { CreateTransactionSchema, TransactionIdSchema } from "@vyaya/shared";
 import { z } from "zod";
 
 import type { AuthenticatedUser } from "../auth/auth.guard.js";
@@ -23,5 +23,13 @@ export class TransactionController {
       CreateTransactionSchema.parse(body),
       idempotencyKey === undefined ? undefined : IdempotencyKeySchema.parse(idempotencyKey)
     );
+  }
+
+  @Post(":transactionId/reverse")
+  reverse(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("transactionId") transactionId: string
+  ): Promise<CreateTransactionResult> {
+    return this.transactions.reverse(user.id, TransactionIdSchema.parse(transactionId));
   }
 }

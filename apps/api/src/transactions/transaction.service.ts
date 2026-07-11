@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { InjectConnection } from "@nestjs/mongoose";
-import { type CreateTransaction, type Transaction } from "@vyaya/shared";
+import { type CreateTransaction, type Transaction, type TransactionId } from "@vyaya/shared";
 import type { Connection } from "mongoose";
 import { z } from "zod";
 
@@ -8,6 +8,7 @@ import { AccountRepository } from "../accounts/account.repository.js";
 import { AuditRepository } from "../audit/audit.repository.js";
 import { CategoryRepository } from "../categories/category.repository.js";
 import { EntityNotFoundError } from "../common/errors/entity-not-found.error.js";
+import { TransactionNotReversibleError } from "../common/errors/transaction-not-reversible.error.js";
 import { withTxn } from "../common/mongo-txn.js";
 import { TransactionRepository } from "./transaction.repository.js";
 
@@ -54,6 +55,36 @@ export class TransactionService {
       const transaction = await this.transactions.findByIdempotencyKey(userId, idempotencyKey);
       if (transaction === null) throw error;
       return { transaction, replayed: true };
+    }
+  }
+
+  async reverse(userId: string, transactionId: TransactionId): Promise<CreateTransactionResult> {
+    try {
+      const transaction = await withTxn(this.connection, async (session) => {
+        const original = await this.transactions.findPostedById(userId, transactionId, session);
+        if (original === null) throw new TransactionNotReversibleError();
+
+        const reversal = await this.transactions.createReversal(userId, original, session);
+        if (!(await this.transactions.markReversed(userId, original.id, reversal.id, session))) {
+          throw new TransactionNotReversibleError();
+        }
+
+        const deltaMinor =
+          original.type === "expense" ? original.amountMinor : -original.amountMinor;
+        if (
+          !(await this.accounts.applyBalanceDelta(userId, original.accountId, deltaMinor, session))
+        ) {
+          throw new EntityNotFoundError("Account");
+        }
+
+        await this.audit.record(userId, "transaction.reverse", reversal.id, session);
+        return reversal;
+      });
+      return { transaction, replayed: false };
+    } catch (error) {
+      const reversal = await this.transactions.findByReversalOf(userId, transactionId);
+      if (reversal === null) throw error;
+      return { transaction: reversal, replayed: true };
     }
   }
 }

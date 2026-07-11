@@ -30,6 +30,9 @@ describe("TransactionService", () => {
     await connectedDatabase(connection)
       .collection("transactions")
       .createIndex({ idempotencyKey: 1 }, { unique: true, sparse: true });
+    await connectedDatabase(connection)
+      .collection("transactions")
+      .createIndex({ reversalOf: 1 }, { unique: true, sparse: true });
     const account = await withTxn(connectedConnection(connection), async (session) =>
       accountRepository.create(
         "user-a",
@@ -93,6 +96,39 @@ describe("TransactionService", () => {
 
     expect(await connectedDatabase(connection).collection("transactions").countDocuments()).toBe(1);
     expect(await connectedDatabase(connection).collection("audit_log").countDocuments()).toBe(1);
+  });
+
+  it("creates exactly one compensating reversal under parallel requests", async () => {
+    const service = transactionService(transactions);
+    const original = await service.create(
+      "user-a",
+      {
+        accountId: existingAccountId(accountId),
+        type: "income",
+        amountMinor: 1_000,
+        occurredAt: new Date("2026-07-12T10:00:00.000Z"),
+        description: "Salary",
+        tags: []
+      },
+      "d7c67620-331a-4c8f-998a-e9508318b7b7"
+    );
+
+    const results = await Promise.all(
+      Array.from({ length: 5 }, () => service.reverse("user-a", original.transaction.id))
+    );
+
+    expect(results.filter((result) => result.replayed).length).toBe(4);
+    const originalDocument = await connectedDatabase(connection)
+      .collection("transactions")
+      .findOne({ idempotencyKey: "d7c67620-331a-4c8f-998a-e9508318b7b7" });
+    expect(originalDocument).toMatchObject({ status: "reversed" });
+
+    expect(await connectedDatabase(connection).collection("transactions").countDocuments()).toBe(3);
+    expect(await connectedDatabase(connection).collection("audit_log").countDocuments()).toBe(3);
+    const account = await connectedDatabase(connection)
+      .collection("accounts")
+      .findOne({ userId: "user-a", name: "HDFC Savings" });
+    expect(account).toMatchObject({ balanceMinor: 9_750 });
   });
 });
 

@@ -8,6 +8,8 @@ const booleanStringSchema = z
 export const RuntimeEnvSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   API_PORT: portSchema.default(4000),
+  LOG_LEVEL: z.enum(["debug", "info", "warn", "error", "fatal"]).default("info"),
+  SERVICE_ROLE: z.enum(["api", "worker"]).default("api"),
   MONGODB_URI: z.string().url(),
   REDIS_URL: z.string().url(),
   APP_TIMEZONE: z.literal("Asia/Kolkata").default("Asia/Kolkata"),

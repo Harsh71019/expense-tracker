@@ -25,7 +25,8 @@ describe("TransactionService", () => {
       accountRepository,
       new CategoryRepository(connection),
       new TransactionRepository(connection),
-      new AuditRepository(connection)
+      new AuditRepository(connection),
+      { log: () => undefined, warn: () => undefined }
     );
     await connectedDatabase(connection)
       .collection("transactions")

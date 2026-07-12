@@ -1,6 +1,7 @@
 import { Catch, HttpException, HttpStatus } from "@nestjs/common";
 import type { ArgumentsHost, ExceptionFilter } from "@nestjs/common";
 import type { Request, Response } from "express";
+import { Logger } from "nestjs-pino";
 import { ZodError } from "zod";
 
 import { DomainError } from "./domain-error.js";
@@ -15,11 +16,20 @@ type ProblemDetails = Readonly<{
 
 @Catch()
 export class ProblemJsonFilter implements ExceptionFilter {
+  constructor(private readonly logger: Logger) {}
+
   catch(exception: unknown, host: ArgumentsHost): void {
     const context = host.switchToHttp();
     const request = context.getRequest<Request>();
     const response = context.getResponse<Response>();
     const problem = this.toProblemDetails(exception, request.originalUrl);
+
+    if (!isExpectedException(exception)) {
+      this.logger.error(
+        { err: exception, event: "http.unexpected_error" },
+        "unexpected request failure"
+      );
+    }
 
     response.status(problem.status).type("application/problem+json").send(problem);
   }
@@ -63,4 +73,12 @@ export class ProblemJsonFilter implements ExceptionFilter {
       instance
     };
   }
+}
+
+function isExpectedException(exception: unknown): boolean {
+  return (
+    exception instanceof ZodError ||
+    exception instanceof DomainError ||
+    exception instanceof HttpException
+  );
 }

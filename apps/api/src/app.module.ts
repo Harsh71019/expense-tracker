@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { MongooseModule } from "@nestjs/mongoose";
 import { LoggerModule } from "nestjs-pino";
+import pino from "pino";
 
 import { RuntimeConfigModule } from "./common/config/runtime-config.module.js";
 import { RuntimeConfigService } from "./common/config/runtime-config.service.js";
@@ -31,14 +32,37 @@ import { TransactionsModule } from "./transactions/transactions.module.js";
     CategoriesModule,
     AuditModule,
     TransactionsModule,
-    LoggerModule.forRoot({
-      pinoHttp: {
-        redact: ["req.headers.authorization", "req.headers.cookie"],
-        genReqId: (request) => {
-          const requestId = request.headers["x-request-id"];
-          return typeof requestId === "string" ? requestId : crypto.randomUUID();
+    LoggerModule.forRootAsync({
+      inject: [RuntimeConfigService],
+      useFactory: (config: RuntimeConfigService) => ({
+        pinoHttp: {
+          level: config.env.LOG_LEVEL,
+          base: { service: config.env.SERVICE_ROLE, sha: config.env.GIT_SHA },
+          timestamp: pino.stdTimeFunctions.isoTime,
+          formatters: { level: (label) => ({ level: label }) },
+          redact: {
+            paths: [
+              "req.headers.authorization",
+              "req.headers.cookie",
+              "req.body.password",
+              "*.password",
+              "*.secret",
+              "*.token",
+              "*.mongoUri"
+            ],
+            censor: "[REDACTED]"
+          },
+          autoLogging: {
+            ignore: (request) => request.url === "/api/healthz" || request.url === "/api/readyz"
+          },
+          genReqId: (request, response) => {
+            const requestId = request.headers["x-request-id"];
+            const id = typeof requestId === "string" ? requestId : crypto.randomUUID();
+            response.setHeader("x-request-id", id);
+            return id;
+          }
         }
-      }
+      })
     }),
     HealthModule
   ]

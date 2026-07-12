@@ -19,7 +19,7 @@ async function bootstrap(): Promise<void> {
   const auth = app.get(AuthService);
   app.getHttpAdapter().getInstance().all("/api/auth/*any", toNodeHandler(auth.auth));
   app.enableShutdownHooks();
-  app.useGlobalFilters(new ProblemJsonFilter());
+  app.useGlobalFilters(new ProblemJsonFilter(app.get(Logger)));
   app.setGlobalPrefix("api");
   app.use(helmet());
   app.use(cookieParser());

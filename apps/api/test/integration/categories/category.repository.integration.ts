@@ -3,7 +3,8 @@ import { MongoMemoryReplSet } from "mongodb-memory-server";
 import { createConnection } from "mongoose";
 import type { Connection } from "mongoose";
 
-import { CategoryRepository } from "../../src/categories/category.repository.js";
+import { CategoryRepository } from "../../../src/categories/category.repository.js";
+import { withTxn } from "../../../src/common/mongo-txn.js";
 
 describe("CategoryRepository tenancy and archive behavior", () => {
   let replicaSet: MongoMemoryReplSet | undefined;
@@ -32,9 +33,32 @@ describe("CategoryRepository tenancy and archive behavior", () => {
     expect(await repository.archive("user-a", aCategory.id)).toBe(true);
     expect(await repository.list("user-a")).toEqual([]);
   });
+
+  it("verifies category existence checks (exists method)", async () => {
+    const repository = categoryRepository(categories);
+    const conn = connectedConnection(connection);
+
+    const cat = await repository.create("user-a", { name: "Snacks", kind: "expense" });
+
+    await withTxn(conn, async (session) => {
+      expect(await repository.exists("user-a", cat.id, session)).toBe(true);
+      expect(await repository.exists("user-a", "0123456789abcdef01234567", session)).toBe(false);
+      expect(await repository.exists("user-b", cat.id, session)).toBe(false);
+    });
+
+    await repository.archive("user-a", cat.id);
+    await withTxn(conn, async (session) => {
+      expect(await repository.exists("user-a", cat.id, session)).toBe(false);
+    });
+  });
 });
 
 function categoryRepository(repository: CategoryRepository | undefined): CategoryRepository {
   if (repository === undefined) throw new Error("Category repository is not ready");
   return repository;
+}
+
+function connectedConnection(connection: Connection | undefined): Connection {
+  if (connection === undefined) throw new Error("MongoDB connection is not ready");
+  return connection;
 }

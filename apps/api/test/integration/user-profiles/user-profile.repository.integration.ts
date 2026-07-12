@@ -3,7 +3,7 @@ import { MongoMemoryReplSet } from "mongodb-memory-server";
 import { createConnection } from "mongoose";
 import type { Connection } from "mongoose";
 
-import { UserProfileRepository } from "../../src/user-profiles/user-profile.repository.js";
+import { UserProfileRepository } from "../../../src/user-profiles/user-profile.repository.js";
 
 describe("UserProfileRepository tenancy", () => {
   let replicaSet: MongoMemoryReplSet | undefined;
@@ -40,6 +40,31 @@ describe("UserProfileRepository tenancy", () => {
 
     expect(await repository.findByUserId("user-a")).toMatchObject({ displayName: "Asha Mehta" });
     expect(await repository.findByUserId("user-b")).toMatchObject({ displayName: "Bharat" });
+  });
+
+  it("creates user profile directly", async () => {
+    const repository = profileRepository(profiles);
+    const profile = await repository.create("user-c", "Chitra");
+    expect(profile).toMatchObject({
+      userId: "user-c",
+      displayName: "Chitra",
+      locale: "en-IN",
+      timezone: "Asia/Kolkata"
+    });
+
+    const found = await repository.findByUserId("user-c");
+    expect(found).toMatchObject({
+      userId: "user-c",
+      displayName: "Chitra",
+      locale: "en-IN",
+      timezone: "Asia/Kolkata"
+    });
+  });
+
+  it("returns null when updating non-existent profile", async () => {
+    const repository = profileRepository(profiles);
+    const updated = await repository.update("non-existent-user", { displayName: "Ghost" });
+    expect(updated).toBeNull();
   });
 });
 

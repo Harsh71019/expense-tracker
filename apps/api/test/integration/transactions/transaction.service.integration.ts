@@ -3,12 +3,12 @@ import { MongoMemoryReplSet } from "mongodb-memory-server";
 import { createConnection } from "mongoose";
 import type { Connection } from "mongoose";
 
-import { AccountRepository } from "../../src/accounts/account.repository.js";
-import { AuditRepository } from "../../src/audit/audit.repository.js";
-import { CategoryRepository } from "../../src/categories/category.repository.js";
-import { withTxn } from "../../src/common/mongo-txn.js";
-import { TransactionRepository } from "../../src/transactions/transaction.repository.js";
-import { TransactionService } from "../../src/transactions/transaction.service.js";
+import { AccountRepository } from "../../../src/accounts/account.repository.js";
+import { AuditRepository } from "../../../src/audit/audit.repository.js";
+import { CategoryRepository } from "../../../src/categories/category.repository.js";
+import { withTxn } from "../../../src/common/mongo-txn.js";
+import { TransactionRepository } from "../../../src/transactions/transaction.repository.js";
+import { TransactionService } from "../../../src/transactions/transaction.service.js";
 
 describe("TransactionService", () => {
   let replicaSet: MongoMemoryReplSet | undefined;
@@ -129,6 +129,25 @@ describe("TransactionService", () => {
       .collection("accounts")
       .findOne({ userId: "user-a", name: "HDFC Savings" });
     expect(account).toMatchObject({ balanceMinor: 9_750 });
+  });
+
+  it("rolls back the transaction when the category does not exist", async () => {
+    const service = transactionService(transactions);
+    await expect(
+      service.create(
+        "user-a",
+        {
+          accountId: existingAccountId(accountId),
+          categoryId: "0123456789abcdef01234567",
+          type: "expense",
+          amountMinor: 500,
+          occurredAt: new Date("2026-07-12T09:00:00.000Z"),
+          description: "Invalid category",
+          tags: []
+        },
+        "b3a8d11c-2dfa-4933-911b-87b7f9681282"
+      )
+    ).rejects.toThrow("Category not found.");
   });
 });
 

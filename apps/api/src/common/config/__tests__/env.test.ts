@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { parseRuntimeEnv } from "../../../src/common/config/env.js";
+import { parseRuntimeEnv } from "../env.js";
 
 describe("parseRuntimeEnv", () => {
   it("applies safe defaults to a valid environment", () => {

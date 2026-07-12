@@ -3,8 +3,8 @@ import { MongoMemoryReplSet } from "mongodb-memory-server";
 import { createConnection } from "mongoose";
 import type { Connection } from "mongoose";
 
-import { AccountRepository } from "../../src/accounts/account.repository.js";
-import { withTxn } from "../../src/common/mongo-txn.js";
+import { AccountRepository } from "../../../src/accounts/account.repository.js";
+import { withTxn } from "../../../src/common/mongo-txn.js";
 
 describe("AccountRepository tenancy and archive behavior", () => {
   let replicaSet: MongoMemoryReplSet | undefined;

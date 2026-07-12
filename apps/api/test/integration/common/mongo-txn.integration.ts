@@ -3,7 +3,7 @@ import { MongoMemoryReplSet } from "mongodb-memory-server";
 import { createConnection } from "mongoose";
 import type { Connection } from "mongoose";
 
-import { withTxn } from "../../src/common/mongo-txn.js";
+import { withTxn } from "../../../src/common/mongo-txn.js";
 
 describe("withTxn", () => {
   let replicaSet: MongoMemoryReplSet | undefined;

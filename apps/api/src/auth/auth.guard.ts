@@ -6,6 +6,7 @@ import type { Request } from "express";
 
 import { AuthService } from "./auth.service.js";
 import { IS_PUBLIC_KEY } from "./public.decorator.js";
+import { LoggingContextService } from "../common/logging/logging-context.service.js";
 import { UserProfileService } from "../user-profiles/user-profile.service.js";
 
 export type AuthenticatedUser = Readonly<{ id: string }>;
@@ -15,7 +16,8 @@ export class AuthGuard implements CanActivate {
   constructor(
     private readonly authService: AuthService,
     private readonly profiles: UserProfileService,
-    private readonly reflector: Reflector
+    private readonly reflector: Reflector,
+    private readonly loggingContext: LoggingContextService
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -37,6 +39,7 @@ export class AuthGuard implements CanActivate {
     }
 
     await this.profiles.ensure(session.user.id, session.user.name);
+    this.loggingContext.set({ userId: session.user.id });
     request.authUser = { id: session.user.id };
     return true;
   }

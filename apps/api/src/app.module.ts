@@ -5,6 +5,8 @@ import pino from "pino";
 
 import { RuntimeConfigModule } from "./common/config/runtime-config.module.js";
 import { RuntimeConfigService } from "./common/config/runtime-config.service.js";
+import { LoggingContextService } from "./common/logging/logging-context.service.js";
+import { LoggingModule } from "./common/logging/logging.module.js";
 import { RedisModule } from "./common/redis/redis.module.js";
 import { AuthModule } from "./auth/auth.module.js";
 import { AccountsModule } from "./accounts/accounts.module.js";
@@ -22,10 +24,12 @@ import { TransactionsModule } from "./transactions/transactions.module.js";
       useFactory: (config: RuntimeConfigService) => ({
         uri: config.env.MONGODB_URI,
         maxPoolSize: 10,
+        monitorCommands: true,
         serverSelectionTimeoutMS: 5_000
       })
     }),
     RedisModule,
+    LoggingModule,
     UserProfilesModule,
     AuthModule,
     AccountsModule,
@@ -33,8 +37,8 @@ import { TransactionsModule } from "./transactions/transactions.module.js";
     AuditModule,
     TransactionsModule,
     LoggerModule.forRootAsync({
-      inject: [RuntimeConfigService],
-      useFactory: (config: RuntimeConfigService) => ({
+      inject: [RuntimeConfigService, LoggingContextService],
+      useFactory: (config: RuntimeConfigService, context: LoggingContextService) => ({
         pinoHttp: {
           level: config.env.LOG_LEVEL,
           base: { service: config.env.SERVICE_ROLE, sha: config.env.GIT_SHA },
@@ -55,6 +59,7 @@ import { TransactionsModule } from "./transactions/transactions.module.js";
           autoLogging: {
             ignore: (request) => request.url === "/api/healthz" || request.url === "/api/readyz"
           },
+          mixin: () => context.get() ?? {},
           genReqId: (request, response) => {
             const requestId = request.headers["x-request-id"];
             const id = typeof requestId === "string" ? requestId : crypto.randomUUID();

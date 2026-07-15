@@ -1,13 +1,26 @@
 import { Injectable } from "@nestjs/common";
 import { InjectConnection } from "@nestjs/mongoose";
-import { TransactionSchema, type CreateTransaction, type Transaction } from "@vyaya/shared";
+import {
+  TransactionSchema,
+  type CreateTransaction,
+  type ListTransactionsQuery,
+  type Transaction,
+  type TransactionPage,
+  type UpdateTransaction
+} from "@vyaya/shared";
 import { Types } from "mongoose";
 import type { Connection } from "mongoose";
 import { z } from "zod";
 
+import { InvalidCursorError } from "../common/errors/invalid-cursor.error.js";
 import type { MongoSession } from "../common/mongo-txn.js";
 
 const TRANSACTIONS_COLLECTION = "transactions";
+
+const CursorPayloadSchema = z.object({
+  occurredAt: z.string().datetime(),
+  id: z.string().regex(/^[a-f\d]{24}$/i)
+});
 
 const StoredTransactionSchema = z.object({
   _id: z.unknown(),
@@ -25,6 +38,7 @@ const StoredTransactionSchema = z.object({
   idempotencyKey: z.string().uuid().optional(),
   reversalOf: z.unknown().optional(),
   reversedBy: z.unknown().optional(),
+  transferGroupId: z.unknown().optional(),
   createdAt: z.date(),
   updatedAt: z.date()
 });
@@ -37,12 +51,15 @@ export class TransactionRepository {
     userId: string,
     input: CreateTransaction,
     idempotencyKey: string | undefined,
-    session: MongoSession
+    session: MongoSession,
+    transferGroupId?: string
   ): Promise<Transaction> {
     const now = new Date();
     const category =
       input.categoryId === undefined ? {} : { categoryId: new Types.ObjectId(input.categoryId) };
     const idempotency = idempotencyKey === undefined ? {} : { idempotencyKey };
+    const transfer =
+      transferGroupId === undefined ? {} : { transferGroupId: new Types.ObjectId(transferGroupId) };
     const document = {
       userId,
       accountId: new Types.ObjectId(input.accountId),
@@ -56,6 +73,7 @@ export class TransactionRepository {
       source: "manual" as const,
       status: "posted" as const,
       ...idempotency,
+      ...transfer,
       createdAt: now,
       updatedAt: now
     };
@@ -63,6 +81,50 @@ export class TransactionRepository {
       .collection(TRANSACTIONS_COLLECTION)
       .insertOne(document, { session });
     return this.toTransaction({ _id: result.insertedId, ...document });
+  }
+
+  async findMany(userId: string, query: ListTransactionsQuery): Promise<TransactionPage> {
+    const cursor = query.cursor === undefined ? null : decodeCursor(query.cursor);
+    const occurredAtRange = {
+      ...(query.from === undefined ? {} : { $gte: query.from }),
+      ...(query.to === undefined ? {} : { $lte: query.to })
+    };
+
+    const filter: Record<string, unknown> = {
+      userId,
+      ...(query.accountId === undefined ? {} : { accountId: new Types.ObjectId(query.accountId) }),
+      ...(query.categoryId === undefined
+        ? {}
+        : { categoryId: new Types.ObjectId(query.categoryId) }),
+      ...(Object.keys(occurredAtRange).length === 0 ? {} : { occurredAt: occurredAtRange }),
+      ...(query.q === undefined
+        ? {}
+        : { description: { $regex: escapeRegExp(query.q), $options: "i" } }),
+      ...(cursor === null
+        ? {}
+        : {
+            $or: [
+              { occurredAt: { $lt: cursor.occurredAt } },
+              { occurredAt: cursor.occurredAt, _id: { $lt: new Types.ObjectId(cursor.id) } }
+            ]
+          })
+    };
+
+    const documents = await this.database()
+      .collection(TRANSACTIONS_COLLECTION)
+      .find(filter)
+      .sort({ occurredAt: -1, _id: -1 })
+      .limit(query.limit + 1)
+      .toArray();
+
+    const page = documents.slice(0, query.limit);
+    const items = page.map((document) => this.toTransaction(document));
+    const last = items.at(-1);
+    const hasMore = documents.length > query.limit;
+    const nextCursor =
+      hasMore && last !== undefined ? encodeCursor(last.occurredAt, last.id) : null;
+
+    return { items, pageInfo: { nextCursor, hasMore, limit: query.limit } };
   }
 
   async findByIdempotencyKey(userId: string, idempotencyKey: string): Promise<Transaction | null> {
@@ -83,6 +145,45 @@ export class TransactionRepository {
     return transaction === null ? null : this.toTransaction(transaction);
   }
 
+  async findById(
+    userId: string,
+    transactionId: string,
+    session: MongoSession
+  ): Promise<Transaction | null> {
+    const transaction = await this.database()
+      .collection(TRANSACTIONS_COLLECTION)
+      .findOne({ _id: new Types.ObjectId(transactionId), userId }, { session });
+    return transaction === null ? null : this.toTransaction(transaction);
+  }
+
+  async updateNonMonetaryFields(
+    userId: string,
+    transactionId: string,
+    patch: UpdateTransaction,
+    session: MongoSession
+  ): Promise<Transaction | null> {
+    const set: Record<string, unknown> = { updatedAt: new Date() };
+    const unset: Record<string, ""> = {};
+    if (patch.description !== undefined) set.description = patch.description;
+    if (patch.tags !== undefined) set.tags = patch.tags;
+    if (patch.categoryId !== undefined) {
+      if (patch.categoryId === null) {
+        unset.categoryId = "";
+      } else {
+        set.categoryId = new Types.ObjectId(patch.categoryId);
+      }
+    }
+
+    const result = await this.database()
+      .collection(TRANSACTIONS_COLLECTION)
+      .findOneAndUpdate(
+        { _id: new Types.ObjectId(transactionId), userId },
+        { $set: set, ...(Object.keys(unset).length === 0 ? {} : { $unset: unset }) },
+        { session, returnDocument: "after" }
+      );
+    return result === null ? null : this.toTransaction(result);
+  }
+
   async findByReversalOf(userId: string, transactionId: string): Promise<Transaction | null> {
     const transaction = await this.database()
       .collection(TRANSACTIONS_COLLECTION)
@@ -93,13 +194,16 @@ export class TransactionRepository {
   async createReversal(
     userId: string,
     original: Transaction,
-    session: MongoSession
+    session: MongoSession,
+    transferGroupId?: string
   ): Promise<Transaction> {
     const now = new Date();
     const category =
       original.categoryId === undefined
         ? {}
         : { categoryId: new Types.ObjectId(original.categoryId) };
+    const transfer =
+      transferGroupId === undefined ? {} : { transferGroupId: new Types.ObjectId(transferGroupId) };
     const document = {
       userId,
       accountId: new Types.ObjectId(original.accountId),
@@ -113,6 +217,7 @@ export class TransactionRepository {
       source: "manual" as const,
       status: "reversal" as const,
       reversalOf: new Types.ObjectId(original.id),
+      ...transfer,
       createdAt: now,
       updatedAt: now
     };
@@ -120,6 +225,29 @@ export class TransactionRepository {
       .collection(TRANSACTIONS_COLLECTION)
       .insertOne(document, { session });
     return this.toTransaction({ _id: result.insertedId, ...document });
+  }
+
+  async findPostedLegsByTransferGroupId(
+    userId: string,
+    transferGroupId: string,
+    session: MongoSession
+  ): Promise<Transaction[]> {
+    const documents = await this.database()
+      .collection(TRANSACTIONS_COLLECTION)
+      .find(
+        { userId, transferGroupId: new Types.ObjectId(transferGroupId), status: "posted" },
+        { session }
+      )
+      .toArray();
+    return documents.map((document) => this.toTransaction(document));
+  }
+
+  async findLegsByTransferGroupId(userId: string, transferGroupId: string): Promise<Transaction[]> {
+    const documents = await this.database()
+      .collection(TRANSACTIONS_COLLECTION)
+      .find({ userId, transferGroupId: new Types.ObjectId(transferGroupId) })
+      .toArray();
+    return documents.map((document) => this.toTransaction(document));
   }
 
   async markReversed(
@@ -154,6 +282,10 @@ export class TransactionRepository {
       stored.reversalOf === undefined ? {} : { reversalOf: objectIdString(stored.reversalOf) };
     const reversedBy =
       stored.reversedBy === undefined ? {} : { reversedBy: objectIdString(stored.reversedBy) };
+    const transferGroupId =
+      stored.transferGroupId === undefined
+        ? {}
+        : { transferGroupId: objectIdString(stored.transferGroupId) };
     return TransactionSchema.parse({
       id: objectIdString(stored._id),
       userId: stored.userId,
@@ -170,6 +302,7 @@ export class TransactionRepository {
       ...idempotency,
       ...reversalOf,
       ...reversedBy,
+      ...transferGroupId,
       createdAt: stored.createdAt,
       updatedAt: stored.updatedAt
     });
@@ -180,6 +313,27 @@ export class TransactionRepository {
     if (database === undefined) throw new Error("MongoDB connection is not ready");
     return database;
   }
+}
+
+function encodeCursor(occurredAt: Date, id: string): string {
+  return Buffer.from(JSON.stringify({ occurredAt: occurredAt.toISOString(), id }), "utf8").toString(
+    "base64url"
+  );
+}
+
+function decodeCursor(cursor: string): { occurredAt: Date; id: string } {
+  try {
+    const payload = CursorPayloadSchema.parse(
+      JSON.parse(Buffer.from(cursor, "base64url").toString("utf8"))
+    );
+    return { occurredAt: new Date(payload.occurredAt), id: payload.id };
+  } catch {
+    throw new InvalidCursorError();
+  }
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function objectIdString(value: unknown): string {

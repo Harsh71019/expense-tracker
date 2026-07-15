@@ -1,6 +1,13 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { InjectConnection } from "@nestjs/mongoose";
-import { type CreateTransaction, type Transaction, type TransactionId } from "@vyaya/shared";
+import {
+  type CreateTransaction,
+  type ListTransactionsQuery,
+  type Transaction,
+  type TransactionId,
+  type TransactionPage,
+  type UpdateTransaction
+} from "@vyaya/shared";
 import type { Connection } from "mongoose";
 import { Logger } from "nestjs-pino";
 import { z } from "zod";
@@ -78,6 +85,54 @@ export class TransactionService {
       );
       return { transaction, replayed: true };
     }
+  }
+
+  list(userId: string, query: ListTransactionsQuery): Promise<TransactionPage> {
+    return this.transactions.findMany(userId, query);
+  }
+
+  async update(
+    userId: string,
+    transactionId: TransactionId,
+    patch: UpdateTransaction
+  ): Promise<Transaction> {
+    const updated = await withTxn(this.connection, async (session) => {
+      const before = await this.transactions.findById(userId, transactionId, session);
+      if (before === null) throw new EntityNotFoundError("Transaction");
+
+      if (
+        patch.categoryId !== undefined &&
+        patch.categoryId !== null &&
+        !(await this.categories.exists(userId, patch.categoryId, session))
+      ) {
+        throw new EntityNotFoundError("Category");
+      }
+
+      const after = await this.transactions.updateNonMonetaryFields(
+        userId,
+        transactionId,
+        patch,
+        session
+      );
+      if (after === null) throw new EntityNotFoundError("Transaction");
+
+      await this.audit.record(userId, "transaction.update", after.id, session, {
+        before: {
+          description: before.description,
+          tags: before.tags,
+          categoryId: before.categoryId
+        },
+        after: { description: after.description, tags: after.tags, categoryId: after.categoryId }
+      });
+
+      return after;
+    });
+
+    this.logger.log(
+      { event: LogEvent.TransactionUpdated, txnId: updated.id },
+      "transaction updated"
+    );
+    return updated;
   }
 
   async reverse(userId: string, transactionId: TransactionId): Promise<CreateTransactionResult> {

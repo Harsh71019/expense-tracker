@@ -14,11 +14,13 @@ export class AuditRepository {
     userId: string,
     action: string,
     entityId: string,
-    session: MongoSession
+    session: MongoSession,
+    meta?: Record<string, unknown>
   ): Promise<void> {
+    const metaField = meta === undefined ? {} : { meta };
     await this.database()
       .collection(AUDIT_LOG_COLLECTION)
-      .insertOne({ userId, action, entityId, at: new Date() }, { session });
+      .insertOne({ userId, action, entityId, ...metaField, at: new Date() }, { session });
   }
 
   private database(): NonNullable<Connection["db"]> {

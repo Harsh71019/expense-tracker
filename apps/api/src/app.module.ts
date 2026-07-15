@@ -10,6 +10,7 @@ import { LoggingModule } from "./common/logging/logging.module.js";
 import { RedisModule } from "./common/redis/redis.module.js";
 import { AuthModule } from "./auth/auth.module.js";
 import { AccountsModule } from "./accounts/accounts.module.js";
+import { AssetsModule } from "./assets/assets.module.js";
 import { AuditModule } from "./audit/audit.module.js";
 import { CategoriesModule } from "./categories/categories.module.js";
 import { HealthModule } from "./health/health.module.js";
@@ -36,6 +37,7 @@ import { TransactionsModule } from "./transactions/transactions.module.js";
     CategoriesModule,
     AuditModule,
     TransactionsModule,
+    AssetsModule,
     LoggerModule.forRootAsync({
       inject: [RuntimeConfigService, LoggingContextService],
       useFactory: (config: RuntimeConfigService, context: LoggingContextService) => ({

@@ -9,21 +9,26 @@ import { CategoryRepository } from "../../../src/categories/category.repository.
 import { withTxn } from "../../../src/common/mongo-txn.js";
 import { TransactionRepository } from "../../../src/transactions/transaction.repository.js";
 import { TransactionService } from "../../../src/transactions/transaction.service.js";
+import { TransactionNotReversibleError } from "../../../src/common/errors/transaction-not-reversible.error.js";
 
 describe("TransactionService", () => {
   let replicaSet: MongoMemoryReplSet | undefined;
   let connection: Connection | undefined;
   let transactions: TransactionService | undefined;
   let accountId: string | undefined;
+  let categoryRepository: CategoryRepository | undefined;
+  let foodCategoryId: string | undefined;
+  let travelCategoryId: string | undefined;
 
   beforeAll(async () => {
     replicaSet = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
     connection = await createConnection(replicaSet.getUri("vyaya_transactions_test")).asPromise();
     const accountRepository = new AccountRepository(connection);
+    categoryRepository = new CategoryRepository(connection);
     transactions = new TransactionService(
       connection,
       accountRepository,
-      new CategoryRepository(connection),
+      categoryRepository,
       new TransactionRepository(connection),
       new AuditRepository(connection),
       { log: () => undefined, warn: () => undefined }
@@ -42,6 +47,11 @@ describe("TransactionService", () => {
       )
     );
     accountId = account.id;
+
+    const food = await categoryRepository.create("user-a", { name: "Food", kind: "expense" });
+    foodCategoryId = food.id;
+    const travel = await categoryRepository.create("user-a", { name: "Travel", kind: "expense" });
+    travelCategoryId = travel.id;
   });
 
   afterAll(async () => {
@@ -150,6 +160,132 @@ describe("TransactionService", () => {
       )
     ).rejects.toThrow("Category not found.");
   });
+
+  it("throws TransactionNotReversibleError when reversing a non-existent transaction", async () => {
+    const service = transactionService(transactions);
+    await expect(service.reverse("user-a", "507f1f77bcf86cd799439011")).rejects.toThrow(
+      TransactionNotReversibleError
+    );
+  });
+
+  it("updates description, tags, and category, recording a before/after audit snapshot", async () => {
+    const service = transactionService(transactions);
+    const created = await service.create(
+      "user-a",
+      {
+        accountId: existingAccountId(accountId),
+        categoryId: existingId(foodCategoryId),
+        type: "expense",
+        amountMinor: 300,
+        occurredAt: new Date("2026-07-13T09:00:00.000Z"),
+        description: "Vada pav",
+        tags: ["snack"]
+      },
+      "f1a1a1a1-1111-4111-a111-111111111111"
+    );
+
+    const updated = await service.update("user-a", created.transaction.id, {
+      description: "Vada pav and chai",
+      tags: ["snack", "chai"],
+      categoryId: existingId(travelCategoryId)
+    });
+
+    expect(updated).toMatchObject({
+      description: "Vada pav and chai",
+      tags: ["snack", "chai"],
+      categoryId: existingId(travelCategoryId),
+      amountMinor: 300,
+      type: "expense"
+    });
+
+    const audit = await connectedDatabase(connection)
+      .collection("audit_log")
+      .findOne({ userId: "user-a", action: "transaction.update", entityId: updated.id });
+    expect(audit).toMatchObject({
+      meta: {
+        before: {
+          description: "Vada pav",
+          tags: ["snack"],
+          categoryId: existingId(foodCategoryId)
+        },
+        after: {
+          description: "Vada pav and chai",
+          tags: ["snack", "chai"],
+          categoryId: existingId(travelCategoryId)
+        }
+      }
+    });
+  });
+
+  it("clears the category when categoryId is explicitly null", async () => {
+    const service = transactionService(transactions);
+    const created = await service.create(
+      "user-a",
+      {
+        accountId: existingAccountId(accountId),
+        categoryId: existingId(foodCategoryId),
+        type: "expense",
+        amountMinor: 150,
+        occurredAt: new Date("2026-07-13T10:00:00.000Z"),
+        description: "Misc snack",
+        tags: []
+      },
+      "f2a2a2a2-2222-4222-a222-222222222222"
+    );
+
+    const updated = await service.update("user-a", created.transaction.id, { categoryId: null });
+
+    expect(updated.categoryId).toBeUndefined();
+  });
+
+  it("throws EntityNotFoundError when updating a transaction that does not exist", async () => {
+    const service = transactionService(transactions);
+    await expect(
+      service.update("user-a", "507f1f77bcf86cd799439011", { description: "Ghost" })
+    ).rejects.toThrow("Transaction not found.");
+  });
+
+  it("throws EntityNotFoundError when the patch references a non-existent category", async () => {
+    const service = transactionService(transactions);
+    const created = await service.create(
+      "user-a",
+      {
+        accountId: existingAccountId(accountId),
+        type: "expense",
+        amountMinor: 200,
+        occurredAt: new Date("2026-07-13T11:00:00.000Z"),
+        description: "Snack",
+        tags: []
+      },
+      "f3a3a3a3-3333-4333-a333-333333333333"
+    );
+
+    await expect(
+      service.update("user-a", created.transaction.id, {
+        categoryId: "0123456789abcdef01234567"
+      })
+    ).rejects.toThrow("Category not found.");
+  });
+
+  it("does not allow updating another user's transaction", async () => {
+    const service = transactionService(transactions);
+    const created = await service.create(
+      "user-a",
+      {
+        accountId: existingAccountId(accountId),
+        type: "expense",
+        amountMinor: 175,
+        occurredAt: new Date("2026-07-13T12:00:00.000Z"),
+        description: "Private snack",
+        tags: []
+      },
+      "f4a4a4a4-4444-4444-a444-444444444444"
+    );
+
+    await expect(
+      service.update("someone-else", created.transaction.id, { description: "Hijacked" })
+    ).rejects.toThrow("Transaction not found.");
+  });
 });
 
 function transactionService(service: TransactionService | undefined): TransactionService {
@@ -160,6 +296,11 @@ function transactionService(service: TransactionService | undefined): Transactio
 function existingAccountId(accountId: string | undefined): string {
   if (accountId === undefined) throw new Error("Account is not ready");
   return accountId;
+}
+
+function existingId(id: string | undefined): string {
+  if (id === undefined) throw new Error("Fixture id is not ready");
+  return id;
 }
 
 function connectedConnection(connection: Connection | undefined): Connection {

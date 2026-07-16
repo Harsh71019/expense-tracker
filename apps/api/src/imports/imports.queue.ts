@@ -28,6 +28,11 @@ export class ImportsQueue implements OnModuleDestroy {
     });
   }
 
+  /** Read-only access to the underlying Queue — Bull Board needs the real instance. */
+  getQueue(): Queue<ParseImportJobData> {
+    return this.queue;
+  }
+
   async enqueueParse(data: ParseImportJobData): Promise<void> {
     await this.queue.add(PARSE_IMPORT_JOB_NAME, data, {
       // One parse job per batch: a duplicate enqueue for the same batchId

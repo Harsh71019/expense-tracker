@@ -6,6 +6,8 @@ import { RuntimeConfigService } from "./common/config/runtime-config.service.js"
 import { RedisService } from "./common/redis/redis.service.js";
 import { ImportsService } from "./imports/imports.service.js";
 import { startImportsWorker } from "./imports/imports.processor.js";
+import { NotificationDeliveryService } from "./notifications/notification-delivery.service.js";
+import { startNotificationsWorker } from "./notifications/notifications.processor.js";
 
 async function bootstrapWorker(): Promise<void> {
   const app = await NestFactory.createApplicationContext(AppModule);
@@ -24,10 +26,19 @@ async function bootstrapWorker(): Promise<void> {
     app.get(ImportsService),
     app.get(Logger)
   );
+  const notificationsWorker = startNotificationsWorker(
+    app.get(RuntimeConfigService),
+    app.get(NotificationDeliveryService),
+    app.get(Logger)
+  );
   app.get(Logger).log({ event: "worker.started" }, "worker process started");
 
-  process.on("SIGTERM", () => void importsWorker.close());
-  process.on("SIGINT", () => void importsWorker.close());
+  const shutdown = (): void => {
+    void importsWorker.close();
+    void notificationsWorker.close();
+  };
+  process.on("SIGTERM", shutdown);
+  process.on("SIGINT", shutdown);
 }
 
 void bootstrapWorker();

@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 import { MongooseModule } from "@nestjs/mongoose";
+import { ScheduleModule } from "@nestjs/schedule";
 import { LoggerModule } from "nestjs-pino";
 import pino from "pino";
 
@@ -17,6 +18,7 @@ import { CategoryRulesModule } from "./category-rules/category-rules.module.js";
 import { ExportModule } from "./export/export.module.js";
 import { HealthModule } from "./health/health.module.js";
 import { ImportsModule } from "./imports/imports.module.js";
+import { NotificationsModule } from "./notifications/notifications.module.js";
 import { UserProfilesModule } from "./user-profiles/user-profiles.module.js";
 import { TransactionsModule } from "./transactions/transactions.module.js";
 
@@ -34,6 +36,8 @@ import { TransactionsModule } from "./transactions/transactions.module.js";
     }),
     RedisModule,
     LoggingModule,
+    ScheduleModule.forRoot(),
+    NotificationsModule,
     UserProfilesModule,
     AuthModule,
     AccountsModule,

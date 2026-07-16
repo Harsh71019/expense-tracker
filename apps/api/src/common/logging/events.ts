@@ -6,7 +6,10 @@ export const LogEvent = {
   TransferCreated: "transfer.created",
   TransferReversed: "transfer.reversed",
   ImportBatchParsed: "import.batch_parsed",
-  ImportBatchParseFailed: "import.batch_parse_failed"
+  ImportBatchParseFailed: "import.batch_parse_failed",
+  NotificationDelivered: "notification.delivered",
+  NotificationDeliveryFailed: "notification.delivery_failed",
+  NotificationSweepEnqueued: "notification.sweep_enqueued"
 } as const;
 
 export type LogEvent = (typeof LogEvent)[keyof typeof LogEvent];

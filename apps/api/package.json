@@ -22,6 +22,7 @@
     "@nestjs/core": "latest",
     "@nestjs/mongoose": "latest",
     "@nestjs/platform-express": "latest",
+    "@nestjs/schedule": "latest",
     "@vyaya/shared": "workspace:*",
     "better-auth": "latest",
     "bullmq": "latest",

@@ -148,6 +148,31 @@ describe("StagedRowRepository", () => {
 
     expect(await repository.updateRow(otherBatchId, rowId, { include: false })).toBeNull();
   });
+
+  it("updateRow refuses to set include: true on a row with no parsed data", async () => {
+    const repository = stagedRowRepository(rows);
+    const batchId = new Types.ObjectId().toString();
+    await repository.insertMany(batchId, [
+      row({
+        rowNumber: 1,
+        parsed: undefined,
+        dedupeHash: undefined,
+        problems: ['Row is missing a value for column "Amount".'],
+        isDuplicate: false,
+        include: false
+      })
+    ]);
+    const [inserted] = (await repository.findByBatchId(batchId, undefined, 10)).items;
+    const rowId = nonNull(inserted).id;
+
+    expect(await repository.updateRow(batchId, rowId, { include: true })).toBeNull();
+
+    // Editing its category is still fine — only flipping it includable is blocked.
+    const categoryId = new Types.ObjectId().toString();
+    expect(
+      await repository.updateRow(batchId, rowId, { suggestedCategoryId: categoryId })
+    ).toMatchObject({ suggestedCategoryId: categoryId, include: false });
+  });
 });
 
 function nonNull<T>(value: T | undefined): T {

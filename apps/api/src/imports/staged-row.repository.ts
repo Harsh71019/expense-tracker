@@ -105,7 +105,16 @@ export class StagedRowRepository {
     return documents.map((document) => this.toStagedRow(document));
   }
 
-  /** Toggling `include`/`suggestedCategoryId` — the preview screen's edits. */
+  /**
+   * Toggling `include`/`suggestedCategoryId` — the preview screen's edits.
+   * A row with no `parsed` data (it failed to parse) can never be flipped to
+   * `include: true` — there's nothing committable on it, and commitBatch's
+   * findIncludableForBatch assumes every includable row has parsed data.
+   * Enforced in the filter itself rather than the caller: a row that
+   * doesn't satisfy that invariant simply doesn't match, so this returns
+   * null exactly like "row not found" does — safe by construction, not by
+   * trusting every call site to remember to check.
+   */
   async updateRow(
     batchId: ImportBatchId,
     rowId: StagedRowId,
@@ -122,10 +131,11 @@ export class StagedRowRepository {
       }
     }
 
+    const requiresParsed = patch.include === true ? { parsed: { $exists: true } } : {};
     const result = await this.database()
       .collection(STAGED_ROWS_COLLECTION)
       .findOneAndUpdate(
-        { _id: new Types.ObjectId(rowId), batchId: new Types.ObjectId(batchId) },
+        { _id: new Types.ObjectId(rowId), batchId: new Types.ObjectId(batchId), ...requiresParsed },
         { $set: set, ...(Object.keys(unset).length === 0 ? {} : { $unset: unset }) },
         { returnDocument: "after" }
       );

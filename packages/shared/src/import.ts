@@ -107,6 +107,38 @@ export const UploadImportMetadataSchema = z.object({
   mapping: ColumnMappingSchema
 });
 
+/**
+ * IMPLEMENTATION-PLAN.md Phase 3: "ship HDFC + ICICI presets." Column
+ * headers are the commonly-documented ones for each bank's "download
+ * statement as CSV" export — a starting point for the mapping form, not a
+ * guarantee. Real headers vary by account type, date range, and export
+ * settings; the user can still edit every field after picking a preset.
+ */
+export const COLUMN_MAPPING_PRESETS = {
+  hdfc: {
+    date: "Date",
+    description: "Narration",
+    dateFormat: "DD/MM/YYYY",
+    amountConvention: "debit_credit_cols",
+    debit: "Withdrawal Amt.",
+    credit: "Deposit Amt."
+  },
+  icici: {
+    date: "Transaction Date",
+    description: "Transaction Remarks",
+    dateFormat: "DD/MM/YYYY",
+    amountConvention: "debit_credit_cols",
+    debit: "Withdrawal Amount (INR)",
+    credit: "Deposit Amount (INR)"
+  }
+} as const satisfies Record<string, ColumnMapping>;
+
+export type ColumnMappingPresetName = keyof typeof COLUMN_MAPPING_PRESETS;
+
+export const AccountImportMappingSchema = z.object({
+  mapping: ColumnMappingSchema.nullable()
+});
+
 export const PreviewStagedRowsQuerySchema = z.object({
   cursor: z.string().min(1).optional(),
   limit: z.coerce.number().int().min(1).max(200).default(50)
@@ -140,3 +172,4 @@ export type UploadImportMetadata = z.infer<typeof UploadImportMetadataSchema>;
 export type PreviewStagedRowsQuery = z.infer<typeof PreviewStagedRowsQuerySchema>;
 export type StagedRowPage = z.infer<typeof StagedRowPageSchema>;
 export type UpdateStagedRow = z.infer<typeof UpdateStagedRowSchema>;
+export type AccountImportMapping = z.infer<typeof AccountImportMappingSchema>;

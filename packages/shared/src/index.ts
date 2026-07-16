@@ -47,7 +47,9 @@ export type { ErrorCode } from "./errors/codes.js";
 export {
   ALLOWED_IMPORT_FILE_EXTENSIONS,
   ALLOWED_IMPORT_MIME_TYPES,
+  AccountImportMappingSchema,
   AmountConventionSchema,
+  COLUMN_MAPPING_PRESETS,
   ColumnMappingSchema,
   DateFormatSchema,
   ImportBatchIdSchema,
@@ -65,8 +67,10 @@ export {
   UploadImportMetadataSchema
 } from "./import.js";
 export type {
+  AccountImportMapping,
   AmountConvention,
   ColumnMapping,
+  ColumnMappingPresetName,
   DateFormat,
   ImportBatch,
   ImportBatchId,

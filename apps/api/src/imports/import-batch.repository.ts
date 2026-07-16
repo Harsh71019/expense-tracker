@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { InjectConnection } from "@nestjs/mongoose";
 import {
+  ColumnMappingSchema,
   ImportBatchSchema,
   type AccountId,
   type ColumnMapping,
@@ -66,6 +67,25 @@ export class ImportBatchRepository {
       .sort({ createdAt: -1 })
       .toArray();
     return batches.map((batch) => this.toImportBatch(batch));
+  }
+
+  /**
+   * "Column mapping is saved per account" (BACKEND.md §4) is implemented as
+   * reusing the most recent batch's mapping for that account — no separate
+   * persisted field, no extra write path, always reflects what actually
+   * worked last time rather than a value that can drift from real usage.
+   */
+  async findLatestMappingForAccount(
+    userId: string,
+    accountId: AccountId
+  ): Promise<ColumnMapping | null> {
+    const batch = await this.database()
+      .collection(IMPORT_BATCHES_COLLECTION)
+      .findOne(
+        { userId, accountId: new Types.ObjectId(accountId) },
+        { sort: { createdAt: -1 }, projection: { mapping: 1 } }
+      );
+    return batch === null ? null : ColumnMappingSchema.parse(batch.mapping);
   }
 
   /**

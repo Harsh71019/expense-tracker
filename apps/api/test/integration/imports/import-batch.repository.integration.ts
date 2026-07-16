@@ -138,6 +138,24 @@ describe("ImportBatchRepository", () => {
     const list = await repository.list("user-list");
     expect(list.map((batch) => batch.id)).toEqual([second.id, first.id]);
   });
+
+  it("finds the most recent mapping for an account, scoped to the user", async () => {
+    const repository = importBatchRepository(batches);
+    const accountId = "0123456789abcdef01234abc";
+    const olderMapping: ColumnMapping = { ...MAPPING, amount: "Amount v1" };
+    const newerMapping: ColumnMapping = { ...MAPPING, amount: "Amount v2" };
+
+    await repository.create("user-mapping", accountId, "old.csv", "sha256:mapping-1", olderMapping);
+    await repository.create("user-mapping", accountId, "new.csv", "sha256:mapping-2", newerMapping);
+
+    expect(await repository.findLatestMappingForAccount("user-mapping", accountId)).toEqual(
+      newerMapping
+    );
+    expect(await repository.findLatestMappingForAccount("someone-else", accountId)).toBeNull();
+    expect(
+      await repository.findLatestMappingForAccount("user-mapping", "0123456789abcdef01234def")
+    ).toBeNull();
+  });
 });
 
 function importBatchRepository(

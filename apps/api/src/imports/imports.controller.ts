@@ -12,11 +12,13 @@ import {
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import {
+  AccountIdSchema,
   ImportBatchIdSchema,
   PreviewStagedRowsQuerySchema,
   StagedRowIdSchema,
   UpdateStagedRowSchema,
   UploadImportMetadataSchema,
+  type AccountImportMapping,
   type ImportBatch,
   type StagedRow,
   type StagedRowPage
@@ -78,6 +80,15 @@ export class ImportsController {
   @Get()
   list(@CurrentUser() user: AuthenticatedUser): Promise<ImportBatch[]> {
     return this.imports.list(user.id);
+  }
+
+  @Get("accounts/:accountId/mapping")
+  async savedMapping(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("accountId") accountId: string
+  ): Promise<AccountImportMapping> {
+    const mapping = await this.imports.getSavedMapping(user.id, AccountIdSchema.parse(accountId));
+    return { mapping };
   }
 
   @Get(":importBatchId/preview")

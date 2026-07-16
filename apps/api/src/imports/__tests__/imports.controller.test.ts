@@ -117,6 +117,17 @@ describe("ImportsController", () => {
     expect(mockService.list).toHaveBeenCalledWith("user-1");
   });
 
+  it("returns the account's saved mapping, or null if there isn't one", async () => {
+    const mockService = { getSavedMapping: vi.fn().mockResolvedValue(null) };
+    // @ts-expect-error - mock ImportsService for unit testing
+    const controller = new ImportsController(mockService);
+
+    const result = await controller.savedMapping(user, "507f1f77bcf86cd799439012");
+
+    expect(result).toEqual({ mapping: null });
+    expect(mockService.getSavedMapping).toHaveBeenCalledWith("user-1", "507f1f77bcf86cd799439012");
+  });
+
   it("previews staged rows with validated query params and a default limit", async () => {
     const mockPage = { items: [], pageInfo: { nextCursor: null, hasMore: false, limit: 50 } };
     const mockService = { preview: vi.fn().mockResolvedValue(mockPage) };

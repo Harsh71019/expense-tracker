@@ -207,6 +207,11 @@ export class ImportsService {
     return this.batches.list(userId);
   }
 
+  /** The mapping form's pre-fill — the most recent batch's mapping for this account, or null. */
+  getSavedMapping(userId: string, accountId: AccountId): Promise<ColumnMapping | null> {
+    return this.batches.findLatestMappingForAccount(userId, accountId);
+  }
+
   async preview(
     userId: string,
     batchId: ImportBatchId,

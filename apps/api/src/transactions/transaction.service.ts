@@ -139,7 +139,11 @@ export class TransactionService {
     try {
       const transaction = await withTxn(this.connection, async (session) => {
         const original = await this.transactions.findPostedById(userId, transactionId, session);
-        if (original === null) throw new TransactionNotReversibleError();
+        if (original === null) {
+          const existing = await this.transactions.findById(userId, transactionId, session);
+          if (existing === null) throw new EntityNotFoundError("Transaction");
+          throw new TransactionNotReversibleError();
+        }
 
         const reversal = await this.transactions.createReversal(userId, original, session);
         if (!(await this.transactions.markReversed(userId, original.id, reversal.id, session))) {

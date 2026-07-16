@@ -5,6 +5,8 @@ import type { Connection } from "mongoose";
 
 import { AccountRepository } from "../../../src/accounts/account.repository.js";
 import { AuditRepository } from "../../../src/audit/audit.repository.js";
+import { EntityNotFoundError } from "../../../src/common/errors/entity-not-found.error.js";
+import { TransactionNotReversibleError } from "../../../src/common/errors/transaction-not-reversible.error.js";
 import { withTxn } from "../../../src/common/mongo-txn.js";
 import { TransactionRepository } from "../../../src/transactions/transaction.repository.js";
 import { TransferService } from "../../../src/transactions/transfer.service.js";
@@ -233,7 +235,28 @@ describe("TransferService", () => {
     );
 
     await expect(service.reverse("someone-else", original.transferGroupId)).rejects.toThrow(
-      "Transaction cannot be reversed."
+      EntityNotFoundError
+    );
+  });
+
+  it("throws TransactionNotReversibleError when reversing an already-reversed transfer group", async () => {
+    const service = transferService(transfers);
+    const original = await service.create(
+      "user-a",
+      {
+        fromAccountId: existingId(hdfcAccountId),
+        toAccountId: existingId(cashAccountId),
+        amountMinor: 200,
+        occurredAt: new Date("2026-07-16T10:00:00.000Z"),
+        description: "Vending machine",
+        tags: []
+      },
+      "ffffffff-6666-4666-a666-ffffffffffff"
+    );
+    const reversed = await service.reverse("user-a", original.transferGroupId);
+
+    await expect(service.reverse("user-a", reversed.transferGroupId)).rejects.toThrow(
+      TransactionNotReversibleError
     );
   });
 

@@ -148,7 +148,14 @@ export class TransferService {
           transferGroupId,
           session
         );
-        if (legs.length !== 2) throw new TransactionNotReversibleError();
+        if (legs.length !== 2) {
+          const existing = await this.transactions.findLegsByTransferGroupId(
+            userId,
+            transferGroupId
+          );
+          if (existing.length === 0) throw new EntityNotFoundError("Transfer");
+          throw new TransactionNotReversibleError();
+        }
 
         const newTransferGroupId = new Types.ObjectId().toString();
         const reversedLegs: Transaction[] = [];

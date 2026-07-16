@@ -2,8 +2,8 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { MongoMemoryReplSet } from "mongodb-memory-server";
 import { createConnection } from "mongoose";
 import type { Connection } from "mongoose";
-import { ServiceUnavailableException } from "@nestjs/common";
 
+import { DependencyUnavailableError } from "../../../src/common/errors/dependency-unavailable.error.js";
 import { HealthService } from "../../../src/health/health.service.js";
 import { RedisService } from "../../../src/common/redis/redis.service.js";
 
@@ -37,17 +37,17 @@ describe("HealthService", () => {
     });
   });
 
-  it("throws ServiceUnavailableException when redis ping fails", async () => {
+  it("throws DependencyUnavailableError when redis ping fails", async () => {
     // @ts-expect-error - mock RedisService for tests
     const redisMock: RedisService = {
       ping: vi.fn().mockRejectedValue(new Error("Redis Down"))
     };
 
     const healthService = new HealthService(getConnection(connection), redisMock);
-    await expect(healthService.readiness()).rejects.toThrow(ServiceUnavailableException);
+    await expect(healthService.readiness()).rejects.toThrow(DependencyUnavailableError);
   });
 
-  it("throws ServiceUnavailableException when mongodb connection db is undefined", async () => {
+  it("throws DependencyUnavailableError when mongodb connection db is undefined", async () => {
     // @ts-expect-error - mock RedisService for tests
     const redisMock: RedisService = {
       ping: vi.fn().mockResolvedValue(true)
@@ -59,7 +59,7 @@ describe("HealthService", () => {
     };
 
     const healthService = new HealthService(mockConn, redisMock);
-    await expect(healthService.readiness()).rejects.toThrow(ServiceUnavailableException);
+    await expect(healthService.readiness()).rejects.toThrow(DependencyUnavailableError);
   });
 });
 

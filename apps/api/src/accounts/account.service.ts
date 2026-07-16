@@ -1,8 +1,9 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { InjectConnection } from "@nestjs/mongoose";
 import type { Account, AccountId, CreateAccount } from "@vyaya/shared";
 import type { Connection } from "mongoose";
 
+import { EntityNotFoundError } from "../common/errors/entity-not-found.error.js";
 import { withTxn } from "../common/mongo-txn.js";
 import { AccountRepository } from "./account.repository.js";
 
@@ -26,7 +27,7 @@ export class AccountService {
   async archive(userId: string, accountId: AccountId): Promise<void> {
     const archived = await this.accounts.archive(userId, accountId);
     if (!archived) {
-      throw new NotFoundException("Account not found");
+      throw new EntityNotFoundError("Account");
     }
   }
 }

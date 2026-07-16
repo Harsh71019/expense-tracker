@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import type { Category, CategoryId, CreateCategory } from "@vyaya/shared";
 
+import { EntityNotFoundError } from "../common/errors/entity-not-found.error.js";
 import { CategoryRepository } from "./category.repository.js";
 
 @Injectable()
@@ -14,6 +15,6 @@ export class CategoryService {
   }
   async archive(userId: string, categoryId: CategoryId): Promise<void> {
     if (!(await this.categories.archive(userId, categoryId)))
-      throw new NotFoundException("Category not found");
+      throw new EntityNotFoundError("Category");
   }
 }

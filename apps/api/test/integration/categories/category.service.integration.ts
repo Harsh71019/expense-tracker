@@ -2,10 +2,9 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { MongoMemoryReplSet } from "mongodb-memory-server";
 import { createConnection } from "mongoose";
 import type { Connection } from "mongoose";
-import { NotFoundException } from "@nestjs/common";
-
 import { CategoryRepository } from "../../../src/categories/category.repository.js";
 import { CategoryService } from "../../../src/categories/category.service.js";
+import { EntityNotFoundError } from "../../../src/common/errors/entity-not-found.error.js";
 
 describe("CategoryService", () => {
   let replicaSet: MongoMemoryReplSet | undefined;
@@ -51,19 +50,19 @@ describe("CategoryService", () => {
     });
   });
 
-  it("archives a category successfully and throws NotFoundException if non-existent or owned by another user", async () => {
+  it("archives a category successfully and throws EntityNotFoundError if non-existent or owned by another user", async () => {
     const service = getCategoryService(categoryService);
 
     const cat = await service.create("user-a", { name: "Travel", kind: "expense" });
 
     // Trying to archive user-a's category as user-b should fail
-    await expect(service.archive("user-b", cat.id)).rejects.toThrow(NotFoundException);
+    await expect(service.archive("user-b", cat.id)).rejects.toThrow(EntityNotFoundError);
 
     // Archiving as the correct user should succeed
     await expect(service.archive("user-a", cat.id)).resolves.toBeUndefined();
 
     // Archiving it again should fail since it's already archived
-    await expect(service.archive("user-a", cat.id)).rejects.toThrow(NotFoundException);
+    await expect(service.archive("user-a", cat.id)).rejects.toThrow(EntityNotFoundError);
   });
 });
 

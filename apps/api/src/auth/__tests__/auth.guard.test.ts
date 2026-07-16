@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { UnauthorizedException } from "@nestjs/common";
 import { AuthGuard } from "../auth.guard.js";
+import { UnauthenticatedError } from "../../common/errors/unauthenticated.error.js";
 
 describe("AuthGuard", () => {
   it("returns true immediately if the route is marked public", async () => {
@@ -48,8 +48,8 @@ describe("AuthGuard", () => {
 
     const mockLoggingContext = { set: vi.fn() };
 
-    // @ts-expect-error - mock services for unit testing
     const guard = new AuthGuard(
+      // @ts-expect-error - mock services for unit testing
       mockAuthService,
       mockUserProfileService,
       mockReflector,
@@ -80,7 +80,7 @@ describe("AuthGuard", () => {
     expect(mockRequest.authUser).toEqual({ id: "user-1" });
   });
 
-  it("throws UnauthorizedException when session is null", async () => {
+  it("throws UnauthenticatedError when session is null", async () => {
     const mockReflector = {
       getAllAndOverride: vi.fn().mockReturnValue(false)
     };
@@ -109,6 +109,6 @@ describe("AuthGuard", () => {
     };
 
     // @ts-expect-error - mock ExecutionContext
-    await expect(guard.canActivate(mockContext)).rejects.toThrow(UnauthorizedException);
+    await expect(guard.canActivate(mockContext)).rejects.toThrow(UnauthenticatedError);
   });
 });

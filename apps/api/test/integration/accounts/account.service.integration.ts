@@ -2,10 +2,9 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { MongoMemoryReplSet } from "mongodb-memory-server";
 import { createConnection } from "mongoose";
 import type { Connection } from "mongoose";
-import { NotFoundException } from "@nestjs/common";
-
 import { AccountRepository } from "../../../src/accounts/account.repository.js";
 import { AccountService } from "../../../src/accounts/account.service.js";
+import { EntityNotFoundError } from "../../../src/common/errors/entity-not-found.error.js";
 
 describe("AccountService", () => {
   let replicaSet: MongoMemoryReplSet | undefined;
@@ -59,7 +58,7 @@ describe("AccountService", () => {
     });
   });
 
-  it("archives an account successfully and throws NotFoundException if non-existent or owned by another user", async () => {
+  it("archives an account successfully and throws EntityNotFoundError if non-existent or owned by another user", async () => {
     const service = getAccountService(accountService);
 
     const acc = await service.create("user-a", {
@@ -69,13 +68,13 @@ describe("AccountService", () => {
     });
 
     // Archiving user-a's account as user-b should fail
-    await expect(service.archive("user-b", acc.id)).rejects.toThrow(NotFoundException);
+    await expect(service.archive("user-b", acc.id)).rejects.toThrow(EntityNotFoundError);
 
     // Archiving as the correct user should succeed
     await expect(service.archive("user-a", acc.id)).resolves.toBeUndefined();
 
     // Archiving again should fail since it's already archived
-    await expect(service.archive("user-a", acc.id)).rejects.toThrow(NotFoundException);
+    await expect(service.archive("user-a", acc.id)).rejects.toThrow(EntityNotFoundError);
   });
 });
 

@@ -2,8 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { MongoMemoryReplSet } from "mongodb-memory-server";
 import { createConnection } from "mongoose";
 import type { Connection } from "mongoose";
-import { NotFoundException } from "@nestjs/common";
-
+import { EntityNotFoundError } from "../../../src/common/errors/entity-not-found.error.js";
 import { UserProfileRepository } from "../../../src/user-profiles/user-profile.repository.js";
 import { UserProfileService } from "../../../src/user-profiles/user-profile.service.js";
 
@@ -41,10 +40,10 @@ describe("UserProfileService", () => {
     expect(retrieved).toEqual(profile);
   });
 
-  it("throws NotFoundException if the profile does not exist", async () => {
+  it("throws EntityNotFoundError if the profile does not exist", async () => {
     const service = getUserProfileService(userProfileService);
 
-    await expect(service.get("non-existent-user")).rejects.toThrow(NotFoundException);
+    await expect(service.get("non-existent-user")).rejects.toThrow(EntityNotFoundError);
   });
 });
 

@@ -9,6 +9,7 @@ import { CategoryRepository } from "../../../src/categories/category.repository.
 import { withTxn } from "../../../src/common/mongo-txn.js";
 import { TransactionRepository } from "../../../src/transactions/transaction.repository.js";
 import { TransactionService } from "../../../src/transactions/transaction.service.js";
+import { EntityNotFoundError } from "../../../src/common/errors/entity-not-found.error.js";
 import { TransactionNotReversibleError } from "../../../src/common/errors/transaction-not-reversible.error.js";
 
 describe("TransactionService", () => {
@@ -161,9 +162,30 @@ describe("TransactionService", () => {
     ).rejects.toThrow("Category not found.");
   });
 
-  it("throws TransactionNotReversibleError when reversing a non-existent transaction", async () => {
+  it("throws EntityNotFoundError when reversing a non-existent transaction", async () => {
     const service = transactionService(transactions);
     await expect(service.reverse("user-a", "507f1f77bcf86cd799439011")).rejects.toThrow(
+      EntityNotFoundError
+    );
+  });
+
+  it("throws TransactionNotReversibleError when reversing a reversal transaction", async () => {
+    const service = transactionService(transactions);
+    const original = await service.create(
+      "user-a",
+      {
+        accountId: existingAccountId(accountId),
+        type: "income",
+        amountMinor: 500,
+        occurredAt: new Date("2026-07-14T09:00:00.000Z"),
+        description: "Freelance",
+        tags: []
+      },
+      "f1a2b3c4-5566-4778-899a-abbccddeeff0"
+    );
+    const reversed = await service.reverse("user-a", original.transaction.id);
+
+    await expect(service.reverse("user-a", reversed.transaction.id)).rejects.toThrow(
       TransactionNotReversibleError
     );
   });

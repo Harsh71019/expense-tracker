@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import type { CanActivate, ExecutionContext } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { fromNodeHeaders } from "better-auth/node";
@@ -6,6 +6,7 @@ import type { Request } from "express";
 
 import { AuthService } from "./auth.service.js";
 import { IS_PUBLIC_KEY } from "./public.decorator.js";
+import { UnauthenticatedError } from "../common/errors/unauthenticated.error.js";
 import { LoggingContextService } from "../common/logging/logging-context.service.js";
 import { UserProfileService } from "../user-profiles/user-profile.service.js";
 
@@ -35,7 +36,7 @@ export class AuthGuard implements CanActivate {
     });
 
     if (session === null) {
-      throw new UnauthorizedException();
+      throw new UnauthenticatedError();
     }
 
     await this.profiles.ensure(session.user.id, session.user.name);

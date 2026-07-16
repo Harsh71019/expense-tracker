@@ -1,7 +1,8 @@
-import { Injectable, ServiceUnavailableException } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { InjectConnection } from "@nestjs/mongoose";
 import type { Connection } from "mongoose";
 
+import { DependencyUnavailableError } from "../common/errors/dependency-unavailable.error.js";
 import { RedisService } from "../common/redis/redis.service.js";
 
 export type ReadinessResponse = Readonly<{
@@ -19,13 +20,13 @@ export class HealthService {
 
   async readiness(): Promise<ReadinessResponse> {
     if (this.connection.db === undefined) {
-      throw new ServiceUnavailableException("MongoDB is not connected.");
+      throw new DependencyUnavailableError("MongoDB is not connected.");
     }
 
     try {
       await Promise.all([this.connection.db.admin().ping(), this.redis.ping()]);
     } catch {
-      throw new ServiceUnavailableException("Dependencies are not ready.");
+      throw new DependencyUnavailableError("Dependencies are not ready.");
     }
 
     return { status: "ok", mongo: "ok", redis: "ok" };

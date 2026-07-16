@@ -108,6 +108,13 @@ export type {
   UpdateRecurringRule
 } from "./recurring.js";
 export {
+  AccountRollupSchema,
+  CategoryRollupSchema,
+  MonthlyRollupSchema,
+  MonthSchema
+} from "./report.js";
+export type { AccountRollup, CategoryRollup, Month, MonthlyRollup } from "./report.js";
+export {
   CreateTransactionSchema,
   CreateTransferSchema,
   ListTransactionsQuerySchema,

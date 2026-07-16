@@ -11,7 +11,9 @@ export const LogEvent = {
   NotificationDeliveryFailed: "notification.delivery_failed",
   NotificationSweepEnqueued: "notification.sweep_enqueued",
   RecurringMaterialized: "recurring.materialized",
-  RecurringMaterializeFailed: "recurring.materialize_failed"
+  RecurringMaterializeFailed: "recurring.materialize_failed",
+  RollupsRefreshed: "rollups.refreshed",
+  RollupRefreshFailed: "rollups.refresh_failed"
 } as const;
 
 export type LogEvent = (typeof LogEvent)[keyof typeof LogEvent];

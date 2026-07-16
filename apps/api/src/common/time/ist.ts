@@ -26,3 +26,8 @@ export function toISTCalendarDate(date: Date): string {
 
   return `${lookup("year")}-${lookup("month")}-${lookup("day")}`;
 }
+
+/** The "YYYY-MM" bucket a Date falls into under Asia/Kolkata — the rollup key. */
+export function toISTMonth(date: Date): string {
+  return toISTCalendarDate(date).slice(0, 7);
+}

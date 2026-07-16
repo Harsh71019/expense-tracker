@@ -38,8 +38,30 @@ export {
 export type { Category, CategoryId, CategoryKind, CreateCategory } from "./category.js";
 export { ErrorCodes } from "./errors/codes.js";
 export type { ErrorCode } from "./errors/codes.js";
-export { DateFormatSchema } from "./import.js";
-export type { DateFormat } from "./import.js";
+export {
+  AmountConventionSchema,
+  ColumnMappingSchema,
+  DateFormatSchema,
+  ImportBatchIdSchema,
+  ImportBatchSchema,
+  ImportBatchStatsSchema,
+  ImportBatchStatusSchema,
+  ParsedRowSchema,
+  StagedRowIdSchema,
+  StagedRowSchema
+} from "./import.js";
+export type {
+  AmountConvention,
+  ColumnMapping,
+  DateFormat,
+  ImportBatch,
+  ImportBatchId,
+  ImportBatchStats,
+  ImportBatchStatus,
+  ParsedRow,
+  StagedRow,
+  StagedRowId
+} from "./import.js";
 export { formatMinor, isMinorAmount, parseMinor } from "./money.js";
 export type { MinorAmount } from "./money.js";
 export { PageInfoSchema } from "./pagination.js";

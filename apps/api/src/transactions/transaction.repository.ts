@@ -127,6 +127,28 @@ export class TransactionRepository {
     return { items, pageInfo: { nextCursor, hasMore, limit: query.limit } };
   }
 
+  /**
+   * Bulk existence check for the CSV import dedupe pass — one query for the
+   * whole file's dedupeHashes rather than one round-trip per row.
+   */
+  async findExistingDedupeHashes(
+    userId: string,
+    dedupeHashes: readonly string[]
+  ): Promise<Set<string>> {
+    if (dedupeHashes.length === 0) return new Set();
+
+    const documents = await this.database()
+      .collection(TRANSACTIONS_COLLECTION)
+      .find({ userId, dedupeHash: { $in: [...dedupeHashes] } }, { projection: { dedupeHash: 1 } })
+      .toArray();
+
+    return new Set(
+      documents
+        .map((document) => document.dedupeHash)
+        .filter((hash): hash is string => typeof hash === "string")
+    );
+  }
+
   async findByIdempotencyKey(userId: string, idempotencyKey: string): Promise<Transaction | null> {
     const transaction = await this.database()
       .collection(TRANSACTIONS_COLLECTION)

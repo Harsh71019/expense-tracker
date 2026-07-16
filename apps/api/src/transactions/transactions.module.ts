@@ -11,6 +11,7 @@ import { TransferService } from "./transfer.service.js";
 @Module({
   imports: [AccountsModule, CategoriesModule],
   controllers: [TransactionController, TransferController],
-  providers: [TransactionRepository, TransactionService, TransferService]
+  providers: [TransactionRepository, TransactionService, TransferService],
+  exports: [TransactionRepository]
 })
 export class TransactionsModule {}

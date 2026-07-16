@@ -4,7 +4,9 @@ export const LogEvent = {
   TransactionReversed: "txn.reversed",
   TransactionUpdated: "txn.updated",
   TransferCreated: "transfer.created",
-  TransferReversed: "transfer.reversed"
+  TransferReversed: "transfer.reversed",
+  ImportBatchParsed: "import.batch_parsed",
+  ImportBatchParseFailed: "import.batch_parse_failed"
 } as const;
 
 export type LogEvent = (typeof LogEvent)[keyof typeof LogEvent];

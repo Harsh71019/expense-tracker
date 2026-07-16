@@ -6,6 +6,7 @@ import type { ColumnMapping } from "@vyaya/shared";
 
 import { AccountRepository } from "../../../src/accounts/account.repository.js";
 import { AuditRepository } from "../../../src/audit/audit.repository.js";
+import { CategoryRuleRepository } from "../../../src/category-rules/category-rule.repository.js";
 import { RuntimeConfigService } from "../../../src/common/config/runtime-config.service.js";
 import { EntityNotFoundError } from "../../../src/common/errors/entity-not-found.error.js";
 import { ImportBatchNotReadyError } from "../../../src/common/errors/import-batch-not-ready.error.js";
@@ -85,6 +86,7 @@ describe("ImportsService commit/revert", () => {
     transactions = new TransactionRepository(connection);
     accounts = new AccountRepository(connection);
     const audit = new AuditRepository(connection);
+    const categoryRules = new CategoryRuleRepository(connection);
     const queue = new ImportsQueue(new TestRuntimeConfig());
     service = new ImportsService(
       connection,
@@ -93,6 +95,7 @@ describe("ImportsService commit/revert", () => {
       transactions,
       accounts,
       audit,
+      categoryRules,
       queue
     );
   }, 30_000);

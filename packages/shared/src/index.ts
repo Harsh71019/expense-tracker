@@ -36,6 +36,12 @@ export {
   CreateCategorySchema
 } from "./category.js";
 export type { Category, CategoryId, CategoryKind, CreateCategory } from "./category.js";
+export {
+  CategoryRuleIdSchema,
+  CategoryRuleSchema,
+  CreateCategoryRuleSchema
+} from "./category-rule.js";
+export type { CategoryRule, CategoryRuleId, CreateCategoryRule } from "./category-rule.js";
 export { ErrorCodes } from "./errors/codes.js";
 export type { ErrorCode } from "./errors/codes.js";
 export {

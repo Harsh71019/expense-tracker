@@ -13,6 +13,7 @@ import { AccountsModule } from "./accounts/accounts.module.js";
 import { AssetsModule } from "./assets/assets.module.js";
 import { AuditModule } from "./audit/audit.module.js";
 import { CategoriesModule } from "./categories/categories.module.js";
+import { CategoryRulesModule } from "./category-rules/category-rules.module.js";
 import { HealthModule } from "./health/health.module.js";
 import { ImportsModule } from "./imports/imports.module.js";
 import { UserProfilesModule } from "./user-profiles/user-profiles.module.js";
@@ -36,6 +37,7 @@ import { TransactionsModule } from "./transactions/transactions.module.js";
     AuthModule,
     AccountsModule,
     CategoriesModule,
+    CategoryRulesModule,
     AuditModule,
     TransactionsModule,
     AssetsModule,

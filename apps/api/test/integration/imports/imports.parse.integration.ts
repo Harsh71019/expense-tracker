@@ -7,6 +7,7 @@ import { Redis } from "ioredis";
 
 import { AccountRepository } from "../../../src/accounts/account.repository.js";
 import { AuditRepository } from "../../../src/audit/audit.repository.js";
+import { CategoryRuleRepository } from "../../../src/category-rules/category-rule.repository.js";
 import { RuntimeConfigService } from "../../../src/common/config/runtime-config.service.js";
 import { ImportBatchRepository } from "../../../src/imports/import-batch.repository.js";
 import { StagedRowRepository } from "../../../src/imports/staged-row.repository.js";
@@ -72,6 +73,7 @@ describe("Imports parse pipeline (real BullMQ worker against real Redis)", () =>
     const transactions = new TransactionRepository(connection);
     const accounts = new AccountRepository(connection);
     const audit = new AuditRepository(connection);
+    const categoryRules = new CategoryRuleRepository(connection);
     const config = new TestRuntimeConfig();
     backgroundQueue = new ImportsQueue(config);
     const service = new ImportsService(
@@ -81,6 +83,7 @@ describe("Imports parse pipeline (real BullMQ worker against real Redis)", () =>
       transactions,
       accounts,
       audit,
+      categoryRules,
       backgroundQueue
     );
     const logger = { log: () => undefined, error: () => undefined };
@@ -156,6 +159,7 @@ describe("Imports parse pipeline (real BullMQ worker against real Redis)", () =>
     const transactions = new TransactionRepository(nonNullConnection(connection));
     const accounts = new AccountRepository(nonNullConnection(connection));
     const audit = new AuditRepository(nonNullConnection(connection));
+    const categoryRules = new CategoryRuleRepository(nonNullConnection(connection));
     const service = new ImportsService(
       nonNullConnection(connection),
       repository,
@@ -163,6 +167,7 @@ describe("Imports parse pipeline (real BullMQ worker against real Redis)", () =>
       transactions,
       accounts,
       audit,
+      categoryRules,
       nonNullQueue(backgroundQueue)
     );
 
@@ -182,6 +187,40 @@ describe("Imports parse pipeline (real BullMQ worker against real Redis)", () =>
         .collection("staged_rows")
         .countDocuments({ batchId: new Types.ObjectId(batch.id) })
     ).toBe(2);
+  });
+
+  it("applies a matching category rule's suggestion during parse", async () => {
+    const repository = importBatchRepository(batches);
+    const stagedRows = new StagedRowRepository(nonNullConnection(connection));
+    const transactions = new TransactionRepository(nonNullConnection(connection));
+    const accounts = new AccountRepository(nonNullConnection(connection));
+    const audit = new AuditRepository(nonNullConnection(connection));
+    const categoryRules = new CategoryRuleRepository(nonNullConnection(connection));
+    const service = new ImportsService(
+      nonNullConnection(connection),
+      repository,
+      stagedRows,
+      transactions,
+      accounts,
+      audit,
+      categoryRules,
+      nonNullQueue(backgroundQueue)
+    );
+
+    const foodCategoryId = "0123456789abcdef0123456f";
+    await categoryRules.create("user-suggest", { pattern: "Chai", categoryId: foodCategoryId });
+
+    const batch = await repository.create(
+      "user-suggest",
+      "0123456789abcdef01234567",
+      "suggest.csv",
+      "sha256:suggest-e2e",
+      MAPPING
+    );
+    await service.parseFile(batch.id, "user-suggest", "0123456789abcdef01234567", MAPPING, CSV);
+
+    const page = await stagedRows.findByBatchId(batch.id, undefined, 10);
+    expect(page.items[0]).toMatchObject({ suggestedCategoryId: foodCategoryId });
   });
 });
 

@@ -7,6 +7,7 @@ import { Redis } from "ioredis";
 
 import { AccountRepository } from "../../../src/accounts/account.repository.js";
 import { AuditRepository } from "../../../src/audit/audit.repository.js";
+import { CategoryRuleRepository } from "../../../src/category-rules/category-rule.repository.js";
 import { ImportAlreadyCommittedError } from "../../../src/common/errors/import-already-committed.error.js";
 import { RuntimeConfigService } from "../../../src/common/config/runtime-config.service.js";
 import { ImportBatchRepository } from "../../../src/imports/import-batch.repository.js";
@@ -68,6 +69,7 @@ describe("ImportsService.createBatch", () => {
     const transactions = new TransactionRepository(connection);
     const accounts = new AccountRepository(connection);
     const audit = new AuditRepository(connection);
+    const categoryRules = new CategoryRuleRepository(connection);
     queue = new ImportsQueue(new TestRuntimeConfig());
     service = new ImportsService(
       connection,
@@ -76,6 +78,7 @@ describe("ImportsService.createBatch", () => {
       transactions,
       accounts,
       audit,
+      categoryRules,
       queue
     );
   }, 30_000);

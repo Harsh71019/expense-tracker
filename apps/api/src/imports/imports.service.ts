@@ -26,6 +26,8 @@ import { z } from "zod";
 
 import { AccountRepository } from "../accounts/account.repository.js";
 import { AuditRepository } from "../audit/audit.repository.js";
+import { CategoryRuleRepository } from "../category-rules/category-rule.repository.js";
+import { suggestCategory } from "../category-rules/suggest-category.js";
 import { EntityNotFoundError } from "../common/errors/entity-not-found.error.js";
 import { ImportAlreadyCommittedError } from "../common/errors/import-already-committed.error.js";
 import { ImportBatchNotReadyError } from "../common/errors/import-batch-not-ready.error.js";
@@ -54,6 +56,7 @@ export class ImportsService {
     private readonly transactions: TransactionRepository,
     private readonly accounts: AccountRepository,
     private readonly audit: AuditRepository,
+    private readonly categoryRules: CategoryRuleRepository,
     private readonly queue: ImportsQueue
   ) {}
 
@@ -152,6 +155,7 @@ export class ImportsService {
       userId,
       candidateHashes
     );
+    const rules = await this.categoryRules.list(userId);
 
     const seenInFile = new Set<string>();
     let duplicates = 0;
@@ -169,12 +173,14 @@ export class ImportsService {
       const isDuplicate = seenInFile.has(row.dedupeHash) || existingHashes.has(row.dedupeHash);
       seenInFile.add(row.dedupeHash);
       if (isDuplicate) duplicates += 1;
+      const suggestedCategoryId = suggestCategory(row.parsed.description, rules);
 
       return {
         rowNumber: row.rowNumber,
         raw: row.raw,
         parsed: row.parsed,
         dedupeHash: row.dedupeHash,
+        ...(suggestedCategoryId === undefined ? {} : { suggestedCategoryId }),
         problems: row.problems,
         isDuplicate,
         include: !isDuplicate

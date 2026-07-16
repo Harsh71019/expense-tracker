@@ -13,7 +13,9 @@ export const LogEvent = {
   RecurringMaterialized: "recurring.materialized",
   RecurringMaterializeFailed: "recurring.materialize_failed",
   RollupsRefreshed: "rollups.refreshed",
-  RollupRefreshFailed: "rollups.refresh_failed"
+  RollupRefreshFailed: "rollups.refresh_failed",
+  BalanceDriftDetected: "balances.drift_detected",
+  BalancesVerified: "balances.verified"
 } as const;
 
 export type LogEvent = (typeof LogEvent)[keyof typeof LogEvent];

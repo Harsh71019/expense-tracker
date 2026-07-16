@@ -4,6 +4,7 @@ import { ScheduleModule } from "@nestjs/schedule";
 import { LoggerModule } from "nestjs-pino";
 import pino from "pino";
 
+import { BalancesModule } from "./balances/balances.module.js";
 import { RuntimeConfigModule } from "./common/config/runtime-config.module.js";
 import { RuntimeConfigService } from "./common/config/runtime-config.service.js";
 import { LoggingContextService } from "./common/logging/logging-context.service.js";
@@ -37,6 +38,7 @@ import { TransactionsModule } from "./transactions/transactions.module.js";
       })
     }),
     RedisModule,
+    BalancesModule,
     LoggingModule,
     ScheduleModule.forRoot(),
     NotificationsModule,

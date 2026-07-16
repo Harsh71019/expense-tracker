@@ -9,7 +9,8 @@ export const ErrorCodes = [
   "asset.invalid_valuation_sign",
   "import.invalid_file",
   "import.already_committed",
-  "import.invalid_state"
+  "import.invalid_state",
+  "recurring.no_occurrences"
 ] as const;
 
 export type ErrorCode = (typeof ErrorCodes)[number];

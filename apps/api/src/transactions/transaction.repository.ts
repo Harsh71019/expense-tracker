@@ -9,6 +9,7 @@ import {
   type ParsedRow,
   type Transaction,
   type TransactionPage,
+  type TransactionSource,
   type UpdateTransaction
 } from "@vyaya/shared";
 import { Types } from "mongoose";
@@ -55,7 +56,8 @@ export class TransactionRepository {
     input: CreateTransaction,
     idempotencyKey: string | undefined,
     session: MongoSession,
-    transferGroupId?: string
+    transferGroupId?: string,
+    source: TransactionSource = "manual"
   ): Promise<Transaction> {
     const now = new Date();
     const category =
@@ -73,7 +75,7 @@ export class TransactionRepository {
       occurredAt: input.occurredAt,
       description: input.description,
       tags: input.tags,
-      source: "manual" as const,
+      source,
       status: "posted" as const,
       ...idempotency,
       ...transfer,

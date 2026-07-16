@@ -104,3 +104,4 @@ export type CreateTransfer = z.infer<typeof CreateTransferSchema>;
 export type Transfer = z.infer<typeof TransferSchema>;
 export type TransferReversal = z.infer<typeof TransferReversalSchema>;
 export type TransferGroupId = z.infer<typeof TransferGroupIdSchema>;
+export type TransactionSource = z.infer<typeof TransactionSourceSchema>;

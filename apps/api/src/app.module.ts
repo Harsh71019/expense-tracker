@@ -19,6 +19,7 @@ import { ExportModule } from "./export/export.module.js";
 import { HealthModule } from "./health/health.module.js";
 import { ImportsModule } from "./imports/imports.module.js";
 import { NotificationsModule } from "./notifications/notifications.module.js";
+import { RecurringModule } from "./recurring/recurring.module.js";
 import { UserProfilesModule } from "./user-profiles/user-profiles.module.js";
 import { TransactionsModule } from "./transactions/transactions.module.js";
 
@@ -48,6 +49,7 @@ import { TransactionsModule } from "./transactions/transactions.module.js";
     AssetsModule,
     ImportsModule,
     ExportModule,
+    RecurringModule,
     LoggerModule.forRootAsync({
       inject: [RuntimeConfigService, LoggingContextService],
       useFactory: (config: RuntimeConfigService, context: LoggingContextService) => ({

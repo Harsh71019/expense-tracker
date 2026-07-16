@@ -53,6 +53,16 @@ export class AccountRepository {
     return result.modifiedCount === 1;
   }
 
+  async exists(userId: string, accountId: AccountId, session?: MongoSession): Promise<boolean> {
+    const account = await this.database()
+      .collection(ACCOUNTS_COLLECTION)
+      .findOne(
+        { _id: new Types.ObjectId(accountId), userId, isArchived: false },
+        { projection: { _id: 1 }, ...(session === undefined ? {} : { session }) }
+      );
+    return account !== null;
+  }
+
   async applyBalanceDelta(
     userId: string,
     accountId: AccountId,

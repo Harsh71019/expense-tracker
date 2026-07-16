@@ -91,6 +91,23 @@ export type { MinorAmount } from "./money.js";
 export { PageInfoSchema } from "./pagination.js";
 export type { PageInfo } from "./pagination.js";
 export {
+  computeFirstOccurrence,
+  computeNextOccurrence,
+  CreateRecurringRuleSchema,
+  RecurringRuleIdSchema,
+  RecurringRuleSchema,
+  RecurringRuleTemplateSchema,
+  RRuleStringSchema,
+  UpdateRecurringRuleSchema
+} from "./recurring.js";
+export type {
+  CreateRecurringRule,
+  RecurringRule,
+  RecurringRuleId,
+  RecurringRuleTemplate,
+  UpdateRecurringRule
+} from "./recurring.js";
+export {
   CreateTransactionSchema,
   CreateTransferSchema,
   ListTransactionsQuerySchema,
@@ -112,6 +129,7 @@ export type {
   Transaction,
   TransactionId,
   TransactionPage,
+  TransactionSource,
   TransactionType,
   Transfer,
   TransferGroupId,

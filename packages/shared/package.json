@@ -26,6 +26,7 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "rrule": "latest",
     "zod": "latest"
   },
   "devDependencies": {

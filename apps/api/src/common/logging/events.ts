@@ -9,7 +9,9 @@ export const LogEvent = {
   ImportBatchParseFailed: "import.batch_parse_failed",
   NotificationDelivered: "notification.delivered",
   NotificationDeliveryFailed: "notification.delivery_failed",
-  NotificationSweepEnqueued: "notification.sweep_enqueued"
+  NotificationSweepEnqueued: "notification.sweep_enqueued",
+  RecurringMaterialized: "recurring.materialized",
+  RecurringMaterializeFailed: "recurring.materialize_failed"
 } as const;
 
 export type LogEvent = (typeof LogEvent)[keyof typeof LogEvent];

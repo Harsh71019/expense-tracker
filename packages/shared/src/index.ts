@@ -51,8 +51,11 @@ export {
   MAX_IMPORT_FILE_SIZE_BYTES,
   MAX_IMPORT_ROWS,
   ParsedRowSchema,
+  PreviewStagedRowsQuerySchema,
   StagedRowIdSchema,
+  StagedRowPageSchema,
   StagedRowSchema,
+  UpdateStagedRowSchema,
   UploadImportMetadataSchema
 } from "./import.js";
 export type {
@@ -64,8 +67,11 @@ export type {
   ImportBatchStats,
   ImportBatchStatus,
   ParsedRow,
+  PreviewStagedRowsQuery,
   StagedRow,
   StagedRowId,
+  StagedRowPage,
+  UpdateStagedRow,
   UploadImportMetadata
 } from "./import.js";
 export { formatMinor, isMinorAmount, parseMinor } from "./money.js";

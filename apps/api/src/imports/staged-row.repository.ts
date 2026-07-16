@@ -1,12 +1,28 @@
 import { Injectable } from "@nestjs/common";
 import { InjectConnection } from "@nestjs/mongoose";
-import type { ImportBatchId, StagedRow } from "@vyaya/shared";
+import {
+  StagedRowSchema,
+  type ImportBatchId,
+  type StagedRow,
+  type StagedRowId,
+  type UpdateStagedRow
+} from "@vyaya/shared";
 import { Types } from "mongoose";
 import type { Connection } from "mongoose";
+import { z } from "zod";
+
+import { InvalidCursorError } from "../common/errors/invalid-cursor.error.js";
 
 const STAGED_ROWS_COLLECTION = "staged_rows";
 
 export type NewStagedRow = Omit<StagedRow, "id" | "batchId">;
+
+export type StagedRowPageResult = Readonly<{
+  items: StagedRow[];
+  pageInfo: Readonly<{ nextCursor: string | null; hasMore: boolean; limit: number }>;
+}>;
+
+const CursorPayloadSchema = z.object({ rowNumber: z.number().int().positive() });
 
 @Injectable()
 export class StagedRowRepository {
@@ -47,6 +63,72 @@ export class StagedRowRepository {
     await this.database().collection(STAGED_ROWS_COLLECTION).insertMany(documents);
   }
 
+  async findByBatchId(
+    batchId: ImportBatchId,
+    cursor: string | undefined,
+    limit: number
+  ): Promise<StagedRowPageResult> {
+    const afterRowNumber = cursor === undefined ? null : decodeCursor(cursor);
+    const filter: Record<string, unknown> = {
+      batchId: new Types.ObjectId(batchId),
+      ...(afterRowNumber === null ? {} : { rowNumber: { $gt: afterRowNumber } })
+    };
+
+    const documents = await this.database()
+      .collection(STAGED_ROWS_COLLECTION)
+      .find(filter)
+      .sort({ rowNumber: 1 })
+      .limit(limit + 1)
+      .toArray();
+
+    const page = documents.slice(0, limit);
+    const items = page.map((document) => this.toStagedRow(document));
+    const last = items.at(-1);
+    const hasMore = documents.length > limit;
+    const nextCursor = hasMore && last !== undefined ? encodeCursor(last.rowNumber) : null;
+
+    return { items, pageInfo: { nextCursor, hasMore, limit } };
+  }
+
+  /** Toggling `include`/`suggestedCategoryId` — the preview screen's edits. */
+  async updateRow(
+    batchId: ImportBatchId,
+    rowId: StagedRowId,
+    patch: UpdateStagedRow
+  ): Promise<StagedRow | null> {
+    const set: Record<string, unknown> = {};
+    const unset: Record<string, ""> = {};
+    if (patch.include !== undefined) set.include = patch.include;
+    if (patch.suggestedCategoryId !== undefined) {
+      if (patch.suggestedCategoryId === null) {
+        unset.suggestedCategoryId = "";
+      } else {
+        set.suggestedCategoryId = new Types.ObjectId(patch.suggestedCategoryId);
+      }
+    }
+
+    const result = await this.database()
+      .collection(STAGED_ROWS_COLLECTION)
+      .findOneAndUpdate(
+        { _id: new Types.ObjectId(rowId), batchId: new Types.ObjectId(batchId) },
+        { $set: set, ...(Object.keys(unset).length === 0 ? {} : { $unset: unset }) },
+        { returnDocument: "after" }
+      );
+    return result === null ? null : this.toStagedRow(result);
+  }
+
+  private toStagedRow(value: Record<string, unknown>): StagedRow {
+    const { _id, batchId, suggestedCategoryId, ...rest } = value;
+    return StagedRowSchema.parse({
+      id: objectIdString(_id),
+      batchId: objectIdString(batchId),
+      ...(suggestedCategoryId === undefined
+        ? {}
+        : { suggestedCategoryId: objectIdString(suggestedCategoryId) }),
+      ...rest
+    });
+  }
+
   private database(): NonNullable<Connection["db"]> {
     const database = this.connection.db;
     if (database === undefined) {
@@ -54,4 +136,30 @@ export class StagedRowRepository {
     }
     return database;
   }
+}
+
+function encodeCursor(rowNumber: number): string {
+  return Buffer.from(JSON.stringify({ rowNumber }), "utf8").toString("base64url");
+}
+
+function decodeCursor(cursor: string): number {
+  try {
+    const payload = CursorPayloadSchema.parse(
+      JSON.parse(Buffer.from(cursor, "base64url").toString("utf8"))
+    );
+    return payload.rowNumber;
+  } catch {
+    throw new InvalidCursorError();
+  }
+}
+
+function objectIdString(value: unknown): string {
+  if (typeof value !== "object" || value === null || !("toString" in value)) {
+    throw new Error("MongoDB document contains an invalid ObjectId.");
+  }
+  const stringify = value.toString;
+  if (typeof stringify !== "function") {
+    throw new Error("MongoDB document contains an invalid ObjectId.");
+  }
+  return stringify.call(value);
 }

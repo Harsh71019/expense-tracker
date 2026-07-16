@@ -92,7 +92,70 @@ describe("StagedRowRepository", () => {
         .countDocuments({ batchId: new Types.ObjectId(otherBatchId) })
     ).toBe(1);
   });
+
+  it("paginates by rowNumber and the cursor never crosses into another batch", async () => {
+    const repository = stagedRowRepository(rows);
+    const batchId = new Types.ObjectId().toString();
+    const otherBatchId = new Types.ObjectId().toString();
+    await repository.insertMany(
+      batchId,
+      Array.from({ length: 5 }, (_unused, index) => row({ rowNumber: index + 1 }))
+    );
+    await repository.insertMany(otherBatchId, [row({ rowNumber: 1 })]);
+
+    const firstPage = await repository.findByBatchId(batchId, undefined, 2);
+    expect(firstPage.items.map((item) => item.rowNumber)).toEqual([1, 2]);
+    expect(firstPage.pageInfo.hasMore).toBe(true);
+    expect(firstPage.pageInfo.nextCursor).not.toBeNull();
+
+    const secondPage = await repository.findByBatchId(
+      batchId,
+      firstPage.pageInfo.nextCursor ?? undefined,
+      2
+    );
+    expect(secondPage.items.map((item) => item.rowNumber)).toEqual([3, 4]);
+
+    const thirdPage = await repository.findByBatchId(
+      batchId,
+      secondPage.pageInfo.nextCursor ?? undefined,
+      2
+    );
+    expect(thirdPage.items.map((item) => item.rowNumber)).toEqual([5]);
+    expect(thirdPage.pageInfo.hasMore).toBe(false);
+    expect(thirdPage.pageInfo.nextCursor).toBeNull();
+  });
+
+  it("updateRow toggles include and sets/clears suggestedCategoryId, scoped to its batch", async () => {
+    const repository = stagedRowRepository(rows);
+    const batchId = new Types.ObjectId().toString();
+    const otherBatchId = new Types.ObjectId().toString();
+    await repository.insertMany(batchId, [row({ rowNumber: 1 })]);
+    const [inserted] = (await repository.findByBatchId(batchId, undefined, 10)).items;
+    const rowId = nonNull(inserted).id;
+
+    expect(await repository.updateRow(batchId, rowId, { include: false })).toMatchObject({
+      include: false
+    });
+
+    const categoryId = new Types.ObjectId().toString();
+    const withCategory = await repository.updateRow(batchId, rowId, {
+      suggestedCategoryId: categoryId
+    });
+    expect(withCategory).toMatchObject({ suggestedCategoryId: categoryId });
+
+    const cleared = await repository.updateRow(batchId, rowId, { suggestedCategoryId: null });
+    expect(cleared?.suggestedCategoryId).toBeUndefined();
+
+    expect(await repository.updateRow(otherBatchId, rowId, { include: false })).toBeNull();
+  });
 });
+
+function nonNull<T>(value: T | undefined): T {
+  if (value === undefined) {
+    throw new Error("Expected a staged row to exist");
+  }
+  return value;
+}
 
 function stagedRowRepository(repository: StagedRowRepository | undefined): StagedRowRepository {
   if (repository === undefined) {

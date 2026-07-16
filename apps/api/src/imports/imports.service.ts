@@ -12,11 +12,16 @@ import type {
   ColumnMapping,
   ImportBatch,
   ImportBatchId,
-  ImportBatchStats
+  ImportBatchStats,
+  StagedRow,
+  StagedRowId,
+  StagedRowPage,
+  UpdateStagedRow
 } from "@vyaya/shared";
 import { parse } from "csv-parse/sync";
 import { z } from "zod";
 
+import { EntityNotFoundError } from "../common/errors/entity-not-found.error.js";
 import { ImportAlreadyCommittedError } from "../common/errors/import-already-committed.error.js";
 import { InvalidImportFileError } from "../common/errors/invalid-import-file.error.js";
 import { TransactionRepository } from "../transactions/transaction.repository.js";
@@ -178,6 +183,35 @@ export class ImportsService {
       committed: 0
     };
     await this.batches.markParsed(batchId, "staged", stats);
+  }
+
+  list(userId: string): Promise<ImportBatch[]> {
+    return this.batches.list(userId);
+  }
+
+  async preview(
+    userId: string,
+    batchId: ImportBatchId,
+    cursor: string | undefined,
+    limit: number
+  ): Promise<StagedRowPage> {
+    const batch = await this.batches.findById(userId, batchId);
+    if (batch === null) throw new EntityNotFoundError("Import batch");
+    return this.stagedRows.findByBatchId(batchId, cursor, limit);
+  }
+
+  async updateRow(
+    userId: string,
+    batchId: ImportBatchId,
+    rowId: StagedRowId,
+    patch: UpdateStagedRow
+  ): Promise<StagedRow> {
+    const batch = await this.batches.findById(userId, batchId);
+    if (batch === null) throw new EntityNotFoundError("Import batch");
+
+    const updated = await this.stagedRows.updateRow(batchId, rowId, patch);
+    if (updated === null) throw new EntityNotFoundError("Staged row");
+    return updated;
   }
 }
 

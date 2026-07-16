@@ -110,6 +110,34 @@ describe("ImportBatchRepository", () => {
     const stillStaged = await repository.findById("user-a", batch.id);
     expect(stillStaged).toMatchObject({ status: "staged", stats: { total: 3, staged: 2 } });
   });
+
+  it("lists a user's batches newest first, scoped to that user", async () => {
+    const repository = importBatchRepository(batches);
+    const first = await repository.create(
+      "user-list",
+      "0123456789abcdef01234567",
+      "first.csv",
+      "sha256:list-1",
+      MAPPING
+    );
+    const second = await repository.create(
+      "user-list",
+      "0123456789abcdef01234567",
+      "second.csv",
+      "sha256:list-2",
+      MAPPING
+    );
+    await repository.create(
+      "someone-else",
+      "0123456789abcdef01234567",
+      "not-mine.csv",
+      "sha256:list-3",
+      MAPPING
+    );
+
+    const list = await repository.list("user-list");
+    expect(list.map((batch) => batch.id)).toEqual([second.id, first.id]);
+  });
 });
 
 function importBatchRepository(

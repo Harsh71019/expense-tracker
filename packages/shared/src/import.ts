@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { AccountIdSchema } from "./account.js";
 import { CategoryIdSchema } from "./category.js";
+import { PageInfoSchema } from "./pagination.js";
 import { TransactionTypeSchema } from "./transaction.js";
 
 /** AGENTS.md §8: "respect the existing caps (5MB, 50k rows, MIME check)." */
@@ -106,6 +107,25 @@ export const UploadImportMetadataSchema = z.object({
   mapping: ColumnMappingSchema
 });
 
+export const PreviewStagedRowsQuerySchema = z.object({
+  cursor: z.string().min(1).optional(),
+  limit: z.coerce.number().int().min(1).max(200).default(50)
+});
+
+export const StagedRowPageSchema = z.object({
+  items: z.array(StagedRowSchema),
+  pageInfo: PageInfoSchema
+});
+
+export const UpdateStagedRowSchema = z
+  .object({
+    include: z.boolean().optional(),
+    suggestedCategoryId: CategoryIdSchema.nullable().optional()
+  })
+  .refine((value) => value.include !== undefined || value.suggestedCategoryId !== undefined, {
+    message: "At least one field must be provided."
+  });
+
 export type DateFormat = z.infer<typeof DateFormatSchema>;
 export type AmountConvention = z.infer<typeof AmountConventionSchema>;
 export type ColumnMapping = z.infer<typeof ColumnMappingSchema>;
@@ -117,3 +137,6 @@ export type ImportBatch = z.infer<typeof ImportBatchSchema>;
 export type ParsedRow = z.infer<typeof ParsedRowSchema>;
 export type StagedRow = z.infer<typeof StagedRowSchema>;
 export type UploadImportMetadata = z.infer<typeof UploadImportMetadataSchema>;
+export type PreviewStagedRowsQuery = z.infer<typeof PreviewStagedRowsQuerySchema>;
+export type StagedRowPage = z.infer<typeof StagedRowPageSchema>;
+export type UpdateStagedRow = z.infer<typeof UpdateStagedRowSchema>;

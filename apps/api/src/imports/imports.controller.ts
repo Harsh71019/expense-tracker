@@ -1,6 +1,26 @@
-import { Body, Controller, Post, Res, UploadedFile, UseInterceptors } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Res,
+  UploadedFile,
+  UseInterceptors
+} from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
-import { UploadImportMetadataSchema, type ImportBatch } from "@vyaya/shared";
+import {
+  ImportBatchIdSchema,
+  PreviewStagedRowsQuerySchema,
+  StagedRowIdSchema,
+  UpdateStagedRowSchema,
+  UploadImportMetadataSchema,
+  type ImportBatch,
+  type StagedRow,
+  type StagedRowPage
+} from "@vyaya/shared";
 import type { Response } from "express";
 import { z } from "zod";
 
@@ -53,6 +73,36 @@ export class ImportsController {
     );
     response.setHeader("Location", `/api/v1/imports/${batch.id}`);
     return batch;
+  }
+
+  @Get()
+  list(@CurrentUser() user: AuthenticatedUser): Promise<ImportBatch[]> {
+    return this.imports.list(user.id);
+  }
+
+  @Get(":importBatchId/preview")
+  preview(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("importBatchId") importBatchId: string,
+    @Query() query: unknown
+  ): Promise<StagedRowPage> {
+    const { cursor, limit } = PreviewStagedRowsQuerySchema.parse(query);
+    return this.imports.preview(user.id, ImportBatchIdSchema.parse(importBatchId), cursor, limit);
+  }
+
+  @Patch(":importBatchId/rows/:stagedRowId")
+  updateRow(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("importBatchId") importBatchId: string,
+    @Param("stagedRowId") stagedRowId: string,
+    @Body() body: unknown
+  ): Promise<StagedRow> {
+    return this.imports.updateRow(
+      user.id,
+      ImportBatchIdSchema.parse(importBatchId),
+      StagedRowIdSchema.parse(stagedRowId),
+      UpdateStagedRowSchema.parse(body)
+    );
   }
 }
 

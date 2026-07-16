@@ -57,6 +57,15 @@ export class ImportBatchRepository {
     return batch === null ? null : this.toImportBatch(batch);
   }
 
+  async list(userId: string): Promise<ImportBatch[]> {
+    const batches = await this.database()
+      .collection(IMPORT_BATCHES_COLLECTION)
+      .find({ userId })
+      .sort({ createdAt: -1 })
+      .toArray();
+    return batches.map((batch) => this.toImportBatch(batch));
+  }
+
   /**
    * Only the parse job transitions a batch out of "pending" — never a controller.
    * Not wrapped in a Mongo transaction: staged_rows/import_batches are disposable,

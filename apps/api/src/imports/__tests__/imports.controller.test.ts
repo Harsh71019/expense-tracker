@@ -105,4 +105,82 @@ describe("ImportsController", () => {
     ).rejects.toThrow();
     expect(mockService.createBatch).not.toHaveBeenCalled();
   });
+
+  it("lists the user's batches", async () => {
+    const mockService = { list: vi.fn().mockResolvedValue([sampleBatch]) };
+    // @ts-expect-error - mock ImportsService for unit testing
+    const controller = new ImportsController(mockService);
+
+    const result = await controller.list(user);
+
+    expect(result).toEqual([sampleBatch]);
+    expect(mockService.list).toHaveBeenCalledWith("user-1");
+  });
+
+  it("previews staged rows with validated query params and a default limit", async () => {
+    const mockPage = { items: [], pageInfo: { nextCursor: null, hasMore: false, limit: 50 } };
+    const mockService = { preview: vi.fn().mockResolvedValue(mockPage) };
+    // @ts-expect-error - mock ImportsService for unit testing
+    const controller = new ImportsController(mockService);
+
+    const result = await controller.preview(user, "507f1f77bcf86cd799439011", {});
+
+    expect(result).toEqual(mockPage);
+    expect(mockService.preview).toHaveBeenCalledWith(
+      "user-1",
+      "507f1f77bcf86cd799439011",
+      undefined,
+      50
+    );
+  });
+
+  it("rejects an out-of-range preview limit before calling the service", () => {
+    const mockService = { preview: vi.fn() };
+    // @ts-expect-error - mock ImportsService for unit testing
+    const controller = new ImportsController(mockService);
+
+    expect(() => controller.preview(user, "507f1f77bcf86cd799439011", { limit: "500" })).toThrow();
+    expect(mockService.preview).not.toHaveBeenCalled();
+  });
+
+  it("updates a staged row with a validated patch", async () => {
+    const updatedRow = {
+      id: "507f1f77bcf86cd799439013",
+      batchId: "507f1f77bcf86cd799439011",
+      rowNumber: 1,
+      raw: {},
+      problems: [],
+      isDuplicate: false,
+      include: false
+    };
+    const mockService = { updateRow: vi.fn().mockResolvedValue(updatedRow) };
+    // @ts-expect-error - mock ImportsService for unit testing
+    const controller = new ImportsController(mockService);
+
+    const result = await controller.updateRow(
+      user,
+      "507f1f77bcf86cd799439011",
+      "507f1f77bcf86cd799439013",
+      { include: false }
+    );
+
+    expect(result).toEqual(updatedRow);
+    expect(mockService.updateRow).toHaveBeenCalledWith(
+      "user-1",
+      "507f1f77bcf86cd799439011",
+      "507f1f77bcf86cd799439013",
+      { include: false }
+    );
+  });
+
+  it("rejects an empty row patch before calling the service", () => {
+    const mockService = { updateRow: vi.fn() };
+    // @ts-expect-error - mock ImportsService for unit testing
+    const controller = new ImportsController(mockService);
+
+    expect(() =>
+      controller.updateRow(user, "507f1f77bcf86cd799439011", "507f1f77bcf86cd799439013", {})
+    ).toThrow();
+    expect(mockService.updateRow).not.toHaveBeenCalled();
+  });
 });

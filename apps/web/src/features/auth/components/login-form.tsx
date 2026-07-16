@@ -1,30 +1,42 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { authClient } from "../../../lib/auth/client";
+import { getSafeCallbackPath } from "../../../lib/auth/redirect";
 
 export function LoginForm(): ReactNode {
   const searchParams = useSearchParams();
-  const callbackURL = searchParams.get("next") ?? "/";
+  const callbackURL = getSafeCallbackPath(searchParams.get("next"));
 
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  // Guards against a native (unhandled) form submission — which would GET
+  // the page with the password in the URL query string — if the button is
+  // tapped before React has finished hydrating and attached onSubmit.
+  const [isHydrated, setIsHydrated] = useState(false);
+  useEffect(() => setIsHydrated(true), []);
+
   async function signIn(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
     setError(null);
     setIsSubmitting(true);
 
-    const result = await authClient.signIn.email({ email, password, callbackURL });
-    if (result.error !== null) {
-      setError(result.error.message ?? "Sign-in failed.");
+    try {
+      const result = await authClient.signIn.email({ email, password, callbackURL });
+      if (result.error !== null) {
+        setError(result.error.message ?? "Sign-in failed.");
+      }
+    } catch {
+      setError("Unable to sign in right now. Check your connection and try again.");
+    } finally {
       setIsSubmitting(false);
     }
   }
@@ -51,7 +63,7 @@ export function LoginForm(): ReactNode {
         onChange={(event) => setPassword(event.target.value)}
         required
       />
-      <Button type="submit" disabled={isSubmitting}>
+      <Button type="submit" disabled={isSubmitting || !isHydrated} className="w-full">
         {isSubmitting ? "Signing in…" : "Sign in"}
       </Button>
       {error === null ? null : (

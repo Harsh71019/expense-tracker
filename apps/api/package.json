@@ -9,17 +9,18 @@
     "typecheck": "tsc --noEmit -p tsconfig.test.json",
     "test": "vitest run --passWithNoTests",
     "test:integration": "vitest run --passWithNoTests --config vitest.integration.config.ts",
+    "test:e2e": "vitest run --passWithNoTests --config vitest.e2e.config.ts",
     "migrate": "migrate-mongo up -f ../../migrate-mongo-config.cjs",
     "migrate:status": "migrate-mongo status -f ../../migrate-mongo-config.cjs"
   },
   "dependencies": {
-    "@vyaya/shared": "workspace:*",
     "@better-auth/mongo-adapter": "latest",
     "@nestjs/common": "latest",
     "@nestjs/config": "latest",
     "@nestjs/core": "latest",
     "@nestjs/mongoose": "latest",
     "@nestjs/platform-express": "latest",
+    "@vyaya/shared": "workspace:*",
     "better-auth": "latest",
     "cookie-parser": "latest",
     "express": "latest",
@@ -36,6 +37,7 @@
   "devDependencies": {
     "@types/cookie-parser": "latest",
     "@types/express": "latest",
+    "@vitest/coverage-v8": "^4.1.10",
     "@vyaya/config": "workspace:*",
     "concurrently": "latest",
     "mongodb-memory-server": "latest"

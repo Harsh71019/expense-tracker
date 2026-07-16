@@ -5,11 +5,14 @@
   "scripts": {
     "build": "next build",
     "dev": "next dev",
-    "lint": "eslint --config ../../eslint.config.mjs --no-warn-ignored --max-warnings=0 src/",
+    "lint": "eslint --config ../../eslint.config.mjs --no-warn-ignored --max-warnings=0 src/ e2e/ tests/",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run --passWithNoTests",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@sentry/nextjs": "latest",
     "@vyaya/shared": "workspace:*",
     "better-auth": "latest",
     "next": "latest",
@@ -18,8 +21,14 @@
     "zod": "latest"
   },
   "devDependencies": {
+    "@playwright/test": "latest",
     "@tailwindcss/postcss": "latest",
+    "@testing-library/jest-dom": "latest",
+    "@testing-library/react": "latest",
+    "@testing-library/user-event": "latest",
+    "@vitejs/plugin-react": "latest",
     "@vyaya/config": "workspace:*",
+    "jsdom": "latest",
     "tailwindcss": "latest",
     "typescript": "beta"
   }

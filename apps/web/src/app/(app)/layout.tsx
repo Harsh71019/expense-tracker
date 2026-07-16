@@ -1,9 +1,11 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 
+import { AppNav } from "@/components/app-nav";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { SignOutButton } from "@/features/auth";
 import { getSession } from "@/lib/api/session";
+import { getStoredTheme } from "@/lib/theme-server";
 
 const navItems = [
   { href: "/", label: "Home" },
@@ -16,46 +18,43 @@ const navItems = [
 export default async function AppLayout({
   children
 }: Readonly<{ children: ReactNode }>): Promise<ReactNode> {
-  const session = await getSession();
+  const [session, theme] = await Promise.all([getSession(), getStoredTheme()]);
   if (session === null) {
     redirect("/login");
   }
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
-      <aside className="hidden w-56 shrink-0 flex-col justify-between border-r border-border p-4 md:flex">
-        <div className="flex flex-col gap-1">
-          <span className="mb-4 px-2 text-lg font-semibold">Vyaya</span>
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="rounded-md px-2 py-2 text-sm hover:bg-surface-muted"
-            >
-              {item.label}
-            </Link>
-          ))}
+      <aside className="hidden w-60 shrink-0 flex-col justify-between border-r border-border p-4 md:flex">
+        <div className="flex flex-col gap-6">
+          <div>
+            <span className="font-mono text-sm font-semibold tracking-[0.2em] text-foreground uppercase">
+              Vyaya
+            </span>
+            <div className="mt-2 h-px w-8 bg-accent" aria-hidden="true" />
+          </div>
+          <AppNav items={navItems} orientation="sidebar" />
         </div>
-        <div className="flex flex-col gap-2 px-2">
+        <div className="flex flex-col gap-3">
+          <ThemeToggle current={theme} />
           <span className="truncate text-xs text-foreground-muted">{session.user.email}</span>
           <SignOutButton />
         </div>
       </aside>
 
       <div className="flex flex-1 flex-col">
+        <header className="flex items-center justify-between border-b border-border px-4 py-3 md:hidden">
+          <span className="font-mono text-sm font-semibold tracking-[0.2em] text-foreground uppercase">
+            Vyaya
+          </span>
+          <ThemeToggle current={theme} />
+        </header>
+
         <main className="flex-1 p-4 pb-20 md:pb-4">{children}</main>
 
-        <nav className="fixed inset-x-0 bottom-0 flex border-t border-border bg-surface md:hidden">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="flex flex-1 flex-col items-center gap-1 py-2 text-xs text-foreground-muted"
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
+        <div className="fixed inset-x-0 bottom-0 md:hidden">
+          <AppNav items={navItems} orientation="bottom" />
+        </div>
       </div>
     </div>
   );

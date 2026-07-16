@@ -29,7 +29,9 @@ export function Money({
   className
 }: MoneyProps): ReactNode {
   const prefix = signed ? signPrefix[variant] : "";
-  const classes = ["tabular-nums", variantClasses[variant], className].filter(Boolean).join(" ");
+  const classes = ["font-mono tabular-nums", variantClasses[variant], className]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <span className={classes}>

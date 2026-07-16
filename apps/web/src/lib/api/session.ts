@@ -2,6 +2,8 @@ import { cache } from "react";
 import { cookies } from "next/headers";
 import { z } from "zod";
 
+import { debug } from "../debug";
+import { generateRequestId } from "../request-id";
 import { getApiBaseUrl } from "./base-url";
 
 const SessionResponseSchema = z
@@ -17,22 +19,26 @@ export type ServerSession = z.infer<typeof SessionResponseSchema>;
 
 export const getSession = cache(async (): Promise<ServerSession> => {
   const cookieStore = await cookies();
+  const reqId = generateRequestId();
 
-  let response: Response;
   try {
-    response = await fetch(`${getApiBaseUrl()}/auth/get-session`, {
-      headers: { cookie: cookieStore.toString() },
+    const response = await fetch(`${getApiBaseUrl()}/auth/get-session`, {
+      headers: { cookie: cookieStore.toString(), "x-request-id": reqId },
       cache: "no-store"
     });
-  } catch {
+    debug.api(`get-session ${response.status} reqId=${reqId}`);
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const body: unknown = await response.json();
+    const result = SessionResponseSchema.safeParse(body);
+    return result.success ? result.data : null;
+  } catch (error) {
+    // A down/unreachable API or malformed response fails closed to "logged out"
+    // rather than surfacing a server error from the app shell.
+    debug.api(`get-session failed reqId=${reqId}`, error);
     return null;
   }
-
-  if (!response.ok) {
-    return null;
-  }
-
-  const body: unknown = await response.json();
-  const result = SessionResponseSchema.safeParse(body);
-  return result.success ? result.data : null;
 });

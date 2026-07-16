@@ -5,3 +5,5 @@ dist/
 infra/**/.env
 coverage/
 *.tsbuildinfo
+playwright-report/
+test-results/

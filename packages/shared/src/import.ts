@@ -4,6 +4,17 @@ import { AccountIdSchema } from "./account.js";
 import { CategoryIdSchema } from "./category.js";
 import { TransactionTypeSchema } from "./transaction.js";
 
+/** AGENTS.md §8: "respect the existing caps (5MB, 50k rows, MIME check)." */
+export const MAX_IMPORT_FILE_SIZE_BYTES = 5 * 1024 * 1024;
+export const MAX_IMPORT_ROWS = 50_000;
+export const ALLOWED_IMPORT_FILE_EXTENSIONS = [".csv"] as const;
+export const ALLOWED_IMPORT_MIME_TYPES = [
+  "text/csv",
+  "application/vnd.ms-excel",
+  "application/csv",
+  "text/plain"
+] as const;
+
 export const DateFormatSchema = z.enum(["DD/MM/YYYY", "MM/DD/YYYY", "YYYY-MM-DD"]);
 
 export const AmountConventionSchema = z.enum(["single_signed", "debit_credit_cols"]);
@@ -90,6 +101,11 @@ export const StagedRowSchema = z.object({
   include: z.boolean()
 });
 
+export const UploadImportMetadataSchema = z.object({
+  accountId: AccountIdSchema,
+  mapping: ColumnMappingSchema
+});
+
 export type DateFormat = z.infer<typeof DateFormatSchema>;
 export type AmountConvention = z.infer<typeof AmountConventionSchema>;
 export type ColumnMapping = z.infer<typeof ColumnMappingSchema>;
@@ -100,3 +116,4 @@ export type ImportBatchStats = z.infer<typeof ImportBatchStatsSchema>;
 export type ImportBatch = z.infer<typeof ImportBatchSchema>;
 export type ParsedRow = z.infer<typeof ParsedRowSchema>;
 export type StagedRow = z.infer<typeof StagedRowSchema>;
+export type UploadImportMetadata = z.infer<typeof UploadImportMetadataSchema>;

@@ -1,11 +1,28 @@
+import { createHash } from "node:crypto";
+
 import { Injectable } from "@nestjs/common";
-import type { ColumnMapping, ImportBatchId, ImportBatchStats } from "@vyaya/shared";
+import {
+  ALLOWED_IMPORT_FILE_EXTENSIONS,
+  ALLOWED_IMPORT_MIME_TYPES,
+  MAX_IMPORT_FILE_SIZE_BYTES,
+  MAX_IMPORT_ROWS
+} from "@vyaya/shared";
+import type {
+  AccountId,
+  ColumnMapping,
+  ImportBatch,
+  ImportBatchId,
+  ImportBatchStats
+} from "@vyaya/shared";
 import { parse } from "csv-parse/sync";
 import { z } from "zod";
 
+import { ImportAlreadyCommittedError } from "../common/errors/import-already-committed.error.js";
+import { InvalidImportFileError } from "../common/errors/invalid-import-file.error.js";
 import { TransactionRepository } from "../transactions/transaction.repository.js";
 import { computeDedupeHash } from "./dedupe-hash.js";
 import { ImportBatchRepository } from "./import-batch.repository.js";
+import { ImportsQueue } from "./imports.queue.js";
 import { parseCsvRow } from "./parse-csv-row.js";
 import { StagedRowRepository } from "./staged-row.repository.js";
 import type { NewStagedRow } from "./staged-row.repository.js";
@@ -19,8 +36,45 @@ export class ImportsService {
   constructor(
     private readonly batches: ImportBatchRepository,
     private readonly stagedRows: StagedRowRepository,
-    private readonly transactions: TransactionRepository
+    private readonly transactions: TransactionRepository,
+    private readonly queue: ImportsQueue
   ) {}
+
+  /**
+   * Validates the uploaded file, rejects it if the exact same bytes were
+   * already committed (BACKEND.md §4: "reject if fileHash already
+   * committed" — narrower than "already uploaded": a staged, reverted, or
+   * failed prior attempt at the same file must not block a fresh try, per
+   * Gate 3's "revert the batch ... re-import -> clean"), creates the batch,
+   * and enqueues the parse job. The actual parse happens off the request
+   * cycle (ImportsProcessor).
+   */
+  async createBatch(
+    userId: string,
+    accountId: AccountId,
+    filename: string,
+    mimetype: string,
+    buffer: Buffer,
+    mapping: ColumnMapping
+  ): Promise<ImportBatch> {
+    assertValidImportFile(filename, mimetype, buffer);
+
+    const fileHash = createHash("sha256").update(buffer).digest("hex");
+    const existing = await this.batches.findByFileHash(userId, fileHash);
+    if (existing !== null && existing.status === "committed") {
+      throw new ImportAlreadyCommittedError();
+    }
+
+    const batch = await this.batches.create(userId, accountId, filename, fileHash, mapping);
+    await this.queue.enqueueParse({
+      batchId: batch.id,
+      userId,
+      accountId,
+      mapping,
+      fileContentBase64: buffer.toString("base64")
+    });
+    return batch;
+  }
 
   /**
    * Parses a CSV file into staged_rows and flips the batch to "staged" (or
@@ -124,5 +178,38 @@ export class ImportsService {
       committed: 0
     };
     await this.batches.markParsed(batchId, "staged", stats);
+  }
+}
+
+export function assertValidImportFile(filename: string, mimetype: string, buffer: Buffer): void {
+  const extension = filename.slice(filename.lastIndexOf(".")).toLowerCase();
+  if (!ALLOWED_IMPORT_FILE_EXTENSIONS.some((allowed) => allowed === extension)) {
+    throw new InvalidImportFileError(
+      `Unsupported file extension "${extension}". Only .csv files are accepted.`
+    );
+  }
+  if (!ALLOWED_IMPORT_MIME_TYPES.some((allowed) => allowed === mimetype)) {
+    throw new InvalidImportFileError(`Unsupported file type "${mimetype}".`);
+  }
+  if (buffer.length === 0) {
+    throw new InvalidImportFileError("The uploaded file is empty.");
+  }
+  if (buffer.length > MAX_IMPORT_FILE_SIZE_BYTES) {
+    throw new InvalidImportFileError(
+      `File is ${buffer.length} bytes, exceeding the ${MAX_IMPORT_FILE_SIZE_BYTES}-byte cap.`
+    );
+  }
+
+  // An approximate, cheap row count (newline count, not a full CSV parse) —
+  // good enough for a safety cap; the real parse job counts exactly.
+  const lineCount = buffer
+    .toString("utf8")
+    .split(/\r\n|\r|\n/)
+    .filter((line) => line.trim() !== "").length;
+  const approximateRowCount = Math.max(lineCount - 1, 0);
+  if (approximateRowCount > MAX_IMPORT_ROWS) {
+    throw new InvalidImportFileError(
+      `File has approximately ${approximateRowCount} rows, exceeding the ${MAX_IMPORT_ROWS}-row cap.`
+    );
   }
 }

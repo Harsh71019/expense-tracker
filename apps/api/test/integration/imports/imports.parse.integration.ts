@@ -57,6 +57,7 @@ describe("Imports parse pipeline (real BullMQ worker against real Redis)", () =>
   let batches: ImportBatchRepository | undefined;
   let flushClient: Redis | undefined;
   let worker: ReturnType<typeof startImportsWorker> | undefined;
+  let backgroundQueue: ImportsQueue | undefined;
 
   beforeAll(async () => {
     replicaSet = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
@@ -68,7 +69,8 @@ describe("Imports parse pipeline (real BullMQ worker against real Redis)", () =>
     const stagedRows = new StagedRowRepository(connection);
     const transactions = new TransactionRepository(connection);
     const config = new TestRuntimeConfig();
-    const service = new ImportsService(batches, stagedRows, transactions);
+    backgroundQueue = new ImportsQueue(config);
+    const service = new ImportsService(batches, stagedRows, transactions, backgroundQueue);
     const logger = { log: () => undefined, error: () => undefined };
 
     worker = startImportsWorker(config, service, logger);
@@ -77,6 +79,7 @@ describe("Imports parse pipeline (real BullMQ worker against real Redis)", () =>
 
   afterAll(async () => {
     if (worker !== undefined) await worker.close();
+    if (backgroundQueue !== undefined) await backgroundQueue.onModuleDestroy();
     if (flushClient !== undefined) {
       await flushClient.flushdb();
       await flushClient.quit();
@@ -139,7 +142,12 @@ describe("Imports parse pipeline (real BullMQ worker against real Redis)", () =>
     const database = connectedDatabase(connection);
     const stagedRows = new StagedRowRepository(nonNullConnection(connection));
     const transactions = new TransactionRepository(nonNullConnection(connection));
-    const service = new ImportsService(repository, stagedRows, transactions);
+    const service = new ImportsService(
+      repository,
+      stagedRows,
+      transactions,
+      nonNullQueue(backgroundQueue)
+    );
 
     const batch = await repository.create(
       "user-a",
@@ -184,6 +192,13 @@ function importBatchRepository(
     throw new Error("Import batch repository is not ready");
   }
   return repository;
+}
+
+function nonNullQueue(queue: ImportsQueue | undefined): ImportsQueue {
+  if (queue === undefined) {
+    throw new Error("Imports queue is not ready");
+  }
+  return queue;
 }
 
 function nonNullConnection(connection: Connection | undefined): Connection {

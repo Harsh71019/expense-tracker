@@ -6,7 +6,9 @@ export const ErrorCodes = [
   "common.dependency_unavailable",
   "auth.unauthenticated",
   "txn.already_reversed",
-  "asset.invalid_valuation_sign"
+  "asset.invalid_valuation_sign",
+  "import.invalid_file",
+  "import.already_committed"
 ] as const;
 
 export type ErrorCode = (typeof ErrorCodes)[number];

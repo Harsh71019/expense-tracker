@@ -39,6 +39,8 @@ export type { Category, CategoryId, CategoryKind, CreateCategory } from "./categ
 export { ErrorCodes } from "./errors/codes.js";
 export type { ErrorCode } from "./errors/codes.js";
 export {
+  ALLOWED_IMPORT_FILE_EXTENSIONS,
+  ALLOWED_IMPORT_MIME_TYPES,
   AmountConventionSchema,
   ColumnMappingSchema,
   DateFormatSchema,
@@ -46,9 +48,12 @@ export {
   ImportBatchSchema,
   ImportBatchStatsSchema,
   ImportBatchStatusSchema,
+  MAX_IMPORT_FILE_SIZE_BYTES,
+  MAX_IMPORT_ROWS,
   ParsedRowSchema,
   StagedRowIdSchema,
-  StagedRowSchema
+  StagedRowSchema,
+  UploadImportMetadataSchema
 } from "./import.js";
 export type {
   AmountConvention,
@@ -60,7 +65,8 @@ export type {
   ImportBatchStatus,
   ParsedRow,
   StagedRow,
-  StagedRowId
+  StagedRowId,
+  UploadImportMetadata
 } from "./import.js";
 export { formatMinor, isMinorAmount, parseMinor } from "./money.js";
 export type { MinorAmount } from "./money.js";

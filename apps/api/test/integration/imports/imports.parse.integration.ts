@@ -5,6 +5,8 @@ import type { Connection } from "mongoose";
 import type { ColumnMapping } from "@vyaya/shared";
 import { Redis } from "ioredis";
 
+import { AccountRepository } from "../../../src/accounts/account.repository.js";
+import { AuditRepository } from "../../../src/audit/audit.repository.js";
 import { RuntimeConfigService } from "../../../src/common/config/runtime-config.service.js";
 import { ImportBatchRepository } from "../../../src/imports/import-batch.repository.js";
 import { StagedRowRepository } from "../../../src/imports/staged-row.repository.js";
@@ -68,9 +70,19 @@ describe("Imports parse pipeline (real BullMQ worker against real Redis)", () =>
     batches = new ImportBatchRepository(connection);
     const stagedRows = new StagedRowRepository(connection);
     const transactions = new TransactionRepository(connection);
+    const accounts = new AccountRepository(connection);
+    const audit = new AuditRepository(connection);
     const config = new TestRuntimeConfig();
     backgroundQueue = new ImportsQueue(config);
-    const service = new ImportsService(batches, stagedRows, transactions, backgroundQueue);
+    const service = new ImportsService(
+      connection,
+      batches,
+      stagedRows,
+      transactions,
+      accounts,
+      audit,
+      backgroundQueue
+    );
     const logger = { log: () => undefined, error: () => undefined };
 
     worker = startImportsWorker(config, service, logger);
@@ -142,10 +154,15 @@ describe("Imports parse pipeline (real BullMQ worker against real Redis)", () =>
     const database = connectedDatabase(connection);
     const stagedRows = new StagedRowRepository(nonNullConnection(connection));
     const transactions = new TransactionRepository(nonNullConnection(connection));
+    const accounts = new AccountRepository(nonNullConnection(connection));
+    const audit = new AuditRepository(nonNullConnection(connection));
     const service = new ImportsService(
+      nonNullConnection(connection),
       repository,
       stagedRows,
       transactions,
+      accounts,
+      audit,
       nonNullQueue(backgroundQueue)
     );
 

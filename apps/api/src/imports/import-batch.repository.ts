@@ -12,6 +12,8 @@ import {
 import { Types } from "mongoose";
 import type { Connection } from "mongoose";
 
+import type { MongoSession } from "../common/mongo-txn.js";
+
 const IMPORT_BATCHES_COLLECTION = "import_batches";
 
 const EMPTY_STATS: ImportBatchStats = { total: 0, staged: 0, duplicates: 0, committed: 0 };
@@ -82,6 +84,44 @@ export class ImportBatchRepository {
       .updateOne(
         { _id: new Types.ObjectId(batchId), status: "pending" },
         { $set: { status, stats, updatedAt: new Date() } }
+      );
+  }
+
+  /**
+   * Advances stats.committed by one chunk's worth, inside that chunk's own
+   * transaction — so a mid-commit crash leaves stats.committed exactly
+   * matching what actually landed, never ahead of it.
+   */
+  async incrementCommittedCount(
+    batchId: ImportBatchId,
+    delta: number,
+    session: MongoSession
+  ): Promise<void> {
+    await this.database()
+      .collection(IMPORT_BATCHES_COLLECTION)
+      .updateOne(
+        { _id: new Types.ObjectId(batchId) },
+        { $inc: { "stats.committed": delta }, $set: { updatedAt: new Date() } },
+        { session }
+      );
+  }
+
+  /** Only after every includable row has landed — never mid-commit. */
+  async markCommitted(batchId: ImportBatchId): Promise<void> {
+    await this.database()
+      .collection(IMPORT_BATCHES_COLLECTION)
+      .updateOne(
+        { _id: new Types.ObjectId(batchId), status: "staged" },
+        { $set: { status: "committed", committedAt: new Date(), updatedAt: new Date() } }
+      );
+  }
+
+  async markReverted(batchId: ImportBatchId): Promise<void> {
+    await this.database()
+      .collection(IMPORT_BATCHES_COLLECTION)
+      .updateOne(
+        { _id: new Types.ObjectId(batchId), status: "committed" },
+        { $set: { status: "reverted", revertedAt: new Date(), updatedAt: new Date() } }
       );
   }
 

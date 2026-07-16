@@ -90,6 +90,21 @@ export class StagedRowRepository {
     return { items, pageInfo: { nextCursor, hasMore, limit } };
   }
 
+  /**
+   * All includable rows for a commit run, unpaginated — bounded by
+   * MAX_IMPORT_ROWS (50k), a manageable in-memory array. Only rows with
+   * `include: true` (which implies `parsed` is set — parseFile only ever
+   * marks a row includable when it parsed cleanly and wasn't a duplicate).
+   */
+  async findIncludableForBatch(batchId: ImportBatchId): Promise<StagedRow[]> {
+    const documents = await this.database()
+      .collection(STAGED_ROWS_COLLECTION)
+      .find({ batchId: new Types.ObjectId(batchId), include: true })
+      .sort({ rowNumber: 1 })
+      .toArray();
+    return documents.map((document) => this.toStagedRow(document));
+  }
+
   /** Toggling `include`/`suggestedCategoryId` — the preview screen's edits. */
   async updateRow(
     batchId: ImportBatchId,

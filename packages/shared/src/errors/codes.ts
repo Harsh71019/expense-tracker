@@ -8,7 +8,8 @@ export const ErrorCodes = [
   "txn.already_reversed",
   "asset.invalid_valuation_sign",
   "import.invalid_file",
-  "import.already_committed"
+  "import.already_committed",
+  "import.invalid_state"
 ] as const;
 
 export type ErrorCode = (typeof ErrorCodes)[number];

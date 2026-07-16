@@ -104,6 +104,22 @@ export class ImportsController {
       UpdateStagedRowSchema.parse(body)
     );
   }
+
+  @Post(":importBatchId/commit")
+  commit(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("importBatchId") importBatchId: string
+  ): Promise<ImportBatch> {
+    return this.imports.commitBatch(user.id, ImportBatchIdSchema.parse(importBatchId));
+  }
+
+  @Post(":importBatchId/revert")
+  revert(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("importBatchId") importBatchId: string
+  ): Promise<ImportBatch> {
+    return this.imports.revertBatch(user.id, ImportBatchIdSchema.parse(importBatchId));
+  }
 }
 
 function parseMetadataFields(body: unknown): unknown {

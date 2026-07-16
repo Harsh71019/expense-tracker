@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 
 import { Injectable } from "@nestjs/common";
+import { InjectConnection } from "@nestjs/mongoose";
 import {
   ALLOWED_IMPORT_FILE_EXTENSIONS,
   ALLOWED_IMPORT_MIME_TYPES,
@@ -13,17 +14,23 @@ import type {
   ImportBatch,
   ImportBatchId,
   ImportBatchStats,
+  ParsedRow,
   StagedRow,
   StagedRowId,
   StagedRowPage,
   UpdateStagedRow
 } from "@vyaya/shared";
 import { parse } from "csv-parse/sync";
+import type { Connection } from "mongoose";
 import { z } from "zod";
 
+import { AccountRepository } from "../accounts/account.repository.js";
+import { AuditRepository } from "../audit/audit.repository.js";
 import { EntityNotFoundError } from "../common/errors/entity-not-found.error.js";
 import { ImportAlreadyCommittedError } from "../common/errors/import-already-committed.error.js";
+import { ImportBatchNotReadyError } from "../common/errors/import-batch-not-ready.error.js";
 import { InvalidImportFileError } from "../common/errors/invalid-import-file.error.js";
+import { withTxn } from "../common/mongo-txn.js";
 import { TransactionRepository } from "../transactions/transaction.repository.js";
 import { computeDedupeHash } from "./dedupe-hash.js";
 import { ImportBatchRepository } from "./import-batch.repository.js";
@@ -33,15 +40,20 @@ import { StagedRowRepository } from "./staged-row.repository.js";
 import type { NewStagedRow } from "./staged-row.repository.js";
 
 const STAGED_ROW_INSERT_CHUNK_SIZE = 200;
+const COMMIT_CHUNK_SIZE = 200;
+const REVERT_CHUNK_SIZE = 200;
 
 const RawCsvRecordsSchema = z.array(z.record(z.string(), z.string()));
 
 @Injectable()
 export class ImportsService {
   constructor(
+    @InjectConnection() private readonly connection: Connection,
     private readonly batches: ImportBatchRepository,
     private readonly stagedRows: StagedRowRepository,
     private readonly transactions: TransactionRepository,
+    private readonly accounts: AccountRepository,
+    private readonly audit: AuditRepository,
     private readonly queue: ImportsQueue
   ) {}
 
@@ -213,6 +225,134 @@ export class ImportsService {
     if (updated === null) throw new EntityNotFoundError("Staged row");
     return updated;
   }
+
+  /**
+   * Chunks of 200 rows, each chunk = one Mongo transaction (insert +
+   * balance $inc + stats + audit), per BACKEND.md §4. Resumable: rows whose
+   * dedupeHash already landed (from a previous, interrupted run) are
+   * pre-filtered out via the same bulk findExistingDedupeHashes query the
+   * parse job uses, so re-invoking a partially-committed batch only
+   * processes what's left — never double-posts. The batch stays "staged"
+   * for the whole run and only flips to "committed" once every includable
+   * row has landed; a crash mid-run leaves it "staged" with partial
+   * transactions, exactly as designed.
+   */
+  async commitBatch(userId: string, batchId: ImportBatchId): Promise<ImportBatch> {
+    const batch = await this.batches.findById(userId, batchId);
+    if (batch === null) throw new EntityNotFoundError("Import batch");
+    if (batch.status !== "staged") {
+      throw new ImportBatchNotReadyError(
+        `Only a staged batch can be committed (current status: "${batch.status}").`
+      );
+    }
+
+    const includable = await this.stagedRows.findIncludableForBatch(batchId);
+    const candidateHashes = includable
+      .map((row) => row.dedupeHash)
+      .filter((hash): hash is string => hash !== undefined);
+    const alreadyLanded = await this.transactions.findExistingDedupeHashes(userId, candidateHashes);
+    const remaining = includable.filter(
+      (row) => row.dedupeHash !== undefined && !alreadyLanded.has(row.dedupeHash)
+    );
+
+    for (let start = 0; start < remaining.length; start += COMMIT_CHUNK_SIZE) {
+      const chunk = remaining.slice(start, start + COMMIT_CHUNK_SIZE);
+      const rows = chunk.map((row) => toCommitRow(row));
+      const netMinor = rows.reduce(
+        (sum, row) => sum + (row.type === "income" ? row.amountMinor : -row.amountMinor),
+        0
+      );
+
+      await withTxn(this.connection, async (session) => {
+        await this.transactions.insertImportedRows(userId, batch.accountId, batchId, rows, session);
+        if (netMinor !== 0) {
+          const applied = await this.accounts.applyBalanceDelta(
+            userId,
+            batch.accountId,
+            netMinor,
+            session
+          );
+          if (!applied) throw new EntityNotFoundError("Account");
+        }
+        await this.batches.incrementCommittedCount(batchId, chunk.length, session);
+        await this.audit.record(userId, "import.commit", batchId, session, {
+          chunkSize: chunk.length,
+          netMinor
+        });
+      });
+    }
+
+    await this.batches.markCommitted(batchId);
+    const committed = await this.batches.findById(userId, batchId);
+    if (committed === null) throw new EntityNotFoundError("Import batch");
+    return committed;
+  }
+
+  /**
+   * One bulk reversal, chunked transactions, reverses every posted
+   * transaction with this batchId, per BACKEND.md §4. Naturally resumable
+   * without any dedupe bookkeeping: each chunk marks its originals
+   * "reversed" inside the same transaction as the reversal insert + balance
+   * $inc, so a re-invoked revert's findPostedByImportBatchId query simply
+   * no longer returns whatever already landed.
+   */
+  async revertBatch(userId: string, batchId: ImportBatchId): Promise<ImportBatch> {
+    const batch = await this.batches.findById(userId, batchId);
+    if (batch === null) throw new EntityNotFoundError("Import batch");
+    if (batch.status !== "committed") {
+      throw new ImportBatchNotReadyError(
+        `Only a committed batch can be reverted (current status: "${batch.status}").`
+      );
+    }
+
+    const posted = await this.transactions.findPostedByImportBatchId(userId, batchId);
+
+    for (let start = 0; start < posted.length; start += REVERT_CHUNK_SIZE) {
+      const chunk = posted.slice(start, start + REVERT_CHUNK_SIZE);
+      const netMinor = chunk.reduce(
+        (sum, original) =>
+          sum + (original.type === "expense" ? original.amountMinor : -original.amountMinor),
+        0
+      );
+
+      await withTxn(this.connection, async (session) => {
+        await this.transactions.insertBulkReversals(userId, chunk, session);
+        if (netMinor !== 0) {
+          const applied = await this.accounts.applyBalanceDelta(
+            userId,
+            batch.accountId,
+            netMinor,
+            session
+          );
+          if (!applied) throw new EntityNotFoundError("Account");
+        }
+        await this.audit.record(userId, "import.revert", batchId, session, {
+          chunkSize: chunk.length,
+          netMinor
+        });
+      });
+    }
+
+    await this.batches.markReverted(batchId);
+    const reverted = await this.batches.findById(userId, batchId);
+    if (reverted === null) throw new EntityNotFoundError("Import batch");
+    return reverted;
+  }
+}
+
+function toCommitRow(row: StagedRow): ParsedRow & { dedupeHash: string; categoryId?: string } {
+  if (row.parsed === undefined || row.dedupeHash === undefined) {
+    throw new Error(
+      `Staged row ${row.id} is marked includable but is missing its parsed data or dedupeHash — ` +
+        "this should be impossible by construction (parseFile only ever sets include: true " +
+        "alongside a successful parse)."
+    );
+  }
+  return {
+    ...row.parsed,
+    dedupeHash: row.dedupeHash,
+    ...(row.suggestedCategoryId === undefined ? {} : { categoryId: row.suggestedCategoryId })
+  };
 }
 
 export function assertValidImportFile(filename: string, mimetype: string, buffer: Buffer): void {

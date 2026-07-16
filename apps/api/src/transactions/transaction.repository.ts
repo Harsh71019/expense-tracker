@@ -2,8 +2,11 @@ import { Injectable } from "@nestjs/common";
 import { InjectConnection } from "@nestjs/mongoose";
 import {
   TransactionSchema,
+  TransactionSourceSchema,
   type CreateTransaction,
+  type ImportBatchId,
   type ListTransactionsQuery,
+  type ParsedRow,
   type Transaction,
   type TransactionPage,
   type UpdateTransaction
@@ -33,7 +36,7 @@ const StoredTransactionSchema = z.object({
   description: z.string(),
   tags: z.array(z.string()),
   currency: z.literal("INR"),
-  source: z.literal("manual"),
+  source: TransactionSourceSchema,
   status: z.enum(["posted", "reversed", "reversal"]),
   idempotencyKey: z.string().uuid().optional(),
   reversalOf: z.unknown().optional(),
@@ -247,6 +250,109 @@ export class TransactionRepository {
       .collection(TRANSACTIONS_COLLECTION)
       .insertOne(document, { session });
     return this.toTransaction({ _id: result.insertedId, ...document });
+  }
+
+  /**
+   * Bulk-inserts one chunk of a CSV import commit — `source: 'csv_import'`,
+   * `importBatchId`, `dedupeHash` carried for provenance/resumability, but
+   * deliberately not surfaced on the public `Transaction` type (internal
+   * bookkeeping only, per StoredTransactionSchema/toTransaction). Not
+   * wrapped in idempotency-key duplicate handling like create() — resumable
+   * commit dedupes by pre-filtering against findExistingDedupeHashes before
+   * this is ever called, not by catching a duplicate-key error here.
+   */
+  async insertImportedRows(
+    userId: string,
+    accountId: string,
+    importBatchId: ImportBatchId,
+    rows: readonly (ParsedRow & { dedupeHash: string; categoryId?: string })[],
+    session: MongoSession
+  ): Promise<void> {
+    if (rows.length === 0) return;
+
+    const now = new Date();
+    const documents = rows.map((row) => ({
+      userId,
+      accountId: new Types.ObjectId(accountId),
+      ...(row.categoryId === undefined ? {} : { categoryId: new Types.ObjectId(row.categoryId) }),
+      type: row.type,
+      amountMinor: row.amountMinor,
+      currency: "INR" as const,
+      occurredAt: row.occurredAt,
+      description: row.description,
+      tags: [] as const,
+      source: "csv_import" as const,
+      status: "posted" as const,
+      importBatchId: new Types.ObjectId(importBatchId),
+      dedupeHash: row.dedupeHash,
+      createdAt: now,
+      updatedAt: now
+    }));
+
+    await this.database().collection(TRANSACTIONS_COLLECTION).insertMany(documents, { session });
+  }
+
+  async findPostedByImportBatchId(
+    userId: string,
+    importBatchId: ImportBatchId
+  ): Promise<Transaction[]> {
+    const documents = await this.database()
+      .collection(TRANSACTIONS_COLLECTION)
+      .find({ userId, importBatchId: new Types.ObjectId(importBatchId), status: "posted" })
+      .toArray();
+    return documents.map((document) => this.toTransaction(document));
+  }
+
+  /**
+   * Bulk compensating-entry reversal for import revert: one reversal doc
+   * per original + one updateMany flipping every original to "reversed",
+   * both within the caller's chunk transaction. Mirrors createReversal +
+   * markReversed's per-row logic, batched.
+   */
+  async insertBulkReversals(
+    userId: string,
+    originals: readonly Transaction[],
+    session: MongoSession
+  ): Promise<Transaction[]> {
+    if (originals.length === 0) return [];
+
+    const now = new Date();
+    const pairs = originals.map((original) => ({ original, reversalId: new Types.ObjectId() }));
+    const documents = pairs.map(({ original, reversalId }) => {
+      const category =
+        original.categoryId === undefined
+          ? {}
+          : { categoryId: new Types.ObjectId(original.categoryId) };
+      return {
+        _id: reversalId,
+        userId,
+        accountId: new Types.ObjectId(original.accountId),
+        ...category,
+        type: original.type === "expense" ? ("income" as const) : ("expense" as const),
+        amountMinor: original.amountMinor,
+        currency: "INR" as const,
+        occurredAt: now,
+        description: `Reversal: ${original.description}`,
+        tags: original.tags,
+        source: "manual" as const,
+        status: "reversal" as const,
+        reversalOf: new Types.ObjectId(original.id),
+        createdAt: now,
+        updatedAt: now
+      };
+    });
+
+    await this.database().collection(TRANSACTIONS_COLLECTION).insertMany(documents, { session });
+
+    const bulkOps = pairs.map(({ original, reversalId }) => ({
+      updateOne: {
+        filter: { _id: new Types.ObjectId(original.id), userId, status: "posted" as const },
+        update: { $set: { status: "reversed" as const, reversedBy: reversalId, updatedAt: now } }
+      }
+    }));
+    await this.database().collection(TRANSACTIONS_COLLECTION).bulkWrite(bulkOps, { session });
+
+    return documents.map((document) => this.toTransaction(document));
   }
 
   async findPostedLegsByTransferGroupId(

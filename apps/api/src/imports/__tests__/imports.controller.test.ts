@@ -183,4 +183,26 @@ describe("ImportsController", () => {
     ).toThrow();
     expect(mockService.updateRow).not.toHaveBeenCalled();
   });
+
+  it("commits a batch", async () => {
+    const mockService = { commitBatch: vi.fn().mockResolvedValue(sampleBatch) };
+    // @ts-expect-error - mock ImportsService for unit testing
+    const controller = new ImportsController(mockService);
+
+    const result = await controller.commit(user, "507f1f77bcf86cd799439011");
+
+    expect(result).toEqual(sampleBatch);
+    expect(mockService.commitBatch).toHaveBeenCalledWith("user-1", "507f1f77bcf86cd799439011");
+  });
+
+  it("reverts a batch", async () => {
+    const mockService = { revertBatch: vi.fn().mockResolvedValue(sampleBatch) };
+    // @ts-expect-error - mock ImportsService for unit testing
+    const controller = new ImportsController(mockService);
+
+    const result = await controller.revert(user, "507f1f77bcf86cd799439011");
+
+    expect(result).toEqual(sampleBatch);
+    expect(mockService.revertBatch).toHaveBeenCalledWith("user-1", "507f1f77bcf86cd799439011");
+  });
 });

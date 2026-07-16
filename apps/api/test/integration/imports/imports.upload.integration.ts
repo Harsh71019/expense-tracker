@@ -5,6 +5,8 @@ import type { Connection } from "mongoose";
 import type { ColumnMapping } from "@vyaya/shared";
 import { Redis } from "ioredis";
 
+import { AccountRepository } from "../../../src/accounts/account.repository.js";
+import { AuditRepository } from "../../../src/audit/audit.repository.js";
 import { ImportAlreadyCommittedError } from "../../../src/common/errors/import-already-committed.error.js";
 import { RuntimeConfigService } from "../../../src/common/config/runtime-config.service.js";
 import { ImportBatchRepository } from "../../../src/imports/import-batch.repository.js";
@@ -64,8 +66,18 @@ describe("ImportsService.createBatch", () => {
     batches = new ImportBatchRepository(connection);
     const stagedRows = new StagedRowRepository(connection);
     const transactions = new TransactionRepository(connection);
+    const accounts = new AccountRepository(connection);
+    const audit = new AuditRepository(connection);
     queue = new ImportsQueue(new TestRuntimeConfig());
-    service = new ImportsService(batches, stagedRows, transactions, queue);
+    service = new ImportsService(
+      connection,
+      batches,
+      stagedRows,
+      transactions,
+      accounts,
+      audit,
+      queue
+    );
   }, 30_000);
 
   afterAll(async () => {

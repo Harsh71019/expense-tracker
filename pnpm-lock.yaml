@@ -73,6 +73,12 @@ importers:
       "@better-auth/mongo-adapter":
         specifier: latest
         version: 1.6.23(@better-auth/core@1.6.23(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.4.3))(jose@6.2.3)(kysely@0.29.3)(nanostores@1.4.0))(@better-auth/utils@0.4.2)(mongodb@7.2.0)
+      "@bull-board/api":
+        specifier: latest
+        version: 8.1.2(@bull-board/ui@8.1.2)
+      "@bull-board/express":
+        specifier: latest
+        version: 8.1.2
       "@nestjs/common":
         specifier: latest
         version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -88,15 +94,24 @@ importers:
       "@nestjs/platform-express":
         specifier: latest
         version: 11.1.28(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.28)
+      "@nestjs/schedule":
+        specifier: latest
+        version: 6.1.3(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.28)
       "@vyaya/shared":
         specifier: workspace:*
         version: link:../../packages/shared
       better-auth:
         specifier: latest
         version: 1.6.23(@opentelemetry/api@1.9.1)(mongodb@7.2.0)(next@16.2.10(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.61.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@4.1.10)
+      bullmq:
+        specifier: latest
+        version: 5.80.5
       cookie-parser:
         specifier: latest
         version: 1.4.7
+      csv-parse:
+        specifier: latest
+        version: 7.0.1
       express:
         specifier: latest
         version: 5.2.1
@@ -596,6 +611,26 @@ packages:
         integrity: sha512-ctxtJ/eA+t+6q2++vj5j7FYX3nRu311q1wfYH3xjlLOsczhlhxAg2FWNUXhpGvAw3BWo1xBcvOV6/YLc2r5FJw==
       }
     hasBin: true
+
+  "@bull-board/api@8.1.2":
+    resolution:
+      {
+        integrity: sha512-6NGYCIRhHJmmoCwAFA1z4lPpR/D/BdOjyERd2MMeG4Samu05FSjzKKdN55S3ga30EcXeENfYzmNn6IDmVz5OTg==
+      }
+    peerDependencies:
+      "@bull-board/ui": 8.1.2
+
+  "@bull-board/express@8.1.2":
+    resolution:
+      {
+        integrity: sha512-IldpQLXlezJRzk1BVNJjH+Oi3NBRcBopq9bI2ndLs0R+ySK1ux+TtGDUW+eX2fl0wEHwSpuUgPBAJID695zohA==
+      }
+
+  "@bull-board/ui@8.1.2":
+    resolution:
+      {
+        integrity: sha512-gC5u9XUSiRile4/VC+WHXtaPvfZV4Mrrz8MSvPe32Hjl2MXStfSuEOb+9Tw/WMpNSZ442tGpFZLz0RDh1Yo3jg==
+      }
 
   "@colors/colors@1.5.0":
     resolution:
@@ -1648,6 +1683,54 @@ packages:
         integrity: sha512-QAfAMwNgnYxZ2C6D1HgeP7Gc4i/uvJRim415PCIL9ptRxWMNbWeLBYb2/9R4pGKny/s1FVu2JA2cxCUBUOggrA==
       }
 
+  "@msgpackr-extract/msgpackr-extract-darwin-arm64@3.0.4":
+    resolution:
+      {
+        integrity: sha512-LCkGo6JDfaBhgST7UpPWgNgLINpcpabaHfyz5OBx75nUYxBsaEPxjnyNjWpeb/xBup/682QnBfRBy2/LvPutZQ==
+      }
+    cpu: [arm64]
+    os: [darwin]
+
+  "@msgpackr-extract/msgpackr-extract-darwin-x64@3.0.4":
+    resolution:
+      {
+        integrity: sha512-zExlW9zUJKZH/tOtVMttwjKa4Xm/3KcNjnE3dPN92uCktwavMxpgCA3MoJK/DOnTWsQgo224OaST27/mPNAf+w==
+      }
+    cpu: [x64]
+    os: [darwin]
+
+  "@msgpackr-extract/msgpackr-extract-linux-arm64@3.0.4":
+    resolution:
+      {
+        integrity: sha512-dgX0P/9wGPJeHFBG+ZmhgE6bmtMt7NP5CRBGyyktpopdk/mW4POnrpQsSLtKI1dwpc+pPLuXHDh6vvskyQE/sw==
+      }
+    cpu: [arm64]
+    os: [linux]
+
+  "@msgpackr-extract/msgpackr-extract-linux-arm@3.0.4":
+    resolution:
+      {
+        integrity: sha512-Tg3yX65f5GbtXLkrYEHE5oibZG9epyYWas7FogTTEJeDEF9JlXJzKgXaNhT3UXlTOeA+AfZpYZYZ0uPj7Cfquw==
+      }
+    cpu: [arm]
+    os: [linux]
+
+  "@msgpackr-extract/msgpackr-extract-linux-x64@3.0.4":
+    resolution:
+      {
+        integrity: sha512-8TNXMEjJc3QEy7R/x1INhgiU+XakDAFUzBhaz7+Rbrs8NH5UQeHQxxmzsSBJGyV6I1jW79undiQm8tOI+D+8FQ==
+      }
+    cpu: [x64]
+    os: [linux]
+
+  "@msgpackr-extract/msgpackr-extract-win32-x64@3.0.4":
+    resolution:
+      {
+        integrity: sha512-CmCXPQrkbwExx3j946/PtHWHbYJiCRBRDl4BlkRQcJB/YOwQxJRTpoo7aTsortjgoJ1x7opzTSxn7C+ASSLVjQ==
+      }
+    cpu: [x64]
+    os: [win32]
+
   "@napi-rs/wasm-runtime@1.1.6":
     resolution:
       {
@@ -1738,6 +1821,15 @@ packages:
     peerDependencies:
       "@nestjs/common": ^11.0.0
       "@nestjs/core": ^11.0.0
+
+  "@nestjs/schedule@6.1.3":
+    resolution:
+      {
+        integrity: sha512-RflMFOpR16Dwd1jAUbeB4mfGTCh65fvEdL4mSjQPJChpkRGRjIXjb+6YQcK2faQrVT60c9DmLmoVR7/ONCtuYQ==
+      }
+    peerDependencies:
+      "@nestjs/common": ^10.0.0 || ^11.0.0
+      "@nestjs/core": ^10.0.0 || ^11.0.0
 
   "@nestjs/schematics@11.1.0":
     resolution:
@@ -2884,6 +2976,12 @@ packages:
         integrity: sha512-dRLjCWHYg4oaA77cxO64oO+7JwCwnIzkZPdrrC71jQmQtlhM556pwKo5bUzqvZndkVbeFLIIi+9TC40JNF5hNQ==
       }
 
+  "@types/luxon@3.7.2":
+    resolution:
+      {
+        integrity: sha512-gW+Oib+vUtGJBtNC8V9Reww0oIpusw+4m81uncg9REGZAJfqOQHfo/nkabnc7w0QReXyPqjrbWMJk6NuAkiX3Q==
+      }
+
   "@types/node@26.1.1":
     resolution:
       {
@@ -3943,6 +4041,18 @@ packages:
         integrity: sha512-EHcyIPBQ4BSGlvjB16k5KgAJ27CIsHY/2JBmCRReo48y9rQ3MaUzWX3KVlBa4U7MyX02HdVj0K7C3WaB3ju7FQ==
       }
 
+  bullmq@5.80.5:
+    resolution:
+      {
+        integrity: sha512-3cVpkFXvmi7U7clGQGqlIzWLNJgX77Q0U0xCfbsiu6CFdiAcrKem1rK+xHIq0jIzMA6swq9ss6uvMqzCeTbAgg==
+      }
+    engines: { node: ">=12.22.0" }
+    peerDependencies:
+      redis: ">=5.0.0"
+    peerDependenciesMeta:
+      redis:
+        optional: true
+
   busboy@1.6.0:
     resolution:
       {
@@ -4299,6 +4409,20 @@ packages:
       typescript:
         optional: true
 
+  cron-parser@4.9.0:
+    resolution:
+      {
+        integrity: sha512-p0SaNjrHOnQeR8/VnfGbmg9te2kfyYSQ7Sc/j/6DtPL3JQvKxmjO9TSjNFpujqV3vEYYBvNNvXSxzyksBWAx1Q==
+      }
+    engines: { node: ">=12.0.0" }
+
+  cron@4.4.0:
+    resolution:
+      {
+        integrity: sha512-fkdfq+b+AHI4cKdhZlppHveI/mgz2qpiYxcm+t5E5TsxX7QrLS1VE0+7GENEk9z0EeGPcpSciGv6ez24duWhwQ==
+      }
+    engines: { node: ">=18.x" }
+
   cross-spawn@7.0.6:
     resolution:
       {
@@ -4323,6 +4447,12 @@ packages:
     resolution:
       {
         integrity: sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ==
+      }
+
+  csv-parse@7.0.1:
+    resolution:
+      {
+        integrity: sha512-+2z7Ar0APQ7Uu6fX4cn+pitRmxjZ1WPBcGmZFKmA74FCyi7Et/XZx8cjNQ5CjbZ4HCOxXCOpRBYvYH08Qa003A==
       }
 
   damerau-levenshtein@1.0.8:
@@ -4514,6 +4644,14 @@ packages:
       {
         integrity: sha512-WMwm9LhRUo+WUaRN+vRuETqG89IgZphVSNkdFgeb6sS/E4OrDIN7t48CAewSHXc6C8lefD8KKfr5vY61brQlow==
       }
+
+  ejs@6.0.1:
+    resolution:
+      {
+        integrity: sha512-UaaM14yby8U3k02ihS1Bmj5Kz2d7CCQM1scxpgs4Mhkq8F1wR2gl3+Ts4h5Ne4Mnt7M9m4Dw7jsuMr3+xO4vZA==
+      }
+    engines: { node: ">=0.12.18" }
+    hasBin: true
 
   electron-to-chromium@1.5.389:
     resolution:
@@ -6125,6 +6263,13 @@ packages:
         integrity: sha512-KpNARQA3Iwv+jTA0utUVVbrh+Jlrr1Fv0e56GGzAFOXN7dk/FviaDW8LHmK52DlcH4WP2n6gI8vN1aesBFgo9w==
       }
 
+  luxon@3.7.2:
+    resolution:
+      {
+        integrity: sha512-vtEhXh/gNjI9Yg1u4jX/0YVPMvxzHuGgCm6tC5kZyb08yjGWGnqAjGJvcXbqQR2P3MyMEFnRbpcdFS6PBcLqew==
+      }
+    engines: { node: ">=12" }
+
   lz-string@1.5.0:
     resolution:
       {
@@ -6407,6 +6552,19 @@ packages:
         integrity: sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==
       }
 
+  msgpackr-extract@3.0.4:
+    resolution:
+      {
+        integrity: sha512-4kmO/MdyUIkLIvTPr8VHLil4AtoKIoniWPIEk5+CDy0xnWC84azhSFmuJ7PxZdsYtiP5kEeQsORAVIeMgxT+Hw==
+      }
+    hasBin: true
+
+  msgpackr@2.0.4:
+    resolution:
+      {
+        integrity: sha512-o1C5KRmuRt+apqMr1HuGSqWStZoRBUpEsCsl15uM9VdAF1qHLtvMOU2En747EnTyEl6c4pzPewRMFF31s1CNbA==
+      }
+
   multer@2.2.0:
     resolution:
       {
@@ -6536,6 +6694,13 @@ packages:
     peerDependenciesMeta:
       encoding:
         optional: true
+
+  node-gyp-build-optional-packages@5.2.2:
+    resolution:
+      {
+        integrity: sha512-s+w+rBWnpTMwSFbaE0UXsRlg7hU4FjekKU4eyAih5T8nJuNZT1nNsskXpxmeqSK9UzkBl6UgRlnKc8hz8IEqOw==
+      }
+    hasBin: true
 
   node-releases@2.0.51:
     resolution:
@@ -7046,6 +7211,12 @@ packages:
         integrity: sha512-1qny3OExCf0UvUV/5wpYKf2YwPcOqXzkwKKSmKHiE6ZMQs5heeE/c8eXK+PNllPvmjgAbfnsbpkGZWy8cBpn9w==
       }
     engines: { node: ">=4" }
+
+  redis-info@3.1.0:
+    resolution:
+      {
+        integrity: sha512-ER4L9Sh/vm63DkIE0bkSjxluQlioBiBgf5w1UuldaW/3vPcecdljVDisZhmnCMvsxHNiARTTDDHGg9cGwTfrKg==
+      }
 
   redis-parser@3.0.0:
     resolution:
@@ -8720,6 +8891,24 @@ snapshots:
     dependencies:
       css-tree: 3.2.1
 
+  "@bull-board/api@8.1.2(@bull-board/ui@8.1.2)":
+    dependencies:
+      "@bull-board/ui": 8.1.2
+      redis-info: 3.1.0
+
+  "@bull-board/express@8.1.2":
+    dependencies:
+      "@bull-board/api": 8.1.2(@bull-board/ui@8.1.2)
+      "@bull-board/ui": 8.1.2
+      ejs: 6.0.1
+      express: 5.2.1
+    transitivePeerDependencies:
+      - supports-color
+
+  "@bull-board/ui@8.1.2":
+    dependencies:
+      "@bull-board/api": 8.1.2(@bull-board/ui@8.1.2)
+
   "@colors/colors@1.5.0":
     optional: true
 
@@ -9304,6 +9493,24 @@ snapshots:
     dependencies:
       sparse-bitfield: 3.0.3
 
+  "@msgpackr-extract/msgpackr-extract-darwin-arm64@3.0.4":
+    optional: true
+
+  "@msgpackr-extract/msgpackr-extract-darwin-x64@3.0.4":
+    optional: true
+
+  "@msgpackr-extract/msgpackr-extract-linux-arm64@3.0.4":
+    optional: true
+
+  "@msgpackr-extract/msgpackr-extract-linux-arm@3.0.4":
+    optional: true
+
+  "@msgpackr-extract/msgpackr-extract-linux-x64@3.0.4":
+    optional: true
+
+  "@msgpackr-extract/msgpackr-extract-win32-x64@3.0.4":
+    optional: true
+
   "@napi-rs/wasm-runtime@1.1.6(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)":
     dependencies:
       "@emnapi/core": 1.10.0
@@ -9405,6 +9612,12 @@ snapshots:
       tslib: 2.8.1
     transitivePeerDependencies:
       - supports-color
+
+  "@nestjs/schedule@6.1.3(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.28)":
+    dependencies:
+      "@nestjs/common": 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      "@nestjs/core": 11.1.28(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@11.1.28)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      cron: 4.4.0
 
   "@nestjs/schematics@11.1.0(chokidar@4.0.3)(prettier@3.9.5)(typescript@5.9.3)":
     dependencies:
@@ -10051,6 +10264,8 @@ snapshots:
   "@types/json-schema@7.0.15": {}
 
   "@types/json5@0.0.29": {}
+
+  "@types/luxon@3.7.2": {}
 
   "@types/node@26.1.1":
     dependencies:
@@ -10709,6 +10924,17 @@ snapshots:
       base64-js: 1.5.1
       ieee754: 1.2.1
 
+  bullmq@5.80.5:
+    dependencies:
+      cron-parser: 4.9.0
+      ioredis: 5.11.1
+      msgpackr: 2.0.4
+      node-abort-controller: 3.1.1
+      semver: 7.8.5
+      tslib: 2.8.1
+    transitivePeerDependencies:
+      - supports-color
+
   busboy@1.6.0:
     dependencies:
       streamsearch: 1.1.0
@@ -10891,6 +11117,15 @@ snapshots:
     optionalDependencies:
       typescript: 6.0.0-beta
 
+  cron-parser@4.9.0:
+    dependencies:
+      luxon: 3.7.2
+
+  cron@4.4.0:
+    dependencies:
+      "@types/luxon": 3.7.2
+      luxon: 3.7.2
+
   cross-spawn@7.0.6:
     dependencies:
       path-key: 3.1.1
@@ -10905,6 +11140,8 @@ snapshots:
   css.escape@1.5.1: {}
 
   csstype@3.2.3: {}
+
+  csv-parse@7.0.1: {}
 
   damerau-levenshtein@1.0.8: {}
 
@@ -10998,6 +11235,8 @@ snapshots:
       gopd: 1.2.0
 
   ee-first@1.1.1: {}
+
+  ejs@6.0.1: {}
 
   electron-to-chromium@1.5.389: {}
 
@@ -12131,6 +12370,8 @@ snapshots:
     dependencies:
       yallist: 3.1.1
 
+  luxon@3.7.2: {}
+
   lz-string@1.5.0: {}
 
   magic-string@0.30.17:
@@ -12299,6 +12540,22 @@ snapshots:
 
   ms@2.1.3: {}
 
+  msgpackr-extract@3.0.4:
+    dependencies:
+      node-gyp-build-optional-packages: 5.2.2
+    optionalDependencies:
+      "@msgpackr-extract/msgpackr-extract-darwin-arm64": 3.0.4
+      "@msgpackr-extract/msgpackr-extract-darwin-x64": 3.0.4
+      "@msgpackr-extract/msgpackr-extract-linux-arm": 3.0.4
+      "@msgpackr-extract/msgpackr-extract-linux-arm64": 3.0.4
+      "@msgpackr-extract/msgpackr-extract-linux-x64": 3.0.4
+      "@msgpackr-extract/msgpackr-extract-win32-x64": 3.0.4
+    optional: true
+
+  msgpackr@2.0.4:
+    optionalDependencies:
+      msgpackr-extract: 3.0.4
+
   multer@2.2.0:
     dependencies:
       append-field: 1.0.0
@@ -12375,6 +12632,11 @@ snapshots:
   node-fetch@2.7.0:
     dependencies:
       whatwg-url: 5.0.0
+
+  node-gyp-build-optional-packages@5.2.2:
+    dependencies:
+      detect-libc: 2.1.2
+    optional: true
 
   node-releases@2.0.51: {}
 
@@ -12662,6 +12924,10 @@ snapshots:
       strip-indent: 3.0.0
 
   redis-errors@1.2.0: {}
+
+  redis-info@3.1.0:
+    dependencies:
+      lodash: 4.18.1
 
   redis-parser@3.0.0:
     dependencies:

@@ -14,6 +14,7 @@ import { AssetsModule } from "./assets/assets.module.js";
 import { AuditModule } from "./audit/audit.module.js";
 import { CategoriesModule } from "./categories/categories.module.js";
 import { CategoryRulesModule } from "./category-rules/category-rules.module.js";
+import { ExportModule } from "./export/export.module.js";
 import { HealthModule } from "./health/health.module.js";
 import { ImportsModule } from "./imports/imports.module.js";
 import { UserProfilesModule } from "./user-profiles/user-profiles.module.js";
@@ -42,6 +43,7 @@ import { TransactionsModule } from "./transactions/transactions.module.js";
     TransactionsModule,
     AssetsModule,
     ImportsModule,
+    ExportModule,
     LoggerModule.forRootAsync({
       inject: [RuntimeConfigService, LoggingContextService],
       useFactory: (config: RuntimeConfigService, context: LoggingContextService) => ({

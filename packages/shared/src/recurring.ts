@@ -1,11 +1,49 @@
-import pkg from "rrule";
+import * as rrulePkg from "rrule";
 import { z } from "zod";
 
 import { AccountIdSchema } from "./account.js";
 import { CategoryIdSchema } from "./category.js";
 import { TransactionTypeSchema } from "./transaction.js";
 
-const { RRule } = pkg;
+type RRuleConstructor = typeof import("rrule").RRule;
+
+/**
+ * rrule ships no `exports` map — just `main` (a UMD bundle) and `module`
+ * (real ESM). Node's native ESM resolver ignores `module` and falls back to
+ * `main`, but that UMD wrapper isn't statically analyzable by
+ * cjs-module-lexer, so the namespace import's named `RRule` binding is
+ * missing there — while bundlers (Turbopack/webpack, used by apps/web)
+ * resolve the same bare specifier via `module` to the real-ESM build
+ * instead, where the named binding *is* present directly. The two consumers
+ * of this package (apps/api under plain Node, apps/web under Turbopack) hit
+ * genuinely different files with incompatible export shapes, so this can't
+ * be fixed by picking a different `import` form — it has to duck-type at
+ * runtime. This deliberately avoids Node builtins (no `createRequire`):
+ * `packages/shared` has no `sideEffects: false`, so this module can end up
+ * in a browser bundle via the barrel export even if only a server component
+ * uses it today, and `node:module` doesn't exist there.
+ */
+const RRule = resolveRRuleConstructor();
+
+function resolveRRuleConstructor(): RRuleConstructor {
+  const namespace: unknown = rrulePkg;
+  const direct = isRecord(namespace) ? namespace.RRule : undefined;
+  if (isRRuleConstructor(direct)) return direct;
+
+  const cjsDefault = isRecord(namespace) ? namespace.default : undefined;
+  const viaDefault = isRecord(cjsDefault) ? cjsDefault.RRule : undefined;
+  if (isRRuleConstructor(viaDefault)) return viaDefault;
+
+  throw new Error('Could not resolve the RRule constructor from the "rrule" package.');
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function isRRuleConstructor(value: unknown): value is RRuleConstructor {
+  return typeof value === "function";
+}
 
 export const RecurringRuleIdSchema = z
   .string()

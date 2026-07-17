@@ -1,14 +1,16 @@
-import { IBM_Plex_Mono, Space_Grotesk } from "next/font/google";
+import { IBM_Plex_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 import "./globals.css";
 import { getStoredTheme } from "../lib/theme-server";
+import { QueryProvider } from "../lib/query/provider";
+import { Toaster } from "../components/ui/sonner";
 
-const spaceGrotesk = Space_Grotesk({
+const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
-  weight: ["500", "600", "700"],
-  variable: "--font-space-grotesk"
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-plus-jakarta-sans"
 });
 
 const ibmPlexMono = IBM_Plex_Mono({
@@ -31,9 +33,15 @@ export default async function RootLayout({
     <html
       lang="en-IN"
       data-theme={theme ?? undefined}
-      className={`${spaceGrotesk.variable} ${ibmPlexMono.variable}`}
+      className={`${plusJakartaSans.variable} ${ibmPlexMono.variable}`}
     >
-      <body className="bg-surface font-sans text-foreground antialiased">{children}</body>
+      {/* ColorZilla injects cz-shortcut-listen on body before React hydrates. */}
+      <body suppressHydrationWarning className="bg-surface font-sans text-foreground antialiased">
+        <QueryProvider>
+          {children}
+          <Toaster />
+        </QueryProvider>
+      </body>
     </html>
   );
 }

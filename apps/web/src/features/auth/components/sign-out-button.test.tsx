@@ -48,4 +48,10 @@ describe("SignOutButton", () => {
     expect(screen.getByRole("button", { name: "Sign out" })).toBeEnabled();
     expect(mocks.push).not.toHaveBeenCalled();
   });
+
+  it("uses an icon-sized sign-out control in compact mode", () => {
+    render(<SignOutButton compact />);
+
+    expect(screen.getByRole("button", { name: "Sign out" })).toHaveClass("h-10", "w-10");
+  });
 });

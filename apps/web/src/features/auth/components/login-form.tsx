@@ -42,7 +42,7 @@ export function LoginForm(): ReactNode {
   }
 
   return (
-    <form onSubmit={signIn} className="flex flex-col gap-4">
+    <form onSubmit={signIn} className="flex flex-col gap-5">
       <Input
         id="email"
         name="email"
@@ -63,11 +63,14 @@ export function LoginForm(): ReactNode {
         onChange={(event) => setPassword(event.target.value)}
         required
       />
-      <Button type="submit" disabled={isSubmitting || !isHydrated} className="w-full">
+      <Button type="submit" disabled={isSubmitting || !isHydrated} className="w-full py-3.5">
         {isSubmitting ? "Signing in…" : "Sign in"}
       </Button>
       {error === null ? null : (
-        <p role="alert" className="text-sm text-expense">
+        <p
+          role="alert"
+          className="rounded-lg border border-expense/25 bg-expense/10 px-3 py-2 text-center font-mono text-[11px] font-semibold text-expense animate-fade-in"
+        >
           {error}
         </p>
       )}

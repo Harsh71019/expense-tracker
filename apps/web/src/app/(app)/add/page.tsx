@@ -1,7 +1,20 @@
 import type { ReactNode } from "react";
+import Link from "next/link";
 
-import { ComingSoon } from "@/components/ui/coming-soon";
+import { QuickAddForm } from "@/features/quick-add";
 
 export default function AddTransactionPage(): ReactNode {
-  return <ComingSoon title="Quick add" phase="Phase 2" />;
+  return (
+    <div className="space-y-5">
+      <div className="flex justify-end">
+        <Link
+          href="/transfers/new"
+          className="rounded-xl border border-border bg-surface-elevated px-4 py-2.5 text-sm font-semibold transition-colors hover:border-accent/40"
+        >
+          Transfer between accounts
+        </Link>
+      </div>
+      <QuickAddForm />
+    </div>
+  );
 }

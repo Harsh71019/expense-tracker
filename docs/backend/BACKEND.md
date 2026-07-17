@@ -354,9 +354,13 @@ Both writes + the balance `$inc` + audit entry happen in one transaction. Why th
 
 "Move ₹10,000 from HDFC to Cash" creates two transactions sharing a `transferGroupId` (expense leg + income leg), both balance updates, all in one Mongo transaction. Reverting a transfer reverts **both legs** — the API only accepts `transferGroupId` for transfer reverts, never a single leg.
 
+Non-monetary metadata on a transfer is also group-scoped. Until a group-level metadata endpoint exists, `PATCH /transactions/:id` rejects transfer legs instead of changing only one half of the transfer.
+
 ### 3.4 Idempotency
 
-Every mutating endpoint accepts an `Idempotency-Key` header (client generates UUID per logical action; the Next.js form generates it on mount, so a double-tap on a jittery train connection can't double-post). Unique sparse index on `idempotencyKey` — the second attempt fails the insert inside the transaction, the API catches the duplicate-key error and returns the original result with `200` instead of `201`. Cheap, bulletproof, and exactly the pattern payment APIs use.
+Client-initiated create/update/archive/delete operations require an `Idempotency-Key` header (the client generates one UUID per logical action and reuses it for retries). General mutations store their Zod-validated response in `idempotency_records`, uniquely keyed by `(userId, operation, key)`, in the same Mongo transaction as the business effect. Replays return that authoritative stored response; no-content operations store `null` so an archive/delete replay cannot fall through to `404`.
+
+Ledger transaction and transfer creation retain their unique transaction-key protection. Transaction and transfer-group reversals are naturally idempotent by the original transaction/group linkage: a concurrent duplicate returns the committed compensating entry or pair and sets `Idempotency-Replayed: true`. First creates return `201`; replayed creates return `200`; same-status mutations expose replay through that header.
 
 ---
 
@@ -463,20 +467,27 @@ All routes behind `AuthGuard`; validation via `zod` schemas shared with the fron
 ```
 POST   /transactions                    create (Idempotency-Key required)
 GET    /transactions?from&to&accountId&categoryId&q&cursor   cursor-paginated
-PATCH  /transactions/:id                non-monetary fields only
+GET    /transactions/:id                tenancy-scoped detail
+PATCH  /transactions/:id                non-monetary fields only (Idempotency-Key required; transfer legs rejected)
 POST   /transactions/:id/reverse        compensating entry
 POST   /transfers                       two-leg atomic transfer
 POST   /transfers/:groupId/reverse
 
 POST   /imports                         upload CSV (multipart)
 GET    /imports                         batch history
+GET    /imports/accounts/:accountId/mapping  last mapping for an owned active account
 GET    /imports/:id/preview             staged rows + dupe flags
 PATCH  /imports/:id/rows/:rowId         toggle include / fix category
 POST   /imports/:id/commit
 POST   /imports/:id/revert
 
-GET    /accounts | POST /accounts | PATCH /accounts/:id
-GET    /categories | POST /categories | PATCH /categories/:id
+GET    /accounts | POST /accounts | PATCH /accounts/:id/archive
+GET    /categories | POST /categories | PATCH /categories/:id/archive
+GET    /category-rules | POST /category-rules | DELETE /category-rules/:id
+GET    /assets | POST /assets | POST /assets/:id/close
+GET    /assets/:id/valuations | POST /assets/:id/valuations
+GET    /net-worth
+GET    /profile                         read-only app profile
 GET    /recurring | POST /recurring | PATCH /recurring/:id
 GET    /budgets | PUT /budgets/:categoryId
 
@@ -486,6 +497,8 @@ GET    /export/csv?from&to              your data back out, always
 
 /api/auth/*                             Better Auth handler
 GET    /healthz                         liveness (Beszel/uptime checks)
+GET    /docs                            Interactive API documentation (Stoplight Elements)
+GET    /openapi.json                    Live OpenAPI 3.1 specification JSON
 ```
 
 Cursor pagination (`occurredAt + _id` compound cursor), not offset — offset paginating a growing ledger degrades and skips rows under concurrent writes.
@@ -546,12 +559,12 @@ Conventions: controllers do HTTP only; services own business rules and transacti
 ## 11. API Versioning & Contracts
 
 - **URI versioning:** everything under `/v1/...` from day one (`app.enableVersioning({ type: VersioningType.URI })`). Cheap now, impossible to retrofit cleanly later.
-- **OpenAPI as a build artifact:** `@nestjs/swagger` generates the spec; CI publishes it and fails if a change breaks the previous spec (breaking-change detection via `oasdiff`). The Next.js client is generated from the spec (`openapi-typescript`) — frontend/backend drift becomes a compile error, not a runtime bug.
+- **OpenAPI Schema & Live Documentation:** `@asteasolutions/zod-to-openapi` generates the spec from the shared zod schemas. The spec is served live at `/api/openapi.json`. Interactive Stoplight Elements documentation is served dynamically at `/api/docs` (with a per-route custom Content Security Policy). The Next.js client is generated from this spec (`openapi-typescript`) — frontend/backend drift becomes a compile error, not a runtime bug.
 - **Shared zod schemas** in `packages/shared` remain the single source of truth: zod → DTO validation at runtime, zod → OpenAPI via `zod-openapi`, zod → TS types at compile time. One definition, three enforcement points.
 
 ## 12. Configuration & Secrets
 
-- **Fail-fast env validation:** a `zod` schema parses `process.env` at bootstrap; a missing `ATLAS_URI` kills the process at startup with a named error, never a 3 a.m. `undefined` deep in a request.
+- **Fail-fast env validation:** a `zod` schema parses `process.env` at bootstrap; a missing `MONGODB_URI`, `REDIS_URL`, `TRUSTED_ORIGINS`, `BETTER_AUTH_SECRET`, or `BETTER_AUTH_URL` kills the process at startup with a named error, never a 3 a.m. `undefined` deep in a request. The API development command loads the ignored repository-root `.env`, then optional `.env.development.local` overrides via Node's `--env-file` flags; production continues to inject its environment externally.
 - **Secrets:** you already run **Vaultwarden** — keep the canonical copies there; deploy-time injection via `sops`-encrypted `.env` in the repo (age key lives only on the LXC) or Docker secrets. Rule: plaintext secrets exist only inside the container's env, never in git, never in images.
 - **Config tiers:** `local` (mongodb-memory-server) / `staging` / `prod` — same image, different env. No `if (NODE_ENV === ...)` branches in business code.
 

@@ -6,13 +6,13 @@
 
 ## 1. What the Frontend Logs (and pointedly doesn't)
 
-| Signal | Destination | Notes |
-|---|---|---|
-| Unhandled errors, boundary catches, failed mutations | GlitchTip | deduplicated, source-mapped, tagged with `reqId` |
+| Signal                                                         | Destination                         | Notes                                                        |
+| -------------------------------------------------------------- | ----------------------------------- | ------------------------------------------------------------ |
+| Unhandled errors, boundary catches, failed mutations           | GlitchTip                           | deduplicated, source-mapped, tagged with `reqId`             |
 | Breadcrumbs (route changes, key user actions, network results) | GlitchTip (attached to events only) | ring buffer in memory; uploaded **only** when an error fires |
-| Web vitals (LCP/INP/CLS) | `POST /api/v1/vitals` → Prometheus | sampled beacon, no third party |
-| Dev-time debugging | `lib/debug.ts` logger | compiled out of prod bundles |
-| Everything else | nowhere | no analytics, no session replay, no console noise in prod |
+| Web vitals (LCP/INP/CLS)                                       | `POST /api/v1/vitals` → Prometheus  | sampled beacon, no third party                               |
+| Dev-time debugging                                             | `lib/debug.ts` logger               | compiled out of prod bundles                                 |
+| Everything else                                                | nowhere                             | no analytics, no session replay, no console noise in prod    |
 
 There is deliberately **no general log shipping from the browser**: at single-user scale it's cost without benefit, and the backend summary line already records every request the client makes. GlitchTip breadcrumbs give you the client-side story exactly when it matters — attached to an actual error.
 
@@ -31,18 +31,19 @@ There is deliberately **no general log shipping from the browser**: at single-us
 // instrumentation-client.ts
 Sentry.init({
   dsn: env.NEXT_PUBLIC_GLITCHTIP_DSN,
-  release: env.NEXT_PUBLIC_GIT_SHA,          // same SHA the API reports on /healthz
-  environment: env.NEXT_PUBLIC_ENV,          // staging | prod
-  sampleRate: 1.0,                            // errors: all of them (single user)
-  tracesSampleRate: 0,                        // perf tracing stays a backend concern (Tempo)
+  release: env.NEXT_PUBLIC_GIT_SHA, // same SHA the API reports on /healthz
+  environment: env.NEXT_PUBLIC_ENV, // staging | prod
+  sampleRate: 1.0, // errors: all of them (single user)
+  tracesSampleRate: 0, // perf tracing stays a backend concern (Tempo)
   maxBreadcrumbs: 50,
-  beforeBreadcrumb: scrubBreadcrumb,          // §4
-  beforeSend: scrubEvent,                     // §4
+  beforeBreadcrumb: scrubBreadcrumb, // §4
+  beforeSend: scrubEvent, // §4
   ignoreErrors: [
-    'AbortError', 'Load failed',              // navigation/HMR noise
-    /Failed to fetch/,                        // raw network flap — we report our typed NetworkError instead, once, with context
-    'ResizeObserver loop',
-  ],
+    "AbortError",
+    "Load failed", // navigation/HMR noise
+    /Failed to fetch/, // raw network flap — we report our typed NetworkError instead, once, with context
+    "ResizeObserver loop"
+  ]
 });
 ```
 
@@ -55,21 +56,23 @@ Sentry.init({
 **Recorded breadcrumbs:** route changes, mutation attempts/outcomes (`txn.create → 201 (142ms) reqId=…`), query cache invalidations (dev only), offline queue transitions (`queued/drained/conflict`), auth state changes, import step progression.
 
 **Scrubbing (`scrubEvent`/`scrubBreadcrumb`):** even on a self-hosted GlitchTip, error payloads shouldn't carry ledger contents — events leave the app's trust boundary (screenshots, shared issues):
-- Replace `amountMinor` values and `description` strings in breadcrumb/request data with `⟨minor⟩`/`⟨text⟩` — the *shape and status* is what debugging needs; the reqId recovers exact values from backend logs if truly required.
+
+- Replace `amountMinor` values and `description` strings in breadcrumb/request data with `⟨minor⟩`/`⟨text⟩` — the _shape and status_ is what debugging needs; the reqId recovers exact values from backend logs if truly required.
 - Never attach form state, cookies, or the offline queue payloads. URLs are fine (they carry filters, not amounts).
 - One `Sentry.setUser({ id })` with the user id only — no email/name.
 
 ## 5. The Dev Logger (`lib/debug.ts`)
 
 ```ts
-const enabled = process.env.NODE_ENV !== 'production'
-  || (typeof window !== 'undefined' && localStorage.getItem('vyaya:debug') === '1');
+const enabled =
+  process.env.NODE_ENV !== "production" ||
+  (typeof window !== "undefined" && localStorage.getItem("vyaya:debug") === "1");
 
 export const debug = {
-  api:     mk('api'),      // request/response summaries
-  query:   mk('query'),    // TanStack cache events
-  offline: mk('offline'),  // queue ops
-  form:    mk('form'),     // validation traces
+  api: mk("api"), // request/response summaries
+  query: mk("query"), // TanStack cache events
+  offline: mk("offline"), // queue ops
+  form: mk("form") // validation traces
 };
 // mk(ns) → enabled ? console.debug.bind(console, `[${ns}]`) : () => {}
 ```
@@ -80,24 +83,24 @@ export const debug = {
 
 ## 6. Feature-Specific Diagnostics
 
-- **Offline queue:** every entry stores `{idemKey, createdAt, attempts, lastError}`. The settings screen ships a small "Sync diagnostics" panel (queue contents, last drain result, force-drain button) — user-facing plumbing beats adb spelunking. Drain conflicts (`409`) breadcrumb as info; `422`s surface in the "needs attention" list *and* report to GlitchTip once (they mean shared-schema drift — a real bug).
+- **Offline queue:** every entry stores `{idemKey, createdAt, attempts, lastError}`. The settings screen ships a small "Sync diagnostics" panel (queue contents, last drain result, force-drain button) — user-facing plumbing beats adb spelunking. Drain conflicts (`409`) breadcrumb as info; `422`s surface in the "needs attention" list _and_ report to GlitchTip once (they mean shared-schema drift — a real bug).
 - **Optimistic rollbacks:** every rollback logs a breadcrumb with the mutation key and error class. Frequent rollbacks with `NetworkError` = connectivity (fine); with `ValidationError` = client/server schema drift (bug) — a GlitchTip alert rule watches for the latter pattern.
 - **CSV import UI:** file metadata breadcrumbs only (name, size, row count) — never file contents. Mapping-editor state attaches to events on import-page errors (it's config, not data).
 - **Error boundaries** report with a `boundary` tag (`route-segment`/`root`/`global`) so "which shell failed" is a facet, and render recovery UIs per FRONTEND.md §8 with the reqId visible.
 
 ## 7. Web Vitals & Perf Signals
 
-- `useReportWebVitals` → sampled `navigator.sendBeacon('/api/v1/vitals', {metric, value, route, connection: navigator.connection?.effectiveType})` → Prometheus. Route + connection-type labels answer the real question: *is the dashboard slow on 4G specifically?*
+- `useReportWebVitals` → sampled `navigator.sendBeacon('/api/v1/vitals', {metric, value, route, connection: navigator.connection?.effectiveType})` → Prometheus. Route + connection-type labels answer the real question: _is the dashboard slow on 4G specifically?_
 - No RUM vendor, no client tracing — Tempo already times the backend half; the vitals beacon covers the paint half; the gap between them (network) is visible as the difference.
 
 ## 8. Environment Matrix
 
-| | dev | staging | prod |
-|---|---|---|---|
-| `debug.*` logger | on | on | off (localStorage flag re-enables) |
-| GlitchTip | off (console fallback) | on, env-tagged | on |
-| Query Devtools | on | flag | flag |
-| Vitals beacon | off | on | on |
-| Source maps | local | uploaded | uploaded, not served publicly |
+|                  | dev                    | staging        | prod                               |
+| ---------------- | ---------------------- | -------------- | ---------------------------------- |
+| `debug.*` logger | on                     | on             | off (localStorage flag re-enables) |
+| GlitchTip        | off (console fallback) | on, env-tagged | on                                 |
+| Query Devtools   | on                     | flag           | flag                               |
+| Vitals beacon    | off                    | on             | on                                 |
+| Source maps      | local                  | uploaded       | uploaded, not served publicly      |
 
-**Definition of done for any frontend bug:** the fix's PR must answer "would the *next* occurrence have been diagnosable from GlitchTip + Loki alone?" If not, the missing breadcrumb/tag ships with the fix.
+**Definition of done for any frontend bug:** the fix's PR must answer "would the _next_ occurrence have been diagnosable from GlitchTip + Loki alone?" If not, the missing breadcrumb/tag ships with the fix.

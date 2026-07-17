@@ -23,11 +23,13 @@ Counts: 52 unit + 50 integration tests in `apps/api`, 27 tests in `packages/shar
 ## What shipped this session
 
 ### 1. `GET /v1/transactions` — cursor pagination
+
 Filters: `accountId`, `categoryId`, `from`, `to`, `q` (case-insensitive description
 substring), `cursor`, `limit`. Opaque base64url cursor over `(occurredAt, _id)`, backed
 by the existing `{userId, occurredAt}` index (migration `005`).
 
 ### 2. Two-leg atomic transfers
+
 `POST /v1/transfers` and `POST /v1/transfers/:transferGroupId/reverse`
 (`apps/api/src/transactions/transfer.{service,controller}.ts`). Both legs (expense +
 income) insert in one `withTxn`, share a `transferGroupId`
@@ -38,6 +40,7 @@ linked transfer-reversal pair; only `transferGroupId` is accepted for reverting,
 a single leg. Concurrent create/reverse races are covered by 5-way parallel tests.
 
 ### 3. `PATCH /v1/transactions/:id` — non-monetary edits
+
 `description` / `tags` / `categoryId` only (never `amountMinor`/`type`/`accountId`).
 `categoryId: null` explicitly clears the category (vs. omitted = untouched — the
 `exactOptionalPropertyTypes` + explicit-null convention from `API-STANDARDS.md` §2.1).
@@ -46,6 +49,7 @@ idempotency key — a PATCH is naturally safe to retry since it just sets fields
 counter/balance involved.
 
 ### 4. Net-worth assets module (new: `apps/api/src/assets/`)
+
 - `POST /v1/assets` — creates the asset **and its opening valuation** atomically, plus
   an audit entry. Kind-specific field validation lives in the zod schema
   (`packages/shared/src/asset.ts`): `maturityAt`/`annualRateBps` only on
@@ -54,7 +58,7 @@ counter/balance involved.
 - `GET /v1/assets` — list open (non-closed) assets.
 - `POST /v1/assets/:id/close` — archive-not-delete, mirrors the accounts pattern.
 - `POST /v1/assets/:id/valuations` — append-only snapshot. Guards: 404 if the asset
-  doesn't exist *or is closed* (same "doesn't-exist-or-inactive → 404" convention
+  doesn't exist _or is closed_ (same "doesn't-exist-or-inactive → 404" convention
   `accounts.applyBalanceDelta` already uses); 422 `asset.invalid_valuation_sign` if a
   non-liability asset gets a negative value.
 - `GET /v1/assets/:id/valuations` — history, wrapped in the `{items, pageInfo}` list
@@ -66,6 +70,7 @@ counter/balance involved.
   `{userId, assetId, valuedAt: -1}` (valuations).
 
 ### 5. `API-STANDARDS.md` core-shape compliance
+
 Applied to every endpoint above (transactions, transfers, assets) — **not** retrofitted
 onto `accounts`/`categories`/`user-profiles`/`health`/`auth` (see Known gaps below).
 

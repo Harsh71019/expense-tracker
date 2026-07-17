@@ -40,11 +40,13 @@
     "zod": "latest"
   },
   "devDependencies": {
+    "@swc/core": "1.15.43",
     "@types/cookie-parser": "latest",
     "@types/express": "latest",
     "@vitest/coverage-v8": "^4.1.10",
     "@vyaya/config": "workspace:*",
     "concurrently": "latest",
-    "mongodb-memory-server": "latest"
+    "mongodb-memory-server": "latest",
+    "unplugin-swc": "1.5.9"
   }
 }

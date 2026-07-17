@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
@@ -10,6 +10,7 @@ import { authClient } from "../../../lib/auth/client";
 import { getSafeCallbackPath } from "../../../lib/auth/redirect";
 
 export function LoginForm(): ReactNode {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const callbackURL = getSafeCallbackPath(searchParams.get("next"));
 
@@ -33,6 +34,9 @@ export function LoginForm(): ReactNode {
       const result = await authClient.signIn.email({ email, password, callbackURL });
       if (result.error !== null) {
         setError(result.error.message ?? "Sign-in failed.");
+      } else {
+        router.push(callbackURL);
+        router.refresh();
       }
     } catch {
       setError("Unable to sign in right now. Check your connection and try again.");

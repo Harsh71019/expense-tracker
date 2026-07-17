@@ -21,7 +21,8 @@ COPY apps/web apps/web
 COPY packages/config packages/config
 COPY packages/shared packages/shared
 
-RUN pnpm --filter @vyaya/web build
+RUN pnpm --filter @vyaya/shared build \
+  && pnpm --filter @vyaya/web build
 
 FROM gcr.io/distroless/nodejs24-debian12:nonroot
 
@@ -29,6 +30,8 @@ WORKDIR /app
 COPY --chown=nonroot:nonroot --from=build /workspace/apps/web/.next/standalone ./
 COPY --chown=nonroot:nonroot --from=build /workspace/apps/web/.next/static ./apps/web/.next/static
 
+ARG INTERNAL_API_URL=http://api:4000/api
+ENV INTERNAL_API_URL=$INTERNAL_API_URL
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0

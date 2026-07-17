@@ -4,10 +4,15 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { LoginForm } from "./login-form";
 
-const mocks = vi.hoisted(() => ({ signInWithEmail: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  signInWithEmail: vi.fn(),
+  push: vi.fn(),
+  refresh: vi.fn()
+}));
 
 vi.mock("next/navigation", () => ({
-  useSearchParams: () => new URLSearchParams("next=%2Ftransactions")
+  useSearchParams: () => new URLSearchParams("next=%2Ftransactions"),
+  useRouter: () => ({ push: mocks.push, refresh: mocks.refresh })
 }));
 
 vi.mock("../../../lib/auth/client", () => ({
@@ -17,9 +22,11 @@ vi.mock("../../../lib/auth/client", () => ({
 describe("LoginForm", () => {
   beforeEach(() => {
     mocks.signInWithEmail.mockReset();
+    mocks.push.mockReset();
+    mocks.refresh.mockReset();
   });
 
-  it("submits entered credentials to the requested internal return path", async () => {
+  it("submits entered credentials to the requested internal return path and navigates there", async () => {
     mocks.signInWithEmail.mockResolvedValue({ error: null });
     const user = userEvent.setup();
     render(<LoginForm />);
@@ -34,6 +41,8 @@ describe("LoginForm", () => {
       password: "correct-password",
       callbackURL: "/transactions"
     });
+    await waitFor(() => expect(mocks.push).toHaveBeenCalledWith("/transactions"));
+    expect(mocks.refresh).toHaveBeenCalled();
   });
 
   it("renders the auth provider error and restores the submit button", async () => {
@@ -48,6 +57,7 @@ describe("LoginForm", () => {
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Invalid credentials");
     expect(screen.getByRole("button", { name: "Sign in" })).toBeEnabled();
+    expect(mocks.push).not.toHaveBeenCalled();
   });
 
   it("shows a retryable error when the sign-in request rejects", async () => {

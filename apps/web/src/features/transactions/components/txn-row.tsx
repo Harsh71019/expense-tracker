@@ -30,25 +30,22 @@ export function TxnRow({
   const isReversal = transaction.status === "reversal";
   const isIncome = transaction.type === "income";
 
-  const borderStripe = isReversed
-    ? "border-l-[3px] border-reversed"
+  const stripeColor = isReversed
+    ? "bg-reversed"
     : isReversal
-      ? "border-l-[3px] border-accent"
+      ? "bg-accent"
       : isIncome
-        ? "border-l-[3px] border-income"
-        : "border-l-[3px] border-expense";
-
-  const rowClasses = [
-    "group relative flex items-center gap-4 rounded-xl border border-border/80 bg-surface-elevated/70 px-4 py-3.5 shadow-xs transition-all duration-300 hover:-translate-y-0.5 hover:shadow-glow hover:border-accent/40 active:scale-[0.99]",
-    borderStripe,
-    isReversed ? "opacity-60 bg-surface-muted/30" : ""
-  ]
-    .filter(Boolean)
-    .join(" ");
+        ? "bg-income"
+        : "bg-expense";
 
   return (
-    <article className={rowClasses}>
-      <div className="min-w-0 flex-1">
+    <article
+      className={`group relative flex items-center gap-4 px-4 py-3.5 transition-colors duration-150 hover:bg-surface-muted/50 ${
+        isReversed ? "opacity-60" : ""
+      }`}
+    >
+      <span className={`absolute inset-y-0 left-0 w-[3px] ${stripeColor}`} aria-hidden="true" />
+      <div className="min-w-0 flex-1 pl-2">
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="truncate text-sm font-semibold text-foreground">
             <Link href={`/transactions/${transaction.id}`} className="hover:text-accent">
@@ -62,20 +59,19 @@ export function TxnRow({
           {isReversal ? ` · Reversal of: ${originalDescription ?? "original transaction"}` : ""}
         </p>
       </div>
-      <div className="flex shrink-0 flex-col items-end gap-2.5">
+      <div className="flex shrink-0 flex-col items-end gap-2">
         <Money
           minor={transaction.amountMinor}
           variant={isReversed ? "neutral" : transaction.type}
           signed
-          {...(isReversed
-            ? { className: "line-through text-foreground-muted" }
-            : { className: "text-[15px]" })}
+          size="md"
+          {...(isReversed ? { className: "line-through" } : {})}
         />
         {transaction.status === "posted" && transaction.transferGroupId === undefined ? (
           <Button
             type="button"
             variant="secondary"
-            className="px-2.5 py-1 text-xs opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200"
+            className="px-2.5 py-1 text-xs opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-150"
             disabled={isReversing}
             onClick={() => onReverse(transaction.id)}
           >

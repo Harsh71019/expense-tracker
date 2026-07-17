@@ -32,38 +32,38 @@ export function TransferRow({ legs, accounts, onReverse, isReversing }: Props): 
       : (accounts.find((account) => account.id === id)?.name ?? "Archived account");
   const posted = legs.some((leg) => leg.status === "posted");
   return (
-    <article className="rounded-xl border border-accent/30 border-l-4 border-l-accent bg-surface-elevated p-4">
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <h2 className="font-semibold">
-              <Link href={`/transactions/${first.id}`} className="hover:text-accent">
-                {first.description}
-              </Link>
-            </h2>
-            <Badge variant={posted ? "success" : "reversed"}>Transfer</Badge>
-          </div>
-          <p className="mt-1 text-sm text-foreground-muted">
-            From {accountName(expense?.accountId)} → To {accountName(income?.accountId)}
-          </p>
-          <p className="mt-1 font-mono text-[10px] uppercase tracking-wider text-foreground-muted">
-            {dateFormatter.format(first.occurredAt)} ·{" "}
-            {legs.length === 2 ? "Both legs loaded" : "Transfer details loading"}
-          </p>
+    <article className="relative flex items-start justify-between gap-4 px-4 py-3.5">
+      <span className="absolute inset-y-0 left-0 w-[3px] bg-accent" aria-hidden="true" />
+      <div className="min-w-0 pl-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className="font-semibold">
+            <Link href={`/transactions/${first.id}`} className="hover:text-accent">
+              {first.description}
+            </Link>
+          </h2>
+          <Badge variant={posted ? "success" : "reversed"}>Transfer</Badge>
         </div>
-        <div className="flex shrink-0 flex-col items-end gap-3">
-          <Money minor={first.amountMinor} />
-          {posted ? (
-            <Button
-              type="button"
-              variant="secondary"
-              disabled={isReversing}
-              onClick={() => onReverse(first.transferGroupId ?? "")}
-            >
-              {isReversing ? "Reversing…" : "Reverse transfer"}
-            </Button>
-          ) : null}
-        </div>
+        <p className="mt-1 text-sm text-foreground-muted">
+          From {accountName(expense?.accountId)} → To {accountName(income?.accountId)}
+        </p>
+        <p className="mt-1 font-mono text-[10px] uppercase tracking-wider text-foreground-muted">
+          {dateFormatter.format(first.occurredAt)} ·{" "}
+          {legs.length === 2 ? "Both legs loaded" : "Transfer details loading"}
+        </p>
+      </div>
+      <div className="flex shrink-0 flex-col items-end gap-2">
+        <Money minor={first.amountMinor} size="md" />
+        {posted ? (
+          <Button
+            type="button"
+            variant="secondary"
+            className="px-2.5 py-1 text-xs"
+            disabled={isReversing}
+            onClick={() => onReverse(first.transferGroupId ?? "")}
+          >
+            {isReversing ? "Reversing…" : "Reverse transfer"}
+          </Button>
+        ) : null}
       </div>
     </article>
   );

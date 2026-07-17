@@ -36,16 +36,9 @@ export function TxnList({
 
   return (
     <section className="mx-auto max-w-3xl animate-fade-in">
-      <div className="mb-6 flex items-end justify-between gap-4">
-        <div>
-          <p className="font-mono text-[10px] font-bold tracking-widest text-foreground-muted uppercase">
-            Ledger
-          </p>
-          <h1 className="mt-1 text-3xl font-extrabold tracking-tight text-foreground">
-            Transactions
-          </h1>
-        </div>
-        <p className="rounded-full border border-border bg-surface-muted px-3 py-1 font-mono text-[10px] font-bold tracking-wider text-foreground-muted uppercase">
+      <div className="mb-6 flex items-baseline justify-between gap-4">
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">Transactions</h1>
+        <p className="font-mono text-[10px] font-bold tracking-wider text-foreground-muted uppercase">
           {transactions.length} entries shown
         </p>
       </div>
@@ -56,7 +49,7 @@ export function TxnList({
           description="Every entry you add will appear here — with its full audit trail."
         />
       ) : (
-        <div className="space-y-3">
+        <div className="divide-y divide-border overflow-hidden rounded-xl border border-border">
           {transactions.map((transaction) => {
             if (transaction.transferGroupId !== undefined) {
               if (renderedTransfers.has(transaction.transferGroupId)) return null;

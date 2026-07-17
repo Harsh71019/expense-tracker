@@ -79,7 +79,7 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
 
   return (
     <form
-      className="mb-6 grid gap-4 rounded-2xl border border-border/80 bg-surface-elevated/55 backdrop-blur-md p-5 shadow-xs sm:grid-cols-2 lg:grid-cols-3 lg:items-end animate-fade-in"
+      className="mb-6 grid gap-4 rounded-xl border border-border bg-surface-elevated p-5 sm:grid-cols-2 lg:grid-cols-3 lg:items-end"
       onSubmit={submit}
     >
       <Input
@@ -92,7 +92,7 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
       <label className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
         Account
         <select
-          className="rounded-xl border border-border bg-surface px-3.5 py-2.5 text-sm normal-case tracking-normal"
+          className="rounded-lg border border-border bg-surface px-3.5 py-2.5 text-sm normal-case tracking-normal"
           value={draft.accountId}
           onChange={(event) =>
             setDraft((current) => ({ ...current, accountId: event.target.value }))
@@ -113,7 +113,7 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
       <label className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
         Category
         <select
-          className="rounded-xl border border-border bg-surface px-3.5 py-2.5 text-sm normal-case tracking-normal"
+          className="rounded-lg border border-border bg-surface px-3.5 py-2.5 text-sm normal-case tracking-normal"
           value={draft.categoryId}
           onChange={(event) =>
             setDraft((current) => ({ ...current, categoryId: event.target.value }))

@@ -24,28 +24,22 @@ export default async function AppLayout({
   }
 
   return (
-    <div className="relative min-h-screen bg-surface md:flex overflow-x-hidden">
-      {/* Soft background glow */}
-      <div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,var(--color-accent-glow),transparent_40%)] opacity-70 animate-bg-shift"
-        aria-hidden="true"
-      />
-
+    <div className="min-h-screen bg-surface md:flex">
       <AppSidebar email={session.user.email} theme={theme} />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center justify-between border-b border-border bg-surface-elevated/70 backdrop-blur-md px-5 py-4 md:hidden">
+        <header className="flex items-center justify-between border-b border-border bg-surface-elevated px-5 py-4 md:hidden">
           <span className="font-mono text-sm font-semibold tracking-[0.2em] text-foreground uppercase">
             Vyaya
           </span>
           <ThemeToggle current={theme} />
         </header>
 
-        <main className="mx-auto w-full max-w-6xl flex-1 p-5 pb-24 sm:p-8 md:pb-8 animate-fade-in animate-scale-up">
+        <main className="mx-auto w-full max-w-6xl flex-1 p-5 pb-24 sm:p-8 md:pb-8 animate-fade-in">
           {children}
         </main>
 
-        <div className="fixed bottom-4 inset-x-4 z-10 rounded-2xl border border-border/70 bg-surface-elevated/75 backdrop-blur-xl shadow-lg md:hidden">
+        <div className="fixed bottom-4 inset-x-4 z-10 rounded-xl border border-border bg-surface-elevated shadow-sm md:hidden">
           <AppNav items={navItems} orientation="bottom" />
         </div>
       </div>

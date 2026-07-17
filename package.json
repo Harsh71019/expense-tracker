@@ -35,14 +35,16 @@
     "mongodb-memory-server": "latest",
     "prettier": "latest",
     "tsx": "latest",
-    "typescript": "beta",
+    "typescript": "6.0.0-beta",
     "typescript-eslint": "latest",
-    "vitest": "latest",
+    "vite": "7.3.6",
+    "vitest": "4.1.10",
     "zod": "latest"
   },
   "pnpm": {
     "overrides": {
-      "@typescript-eslint/typescript-estree>typescript": "npm:@typescript/typescript6@*"
+      "@typescript-eslint/typescript-estree>typescript": "npm:@typescript/typescript6@*",
+      "vite": "7.3.6"
     }
   }
 }

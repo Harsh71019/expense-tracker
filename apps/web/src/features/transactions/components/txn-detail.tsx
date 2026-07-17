@@ -81,7 +81,7 @@ export function TxnDetail({ initialTransaction }: { initialTransaction: Transact
           <Link href="/transactions" className="text-sm text-accent">
             ← Back to transactions
           </Link>
-          <h1 className="mt-3 text-3xl font-extrabold">{transaction.description}</h1>
+          <h1 className="mt-3 text-2xl font-semibold tracking-tight">{transaction.description}</h1>
           <div className="mt-2 flex flex-wrap gap-2">
             <Badge variant={transaction.status === "posted" ? "success" : "reversed"}>
               {transaction.status}
@@ -90,14 +90,9 @@ export function TxnDetail({ initialTransaction }: { initialTransaction: Transact
             {isTransfer ? <Badge variant="success">transfer</Badge> : null}
           </div>
         </div>
-        <Money
-          minor={transaction.amountMinor}
-          variant={transaction.type}
-          signed
-          className="text-xl"
-        />
+        <Money minor={transaction.amountMinor} variant={transaction.type} signed size="lg" />
       </header>
-      <section className="rounded-2xl border border-border bg-surface-elevated p-5">
+      <section className="rounded-xl border border-border bg-surface-elevated p-5">
         <h2 className="font-bold">Ledger facts</h2>
         <dl className="mt-4 grid gap-4 sm:grid-cols-2">
           <Fact label="Account" value={accountName} />
@@ -125,7 +120,7 @@ export function TxnDetail({ initialTransaction }: { initialTransaction: Transact
         </dl>
       </section>
       {isTransfer ? (
-        <section className="rounded-2xl border border-accent/30 bg-accent/5 p-5">
+        <section className="rounded-xl border border-accent/30 bg-accent/5 p-5">
           <h2 className="font-bold">Linked transfer leg</h2>
           <p className="mt-2 text-sm text-foreground-muted">
             Metadata cannot be edited on one leg. Reverse the whole transfer group to correct its
@@ -146,7 +141,7 @@ export function TxnDetail({ initialTransaction }: { initialTransaction: Transact
           ) : null}
         </section>
       ) : (
-        <section className="space-y-4 rounded-2xl border border-border bg-surface-elevated p-5">
+        <section className="space-y-4 rounded-xl border border-border bg-surface-elevated p-5">
           <div className="flex justify-between gap-3">
             <div>
               <h2 className="font-bold">Metadata</h2>
@@ -169,7 +164,7 @@ export function TxnDetail({ initialTransaction }: { initialTransaction: Transact
               <label className="flex flex-col gap-1.5 text-xs font-semibold">
                 Category
                 <select
-                  className="rounded-xl border border-border bg-surface px-3.5 py-2.5"
+                  className="rounded-lg border border-border bg-surface px-3.5 py-2.5"
                   value={categoryId}
                   onChange={(event) => setCategoryId(event.target.value)}
                 >

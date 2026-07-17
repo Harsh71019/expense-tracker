@@ -9,7 +9,7 @@ export function ProfileSummary({
   email: string;
 }): ReactNode {
   return (
-    <section className="rounded-2xl border border-border bg-surface-elevated p-5 shadow-sm">
+    <section className="rounded-xl border border-border bg-surface-elevated p-5">
       <p className="font-mono text-[10px] font-bold tracking-widest text-foreground-muted uppercase">
         Profile
       </p>

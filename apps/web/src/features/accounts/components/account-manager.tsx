@@ -75,14 +75,11 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
 
   const items = accounts.data ?? initialAccounts;
   return (
-    <section className="mx-auto max-w-4xl space-y-6">
+    <section className="mx-auto max-w-3xl space-y-6">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="font-mono text-[10px] font-bold tracking-widest text-foreground-muted uppercase">
-            Settings
-          </p>
-          <h1 className="mt-1 text-3xl font-extrabold tracking-tight">Accounts</h1>
-          <p className="mt-2 text-sm text-foreground-muted">
+          <h1 className="text-xl font-semibold tracking-tight">Accounts</h1>
+          <p className="mt-1.5 text-sm text-foreground-muted">
             Balances remain ledger-derived; archiving never removes history.
           </p>
         </div>
@@ -93,7 +90,7 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
 
       {showForm ? (
         <form
-          className="space-y-5 rounded-2xl border border-border bg-surface-elevated p-5 sm:p-7"
+          className="space-y-5 rounded-xl border border-border bg-surface-elevated p-5 sm:p-7"
           onSubmit={submit}
         >
           <div className="grid gap-4 sm:grid-cols-2">
@@ -106,7 +103,7 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
             <label className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
               Account type
               <select
-                className="rounded-xl border border-border bg-surface px-3.5 py-2.5 text-sm"
+                className="rounded-lg border border-border bg-surface px-3.5 py-2.5 text-sm"
                 value={type}
                 onChange={(event) => {
                   const parsed = AccountTypeSchema.safeParse(event.target.value);
@@ -162,29 +159,30 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
           description="Create an account to start recording your ledger."
         />
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="divide-y divide-border overflow-hidden rounded-xl border border-border">
           {items.map((account) => (
             <article
               key={account.id}
-              className="rounded-2xl border border-border bg-surface-elevated p-5"
+              className="relative flex flex-wrap items-center justify-between gap-4 px-4 py-3.5"
             >
-              <div className="flex items-start justify-between gap-4">
-                <div className="min-w-0">
-                  <h2 className="truncate text-lg font-bold">{account.name}</h2>
-                  <p className="mt-1 text-xs uppercase tracking-wider text-foreground-muted">
-                    {account.type.replaceAll("_", " ")}
-                  </p>
-                </div>
-                <SignedMoney minor={account.balanceMinor} className="text-lg" />
+              <span className="absolute inset-y-0 left-0 w-[3px] bg-accent" aria-hidden="true" />
+              <div className="min-w-0 pl-2">
+                <h2 className="truncate text-sm font-semibold text-foreground">{account.name}</h2>
+                <p className="mt-0.5 font-mono text-[10px] tracking-wider text-foreground-muted uppercase">
+                  {account.type.replaceAll("_", " ")}
+                </p>
               </div>
-              <Button
-                type="button"
-                variant="secondary"
-                className="mt-5"
-                onClick={() => setConfirming(account)}
-              >
-                Archive
-              </Button>
+              <div className="flex items-center gap-4">
+                <SignedMoney minor={account.balanceMinor} size="lg" />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="px-2.5 py-1 text-xs"
+                  onClick={() => setConfirming(account)}
+                >
+                  Archive
+                </Button>
+              </div>
             </article>
           ))}
         </div>
@@ -195,7 +193,7 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
           role="dialog"
           aria-modal="true"
           aria-labelledby="archive-account-title"
-          className="rounded-2xl border border-expense/30 bg-surface-elevated p-5 shadow-lg"
+          className="rounded-xl border border-expense/30 bg-surface-elevated p-5"
         >
           <h2 id="archive-account-title" className="text-lg font-bold">
             Archive {confirming.name}?

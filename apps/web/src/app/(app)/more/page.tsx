@@ -20,7 +20,7 @@ export default async function MorePage(): Promise<ReactNode> {
   const email = session?.user.email ?? "";
 
   return (
-    <section className="flex max-w-xl flex-col gap-6">
+    <section className="flex flex-col gap-6">
       <h1 className="text-xl font-semibold tracking-tight text-foreground">Your account</h1>
 
       <ProfileSummary profile={profile} email={email} />
@@ -52,9 +52,7 @@ export default async function MorePage(): Promise<ReactNode> {
         ))}
       </div>
 
-      <div className="md:hidden">
-        <SignOutButton />
-      </div>
+      <SignOutButton />
     </section>
   );
 }

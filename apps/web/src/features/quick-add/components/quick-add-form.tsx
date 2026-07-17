@@ -95,31 +95,28 @@ export function QuickAddForm(): ReactNode {
   }
 
   const inputClasses =
-    "w-full rounded-xl border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground transition-all duration-200 focus:border-accent focus:outline-none focus:ring-4 focus:ring-accent/8";
+    "w-full rounded-lg border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground transition-colors duration-150 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30";
   return (
-    <section className="mx-auto max-w-xl animate-fade-in">
+    <section>
       <div className="mb-6">
-        <p className="font-mono text-[10px] font-bold tracking-widest text-foreground-muted uppercase">
-          Quick add
-        </p>
-        <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-foreground">
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">
           Capture it while it’s fresh
         </h1>
-        <p className="mt-2 text-sm text-foreground-muted">
+        <p className="mt-1.5 text-sm text-foreground-muted">
           Every save is idempotent and recorded in the ledger.
         </p>
       </div>
       <form
         onSubmit={form.handleSubmit(submit)}
-        className="space-y-6 rounded-2xl border border-border bg-surface-elevated/70 p-6 shadow-sm backdrop-blur-md"
+        className="space-y-6 rounded-xl border border-border bg-surface-elevated p-6"
       >
         <div
-          className="relative grid grid-cols-2 rounded-xl bg-surface-muted p-1 border border-border/50"
+          className="relative grid grid-cols-2 rounded-lg bg-surface-muted p-1 border border-border/50"
           aria-label="Transaction type"
         >
           {/* Animated active sliding pill */}
           <div
-            className={`absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-lg bg-surface-elevated border border-border shadow-xs transition-all duration-300 ease-out ${
+            className={`absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-md bg-surface-elevated border border-border transition-transform duration-200 ease-out ${
               type === "expense" ? "translate-x-1" : "translate-x-[calc(100%+3px)]"
             }`}
             aria-hidden="true"
@@ -221,12 +218,12 @@ export function QuickAddForm(): ReactNode {
           />
         </label>
         {create.isError && !(create.error instanceof ValidationError) ? (
-          <p className="text-expense border border-expense/20 bg-expense/10 px-3.5 py-2.5 rounded-xl font-mono text-[11px] font-semibold text-center">
+          <p className="text-expense border border-expense/20 bg-expense/10 px-3.5 py-2.5 rounded-lg font-mono text-[11px] font-semibold text-center">
             Could not save. Your entry is still ready to retry.
           </p>
         ) : null}
         {create.isSuccess ? (
-          <p className="text-income border border-income/20 bg-income/10 px-3.5 py-2.5 rounded-xl font-mono text-[11px] font-semibold text-center animate-fade-in">
+          <p className="text-income border border-income/20 bg-income/10 px-3.5 py-2.5 rounded-lg font-mono text-[11px] font-semibold text-center animate-fade-in">
             Saved to your ledger.
           </p>
         ) : null}

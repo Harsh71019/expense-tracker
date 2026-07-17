@@ -48,7 +48,7 @@ export function AmountInput({ id, label, value, onChange, error }: AmountInputPr
           aria-describedby={message === undefined || message === null ? undefined : `${id}-error`}
           onChange={(event) => setDraft(event.target.value)}
           onBlur={commit}
-          className="w-full rounded-2xl border border-border bg-surface/50 px-4 py-4.5 text-center font-mono text-3xl font-extrabold text-foreground tabular-nums transition-all duration-200 placeholder:text-foreground-muted/30 focus:border-accent focus:bg-surface focus:outline-none focus:ring-4 focus:ring-accent/8"
+          className="w-full rounded-xl border border-border bg-surface px-4 py-4.5 text-center font-mono text-3xl font-extrabold text-foreground tabular-nums transition-colors duration-150 placeholder:text-foreground-muted/30 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
         />
       </div>
       {message === undefined || message === null ? null : (

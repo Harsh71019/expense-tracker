@@ -73,14 +73,11 @@ export function CategoryManager({
   }
 
   return (
-    <section className="mx-auto max-w-4xl space-y-6">
+    <section className="space-y-6">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="font-mono text-[10px] font-bold tracking-widest text-foreground-muted uppercase">
-            Settings
-          </p>
-          <h1 className="mt-1 text-3xl font-extrabold">Categories</h1>
-          <p className="mt-2 text-sm text-foreground-muted">
+          <h1 className="text-xl font-semibold tracking-tight">Categories</h1>
+          <p className="mt-1.5 text-sm text-foreground-muted">
             Organise future entries without rewriting ledger history.
           </p>
         </div>
@@ -90,7 +87,7 @@ export function CategoryManager({
       </header>
       {showForm ? (
         <form
-          className="space-y-5 rounded-2xl border border-border bg-surface-elevated p-5 sm:p-7"
+          className="space-y-5 rounded-xl border border-border bg-surface-elevated p-5 sm:p-7"
           onSubmit={submit}
         >
           <div className="grid gap-4 sm:grid-cols-2">
@@ -103,7 +100,7 @@ export function CategoryManager({
             <label className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
               Kind
               <select
-                className="rounded-xl border border-border bg-surface px-3.5 py-2.5 text-sm"
+                className="rounded-lg border border-border bg-surface px-3.5 py-2.5 text-sm"
                 value={kind}
                 onChange={(event) => {
                   const parsed = CategoryKindSchema.safeParse(event.target.value);
@@ -121,7 +118,7 @@ export function CategoryManager({
           <label className="flex flex-col gap-1.5 text-xs font-semibold">
             Parent category
             <select
-              className="rounded-xl border border-border bg-surface px-3.5 py-2.5 text-sm"
+              className="rounded-lg border border-border bg-surface px-3.5 py-2.5 text-sm"
               value={parentId}
               onChange={(event) => setParentId(event.target.value)}
             >
@@ -165,49 +162,56 @@ export function CategoryManager({
         />
       ) : (
         <div className="grid gap-6 md:grid-cols-2">
-          {(["expense", "income"] as const).map((section) => (
-            <section key={section} className="space-y-3">
-              <h2 className="font-mono text-xs font-bold tracking-widest uppercase">{section}</h2>
-              {items
-                .filter((item) => item.kind === section)
-                .map((item) => {
-                  const parent = items.find((candidate) => candidate.id === item.parentId);
-                  return (
-                    <article
-                      key={item.id}
-                      className="rounded-xl border border-border bg-surface-elevated p-4"
-                      style={
-                        item.color === undefined
-                          ? undefined
-                          : { borderLeftColor: item.color, borderLeftWidth: 4 }
-                      }
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <h3 className="font-bold">
-                            {item.icon === undefined ? null : `${item.icon} `}
-                            {item.name}
-                          </h3>
-                          {item.parentId === undefined ? null : (
-                            <p className="mt-1 text-xs text-foreground-muted">
-                              Child of {parent?.name ?? "unavailable category"}
-                            </p>
-                          )}
-                        </div>
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          className="px-3 py-2"
-                          onClick={() => setConfirming(item)}
+          {(["expense", "income"] as const).map((section) => {
+            const sectionItems = items.filter((item) => item.kind === section);
+            return (
+              <section key={section} className="space-y-3">
+                <h2 className="font-mono text-[10px] font-bold tracking-widest text-foreground-muted uppercase">
+                  {section}
+                </h2>
+                {sectionItems.length === 0 ? (
+                  <p className="text-sm text-foreground-muted">No {section} categories yet.</p>
+                ) : (
+                  <div className="divide-y divide-border overflow-hidden rounded-xl border border-border">
+                    {sectionItems.map((item) => {
+                      const parent = items.find((candidate) => candidate.id === item.parentId);
+                      return (
+                        <article
+                          key={item.id}
+                          className="relative flex items-start justify-between gap-3 px-4 py-3.5"
                         >
-                          Archive
-                        </Button>
-                      </div>
-                    </article>
-                  );
-                })}
-            </section>
-          ))}
+                          <span
+                            className="absolute inset-y-0 left-0 w-[3px]"
+                            style={{ backgroundColor: item.color ?? "var(--color-border)" }}
+                            aria-hidden="true"
+                          />
+                          <div className="min-w-0 pl-2">
+                            <h3 className="truncate text-sm font-semibold text-foreground">
+                              {item.icon === undefined ? null : `${item.icon} `}
+                              {item.name}
+                            </h3>
+                            {item.parentId === undefined ? null : (
+                              <p className="mt-0.5 text-xs text-foreground-muted">
+                                Child of {parent?.name ?? "unavailable category"}
+                              </p>
+                            )}
+                          </div>
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            className="shrink-0 px-2.5 py-1 text-xs"
+                            onClick={() => setConfirming(item)}
+                          >
+                            Archive
+                          </Button>
+                        </article>
+                      );
+                    })}
+                  </div>
+                )}
+              </section>
+            );
+          })}
         </div>
       )}
       {confirming === undefined ? null : (
@@ -215,7 +219,7 @@ export function CategoryManager({
           role="dialog"
           aria-modal="true"
           aria-labelledby="archive-category-title"
-          className="rounded-2xl border border-expense/30 bg-surface-elevated p-5"
+          className="rounded-xl border border-expense/30 bg-surface-elevated p-5"
         >
           <h2 id="archive-category-title" className="text-lg font-bold">
             Archive {confirming.name}?

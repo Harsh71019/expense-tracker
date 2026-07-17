@@ -72,18 +72,15 @@ export function TransferForm(): ReactNode {
     );
 
   return (
-    <section className="mx-auto max-w-2xl space-y-6">
+    <section className="space-y-6">
       <header>
-        <p className="font-mono text-[10px] font-bold tracking-widest text-foreground-muted uppercase">
-          Move money
-        </p>
-        <h1 className="mt-1 text-3xl font-extrabold">Transfer between accounts</h1>
-        <p className="mt-2 text-sm text-foreground-muted">
+        <h1 className="text-xl font-semibold tracking-tight">Transfer between accounts</h1>
+        <p className="mt-1.5 text-sm text-foreground-muted">
           Vyaya records two linked ledger legs atomically; it does not initiate a bank transfer.
         </p>
       </header>
       <form
-        className="space-y-5 rounded-2xl border border-border bg-surface-elevated p-5 sm:p-7"
+        className="space-y-5 rounded-xl border border-border bg-surface-elevated p-5 sm:p-7"
         onSubmit={submit}
       >
         <AmountInput
@@ -96,7 +93,7 @@ export function TransferForm(): ReactNode {
           <label className="flex flex-col gap-1.5 text-xs font-semibold">
             From
             <select
-              className="min-h-11 rounded-xl border border-border bg-surface px-3"
+              className="min-h-11 rounded-lg border border-border bg-surface px-3"
               value={fromAccountId}
               onChange={(event) => {
                 setFromAccountId(event.target.value);
@@ -114,7 +111,7 @@ export function TransferForm(): ReactNode {
           <label className="flex flex-col gap-1.5 text-xs font-semibold">
             To
             <select
-              className="min-h-11 rounded-xl border border-border bg-surface px-3"
+              className="min-h-11 rounded-lg border border-border bg-surface px-3"
               value={toAccountId}
               onChange={(event) => setToAccountId(event.target.value)}
             >

@@ -13,7 +13,7 @@ export function Toaster({ ...props }: Readonly<ToasterProps>) {
       toastOptions={{
         classNames: {
           toast:
-            "group toast group-[.toaster]:bg-surface-elevated/80 group-[.toaster]:backdrop-blur-md group-[.toaster]:text-foreground group-[.toaster]:border group-[.toaster]:border-border/60 group-[.toaster]:shadow-lg group-[.toaster]:rounded-2xl group-[.toaster]:px-4 group-[.toaster]:py-3.5 group-[.toaster]:font-sans",
+            "group toast group-[.toaster]:bg-surface-elevated group-[.toaster]:text-foreground group-[.toaster]:border group-[.toaster]:border-border group-[.toaster]:shadow-sm group-[.toaster]:rounded-xl group-[.toaster]:px-4 group-[.toaster]:py-3.5 group-[.toaster]:font-sans",
           description:
             "group-[.toast]:text-foreground-muted group-[.toast]:text-xs group-[.toast]:mt-1",
           actionButton:

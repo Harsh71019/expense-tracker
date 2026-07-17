@@ -57,18 +57,15 @@ export function CategoryRuleManager({ initialRules }: { initialRules: CategoryRu
   const categoryName = (id: string): string =>
     categoryItems.find((item) => item.id === id)?.name ?? "Unavailable category";
   return (
-    <section className="mx-auto max-w-3xl space-y-6">
+    <section className="space-y-6">
       <header>
-        <p className="font-mono text-[10px] font-bold tracking-widest text-foreground-muted uppercase">
-          Automation
-        </p>
-        <h1 className="mt-1 text-3xl font-extrabold">Automatic categories</h1>
-        <p className="mt-2 text-sm text-foreground-muted">
+        <h1 className="text-xl font-semibold tracking-tight">Automatic categories</h1>
+        <p className="mt-1.5 text-sm text-foreground-muted">
           Matching ignores letter case. When several rules match, the longest pattern wins.
         </p>
       </header>
       <form
-        className="space-y-4 rounded-2xl border border-border bg-surface-elevated p-5"
+        className="space-y-4 rounded-xl border border-border bg-surface-elevated p-5"
         onSubmit={submit}
       >
         <Input
@@ -81,7 +78,7 @@ export function CategoryRuleManager({ initialRules }: { initialRules: CategoryRu
         <label className="flex flex-col gap-1.5 text-xs font-semibold">
           Assign category
           <select
-            className="rounded-xl border border-border bg-surface px-3.5 py-2.5 text-sm"
+            className="rounded-lg border border-border bg-surface px-3.5 py-2.5 text-sm"
             value={categoryId}
             onChange={(event) => setCategoryId(event.target.value)}
           >
@@ -111,17 +108,22 @@ export function CategoryRuleManager({ initialRules }: { initialRules: CategoryRu
           description="Imports still work; staged rows simply have no automatic category suggestion."
         />
       ) : (
-        <div className="space-y-3">
+        <div className="divide-y divide-border overflow-hidden rounded-xl border border-border">
           {(rules.data ?? []).map((rule) => (
             <article
               key={rule.id}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-surface-elevated p-4"
+              className="flex flex-wrap items-center justify-between gap-3 px-4 py-3.5"
             >
               <p className="text-sm">
                 Description contains <strong>“{rule.pattern}”</strong> →{" "}
                 <strong>{categoryName(rule.categoryId)}</strong>
               </p>
-              <Button type="button" variant="secondary" onClick={() => setConfirming(rule)}>
+              <Button
+                type="button"
+                variant="secondary"
+                className="px-2.5 py-1 text-xs"
+                onClick={() => setConfirming(rule)}
+              >
                 Delete rule
               </Button>
             </article>
@@ -133,7 +135,7 @@ export function CategoryRuleManager({ initialRules }: { initialRules: CategoryRu
           role="dialog"
           aria-modal="true"
           aria-labelledby="delete-rule-title"
-          className="rounded-2xl border border-expense/30 bg-surface-elevated p-5"
+          className="rounded-xl border border-expense/30 bg-surface-elevated p-5"
         >
           <h2 id="delete-rule-title" className="text-lg font-bold">
             Delete “{confirming.pattern}”?

@@ -92,14 +92,11 @@ export function AssetManager({
 
   const items = assets.data ?? initialAssets;
   return (
-    <section className="mx-auto max-w-5xl space-y-6">
+    <section className="space-y-6">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="font-mono text-[10px] font-bold tracking-widest text-foreground-muted uppercase">
-            Net worth
-          </p>
-          <h1 className="mt-1 text-3xl font-extrabold tracking-tight">Assets and liabilities</h1>
-          <p className="mt-2 text-sm text-foreground-muted">
+          <h1 className="text-xl font-semibold tracking-tight">Assets and liabilities</h1>
+          <p className="mt-1.5 text-sm text-foreground-muted">
             Values are immutable snapshots; closing preserves all history.
           </p>
         </div>
@@ -110,14 +107,14 @@ export function AssetManager({
 
       {showForm ? (
         <form
-          className="space-y-5 rounded-2xl border border-border bg-surface-elevated p-5 sm:p-7"
+          className="space-y-5 rounded-xl border border-border bg-surface-elevated p-5 sm:p-7"
           onSubmit={submit}
         >
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
               Kind
               <select
-                className="rounded-xl border border-border bg-surface px-3.5 py-2.5 text-sm"
+                className="rounded-lg border border-border bg-surface px-3.5 py-2.5 text-sm"
                 value={kind}
                 onChange={(event) => {
                   const parsed = AssetKindSchema.safeParse(event.target.value);
@@ -202,26 +199,27 @@ export function AssetManager({
           description="Add an asset or liability to include it in net worth."
         />
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="divide-y divide-border overflow-hidden rounded-xl border border-border">
           {items.map((asset) => {
             const current = netWorth.data?.assets.find((value) => value.assetId === asset.id);
             return (
               <Link
                 key={asset.id}
                 href={`/assets/${asset.id}`}
-                className="rounded-2xl border border-border bg-surface-elevated p-5 transition-colors hover:border-accent/40"
+                className="relative flex items-center justify-between gap-4 px-4 py-3.5 transition-colors hover:bg-surface-muted/50"
               >
-                <p className="text-xs font-semibold tracking-wider text-foreground-muted uppercase">
-                  {assetKindLabel(asset.kind)}
-                </p>
-                <div className="mt-2 flex items-start justify-between gap-4">
-                  <h2 className="text-lg font-bold">{asset.name}</h2>
-                  {current === undefined ? (
-                    <span className="text-sm text-foreground-muted">No valuation</span>
-                  ) : (
-                    <SignedMoney minor={current.valueMinor} />
-                  )}
+                <span className="absolute inset-y-0 left-0 w-[3px] bg-accent" aria-hidden="true" />
+                <div className="min-w-0 pl-2">
+                  <p className="truncate text-sm font-semibold text-foreground">{asset.name}</p>
+                  <p className="mt-0.5 font-mono text-[10px] tracking-wider text-foreground-muted uppercase">
+                    {assetKindLabel(asset.kind)}
+                  </p>
                 </div>
+                {current === undefined ? (
+                  <span className="shrink-0 text-sm text-foreground-muted">No valuation</span>
+                ) : (
+                  <SignedMoney minor={current.valueMinor} size="lg" />
+                )}
               </Link>
             );
           })}

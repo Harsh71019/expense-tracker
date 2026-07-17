@@ -1,30 +1,31 @@
 @import "tailwindcss";
 
 @theme {
-  --color-surface: oklch(0.99 0.004 95);
-  --color-surface-muted: oklch(0.965 0.006 95);
-  --color-surface-elevated: oklch(1 0 0);
-  --color-border: oklch(0.88 0.008 95);
-  --color-foreground: oklch(0.18 0.01 152);
-  --color-foreground-muted: oklch(0.45 0.015 152);
+  --color-surface: #f6f8f6;
+  --color-surface-muted: #f0f4f0;
+  --color-surface-elevated: #ffffff;
+  --color-border: #e2e8e3;
+  --color-foreground: #0d1512;
+  --color-foreground-muted: #6b7a72;
 
-  --color-accent: oklch(0.5 0.15 152);
-  --color-accent-strong: oklch(0.42 0.16 152);
-  --color-accent-foreground: oklch(0.99 0.004 95);
-  --color-accent-glow: oklch(0.5 0.15 152 / 0.15);
+  --color-accent: #0f9d63;
+  --color-accent-strong: #128051;
+  --color-accent-foreground: #ffffff;
+  --color-accent-glow: rgba(15, 157, 99, 0.15);
 
-  --color-income: oklch(0.5 0.15 152);
-  --color-expense: oklch(0.5 0.17 25);
-  --color-reversed: oklch(0.55 0.01 152);
+  --color-income: #0f9d63;
+  --color-expense: #dc2626;
+  --color-reversed: #6b7a72;
 
-  --font-sans: var(--font-plus-jakarta-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-ibm-plex-mono), ui-monospace, "SFMono-Regular", monospace;
+  --font-sans: var(--font-inter-tight), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, "SFMono-Regular", monospace;
 
   --shadow-glow: 0 0 20px var(--color-accent-glow);
   --shadow-glow-strong: 0 0 30px var(--color-accent-glow);
 
   --animate-fade-in: fade-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   --animate-scale-up: scale-up 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  --animate-float-glow: float-glow 12s ease-in-out infinite;
 
   @keyframes fade-in {
     from {
@@ -45,64 +46,74 @@
       opacity: 1;
     }
   }
+
+  @keyframes float-glow {
+    0%,
+    100% {
+      transform: translate(0, 0);
+    }
+    50% {
+      transform: translate(20px, -20px);
+    }
+  }
 }
 
 /* Dark follows system preference by default. */
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-surface: oklch(0 0 0);
-    --color-surface-muted: oklch(0.14 0.005 152);
-    --color-surface-elevated: oklch(0.18 0.006 152);
-    --color-border: oklch(0.24 0.01 152);
-    --color-foreground: oklch(0.95 0.005 152);
-    --color-foreground-muted: oklch(0.62 0.01 152);
+    --color-surface: #000000;
+    --color-surface-muted: #12160f;
+    --color-surface-elevated: #0a0d0b;
+    --color-border: #1c2320;
+    --color-foreground: #f2f5f2;
+    --color-foreground-muted: #71817a;
 
-    --color-accent: oklch(0.78 0.19 152);
-    --color-accent-strong: oklch(0.68 0.2 152);
-    --color-accent-foreground: oklch(0.08 0.01 152);
-    --color-accent-glow: oklch(0.78 0.19 152 / 0.1);
+    --color-accent: #34d399;
+    --color-accent-strong: #2cb382;
+    --color-accent-foreground: #04140d;
+    --color-accent-glow: rgba(52, 211, 153, 0.15);
 
-    --color-income: oklch(0.78 0.19 152);
-    --color-expense: oklch(0.68 0.19 25);
-    --color-reversed: oklch(0.55 0.02 152);
+    --color-income: #34d399;
+    --color-expense: #f87171;
+    --color-reversed: #71817a;
   }
 }
 
 /* Explicit choice (cookie-backed toggle) always wins over system preference. */
 :root[data-theme="light"] {
-  --color-surface: oklch(0.99 0.004 95);
-  --color-surface-muted: oklch(0.965 0.006 95);
-  --color-surface-elevated: oklch(1 0 0);
-  --color-border: oklch(0.88 0.008 95);
-  --color-foreground: oklch(0.18 0.01 152);
-  --color-foreground-muted: oklch(0.45 0.015 152);
+  --color-surface: #f6f8f6;
+  --color-surface-muted: #f0f4f0;
+  --color-surface-elevated: #ffffff;
+  --color-border: #e2e8e3;
+  --color-foreground: #0d1512;
+  --color-foreground-muted: #6b7a72;
 
-  --color-accent: oklch(0.5 0.15 152);
-  --color-accent-strong: oklch(0.42 0.16 152);
-  --color-accent-foreground: oklch(0.99 0.004 95);
-  --color-accent-glow: oklch(0.5 0.15 152 / 0.15);
+  --color-accent: #0f9d63;
+  --color-accent-strong: #128051;
+  --color-accent-foreground: #ffffff;
+  --color-accent-glow: rgba(15, 157, 99, 0.15);
 
-  --color-income: oklch(0.5 0.15 152);
-  --color-expense: oklch(0.5 0.17 25);
-  --color-reversed: oklch(0.55 0.01 152);
+  --color-income: #0f9d63;
+  --color-expense: #dc2626;
+  --color-reversed: #6b7a72;
 }
 
 :root[data-theme="dark"] {
-  --color-surface: oklch(0 0 0);
-  --color-surface-muted: oklch(0.14 0.005 152);
-  --color-surface-elevated: oklch(0.18 0.006 152);
-  --color-border: oklch(0.24 0.01 152);
-  --color-foreground: oklch(0.95 0.005 152);
-  --color-foreground-muted: oklch(0.62 0.01 152);
+  --color-surface: #000000;
+  --color-surface-muted: #12160f;
+  --color-surface-elevated: #0a0d0b;
+  --color-border: #1c2320;
+  --color-foreground: #f2f5f2;
+  --color-foreground-muted: #71817a;
 
-  --color-accent: oklch(0.78 0.19 152);
-  --color-accent-strong: oklch(0.68 0.2 152);
-  --color-accent-foreground: oklch(0.08 0.01 152);
-  --color-accent-glow: oklch(0.78 0.19 152 / 0.1);
+  --color-accent: #34d399;
+  --color-accent-strong: #2cb382;
+  --color-accent-foreground: #04140d;
+  --color-accent-glow: rgba(52, 211, 153, 0.15);
 
-  --color-income: oklch(0.78 0.19 152);
-  --color-expense: oklch(0.68 0.19 25);
-  --color-reversed: oklch(0.55 0.02 152);
+  --color-income: #34d399;
+  --color-expense: #f87171;
+  --color-reversed: #71817a;
 }
 
 body {

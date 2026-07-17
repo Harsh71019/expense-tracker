@@ -60,31 +60,28 @@ export function ExportCsvForm(): ReactNode {
   }
 
   return (
-    <section className="mx-auto max-w-2xl space-y-6">
+    <section className="space-y-6">
       <header>
-        <p className="font-mono text-[10px] font-bold tracking-widest text-foreground-muted uppercase">
-          Your data
-        </p>
-        <h1 className="mt-1 text-3xl font-extrabold tracking-tight">Export transactions</h1>
-        <p className="mt-2 text-sm text-foreground-muted">
+        <h1 className="text-xl font-semibold tracking-tight">Export transactions</h1>
+        <p className="mt-1.5 text-sm text-foreground-muted">
           Download posted transactions as a formula-injection-safe CSV with exact signed INR
           amounts.
         </p>
       </header>
 
       <form
-        className="space-y-5 rounded-2xl border border-border bg-surface-elevated p-5 sm:p-7"
+        className="space-y-5 rounded-xl border border-border bg-surface-elevated p-5 sm:p-7"
         onSubmit={submit}
       >
         <fieldset className="space-y-3">
           <legend className="font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
             Date range
           </legend>
-          <label className="flex min-h-11 items-center gap-3 rounded-xl border border-border px-4 text-sm">
+          <label className="flex min-h-11 items-center gap-3 rounded-lg border border-border px-4 text-sm">
             <input type="radio" checked={mode === "all"} onChange={() => setMode("all")} />
             All posted transactions
           </label>
-          <label className="flex min-h-11 items-center gap-3 rounded-xl border border-border px-4 text-sm">
+          <label className="flex min-h-11 items-center gap-3 rounded-lg border border-border px-4 text-sm">
             <input type="radio" checked={mode === "range"} onChange={() => setMode("range")} />
             Choose a range
           </label>
@@ -120,7 +117,7 @@ export function ExportCsvForm(): ReactNode {
         </Button>
       </form>
 
-      <section className="rounded-2xl border border-border bg-surface-elevated p-5">
+      <section className="rounded-xl border border-border bg-surface-elevated p-5">
         <h2 className="font-bold">Included columns</h2>
         <p className="mt-2 text-sm text-foreground-muted">
           Date, type, status, account, category, description, tags, and amount. Reversed and

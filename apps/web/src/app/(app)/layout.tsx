@@ -24,7 +24,7 @@ export default async function AppLayout({
   }
 
   return (
-    <div className="min-h-screen bg-surface md:flex">
+    <div className="relative min-h-screen bg-surface md:flex">
       <AppSidebar email={session.user.email} theme={theme} />
 
       <div className="flex min-w-0 flex-1 flex-col">
@@ -35,9 +35,7 @@ export default async function AppLayout({
           <ThemeToggle current={theme} />
         </header>
 
-        <main className="mx-auto w-full max-w-6xl flex-1 p-5 pb-24 sm:p-8 md:pb-8 animate-fade-in">
-          {children}
-        </main>
+        <main className="w-full flex-1 p-5 pb-24 sm:p-8 md:pb-8 animate-fade-in">{children}</main>
 
         <div className="fixed bottom-4 inset-x-4 z-10 rounded-xl border border-border bg-surface-elevated shadow-sm md:hidden">
           <AppNav items={navItems} orientation="bottom" />

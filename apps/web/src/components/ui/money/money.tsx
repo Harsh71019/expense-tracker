@@ -52,12 +52,7 @@ export function Money({
     .filter(Boolean)
     .join(" ");
 
-  return (
-    <span className={classes}>
-      {prefix}
-      {formatMinor(minor)}
-    </span>
-  );
+  return <span className={classes}>{`${prefix}${formatMinor(minor)}`}</span>;
 }
 
 export function SignedMoney({ minor, size, className }: SignedMoneyProps): ReactNode {

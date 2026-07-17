@@ -6,7 +6,6 @@ import { AppSidebar } from "../app-sidebar";
 
 vi.mock("../app-nav", () => ({ AppNav: () => <nav>Navigation</nav> }));
 vi.mock("../ui/theme-toggle", () => ({ ThemeToggle: () => <button>Theme</button> }));
-vi.mock("@/features/auth", () => ({ SignOutButton: () => <button>Sign out</button> }));
 
 describe("AppSidebar", () => {
   beforeEach(() => {

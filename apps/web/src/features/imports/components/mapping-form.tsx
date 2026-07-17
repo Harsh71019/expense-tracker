@@ -101,7 +101,7 @@ export function MappingForm({
       <label className="flex flex-col gap-1.5 text-xs font-semibold text-foreground">
         Date format
         <select
-          className="rounded-xl border border-border bg-surface px-3 py-2.5 text-sm"
+          className="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm"
           value={draft.dateFormat}
           onChange={(event) => {
             const value = DateFormatSchema.safeParse(event.target.value);
@@ -121,7 +121,7 @@ export function MappingForm({
       <label className="flex flex-col gap-1.5 text-xs font-semibold text-foreground">
         Amount convention
         <select
-          className="rounded-xl border border-border bg-surface px-3 py-2.5 text-sm"
+          className="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm"
           value={draft.amountConvention}
           onChange={(event) => {
             const value = AmountConventionSchema.safeParse(event.target.value);

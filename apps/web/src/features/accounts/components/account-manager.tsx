@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  AccountTypeSchema,
-  CreateAccountSchema,
-  type Account,
-  type AccountType
-} from "@vyaya/shared";
+import { CreateAccountSchema, type Account, type AccountType } from "@vyaya/shared";
 import { useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 
@@ -13,31 +8,60 @@ import { AmountInput } from "@/components/ui/amount-input";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
-import { SignedMoney } from "@/components/ui/money";
+import { Money, SignedMoney } from "@/components/ui/money";
 
 import { useAccounts } from "../hooks/use-accounts";
 import { useArchiveAccount } from "../hooks/use-archive-account";
 import { useCreateAccount } from "../hooks/use-create-account";
 
-const accountTypes: readonly Readonly<{ value: AccountType; label: string }>[] = [
-  { value: "bank", label: "Bank account" },
-  { value: "credit_card", label: "Credit card" },
-  { value: "cash", label: "Cash" },
-  { value: "wallet", label: "Wallet" },
-  { value: "investment", label: "Investment" }
+type TypeMeta = { value: AccountType; label: string; filterLabel: string; icon: string };
+
+const accountTypes: readonly TypeMeta[] = [
+  { value: "bank", label: "Bank", filterLabel: "Bank", icon: "🏦" },
+  { value: "credit_card", label: "Credit card", filterLabel: "Cards", icon: "💳" },
+  { value: "cash", label: "Cash", filterLabel: "Cash", icon: "💵" },
+  { value: "wallet", label: "Wallet", filterLabel: "Wallets", icon: "👛" },
+  { value: "investment", label: "Investment", filterLabel: "Investments", icon: "📈" }
 ];
+
+function typeMeta(type: AccountType): TypeMeta {
+  const meta = accountTypes.find((entry) => entry.value === type);
+  if (meta === undefined) throw new Error(`Unknown account type: ${type}`);
+  return meta;
+}
+
+type Filter = "all" | AccountType;
+
+const pillClasses = (active: boolean): string =>
+  [
+    "rounded-lg px-3.5 py-2 text-sm font-medium transition-colors duration-150",
+    active
+      ? "border border-accent bg-accent-glow text-accent"
+      : "border border-transparent text-foreground-muted hover:text-foreground"
+  ].join(" ");
 
 export function AccountManager({ initialAccounts }: { initialAccounts: Account[] }): ReactNode {
   const accounts = useAccounts(initialAccounts);
   const createAccount = useCreateAccount();
   const archiveAccount = useArchiveAccount();
-  const [showForm, setShowForm] = useState(initialAccounts.length === 0);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [filter, setFilter] = useState<Filter>("all");
+  const [showArchived, setShowArchived] = useState(false);
   const [name, setName] = useState("");
   const [type, setType] = useState<AccountType>("bank");
   const [amountMinor, setAmountMinor] = useState(0);
   const [direction, setDirection] = useState<"available" | "owed">("available");
   const [confirming, setConfirming] = useState<Account>();
   const [error, setError] = useState<string>();
+
+  function openCreate(): void {
+    setName("");
+    setAmountMinor(0);
+    setDirection("available");
+    setType("bank");
+    setError(undefined);
+    setCreateOpen(true);
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
@@ -52,11 +76,7 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
     }
     try {
       await createAccount.mutateAsync(parsed.data);
-      setName("");
-      setAmountMinor(0);
-      setDirection("available");
-      setShowForm(false);
-      setError(undefined);
+      setCreateOpen(false);
     } catch (caught: unknown) {
       setError(caught instanceof Error ? caught.message : "Could not create this account.");
     }
@@ -74,150 +94,319 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
   }
 
   const items = accounts.data ?? initialAccounts;
+  const active = items.filter((account) => !account.isArchived);
+  const hasArchived = items.some((account) => account.isArchived);
+  const assetsTotal = active
+    .filter((account) => account.balanceMinor >= 0)
+    .reduce((sum, account) => sum + account.balanceMinor, 0);
+  const liabilitiesTotal = active
+    .filter((account) => account.balanceMinor < 0)
+    .reduce((sum, account) => sum + account.balanceMinor, 0);
+  const netWorth = active.reduce((sum, account) => sum + account.balanceMinor, 0);
+
+  let visible = showArchived ? items : active;
+  if (filter !== "all") visible = visible.filter((account) => account.type === filter);
+
   return (
-    <section className="mx-auto max-w-3xl space-y-6">
-      <header className="flex flex-wrap items-end justify-between gap-4">
+    <section className="space-y-8">
+      <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">Accounts</h1>
-          <p className="mt-1.5 text-sm text-foreground-muted">
-            Balances remain ledger-derived; archiving never removes history.
+          <p className="font-mono text-[10px] font-bold tracking-[0.2em] text-accent uppercase">
+            Expense tracker
+          </p>
+          <h1 className="mt-2 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+            Accounts
+          </h1>
+          <p className="mt-2 max-w-md text-sm text-foreground-muted">
+            The containers your money lives in. Balances update automatically as transactions post.
           </p>
         </div>
-        <Button type="button" onClick={() => setShowForm((value) => !value)}>
-          {showForm ? "Close form" : "Add account"}
+        <Button type="button" onClick={openCreate}>
+          <span className="mr-1 text-base leading-none">+</span> New account
         </Button>
       </header>
 
-      {showForm ? (
-        <form
-          className="space-y-5 rounded-xl border border-border bg-surface-elevated p-5 sm:p-7"
-          onSubmit={submit}
-        >
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Input
-              id="account-name"
-              label="Account name"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-            />
-            <label className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
-              Account type
-              <select
-                className="rounded-lg border border-border bg-surface px-3.5 py-2.5 text-sm"
-                value={type}
-                onChange={(event) => {
-                  const parsed = AccountTypeSchema.safeParse(event.target.value);
-                  if (parsed.success) setType(parsed.data);
-                }}
-              >
-                {accountTypes.map((item) => (
-                  <option key={item.value} value={item.value}>
-                    {item.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-          <AmountInput
-            id="opening-balance"
-            label="Opening balance"
-            value={amountMinor}
-            onChange={setAmountMinor}
-          />
-          <fieldset className="flex gap-3">
-            <legend className="mb-2 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
-              Balance direction
-            </legend>
-            {(["available", "owed"] as const).map((value) => (
-              <label
-                key={value}
-                className="flex min-h-11 items-center gap-2 rounded-xl border border-border px-4 text-sm"
-              >
-                <input
-                  type="radio"
-                  checked={direction === value}
-                  onChange={() => setDirection(value)}
-                />
-                {value === "available" ? "Available / positive" : "Owed / negative"}
-              </label>
-            ))}
-          </fieldset>
-          {error === undefined ? null : (
-            <p role="alert" className="text-sm text-expense">
-              {error}
+      {items.length === 0 ? null : (
+        <div className="flex flex-wrap items-center gap-10 rounded-2xl border border-border bg-surface-elevated p-6 sm:p-7">
+          <div className="min-w-[200px]">
+            <p className="font-mono text-[10px] font-bold tracking-[0.15em] text-foreground-muted uppercase">
+              Net worth
             </p>
-          )}
-          <Button type="submit" disabled={createAccount.isPending}>
-            {createAccount.isPending ? "Creating…" : "Create account"}
-          </Button>
-        </form>
-      ) : null}
-
-      {items.length === 0 ? (
-        <EmptyState
-          title="No active accounts"
-          description="Create an account to start recording your ledger."
-        />
-      ) : (
-        <div className="divide-y divide-border overflow-hidden rounded-xl border border-border">
-          {items.map((account) => (
-            <article
-              key={account.id}
-              className="relative flex flex-wrap items-center justify-between gap-4 px-4 py-3.5"
-            >
-              <span className="absolute inset-y-0 left-0 w-[3px] bg-accent" aria-hidden="true" />
-              <div className="min-w-0 pl-2">
-                <h2 className="truncate text-sm font-semibold text-foreground">{account.name}</h2>
-                <p className="mt-0.5 font-mono text-[10px] tracking-wider text-foreground-muted uppercase">
-                  {account.type.replaceAll("_", " ")}
-                </p>
+            <div className="mt-1.5">
+              <SignedMoney minor={netWorth} size="hero" />
+            </div>
+            <p className="mt-2 text-sm text-foreground-muted">
+              across {active.length} active {active.length === 1 ? "account" : "accounts"}
+            </p>
+          </div>
+          <div className="hidden h-14 w-px self-stretch bg-border sm:block" aria-hidden="true" />
+          <div className="flex flex-wrap gap-10">
+            <div>
+              <p className="font-mono text-[10px] font-bold tracking-[0.15em] text-foreground-muted uppercase">
+                Assets
+              </p>
+              <div className="mt-1.5">
+                <Money minor={assetsTotal} size="lg" />
               </div>
-              <div className="flex items-center gap-4">
-                <SignedMoney minor={account.balanceMinor} size="lg" />
-                <Button
-                  type="button"
-                  variant="secondary"
-                  className="px-2.5 py-1 text-xs"
-                  onClick={() => setConfirming(account)}
-                >
-                  Archive
-                </Button>
+            </div>
+            <div>
+              <p className="font-mono text-[10px] font-bold tracking-[0.15em] text-foreground-muted uppercase">
+                Liabilities
+              </p>
+              <div className="mt-1.5">
+                <Money
+                  minor={Math.abs(liabilitiesTotal)}
+                  variant={liabilitiesTotal < 0 ? "expense" : "neutral"}
+                  size="lg"
+                />
               </div>
-            </article>
-          ))}
+            </div>
+          </div>
         </div>
       )}
 
-      {confirming === undefined ? null : (
-        <section
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="archive-account-title"
-          className="rounded-xl border border-expense/30 bg-surface-elevated p-5"
-        >
-          <h2 id="archive-account-title" className="text-lg font-bold">
-            Archive {confirming.name}?
-          </h2>
-          <p className="mt-2 text-sm text-foreground-muted">
-            Existing transactions and the current balance remain in the ledger. This account will
-            disappear from future selectors.
-          </p>
-          <div className="mt-3">
-            <SignedMoney minor={confirming.balanceMinor} />
-          </div>
-          <div className="mt-5 flex gap-3">
-            <Button
+      {items.length === 0 ? null : (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => setFilter("all")}
+            className={pillClasses(filter === "all")}
+          >
+            All
+          </button>
+          {accountTypes.map((meta) => (
+            <button
+              key={meta.value}
               type="button"
-              onClick={() => void archive()}
-              disabled={archiveAccount.isPending}
+              onClick={() => setFilter(meta.value)}
+              className={pillClasses(filter === meta.value)}
             >
-              {archiveAccount.isPending ? "Archiving…" : "Archive account"}
+              {meta.filterLabel}
+            </button>
+          ))}
+          <div className="flex-1" />
+          {hasArchived ? (
+            <label className="flex items-center gap-2 text-sm text-foreground-muted select-none">
+              <input
+                type="checkbox"
+                checked={showArchived}
+                onChange={(event) => setShowArchived(event.target.checked)}
+                className="h-3.5 w-3.5 accent-accent"
+              />
+              Show archived
+            </label>
+          ) : null}
+        </div>
+      )}
+
+      {items.length === 0 ? (
+        <EmptyState
+          title="No accounts yet"
+          description="Accounts are where every transaction, transfer, and import lands. Create your first one to start tracking."
+          action={
+            <Button type="button" onClick={openCreate}>
+              <span className="mr-1 text-base leading-none">+</span> Create account
             </Button>
-            <Button type="button" variant="secondary" onClick={() => setConfirming(undefined)}>
-              Cancel
-            </Button>
+          }
+        />
+      ) : visible.length === 0 ? (
+        <EmptyState title="No matching accounts" description="Try a different filter." />
+      ) : (
+        <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(280px,1fr))]">
+          {visible.map((account) => {
+            const meta = typeMeta(account.type);
+            return (
+              <article
+                key={account.id}
+                className={`rounded-2xl border border-border bg-surface-elevated p-5 ${
+                  account.isArchived ? "opacity-60" : ""
+                }`}
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-border bg-surface-muted text-xl">
+                      {meta.icon}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate text-base font-semibold text-foreground">
+                        {account.name}
+                      </p>
+                      <p className="mt-0.5 font-mono text-[10px] tracking-wider text-foreground-muted uppercase">
+                        {meta.label}
+                      </p>
+                    </div>
+                  </div>
+                  {account.isArchived ? (
+                    <span className="shrink-0 rounded-md border border-border bg-surface-muted px-1.5 py-0.5 font-mono text-[9px] font-bold tracking-wider text-foreground-muted">
+                      ARCHIVED
+                    </span>
+                  ) : null}
+                </div>
+
+                <p className="mt-5 font-mono text-[10px] font-bold tracking-[0.15em] text-foreground-muted uppercase">
+                  Balance
+                </p>
+                <div className="mt-1">
+                  <SignedMoney minor={account.balanceMinor} size="lg" />
+                </div>
+
+                <div className="mt-4 flex items-center justify-between border-t border-border pt-3.5">
+                  <span className="font-mono text-[11px] text-foreground-muted">
+                    Opening <SignedMoney minor={account.openingBalanceMinor} size="sm" />
+                  </span>
+                  {account.isArchived ? null : (
+                    <button
+                      type="button"
+                      onClick={() => setConfirming(account)}
+                      className="text-xs font-medium text-foreground-muted hover:text-foreground"
+                    >
+                      Archive
+                    </button>
+                  )}
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      )}
+
+      {createOpen ? (
+        <div
+          role="presentation"
+          className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-6 backdrop-blur-sm animate-fade-in"
+          onClick={() => setCreateOpen(false)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="create-account-title"
+            className="w-full max-w-md rounded-2xl border border-border bg-surface-elevated p-6 shadow-glow-strong animate-scale-up sm:p-7"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h2 id="create-account-title" className="text-lg font-bold text-foreground">
+              New account
+            </h2>
+            <p className="mt-1 text-sm text-foreground-muted">
+              Name, type, and opening balance are set once and can&apos;t be changed later.
+            </p>
+
+            <form className="mt-6 space-y-5" onSubmit={submit}>
+              <Input
+                id="account-name"
+                label="Account name"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                placeholder="e.g. HDFC Savings"
+                maxLength={80}
+              />
+
+              <div>
+                <p className="font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+                  Type
+                </p>
+                <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-5">
+                  {accountTypes.map((meta) => (
+                    <button
+                      key={meta.value}
+                      type="button"
+                      onClick={() => setType(meta.value)}
+                      className={`flex flex-col items-center gap-1.5 rounded-xl border px-2 py-3 text-[11px] font-semibold transition-colors duration-150 ${
+                        type === meta.value
+                          ? "border-accent bg-accent-glow text-accent"
+                          : "border-border bg-surface text-foreground-muted"
+                      }`}
+                    >
+                      <span className="text-lg leading-none">{meta.icon}</span>
+                      <span>{meta.filterLabel}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <AmountInput
+                  id="opening-balance"
+                  label="Opening balance"
+                  value={amountMinor}
+                  onChange={setAmountMinor}
+                />
+                <div className="mt-3 flex justify-center gap-2">
+                  {(["available", "owed"] as const).map((value) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setDirection(value)}
+                      className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors duration-150 ${
+                        direction === value
+                          ? value === "owed"
+                            ? "border border-expense/40 bg-expense/10 text-expense"
+                            : "border border-accent bg-accent-glow text-accent"
+                          : "border border-border text-foreground-muted"
+                      }`}
+                    >
+                      {value === "available" ? "+ Available" : "− Owed"}
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-2 text-center text-xs text-foreground-muted">
+                  Use owed for accounts that start in debt, like a credit card.
+                </p>
+              </div>
+
+              {error === undefined ? null : (
+                <p role="alert" className="text-sm text-expense">
+                  {error}
+                </p>
+              )}
+
+              <div className="flex justify-end gap-2 pt-1">
+                <Button type="button" variant="secondary" onClick={() => setCreateOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={createAccount.isPending}>
+                  {createAccount.isPending ? "Creating…" : "Create account"}
+                </Button>
+              </div>
+            </form>
           </div>
-        </section>
+        </div>
+      ) : null}
+
+      {confirming === undefined ? null : (
+        <div
+          role="presentation"
+          className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-6 backdrop-blur-sm animate-fade-in"
+          onClick={() => setConfirming(undefined)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="archive-account-title"
+            className="w-full max-w-sm rounded-2xl border border-border bg-surface-elevated p-6 shadow-glow-strong animate-scale-up sm:p-7"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h2 id="archive-account-title" className="text-lg font-bold text-foreground">
+              Archive {confirming.name}?
+            </h2>
+            <p className="mt-2 text-sm text-foreground-muted">
+              It drops out of active lists and totals, but its transaction history stays intact.
+              This can&apos;t be undone — archiving is one-way.
+            </p>
+            <div className="mt-4 flex justify-end gap-2">
+              <Button type="button" variant="secondary" onClick={() => setConfirming(undefined)}>
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={() => void archive()}
+                disabled={archiveAccount.isPending}
+                className="bg-expense text-white hover:bg-expense/90"
+              >
+                {archiveAccount.isPending ? "Archiving…" : "Archive account"}
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </section>
   );

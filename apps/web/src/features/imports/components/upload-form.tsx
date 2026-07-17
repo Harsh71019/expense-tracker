@@ -55,7 +55,7 @@ export function UploadForm(): ReactNode {
     );
   return (
     <form
-      className="space-y-6 rounded-2xl border border-border bg-surface-elevated p-5 sm:p-7"
+      className="space-y-6 rounded-xl border border-border bg-surface-elevated p-5 sm:p-7"
       onSubmit={submit}
     >
       <FileDropZone
@@ -66,7 +66,7 @@ export function UploadForm(): ReactNode {
       <label className="flex flex-col gap-1.5 text-xs font-semibold text-foreground">
         Import to account
         <select
-          className="rounded-xl border border-border bg-surface px-3 py-2.5 text-sm"
+          className="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm"
           value={accountId}
           onChange={(event) => {
             setAccountId(event.target.value);

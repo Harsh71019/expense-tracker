@@ -68,7 +68,7 @@ export function AssetDetail({
 
   const items = valuations.data?.items ?? initialValuations.items;
   return (
-    <section className="mx-auto max-w-4xl space-y-6">
+    <section className="space-y-6">
       <header>
         <Link href="/assets" className="text-sm text-accent">
           ← Back to assets
@@ -76,12 +76,12 @@ export function AssetDetail({
         <p className="mt-4 text-xs font-semibold tracking-wider text-foreground-muted uppercase">
           {assetKindLabel(asset.kind)}
         </p>
-        <h1 className="mt-1 text-3xl font-extrabold">{asset.name}</h1>
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight">{asset.name}</h1>
         <p className="mt-2 text-sm text-foreground-muted">Opened {date.format(asset.openedAt)}</p>
       </header>
 
       <form
-        className="space-y-5 rounded-2xl border border-border bg-surface-elevated p-5"
+        className="space-y-5 rounded-xl border border-border bg-surface-elevated p-5"
         onSubmit={submit}
       >
         <h2 className="text-lg font-bold">Append valuation</h2>
@@ -94,7 +94,7 @@ export function AssetDetail({
         <label className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
           Valued date (Asia/Kolkata)
           <input
-            className="rounded-xl border border-border bg-surface px-3.5 py-2.5 text-sm"
+            className="rounded-lg border border-border bg-surface px-3.5 py-2.5 text-sm"
             type="date"
             value={valuedAt}
             onChange={(event) => setValuedAt(event.target.value)}
@@ -110,7 +110,7 @@ export function AssetDetail({
         </Button>
       </form>
 
-      <section className="rounded-2xl border border-border bg-surface-elevated p-5">
+      <section className="rounded-xl border border-border bg-surface-elevated p-5">
         <h2 className="text-lg font-bold">Valuation history</h2>
         <p className="mt-1 text-sm text-foreground-muted">
           Newest first. Valuations cannot be edited or deleted.
@@ -130,7 +130,7 @@ export function AssetDetail({
         </div>
       </section>
 
-      <section className="rounded-2xl border border-expense/25 bg-surface-elevated p-5">
+      <section className="rounded-xl border border-expense/25 bg-surface-elevated p-5">
         <h2 className="font-bold">Close asset</h2>
         <p className="mt-2 text-sm text-foreground-muted">
           Closing removes it from current net worth and prevents new valuations. Stored history

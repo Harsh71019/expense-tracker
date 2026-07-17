@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 
 export default function TransactionsLoading(): ReactNode {
   return (
-    <div className="mx-auto max-w-3xl rounded-md border border-border bg-surface-elevated px-4">
+    <div className="rounded-xl border border-border bg-surface-elevated px-4">
       {Array.from({ length: 6 }, (_, index) => (
         <div
           key={index}

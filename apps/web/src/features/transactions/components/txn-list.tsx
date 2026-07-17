@@ -35,7 +35,7 @@ export function TxnList({
   const renderedTransfers = new Set<string>();
 
   return (
-    <section className="mx-auto max-w-3xl animate-fade-in">
+    <section className="animate-fade-in">
       <div className="mb-6 flex items-baseline justify-between gap-4">
         <h1 className="text-xl font-semibold tracking-tight text-foreground">Transactions</h1>
         <p className="font-mono text-[10px] font-bold tracking-wider text-foreground-muted uppercase">

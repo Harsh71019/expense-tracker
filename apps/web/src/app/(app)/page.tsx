@@ -12,7 +12,7 @@ export default async function DashboardPage(): Promise<ReactNode> {
   const balanceMinor = activeAccounts.reduce((total, account) => total + account.balanceMinor, 0);
 
   return (
-    <section className="flex max-w-2xl flex-col gap-8">
+    <section className="flex flex-col gap-8">
       <div className="flex items-baseline justify-between gap-4">
         <h1 className="text-xl font-semibold tracking-tight text-foreground">Overview</h1>
         <p className="truncate font-mono text-[11px] text-foreground-muted">{email}</p>

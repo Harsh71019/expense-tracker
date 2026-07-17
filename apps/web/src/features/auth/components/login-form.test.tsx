@@ -32,6 +32,7 @@ describe("LoginForm", () => {
     expect(mocks.signInWithEmail).toHaveBeenCalledWith({
       email: "harsh@example.com",
       password: "correct-password",
+      rememberMe: true,
       callbackURL: "/transactions"
     });
   });

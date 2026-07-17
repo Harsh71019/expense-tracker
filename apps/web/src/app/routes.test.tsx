@@ -19,6 +19,7 @@ const mocks = vi.hoisted(
 );
 
 vi.mock("@/lib/api/session", () => ({ getSession: async () => mocks.session }));
+vi.mock("@/lib/theme-server", () => ({ getStoredTheme: async () => null }));
 vi.mock("@/features/auth", () => ({
   LoginForm: () => <p>Mock login form</p>,
   SignOutButton: () => <button>Sign out</button>
@@ -67,7 +68,7 @@ vi.mock("@/features/transactions/server/get-txn-page", () => ({
 describe("route shells", () => {
   it("renders the dashboard and account page with the session email", async () => {
     render(await DashboardPage());
-    expect(screen.getByRole("heading", { name: "Good to see you." })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Overview" })).toBeVisible();
     expect(screen.getByText("harsh@example.com")).toBeVisible();
 
     render(await MorePage());
@@ -92,7 +93,7 @@ describe("route shells", () => {
     ];
     render(await DashboardPage());
 
-    const balanceElements = screen.getAllByText("₹123.45");
+    const balanceElements = screen.getAllByText("+₹123.45");
     expect(balanceElements.length).toBeGreaterThanOrEqual(1);
     expect(balanceElements[0]).toBeVisible();
     expect(screen.getByText("Across 1 active account.")).toBeVisible();
@@ -144,12 +145,8 @@ describe("route shells", () => {
     expect(screen.getByRole("heading", { name: "Net worth" })).toBeVisible();
   });
 
-  it("renders the auth, login, and not-found shells", () => {
-    render(
-      <AuthLayout>
-        <p>Auth content</p>
-      </AuthLayout>
-    );
+  it("renders the auth, login, and not-found shells", async () => {
+    render(await AuthLayout({ children: <p>Auth content</p> }));
     expect(screen.getByText("Auth content")).toBeVisible();
 
     render(<LoginPage />);

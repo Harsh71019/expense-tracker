@@ -35,7 +35,7 @@ describe("AppNav", () => {
   it("marks the current sidebar item and links every item", () => {
     render(<AppNav items={items} orientation="sidebar" />);
 
-    expect(screen.getByRole("link", { name: "Home" })).toHaveClass("bg-surface-muted");
+    expect(screen.getByRole("link", { name: "Home" })).toHaveClass("bg-accent-glow");
     expect(screen.getByRole("link", { name: "Transactions" })).toHaveAttribute(
       "href",
       "/transactions"

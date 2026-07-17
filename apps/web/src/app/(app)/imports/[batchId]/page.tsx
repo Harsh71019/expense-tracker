@@ -16,11 +16,11 @@ export default async function ImportPreviewPage({
   const [batch, firstPage] = await Promise.all([getImportBatch(batchId), getStagedRows(batchId)]);
   if (batch === undefined) notFound();
   return (
-    <section className="mx-auto max-w-4xl space-y-6">
+    <section className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
               {batch.filename}
             </h1>
             <ImportBatchStatus status={batch.status} />

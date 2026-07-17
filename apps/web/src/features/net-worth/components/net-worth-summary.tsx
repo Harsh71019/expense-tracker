@@ -21,20 +21,20 @@ export function NetWorthSummary({ initialData }: { initialData: NetWorth }): Rea
   const isEmpty = summary.accounts.length === 0 && summary.assets.length === 0;
 
   return (
-    <section className="mx-auto max-w-5xl space-y-6">
+    <section className="space-y-6">
       <header>
-        <p className="font-mono text-[10px] font-bold tracking-widest text-foreground-muted uppercase">
-          Current snapshot
-        </p>
-        <h1 className="mt-1 text-3xl font-extrabold tracking-tight">Net worth</h1>
+        <h1 className="text-xl font-semibold tracking-tight">Net worth</h1>
       </header>
 
-      <div className="rounded-3xl border border-accent/25 bg-surface-elevated p-6 shadow-sm sm:p-8">
-        <p className="text-sm text-foreground-muted">Accounts + latest active asset valuations</p>
-        <div className="mt-3 text-4xl sm:text-5xl">
-          <SignedMoney minor={summary.netWorthMinor} />
+      <div className="relative overflow-hidden rounded-xl border border-border bg-surface-elevated p-6 sm:p-8">
+        <span className="absolute inset-y-0 left-0 w-[3px] bg-accent" aria-hidden="true" />
+        <p className="font-mono text-[10px] font-bold tracking-[0.2em] text-foreground-muted uppercase">
+          Current snapshot
+        </p>
+        <div className="mt-2.5">
+          <SignedMoney minor={summary.netWorthMinor} size="hero" />
         </div>
-        <p className="mt-3 text-xs text-foreground-muted">
+        <p className="mt-3 text-sm text-foreground-muted">
           As of {dateTime.format(summary.asOf)} · Asia/Kolkata
         </p>
       </div>
@@ -79,7 +79,7 @@ export function NetWorthSummary({ initialData }: { initialData: NetWorth }): Rea
 
 function Breakdown({ title, children }: { title: string; children: ReactNode }): ReactNode {
   return (
-    <section className="rounded-2xl border border-border bg-surface-elevated p-5">
+    <section className="rounded-xl border border-border bg-surface-elevated p-5">
       <h2 className="text-lg font-bold">{title}</h2>
       <div className="mt-4 divide-y divide-border">{children}</div>
     </section>

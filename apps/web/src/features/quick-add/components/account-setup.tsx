@@ -41,11 +41,11 @@ export function AccountSetup(): ReactNode {
   }
 
   return (
-    <section className="mx-auto max-w-xl rounded-2xl border border-border bg-surface-elevated/70 p-6 shadow-sm backdrop-blur-md sm:p-8 animate-fade-in">
+    <section className="rounded-xl border border-border bg-surface-elevated p-6 sm:p-8">
       <p className="font-mono text-[10px] font-bold tracking-widest text-foreground-muted uppercase">
         First step
       </p>
-      <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-foreground">
+      <h1 className="mt-1 text-xl font-semibold tracking-tight text-foreground">
         Create your first account
       </h1>
       <p className="mt-2 text-sm text-foreground-muted">
@@ -63,7 +63,7 @@ export function AccountSetup(): ReactNode {
         <label className="flex flex-col gap-1.5 font-mono text-[10px] font-bold tracking-wider text-foreground-muted uppercase">
           Account type
           <select
-            className="w-full rounded-xl border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground transition-all duration-200 focus:border-accent focus:outline-none focus:ring-4 focus:ring-accent/8"
+            className="w-full rounded-lg border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground transition-colors duration-150 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
             value={type}
             onChange={(event) => {
               const parsedType = AccountTypeSchema.safeParse(event.target.value);

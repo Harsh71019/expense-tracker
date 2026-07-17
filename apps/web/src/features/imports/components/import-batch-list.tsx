@@ -24,23 +24,23 @@ export function ImportBatchList({
   }
   return (
     <div className="space-y-3">
-      {items.map((batch) => (
-        <Link
-          key={batch.id}
-          href={`/imports/${batch.id}`}
-          className="block rounded-xl border border-border bg-surface-elevated p-4 transition-colors hover:border-accent/40 hover:bg-accent/5"
-        >
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="font-medium text-foreground">{batch.filename}</p>
-              <p className="mt-1 text-xs text-foreground-muted">
+      <div className="divide-y divide-border overflow-hidden rounded-xl border border-border">
+        {items.map((batch) => (
+          <Link
+            key={batch.id}
+            href={`/imports/${batch.id}`}
+            className="flex items-center justify-between gap-3 px-4 py-3.5 transition-colors hover:bg-surface-muted/50"
+          >
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-foreground">{batch.filename}</p>
+              <p className="mt-0.5 text-xs text-foreground-muted">
                 {batch.stats.total} rows · {batch.stats.duplicates} duplicates
               </p>
             </div>
             <ImportBatchStatus status={batch.status} />
-          </div>
-        </Link>
-      ))}
+          </Link>
+        ))}
+      </div>
       {batches.isError ? <p className="text-sm text-expense">Could not refresh imports.</p> : null}
     </div>
   );

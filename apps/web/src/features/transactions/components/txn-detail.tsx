@@ -75,7 +75,7 @@ export function TxnDetail({ initialTransaction }: { initialTransaction: Transact
   }
 
   return (
-    <section className="mx-auto max-w-3xl space-y-6">
+    <section className="space-y-6">
       <header className="flex items-start justify-between gap-4">
         <div>
           <Link href="/transactions" className="text-sm text-accent">

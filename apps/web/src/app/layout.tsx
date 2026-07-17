@@ -1,4 +1,4 @@
-import { IBM_Plex_Mono, Plus_Jakarta_Sans } from "next/font/google";
+import { Inter_Tight, JetBrains_Mono } from "next/font/google";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
@@ -7,16 +7,16 @@ import { getStoredTheme } from "../lib/theme-server";
 import { QueryProvider } from "../lib/query/provider";
 import { Toaster } from "../components/ui/sonner";
 
-const plusJakartaSans = Plus_Jakarta_Sans({
+const interTight = Inter_Tight({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
-  variable: "--font-plus-jakarta-sans"
+  variable: "--font-inter-tight"
 });
 
-const ibmPlexMono = IBM_Plex_Mono({
+const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
-  variable: "--font-ibm-plex-mono"
+  variable: "--font-jetbrains-mono"
 });
 
 export const metadata: Metadata = {
@@ -33,7 +33,7 @@ export default async function RootLayout({
     <html
       lang="en-IN"
       data-theme={theme ?? undefined}
-      className={`${plusJakartaSans.variable} ${ibmPlexMono.variable}`}
+      className={`${interTight.variable} ${jetbrainsMono.variable}`}
     >
       {/* ColorZilla injects cz-shortcut-listen on body before React hydrates. */}
       <body suppressHydrationWarning className="bg-surface font-sans text-foreground antialiased">

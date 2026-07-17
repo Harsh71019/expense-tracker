@@ -17,6 +17,8 @@ export function LoginForm(): ReactNode {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(true);
+  const [revealPassword, setRevealPassword] = useState(false);
 
   // Guards against a native (unhandled) form submission — which would GET
   // the page with the password in the URL query string — if the button is
@@ -30,7 +32,7 @@ export function LoginForm(): ReactNode {
     setIsSubmitting(true);
 
     try {
-      const result = await authClient.signIn.email({ email, password, callbackURL });
+      const result = await authClient.signIn.email({ email, password, rememberMe, callbackURL });
       if (result.error !== null) {
         setError(result.error.message ?? "Sign-in failed.");
       }
@@ -53,16 +55,42 @@ export function LoginForm(): ReactNode {
         onChange={(event) => setEmail(event.target.value)}
         required
       />
-      <Input
-        id="password"
-        name="password"
-        type="password"
-        label="Password"
-        autoComplete="current-password"
-        value={password}
-        onChange={(event) => setPassword(event.target.value)}
-        required
-      />
+      <div className="flex flex-col gap-1.5">
+        <label
+          htmlFor="password"
+          className="font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase"
+        >
+          Password
+        </label>
+        <div className="flex items-center rounded-lg border border-border bg-surface pr-1.5 transition-colors duration-150 focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/30">
+          <input
+            id="password"
+            name="password"
+            type={revealPassword ? "text" : "password"}
+            autoComplete="current-password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            required
+            className="w-full min-w-0 flex-1 bg-transparent px-3.5 py-2.5 text-sm text-foreground outline-none placeholder:text-foreground-muted/50"
+          />
+          <button
+            type="button"
+            onClick={() => setRevealPassword((value) => !value)}
+            className="shrink-0 rounded-md px-2 py-1 text-xs font-medium text-foreground-muted hover:text-foreground"
+          >
+            {revealPassword ? "Hide" : "Show"}
+          </button>
+        </div>
+      </div>
+      <label className="flex items-center gap-2 text-sm text-foreground-muted select-none">
+        <input
+          type="checkbox"
+          checked={rememberMe}
+          onChange={(event) => setRememberMe(event.target.checked)}
+          className="h-3.5 w-3.5 accent-accent"
+        />
+        Keep me signed in
+      </label>
       <Button type="submit" disabled={isSubmitting || !isHydrated} className="w-full py-3.5">
         {isSubmitting ? "Signing in…" : "Sign in"}
       </Button>

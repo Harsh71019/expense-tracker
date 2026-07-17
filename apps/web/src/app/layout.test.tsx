@@ -6,8 +6,8 @@ import RootLayout from "./layout";
 const mocks = vi.hoisted((): { theme: "dark" | null } => ({ theme: "dark" }));
 
 vi.mock("next/font/google", () => ({
-  IBM_Plex_Mono: () => ({ variable: "font-mono" }),
-  Plus_Jakarta_Sans: () => ({ variable: "font-sans" })
+  JetBrains_Mono: () => ({ variable: "font-mono" }),
+  Inter_Tight: () => ({ variable: "font-sans" })
 }));
 
 vi.mock("../lib/theme-server", () => ({ getStoredTheme: async () => mocks.theme }));

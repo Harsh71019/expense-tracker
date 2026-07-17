@@ -28,15 +28,15 @@ export function AppNav({
               href={item.href}
               title={compact ? item.label : undefined}
               aria-label={compact ? item.label : undefined}
-              className={`relative flex items-center rounded-lg px-3 py-2.5 text-sm transition-colors duration-150 ${compact ? "h-10 w-10 justify-center px-0" : "gap-3"} ${
+              className={`relative flex items-center rounded-lg border px-3 py-2.5 text-sm transition-colors duration-150 ${compact ? "h-10 w-10 justify-center px-0" : "gap-3"} ${
                 active
-                  ? "bg-surface-muted border-l-[3px] border-accent font-semibold text-foreground"
-                  : "text-foreground-muted border-l-[3px] border-transparent hover:bg-surface-muted/60 hover:text-foreground"
+                  ? "border-border bg-accent-glow font-semibold text-foreground"
+                  : "border-transparent text-foreground-muted hover:bg-surface-muted/60 hover:text-foreground"
               }`}
             >
               {item.icon === undefined ? null : (
                 <span
-                  className={`w-5 text-center text-lg leading-none ${active ? "" : "opacity-80"}`}
+                  className={`w-5 text-center text-lg leading-none ${active ? "text-accent" : "text-foreground-muted opacity-80"}`}
                   aria-hidden="true"
                 >
                   {item.icon}

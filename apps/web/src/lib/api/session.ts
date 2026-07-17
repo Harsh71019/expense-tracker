@@ -24,6 +24,7 @@ export const getSession = cache(async (): Promise<ServerSession> => {
   try {
     const response = await fetch(`${getApiBaseUrl()}/auth/get-session`, {
       headers: { cookie: cookieStore.toString(), "x-request-id": reqId },
+      credentials: "include",
       cache: "no-store"
     });
     debug.api(`get-session ${response.status} reqId=${reqId}`);
@@ -36,8 +37,6 @@ export const getSession = cache(async (): Promise<ServerSession> => {
     const result = SessionResponseSchema.safeParse(body);
     return result.success ? result.data : null;
   } catch (error) {
-    // A down/unreachable API or malformed response fails closed to "logged out"
-    // rather than surfacing a server error from the app shell.
     debug.api(`get-session failed reqId=${reqId}`, error);
     return null;
   }

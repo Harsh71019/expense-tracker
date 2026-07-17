@@ -12,12 +12,17 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.4.0",
     "@sentry/nextjs": "latest",
+    "@tanstack/react-query": "^5.101.2",
     "@vyaya/shared": "workspace:*",
     "better-auth": "latest",
     "next": "latest",
+    "openapi-fetch": "^0.17.0",
     "react": "latest",
     "react-dom": "latest",
+    "react-hook-form": "^7.81.0",
+    "sonner": "^2.0.7",
     "zod": "latest"
   },
   "devDependencies": {

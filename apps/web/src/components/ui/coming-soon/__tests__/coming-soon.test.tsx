@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { ComingSoon } from "./coming-soon";
+import { ComingSoon } from "../coming-soon";
 
 describe("ComingSoon", () => {
   it("identifies the unavailable feature and its delivery phase", () => {

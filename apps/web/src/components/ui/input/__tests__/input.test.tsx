@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
-import { Input } from "./input";
+import { Input } from "../input";
 
 describe("Input", () => {
   it("associates its label and forwards input attributes", async () => {

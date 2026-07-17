@@ -1,12 +1,13 @@
 import { render, screen } from "@testing-library/react";
+import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { AppNav } from "./app-nav";
+import { AppNav } from "../app-nav";
 
 const pathname = vi.hoisted(() => ({ value: "/" }));
 
 vi.mock("next/link", () => ({
-  default: ({ children, href, ...props }: Readonly<{ children: string; href: string }>) => (
+  default: ({ children, href, ...props }: Readonly<{ children: ReactNode; href: string }>) => (
     <a href={href} {...props}>
       {children}
     </a>
@@ -20,6 +21,10 @@ vi.mock("next/navigation", () => ({
 const items = [
   { href: "/", label: "Home" },
   { href: "/transactions", label: "Transactions" }
+] as const;
+const iconItems = [
+  { href: "/", label: "Home", icon: "⌂" },
+  { href: "/transactions", label: "Transactions", icon: "≡" }
 ] as const;
 
 describe("AppNav", () => {
@@ -43,5 +48,18 @@ describe("AppNav", () => {
 
     expect(screen.getByRole("link", { name: "Transactions" })).toHaveClass("text-accent");
     expect(screen.getByRole("link", { name: "Home" })).toHaveClass("text-foreground-muted");
+  });
+
+  it("renders icon-first navigation when the sidebar is compact", () => {
+    render(<AppNav items={iconItems} orientation="sidebar" compact />);
+
+    expect(screen.getByRole("link", { name: "Home" })).toHaveAttribute("title", "Home");
+    expect(screen.getByText("⌂")).toBeVisible();
+  });
+
+  it("renders icons in the mobile navigation", () => {
+    render(<AppNav items={iconItems} orientation="bottom" />);
+
+    expect(screen.getByText("≡")).toBeVisible();
   });
 });

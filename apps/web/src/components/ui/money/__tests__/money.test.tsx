@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { Money } from "./money";
+import { Money, SignedMoney } from "../money";
 
 describe("Money", () => {
   it("formats integer paise as rupees", () => {
@@ -22,5 +22,10 @@ describe("Money", () => {
   it("omits the sign when unsigned regardless of variant", () => {
     render(<Money minor={2_000} variant="expense" />);
     expect(screen.getByText("₹20.00")).toBeInTheDocument();
+  });
+
+  it("formats signed values without passing negatives to formatMinor", () => {
+    render(<SignedMoney minor={-500} />);
+    expect(screen.getByText("−₹5.00")).toBeInTheDocument();
   });
 });

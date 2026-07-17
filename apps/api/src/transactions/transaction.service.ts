@@ -17,7 +17,8 @@ import { AuditRepository } from "../audit/audit.repository.js";
 import { CategoryRepository } from "../categories/category.repository.js";
 import { EntityNotFoundError } from "../common/errors/entity-not-found.error.js";
 import { TransactionNotReversibleError } from "../common/errors/transaction-not-reversible.error.js";
-import { withTxn } from "../common/mongo-txn.js";
+import { TransferMetadataRequiresGroupError } from "../common/errors/transfer-metadata-requires-group.error.js";
+import { withTxn, type MongoSession } from "../common/mongo-txn.js";
 import { LogEvent } from "../common/logging/events.js";
 import { TransactionRepository } from "./transaction.repository.js";
 
@@ -91,48 +92,64 @@ export class TransactionService {
     return this.transactions.findMany(userId, query);
   }
 
+  async get(userId: string, transactionId: TransactionId): Promise<Transaction> {
+    const transaction = await this.transactions.findById(userId, transactionId);
+    if (transaction === null) throw new EntityNotFoundError("Transaction");
+    return transaction;
+  }
+
   async update(
     userId: string,
     transactionId: TransactionId,
     patch: UpdateTransaction
   ): Promise<Transaction> {
-    const updated = await withTxn(this.connection, async (session) => {
-      const before = await this.transactions.findById(userId, transactionId, session);
-      if (before === null) throw new EntityNotFoundError("Transaction");
-
-      if (
-        patch.categoryId !== undefined &&
-        patch.categoryId !== null &&
-        !(await this.categories.exists(userId, patch.categoryId, session))
-      ) {
-        throw new EntityNotFoundError("Category");
-      }
-
-      const after = await this.transactions.updateNonMonetaryFields(
-        userId,
-        transactionId,
-        patch,
-        session
-      );
-      if (after === null) throw new EntityNotFoundError("Transaction");
-
-      await this.audit.record(userId, "transaction.update", after.id, session, {
-        before: {
-          description: before.description,
-          tags: before.tags,
-          categoryId: before.categoryId
-        },
-        after: { description: after.description, tags: after.tags, categoryId: after.categoryId }
-      });
-
-      return after;
-    });
+    const updated = await withTxn(this.connection, (session) =>
+      this.updateInSession(userId, transactionId, patch, session)
+    );
 
     this.logger.log(
       { event: LogEvent.TransactionUpdated, txnId: updated.id },
       "transaction updated"
     );
     return updated;
+  }
+
+  async updateInSession(
+    userId: string,
+    transactionId: TransactionId,
+    patch: UpdateTransaction,
+    session: MongoSession
+  ): Promise<Transaction> {
+    const before = await this.transactions.findById(userId, transactionId, session);
+    if (before === null) throw new EntityNotFoundError("Transaction");
+    if (before.transferGroupId !== undefined) throw new TransferMetadataRequiresGroupError();
+
+    if (
+      patch.categoryId !== undefined &&
+      patch.categoryId !== null &&
+      !(await this.categories.exists(userId, patch.categoryId, session))
+    ) {
+      throw new EntityNotFoundError("Category");
+    }
+
+    const after = await this.transactions.updateNonMonetaryFields(
+      userId,
+      transactionId,
+      patch,
+      session
+    );
+    if (after === null) throw new EntityNotFoundError("Transaction");
+
+    await this.audit.record(userId, "transaction.update", after.id, session, {
+      before: {
+        description: before.description,
+        tags: before.tags,
+        categoryId: before.categoryId
+      },
+      after: { description: after.description, tags: after.tags, categoryId: after.categoryId }
+    });
+
+    return after;
   }
 
   async reverse(userId: string, transactionId: TransactionId): Promise<CreateTransactionResult> {

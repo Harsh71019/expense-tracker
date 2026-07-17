@@ -42,12 +42,13 @@ export class AccountRepository {
     );
   }
 
-  async archive(userId: string, accountId: AccountId): Promise<boolean> {
+  async archive(userId: string, accountId: AccountId, session?: MongoSession): Promise<boolean> {
     const result = await this.database()
       .collection(ACCOUNTS_COLLECTION)
       .updateOne(
         { _id: new Types.ObjectId(accountId), userId, isArchived: false },
-        { $set: { isArchived: true, updatedAt: new Date() } }
+        { $set: { isArchived: true, updatedAt: new Date() } },
+        ...(session === undefined ? [] : [{ session }])
       );
 
     return result.modifiedCount === 1;

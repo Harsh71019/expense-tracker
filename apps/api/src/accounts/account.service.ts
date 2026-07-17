@@ -25,9 +25,6 @@ export class AccountService {
   }
 
   async archive(userId: string, accountId: AccountId): Promise<void> {
-    const archived = await this.accounts.archive(userId, accountId);
-    if (!archived) {
-      throw new EntityNotFoundError("Account");
-    }
+    if (!(await this.accounts.archive(userId, accountId))) throw new EntityNotFoundError("Account");
   }
 }

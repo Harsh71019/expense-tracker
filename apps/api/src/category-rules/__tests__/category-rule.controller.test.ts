@@ -32,12 +32,12 @@ describe("CategoryRuleController", () => {
     });
   });
 
-  it("rejects a create body missing required fields before calling the service", () => {
+  it("rejects a create body missing required fields before calling the service", async () => {
     const mockService = { create: vi.fn() };
     // @ts-expect-error - mock CategoryRuleService for unit testing
     const controller = new CategoryRuleController(mockService);
 
-    expect(() => controller.create(user, { pattern: "SWIGGY" })).toThrow();
+    await expect(controller.create(user, { pattern: "SWIGGY" })).rejects.toThrow();
     expect(mockService.create).not.toHaveBeenCalled();
   });
 
@@ -57,5 +57,35 @@ describe("CategoryRuleController", () => {
 
     await controller.delete(user, "507f1f77bcf86cd799439011");
     expect(mockService.delete).toHaveBeenCalledWith("user-1", "507f1f77bcf86cd799439011");
+  });
+
+  it("uses replay-aware create and delete mutations", async () => {
+    const mockService = { create: vi.fn(), delete: vi.fn() };
+    const mockMutations = {
+      create: vi.fn().mockResolvedValue({ result: sampleRule, replayed: true }),
+      delete: vi.fn().mockResolvedValue({ result: null, replayed: true })
+    };
+    // @ts-expect-error - mock services for unit testing
+    const controller = new CategoryRuleController(mockService, mockMutations);
+    const response = { status: vi.fn(), setHeader: vi.fn() };
+    response.status.mockReturnValue(response);
+
+    await controller.create(
+      user,
+      { pattern: "SWIGGY", categoryId: sampleRule.categoryId },
+      "21212121-aaaa-4212-8212-212121212121",
+      // @ts-expect-error - mock Response for unit testing
+      response
+    );
+    await controller.delete(
+      user,
+      sampleRule.id,
+      "22222222-bbbb-4222-8222-222222222222",
+      // @ts-expect-error - mock Response for unit testing
+      response
+    );
+
+    expect(response.status).toHaveBeenCalledWith(200);
+    expect(response.setHeader).toHaveBeenCalledWith("Idempotency-Replayed", "true");
   });
 });

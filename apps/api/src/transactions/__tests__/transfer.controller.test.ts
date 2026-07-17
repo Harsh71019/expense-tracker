@@ -113,6 +113,27 @@ describe("TransferController", () => {
     expect(mockService.reverse).toHaveBeenCalledWith("user-1", "507f1f77bcf86cd799439099");
   });
 
+  it("marks a natural group-reversal replay in the response header", async () => {
+    const mockResult = {
+      transferGroupId: "507f1f77bcf86cd799439099",
+      legs: [{ id: "txn-a" }, { id: "txn-b" }],
+      replayed: true
+    };
+    const mockService = { reverse: vi.fn().mockResolvedValue(mockResult) };
+    // @ts-expect-error - mock TransferService for unit testing
+    const controller = new TransferController(mockService);
+    const response = mockResponse();
+
+    await controller.reverse(
+      user,
+      "507f1f77bcf86cd799439099",
+      // @ts-expect-error - mock Response for unit testing
+      response
+    );
+
+    expect(response.setHeader).toHaveBeenCalledWith("Idempotency-Replayed", "true");
+  });
+
   it("rejects a transfer between the same account before calling the service", async () => {
     const mockService = { create: vi.fn() };
     // @ts-expect-error - mock TransferService for unit testing
@@ -154,6 +175,30 @@ describe("TransferController", () => {
           description: "ATM withdrawal"
         },
         "not-a-uuid",
+        // @ts-expect-error - mock Response for unit testing
+        response
+      )
+    ).rejects.toThrow();
+    expect(mockService.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects a missing idempotency key before calling the service", async () => {
+    const mockService = { create: vi.fn() };
+    // @ts-expect-error - mock TransferService for unit testing
+    const controller = new TransferController(mockService);
+    const response = mockResponse();
+
+    await expect(
+      controller.create(
+        user,
+        {
+          fromAccountId: "507f1f77bcf86cd799439011",
+          toAccountId: "507f1f77bcf86cd799439012",
+          amountMinor: 10_000,
+          occurredAt: "2026-07-12T09:00:00.000Z",
+          description: "ATM withdrawal"
+        },
+        undefined,
         // @ts-expect-error - mock Response for unit testing
         response
       )

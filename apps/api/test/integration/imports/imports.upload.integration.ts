@@ -10,6 +10,7 @@ import { AuditRepository } from "../../../src/audit/audit.repository.js";
 import { CategoryRuleRepository } from "../../../src/category-rules/category-rule.repository.js";
 import { ImportAlreadyCommittedError } from "../../../src/common/errors/import-already-committed.error.js";
 import { RuntimeConfigService } from "../../../src/common/config/runtime-config.service.js";
+import { EntityNotFoundError } from "../../../src/common/errors/entity-not-found.error.js";
 import { ImportBatchRepository } from "../../../src/imports/import-batch.repository.js";
 import { StagedRowRepository } from "../../../src/imports/staged-row.repository.js";
 import { ImportsQueue } from "../../../src/imports/imports.queue.js";
@@ -194,6 +195,42 @@ describe("ImportsService.createBatch", () => {
         MAPPING
       )
     ).resolves.toMatchObject({ status: "pending" });
+  });
+
+  it("returns saved mappings only for an active account owned by the requester", async () => {
+    const accountId = new Types.ObjectId();
+    await connectedDatabase(connection).collection("accounts").insertOne({
+      _id: accountId,
+      userId: "mapping-owner",
+      name: "HDFC",
+      type: "bank",
+      currency: "INR",
+      openingBalanceMinor: 0,
+      balanceMinor: 0,
+      isArchived: false,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
+    await connectedDatabase(connection)
+      .collection("import_batches")
+      .insertOne({
+        userId: "mapping-owner",
+        accountId,
+        filename: "mapping.csv",
+        fileHash: "mapping-hash",
+        mapping: MAPPING,
+        status: "staged",
+        stats: { total: 0, staged: 0, duplicates: 0, committed: 0 },
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+
+    await expect(
+      nonNull(service).getSavedMapping("mapping-owner", accountId.toString())
+    ).resolves.toEqual(MAPPING);
+    await expect(
+      nonNull(service).getSavedMapping("someone-else", accountId.toString())
+    ).rejects.toThrow(EntityNotFoundError);
   });
 });
 

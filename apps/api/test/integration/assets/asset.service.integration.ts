@@ -6,12 +6,16 @@ import type { Connection } from "mongoose";
 import { AuditRepository } from "../../../src/audit/audit.repository.js";
 import { AssetRepository } from "../../../src/assets/asset.repository.js";
 import { AssetService } from "../../../src/assets/asset.service.js";
+import { AssetMutationService } from "../../../src/assets/asset-mutation.service.js";
 import { ValuationRepository } from "../../../src/assets/valuation.repository.js";
+import { IdempotencyRepository } from "../../../src/common/idempotency/idempotency.repository.js";
+import { IdempotencyService } from "../../../src/common/idempotency/idempotency.service.js";
 
 describe("AssetService", () => {
   let replicaSet: MongoMemoryReplSet | undefined;
   let connection: Connection | undefined;
   let service: AssetService | undefined;
+  let mutations: AssetMutationService | undefined;
 
   beforeAll(async () => {
     replicaSet = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
@@ -22,6 +26,14 @@ describe("AssetService", () => {
       new ValuationRepository(connection),
       new AuditRepository(connection)
     );
+    mutations = new AssetMutationService(
+      connection,
+      service,
+      new IdempotencyService(new IdempotencyRepository(connection))
+    );
+    await connectedDatabase(connection)
+      .collection("idempotency_records")
+      .createIndex({ userId: 1, operation: 1, key: 1 }, { unique: true });
   });
 
   afterAll(async () => {
@@ -149,10 +161,74 @@ describe("AssetService", () => {
       })
     ).rejects.toThrow("Asset not found.");
   });
+
+  it("replays asset create, valuation append, and close across five attempts each", async () => {
+    const mutation = assetMutations(mutations);
+    const creates = await Promise.all(
+      Array.from({ length: 5 }, () =>
+        mutation.create(
+          "user-idempotent",
+          {
+            kind: "investment",
+            name: "Replay-safe fund",
+            openedAt: new Date("2026-05-01T00:00:00.000Z"),
+            openingValueMinor: 25_000_00
+          },
+          "77777777-aaaa-4777-8777-777777777777"
+        )
+      )
+    );
+    expect(creates.filter((result) => !result.replayed)).toHaveLength(1);
+    const assetId = creates[0]?.result.id;
+    if (assetId === undefined) throw new Error("Expected a created asset");
+    expect(
+      await connectedDatabase(connection)
+        .collection("asset_valuations")
+        .countDocuments({ userId: "user-idempotent" })
+    ).toBe(1);
+
+    const valuations = await Promise.all(
+      Array.from({ length: 5 }, () =>
+        mutation.addValuation(
+          "user-idempotent",
+          assetId,
+          {
+            valueMinor: 26_000_00,
+            valuedAt: new Date("2026-07-01T00:00:00.000Z"),
+            source: "manual"
+          },
+          "88888888-aaaa-4888-8888-888888888888"
+        )
+      )
+    );
+    expect(valuations.filter((result) => !result.replayed)).toHaveLength(1);
+    expect(
+      await connectedDatabase(connection)
+        .collection("asset_valuations")
+        .countDocuments({ userId: "user-idempotent" })
+    ).toBe(2);
+
+    const closes = await Promise.all(
+      Array.from({ length: 5 }, () =>
+        mutation.close("user-idempotent", assetId, "99999999-aaaa-4999-8999-999999999999")
+      )
+    );
+    expect(closes.filter((result) => !result.replayed)).toHaveLength(1);
+    expect(
+      await connectedDatabase(connection)
+        .collection("audit_log")
+        .countDocuments({ userId: "user-idempotent" })
+    ).toBe(3);
+  });
 });
 
 function assetService(service: AssetService | undefined): AssetService {
   if (service === undefined) throw new Error("Asset service is not ready");
+  return service;
+}
+
+function assetMutations(service: AssetMutationService | undefined): AssetMutationService {
+  if (service === undefined) throw new Error("Asset mutation service is not ready");
   return service;
 }
 

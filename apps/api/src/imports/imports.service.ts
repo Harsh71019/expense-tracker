@@ -208,7 +208,10 @@ export class ImportsService {
   }
 
   /** The mapping form's pre-fill — the most recent batch's mapping for this account, or null. */
-  getSavedMapping(userId: string, accountId: AccountId): Promise<ColumnMapping | null> {
+  async getSavedMapping(userId: string, accountId: AccountId): Promise<ColumnMapping | null> {
+    if (!(await this.accounts.exists(userId, accountId))) {
+      throw new EntityNotFoundError("Account");
+    }
     return this.batches.findLatestMappingForAccount(userId, accountId);
   }
 

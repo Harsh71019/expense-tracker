@@ -108,6 +108,34 @@ describe("TransactionController", () => {
     expect(mockService.reverse).toHaveBeenCalledWith("user-1", "507f1f77bcf86cd799439011");
   });
 
+  it("loads a transaction detail by validated id", async () => {
+    const mockService = { get: vi.fn().mockResolvedValue(sampleTransaction) };
+    // @ts-expect-error - mock TransactionService for unit testing
+    const controller = new TransactionController(mockService);
+
+    await expect(controller.get(user, "507f1f77bcf86cd799439011")).resolves.toEqual(
+      sampleTransaction
+    );
+    expect(mockService.get).toHaveBeenCalledWith("user-1", "507f1f77bcf86cd799439011");
+  });
+
+  it("marks a natural reversal replay in the response header", async () => {
+    const mockService = {
+      reverse: vi.fn().mockResolvedValue({ transaction: sampleTransaction, replayed: true })
+    };
+    // @ts-expect-error - mock TransactionService for unit testing
+    const controller = new TransactionController(mockService);
+    const response = mockResponse();
+
+    await controller.reverse(
+      user,
+      "507f1f77bcf86cd799439011",
+      // @ts-expect-error - mock Response for unit testing
+      response
+    );
+    expect(response.setHeader).toHaveBeenCalledWith("Idempotency-Replayed", "true");
+  });
+
   it("calls update on the transaction service with a validated patch", async () => {
     const updatedTransaction = { ...sampleTransaction, description: "Chai and biscuits" };
     const mockService = {
@@ -124,6 +152,35 @@ describe("TransactionController", () => {
     expect(mockService.update).toHaveBeenCalledWith("user-1", "507f1f77bcf86cd799439011", {
       description: "Chai and biscuits"
     });
+  });
+
+  it("uses the replay-aware metadata mutation path", async () => {
+    const updatedTransaction = { ...sampleTransaction, description: "Replay-safe edit" };
+    const mockService = { update: vi.fn() };
+    const mockMutations = {
+      update: vi.fn().mockResolvedValue({ result: updatedTransaction, replayed: true })
+    };
+    // @ts-expect-error - mock services for unit testing
+    const controller = new TransactionController(mockService, mockMutations);
+    const response = mockResponse();
+
+    const result = await controller.update(
+      user,
+      "507f1f77bcf86cd799439011",
+      { description: "Replay-safe edit" },
+      "16161616-aaaa-4161-8161-161616161616",
+      // @ts-expect-error - mock Response for unit testing
+      response
+    );
+
+    expect(result).toEqual(updatedTransaction);
+    expect(mockMutations.update).toHaveBeenCalledWith(
+      "user-1",
+      "507f1f77bcf86cd799439011",
+      { description: "Replay-safe edit" },
+      "16161616-aaaa-4161-8161-161616161616"
+    );
+    expect(response.setHeader).toHaveBeenCalledWith("Idempotency-Replayed", "true");
   });
 
   it("calls list on the transaction service with validated query params", async () => {
@@ -161,16 +218,18 @@ describe("TransactionController", () => {
     expect(mockService.list).toHaveBeenCalledTimes(1);
   });
 
-  it("rejects attempts to patch immutable ledger fields", () => {
+  it("rejects attempts to patch immutable ledger fields", async () => {
     const mockService = { update: vi.fn() };
 
     // @ts-expect-error - mock TransactionService for unit testing
     const controller = new TransactionController(mockService);
 
-    expect(() =>
+    await expect(
       controller.update(user, "507f1f77bcf86cd799439011", { amountMinor: 100 })
-    ).toThrow();
-    expect(() => controller.update(user, "507f1f77bcf86cd799439011", { type: "income" })).toThrow();
+    ).rejects.toThrow();
+    await expect(
+      controller.update(user, "507f1f77bcf86cd799439011", { type: "income" })
+    ).rejects.toThrow();
     expect(mockService.update).not.toHaveBeenCalled();
   });
 
@@ -191,6 +250,30 @@ describe("TransactionController", () => {
           description: "Chai"
         },
         "not-a-uuid",
+        // @ts-expect-error - mock Response for unit testing
+        response
+      )
+    ).rejects.toThrow();
+    expect(mockService.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects a missing create idempotency key before calling the service", async () => {
+    const mockService = { create: vi.fn() };
+    // @ts-expect-error - mock TransactionService for unit testing
+    const controller = new TransactionController(mockService);
+    const response = mockResponse();
+
+    await expect(
+      controller.create(
+        user,
+        {
+          accountId: "507f1f77bcf86cd799439011",
+          type: "expense",
+          amountMinor: 250,
+          occurredAt: "2026-07-12T09:00:00.000Z",
+          description: "Chai"
+        },
+        undefined,
         // @ts-expect-error - mock Response for unit testing
         response
       )

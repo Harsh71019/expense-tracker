@@ -6,6 +6,8 @@ export const ErrorCodes = [
   "common.dependency_unavailable",
   "auth.unauthenticated",
   "txn.already_reversed",
+  "txn.transfer_metadata_requires_group",
+  "category.parent_kind_mismatch",
   "asset.invalid_valuation_sign",
   "import.invalid_file",
   "import.already_committed",

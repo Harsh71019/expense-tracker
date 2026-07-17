@@ -46,6 +46,8 @@ export { ErrorCodes } from "./errors/codes.js";
 export type { ErrorCode } from "./errors/codes.js";
 export { ExportCsvQuerySchema } from "./export.js";
 export type { ExportCsvQuery } from "./export.js";
+export { ProblemDetailsSchema, ProblemFieldErrorSchema } from "./errors/problem-details.js";
+export type { ProblemDetails, ProblemFieldError } from "./errors/problem-details.js";
 export {
   ALLOWED_IMPORT_FILE_EXTENSIONS,
   ALLOWED_IMPORT_MIME_TYPES,

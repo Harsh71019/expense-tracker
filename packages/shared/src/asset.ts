@@ -55,13 +55,13 @@ export const AssetSchema = z.object({
   userId: z.string().min(1),
   kind: AssetKindSchema,
   name: z.string().trim().min(1).max(80),
-  openedAt: z.date(),
-  maturityAt: z.date().optional(),
+  openedAt: z.coerce.date(),
+  maturityAt: z.coerce.date().optional(),
   annualRateBps: z.number().int().min(0).max(100_00).optional(),
   quantityMilliUnits: z.number().int().positive().optional(),
   isClosed: z.boolean(),
-  createdAt: z.date(),
-  updatedAt: z.date()
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date()
 });
 
 export const ValuationSourceSchema = z.enum(["manual", "maturity_projection"]);
@@ -76,7 +76,7 @@ export const ValuationSchema = CreateValuationSchema.extend({
   id: z.string().regex(/^[a-f\d]{24}$/i, "Valuation id must be a MongoDB ObjectId."),
   assetId: AssetIdSchema,
   userId: z.string().min(1),
-  createdAt: z.date()
+  createdAt: z.coerce.date()
 });
 
 export const ValuationPageSchema = z.object({
@@ -95,11 +95,11 @@ export const NetWorthAssetSchema = z.object({
   name: z.string(),
   kind: AssetKindSchema,
   valueMinor: SignedMinorSchema,
-  valuedAt: z.date().nullable()
+  valuedAt: z.coerce.date().nullable()
 });
 
 export const NetWorthSchema = z.object({
-  asOf: z.date(),
+  asOf: z.coerce.date(),
   netWorthMinor: SignedMinorSchema,
   accounts: z.array(NetWorthAccountSchema),
   assets: z.array(NetWorthAssetSchema)

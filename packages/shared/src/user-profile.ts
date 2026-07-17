@@ -10,8 +10,8 @@ export const UserProfileSchema = z.object({
   displayName: z.string().trim().min(1).max(100),
   locale: z.literal(DEFAULT_USER_PROFILE.locale),
   timezone: z.literal(DEFAULT_USER_PROFILE.timezone),
-  createdAt: z.date(),
-  updatedAt: z.date()
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date()
 });
 
 export const UserProfileUpdateSchema = UserProfileSchema.pick({

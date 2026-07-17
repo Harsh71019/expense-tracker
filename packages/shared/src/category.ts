@@ -21,8 +21,8 @@ export const CategorySchema = CreateCategorySchema.extend({
   id: CategoryIdSchema,
   userId: z.string().min(1),
   isArchived: z.boolean(),
-  createdAt: z.date(),
-  updatedAt: z.date()
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date()
 });
 
 export type Category = z.infer<typeof CategorySchema>;

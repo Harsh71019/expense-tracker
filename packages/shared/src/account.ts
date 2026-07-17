@@ -24,8 +24,8 @@ export const AccountSchema = CreateAccountSchema.extend({
   currency: z.literal("INR"),
   balanceMinor: AccountBalanceMinorSchema,
   isArchived: z.boolean(),
-  createdAt: z.date(),
-  updatedAt: z.date()
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date()
 });
 
 export type Account = z.infer<typeof AccountSchema>;

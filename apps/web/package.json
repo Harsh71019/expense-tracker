@@ -26,7 +26,7 @@
     "@testing-library/jest-dom": "latest",
     "@testing-library/react": "latest",
     "@testing-library/user-event": "latest",
-    "@vitejs/plugin-react": "latest",
+    "@vitejs/plugin-react": "5.2.0",
     "@vyaya/config": "workspace:*",
     "jsdom": "latest",
     "tailwindcss": "latest",

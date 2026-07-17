@@ -21,35 +21,33 @@ export default async function MorePage(): Promise<ReactNode> {
 
   return (
     <section className="flex max-w-xl flex-col gap-6">
-      <div>
-        <p className="font-mono text-xs tracking-widest text-foreground-muted uppercase">
-          Settings
-        </p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground">Your account</h1>
-      </div>
+      <h1 className="text-xl font-semibold tracking-tight text-foreground">Your account</h1>
 
       <ProfileSummary profile={profile} email={email} />
 
-      <Link
-        href="/imports"
-        className="block rounded-xl border border-border bg-surface-elevated p-5 shadow-sm transition-colors hover:border-accent/40 hover:bg-accent/5"
-      >
-        <p className="font-mono text-xs tracking-widest text-foreground-muted uppercase">
-          Statements
-        </p>
-        <p className="mt-2 text-base font-medium text-foreground">Import statement</p>
-        <p className="mt-1 text-sm text-foreground-muted">Upload, review, and post a CSV safely.</p>
-      </Link>
-
-      <div className="grid gap-3 sm:grid-cols-2">
-        {settingsLinks.map(([href, label, description]) => (
+      <div className="overflow-hidden rounded-xl border border-border">
+        <Link
+          href="/imports"
+          className="block border-b border-border px-5 py-4 transition-colors hover:bg-surface-muted/50"
+        >
+          <p className="font-mono text-[10px] tracking-widest text-foreground-muted uppercase">
+            Statements
+          </p>
+          <p className="mt-1 text-sm font-semibold text-foreground">Import statement</p>
+          <p className="mt-0.5 text-sm text-foreground-muted">
+            Upload, review, and post a CSV safely.
+          </p>
+        </Link>
+        {settingsLinks.map(([href, label, description], index) => (
           <Link
             key={href}
             href={href}
-            className="rounded-xl border border-border bg-surface-elevated p-4 transition-colors hover:border-accent/40 hover:bg-accent/5"
+            className={`block px-5 py-4 transition-colors hover:bg-surface-muted/50 ${
+              index < settingsLinks.length - 1 ? "border-b border-border" : ""
+            }`}
           >
-            <p className="font-semibold">{label}</p>
-            <p className="mt-1 text-sm text-foreground-muted">{description}</p>
+            <p className="text-sm font-semibold text-foreground">{label}</p>
+            <p className="mt-0.5 text-sm text-foreground-muted">{description}</p>
           </Link>
         ))}
       </div>

@@ -6,6 +6,7 @@ import "./globals.css";
 import { getStoredTheme } from "../lib/theme-server";
 import { QueryProvider } from "../lib/query/provider";
 import { Toaster } from "../components/ui/sonner";
+import { MockApiBoot } from "../mocks/MockApiBoot";
 
 const interTight = Inter_Tight({
   subsets: ["latin"],
@@ -40,6 +41,7 @@ export default async function RootLayout({
         <QueryProvider>
           {children}
           <Toaster />
+          <MockApiBoot />
         </QueryProvider>
       </body>
     </html>

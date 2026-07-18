@@ -16,7 +16,8 @@ export default defineConfig({
     exclude: ["**/node_modules/**", "**/.next/**", "e2e/**"],
     coverage: {
       include: ["src/**/*.{ts,tsx}"],
-      exclude: ["src/**/*.test.{ts,tsx}"],
+      // src/mocks is dev-only fixture/wiring for the local mock API layer, not app logic — excluded from the coverage gate.
+      exclude: ["src/**/*.test.{ts,tsx}", "src/mocks/**"],
       reporter: ["text", "html", "json-summary"],
       thresholds: {
         statements: 90,

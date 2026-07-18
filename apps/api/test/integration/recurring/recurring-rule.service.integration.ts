@@ -10,10 +10,13 @@ import { EntityNotFoundError } from "../../../src/common/errors/entity-not-found
 import { InvalidRecurringRuleError } from "../../../src/common/errors/invalid-recurring-rule.error.js";
 import { RecurringRuleRepository } from "../../../src/recurring/recurring-rule.repository.js";
 import { RecurringRuleService } from "../../../src/recurring/recurring-rule.service.js";
+import { createTestDb, insertTestUser } from "../support/postgres-test-db.js";
+import type { TestDb } from "../support/postgres-test-db.js";
 
 describe("RecurringRuleService", () => {
   let replicaSet: MongoMemoryReplSet | undefined;
   let connection: Connection | undefined;
+  let pgTestDb: TestDb | undefined;
   let service: RecurringRuleService | undefined;
   let accountId: string | undefined;
   let categoryId: string | undefined;
@@ -23,8 +26,12 @@ describe("RecurringRuleService", () => {
     connection = await createConnection(
       replicaSet.getUri("vyaya_recurring_service_test")
     ).asPromise();
+    // categories is already Postgres-backed (Task 10); accounts/recurring_rules are
+    // still Mongo (Tasks 11/21 not done yet) -- two separate test databases.
+    pgTestDb = await createTestDb();
+    await insertTestUser(pgTestDb.db, "user-a");
     const accounts = new AccountRepository(connection);
-    const categories = new CategoryRepository(connection);
+    const categories = new CategoryRepository(pgTestDb.db);
     service = new RecurringRuleService(
       connection,
       new RecurringRuleRepository(connection),
@@ -42,11 +49,12 @@ describe("RecurringRuleService", () => {
     accountId = account.id;
     const category = await categories.create("user-a", { name: "Rent", kind: "expense" });
     categoryId = category.id;
-  });
+  }, 60_000);
 
   afterAll(async () => {
     if (connection !== undefined) await connection.close();
     if (replicaSet !== undefined) await replicaSet.stop();
+    if (pgTestDb !== undefined) await pgTestDb.teardown();
   });
 
   it("creates a rule and seeds nextRunAt from the rrule/startAt", async () => {

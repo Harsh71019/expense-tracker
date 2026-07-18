@@ -9,10 +9,13 @@ import { CategoryRepository } from "../../../src/categories/category.repository.
 import { withTxn } from "../../../src/common/mongo-txn.js";
 import { TransactionRepository } from "../../../src/transactions/transaction.repository.js";
 import { TransactionService } from "../../../src/transactions/transaction.service.js";
+import { createTestDb, insertTestUser } from "../support/postgres-test-db.js";
+import type { TestDb } from "../support/postgres-test-db.js";
 
 describe("TransactionService.list", () => {
   let replicaSet: MongoMemoryReplSet | undefined;
   let connection: Connection | undefined;
+  let pgTestDb: TestDb | undefined;
   let transactions: TransactionService | undefined;
   let cashAccountId: string | undefined;
   let foodCategoryId: string | undefined;
@@ -22,8 +25,12 @@ describe("TransactionService.list", () => {
     connection = await createConnection(
       replicaSet.getUri("vyaya_transactions_list_test")
     ).asPromise();
+    // categories is already Postgres-backed (Task 10); accounts/transactions/audit are
+    // still Mongo (Tasks 11/14/12 not done yet) -- two separate test databases.
+    pgTestDb = await createTestDb();
+    await insertTestUser(pgTestDb.db, "user-a");
     const accountRepository = new AccountRepository(connection);
-    const categoryRepository = new CategoryRepository(connection);
+    const categoryRepository = new CategoryRepository(pgTestDb.db);
     transactions = new TransactionService(
       connection,
       accountRepository,
@@ -96,11 +103,12 @@ describe("TransactionService.list", () => {
         `11111111-1111-4111-a111-11111111111${index}`
       );
     }
-  });
+  }, 60_000);
 
   afterAll(async () => {
     if (connection !== undefined) await connection.close();
     if (replicaSet !== undefined) await replicaSet.stop();
+    if (pgTestDb !== undefined) await pgTestDb.teardown();
   });
 
   it("returns pages newest-first and paginates via cursor without gaps or duplicates", async () => {

@@ -8,11 +8,14 @@ import { CategoryRepository } from "../../../src/categories/category.repository.
 import { withTxn } from "../../../src/common/mongo-txn.js";
 import { MonthlyRollupRepository } from "../../../src/reports/monthly-rollup.repository.js";
 import { TransactionRepository } from "../../../src/transactions/transaction.repository.js";
+import { createTestDb, insertTestUser } from "../support/postgres-test-db.js";
+import type { TestDb } from "../support/postgres-test-db.js";
 import type { Transaction } from "@vyaya/shared";
 
 describe("MonthlyRollupRepository", () => {
   let replicaSet: MongoMemoryReplSet | undefined;
   let connection: Connection | undefined;
+  let pgTestDb: TestDb | undefined;
   let rollups: MonthlyRollupRepository | undefined;
   let transactions: TransactionRepository | undefined;
   let accountId: string | undefined;
@@ -21,8 +24,12 @@ describe("MonthlyRollupRepository", () => {
   beforeAll(async () => {
     replicaSet = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
     connection = await createConnection(replicaSet.getUri("vyaya_rollups_test")).asPromise();
+    // categories is already Postgres-backed (Task 10); accounts/transactions/rollups are
+    // still Mongo (Tasks 11/14/22 not done yet) -- two separate test databases.
+    pgTestDb = await createTestDb();
+    await insertTestUser(pgTestDb.db, "user-a");
     const accounts = new AccountRepository(connection);
-    const categories = new CategoryRepository(connection);
+    const categories = new CategoryRepository(pgTestDb.db);
     transactions = new TransactionRepository(connection);
     rollups = new MonthlyRollupRepository(connection);
 
@@ -110,11 +117,12 @@ describe("MonthlyRollupRepository", () => {
         )
       );
     });
-  });
+  }, 60_000);
 
   afterAll(async () => {
     if (connection !== undefined) await connection.close();
     if (replicaSet !== undefined) await replicaSet.stop();
+    if (pgTestDb !== undefined) await pgTestDb.teardown();
   });
 
   async function create(input: {

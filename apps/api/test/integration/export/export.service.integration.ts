@@ -10,10 +10,13 @@ import { withTxn } from "../../../src/common/mongo-txn.js";
 import { ExportService } from "../../../src/export/export.service.js";
 import { TransactionRepository } from "../../../src/transactions/transaction.repository.js";
 import { TransactionService } from "../../../src/transactions/transaction.service.js";
+import { createTestDb, insertTestUser } from "../support/postgres-test-db.js";
+import type { TestDb } from "../support/postgres-test-db.js";
 
 describe("ExportService", () => {
   let replicaSet: MongoMemoryReplSet | undefined;
   let connection: Connection | undefined;
+  let pgTestDb: TestDb | undefined;
   let exportService: ExportService | undefined;
   let accountId: string | undefined;
   let categoryId: string | undefined;
@@ -22,9 +25,14 @@ describe("ExportService", () => {
   beforeAll(async () => {
     replicaSet = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
     connection = await createConnection(replicaSet.getUri("vyaya_export_test")).asPromise();
+    // categories is already Postgres-backed (Task 10); accounts/transactions/audit are
+    // still Mongo (Tasks 11/14/12 not done yet) -- two separate test databases.
+    pgTestDb = await createTestDb();
+    await insertTestUser(pgTestDb.db, "user-export");
+    await insertTestUser(pgTestDb.db, "user-range");
 
     const accountRepository = new AccountRepository(connection);
-    const categoryRepository = new CategoryRepository(connection);
+    const categoryRepository = new CategoryRepository(pgTestDb.db);
     const transactionRepository = new TransactionRepository(connection);
     transactionsService = new TransactionService(
       connection,
@@ -49,11 +57,12 @@ describe("ExportService", () => {
       kind: "expense"
     });
     categoryId = category.id;
-  }, 30_000);
+  }, 60_000);
 
   afterAll(async () => {
     if (connection !== undefined) await connection.close();
     if (replicaSet !== undefined) await replicaSet.stop();
+    if (pgTestDb !== undefined) await pgTestDb.teardown();
   });
 
   it("exports posted transactions as CSV, excludes reversed pairs, neutralizes formula-injection cells", async () => {

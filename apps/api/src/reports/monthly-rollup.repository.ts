@@ -110,7 +110,10 @@ export class MonthlyRollupRepository {
       userId,
       month,
       byCategory: (facetResult?.byCategory ?? []).map((entry) => ({
-        ...(entry._id === null ? {} : { categoryId: objectIdString(entry._id) }),
+        // categories is Postgres-backed (Task 10) -- transactions.categoryId is now a
+        // plain string (the referenced uuid), not a Mongo ObjectId, so the group key
+        // needs no ObjectId conversion, unlike byAccount's entry._id below.
+        ...(entry._id === null ? {} : { categoryId: categoryIdString(entry._id) }),
         spentMinor: entry.spentMinor,
         incomeMinor: entry.incomeMinor,
         txnCount: entry.txnCount
@@ -164,6 +167,13 @@ function roughMonthBounds(month: Month): { roughStart: Date; roughEnd: Date } {
     roughStart: new Date(Date.UTC(year, monthIndex, 1) - ONE_DAY_MS),
     roughEnd: new Date(Date.UTC(year, monthIndex + 1, 1) + ONE_DAY_MS)
   };
+}
+
+function categoryIdString(value: unknown): string {
+  if (typeof value !== "string") {
+    throw new Error("Grouped categoryId is not a string.");
+  }
+  return value;
 }
 
 function objectIdString(value: unknown): string {

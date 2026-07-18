@@ -12,12 +12,15 @@ import { RecurringRuleRepository } from "../../../src/recurring/recurring-rule.r
 import { RecurringRuleService } from "../../../src/recurring/recurring-rule.service.js";
 import { TransactionRepository } from "../../../src/transactions/transaction.repository.js";
 import { CategoryRepository } from "../../../src/categories/category.repository.js";
+import { createTestDb, insertTestUser } from "../support/postgres-test-db.js";
+import type { TestDb } from "../support/postgres-test-db.js";
 
 const NOOP_LOGGER = { log: () => undefined, error: () => undefined };
 
 describe("RecurringMaterializeService", () => {
   let replicaSet: MongoMemoryReplSet | undefined;
   let connection: Connection | undefined;
+  let pgTestDb: TestDb | undefined;
   let accounts: AccountRepository | undefined;
   let rules: RecurringRuleRepository | undefined;
   let ruleService: RecurringRuleService | undefined;
@@ -25,8 +28,13 @@ describe("RecurringMaterializeService", () => {
 
   beforeAll(async () => {
     replicaSet = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
+    // categories is already Postgres-backed (Task 10); everything else here (accounts,
+    // recurring_rules, transactions, audit) is still Mongo -- two separate test databases.
+    pgTestDb = await createTestDb();
+    await insertTestUser(pgTestDb.db, "user-a");
+
     process.env.MONGODB_URI = replicaSet.getUri("vyaya_recurring_materialize_test");
-    process.env.DATABASE_URL = "postgres://test:test@localhost:5432/test";
+    process.env.DATABASE_URL = pgTestDb.connectionUri;
     process.env.REDIS_URL = "redis://127.0.0.1:6379/12";
     process.env.TRUSTED_ORIGINS = "http://localhost:3000";
     process.env.BETTER_AUTH_SECRET = "test-secret-long-enough-32-chars-long";
@@ -41,7 +49,7 @@ describe("RecurringMaterializeService", () => {
       connection,
       rules,
       accounts,
-      new CategoryRepository(connection)
+      new CategoryRepository(pgTestDb.db)
     );
 
     const account = await withTxn(connectedConnection(connection), (session) =>
@@ -52,11 +60,12 @@ describe("RecurringMaterializeService", () => {
       )
     );
     accountId = account.id;
-  });
+  }, 60_000);
 
   afterAll(async () => {
     if (connection !== undefined) await connection.close();
     if (replicaSet !== undefined) await replicaSet.stop();
+    if (pgTestDb !== undefined) await pgTestDb.teardown();
   });
 
   function newMaterializer(serviceRole: "api" | "worker"): RecurringMaterializeService {

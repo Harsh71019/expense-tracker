@@ -8,10 +8,13 @@ import { CategoryRuleMutationService } from "../../../src/category-rules/categor
 import { CategoryRepository } from "../../../src/categories/category.repository.js";
 import { IdempotencyRepository } from "../../../src/common/idempotency/idempotency.repository.js";
 import { IdempotencyService } from "../../../src/common/idempotency/idempotency.service.js";
+import { createTestDb, insertTestUser } from "../support/postgres-test-db.js";
+import type { TestDb } from "../support/postgres-test-db.js";
 
 describe("CategoryRuleRepository", () => {
   let replicaSet: MongoMemoryReplSet | undefined;
   let connection: Connection | undefined;
+  let pgTestDb: TestDb | undefined;
   let rules: CategoryRuleRepository | undefined;
   let mutations: CategoryRuleMutationService | undefined;
   let categoryId: string | undefined;
@@ -19,8 +22,12 @@ describe("CategoryRuleRepository", () => {
   beforeAll(async () => {
     replicaSet = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
     connection = await createConnection(replicaSet.getUri("vyaya_category_rules_test")).asPromise();
+    // categories is already Postgres-backed (Task 10); category_rules is still Mongo
+    // (Task 15 not done yet) -- two separate test databases until that port lands.
+    pgTestDb = await createTestDb();
+    await insertTestUser(pgTestDb.db, "user-mutation");
     rules = new CategoryRuleRepository(connection);
-    const categories = new CategoryRepository(connection);
+    const categories = new CategoryRepository(pgTestDb.db);
     mutations = new CategoryRuleMutationService(
       connection,
       rules,
@@ -31,11 +38,12 @@ describe("CategoryRuleRepository", () => {
     await connectedDatabase(connection)
       .collection("idempotency_records")
       .createIndex({ userId: 1, operation: 1, key: 1 }, { unique: true });
-  });
+  }, 60_000);
 
   afterAll(async () => {
     if (connection !== undefined) await connection.close();
     if (replicaSet !== undefined) await replicaSet.stop();
+    if (pgTestDb !== undefined) await pgTestDb.teardown();
   });
 
   it("creates and lists rules scoped to the user, sorted by pattern", async () => {

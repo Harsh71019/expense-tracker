@@ -1931,7 +1931,7 @@ function seedTransactions(store: MockStore): void {
   }
 
   reverseSeedTransaction(store, "ATM withdrawal");
-  seedTransfer(store);
+  seedTransfers(store);
 }
 
 /** Seeds one already-reversed transaction so reversal UI states have something to show. */
@@ -1963,51 +1963,172 @@ function reverseSeedTransaction(store: MockStore, description: string): void {
   );
 }
 
-function seedTransfer(store: MockStore): void {
-  const from = store.accounts.find((account) => account.name === "HDFC Bank");
-  const to = store.accounts.find((account) => account.name === "Cash Wallet");
-  if (from === undefined || to === undefined) return;
-
-  const transferGroupId = store.nextTransferGroupId();
-  const occurredAt = daysAgo(9);
-  const description = "ATM cash withdrawal transfer";
-
-  const fromTransaction: TransactionDto = {
-    id: store.nextTransactionId(),
-    userId: store.profile.userId,
-    accountId: from.id,
-    type: "expense",
+const TRANSFER_TEMPLATES: ReadonlyArray<{
+  daysAgo: number;
+  fromAccountName: string;
+  toAccountName: string;
+  amountMinor: number;
+  description: string;
+  tags: readonly string[];
+  /** When set, seeds a second linked pair reversing this one, `daysAgo` days ago. */
+  reversedDaysAgo?: number;
+}> = [
+  {
+    daysAgo: 9,
+    fromAccountName: "HDFC Bank",
+    toAccountName: "Cash Wallet",
     amountMinor: 5_000_00,
-    currency: "INR",
-    occurredAt,
-    description,
-    tags: [],
-    source: "manual",
-    status: "posted",
-    transferGroupId,
-    createdAt: occurredAt,
-    updatedAt: occurredAt
-  };
-  const toTransaction: TransactionDto = {
+    description: "ATM cash withdrawal transfer",
+    tags: []
+  },
+  {
+    daysAgo: 30,
+    fromAccountName: "Cash Wallet",
+    toAccountName: "ICICI Credit Card",
+    amountMinor: 2_500_00,
+    description: "Credit card bill payment",
+    tags: ["bills"],
+    reversedDaysAgo: 28
+  },
+  {
+    daysAgo: 45,
+    fromAccountName: "HDFC Bank",
+    toAccountName: "SBI Savings",
+    amountMinor: 15_000_00,
+    description: "Moving emergency fund",
+    tags: ["savings"]
+  },
+  {
+    daysAgo: 60,
+    fromAccountName: "HDFC Bank",
+    toAccountName: "Sodexo Meal Card",
+    amountMinor: 1_000_00,
+    description: "Meal card recharge",
+    tags: []
+  },
+  {
+    daysAgo: 88,
+    fromAccountName: "SBI Savings",
+    toAccountName: "HDFC Bank",
+    amountMinor: 8_000_00,
+    description: "Bringing funds back for rent",
+    tags: []
+  },
+  {
+    daysAgo: 120,
+    fromAccountName: "HDFC Bank",
+    toAccountName: "Paytm Wallet",
+    amountMinor: 3_000_00,
+    description: "Wallet top-up before trip",
+    tags: ["travel"]
+  },
+  {
+    daysAgo: 150,
+    fromAccountName: "SBI Savings",
+    toAccountName: "Paytm Wallet",
+    amountMinor: 2_000_00,
+    description: "UPI wallet funding",
+    tags: []
+  }
+] as const;
+
+function seedTransfers(store: MockStore): void {
+  for (const template of TRANSFER_TEMPLATES) {
+    const from = store.accounts.find((account) => account.name === template.fromAccountName);
+    const to = store.accounts.find((account) => account.name === template.toAccountName);
+    if (from === undefined || to === undefined) continue;
+
+    const transferGroupId = store.nextTransferGroupId();
+    const occurredAt = daysAgo(template.daysAgo);
+
+    const fromTransaction: TransactionDto = {
+      id: store.nextTransactionId(),
+      userId: store.profile.userId,
+      accountId: from.id,
+      type: "expense",
+      amountMinor: template.amountMinor,
+      currency: "INR",
+      occurredAt,
+      description: template.description,
+      tags: [...template.tags],
+      source: "manual",
+      status: "posted",
+      transferGroupId,
+      createdAt: occurredAt,
+      updatedAt: occurredAt
+    };
+    const toTransaction: TransactionDto = {
+      id: store.nextTransactionId(),
+      userId: store.profile.userId,
+      accountId: to.id,
+      type: "income",
+      amountMinor: template.amountMinor,
+      currency: "INR",
+      occurredAt,
+      description: template.description,
+      tags: [...template.tags],
+      source: "manual",
+      status: "posted",
+      transferGroupId,
+      createdAt: occurredAt,
+      updatedAt: occurredAt
+    };
+
+    store.transactions.push(fromTransaction, toTransaction);
+    applyBalanceDelta(store, from.id, -fromTransaction.amountMinor);
+    applyBalanceDelta(store, to.id, toTransaction.amountMinor);
+
+    if (template.reversedDaysAgo !== undefined) {
+      reverseTransferGroup(store, fromTransaction, toTransaction, template.reversedDaysAgo);
+    }
+  }
+}
+
+/** Mirrors apps/api transfer.service.ts's reverse(): a new linked pair, opposite type/delta, original legs marked reversed. */
+function reverseTransferGroup(
+  store: MockStore,
+  fromTransaction: TransactionDto,
+  toTransaction: TransactionDto,
+  reversedDaysAgo: number
+): void {
+  const newTransferGroupId = store.nextTransferGroupId();
+  const reversedAt = daysAgo(reversedDaysAgo);
+
+  const fromReversal: TransactionDto = {
+    ...fromTransaction,
     id: store.nextTransactionId(),
-    userId: store.profile.userId,
-    accountId: to.id,
     type: "income",
-    amountMinor: 5_000_00,
-    currency: "INR",
-    occurredAt,
-    description,
-    tags: [],
-    source: "manual",
-    status: "posted",
-    transferGroupId,
-    createdAt: occurredAt,
-    updatedAt: occurredAt
+    status: "reversal",
+    reversalOf: fromTransaction.id,
+    transferGroupId: newTransferGroupId,
+    description: `Reversal: ${fromTransaction.description}`,
+    occurredAt: reversedAt,
+    createdAt: reversedAt,
+    updatedAt: reversedAt
+  };
+  const toReversal: TransactionDto = {
+    ...toTransaction,
+    id: store.nextTransactionId(),
+    type: "expense",
+    status: "reversal",
+    reversalOf: toTransaction.id,
+    transferGroupId: newTransferGroupId,
+    description: `Reversal: ${toTransaction.description}`,
+    occurredAt: reversedAt,
+    createdAt: reversedAt,
+    updatedAt: reversedAt
   };
 
-  store.transactions.push(fromTransaction, toTransaction);
-  applyBalanceDelta(store, from.id, -fromTransaction.amountMinor);
-  applyBalanceDelta(store, to.id, toTransaction.amountMinor);
+  store.transactions.push(fromReversal, toReversal);
+  fromTransaction.status = "reversed";
+  fromTransaction.reversedBy = fromReversal.id;
+  fromTransaction.updatedAt = reversedAt;
+  toTransaction.status = "reversed";
+  toTransaction.reversedBy = toReversal.id;
+  toTransaction.updatedAt = reversedAt;
+
+  applyBalanceDelta(store, fromTransaction.accountId, fromTransaction.amountMinor);
+  applyBalanceDelta(store, toTransaction.accountId, -toTransaction.amountMinor);
 }
 
 /** Mirrors apps/api asset.service.ts: creating an asset seeds an opening "manual" valuation. */

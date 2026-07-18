@@ -23,11 +23,13 @@ Reversal response: `{ transferGroupId (new), legs: [Transaction, Transaction] }`
 
 ## Business rules that shape the UI
 
-- A transfer's two legs both carry `transferGroupId` when they show up in a plain transaction list — those rows need distinct treatment (paired/linked visual, no standalone "reverse" on either leg individually; reversal must operate on the whole group).
+- A transfer's two legs both carry `transferGroupId` when they show up in a plain transaction list — those rows need distinct treatment (paired/linked visual, no standalone "reverse" **or "edit"** on either leg individually; both operate on the whole group). `PATCH /v1/transactions/:transactionId` on a transfer leg is rejected outright (409) even for just `description`/`tags` — there's no per-leg edit at all, so a transfer's detail view needs its own edit-less presentation, not the normal transaction detail screen with the reverse button swapped out.
 - Same-account transfers are rejected — the form should exclude the currently-selected "from" account from the "to" picker rather than only erroring after submit.
 - Reversing a transfer reverses both legs atomically as one group action, not two separate reversals.
 
 ## API surface
+
+Both endpoints require an `Idempotency-Key: <uuid>` header (see [00-overview.md](00-overview.md)).
 
 | Method | Path | Purpose |
 |---|---|---|

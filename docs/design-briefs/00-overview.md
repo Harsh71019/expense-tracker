@@ -11,6 +11,11 @@ This directory has one design brief per feature, generated directly from the liv
 - **Net worth = accounts + tracked assets** (loans, FDs, gold/silver, other investments), separate from the transaction ledger.
 - CSV bank-statement import is a multi-step flow: upload → map columns → stage/review rows → commit.
 
+## API conventions (apply across every brief below)
+
+- **Idempotent mutations**: every POST/PATCH/DELETE that creates or changes a record (transactions, transfers, accounts, categories, category rules, assets/valuations) requires an `Idempotency-Key` header (a client-generated UUID). Retrying the same request with the same key replays the original result instead of double-posting — this is what makes "tap submit twice on a flaky connection" safe. A replayed response comes back with an `Idempotency-Replayed: true` header. Any form that posts money (quick add, transfers, imports commit) should generate one key per submit attempt and hold onto it across a retry, not mint a fresh one. (Recurring-rule endpoints are the one exception — they don't take an idempotency key today.)
+- **Archived/closed items disappear from list endpoints, not just active views.** Archiving an account, archiving a category, or closing an asset removes it from `GET /v1/accounts`, `GET /v1/categories`, and `GET /v1/assets` server-side — there's no `includeArchived` query param and no get-by-id endpoint for any of the three. Once archived, a record's name/detail can't be re-fetched through the API at all (a transaction still carries its `accountId`, but the account itself is no longer resolvable). Don't design a "show archived/closed" toggle against the current API — it has nothing to page against.
+
 ## Brand constraints
 
 - Single accent hue ~152° (green), used for CTAs and positive/income amounts; a companion red (~25° hue) for expense amounts; a muted gray for reversed/voided entries.

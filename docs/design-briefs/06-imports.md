@@ -53,15 +53,19 @@ Two named presets should be offered as one-click shortcuts in the mapping form: 
 - Commit is the only step that actually posts transactions (each becomes a real `Transaction` with `source: "csv_import"`); everything before that is staging/preview only, so the review screen can be treated as a safe sandbox.
 - A committed batch can be **reverted** — this reverses the posted transactions (append-only rules still apply) rather than deleting them; frame revert copy accordingly ("this will reverse N transactions," not "delete").
 - The mapping for a given account can be remembered/reused so repeat imports from the same bank can skip re-mapping.
+- **Batch state is a strict pipeline** (`pending → staged → committed`, or `→ reverted`/`→ failed`) and the server enforces it: committing a batch that isn't `staged`, or reverting one that isn't `committed`, is rejected with a 409. The commit/revert buttons should be gated on `status` client-side rather than relying on the error — e.g. don't show "Commit" on an already-`committed` batch.
+- **Uploading a file whose contents match an already-committed batch is rejected outright** (409, distinct error from the generic state-machine one) — this is a batch-level dedupe check via `fileHash`, separate from the per-row `isDuplicate` flag described above. Surface this as "you've already imported this file" at upload time, before the user gets anywhere near the mapping step.
 
 ## API surface
 
+`POST /v1/imports` is a `multipart/form-data` request, not JSON — the CSV goes in a `file` field, and `accountId`/`mapping` are separate form fields with `mapping` sent as a JSON string (not a nested object). Every other endpoint here takes/returns normal JSON.
+
 | Method | Path | Purpose |
 |---|---|---|
-| `POST` | `/v1/imports` | upload file + `accountId` + `mapping` → creates batch, stages rows |
+| `POST` | `/v1/imports` | upload file + `accountId` + `mapping` (multipart) → creates batch, stages rows |
 | `GET` | `/v1/imports` | list batches |
 | `GET` | `/v1/imports/accounts/:accountId/mapping` | fetch saved mapping for an account |
-| `GET` | `/v1/imports/:importBatchId/preview` | cursor-paginated staged rows |
-| `PATCH` | `/v1/imports/:importBatchId/rows/:stagedRowId` | toggle `include` and/or override `suggestedCategoryId` |
-| `POST` | `/v1/imports/:importBatchId/commit` | post included rows as real transactions |
-| `POST` | `/v1/imports/:importBatchId/revert` | reverse a committed batch |
+| `GET` | `/v1/imports/:importBatchId/preview` | cursor-paginated staged rows (`limit` up to 200) |
+| `PATCH` | `/v1/imports/:importBatchId/rows/:stagedRowId` | toggle `include` and/or override `suggestedCategoryId` (set it to `null` to clear the suggestion) |
+| `POST` | `/v1/imports/:importBatchId/commit` | post included rows as real transactions — 409 unless batch is `staged` |
+| `POST` | `/v1/imports/:importBatchId/revert` | reverse a committed batch — 409 unless batch is `committed` |

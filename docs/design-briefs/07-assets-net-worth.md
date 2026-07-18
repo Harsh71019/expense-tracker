@@ -40,19 +40,22 @@ An asset's current value = its latest valuation (or `openingValueMinor` if none 
 
 ## Business rules that shape the UI
 
-- Only `loan_liability` can show a negative value — every other asset kind's value/opening value is non-negative.
+- Only `loan_liability` can show a negative value — every other asset kind's value/opening value is non-negative. **This applies to every valuation added later, not just the opening value** — posting a negative `valueMinor` on a non-`loan_liability` asset's valuation is rejected server-side (422), so the "add valuation" form needs the same sign constraint as the create-asset form, keyed off the asset's `kind`.
 - `maturityAt`/`annualRateBps` are FD-only; `quantityMilliUnits` is gold/silver-only — the create form should hide/disable these fields for other kinds rather than showing them greyed out with a validation error after submit.
 - Valuations are append-only too (no edit/delete) — correcting a bad valuation means adding a new one, consistent with the ledger's reversal philosophy elsewhere.
 - `source: maturity_projection` valuations are system-generated (a scheduled job projecting FD maturity value from `annualRateBps`) — visually distinguish these from user-entered manual valuations so nobody mistakes a projection for a confirmed value.
 - `annualRateBps` as basis points (10000 = 100%) needs a percent-formatted input (e.g. show "7.50%", store `750`), not raw basis points exposed to the user.
+- **Closed assets are excluded server-side from `GET /v1/assets`**, the same archived-item pattern as accounts/categories (see [00-overview.md](00-overview.md)) — no `includeClosed` param, no get-by-id. A closed asset (and its valuation history) is no longer reachable through the API once closed, so don't design a "closed assets" archive view against the current API.
 
 ## API surface
+
+Every `POST` requires an `Idempotency-Key: <uuid>` header.
 
 | Method | Path | Purpose |
 |---|---|---|
 | `POST` | `/v1/assets` | create |
-| `GET` | `/v1/assets` | list |
+| `GET` | `/v1/assets` | list **open assets only** |
 | `POST` | `/v1/assets/:assetId/close` | close |
-| `POST` | `/v1/assets/:assetId/valuations` | add a valuation |
+| `POST` | `/v1/assets/:assetId/valuations` | add a valuation — 422 if the sign rule above is violated |
 | `GET` | `/v1/assets/:assetId/valuations` | valuation history (paginated) |
 | `GET` | `/v1/net-worth` | current net worth snapshot |

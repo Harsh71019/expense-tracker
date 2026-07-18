@@ -23,11 +23,16 @@ One-line: the core ledger — every expense and income entry, append-only, with 
 | `transferGroupId` | id, optional | present only on transfer legs (see [03-transfers.md](03-transfers.md)) — these need different affordances than a normal transaction (no "reverse this leg alone") |
 | `createdAt` / `updatedAt` | timestamp | |
 
-**Editable fields, full stop: `description`, `tags`, `categoryId`.** Everything else about a posted transaction is permanent.
+**Editable fields, full stop: `description`, `tags`, `categoryId`.** Everything else about a posted transaction is permanent. `categoryId` can also be explicitly cleared by patching it to `null` (a distinct action from just omitting the field, which leaves it untouched) — the category picker should support an explicit "uncategorize" option, not just swapping one category for another.
+
+**Transfer legs (any transaction with `transferGroupId` set) reject `PATCH` entirely** — the server returns a 409 (`txn.transfer_metadata_requires_group`) even for a `description`/`tags`-only edit. A transfer leg's row in a transaction list/detail view must not offer an edit affordance at all; editing (like reversal) only makes sense at the transfer-group level. See [03-transfers.md](03-transfers.md).
 
 ### Reversal, not edit
 
 There is no "edit amount" or "delete transaction." Correcting a mistake means reversing it: a new compensating transaction is posted, and both records' `status` flips (original → `reversed`, new one → `reversal`, linked via `reversalOf`/`reversedBy`). Any "fix this transaction" flow must be framed as reverse-and-repost, not inline editing — this is a hard product invariant.
+
+- Only a `posted` transaction can be reversed. Reversing an already-`reversed` original, or reversing a `reversal` itself (there's no "undo the undo"), fails with a 409 (`txn.already_reversed`) — a transaction detail view should hide/disable the "reverse" action once `status` is anything other than `posted`, rather than relying on the error to communicate it.
+- Never surface a standalone "reverse" action on an individual transfer leg — always drive transfer reversal through `POST /v1/transfers/:transferGroupId/reverse` (see [03-transfers.md](03-transfers.md)) so both legs reverse together as one action.
 
 ## Query/list shape
 
@@ -35,10 +40,12 @@ Transactions are listable filtered by `accountId`, `categoryId`, a date range (`
 
 ## API surface
 
+Every `POST`/`PATCH` below requires an `Idempotency-Key: <uuid>` header (see [00-overview.md](00-overview.md)).
+
 | Method | Path | Purpose |
 |---|---|---|
 | `POST` | `/v1/transactions` | create |
 | `GET` | `/v1/transactions` | cursor-paginated list, filterable |
 | `GET` | `/v1/transactions/:transactionId` | detail |
-| `PATCH` | `/v1/transactions/:transactionId` | update `description`/`tags`/`categoryId` only |
-| `POST` | `/v1/transactions/:transactionId/reverse` | reverse |
+| `PATCH` | `/v1/transactions/:transactionId` | update `description`/`tags`/`categoryId` only — 409s on a transfer leg |
+| `POST` | `/v1/transactions/:transactionId/reverse` | reverse — 409s if not currently `posted` |

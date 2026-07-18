@@ -175,11 +175,14 @@ export class TransactionRepository {
   async findById(
     userId: string,
     transactionId: string,
-    session: MongoSession
+    session?: MongoSession
   ): Promise<Transaction | null> {
     const transaction = await this.database()
       .collection(TRANSACTIONS_COLLECTION)
-      .findOne({ _id: new Types.ObjectId(transactionId), userId }, { session });
+      .findOne(
+        { _id: new Types.ObjectId(transactionId), userId },
+        session === undefined ? {} : { session }
+      );
     return transaction === null ? null : this.toTransaction(transaction);
   }
 

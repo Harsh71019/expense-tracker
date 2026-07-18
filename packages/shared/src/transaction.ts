@@ -37,8 +37,8 @@ export const TransactionSchema = CreateTransactionSchema.extend({
   reversalOf: TransactionIdSchema.optional(),
   reversedBy: TransactionIdSchema.optional(),
   transferGroupId: TransferGroupIdSchema.optional(),
-  createdAt: z.date(),
-  updatedAt: z.date()
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date()
 });
 
 export const UpdateTransactionSchema = z

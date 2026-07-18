@@ -2,8 +2,10 @@ node_modules/
 dist/
 .next/
 .env
+.env.*.local
 infra/**/.env
 coverage/
 *.tsbuildinfo
 playwright-report/
 test-results/
+.DS_Store

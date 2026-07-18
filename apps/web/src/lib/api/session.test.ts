@@ -63,7 +63,6 @@ describe("getSession", () => {
     fetchMock.mockRejectedValue(new TypeError("Network unavailable"));
 
     const getSession = await loadGetSession();
-
     await expect(getSession()).resolves.toBeNull();
   });
 
@@ -72,7 +71,6 @@ describe("getSession", () => {
     fetchMock.mockResolvedValue(new Response("upstream error page", { status: 200 }));
 
     const getSession = await loadGetSession();
-
     await expect(getSession()).resolves.toBeNull();
   });
 });

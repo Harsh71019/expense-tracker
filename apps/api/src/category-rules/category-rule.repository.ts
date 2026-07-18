@@ -9,13 +9,19 @@ import {
 import { Types } from "mongoose";
 import type { Connection } from "mongoose";
 
+import type { MongoSession } from "../common/mongo-txn.js";
+
 const CATEGORY_RULES_COLLECTION = "category_rules";
 
 @Injectable()
 export class CategoryRuleRepository {
   constructor(@InjectConnection() private readonly connection: Connection) {}
 
-  async create(userId: string, input: CreateCategoryRule): Promise<CategoryRule> {
+  async create(
+    userId: string,
+    input: CreateCategoryRule,
+    session?: MongoSession
+  ): Promise<CategoryRule> {
     const now = new Date();
     const document = {
       userId,
@@ -24,7 +30,9 @@ export class CategoryRuleRepository {
       createdAt: now,
       updatedAt: now
     };
-    const result = await this.database().collection(CATEGORY_RULES_COLLECTION).insertOne(document);
+    const result = await this.database()
+      .collection(CATEGORY_RULES_COLLECTION)
+      .insertOne(document, session === undefined ? {} : { session });
     return this.toCategoryRule({ _id: result.insertedId, ...document });
   }
 
@@ -37,10 +45,13 @@ export class CategoryRuleRepository {
     return rules.map((rule) => this.toCategoryRule(rule));
   }
 
-  async delete(userId: string, ruleId: CategoryRuleId): Promise<boolean> {
+  async delete(userId: string, ruleId: CategoryRuleId, session?: MongoSession): Promise<boolean> {
     const result = await this.database()
       .collection(CATEGORY_RULES_COLLECTION)
-      .deleteOne({ _id: new Types.ObjectId(ruleId), userId });
+      .deleteOne(
+        { _id: new Types.ObjectId(ruleId), userId },
+        session === undefined ? {} : { session }
+      );
     return result.deletedCount === 1;
   }
 

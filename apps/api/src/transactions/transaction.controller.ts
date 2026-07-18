@@ -24,16 +24,28 @@ import { z } from "zod";
 import type { AuthenticatedUser } from "../auth/auth.guard.js";
 import { CurrentUser } from "../auth/current-user.decorator.js";
 import { TransactionService } from "./transaction.service.js";
+import { TransactionMutationService } from "./transaction-mutation.service.js";
 
 const IdempotencyKeySchema = z.string().uuid();
 
 @Controller("v1/transactions")
 export class TransactionController {
-  constructor(private readonly transactions: TransactionService) {}
+  constructor(
+    private readonly transactions: TransactionService,
+    private readonly mutations?: TransactionMutationService
+  ) {}
 
   @Get()
   list(@CurrentUser() user: AuthenticatedUser, @Query() query: unknown): Promise<TransactionPage> {
     return this.transactions.list(user.id, ListTransactionsQuerySchema.parse(query));
+  }
+
+  @Get(":transactionId")
+  get(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("transactionId") transactionId: string
+  ): Promise<Transaction> {
+    return this.transactions.get(user.id, TransactionIdSchema.parse(transactionId));
   }
 
   @Post()
@@ -46,7 +58,7 @@ export class TransactionController {
     const result = await this.transactions.create(
       user.id,
       CreateTransactionSchema.parse(body),
-      idempotencyKey === undefined ? undefined : IdempotencyKeySchema.parse(idempotencyKey)
+      IdempotencyKeySchema.parse(idempotencyKey)
     );
     if (result.replayed) {
       response.status(200).setHeader("Idempotency-Replayed", "true");
@@ -57,28 +69,42 @@ export class TransactionController {
   }
 
   @Patch(":transactionId")
-  update(
+  async update(
     @CurrentUser() user: AuthenticatedUser,
     @Param("transactionId") transactionId: string,
-    @Body() body: unknown
+    @Body() body: unknown,
+    @Headers("idempotency-key") key?: string,
+    @Res({ passthrough: true }) response?: Response
   ): Promise<Transaction> {
-    return this.transactions.update(
+    const parsedId = TransactionIdSchema.parse(transactionId);
+    const patch = UpdateTransactionSchema.parse(body);
+    if (this.mutations === undefined) return this.transactions.update(user.id, parsedId, patch);
+    const result = await this.mutations.update(
       user.id,
-      TransactionIdSchema.parse(transactionId),
-      UpdateTransactionSchema.parse(body)
+      parsedId,
+      patch,
+      IdempotencyKeySchema.parse(key)
     );
+    if (result.replayed && response !== undefined) {
+      response.setHeader("Idempotency-Replayed", "true");
+    }
+    return result.result;
   }
 
   @Post(":transactionId/reverse")
   @HttpCode(200)
   async reverse(
     @CurrentUser() user: AuthenticatedUser,
-    @Param("transactionId") transactionId: string
+    @Param("transactionId") transactionId: string,
+    @Res({ passthrough: true }) response?: Response
   ): Promise<Transaction> {
     const result = await this.transactions.reverse(
       user.id,
       TransactionIdSchema.parse(transactionId)
     );
+    if (result.replayed && response !== undefined) {
+      response.setHeader("Idempotency-Replayed", "true");
+    }
     return result.transaction;
   }
 }

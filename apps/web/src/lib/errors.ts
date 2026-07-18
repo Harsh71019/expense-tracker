@@ -31,9 +31,16 @@ export class NetworkError extends AppError {
 }
 
 export class ValidationError extends AppError {
-  constructor(message: string, context: AppErrorContext = {}) {
+  readonly fields: readonly ProblemFieldError[];
+
+  constructor(
+    message: string,
+    context: AppErrorContext = {},
+    fields: readonly ProblemFieldError[] = []
+  ) {
     super(message, context);
     this.name = "ValidationError";
+    this.fields = fields;
   }
 }
 
@@ -43,3 +50,4 @@ export class ConflictError extends AppError {
     this.name = "ConflictError";
   }
 }
+import type { ProblemFieldError } from "@vyaya/shared";

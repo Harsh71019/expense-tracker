@@ -12,10 +12,12 @@ const CATEGORIES_COLLECTION = "categories";
 export class CategoryRepository {
   constructor(@InjectConnection() private readonly connection: Connection) {}
 
-  async create(userId: string, input: CreateCategory): Promise<Category> {
+  async create(userId: string, input: CreateCategory, session?: MongoSession): Promise<Category> {
     const now = new Date();
     const category = { userId, ...input, isArchived: false, createdAt: now, updatedAt: now };
-    const result = await this.database().collection(CATEGORIES_COLLECTION).insertOne(category);
+    const result = await this.database()
+      .collection(CATEGORIES_COLLECTION)
+      .insertOne(category, session === undefined ? {} : { session });
     return CategorySchema.parse({ id: result.insertedId.toString(), ...category });
   }
 
@@ -30,12 +32,13 @@ export class CategoryRepository {
     );
   }
 
-  async archive(userId: string, categoryId: CategoryId): Promise<boolean> {
+  async archive(userId: string, categoryId: CategoryId, session?: MongoSession): Promise<boolean> {
     const result = await this.database()
       .collection(CATEGORIES_COLLECTION)
       .updateOne(
         { _id: new Types.ObjectId(categoryId), userId, isArchived: false },
-        { $set: { isArchived: true, updatedAt: new Date() } }
+        { $set: { isArchived: true, updatedAt: new Date() } },
+        session === undefined ? {} : { session }
       );
     return result.modifiedCount === 1;
   }
@@ -48,6 +51,22 @@ export class CategoryRepository {
         { session, projection: { _id: 1 } }
       );
     return category !== null;
+  }
+
+  async findActiveById(
+    userId: string,
+    categoryId: CategoryId,
+    session?: MongoSession
+  ): Promise<Category | null> {
+    const category = await this.database()
+      .collection(CATEGORIES_COLLECTION)
+      .findOne(
+        { _id: new Types.ObjectId(categoryId), userId, isArchived: false },
+        session === undefined ? {} : { session }
+      );
+    return category === null
+      ? null
+      : CategorySchema.parse({ id: category._id.toString(), ...category });
   }
 
   private database(): NonNullable<Connection["db"]> {

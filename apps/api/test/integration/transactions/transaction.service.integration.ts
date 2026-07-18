@@ -9,6 +9,9 @@ import { CategoryRepository } from "../../../src/categories/category.repository.
 import { withTxn } from "../../../src/common/mongo-txn.js";
 import { TransactionRepository } from "../../../src/transactions/transaction.repository.js";
 import { TransactionService } from "../../../src/transactions/transaction.service.js";
+import { TransactionMutationService } from "../../../src/transactions/transaction-mutation.service.js";
+import { IdempotencyRepository } from "../../../src/common/idempotency/idempotency.repository.js";
+import { IdempotencyService } from "../../../src/common/idempotency/idempotency.service.js";
 import { EntityNotFoundError } from "../../../src/common/errors/entity-not-found.error.js";
 import { TransactionNotReversibleError } from "../../../src/common/errors/transaction-not-reversible.error.js";
 
@@ -16,6 +19,8 @@ describe("TransactionService", () => {
   let replicaSet: MongoMemoryReplSet | undefined;
   let connection: Connection | undefined;
   let transactions: TransactionService | undefined;
+  let transactionMutations: TransactionMutationService | undefined;
+  let transactionRepository: TransactionRepository | undefined;
   let accountId: string | undefined;
   let categoryRepository: CategoryRepository | undefined;
   let foodCategoryId: string | undefined;
@@ -26,13 +31,19 @@ describe("TransactionService", () => {
     connection = await createConnection(replicaSet.getUri("vyaya_transactions_test")).asPromise();
     const accountRepository = new AccountRepository(connection);
     categoryRepository = new CategoryRepository(connection);
+    transactionRepository = new TransactionRepository(connection);
     transactions = new TransactionService(
       connection,
       accountRepository,
       categoryRepository,
-      new TransactionRepository(connection),
+      transactionRepository,
       new AuditRepository(connection),
       { log: () => undefined, warn: () => undefined }
+    );
+    transactionMutations = new TransactionMutationService(
+      connection,
+      transactions,
+      new IdempotencyService(new IdempotencyRepository(connection))
     );
     await connectedDatabase(connection)
       .collection("transactions")
@@ -40,6 +51,9 @@ describe("TransactionService", () => {
     await connectedDatabase(connection)
       .collection("transactions")
       .createIndex({ reversalOf: 1 }, { unique: true, sparse: true });
+    await connectedDatabase(connection)
+      .collection("idempotency_records")
+      .createIndex({ userId: 1, operation: 1, key: 1 }, { unique: true });
     const account = await withTxn(connectedConnection(connection), async (session) =>
       accountRepository.create(
         "user-a",
@@ -308,11 +322,115 @@ describe("TransactionService", () => {
       service.update("someone-else", created.transaction.id, { description: "Hijacked" })
     ).rejects.toThrow("Transaction not found.");
   });
+
+  it("loads one transaction by id only for its owner", async () => {
+    const service = transactionService(transactions);
+    const created = await service.create(
+      "user-a",
+      {
+        accountId: existingAccountId(accountId),
+        type: "expense",
+        amountMinor: 125,
+        occurredAt: new Date("2026-07-14T12:00:00.000Z"),
+        description: "Detail lookup",
+        tags: []
+      },
+      "12121212-aaaa-4121-8121-121212121212"
+    );
+
+    await expect(service.get("user-a", created.transaction.id)).resolves.toEqual(
+      created.transaction
+    );
+    await expect(service.get("someone-else", created.transaction.id)).rejects.toThrow(
+      "Transaction not found."
+    );
+  });
+
+  it("updates metadata exactly once across five identical attempts", async () => {
+    const service = transactionService(transactions);
+    const mutation = transactionMutationService(transactionMutations);
+    const created = await service.create(
+      "user-a",
+      {
+        accountId: existingAccountId(accountId),
+        type: "expense",
+        amountMinor: 225,
+        occurredAt: new Date("2026-07-14T13:00:00.000Z"),
+        description: "Original metadata",
+        tags: []
+      },
+      "13131313-aaaa-4131-8131-131313131313"
+    );
+
+    const results = await Promise.all(
+      Array.from({ length: 5 }, () =>
+        mutation.update(
+          "user-a",
+          created.transaction.id,
+          { description: "Updated once", tags: ["verified"] },
+          "14141414-aaaa-4141-8141-141414141414"
+        )
+      )
+    );
+
+    expect(results.filter((result) => !result.replayed)).toHaveLength(1);
+    expect(new Set(results.map((result) => result.result.updatedAt.getTime())).size).toBe(1);
+    expect(
+      await connectedDatabase(connection).collection("audit_log").countDocuments({
+        userId: "user-a",
+        action: "transaction.update",
+        entityId: created.transaction.id
+      })
+    ).toBe(1);
+  });
+
+  it("rejects metadata edits on an individual transfer leg", async () => {
+    const repository = requiredTransactionRepository(transactionRepository);
+    const transferLeg = await withTxn(connectedConnection(connection), (session) =>
+      repository.create(
+        "user-a",
+        {
+          accountId: existingAccountId(accountId),
+          type: "expense",
+          amountMinor: 500,
+          occurredAt: new Date("2026-07-14T14:00:00.000Z"),
+          description: "Transfer leg",
+          tags: []
+        },
+        undefined,
+        session,
+        "507f1f77bcf86cd799439099"
+      )
+    );
+
+    await expect(
+      transactionMutationService(transactionMutations).update(
+        "user-a",
+        transferLeg.id,
+        { description: "One-sided edit" },
+        "15151515-aaaa-4151-8151-151515151515"
+      )
+    ).rejects.toThrow("Transfer leg metadata cannot be edited independently.");
+  });
 });
 
 function transactionService(service: TransactionService | undefined): TransactionService {
   if (service === undefined) throw new Error("Transaction service is not ready");
   return service;
+}
+
+function transactionMutationService(
+  service: TransactionMutationService | undefined
+): TransactionMutationService {
+  if (service === undefined) throw new Error("Transaction mutation service is not ready");
+  return service;
+}
+
+function requiredTransactionRepository(
+  repository: TransactionRepository | undefined
+): TransactionRepository {
+  if (repository === undefined) throw new Error("Transaction repository is not ready");
+  return repository;
 }
 
 function existingAccountId(accountId: string | undefined): string {

@@ -5,7 +5,11 @@ import type { NextRequest } from "next/server";
 export function proxy(request: NextRequest): NextResponse {
   const sessionCookie = getSessionCookie(request);
 
-  if (sessionCookie === null) {
+  const hasSessionToken = request.cookies
+    .getAll()
+    .some((cookie) => cookie.name.endsWith("better-auth.session_token"));
+
+  if (sessionCookie === null && !hasSessionToken) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("next", `${request.nextUrl.pathname}${request.nextUrl.search}`);
     return NextResponse.redirect(loginUrl);
@@ -15,5 +19,5 @@ export function proxy(request: NextRequest): NextResponse {
 }
 
 export const config = {
-  matcher: ["/((?!login|api|_next/static|_next/image|favicon.ico).*)"]
+  matcher: ["/((?!login|api|images|_next/static|_next/image|favicon.ico).*)"]
 };

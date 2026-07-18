@@ -1,7 +1,16 @@
 import type { ReactNode } from "react";
 
-import { ComingSoon } from "@/components/ui/coming-soon";
+import {
+  parseTransactionFilters,
+  TxnList,
+  type TransactionSearchParams
+} from "@/features/transactions";
+import { getTxnPage } from "@/features/transactions/server/get-txn-page";
 
-export default function TransactionsPage(): ReactNode {
-  return <ComingSoon title="Transactions" phase="Phase 2" />;
+export default async function TransactionsPage({
+  searchParams
+}: Readonly<{ searchParams: Promise<TransactionSearchParams> }>): Promise<ReactNode> {
+  const filters = parseTransactionFilters(await searchParams);
+  const firstPage = await getTxnPage(filters);
+  return <TxnList filters={filters} initialPage={firstPage} />;
 }

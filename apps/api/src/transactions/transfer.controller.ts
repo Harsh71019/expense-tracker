@@ -28,7 +28,7 @@ export class TransferController {
     const result = await this.transfers.create(
       user.id,
       CreateTransferSchema.parse(body),
-      idempotencyKey === undefined ? undefined : IdempotencyKeySchema.parse(idempotencyKey)
+      IdempotencyKeySchema.parse(idempotencyKey)
     );
     if (result.replayed) {
       response.status(200).setHeader("Idempotency-Replayed", "true");
@@ -46,12 +46,16 @@ export class TransferController {
   @HttpCode(200)
   async reverse(
     @CurrentUser() user: AuthenticatedUser,
-    @Param("transferGroupId") transferGroupId: string
+    @Param("transferGroupId") transferGroupId: string,
+    @Res({ passthrough: true }) response?: Response
   ): Promise<TransferReversal> {
     const result = await this.transfers.reverse(
       user.id,
       TransferGroupIdSchema.parse(transferGroupId)
     );
+    if (result.replayed && response !== undefined) {
+      response.setHeader("Idempotency-Replayed", "true");
+    }
     return { transferGroupId: result.transferGroupId, legs: result.legs };
   }
 }

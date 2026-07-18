@@ -9,6 +9,7 @@ import { RuntimeConfigModule } from "./common/config/runtime-config.module.js";
 import { RuntimeConfigService } from "./common/config/runtime-config.service.js";
 import { LoggingContextService } from "./common/logging/logging-context.service.js";
 import { LoggingModule } from "./common/logging/logging.module.js";
+import { IdempotencyModule } from "./common/idempotency/idempotency.module.js";
 import { RedisModule } from "./common/redis/redis.module.js";
 import { AuthModule } from "./auth/auth.module.js";
 import { AccountsModule } from "./accounts/accounts.module.js";
@@ -20,6 +21,7 @@ import { ExportModule } from "./export/export.module.js";
 import { HealthModule } from "./health/health.module.js";
 import { ImportsModule } from "./imports/imports.module.js";
 import { NotificationsModule } from "./notifications/notifications.module.js";
+import { OpenApiModule } from "./openapi/openapi.module.js";
 import { RecurringModule } from "./recurring/recurring.module.js";
 import { ReportsModule } from "./reports/reports.module.js";
 import { UserProfilesModule } from "./user-profiles/user-profiles.module.js";
@@ -38,6 +40,7 @@ import { TransactionsModule } from "./transactions/transactions.module.js";
       })
     }),
     RedisModule,
+    IdempotencyModule,
     BalancesModule,
     LoggingModule,
     ScheduleModule.forRoot(),
@@ -54,6 +57,7 @@ import { TransactionsModule } from "./transactions/transactions.module.js";
     ExportModule,
     RecurringModule,
     ReportsModule,
+    OpenApiModule,
     LoggerModule.forRootAsync({
       inject: [RuntimeConfigService, LoggingContextService],
       useFactory: (config: RuntimeConfigService, context: LoggingContextService) => ({

@@ -11,6 +11,7 @@ export const RuntimeEnvSchema = z.object({
   LOG_LEVEL: z.enum(["debug", "info", "warn", "error", "fatal"]).default("info"),
   SERVICE_ROLE: z.enum(["api", "worker"]).default("api"),
   MONGODB_URI: z.string().url(),
+  DATABASE_URL: z.string().url(),
   REDIS_URL: z.string().url(),
   APP_TIMEZONE: z.literal("Asia/Kolkata").default("Asia/Kolkata"),
   TRUSTED_ORIGINS: z.string().min(1),

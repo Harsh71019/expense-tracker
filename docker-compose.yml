@@ -1,4 +1,28 @@
 services:
+  postgres:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      POSTGRES_DB: vyaya
+      POSTGRES_USER: vyaya
+    ports:
+      - "5433:5432" # host-side port, avoids clashing with any existing local postgres
+    volumes:
+      - vyaya-postgres-data:/var/lib/postgresql
+    networks:
+      - vyaya-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vyaya -d vyaya"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    logging: &json_logging
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
   # One-shot: runs migrate-mongo up, exits 0. Gates everything else.
   migrate:
     image: vyaya-api:local
@@ -11,11 +35,7 @@ services:
     networks:
       - vyaya-net
     restart: "no"
-    logging: &json_logging
-      driver: json-file
-      options:
-        max-size: 10m
-        max-file: "3"
+    logging: *json_logging
 
   api:
     image: vyaya-api:local
@@ -118,3 +138,6 @@ services:
 networks:
   vyaya-net:
     driver: bridge
+
+volumes:
+  vyaya-postgres-data:

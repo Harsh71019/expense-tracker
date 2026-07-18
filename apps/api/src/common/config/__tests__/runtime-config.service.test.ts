@@ -14,6 +14,7 @@ describe("RuntimeConfigService", () => {
 
   it("parses process.env correctly and splits trusted origins", () => {
     process.env.MONGODB_URI = "mongodb://localhost:27017/vyaya";
+    process.env.DATABASE_URL = "postgres://test:test@localhost:5432/vyaya";
     process.env.REDIS_URL = "redis://localhost:6379";
     process.env.TRUSTED_ORIGINS = "http://localhost:3000, https://vyaya.app";
     process.env.BETTER_AUTH_SECRET = "a-very-long-test-secret-that-is-safe";

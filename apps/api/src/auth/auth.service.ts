@@ -1,27 +1,26 @@
-import { mongodbAdapter } from "better-auth/adapters/mongodb";
+import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { betterAuth } from "better-auth/minimal";
-import { Injectable } from "@nestjs/common";
-import { InjectConnection } from "@nestjs/mongoose";
-import type { Connection } from "mongoose";
+import { Inject, Injectable } from "@nestjs/common";
 import { Logger } from "nestjs-pino";
 
 import { RuntimeConfigService } from "../common/config/runtime-config.service.js";
+import { DATABASE_CONNECTION } from "../common/db/db.module.js";
+import type { DrizzleDb } from "../common/db/db.module.js";
 import { RedisService } from "../common/redis/redis.service.js";
 import { UserProfileService } from "../user-profiles/user-profile.service.js";
 import { createRedisSecondaryStorage } from "./redis-secondary-storage.js";
 
-function createAuth(
-  connection: Connection,
+export function createAuth(
+  db: DrizzleDb,
   config: RuntimeConfigService,
   redis: RedisService,
   profiles: UserProfileService,
   logger: Logger
 ) {
-  const client = connection.getClient();
   return betterAuth({
     baseURL: config.env.BETTER_AUTH_URL,
     secret: config.env.BETTER_AUTH_SECRET,
-    database: mongodbAdapter(client.db(), { client }),
+    database: drizzleAdapter(db, { provider: "pg" }),
     secondaryStorage: createRedisSecondaryStorage(redis),
     trustedOrigins: config.trustedOrigins(),
     emailAndPassword: {
@@ -70,12 +69,12 @@ export class AuthService {
   readonly auth: VyayaAuth;
 
   constructor(
-    @InjectConnection() connection: Connection,
+    @Inject(DATABASE_CONNECTION) db: DrizzleDb,
     config: RuntimeConfigService,
     redis: RedisService,
     profiles: UserProfileService,
     logger: Logger
   ) {
-    this.auth = createAuth(connection, config, redis, profiles, logger);
+    this.auth = createAuth(db, config, redis, profiles, logger);
   }
 }

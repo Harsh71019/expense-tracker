@@ -57,12 +57,6 @@ class MockRuntimeConfigService implements RuntimeConfigService {
 describe("AuthService", () => {
   it("instantiates betterAuth with configuration and hooks", async () => {
     const mockDb = {};
-    const mockClient = {
-      db: () => mockDb
-    };
-    const mockConnection = {
-      getClient: () => mockClient
-    };
 
     const mockConfig = new MockRuntimeConfigService();
     const mockRedis = {};
@@ -74,7 +68,7 @@ describe("AuthService", () => {
     };
 
     // @ts-expect-error - mock dependencies for unit testing
-    new AuthService(mockConnection, mockConfig, mockRedis, mockUserProfileService, mockLogger);
+    new AuthService(mockDb, mockConfig, mockRedis, mockUserProfileService, mockLogger);
 
     expect(betterAuthMockConfig).not.toBeNull();
     if (

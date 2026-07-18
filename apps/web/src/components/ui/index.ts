@@ -3,7 +3,6 @@ export * from "./badge";
 export * from "./button";
 export * from "./coming-soon";
 export * from "./empty-state";
-export * from "./file-drop-zone";
 export * from "./input";
 export * from "./money";
 export * from "./skeleton";

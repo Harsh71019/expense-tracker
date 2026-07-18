@@ -16,7 +16,7 @@ import { ImportsService } from "../../../src/imports/imports.service.js";
 import { startImportsWorker } from "../../../src/imports/imports.processor.js";
 import { TransactionRepository } from "../../../src/transactions/transaction.repository.js";
 
-const TEST_REDIS_URL = "redis://127.0.0.1:6379/9";
+const TEST_REDIS_URL = "redis://127.0.0.1:6379/10";
 
 class TestRuntimeConfig implements RuntimeConfigService {
   env = {

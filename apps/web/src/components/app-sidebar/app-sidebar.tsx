@@ -14,6 +14,8 @@ const SIDEBAR_COMPACT_KEY = "vyaya-sidebar-compact";
 const navItems = [
   { href: "/transactions", label: "Transactions", icon: "≡" },
   { href: "/transfers", label: "Transfers", icon: "⤢" },
+  { href: "/categories", label: "Categories", icon: "▤" },
+  { href: "/category-rules", label: "Category rules", icon: "⌁" },
   { href: "/reports", label: "Reports", icon: "◔" },
   { href: "/more", label: "More", icon: "•••" }
 ] as const;

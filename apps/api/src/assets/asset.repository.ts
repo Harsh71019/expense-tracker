@@ -1,83 +1,61 @@
-import { Injectable } from "@nestjs/common";
-import { InjectConnection } from "@nestjs/mongoose";
+import { Inject, Injectable } from "@nestjs/common";
 import { AssetSchema, type Asset, type AssetId, type CreateAsset } from "@vyaya/shared";
-import { Types } from "mongoose";
-import type { Connection } from "mongoose";
+import { and, eq } from "drizzle-orm";
 
-import type { MongoSession } from "../common/mongo-txn.js";
-
-const ASSETS_COLLECTION = "net_worth_assets";
+import { DATABASE_CONNECTION } from "../common/db/db.module.js";
+import type { DrizzleDb } from "../common/db/db.module.js";
+import { assets } from "../common/db/schema/index.js";
+import { stripNulls } from "../common/db/strip-nulls.js";
+import type { DbTx } from "../common/db/db-txn.js";
 
 @Injectable()
 export class AssetRepository {
-  constructor(@InjectConnection() private readonly connection: Connection) {}
+  constructor(@Inject(DATABASE_CONNECTION) private readonly db: DrizzleDb) {}
 
-  async create(userId: string, input: CreateAsset, session: MongoSession): Promise<Asset> {
+  async create(userId: string, input: CreateAsset, tx: DbTx): Promise<Asset> {
     const now = new Date();
-    const maturityAt = input.maturityAt === undefined ? {} : { maturityAt: input.maturityAt };
-    const annualRateBps =
-      input.annualRateBps === undefined ? {} : { annualRateBps: input.annualRateBps };
-    const quantityMilliUnits =
-      input.quantityMilliUnits === undefined
-        ? {}
-        : { quantityMilliUnits: input.quantityMilliUnits };
-    const asset = {
-      userId,
-      kind: input.kind,
-      name: input.name,
-      openedAt: input.openedAt,
-      ...maturityAt,
-      ...annualRateBps,
-      ...quantityMilliUnits,
-      isClosed: false,
-      createdAt: now,
-      updatedAt: now
-    };
-    const result = await this.database()
-      .collection(ASSETS_COLLECTION)
-      .insertOne(asset, { session });
-
-    return AssetSchema.parse({ id: result.insertedId.toString(), ...asset });
+    const [row] = await tx
+      .insert(assets)
+      .values({
+        userId,
+        kind: input.kind,
+        name: input.name,
+        openedAt: input.openedAt,
+        maturityAt: input.maturityAt ?? null,
+        annualRateBps: input.annualRateBps ?? null,
+        quantityMilliUnits: input.quantityMilliUnits ?? null,
+        isClosed: false,
+        createdAt: now,
+        updatedAt: now
+      })
+      .returning();
+    if (row === undefined) throw new Error("Asset insert did not return a row.");
+    return AssetSchema.parse(stripNulls(row));
   }
 
   async list(userId: string): Promise<Asset[]> {
-    const assets = await this.database()
-      .collection(ASSETS_COLLECTION)
-      .find({ userId, isClosed: false })
-      .sort({ name: 1 })
-      .toArray();
-
-    return assets.map((asset) => AssetSchema.parse({ id: asset._id.toString(), ...asset }));
+    const rows = await this.db
+      .select()
+      .from(assets)
+      .where(and(eq(assets.userId, userId), eq(assets.isClosed, false)))
+      .orderBy(assets.name);
+    return rows.map((row) => AssetSchema.parse(stripNulls(row)));
   }
 
-  async findOpenById(
-    userId: string,
-    assetId: AssetId,
-    session: MongoSession
-  ): Promise<Asset | null> {
-    const asset = await this.database()
-      .collection(ASSETS_COLLECTION)
-      .findOne({ _id: new Types.ObjectId(assetId), userId, isClosed: false }, { session });
-    return asset === null ? null : AssetSchema.parse({ id: asset._id.toString(), ...asset });
+  async findOpenById(userId: string, assetId: AssetId, tx: DbTx): Promise<Asset | null> {
+    const [row] = await tx
+      .select()
+      .from(assets)
+      .where(and(eq(assets.id, assetId), eq(assets.userId, userId), eq(assets.isClosed, false)));
+    return row === undefined ? null : AssetSchema.parse(stripNulls(row));
   }
 
-  async close(userId: string, assetId: AssetId, session: MongoSession): Promise<boolean> {
-    const result = await this.database()
-      .collection(ASSETS_COLLECTION)
-      .updateOne(
-        { _id: new Types.ObjectId(assetId), userId, isClosed: false },
-        { $set: { isClosed: true, updatedAt: new Date() } },
-        { session }
-      );
-    return result.modifiedCount === 1;
-  }
-
-  private database(): NonNullable<Connection["db"]> {
-    const database = this.connection.db;
-    if (database === undefined) {
-      throw new Error("MongoDB connection is not ready");
-    }
-
-    return database;
+  async close(userId: string, assetId: AssetId, tx: DbTx): Promise<boolean> {
+    const rows = await tx
+      .update(assets)
+      .set({ isClosed: true, updatedAt: new Date() })
+      .where(and(eq(assets.id, assetId), eq(assets.userId, userId), eq(assets.isClosed, false)))
+      .returning({ id: assets.id });
+    return rows.length === 1;
   }
 }

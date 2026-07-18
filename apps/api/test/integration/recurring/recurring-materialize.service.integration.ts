@@ -26,6 +26,7 @@ describe("RecurringMaterializeService", () => {
   beforeAll(async () => {
     replicaSet = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
     process.env.MONGODB_URI = replicaSet.getUri("vyaya_recurring_materialize_test");
+    process.env.DATABASE_URL = "postgres://test:test@localhost:5432/test";
     process.env.REDIS_URL = "redis://127.0.0.1:6379/9";
     process.env.TRUSTED_ORIGINS = "http://localhost:3000";
     process.env.BETTER_AUTH_SECRET = "test-secret-long-enough-32-chars-long";

@@ -30,7 +30,10 @@ export class RecurringRuleRepository {
     const document = {
       userId,
       template: {
-        accountId: new Types.ObjectId(input.template.accountId),
+        // accountId references Postgres's accounts table (Task 11) -- stored as a
+        // plain opaque string, not cast to a Mongo ObjectId, same fix as the
+        // categories/accounts cross-repo casting bug from Task 10.
+        accountId: input.template.accountId,
         ...category,
         type: input.template.type,
         amountMinor: input.template.amountMinor,
@@ -90,7 +93,7 @@ export class RecurringRuleRepository {
   ): Promise<RecurringRule | null> {
     const set: Record<string, unknown> = { updatedAt: new Date() };
     if (patch.template?.accountId !== undefined) {
-      set["template.accountId"] = new Types.ObjectId(patch.template.accountId);
+      set["template.accountId"] = patch.template.accountId;
     }
     if (patch.template?.categoryId !== undefined) {
       set["template.categoryId"] = patch.template.categoryId;
@@ -200,8 +203,11 @@ function toTemplate(value: unknown): Record<string, unknown> {
     throw new Error("Recurring rule document is missing its template.");
   }
   const { accountId, categoryId, ...rest } = value;
+  if (typeof accountId !== "string") {
+    throw new Error("Recurring rule template is missing a string accountId.");
+  }
   const category = categoryId === undefined ? {} : { categoryId };
-  return { accountId: objectIdString(accountId), ...category, ...rest };
+  return { accountId, ...category, ...rest };
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

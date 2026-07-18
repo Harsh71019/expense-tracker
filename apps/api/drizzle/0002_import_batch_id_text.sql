@@ -1,0 +1,1 @@
+ALTER TABLE "transactions" ALTER COLUMN "import_batch_id" SET DATA TYPE text;

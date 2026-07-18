@@ -9,11 +9,14 @@ import { AssetRepository } from "../../../src/assets/asset.repository.js";
 import { AssetService } from "../../../src/assets/asset.service.js";
 import { NetWorthService } from "../../../src/assets/net-worth.service.js";
 import { ValuationRepository } from "../../../src/assets/valuation.repository.js";
-import { withTxn } from "../../../src/common/mongo-txn.js";
+import { withTxn } from "../../../src/common/db/db-txn.js";
+import { createTestDb, insertTestUser } from "../support/postgres-test-db.js";
+import type { TestDb } from "../support/postgres-test-db.js";
 
 describe("NetWorthService", () => {
   let replicaSet: MongoMemoryReplSet | undefined;
   let connection: Connection | undefined;
+  let pgTestDb: TestDb | undefined;
   let netWorth: NetWorthService | undefined;
   let assets: AssetService | undefined;
   let accountRepository: AccountRepository | undefined;
@@ -21,30 +24,37 @@ describe("NetWorthService", () => {
   beforeAll(async () => {
     replicaSet = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
     connection = await createConnection(replicaSet.getUri("vyaya_net_worth_test")).asPromise();
-    accountRepository = new AccountRepository(connection);
+    // assets/valuations are still Mongo (Tasks 16/17 not done); accounts/audit_log
+    // moved to Postgres in Task 11.
+    pgTestDb = await createTestDb();
+    await insertTestUser(pgTestDb.db, "user-a");
+    await insertTestUser(pgTestDb.db, "user-c");
+    accountRepository = new AccountRepository(pgTestDb.db);
     const assetRepository = new AssetRepository(connection);
     const valuationRepository = new ValuationRepository(connection);
     assets = new AssetService(
       connection,
+      pgTestDb.db,
       assetRepository,
       valuationRepository,
-      new AuditRepository(connection)
+      new AuditRepository(pgTestDb.db)
     );
     netWorth = new NetWorthService(accountRepository, assetRepository, valuationRepository);
-  });
+  }, 60_000);
 
   afterAll(async () => {
     if (connection !== undefined) await connection.close();
     if (replicaSet !== undefined) await replicaSet.stop();
+    if (pgTestDb !== undefined) await pgTestDb.teardown();
   });
 
   it("sums account balances and latest asset valuations, netting out liabilities", async () => {
     const accounts = accountRepositoryInstance(accountRepository);
-    await withTxn(connectedConnection(connection), async (session) =>
+    await withTxn(requirePgTestDb(pgTestDb).db, (tx) =>
       accounts.create(
         "user-a",
         { name: "HDFC Savings", type: "bank", openingBalanceMinor: 200_000_00 },
-        session
+        tx
       )
     );
 
@@ -122,7 +132,7 @@ function accountRepositoryInstance(repository: AccountRepository | undefined): A
   return repository;
 }
 
-function connectedConnection(connection: Connection | undefined): Connection {
-  if (connection === undefined) throw new Error("MongoDB connection is not ready");
-  return connection;
+function requirePgTestDb(testDb: TestDb | undefined): TestDb {
+  if (testDb === undefined) throw new Error("Postgres test db is not ready");
+  return testDb;
 }

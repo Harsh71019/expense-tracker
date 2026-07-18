@@ -34,12 +34,13 @@ export class RecurringRuleService {
    */
   async create(userId: string, input: CreateRecurringRule): Promise<RecurringRule> {
     return withTxn(this.connection, async (session) => {
-      if (!(await this.accounts.exists(userId, input.template.accountId, session))) {
+      // accounts/categories are already Postgres-backed (Tasks 10-11) while this
+      // transaction is still Mongo -- out-of-transaction reads, not participating in
+      // the transaction below; resolved once this repository is itself ported to
+      // Postgres.
+      if (!(await this.accounts.exists(userId, input.template.accountId))) {
         throw new EntityNotFoundError("Account");
       }
-      // categories is already Postgres-backed (Task 10) while this transaction is still
-      // Mongo -- out-of-transaction read, not participating in the transaction below;
-      // resolved once this repository is itself ported to Postgres.
       if (
         input.template.categoryId !== undefined &&
         !(await this.categories.exists(userId, input.template.categoryId))
@@ -67,13 +68,13 @@ export class RecurringRuleService {
       const current = await this.rules.findById(userId, ruleId, session);
       if (current === null) throw new EntityNotFoundError("Recurring rule");
 
+      // out-of-transaction reads against accounts/categories -- see the comment on the create() path above
       if (
         patch.template?.accountId !== undefined &&
-        !(await this.accounts.exists(userId, patch.template.accountId, session))
+        !(await this.accounts.exists(userId, patch.template.accountId))
       ) {
         throw new EntityNotFoundError("Account");
       }
-      // out-of-transaction read against categories -- see the comment on the create() path above
       if (
         patch.template?.categoryId !== undefined &&
         !(await this.categories.exists(userId, patch.template.categoryId))

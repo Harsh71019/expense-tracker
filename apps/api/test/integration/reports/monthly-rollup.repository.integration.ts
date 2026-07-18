@@ -1,11 +1,10 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { MongoMemoryReplSet } from "mongodb-memory-server";
-import { createConnection } from "mongoose";
-import type { Connection } from "mongoose";
+import { and, eq } from "drizzle-orm";
 
 import { AccountRepository } from "../../../src/accounts/account.repository.js";
 import { CategoryRepository } from "../../../src/categories/category.repository.js";
-import { withTxn } from "../../../src/common/mongo-txn.js";
+import { withTxn } from "../../../src/common/db/db-txn.js";
+import { monthlyRollups } from "../../../src/common/db/schema/index.js";
 import { MonthlyRollupRepository } from "../../../src/reports/monthly-rollup.repository.js";
 import { TransactionRepository } from "../../../src/transactions/transaction.repository.js";
 import { createTestDb, insertTestUser } from "../support/postgres-test-db.js";
@@ -13,32 +12,24 @@ import type { TestDb } from "../support/postgres-test-db.js";
 import type { Transaction } from "@vyaya/shared";
 
 describe("MonthlyRollupRepository", () => {
-  let replicaSet: MongoMemoryReplSet | undefined;
-  let connection: Connection | undefined;
-  let pgTestDb: TestDb | undefined;
-  let rollups: MonthlyRollupRepository | undefined;
-  let transactions: TransactionRepository | undefined;
-  let accountId: string | undefined;
-  let foodCategoryId: string | undefined;
+  let testDb: TestDb;
+  let rollups: MonthlyRollupRepository;
+  let transactions: TransactionRepository;
+  let accountId: string;
+  let foodCategoryId: string;
 
   beforeAll(async () => {
-    replicaSet = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
-    connection = await createConnection(replicaSet.getUri("vyaya_rollups_test")).asPromise();
-    // categories is already Postgres-backed (Task 10); accounts/transactions/rollups are
-    // still Mongo (Tasks 11/14/22 not done yet) -- two separate test databases.
-    pgTestDb = await createTestDb();
-    await insertTestUser(pgTestDb.db, "user-a");
-    const accounts = new AccountRepository(connection);
-    const categories = new CategoryRepository(pgTestDb.db);
-    transactions = new TransactionRepository(connection);
-    rollups = new MonthlyRollupRepository(connection);
+    testDb = await createTestDb();
+    await insertTestUser(testDb.db, "user-a");
+    await insertTestUser(testDb.db, "user-b");
 
-    const account = await withTxn(connectedConnection(connection), (session) =>
-      accounts.create(
-        "user-a",
-        { name: "HDFC Savings", type: "bank", openingBalanceMinor: 0 },
-        session
-      )
+    const accounts = new AccountRepository(testDb.db);
+    const categories = new CategoryRepository(testDb.db);
+    transactions = new TransactionRepository(testDb.db);
+    rollups = new MonthlyRollupRepository(testDb.db);
+
+    const account = await withTxn(testDb.db, (tx) =>
+      accounts.create("user-a", { name: "HDFC Savings", type: "bank", openingBalanceMinor: 0 }, tx)
     );
     accountId = account.id;
     const food = await categories.create("user-a", { name: "Food", kind: "expense" });
@@ -73,18 +64,9 @@ describe("MonthlyRollupRepository", () => {
       occurredAt: "2026-08-16T09:00:00.000Z",
       description: "Reversed purchase"
     });
-    await withTxn(connectedConnection(connection), async (session) => {
-      const reversal = await transactionRepository(transactions).createReversal(
-        "user-a",
-        reversedOriginal,
-        session
-      );
-      await transactionRepository(transactions).markReversed(
-        "user-a",
-        reversedOriginal.id,
-        reversal.id,
-        session
-      );
+    await withTxn(testDb.db, async (tx) => {
+      const reversal = await transactions.createReversal("user-a", reversedOriginal, tx);
+      await transactions.markReversed("user-a", reversedOriginal.id, reversal.id, tx);
     });
     // Outside the target month — must not be picked up.
     await create({
@@ -94,35 +76,32 @@ describe("MonthlyRollupRepository", () => {
       description: "September"
     });
     // Different user — must not be picked up.
-    await withTxn(connectedConnection(connection), (session) =>
+    const otherAccount = await withTxn(testDb.db, (tx) =>
       accounts.create(
         "user-b",
         { name: "Other User Account", type: "cash", openingBalanceMinor: 0 },
-        session
+        tx
       )
-    ).then(async (otherAccount) => {
-      await withTxn(connectedConnection(connection), (session) =>
-        transactionRepository(transactions).create(
-          "user-b",
-          {
-            accountId: otherAccount.id,
-            type: "expense",
-            amountMinor: 4_242,
-            occurredAt: new Date("2026-08-15T09:00:00.000Z"),
-            description: "Someone else's spend",
-            tags: []
-          },
-          undefined,
-          session
-        )
-      );
-    });
+    );
+    await withTxn(testDb.db, (tx) =>
+      transactions.create(
+        "user-b",
+        {
+          accountId: otherAccount.id,
+          type: "expense",
+          amountMinor: 4_242,
+          occurredAt: new Date("2026-08-15T09:00:00.000Z"),
+          description: "Someone else's spend",
+          tags: []
+        },
+        undefined,
+        tx
+      )
+    );
   }, 60_000);
 
   afterAll(async () => {
-    if (connection !== undefined) await connection.close();
-    if (replicaSet !== undefined) await replicaSet.stop();
-    if (pgTestDb !== undefined) await pgTestDb.teardown();
+    await testDb.teardown();
   });
 
   async function create(input: {
@@ -132,11 +111,11 @@ describe("MonthlyRollupRepository", () => {
     categoryId?: string;
     description: string;
   }): Promise<Transaction> {
-    return withTxn(connectedConnection(connection), (session) =>
-      transactionRepository(transactions).create(
+    return withTxn(testDb.db, (tx) =>
+      transactions.create(
         "user-a",
         {
-          accountId: requireId(accountId),
+          accountId,
           categoryId: input.categoryId,
           type: input.type,
           amountMinor: input.amountMinor,
@@ -145,13 +124,13 @@ describe("MonthlyRollupRepository", () => {
           tags: []
         },
         undefined,
-        session
+        tx
       )
     );
   }
 
   it("aggregates by category, by account, and totals for the IST month — excluding reversed pairs, other months, and other users", async () => {
-    const rollup = await monthlyRollupRepository(rollups).recompute("user-a", "2026-08");
+    const rollup = await rollups.recompute("user-a", "2026-08");
 
     const food = rollup.byCategory.find((entry) => entry.categoryId === foodCategoryId);
     expect(food).toMatchObject({ spentMinor: 1_200, incomeMinor: 0, txnCount: 2 });
@@ -170,57 +149,28 @@ describe("MonthlyRollupRepository", () => {
   });
 
   it("persists the rollup so findByMonth reads it back", async () => {
-    const found = await monthlyRollupRepository(rollups).findByMonth("user-a", "2026-08");
+    const found = await rollups.findByMonth("user-a", "2026-08");
     expect(found).toMatchObject({ totalExpenseMinor: 1_200, totalIncomeMinor: 5_000 });
   });
 
   it("findByMonth returns null for a month with no rollup yet", async () => {
-    const found = await monthlyRollupRepository(rollups).findByMonth("user-a", "2020-01");
+    const found = await rollups.findByMonth("user-a", "2020-01");
     expect(found).toBeNull();
   });
 
   it("recompute is idempotent — re-running it upserts rather than duplicating", async () => {
-    await monthlyRollupRepository(rollups).recompute("user-a", "2026-08");
-    await monthlyRollupRepository(rollups).recompute("user-a", "2026-08");
+    await rollups.recompute("user-a", "2026-08");
+    await rollups.recompute("user-a", "2026-08");
 
-    const count = await connectedDatabase(connection)
-      .collection("monthly_rollups")
-      .countDocuments({ userId: "user-a", month: "2026-08" });
-    expect(count).toBe(1);
+    const rows = await testDb.db
+      .select()
+      .from(monthlyRollups)
+      .where(and(eq(monthlyRollups.userId, "user-a"), eq(monthlyRollups.month, "2026-08")));
+    expect(rows.length).toBe(1);
   });
 
   it("distinctUserIds includes every user with at least one posted transaction", async () => {
-    const userIds = await monthlyRollupRepository(rollups).distinctUserIds();
+    const userIds = await rollups.distinctUserIds();
     expect(userIds).toEqual(expect.arrayContaining(["user-a", "user-b"]));
   });
 });
-
-function monthlyRollupRepository(
-  repository: MonthlyRollupRepository | undefined
-): MonthlyRollupRepository {
-  if (repository === undefined) throw new Error("Monthly rollup repository is not ready");
-  return repository;
-}
-
-function transactionRepository(
-  repository: TransactionRepository | undefined
-): TransactionRepository {
-  if (repository === undefined) throw new Error("Transaction repository is not ready");
-  return repository;
-}
-
-function requireId(id: string | undefined): string {
-  if (id === undefined) throw new Error("Fixture id is not ready");
-  return id;
-}
-
-function connectedConnection(connection: Connection | undefined): Connection {
-  if (connection === undefined) throw new Error("MongoDB connection is not ready");
-  return connection;
-}
-
-function connectedDatabase(connection: Connection | undefined): NonNullable<Connection["db"]> {
-  const database = connectedConnection(connection).db;
-  if (database === undefined) throw new Error("MongoDB database is not ready");
-  return database;
-}

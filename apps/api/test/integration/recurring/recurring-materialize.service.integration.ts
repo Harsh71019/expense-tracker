@@ -2,11 +2,17 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { MongoMemoryReplSet } from "mongodb-memory-server";
 import { createConnection, Types } from "mongoose";
 import type { Connection } from "mongoose";
+import { and, eq } from "drizzle-orm";
 
 import { AccountRepository } from "../../../src/accounts/account.repository.js";
 import { AuditRepository } from "../../../src/audit/audit.repository.js";
 import { RuntimeConfigService } from "../../../src/common/config/runtime-config.service.js";
-import { withTxn } from "../../../src/common/mongo-txn.js";
+import { withTxn } from "../../../src/common/db/db-txn.js";
+import {
+  accounts,
+  auditLog,
+  transactions as transactionsTable
+} from "../../../src/common/db/schema/index.js";
 import { RecurringMaterializeService } from "../../../src/recurring/recurring-materialize.service.js";
 import { RecurringRuleRepository } from "../../../src/recurring/recurring-rule.repository.js";
 import { RecurringRuleService } from "../../../src/recurring/recurring-rule.service.js";
@@ -21,15 +27,15 @@ describe("RecurringMaterializeService", () => {
   let replicaSet: MongoMemoryReplSet | undefined;
   let connection: Connection | undefined;
   let pgTestDb: TestDb | undefined;
-  let accounts: AccountRepository | undefined;
+  let accounts_: AccountRepository | undefined;
   let rules: RecurringRuleRepository | undefined;
   let ruleService: RecurringRuleService | undefined;
   let accountId: string | undefined;
 
   beforeAll(async () => {
     replicaSet = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
-    // categories is already Postgres-backed (Task 10); everything else here (accounts,
-    // recurring_rules, transactions, audit) is still Mongo -- two separate test databases.
+    // recurring_rules is still Mongo (Task 21 not done yet); categories/accounts/
+    // transactions/audit are Postgres (Tasks 10-11) -- two separate test databases.
     pgTestDb = await createTestDb();
     await insertTestUser(pgTestDb.db, "user-a");
 
@@ -43,20 +49,20 @@ describe("RecurringMaterializeService", () => {
     connection = await createConnection(
       replicaSet.getUri("vyaya_recurring_materialize_test")
     ).asPromise();
-    accounts = new AccountRepository(connection);
+    accounts_ = new AccountRepository(pgTestDb.db);
     rules = new RecurringRuleRepository(connection);
     ruleService = new RecurringRuleService(
       connection,
       rules,
-      accounts,
+      accounts_,
       new CategoryRepository(pgTestDb.db)
     );
 
-    const account = await withTxn(connectedConnection(connection), (session) =>
-      requireAccounts(accounts).create(
+    const account = await withTxn(requirePgTestDb(pgTestDb).db, (tx) =>
+      requireAccounts(accounts_).create(
         "user-a",
         { name: "HDFC Savings", type: "bank", openingBalanceMinor: 500_000 },
-        session
+        tx
       )
     );
     accountId = account.id;
@@ -72,11 +78,12 @@ describe("RecurringMaterializeService", () => {
     process.env.SERVICE_ROLE = serviceRole;
     return new RecurringMaterializeService(
       connectedConnection(connection),
+      requirePgTestDb(pgTestDb).db,
       new RuntimeConfigService(),
       requireRules(rules),
-      requireAccounts(accounts),
-      new TransactionRepository(connectedConnection(connection)),
-      new AuditRepository(connectedConnection(connection)),
+      requireAccounts(accounts_),
+      new TransactionRepository(requirePgTestDb(pgTestDb).db),
+      new AuditRepository(requirePgTestDb(pgTestDb).db),
       NOOP_LOGGER
     );
   }
@@ -122,10 +129,7 @@ describe("RecurringMaterializeService", () => {
       startAt: new Date("2020-02-01T00:00:00.000Z")
     });
 
-    const before = await connectedDatabase(connection)
-      .collection("accounts")
-      .findOne({ _id: toObjectId(requireId(accountId)) });
-    const balanceBefore = requireNumber(before?.balanceMinor);
+    const balanceBefore = await accountBalance();
 
     await newMaterializer("worker").materialize();
 
@@ -133,24 +137,26 @@ describe("RecurringMaterializeService", () => {
     expect(stored?.nextRunAt.toISOString()).toBe("2020-03-01T00:00:00.000Z");
     expect(stored?.lastRunAt?.toISOString()).toBe(rule.nextRunAt.toISOString());
 
-    const txn = await connectedDatabase(connection)
-      .collection("transactions")
-      .findOne({ userId: "user-a", description: "Rent", source: "recurring" });
-    expect(txn).toMatchObject({
-      amountMinor: 150_000,
-      type: "expense",
-      occurredAt: rule.nextRunAt
-    });
+    const [txn] = await requirePgTestDb(pgTestDb)
+      .db.select()
+      .from(transactionsTable)
+      .where(
+        and(
+          eq(transactionsTable.userId, "user-a"),
+          eq(transactionsTable.description, "Rent"),
+          eq(transactionsTable.source, "recurring")
+        )
+      );
+    expect(txn).toMatchObject({ amountMinor: 150_000, type: "expense" });
+    expect(txn?.occurredAt.toISOString()).toBe(rule.nextRunAt.toISOString());
 
-    const after = await connectedDatabase(connection)
-      .collection("accounts")
-      .findOne({ _id: toObjectId(requireId(accountId)) });
-    expect(requireNumber(after?.balanceMinor)).toBe(balanceBefore - 150_000);
+    expect(await accountBalance()).toBe(balanceBefore - 150_000);
 
-    const audit = await connectedDatabase(connection)
-      .collection("audit_log")
-      .findOne({ userId: "user-a", action: "recurring.materialize" });
-    expect(audit).not.toBeNull();
+    const [audit] = await requirePgTestDb(pgTestDb)
+      .db.select()
+      .from(auditLog)
+      .where(and(eq(auditLog.userId, "user-a"), eq(auditLog.action, "recurring.materialize")));
+    expect(audit).not.toBeUndefined();
   });
 
   it("posting the same due rule concurrently five times posts exactly one transaction", async () => {
@@ -170,10 +176,17 @@ describe("RecurringMaterializeService", () => {
     const materializer = newMaterializer("worker");
     await Promise.all(Array.from({ length: 5 }, () => materializer.materialize()));
 
-    const count = await connectedDatabase(connection)
-      .collection("transactions")
-      .countDocuments({ userId: "user-a", description: "Netflix", source: "recurring" });
-    expect(count).toBe(1);
+    const posted = await requirePgTestDb(pgTestDb)
+      .db.select()
+      .from(transactionsTable)
+      .where(
+        and(
+          eq(transactionsTable.userId, "user-a"),
+          eq(transactionsTable.description, "Netflix"),
+          eq(transactionsTable.source, "recurring")
+        )
+      );
+    expect(posted.length).toBe(1);
 
     const stored = await requireRules(rules).findById("user-a", rule.id);
     expect(stored?.nextRunAt.toISOString()).toBe("2020-05-01T00:00:00.000Z");
@@ -199,6 +212,15 @@ describe("RecurringMaterializeService", () => {
       .findOne({ userId: "user-a", "template.description": "Short-lived subscription" });
     expect(stored).toMatchObject({ isPaused: true });
   });
+
+  async function accountBalance(): Promise<number> {
+    const [account] = await requirePgTestDb(pgTestDb)
+      .db.select()
+      .from(accounts)
+      .where(eq(accounts.id, requireId(accountId)));
+    if (account === undefined) throw new Error("Account fixture not found");
+    return account.balanceMinor;
+  }
 });
 
 function requireRuleService(service: RecurringRuleService | undefined): RecurringRuleService {
@@ -221,9 +243,9 @@ function requireId(id: string | undefined): string {
   return id;
 }
 
-function requireNumber(value: unknown): number {
-  if (typeof value !== "number") throw new Error("Expected a numeric field.");
-  return value;
+function requirePgTestDb(testDb: TestDb | undefined): TestDb {
+  if (testDb === undefined) throw new Error("Postgres test db is not ready");
+  return testDb;
 }
 
 function connectedConnection(connection: Connection | undefined): Connection {

@@ -15,6 +15,8 @@ import { ImportsQueue } from "../../../src/imports/imports.queue.js";
 import { ImportsService } from "../../../src/imports/imports.service.js";
 import { startImportsWorker } from "../../../src/imports/imports.processor.js";
 import { TransactionRepository } from "../../../src/transactions/transaction.repository.js";
+import { createTestDb, insertTestUser } from "../support/postgres-test-db.js";
+import type { TestDb } from "../support/postgres-test-db.js";
 
 const TEST_REDIS_URL = "redis://127.0.0.1:6379/10";
 
@@ -58,6 +60,7 @@ const CSV = [
 describe("Imports parse pipeline (real BullMQ worker against real Redis)", () => {
   let replicaSet: MongoMemoryReplSet | undefined;
   let connection: Connection | undefined;
+  let pgTestDb: TestDb | undefined;
   let batches: ImportBatchRepository | undefined;
   let flushClient: Redis | undefined;
   let worker: ReturnType<typeof startImportsWorker> | undefined;
@@ -69,16 +72,23 @@ describe("Imports parse pipeline (real BullMQ worker against real Redis)", () =>
     flushClient = new Redis(TEST_REDIS_URL);
     await flushClient.flushdb();
 
+    // import_batches/staged_rows/category_rules are still Mongo (Tasks 15/18/19 not
+    // done); accounts/transactions/audit_log moved to Postgres in Task 11.
+    pgTestDb = await createTestDb();
+    await insertTestUser(pgTestDb.db, "user-a");
+    await insertTestUser(pgTestDb.db, "user-suggest");
+
     batches = new ImportBatchRepository(connection);
     const stagedRows = new StagedRowRepository(connection);
-    const transactions = new TransactionRepository(connection);
-    const accounts = new AccountRepository(connection);
-    const audit = new AuditRepository(connection);
+    const transactions = new TransactionRepository(pgTestDb.db);
+    const accounts = new AccountRepository(pgTestDb.db);
+    const audit = new AuditRepository(pgTestDb.db);
     const categoryRules = new CategoryRuleRepository(connection);
     const config = new TestRuntimeConfig();
     backgroundQueue = new ImportsQueue(config);
     const service = new ImportsService(
       connection,
+      pgTestDb.db,
       batches,
       stagedRows,
       transactions,
@@ -102,6 +112,7 @@ describe("Imports parse pipeline (real BullMQ worker against real Redis)", () =>
     }
     if (connection !== undefined) await connection.close();
     if (replicaSet !== undefined) await replicaSet.stop();
+    if (pgTestDb !== undefined) await pgTestDb.teardown();
   });
 
   afterEach(async () => {
@@ -157,12 +168,13 @@ describe("Imports parse pipeline (real BullMQ worker against real Redis)", () =>
     const repository = importBatchRepository(batches);
     const database = connectedDatabase(connection);
     const stagedRows = new StagedRowRepository(nonNullConnection(connection));
-    const transactions = new TransactionRepository(nonNullConnection(connection));
-    const accounts = new AccountRepository(nonNullConnection(connection));
-    const audit = new AuditRepository(nonNullConnection(connection));
+    const transactions = new TransactionRepository(nonNullPgTestDb(pgTestDb).db);
+    const accounts = new AccountRepository(nonNullPgTestDb(pgTestDb).db);
+    const audit = new AuditRepository(nonNullPgTestDb(pgTestDb).db);
     const categoryRules = new CategoryRuleRepository(nonNullConnection(connection));
     const service = new ImportsService(
       nonNullConnection(connection),
+      nonNullPgTestDb(pgTestDb).db,
       repository,
       stagedRows,
       transactions,
@@ -193,12 +205,13 @@ describe("Imports parse pipeline (real BullMQ worker against real Redis)", () =>
   it("applies a matching category rule's suggestion during parse", async () => {
     const repository = importBatchRepository(batches);
     const stagedRows = new StagedRowRepository(nonNullConnection(connection));
-    const transactions = new TransactionRepository(nonNullConnection(connection));
-    const accounts = new AccountRepository(nonNullConnection(connection));
-    const audit = new AuditRepository(nonNullConnection(connection));
+    const transactions = new TransactionRepository(nonNullPgTestDb(pgTestDb).db);
+    const accounts = new AccountRepository(nonNullPgTestDb(pgTestDb).db);
+    const audit = new AuditRepository(nonNullPgTestDb(pgTestDb).db);
     const categoryRules = new CategoryRuleRepository(nonNullConnection(connection));
     const service = new ImportsService(
       nonNullConnection(connection),
+      nonNullPgTestDb(pgTestDb).db,
       repository,
       stagedRows,
       transactions,
@@ -263,6 +276,13 @@ function nonNullConnection(connection: Connection | undefined): Connection {
     throw new Error("MongoDB connection is not ready");
   }
   return connection;
+}
+
+function nonNullPgTestDb(testDb: TestDb | undefined): TestDb {
+  if (testDb === undefined) {
+    throw new Error("Postgres test db is not ready");
+  }
+  return testDb;
 }
 
 function connectedDatabase(connection: Connection | undefined): NonNullable<Connection["db"]> {

@@ -5,7 +5,7 @@ import type { Connection } from "mongoose";
 
 import { AccountRepository } from "../../../src/accounts/account.repository.js";
 import { CategoryRepository } from "../../../src/categories/category.repository.js";
-import { withTxn } from "../../../src/common/mongo-txn.js";
+import { withTxn } from "../../../src/common/db/db-txn.js";
 import { EntityNotFoundError } from "../../../src/common/errors/entity-not-found.error.js";
 import { InvalidRecurringRuleError } from "../../../src/common/errors/invalid-recurring-rule.error.js";
 import { RecurringRuleRepository } from "../../../src/recurring/recurring-rule.repository.js";
@@ -30,7 +30,7 @@ describe("RecurringRuleService", () => {
     // still Mongo (Tasks 11/21 not done yet) -- two separate test databases.
     pgTestDb = await createTestDb();
     await insertTestUser(pgTestDb.db, "user-a");
-    const accounts = new AccountRepository(connection);
+    const accounts = new AccountRepository(pgTestDb.db);
     const categories = new CategoryRepository(pgTestDb.db);
     service = new RecurringRuleService(
       connection,
@@ -39,11 +39,11 @@ describe("RecurringRuleService", () => {
       categories
     );
 
-    const account = await withTxn(connectedConnection(connection), (session) =>
+    const account = await withTxn(pgTestDb.db, (tx) =>
       accounts.create(
         "user-a",
         { name: "HDFC Savings", type: "bank", openingBalanceMinor: 100_000 },
-        session
+        tx
       )
     );
     accountId = account.id;
@@ -80,7 +80,8 @@ describe("RecurringRuleService", () => {
     await expect(
       recurringRuleService(service).create("user-a", {
         template: {
-          accountId: "0123456789abcdef01234567",
+          // accounts is Postgres-backed (Task 11) -- a nonexistent id must be valid uuid syntax.
+          accountId: "3fa85f64-5717-4562-b3fc-2c963f66beef",
           type: "expense",
           amountMinor: 1_000,
           description: "Ghost account",
@@ -193,9 +194,4 @@ function recurringRuleService(service: RecurringRuleService | undefined): Recurr
 function requireId(id: string | undefined): string {
   if (id === undefined) throw new Error("Fixture id is not ready");
   return id;
-}
-
-function connectedConnection(connection: Connection | undefined): Connection {
-  if (connection === undefined) throw new Error("MongoDB connection is not ready");
-  return connection;
 }

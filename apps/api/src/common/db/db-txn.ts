@@ -36,7 +36,7 @@ export async function withTxn<T>(db: DrizzleDb, operation: (tx: DbTx) => Promise
       observer?.completed(performance.now() - startedAt);
       return result;
     } catch (error) {
-      const code = isPostgresError(error) ? error.code : undefined;
+      const code = postgresErrorCode(error);
       if (
         code !== undefined &&
         RETRYABLE_POSTGRES_ERROR_CODES.has(code) &&
@@ -56,7 +56,11 @@ function jitteredBackoff(attempt: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, delayMs));
 }
 
-function isPostgresError(error: unknown): error is { code: string } {
-  if (typeof error !== "object" || error === null || !("code" in error)) return false;
-  return typeof error.code === "string";
+// drizzle-orm wraps the driver's pg error in a DrizzleQueryError, with the
+// real PostgresError (carrying `.code`) on `.cause` -- unwrap before giving up.
+function postgresErrorCode(error: unknown): string | undefined {
+  if (typeof error !== "object" || error === null) return undefined;
+  if ("code" in error && typeof error.code === "string") return error.code;
+  if ("cause" in error) return postgresErrorCode(error.cause);
+  return undefined;
 }

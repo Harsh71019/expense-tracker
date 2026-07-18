@@ -10,12 +10,15 @@ import { AuditRepository } from "../../../src/audit/audit.repository.js";
 import { CategoryRuleRepository } from "../../../src/category-rules/category-rule.repository.js";
 import { ImportAlreadyCommittedError } from "../../../src/common/errors/import-already-committed.error.js";
 import { RuntimeConfigService } from "../../../src/common/config/runtime-config.service.js";
+import { withTxn } from "../../../src/common/db/db-txn.js";
 import { EntityNotFoundError } from "../../../src/common/errors/entity-not-found.error.js";
 import { ImportBatchRepository } from "../../../src/imports/import-batch.repository.js";
 import { StagedRowRepository } from "../../../src/imports/staged-row.repository.js";
 import { ImportsQueue } from "../../../src/imports/imports.queue.js";
 import { ImportsService } from "../../../src/imports/imports.service.js";
 import { TransactionRepository } from "../../../src/transactions/transaction.repository.js";
+import { createTestDb, insertTestUser } from "../support/postgres-test-db.js";
+import type { TestDb } from "../support/postgres-test-db.js";
 
 const TEST_REDIS_URL = "redis://127.0.0.1:6379/9";
 
@@ -55,8 +58,10 @@ const CSV = "Txn Date,Narration,Amount\n04/07/2026,Chai Point,-20.00\n";
 describe("ImportsService.createBatch", () => {
   let replicaSet: MongoMemoryReplSet | undefined;
   let connection: Connection | undefined;
+  let pgTestDb: TestDb | undefined;
   let service: ImportsService | undefined;
   let batches: ImportBatchRepository | undefined;
+  let accounts: AccountRepository | undefined;
   let queue: ImportsQueue | undefined;
   let flushClient: Redis | undefined;
 
@@ -66,15 +71,21 @@ describe("ImportsService.createBatch", () => {
     flushClient = new Redis(TEST_REDIS_URL);
     await flushClient.flushdb();
 
+    // import_batches/staged_rows/category_rules are still Mongo (Tasks 15/18/19 not
+    // done); accounts/transactions/audit_log moved to Postgres in Task 11.
+    pgTestDb = await createTestDb();
+    await insertTestUser(pgTestDb.db, "mapping-owner");
+
     batches = new ImportBatchRepository(connection);
     const stagedRows = new StagedRowRepository(connection);
-    const transactions = new TransactionRepository(connection);
-    const accounts = new AccountRepository(connection);
-    const audit = new AuditRepository(connection);
+    const transactions = new TransactionRepository(pgTestDb.db);
+    accounts = new AccountRepository(pgTestDb.db);
+    const audit = new AuditRepository(pgTestDb.db);
     const categoryRules = new CategoryRuleRepository(connection);
     queue = new ImportsQueue(new TestRuntimeConfig());
     service = new ImportsService(
       connection,
+      pgTestDb.db,
       batches,
       stagedRows,
       transactions,
@@ -93,6 +104,7 @@ describe("ImportsService.createBatch", () => {
     }
     if (connection !== undefined) await connection.close();
     if (replicaSet !== undefined) await replicaSet.stop();
+    if (pgTestDb !== undefined) await pgTestDb.teardown();
   });
 
   afterEach(async () => {
@@ -199,24 +211,18 @@ describe("ImportsService.createBatch", () => {
   });
 
   it("returns saved mappings only for an active account owned by the requester", async () => {
-    const accountId = new Types.ObjectId();
-    await connectedDatabase(connection).collection("accounts").insertOne({
-      _id: accountId,
-      userId: "mapping-owner",
-      name: "HDFC",
-      type: "bank",
-      currency: "INR",
-      openingBalanceMinor: 0,
-      balanceMinor: 0,
-      isArchived: false,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    });
+    const account = await withTxn(nonNull(pgTestDb).db, (tx) =>
+      nonNull(accounts).create(
+        "mapping-owner",
+        { name: "HDFC", type: "bank", openingBalanceMinor: 0 },
+        tx
+      )
+    );
     await connectedDatabase(connection)
       .collection("import_batches")
       .insertOne({
         userId: "mapping-owner",
-        accountId,
+        accountId: account.id,
         filename: "mapping.csv",
         fileHash: "mapping-hash",
         mapping: MAPPING,
@@ -226,12 +232,12 @@ describe("ImportsService.createBatch", () => {
         updatedAt: new Date()
       });
 
-    await expect(
-      nonNull(service).getSavedMapping("mapping-owner", accountId.toString())
-    ).resolves.toEqual(MAPPING);
-    await expect(
-      nonNull(service).getSavedMapping("someone-else", accountId.toString())
-    ).rejects.toThrow(EntityNotFoundError);
+    await expect(nonNull(service).getSavedMapping("mapping-owner", account.id)).resolves.toEqual(
+      MAPPING
+    );
+    await expect(nonNull(service).getSavedMapping("someone-else", account.id)).rejects.toThrow(
+      EntityNotFoundError
+    );
   });
 });
 

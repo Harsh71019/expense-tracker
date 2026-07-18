@@ -33,7 +33,10 @@ export class ImportBatchRepository {
     const now = new Date();
     const document = {
       userId,
-      accountId: new Types.ObjectId(accountId),
+      // accountId references Postgres's accounts table (Task 11) -- stored as a
+      // plain opaque string, not cast to a Mongo ObjectId, same fix as the
+      // categories/accounts cross-repo casting bug from Task 10.
+      accountId,
       filename,
       fileHash,
       mapping,
@@ -81,10 +84,7 @@ export class ImportBatchRepository {
   ): Promise<ColumnMapping | null> {
     const batch = await this.database()
       .collection(IMPORT_BATCHES_COLLECTION)
-      .findOne(
-        { userId, accountId: new Types.ObjectId(accountId) },
-        { sort: { createdAt: -1 }, projection: { mapping: 1 } }
-      );
+      .findOne({ userId, accountId }, { sort: { createdAt: -1 }, projection: { mapping: 1 } });
     return batch === null ? null : ColumnMappingSchema.parse(batch.mapping);
   }
 
@@ -147,9 +147,12 @@ export class ImportBatchRepository {
 
   private toImportBatch(value: Record<string, unknown>): ImportBatch {
     const { _id, accountId, ...rest } = value;
+    if (typeof accountId !== "string") {
+      throw new Error("Import batch document is missing a string accountId.");
+    }
     return ImportBatchSchema.parse({
       id: objectIdString(_id),
-      accountId: objectIdString(accountId),
+      accountId,
       ...rest
     });
   }

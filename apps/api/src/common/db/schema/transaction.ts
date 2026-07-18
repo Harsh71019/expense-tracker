@@ -29,7 +29,10 @@ export const transactions = pgTable(
     reversalOf: uuid("reversal_of"),
     reversedBy: uuid("reversed_by"),
     transferGroupId: uuid("transfer_group_id"),
-    importBatchId: uuid("import_batch_id"),
+    // import_batches is still Mongo (Task 18 not done) -- its ids are ObjectId hex
+    // strings, not UUIDs, so this can't be a real `uuid` column (or FK) yet. Revisit
+    // once ImportBatchRepository is ported to Postgres.
+    importBatchId: text("import_batch_id"),
     dedupeHash: text("dedupe_hash"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull()

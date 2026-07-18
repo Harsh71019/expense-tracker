@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { and, eq } from "drizzle-orm";
 import { MongoMemoryReplSet } from "mongodb-memory-server";
 import { createConnection } from "mongoose";
 import type { Connection } from "mongoose";
@@ -8,23 +9,34 @@ import { AssetRepository } from "../../../src/assets/asset.repository.js";
 import { AssetService } from "../../../src/assets/asset.service.js";
 import { AssetMutationService } from "../../../src/assets/asset-mutation.service.js";
 import { ValuationRepository } from "../../../src/assets/valuation.repository.js";
+import { auditLog } from "../../../src/common/db/schema/index.js";
 import { IdempotencyRepository } from "../../../src/common/idempotency/idempotency.repository.js";
 import { IdempotencyService } from "../../../src/common/idempotency/idempotency.service.js";
+import { createTestDb, insertTestUser } from "../support/postgres-test-db.js";
+import type { TestDb } from "../support/postgres-test-db.js";
 
 describe("AssetService", () => {
   let replicaSet: MongoMemoryReplSet | undefined;
   let connection: Connection | undefined;
+  let pgTestDb: TestDb | undefined;
   let service: AssetService | undefined;
   let mutations: AssetMutationService | undefined;
 
   beforeAll(async () => {
     replicaSet = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
     connection = await createConnection(replicaSet.getUri("vyaya_assets_test")).asPromise();
+    // assets/valuations are still Mongo (Tasks 16/17 not done); audit_log moved to
+    // Postgres in Task 11 -- AssetService now threads both.
+    pgTestDb = await createTestDb();
+    for (const userId of ["user-a", "user-b", "user-idempotent"]) {
+      await insertTestUser(pgTestDb.db, userId);
+    }
     service = new AssetService(
       connection,
+      pgTestDb.db,
       new AssetRepository(connection),
       new ValuationRepository(connection),
-      new AuditRepository(connection)
+      new AuditRepository(pgTestDb.db)
     );
     mutations = new AssetMutationService(
       connection,
@@ -34,11 +46,12 @@ describe("AssetService", () => {
     await connectedDatabase(connection)
       .collection("idempotency_records")
       .createIndex({ userId: 1, operation: 1, key: 1 }, { unique: true });
-  });
+  }, 60_000);
 
   afterAll(async () => {
     if (connection !== undefined) await connection.close();
     if (replicaSet !== undefined) await replicaSet.stop();
+    if (pgTestDb !== undefined) await pgTestDb.teardown();
   });
 
   it("creates an asset with its opening valuation and an audit entry, atomically", async () => {
@@ -58,10 +71,17 @@ describe("AssetService", () => {
       .findOne({ userId: "user-a", assetId: { $exists: true } });
     expect(valuationDoc).toMatchObject({ valueMinor: 100_000_00, source: "manual" });
 
-    const auditDoc = await connectedDatabase(connection)
-      .collection("audit_log")
-      .findOne({ userId: "user-a", action: "asset.create", entityId: asset.id });
-    expect(auditDoc).toMatchObject({ meta: { valueMinor: 100_000_00 } });
+    const [auditDoc] = await requirePgTestDb(pgTestDb)
+      .db.select()
+      .from(auditLog)
+      .where(
+        and(
+          eq(auditLog.userId, "user-a"),
+          eq(auditLog.action, "asset.create"),
+          eq(auditLog.entityId, asset.id)
+        )
+      );
+    expect(auditDoc?.meta).toMatchObject({ valueMinor: 100_000_00 });
   });
 
   it("lists only open assets for the requesting user", async () => {
@@ -214,11 +234,11 @@ describe("AssetService", () => {
       )
     );
     expect(closes.filter((result) => !result.replayed)).toHaveLength(1);
-    expect(
-      await connectedDatabase(connection)
-        .collection("audit_log")
-        .countDocuments({ userId: "user-idempotent" })
-    ).toBe(3);
+    const auditRows = await requirePgTestDb(pgTestDb)
+      .db.select()
+      .from(auditLog)
+      .where(eq(auditLog.userId, "user-idempotent"));
+    expect(auditRows).toHaveLength(3);
   });
 });
 
@@ -237,4 +257,9 @@ function connectedDatabase(connection: Connection | undefined): NonNullable<Conn
   const database = connection.db;
   if (database === undefined) throw new Error("MongoDB database is not ready");
   return database;
+}
+
+function requirePgTestDb(testDb: TestDb | undefined): TestDb {
+  if (testDb === undefined) throw new Error("Postgres test db is not ready");
+  return testDb;
 }

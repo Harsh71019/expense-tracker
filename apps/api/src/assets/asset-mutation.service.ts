@@ -26,8 +26,8 @@ export class AssetMutationService {
     private readonly idempotency: IdempotencyService
   ) {}
 
-  create(userId: string, input: CreateAsset, key: string): Promise<IdempotentResult<Asset>> {
-    return this.idempotency.execute(
+  async create(userId: string, input: CreateAsset, key: string): Promise<IdempotentResult<Asset>> {
+    const outcome = await this.idempotency.execute(
       this.connection,
       userId,
       "asset.create",
@@ -35,10 +35,20 @@ export class AssetMutationService {
       AssetSchema,
       (session) => this.assets.createInSession(userId, input, session)
     );
+    // Audit only on the attempt that actually committed -- see
+    // AssetService.recordAudit's docstring for why this can't live inside
+    // createInSession (called from inside idempotency.execute's retryable
+    // Mongo transaction).
+    if (!outcome.replayed) {
+      await this.assets.recordAudit(userId, "asset.create", outcome.result.id, {
+        valueMinor: input.openingValueMinor
+      });
+    }
+    return outcome;
   }
 
-  close(userId: string, assetId: AssetId, key: string): Promise<IdempotentResult<null>> {
-    return this.idempotency.execute(
+  async close(userId: string, assetId: AssetId, key: string): Promise<IdempotentResult<null>> {
+    const outcome = await this.idempotency.execute(
       this.connection,
       userId,
       "asset.close",
@@ -46,15 +56,19 @@ export class AssetMutationService {
       z.null(),
       (session) => this.assets.closeInSession(userId, assetId, session)
     );
+    if (!outcome.replayed) {
+      await this.assets.recordAudit(userId, "asset.close", assetId);
+    }
+    return outcome;
   }
 
-  addValuation(
+  async addValuation(
     userId: string,
     assetId: AssetId,
     input: CreateValuation,
     key: string
   ): Promise<IdempotentResult<Valuation>> {
-    return this.idempotency.execute(
+    const outcome = await this.idempotency.execute(
       this.connection,
       userId,
       "asset.valuation.create",
@@ -62,5 +76,12 @@ export class AssetMutationService {
       ValuationSchema,
       (session) => this.assets.addValuationInSession(userId, assetId, input, session)
     );
+    if (!outcome.replayed) {
+      await this.assets.recordAudit(userId, "asset.valuation.create", outcome.result.id, {
+        assetId,
+        valueMinor: outcome.result.valueMinor
+      });
+    }
+    return outcome;
   }
 }

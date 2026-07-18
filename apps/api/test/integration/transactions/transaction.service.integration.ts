@@ -1,71 +1,61 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { MongoMemoryReplSet } from "mongodb-memory-server";
-import { createConnection } from "mongoose";
-import type { Connection } from "mongoose";
+import { and, eq } from "drizzle-orm";
 
 import { AccountRepository } from "../../../src/accounts/account.repository.js";
 import { AuditRepository } from "../../../src/audit/audit.repository.js";
 import { CategoryRepository } from "../../../src/categories/category.repository.js";
-import { withTxn } from "../../../src/common/mongo-txn.js";
+import { withTxn } from "../../../src/common/db/db-txn.js";
+import {
+  accounts,
+  auditLog,
+  transactions as transactionsTable
+} from "../../../src/common/db/schema/index.js";
 import { TransactionRepository } from "../../../src/transactions/transaction.repository.js";
 import { TransactionService } from "../../../src/transactions/transaction.service.js";
 import { TransactionMutationService } from "../../../src/transactions/transaction-mutation.service.js";
-import { IdempotencyRepository } from "../../../src/common/idempotency/idempotency.repository.js";
-import { IdempotencyService } from "../../../src/common/idempotency/idempotency.service.js";
+import { IdempotencyPostgresRepository } from "../../../src/common/idempotency/idempotency-postgres.repository.js";
+import { IdempotencyPostgresService } from "../../../src/common/idempotency/idempotency-postgres.service.js";
 import { EntityNotFoundError } from "../../../src/common/errors/entity-not-found.error.js";
 import { TransactionNotReversibleError } from "../../../src/common/errors/transaction-not-reversible.error.js";
 import { createTestDb, insertTestUser } from "../support/postgres-test-db.js";
 import type { TestDb } from "../support/postgres-test-db.js";
 
+const FAKE_ID = "3fa85f64-5717-4562-b3fc-2c963f66beef";
+
 describe("TransactionService", () => {
-  let replicaSet: MongoMemoryReplSet | undefined;
-  let connection: Connection | undefined;
-  let pgTestDb: TestDb | undefined;
-  let transactions: TransactionService | undefined;
-  let transactionMutations: TransactionMutationService | undefined;
-  let transactionRepository: TransactionRepository | undefined;
-  let accountId: string | undefined;
-  let categoryRepository: CategoryRepository | undefined;
-  let foodCategoryId: string | undefined;
-  let travelCategoryId: string | undefined;
+  let testDb: TestDb;
+  let transactions: TransactionService;
+  let transactionMutations: TransactionMutationService;
+  let transactionRepository: TransactionRepository;
+  let accountId: string;
+  let foodCategoryId: string;
+  let travelCategoryId: string;
 
   beforeAll(async () => {
-    replicaSet = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
-    connection = await createConnection(replicaSet.getUri("vyaya_transactions_test")).asPromise();
-    // categories is already Postgres-backed (Task 10); accounts/transactions/audit are
-    // still Mongo (Tasks 11/14/12 not done yet) -- two separate test databases.
-    pgTestDb = await createTestDb();
-    await insertTestUser(pgTestDb.db, "user-a");
-    const accountRepository = new AccountRepository(connection);
-    categoryRepository = new CategoryRepository(pgTestDb.db);
-    transactionRepository = new TransactionRepository(connection);
+    testDb = await createTestDb();
+    await insertTestUser(testDb.db, "user-a");
+
+    const accountRepository = new AccountRepository(testDb.db);
+    const categoryRepository = new CategoryRepository(testDb.db);
+    transactionRepository = new TransactionRepository(testDb.db);
     transactions = new TransactionService(
-      connection,
+      testDb.db,
       accountRepository,
       categoryRepository,
       transactionRepository,
-      new AuditRepository(connection),
+      new AuditRepository(testDb.db),
       { log: () => undefined, warn: () => undefined }
     );
     transactionMutations = new TransactionMutationService(
-      connection,
       transactions,
-      new IdempotencyService(new IdempotencyRepository(connection))
+      new IdempotencyPostgresService(testDb.db, new IdempotencyPostgresRepository(testDb.db))
     );
-    await connectedDatabase(connection)
-      .collection("transactions")
-      .createIndex({ idempotencyKey: 1 }, { unique: true, sparse: true });
-    await connectedDatabase(connection)
-      .collection("transactions")
-      .createIndex({ reversalOf: 1 }, { unique: true, sparse: true });
-    await connectedDatabase(connection)
-      .collection("idempotency_records")
-      .createIndex({ userId: 1, operation: 1, key: 1 }, { unique: true });
-    const account = await withTxn(connectedConnection(connection), async (session) =>
+
+    const account = await withTxn(testDb.db, (tx) =>
       accountRepository.create(
         "user-a",
         { name: "HDFC Savings", type: "bank", openingBalanceMinor: 10_000 },
-        session
+        tx
       )
     );
     accountId = account.id;
@@ -77,19 +67,16 @@ describe("TransactionService", () => {
   }, 60_000);
 
   afterAll(async () => {
-    if (connection !== undefined) await connection.close();
-    if (replicaSet !== undefined) await replicaSet.stop();
-    if (pgTestDb !== undefined) await pgTestDb.teardown();
+    await testDb.teardown();
   });
 
   it("makes five identical submissions create one ledger entry and one balance change", async () => {
-    const service = transactionService(transactions);
     const results = await Promise.all(
       Array.from({ length: 5 }, () =>
-        service.create(
+        transactions.create(
           "user-a",
           {
-            accountId: existingAccountId(accountId),
+            accountId,
             type: "expense",
             amountMinor: 250,
             occurredAt: new Date("2026-07-12T09:00:00.000Z"),
@@ -102,22 +89,22 @@ describe("TransactionService", () => {
     );
 
     expect(results.filter((result) => result.replayed).length).toBe(4);
-    expect(await connectedDatabase(connection).collection("transactions").countDocuments()).toBe(1);
-    expect(await connectedDatabase(connection).collection("audit_log").countDocuments()).toBe(1);
+    expect((await testDb.db.select().from(transactionsTable)).length).toBe(1);
+    expect((await testDb.db.select().from(auditLog)).length).toBe(1);
 
-    const account = await connectedDatabase(connection)
-      .collection("accounts")
-      .findOne({ userId: "user-a", name: "HDFC Savings" });
+    const [account] = await testDb.db
+      .select()
+      .from(accounts)
+      .where(and(eq(accounts.userId, "user-a"), eq(accounts.name, "HDFC Savings")));
     expect(account).toMatchObject({ balanceMinor: 9_750 });
   });
 
   it("rolls back the transaction when the account does not belong to the user", async () => {
-    const service = transactionService(transactions);
     await expect(
-      service.create(
+      transactions.create(
         "user-a",
         {
-          accountId: "0123456789abcdef01234567",
+          accountId: FAKE_ID,
           type: "income",
           amountMinor: 1_000,
           occurredAt: new Date("2026-07-12T09:00:00.000Z"),
@@ -128,16 +115,15 @@ describe("TransactionService", () => {
       )
     ).rejects.toThrow("Account not found.");
 
-    expect(await connectedDatabase(connection).collection("transactions").countDocuments()).toBe(1);
-    expect(await connectedDatabase(connection).collection("audit_log").countDocuments()).toBe(1);
+    expect((await testDb.db.select().from(transactionsTable)).length).toBe(1);
+    expect((await testDb.db.select().from(auditLog)).length).toBe(1);
   });
 
   it("creates exactly one compensating reversal under parallel requests", async () => {
-    const service = transactionService(transactions);
-    const original = await service.create(
+    const original = await transactions.create(
       "user-a",
       {
-        accountId: existingAccountId(accountId),
+        accountId,
         type: "income",
         amountMinor: 1_000,
         occurredAt: new Date("2026-07-12T10:00:00.000Z"),
@@ -148,33 +134,32 @@ describe("TransactionService", () => {
     );
 
     const results = await Promise.all(
-      Array.from({ length: 5 }, () => service.reverse("user-a", original.transaction.id))
+      Array.from({ length: 5 }, () => transactions.reverse("user-a", original.transaction.id))
     );
 
     expect(results.filter((result) => result.replayed).length).toBe(4);
-    const originalDocument = await connectedDatabase(connection)
-      .collection("transactions")
-      .findOne({ idempotencyKey: "d7c67620-331a-4c8f-998a-e9508318b7b7" });
-    expect(originalDocument).toMatchObject({ status: "reversed" });
+    const [originalRow] = await testDb.db
+      .select()
+      .from(transactionsTable)
+      .where(eq(transactionsTable.idempotencyKey, "d7c67620-331a-4c8f-998a-e9508318b7b7"));
+    expect(originalRow).toMatchObject({ status: "reversed" });
 
-    expect(await connectedDatabase(connection).collection("transactions").countDocuments()).toBe(3);
-    expect(await connectedDatabase(connection).collection("audit_log").countDocuments()).toBe(3);
-    const account = await connectedDatabase(connection)
-      .collection("accounts")
-      .findOne({ userId: "user-a", name: "HDFC Savings" });
+    expect((await testDb.db.select().from(transactionsTable)).length).toBe(3);
+    expect((await testDb.db.select().from(auditLog)).length).toBe(3);
+    const [account] = await testDb.db
+      .select()
+      .from(accounts)
+      .where(and(eq(accounts.userId, "user-a"), eq(accounts.name, "HDFC Savings")));
     expect(account).toMatchObject({ balanceMinor: 9_750 });
   });
 
   it("rolls back the transaction when the category does not exist", async () => {
-    const service = transactionService(transactions);
     await expect(
-      service.create(
+      transactions.create(
         "user-a",
         {
-          accountId: existingAccountId(accountId),
-          // categories is Postgres-backed (Task 10) -- a nonexistent category id must be
-          // valid uuid syntax, unlike accountId above (still Mongo, ObjectId hex).
-          categoryId: "3fa85f64-5717-4562-b3fc-2c963f66beef",
+          accountId,
+          categoryId: FAKE_ID,
           type: "expense",
           amountMinor: 500,
           occurredAt: new Date("2026-07-12T09:00:00.000Z"),
@@ -187,18 +172,14 @@ describe("TransactionService", () => {
   });
 
   it("throws EntityNotFoundError when reversing a non-existent transaction", async () => {
-    const service = transactionService(transactions);
-    await expect(service.reverse("user-a", "507f1f77bcf86cd799439011")).rejects.toThrow(
-      EntityNotFoundError
-    );
+    await expect(transactions.reverse("user-a", FAKE_ID)).rejects.toThrow(EntityNotFoundError);
   });
 
   it("throws TransactionNotReversibleError when reversing a reversal transaction", async () => {
-    const service = transactionService(transactions);
-    const original = await service.create(
+    const original = await transactions.create(
       "user-a",
       {
-        accountId: existingAccountId(accountId),
+        accountId,
         type: "income",
         amountMinor: 500,
         occurredAt: new Date("2026-07-14T09:00:00.000Z"),
@@ -207,20 +188,19 @@ describe("TransactionService", () => {
       },
       "f1a2b3c4-5566-4778-899a-abbccddeeff0"
     );
-    const reversed = await service.reverse("user-a", original.transaction.id);
+    const reversed = await transactions.reverse("user-a", original.transaction.id);
 
-    await expect(service.reverse("user-a", reversed.transaction.id)).rejects.toThrow(
+    await expect(transactions.reverse("user-a", reversed.transaction.id)).rejects.toThrow(
       TransactionNotReversibleError
     );
   });
 
   it("updates description, tags, and category, recording a before/after audit snapshot", async () => {
-    const service = transactionService(transactions);
-    const created = await service.create(
+    const created = await transactions.create(
       "user-a",
       {
-        accountId: existingAccountId(accountId),
-        categoryId: existingId(foodCategoryId),
+        accountId,
+        categoryId: foodCategoryId,
         type: "expense",
         amountMinor: 300,
         occurredAt: new Date("2026-07-13T09:00:00.000Z"),
@@ -230,46 +210,52 @@ describe("TransactionService", () => {
       "f1a1a1a1-1111-4111-a111-111111111111"
     );
 
-    const updated = await service.update("user-a", created.transaction.id, {
+    const updated = await transactions.update("user-a", created.transaction.id, {
       description: "Vada pav and chai",
       tags: ["snack", "chai"],
-      categoryId: existingId(travelCategoryId)
+      categoryId: travelCategoryId
     });
 
     expect(updated).toMatchObject({
       description: "Vada pav and chai",
       tags: ["snack", "chai"],
-      categoryId: existingId(travelCategoryId),
+      categoryId: travelCategoryId,
       amountMinor: 300,
       type: "expense"
     });
 
-    const audit = await connectedDatabase(connection)
-      .collection("audit_log")
-      .findOne({ userId: "user-a", action: "transaction.update", entityId: updated.id });
+    const [audit] = await testDb.db
+      .select()
+      .from(auditLog)
+      .where(
+        and(
+          eq(auditLog.userId, "user-a"),
+          eq(auditLog.action, "transaction.update"),
+          eq(auditLog.entityId, updated.id)
+        )
+      );
     expect(audit).toMatchObject({
       meta: {
         before: {
           description: "Vada pav",
           tags: ["snack"],
-          categoryId: existingId(foodCategoryId)
+          categoryId: foodCategoryId
         },
         after: {
           description: "Vada pav and chai",
           tags: ["snack", "chai"],
-          categoryId: existingId(travelCategoryId)
+          categoryId: travelCategoryId
         }
       }
     });
   });
 
   it("clears the category when categoryId is explicitly null", async () => {
-    const service = transactionService(transactions);
-    const created = await service.create(
+    const created = await transactions.create(
       "user-a",
       {
-        accountId: existingAccountId(accountId),
-        categoryId: existingId(foodCategoryId),
+        accountId,
+        categoryId: foodCategoryId,
         type: "expense",
         amountMinor: 150,
         occurredAt: new Date("2026-07-13T10:00:00.000Z"),
@@ -279,24 +265,24 @@ describe("TransactionService", () => {
       "f2a2a2a2-2222-4222-a222-222222222222"
     );
 
-    const updated = await service.update("user-a", created.transaction.id, { categoryId: null });
+    const updated = await transactions.update("user-a", created.transaction.id, {
+      categoryId: null
+    });
 
     expect(updated.categoryId).toBeUndefined();
   });
 
   it("throws EntityNotFoundError when updating a transaction that does not exist", async () => {
-    const service = transactionService(transactions);
-    await expect(
-      service.update("user-a", "507f1f77bcf86cd799439011", { description: "Ghost" })
-    ).rejects.toThrow("Transaction not found.");
+    await expect(transactions.update("user-a", FAKE_ID, { description: "Ghost" })).rejects.toThrow(
+      "Transaction not found."
+    );
   });
 
   it("throws EntityNotFoundError when the patch references a non-existent category", async () => {
-    const service = transactionService(transactions);
-    const created = await service.create(
+    const created = await transactions.create(
       "user-a",
       {
-        accountId: existingAccountId(accountId),
+        accountId,
         type: "expense",
         amountMinor: 200,
         occurredAt: new Date("2026-07-13T11:00:00.000Z"),
@@ -307,18 +293,15 @@ describe("TransactionService", () => {
     );
 
     await expect(
-      service.update("user-a", created.transaction.id, {
-        categoryId: "3fa85f64-5717-4562-b3fc-2c963f66beef"
-      })
+      transactions.update("user-a", created.transaction.id, { categoryId: FAKE_ID })
     ).rejects.toThrow("Category not found.");
   });
 
   it("does not allow updating another user's transaction", async () => {
-    const service = transactionService(transactions);
-    const created = await service.create(
+    const created = await transactions.create(
       "user-a",
       {
-        accountId: existingAccountId(accountId),
+        accountId,
         type: "expense",
         amountMinor: 175,
         occurredAt: new Date("2026-07-13T12:00:00.000Z"),
@@ -329,16 +312,15 @@ describe("TransactionService", () => {
     );
 
     await expect(
-      service.update("someone-else", created.transaction.id, { description: "Hijacked" })
+      transactions.update("someone-else", created.transaction.id, { description: "Hijacked" })
     ).rejects.toThrow("Transaction not found.");
   });
 
   it("loads one transaction by id only for its owner", async () => {
-    const service = transactionService(transactions);
-    const created = await service.create(
+    const created = await transactions.create(
       "user-a",
       {
-        accountId: existingAccountId(accountId),
+        accountId,
         type: "expense",
         amountMinor: 125,
         occurredAt: new Date("2026-07-14T12:00:00.000Z"),
@@ -348,21 +330,19 @@ describe("TransactionService", () => {
       "12121212-aaaa-4121-8121-121212121212"
     );
 
-    await expect(service.get("user-a", created.transaction.id)).resolves.toEqual(
+    await expect(transactions.get("user-a", created.transaction.id)).resolves.toEqual(
       created.transaction
     );
-    await expect(service.get("someone-else", created.transaction.id)).rejects.toThrow(
+    await expect(transactions.get("someone-else", created.transaction.id)).rejects.toThrow(
       "Transaction not found."
     );
   });
 
   it("updates metadata exactly once across five identical attempts", async () => {
-    const service = transactionService(transactions);
-    const mutation = transactionMutationService(transactionMutations);
-    const created = await service.create(
+    const created = await transactions.create(
       "user-a",
       {
-        accountId: existingAccountId(accountId),
+        accountId,
         type: "expense",
         amountMinor: 225,
         occurredAt: new Date("2026-07-14T13:00:00.000Z"),
@@ -374,7 +354,7 @@ describe("TransactionService", () => {
 
     const results = await Promise.all(
       Array.from({ length: 5 }, () =>
-        mutation.update(
+        transactionMutations.update(
           "user-a",
           created.transaction.id,
           { description: "Updated once", tags: ["verified"] },
@@ -386,21 +366,27 @@ describe("TransactionService", () => {
     expect(results.filter((result) => !result.replayed)).toHaveLength(1);
     expect(new Set(results.map((result) => result.result.updatedAt.getTime())).size).toBe(1);
     expect(
-      await connectedDatabase(connection).collection("audit_log").countDocuments({
-        userId: "user-a",
-        action: "transaction.update",
-        entityId: created.transaction.id
-      })
+      (
+        await testDb.db
+          .select()
+          .from(auditLog)
+          .where(
+            and(
+              eq(auditLog.userId, "user-a"),
+              eq(auditLog.action, "transaction.update"),
+              eq(auditLog.entityId, created.transaction.id)
+            )
+          )
+      ).length
     ).toBe(1);
   });
 
   it("rejects metadata edits on an individual transfer leg", async () => {
-    const repository = requiredTransactionRepository(transactionRepository);
-    const transferLeg = await withTxn(connectedConnection(connection), (session) =>
-      repository.create(
+    const transferLeg = await withTxn(testDb.db, (tx) =>
+      transactionRepository.create(
         "user-a",
         {
-          accountId: existingAccountId(accountId),
+          accountId,
           type: "expense",
           amountMinor: 500,
           occurredAt: new Date("2026-07-14T14:00:00.000Z"),
@@ -408,13 +394,13 @@ describe("TransactionService", () => {
           tags: []
         },
         undefined,
-        session,
-        "507f1f77bcf86cd799439099"
+        tx,
+        "3fa85f64-5717-4562-b3fc-2c963f66af99"
       )
     );
 
     await expect(
-      transactionMutationService(transactionMutations).update(
+      transactionMutations.update(
         "user-a",
         transferLeg.id,
         { description: "One-sided edit" },
@@ -423,43 +409,3 @@ describe("TransactionService", () => {
     ).rejects.toThrow("Transfer leg metadata cannot be edited independently.");
   });
 });
-
-function transactionService(service: TransactionService | undefined): TransactionService {
-  if (service === undefined) throw new Error("Transaction service is not ready");
-  return service;
-}
-
-function transactionMutationService(
-  service: TransactionMutationService | undefined
-): TransactionMutationService {
-  if (service === undefined) throw new Error("Transaction mutation service is not ready");
-  return service;
-}
-
-function requiredTransactionRepository(
-  repository: TransactionRepository | undefined
-): TransactionRepository {
-  if (repository === undefined) throw new Error("Transaction repository is not ready");
-  return repository;
-}
-
-function existingAccountId(accountId: string | undefined): string {
-  if (accountId === undefined) throw new Error("Account is not ready");
-  return accountId;
-}
-
-function existingId(id: string | undefined): string {
-  if (id === undefined) throw new Error("Fixture id is not ready");
-  return id;
-}
-
-function connectedConnection(connection: Connection | undefined): Connection {
-  if (connection === undefined) throw new Error("MongoDB connection is not ready");
-  return connection;
-}
-
-function connectedDatabase(connection: Connection | undefined): NonNullable<Connection["db"]> {
-  const database = connectedConnection(connection).db;
-  if (database === undefined) throw new Error("MongoDB database is not ready");
-  return database;
-}

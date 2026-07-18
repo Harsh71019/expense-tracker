@@ -1,12 +1,9 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { MongoMemoryReplSet } from "mongodb-memory-server";
-import { createConnection } from "mongoose";
-import type { Connection } from "mongoose";
 
 import { AccountRepository } from "../../../src/accounts/account.repository.js";
 import { AuditRepository } from "../../../src/audit/audit.repository.js";
 import { CategoryRepository } from "../../../src/categories/category.repository.js";
-import { withTxn } from "../../../src/common/mongo-txn.js";
+import { withTxn } from "../../../src/common/db/db-txn.js";
 import { ExportService } from "../../../src/export/export.service.js";
 import { TransactionRepository } from "../../../src/transactions/transaction.repository.js";
 import { TransactionService } from "../../../src/transactions/transaction.service.js";
@@ -14,41 +11,35 @@ import { createTestDb, insertTestUser } from "../support/postgres-test-db.js";
 import type { TestDb } from "../support/postgres-test-db.js";
 
 describe("ExportService", () => {
-  let replicaSet: MongoMemoryReplSet | undefined;
-  let connection: Connection | undefined;
-  let pgTestDb: TestDb | undefined;
-  let exportService: ExportService | undefined;
-  let accountId: string | undefined;
-  let categoryId: string | undefined;
-  let transactionsService: TransactionService | undefined;
+  let testDb: TestDb;
+  let exportService: ExportService;
+  let accountId: string;
+  let categoryId: string;
+  let transactionsService: TransactionService;
 
   beforeAll(async () => {
-    replicaSet = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
-    connection = await createConnection(replicaSet.getUri("vyaya_export_test")).asPromise();
-    // categories is already Postgres-backed (Task 10); accounts/transactions/audit are
-    // still Mongo (Tasks 11/14/12 not done yet) -- two separate test databases.
-    pgTestDb = await createTestDb();
-    await insertTestUser(pgTestDb.db, "user-export");
-    await insertTestUser(pgTestDb.db, "user-range");
+    testDb = await createTestDb();
+    await insertTestUser(testDb.db, "user-export");
+    await insertTestUser(testDb.db, "user-range");
 
-    const accountRepository = new AccountRepository(connection);
-    const categoryRepository = new CategoryRepository(pgTestDb.db);
-    const transactionRepository = new TransactionRepository(connection);
+    const accountRepository = new AccountRepository(testDb.db);
+    const categoryRepository = new CategoryRepository(testDb.db);
+    const transactionRepository = new TransactionRepository(testDb.db);
     transactionsService = new TransactionService(
-      connection,
+      testDb.db,
       accountRepository,
       categoryRepository,
       transactionRepository,
-      new AuditRepository(connection),
+      new AuditRepository(testDb.db),
       { log: () => undefined, warn: () => undefined }
     );
     exportService = new ExportService(transactionRepository, accountRepository, categoryRepository);
 
-    const account = await withTxn(connection, (session) =>
+    const account = await withTxn(testDb.db, (tx) =>
       accountRepository.create(
         "user-export",
         { name: "HDFC Savings", type: "bank", openingBalanceMinor: 10_000 },
-        session
+        tx
       )
     );
     accountId = account.id;
@@ -60,20 +51,15 @@ describe("ExportService", () => {
   }, 60_000);
 
   afterAll(async () => {
-    if (connection !== undefined) await connection.close();
-    if (replicaSet !== undefined) await replicaSet.stop();
-    if (pgTestDb !== undefined) await pgTestDb.teardown();
+    await testDb.teardown();
   });
 
   it("exports posted transactions as CSV, excludes reversed pairs, neutralizes formula-injection cells", async () => {
-    const service = nonNull(transactionsService);
-    const exporter = nonNull(exportService);
-
-    await service.create(
+    await transactionsService.create(
       "user-export",
       {
-        accountId: nonNull(accountId),
-        categoryId: nonNull(categoryId),
+        accountId,
+        categoryId,
         type: "expense",
         amountMinor: 2_000,
         occurredAt: new Date("2026-07-04T09:00:00.000Z"),
@@ -82,10 +68,10 @@ describe("ExportService", () => {
       },
       "aaaaaaaa-1111-4111-a111-aaaaaaaaaaaa"
     );
-    const toReverse = await service.create(
+    const toReverse = await transactionsService.create(
       "user-export",
       {
-        accountId: nonNull(accountId),
+        accountId,
         type: "income",
         amountMinor: 5_000,
         occurredAt: new Date("2026-07-05T09:00:00.000Z"),
@@ -94,9 +80,9 @@ describe("ExportService", () => {
       },
       "bbbbbbbb-2222-4222-a222-bbbbbbbbbbbb"
     );
-    await service.reverse("user-export", toReverse.transaction.id);
+    await transactionsService.reverse("user-export", toReverse.transaction.id);
 
-    const csv = await exporter.generateCsv("user-export", {});
+    const csv = await exportService.generateCsv("user-export", {});
     const lines = csv.trim().split("\r\n");
 
     expect(lines[0]).toBe("Date,Type,Status,Account,Category,Description,Tags,Amount (INR)");
@@ -115,18 +101,15 @@ describe("ExportService", () => {
   });
 
   it("filters by date range", async () => {
-    const service = nonNull(transactionsService);
-    const exporter = nonNull(exportService);
-
-    await service.create(
+    await transactionsService.create(
       "user-range",
       {
         accountId: (
-          await withTxn(nonNull(connection), (session) =>
-            new AccountRepository(nonNull(connection)).create(
+          await withTxn(testDb.db, (tx) =>
+            new AccountRepository(testDb.db).create(
               "user-range",
               { name: "Cash", type: "cash", openingBalanceMinor: 0 },
-              session
+              tx
             )
           )
         ).id,
@@ -139,17 +122,10 @@ describe("ExportService", () => {
       "cccccccc-3333-4333-a333-cccccccccccc"
     );
 
-    const csv = await exporter.generateCsv("user-range", {
+    const csv = await exportService.generateCsv("user-range", {
       from: new Date("2026-02-01T00:00:00.000Z"),
       to: new Date("2026-03-01T00:00:00.000Z")
     });
     expect(csv.trim().split("\r\n")).toHaveLength(1); // header only
   });
 });
-
-function nonNull<T>(value: T | undefined): T {
-  if (value === undefined) {
-    throw new Error("Test fixture is not ready");
-  }
-  return value;
-}

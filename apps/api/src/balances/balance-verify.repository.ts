@@ -1,82 +1,46 @@
-import { Injectable } from "@nestjs/common";
-import { InjectConnection } from "@nestjs/mongoose";
+import { Inject, Injectable } from "@nestjs/common";
 import { AccountSchema, type Account } from "@vyaya/shared";
-import type { Connection } from "mongoose";
+import { sql } from "drizzle-orm";
 
-const ACCOUNTS_COLLECTION = "accounts";
-const TRANSACTIONS_COLLECTION = "transactions";
+import { DATABASE_CONNECTION } from "../common/db/db.module.js";
+import type { DrizzleDb } from "../common/db/db.module.js";
+import { accounts, transactions } from "../common/db/schema/index.js";
 
-type DeltaGroup = Readonly<{ _id: unknown; netMinor: number }>;
-
-/**
- * Reads `accounts`/`transactions` directly rather than going through
- * AccountRepository/TransactionRepository — this is a read-only,
- * cross-user verification sweep with a different access shape (every
- * account, not one user's), and mirrors the precedent already set by
- * MonthlyRollupRepository reading `transactions` directly instead of
- * depending on TransactionRepository.
- */
 @Injectable()
 export class BalanceVerifyRepository {
-  constructor(@InjectConnection() private readonly connection: Connection) {}
+  constructor(@Inject(DATABASE_CONNECTION) private readonly db: DrizzleDb) {}
 
   /** Every account regardless of isArchived — an archived account's cached balance still has to be internally consistent. */
   async findAllAccounts(): Promise<Account[]> {
-    const documents = await this.database().collection(ACCOUNTS_COLLECTION).find({}).toArray();
-    return documents.map((document) =>
-      AccountSchema.parse({ id: objectIdString(document._id), ...document })
-    );
+    const rows = await this.db.select().from(accounts);
+    return rows.map((row) => AccountSchema.parse(row));
   }
 
   /**
    * Every transaction ever inserted for an account keeps contributing its
    * own original delta forever — a reversal never removes the original's
-   * contribution, it adds an opposite-signed document of its own (see
-   * TransactionService.reverse). Summing every document's signed
-   * amountMinor, regardless of current status, reconstructs exactly what
+   * contribution, it adds an opposite-signed row of its own (see
+   * TransactionService.reverse). Summing every row's signed amountMinor,
+   * regardless of current status, reconstructs exactly what
    * applyBalanceDelta has cumulatively applied — so status is deliberately
    * not filtered here, unlike ExportService/MonthlyRollupRepository's
    * "posted" filter (those read *current* state, this reconstructs *history*).
    */
   async sumDeltasByAccount(): Promise<Map<string, number>> {
-    const groups = await this.database()
-      .collection(TRANSACTIONS_COLLECTION)
-      .aggregate<DeltaGroup>([
-        {
-          $group: {
-            _id: "$accountId",
-            netMinor: {
-              $sum: {
-                $cond: [
-                  { $eq: ["$type", "income"] },
-                  "$amountMinor",
-                  { $multiply: ["$amountMinor", -1] }
-                ]
-              }
-            }
-          }
-        }
-      ])
-      .toArray();
-    return new Map(groups.map((group) => [objectIdString(group._id), group.netMinor]));
+    // `::int`, not `::bigint` -- node-postgres returns bigint columns as
+    // strings (JS numbers can't safely hold the full bigint range), which
+    // silently turned `openingBalanceMinor + deltasByAccount.get(...)` into
+    // string concatenation (e.g. "10000" + "-2000" -> "10000-2000") and
+    // flagged every account with any transaction as drifted. Same `::int`
+    // convention as MonthlyRollupRepository -- personal-finance amounts
+    // never approach the int4 ceiling (~21.4M INR in paise).
+    const rows = await this.db
+      .select({
+        accountId: transactions.accountId,
+        netMinor: sql<number>`coalesce(sum(case when ${transactions.type} = 'income' then ${transactions.amountMinor} else -${transactions.amountMinor} end), 0)::int`
+      })
+      .from(transactions)
+      .groupBy(transactions.accountId);
+    return new Map(rows.map((row) => [row.accountId, row.netMinor]));
   }
-
-  private database(): NonNullable<Connection["db"]> {
-    const database = this.connection.db;
-    if (database === undefined) {
-      throw new Error("MongoDB connection is not ready");
-    }
-    return database;
-  }
-}
-
-function objectIdString(value: unknown): string {
-  if (typeof value !== "object" || value === null || !("toString" in value)) {
-    throw new Error("MongoDB document contains an invalid ObjectId.");
-  }
-  const stringify = value.toString;
-  if (typeof stringify !== "function") {
-    throw new Error("MongoDB document contains an invalid ObjectId.");
-  }
-  return stringify.call(value);
 }

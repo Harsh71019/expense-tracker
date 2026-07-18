@@ -12,10 +12,11 @@ export function MockApiBoot(): ReactNode {
   useEffect(() => {
     if (!isMockApiEnabled) return;
     let cancelled = false;
-    void import("./browser").then(async ({ startMockWorker }) => {
-      await startMockWorker();
-      if (!cancelled) setReady(true);
-    });
+    void import("./browser").then(({ ensureMockWorkerStarted }) =>
+      ensureMockWorkerStarted().then(() => {
+        if (!cancelled) setReady(true);
+      })
+    );
     return () => {
       cancelled = true;
     };

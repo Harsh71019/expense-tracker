@@ -12,9 +12,8 @@ import { ThemeToggle } from "../ui/theme-toggle";
 const SIDEBAR_COMPACT_KEY = "vyaya-sidebar-compact";
 
 const navItems = [
-  { href: "/", label: "Home", icon: "⌂" },
   { href: "/transactions", label: "Transactions", icon: "≡" },
-  { href: "/add", label: "Add", icon: "+" },
+  { href: "/transfers", label: "Transfers", icon: "⤢" },
   { href: "/reports", label: "Reports", icon: "◔" },
   { href: "/more", label: "More", icon: "•••" }
 ] as const;

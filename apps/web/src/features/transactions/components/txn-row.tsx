@@ -1,84 +1,84 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Money } from "@/components/ui/money";
-import type { Transaction } from "@vyaya/shared";
+import type { Category, Transaction, TransactionSource } from "@vyaya/shared";
 import type { ReactNode } from "react";
-import Link from "next/link";
+
+import { Money } from "@/components/ui/money";
+
+export const TXN_ROW_GRID = "grid grid-cols-[2.4fr_1fr_1fr_1.1fr] items-center gap-4";
+
+const SOURCE_LABEL: Record<TransactionSource, string> = {
+  manual: "Manual",
+  csv_import: "CSV",
+  recurring: "Recurring",
+  api: "API"
+};
 
 type TxnRowProps = Readonly<{
   transaction: Transaction;
-  originalDescription: string | undefined;
-  onReverse: (transactionId: string) => void;
-  isReversing: boolean;
+  category: Category | undefined;
+  onOpen: (transaction: Transaction) => void;
 }>;
 
 const dateFormatter = new Intl.DateTimeFormat("en-IN", {
-  day: "numeric",
+  day: "2-digit",
   month: "short",
   timeZone: "Asia/Kolkata"
 });
 
-export function TxnRow({
-  transaction,
-  originalDescription,
-  onReverse,
-  isReversing
-}: TxnRowProps): ReactNode {
+export function TxnRow({ transaction, category, onOpen }: TxnRowProps): ReactNode {
   const isReversed = transaction.status === "reversed";
   const isReversal = transaction.status === "reversal";
   const isIncome = transaction.type === "income";
-
-  const stripeColor = isReversed
-    ? "bg-reversed"
-    : isReversal
-      ? "bg-accent"
-      : isIncome
-        ? "bg-income"
-        : "bg-expense";
+  const icon = category?.icon ?? (isIncome ? "↓" : "↑");
 
   return (
-    <article
-      className={`group relative flex items-center gap-4 px-4 py-3.5 transition-colors duration-150 hover:bg-surface-muted/50 ${
-        isReversed ? "opacity-60" : ""
+    <button
+      type="button"
+      onClick={() => onOpen(transaction)}
+      className={`${TXN_ROW_GRID} w-full px-5 py-3.5 text-left transition-colors duration-150 hover:bg-surface-muted/50 ${
+        isReversed ? "opacity-55" : ""
       }`}
     >
-      <span className={`absolute inset-y-0 left-0 w-[3px] ${stripeColor}`} aria-hidden="true" />
-      <div className="min-w-0 flex-1 pl-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <h2 className="truncate text-sm font-semibold text-foreground">
-            <Link href={`/transactions/${transaction.id}`} className="hover:text-accent">
+      <div className="flex min-w-0 items-center gap-3">
+        <span className="grid h-9.5 w-9.5 shrink-0 place-items-center rounded-[10px] border border-border bg-surface-muted text-base">
+          {icon}
+        </span>
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <span
+              className={`truncate text-sm font-semibold text-foreground ${isReversed ? "line-through" : ""}`}
+            >
               {transaction.description}
-            </Link>
-          </h2>
-          {isReversed ? <Badge variant="reversed">Reversed</Badge> : null}
+            </span>
+            {transaction.source === "manual" ? null : (
+              <span className="shrink-0 rounded-md border border-border bg-surface-muted px-1.5 py-0.5 font-mono text-[9px] font-bold tracking-wider text-foreground-muted uppercase">
+                {SOURCE_LABEL[transaction.source]}
+              </span>
+            )}
+          </div>
+          {isReversed || isReversal ? (
+            <p className="mt-0.5 text-xs font-medium text-amber-500">
+              {isReversed ? "Reversed" : "Reversal entry"}
+            </p>
+          ) : null}
         </div>
-        <p className="mt-1 font-mono text-[10px] tracking-wider text-foreground-muted uppercase">
-          {dateFormatter.format(transaction.occurredAt)}
-          {isReversal ? ` · Reversal of: ${originalDescription ?? "original transaction"}` : ""}
-        </p>
       </div>
-      <div className="flex shrink-0 flex-col items-end gap-2">
-        <Money
-          minor={transaction.amountMinor}
-          variant={isReversed ? "neutral" : transaction.type}
-          signed
-          size="md"
-          {...(isReversed ? { className: "line-through" } : {})}
-        />
-        {transaction.status === "posted" && transaction.transferGroupId === undefined ? (
-          <Button
-            type="button"
-            variant="secondary"
-            className="px-2.5 py-1 text-xs opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-150"
-            disabled={isReversing}
-            onClick={() => onReverse(transaction.id)}
-          >
-            {isReversing ? "Undoing…" : "Undo"}
-          </Button>
-        ) : null}
+      <div
+        className={`truncate text-sm font-medium ${category === undefined ? "text-foreground-muted/50" : "text-foreground-muted"}`}
+      >
+        {category?.name ?? "—"}
       </div>
-    </article>
+      <div className="font-mono text-[13px] font-medium text-foreground-muted">
+        {dateFormatter.format(transaction.occurredAt)}
+      </div>
+      <Money
+        minor={transaction.amountMinor}
+        variant={isReversed ? "neutral" : transaction.type}
+        signed
+        size="md"
+        className={`justify-self-end ${isReversed ? "line-through" : ""}`}
+      />
+    </button>
   );
 }

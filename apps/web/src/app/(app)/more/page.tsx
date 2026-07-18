@@ -11,7 +11,7 @@ const settingsLinks = [
   ["/categories", "Categories", "Manage expense and income categories."],
   ["/category-rules", "Automatic categories", "Configure import suggestions."],
   ["/assets", "Assets", "Track valuations and liabilities."],
-  ["/transfers/new", "Transfer between accounts", "Record a two-leg movement."],
+  ["/transfers", "Transfers", "Move money between your own accounts."],
   ["/export", "Export data", "Download posted transactions as CSV."]
 ] as const;
 

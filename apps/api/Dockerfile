@@ -19,7 +19,8 @@ COPY migrations migrations
 COPY migrate-mongo-config.cjs migrate-mongo-config.cjs
 COPY packages/shared packages/shared
 
-RUN pnpm --filter @vyaya/api build \
+RUN pnpm --filter @vyaya/shared build \
+  && pnpm --filter @vyaya/api build \
   && pnpm --filter @vyaya/api deploy --legacy --prod /app \
   && cp -R apps/api/dist /app/dist \
   && cp migrate-mongo-config.cjs /app/migrate-mongo-config.cjs \

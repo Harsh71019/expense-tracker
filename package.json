@@ -9,11 +9,11 @@
     "build": "pnpm --filter @vyaya/shared build && pnpm --filter @vyaya/api build && pnpm --filter @vyaya/web build",
     "dev": "pnpm --filter @vyaya/shared build && pnpm --parallel --filter @vyaya/shared --filter @vyaya/api --filter @vyaya/web dev",
     "gen:client": "pnpm --filter @vyaya/api gen:openapi && openapi-typescript apps/api/openapi.json -o apps/web/src/lib/api/generated/schema.d.ts",
-    "lint": "pnpm --recursive lint",
-    "typecheck": "pnpm --recursive typecheck",
-    "test": "pnpm --recursive test",
-    "test:integration": "pnpm --filter @vyaya/api test:integration",
-    "test:e2e": "pnpm --filter @vyaya/api test:e2e",
+    "lint": "pnpm --filter @vyaya/shared build && pnpm --recursive lint",
+    "typecheck": "pnpm --filter @vyaya/shared build && pnpm --recursive typecheck",
+    "test": "pnpm --filter @vyaya/shared build && pnpm --recursive test",
+    "test:integration": "pnpm --filter @vyaya/shared build && pnpm --filter @vyaya/api test:integration",
+    "test:e2e": "pnpm --filter @vyaya/shared build && pnpm --filter @vyaya/api test:e2e",
     "migrate": "pnpm --filter @vyaya/api migrate",
     "verify:migrations": "tsx scripts/verify-migrations.ts",
     "format": "prettier --write .",
@@ -38,14 +38,19 @@
     "openapi-typescript": "^7.13.0",
     "prettier": "latest",
     "tsx": "latest",
-    "typescript": "beta",
+    "typescript": "6.0.0-beta",
     "typescript-eslint": "latest",
-    "vitest": "latest",
+    "vite": "7.3.6",
+    "vitest": "4.1.10",
     "zod": "latest"
   },
   "pnpm": {
     "overrides": {
-      "@typescript-eslint/typescript-estree>typescript": "npm:@typescript/typescript6@*"
-    }
+      "@typescript-eslint/typescript-estree>typescript": "npm:@typescript/typescript6@*",
+      "vite": "7.3.6"
+    },
+    "onlyBuiltDependencies": [
+      "@swc/core"
+    ]
   }
 }

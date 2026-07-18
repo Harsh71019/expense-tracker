@@ -1,9 +1,8 @@
 import { z } from "zod";
 
 import { CategoryIdSchema } from "./category.js";
-import { migratingIdSchema } from "./id.js";
 
-export const CategoryRuleIdSchema = migratingIdSchema();
+export const CategoryRuleIdSchema = z.string().uuid("Category rule id must be a UUID.");
 
 export const CreateCategoryRuleSchema = z.object({
   /** Case-insensitive substring matched against a transaction description. */

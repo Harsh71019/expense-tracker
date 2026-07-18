@@ -2,7 +2,6 @@ import { z } from "zod";
 
 import { AccountIdSchema } from "./account.js";
 import { CategoryIdSchema } from "./category.js";
-import { migratingIdSchema } from "./id.js";
 import { PageInfoSchema } from "./pagination.js";
 import { TransactionTypeSchema } from "./transaction.js";
 
@@ -21,9 +20,9 @@ export const DateFormatSchema = z.enum(["DD/MM/YYYY", "MM/DD/YYYY", "YYYY-MM-DD"
 
 export const AmountConventionSchema = z.enum(["single_signed", "debit_credit_cols"]);
 
-export const ImportBatchIdSchema = migratingIdSchema();
+export const ImportBatchIdSchema = z.string().uuid("Import batch id must be a UUID.");
 
-export const StagedRowIdSchema = migratingIdSchema();
+export const StagedRowIdSchema = z.string().uuid("Staged row id must be a UUID.");
 
 export const ColumnMappingSchema = z
   .object({

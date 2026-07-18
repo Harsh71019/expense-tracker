@@ -32,7 +32,6 @@ describe("RecurringMaterializeService", () => {
     testDb = await createTestDb();
     await insertTestUser(testDb.db, "user-a");
 
-    process.env.MONGODB_URI = "mongodb://localhost:27017/unused-recurring-materialize-test";
     process.env.DATABASE_URL = testDb.connectionUri;
     process.env.REDIS_URL = "redis://127.0.0.1:6379/12";
     process.env.TRUSTED_ORIGINS = "http://localhost:3000";

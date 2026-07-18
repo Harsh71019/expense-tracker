@@ -14,7 +14,7 @@ function mockResponse() {
 const sampleTransaction = {
   id: "txn-1",
   userId: "user-1",
-  accountId: "507f1f77bcf86cd799439011",
+  accountId: "3fa85f64-5717-4562-b3fc-2c963f66beef",
   type: "expense" as const,
   amountMinor: 250,
   currency: "INR" as const,
@@ -37,7 +37,7 @@ describe("TransactionController", () => {
     // @ts-expect-error - mock TransactionService for unit testing
     const controller = new TransactionController(mockService);
     const body = {
-      accountId: "507f1f77bcf86cd799439011",
+      accountId: "3fa85f64-5717-4562-b3fc-2c963f66beef",
       type: "expense",
       amountMinor: 250,
       occurredAt: "2026-07-12T09:00:00.000Z",
@@ -56,7 +56,7 @@ describe("TransactionController", () => {
     expect(mockService.create).toHaveBeenCalledWith(
       "user-1",
       {
-        accountId: "507f1f77bcf86cd799439011",
+        accountId: "3fa85f64-5717-4562-b3fc-2c963f66beef",
         type: "expense",
         amountMinor: 250,
         occurredAt: new Date("2026-07-12T09:00:00.000Z"),
@@ -78,7 +78,7 @@ describe("TransactionController", () => {
     const result = await controller.create(
       user,
       {
-        accountId: "507f1f77bcf86cd799439011",
+        accountId: "3fa85f64-5717-4562-b3fc-2c963f66beef",
         type: "expense",
         amountMinor: 250,
         occurredAt: "2026-07-12T09:00:00.000Z",
@@ -102,10 +102,13 @@ describe("TransactionController", () => {
     // @ts-expect-error - mock TransactionService for unit testing
     const controller = new TransactionController(mockService);
 
-    const result = await controller.reverse(user, "507f1f77bcf86cd799439011");
+    const result = await controller.reverse(user, "3fa85f64-5717-4562-b3fc-2c963f66beef");
 
     expect(result).toEqual(sampleTransaction);
-    expect(mockService.reverse).toHaveBeenCalledWith("user-1", "507f1f77bcf86cd799439011");
+    expect(mockService.reverse).toHaveBeenCalledWith(
+      "user-1",
+      "3fa85f64-5717-4562-b3fc-2c963f66beef"
+    );
   });
 
   it("loads a transaction detail by validated id", async () => {
@@ -113,10 +116,10 @@ describe("TransactionController", () => {
     // @ts-expect-error - mock TransactionService for unit testing
     const controller = new TransactionController(mockService);
 
-    await expect(controller.get(user, "507f1f77bcf86cd799439011")).resolves.toEqual(
+    await expect(controller.get(user, "3fa85f64-5717-4562-b3fc-2c963f66beef")).resolves.toEqual(
       sampleTransaction
     );
-    expect(mockService.get).toHaveBeenCalledWith("user-1", "507f1f77bcf86cd799439011");
+    expect(mockService.get).toHaveBeenCalledWith("user-1", "3fa85f64-5717-4562-b3fc-2c963f66beef");
   });
 
   it("marks a natural reversal replay in the response header", async () => {
@@ -129,7 +132,7 @@ describe("TransactionController", () => {
 
     await controller.reverse(
       user,
-      "507f1f77bcf86cd799439011",
+      "3fa85f64-5717-4562-b3fc-2c963f66beef",
       // @ts-expect-error - mock Response for unit testing
       response
     );
@@ -144,14 +147,18 @@ describe("TransactionController", () => {
 
     // @ts-expect-error - mock TransactionService for unit testing
     const controller = new TransactionController(mockService);
-    const result = await controller.update(user, "507f1f77bcf86cd799439011", {
+    const result = await controller.update(user, "3fa85f64-5717-4562-b3fc-2c963f66beef", {
       description: "Chai and biscuits"
     });
 
     expect(result).toEqual(updatedTransaction);
-    expect(mockService.update).toHaveBeenCalledWith("user-1", "507f1f77bcf86cd799439011", {
-      description: "Chai and biscuits"
-    });
+    expect(mockService.update).toHaveBeenCalledWith(
+      "user-1",
+      "3fa85f64-5717-4562-b3fc-2c963f66beef",
+      {
+        description: "Chai and biscuits"
+      }
+    );
   });
 
   it("uses the replay-aware metadata mutation path", async () => {
@@ -166,7 +173,7 @@ describe("TransactionController", () => {
 
     const result = await controller.update(
       user,
-      "507f1f77bcf86cd799439011",
+      "3fa85f64-5717-4562-b3fc-2c963f66beef",
       { description: "Replay-safe edit" },
       "16161616-aaaa-4161-8161-161616161616",
       // @ts-expect-error - mock Response for unit testing
@@ -176,7 +183,7 @@ describe("TransactionController", () => {
     expect(result).toEqual(updatedTransaction);
     expect(mockMutations.update).toHaveBeenCalledWith(
       "user-1",
-      "507f1f77bcf86cd799439011",
+      "3fa85f64-5717-4562-b3fc-2c963f66beef",
       { description: "Replay-safe edit" },
       "16161616-aaaa-4161-8161-161616161616"
     );
@@ -192,7 +199,7 @@ describe("TransactionController", () => {
     // @ts-expect-error - mock TransactionService for unit testing
     const controller = new TransactionController(mockService);
     const query = {
-      accountId: "507f1f77bcf86cd799439011",
+      accountId: "3fa85f64-5717-4562-b3fc-2c963f66beef",
       q: "chai",
       limit: "10"
     };
@@ -200,7 +207,7 @@ describe("TransactionController", () => {
     const result = await controller.list(user, query);
     expect(result).toEqual(mockPage);
     expect(mockService.list).toHaveBeenCalledWith("user-1", {
-      accountId: "507f1f77bcf86cd799439011",
+      accountId: "3fa85f64-5717-4562-b3fc-2c963f66beef",
       q: "chai",
       limit: 10
     });
@@ -225,10 +232,10 @@ describe("TransactionController", () => {
     const controller = new TransactionController(mockService);
 
     await expect(
-      controller.update(user, "507f1f77bcf86cd799439011", { amountMinor: 100 })
+      controller.update(user, "3fa85f64-5717-4562-b3fc-2c963f66beef", { amountMinor: 100 })
     ).rejects.toThrow();
     await expect(
-      controller.update(user, "507f1f77bcf86cd799439011", { type: "income" })
+      controller.update(user, "3fa85f64-5717-4562-b3fc-2c963f66beef", { type: "income" })
     ).rejects.toThrow();
     expect(mockService.update).not.toHaveBeenCalled();
   });
@@ -243,7 +250,7 @@ describe("TransactionController", () => {
       controller.create(
         user,
         {
-          accountId: "507f1f77bcf86cd799439011",
+          accountId: "3fa85f64-5717-4562-b3fc-2c963f66beef",
           type: "expense",
           amountMinor: 250,
           occurredAt: "2026-07-12T09:00:00.000Z",
@@ -267,7 +274,7 @@ describe("TransactionController", () => {
       controller.create(
         user,
         {
-          accountId: "507f1f77bcf86cd799439011",
+          accountId: "3fa85f64-5717-4562-b3fc-2c963f66beef",
           type: "expense",
           amountMinor: 250,
           occurredAt: "2026-07-12T09:00:00.000Z",

@@ -1,9 +1,7 @@
 import { z } from "zod";
 
-import { migratingIdSchema } from "./id.js";
-
 export const CategoryKindSchema = z.enum(["expense", "income"]);
-export const CategoryIdSchema = migratingIdSchema();
+export const CategoryIdSchema = z.string().uuid("Category id must be a UUID.");
 
 export const CreateCategorySchema = z.object({
   name: z.string().trim().min(1).max(80),

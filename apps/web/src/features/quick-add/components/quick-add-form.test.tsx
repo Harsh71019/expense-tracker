@@ -7,8 +7,10 @@ import { ValidationError } from "@/lib/errors";
 
 const mocks = vi.hoisted(() => ({
   mutateAsync: vi.fn(),
-  accounts: [{ id: "507f1f77bcf86cd799439011", name: "Cash", isArchived: false }],
-  categories: [{ id: "507f1f77bcf86cd799439012", name: "Tea", kind: "expense", isArchived: false }],
+  accounts: [{ id: "3fa85f64-5717-4562-b3fc-2c963f66beef", name: "Cash", isArchived: false }],
+  categories: [
+    { id: "3fa85f64-5717-4562-b3fc-2c963f66beff", name: "Tea", kind: "expense", isArchived: false }
+  ],
   accountsLoading: false,
   pending: false,
   error: new Error("No mutation error"),
@@ -33,9 +35,16 @@ vi.mock("./account-setup", () => ({ AccountSetup: () => <h1>No accounts yet</h1>
 
 describe("QuickAddForm", () => {
   beforeEach(() => {
-    mocks.accounts = [{ id: "507f1f77bcf86cd799439011", name: "Cash", isArchived: false }];
+    mocks.accounts = [
+      { id: "3fa85f64-5717-4562-b3fc-2c963f66beef", name: "Cash", isArchived: false }
+    ];
     mocks.categories = [
-      { id: "507f1f77bcf86cd799439012", name: "Tea", kind: "expense", isArchived: false }
+      {
+        id: "3fa85f64-5717-4562-b3fc-2c963f66beff",
+        name: "Tea",
+        kind: "expense",
+        isArchived: false
+      }
     ];
     mocks.accountsLoading = false;
     mocks.pending = false;
@@ -87,8 +96,13 @@ describe("QuickAddForm", () => {
     const user = userEvent.setup();
     mocks.categories = [
       ...mocks.categories,
-      { id: "507f1f77bcf86cd799439014", name: "Salary", kind: "income", isArchived: false },
-      { id: "507f1f77bcf86cd799439015", name: "Old", kind: "expense", isArchived: true }
+      {
+        id: "3fa85f64-5717-4562-b3fc-2c963f66be14",
+        name: "Salary",
+        kind: "income",
+        isArchived: false
+      },
+      { id: "3fa85f64-5717-4562-b3fc-2c963f66be15", name: "Old", kind: "expense", isArchived: true }
     ];
     mocks.pending = true;
     mocks.error = new Error("offline");

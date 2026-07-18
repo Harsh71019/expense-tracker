@@ -29,7 +29,6 @@ describe("StagedRowsCleanupCron", () => {
     testDb = await createTestDb();
     await insertTestUser(testDb.db, "user-a");
 
-    process.env.MONGODB_URI = "mongodb://localhost:27017/unused-staged-rows-cleanup-test";
     process.env.DATABASE_URL = testDb.connectionUri;
     process.env.REDIS_URL = "redis://127.0.0.1:6379/16";
     process.env.TRUSTED_ORIGINS = "http://localhost:3000";

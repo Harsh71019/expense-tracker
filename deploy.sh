@@ -21,7 +21,7 @@ echo "==> Building images..."
 docker compose --env-file .env build
 
 echo "==> Running database migrations (one-shot)..."
-# Runs migrate-mongo up and exits; failure aborts the deploy BEFORE anything restarts
+# Runs drizzle-kit migrate and exits; failure aborts the deploy BEFORE anything restarts
 docker compose --env-file .env run --rm migrate
 
 echo "==> Restarting containers..."

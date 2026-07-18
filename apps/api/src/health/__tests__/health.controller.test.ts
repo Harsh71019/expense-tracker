@@ -8,7 +8,6 @@ class MockRuntimeConfigService implements RuntimeConfigService {
     API_PORT: 4000,
     LOG_LEVEL: "info" as const,
     SERVICE_ROLE: "api" as const,
-    MONGODB_URI: "mongodb://localhost:27017/test",
     DATABASE_URL: "postgres://test:test@localhost:5432/test",
     REDIS_URL: "redis://localhost:6379",
     APP_TIMEZONE: "Asia/Kolkata" as const,
@@ -43,14 +42,14 @@ describe("HealthController", () => {
     const mockConfig = new MockRuntimeConfigService();
 
     const mockHealthService = {
-      readiness: vi.fn().mockResolvedValue({ status: "ok", mongo: "ok", redis: "ok" })
+      readiness: vi.fn().mockResolvedValue({ status: "ok", postgres: "ok", redis: "ok" })
     };
 
     // @ts-expect-error - mock HealthService for controller tests
     const controller = new HealthController(mockConfig, mockHealthService);
     const result = await controller.readyz();
 
-    expect(result).toEqual({ status: "ok", mongo: "ok", redis: "ok" });
+    expect(result).toEqual({ status: "ok", postgres: "ok", redis: "ok" });
     expect(mockHealthService.readiness).toHaveBeenCalled();
   });
 });

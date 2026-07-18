@@ -6,10 +6,10 @@ import { CategoryRuleController } from "../category-rule.controller.js";
 const user: AuthenticatedUser = { id: "user-1" };
 
 const sampleRule = {
-  id: "507f1f77bcf86cd799439011",
+  id: "3fa85f64-5717-4562-b3fc-2c963f66beef",
   userId: "user-1",
   pattern: "SWIGGY",
-  categoryId: "507f1f77bcf86cd799439001",
+  categoryId: "3fa85f64-5717-4562-b3fc-2c963f66be01",
   createdAt: new Date(),
   updatedAt: new Date()
 };
@@ -55,8 +55,11 @@ describe("CategoryRuleController", () => {
     // @ts-expect-error - mock CategoryRuleService for unit testing
     const controller = new CategoryRuleController(mockService);
 
-    await controller.delete(user, "507f1f77bcf86cd799439011");
-    expect(mockService.delete).toHaveBeenCalledWith("user-1", "507f1f77bcf86cd799439011");
+    await controller.delete(user, "3fa85f64-5717-4562-b3fc-2c963f66beef");
+    expect(mockService.delete).toHaveBeenCalledWith(
+      "user-1",
+      "3fa85f64-5717-4562-b3fc-2c963f66beef"
+    );
   });
 
   it("uses replay-aware create and delete mutations", async () => {

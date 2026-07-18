@@ -23,15 +23,17 @@ services:
         max-size: 10m
         max-file: "3"
 
-  # One-shot: runs migrate-mongo up, exits 0. Gates everything else.
+  # One-shot: runs drizzle-kit migrate, exits 0. Gates everything else.
   migrate:
     image: vyaya-api:local
     build:
       context: .
       dockerfile: apps/api/Dockerfile
-    command:
-      ["node_modules/migrate-mongo/bin/migrate-mongo.js", "up", "-f", "migrate-mongo-config.cjs"]
+    command: ["node_modules/.bin/drizzle-kit", "migrate"]
     env_file: .env
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
       - vyaya-net
     restart: "no"

@@ -62,14 +62,17 @@ describe("AccountController", () => {
 
     // @ts-expect-error - mock AccountService for unit testing
     const controller = new AccountController(mockService);
-    await controller.archive(user, "507f1f77bcf86cd799439011");
+    await controller.archive(user, "3fa85f64-5717-4562-b3fc-2c963f66beef");
 
-    expect(mockService.archive).toHaveBeenCalledWith("user-1", "507f1f77bcf86cd799439011");
+    expect(mockService.archive).toHaveBeenCalledWith(
+      "user-1",
+      "3fa85f64-5717-4562-b3fc-2c963f66beef"
+    );
   });
 
   it("uses replay-aware mutations and requires an idempotency key", async () => {
     const account = {
-      id: "507f1f77bcf86cd799439011",
+      id: "3fa85f64-5717-4562-b3fc-2c963f66beef",
       userId: "user-1",
       name: "Cash",
       type: "cash" as const,

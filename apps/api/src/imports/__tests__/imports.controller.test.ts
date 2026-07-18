@@ -16,9 +16,9 @@ const MAPPING = {
 };
 
 const sampleBatch = {
-  id: "507f1f77bcf86cd799439011",
+  id: "3fa85f64-5717-4562-b3fc-2c963f66beef",
   userId: "user-1",
-  accountId: "507f1f77bcf86cd799439012",
+  accountId: "3fa85f64-5717-4562-b3fc-2c963f66beff",
   filename: "hdfc-july.csv",
   fileHash: "sha256:abc",
   mapping: MAPPING,
@@ -41,7 +41,10 @@ describe("ImportsController", () => {
     // @ts-expect-error - mock ImportsService for unit testing
     const controller = new ImportsController(mockService);
     const response = mockResponse();
-    const body = { accountId: "507f1f77bcf86cd799439012", mapping: JSON.stringify(MAPPING) };
+    const body = {
+      accountId: "3fa85f64-5717-4562-b3fc-2c963f66beff",
+      mapping: JSON.stringify(MAPPING)
+    };
 
     // @ts-expect-error - mock Response for unit testing
     const result = await controller.upload(user, file, body, response);
@@ -49,11 +52,11 @@ describe("ImportsController", () => {
     expect(result).toEqual(sampleBatch);
     expect(response.setHeader).toHaveBeenCalledWith(
       "Location",
-      "/api/v1/imports/507f1f77bcf86cd799439011"
+      "/api/v1/imports/3fa85f64-5717-4562-b3fc-2c963f66beef"
     );
     expect(mockService.createBatch).toHaveBeenCalledWith(
       "user-1",
-      "507f1f77bcf86cd799439012",
+      "3fa85f64-5717-4562-b3fc-2c963f66beff",
       "hdfc-july.csv",
       "text/csv",
       file.buffer,
@@ -66,7 +69,10 @@ describe("ImportsController", () => {
     // @ts-expect-error - mock ImportsService for unit testing
     const controller = new ImportsController(mockService);
     const response = mockResponse();
-    const body = { accountId: "507f1f77bcf86cd799439012", mapping: JSON.stringify(MAPPING) };
+    const body = {
+      accountId: "3fa85f64-5717-4562-b3fc-2c963f66beff",
+      mapping: JSON.stringify(MAPPING)
+    };
 
     await expect(
       // @ts-expect-error - mock Response for unit testing
@@ -80,7 +86,7 @@ describe("ImportsController", () => {
     // @ts-expect-error - mock ImportsService for unit testing
     const controller = new ImportsController(mockService);
     const response = mockResponse();
-    const body = { accountId: "507f1f77bcf86cd799439012", mapping: "not-json" };
+    const body = { accountId: "3fa85f64-5717-4562-b3fc-2c963f66beff", mapping: "not-json" };
 
     await expect(
       // @ts-expect-error - mock Response for unit testing
@@ -95,7 +101,7 @@ describe("ImportsController", () => {
     const controller = new ImportsController(mockService);
     const response = mockResponse();
     const body = {
-      accountId: "507f1f77bcf86cd799439012",
+      accountId: "3fa85f64-5717-4562-b3fc-2c963f66beff",
       mapping: JSON.stringify({ date: "Txn Date" })
     };
 
@@ -122,10 +128,13 @@ describe("ImportsController", () => {
     // @ts-expect-error - mock ImportsService for unit testing
     const controller = new ImportsController(mockService);
 
-    const result = await controller.savedMapping(user, "507f1f77bcf86cd799439012");
+    const result = await controller.savedMapping(user, "3fa85f64-5717-4562-b3fc-2c963f66beff");
 
     expect(result).toEqual({ mapping: null });
-    expect(mockService.getSavedMapping).toHaveBeenCalledWith("user-1", "507f1f77bcf86cd799439012");
+    expect(mockService.getSavedMapping).toHaveBeenCalledWith(
+      "user-1",
+      "3fa85f64-5717-4562-b3fc-2c963f66beff"
+    );
   });
 
   it("previews staged rows with validated query params and a default limit", async () => {
@@ -134,12 +143,12 @@ describe("ImportsController", () => {
     // @ts-expect-error - mock ImportsService for unit testing
     const controller = new ImportsController(mockService);
 
-    const result = await controller.preview(user, "507f1f77bcf86cd799439011", {});
+    const result = await controller.preview(user, "3fa85f64-5717-4562-b3fc-2c963f66beef", {});
 
     expect(result).toEqual(mockPage);
     expect(mockService.preview).toHaveBeenCalledWith(
       "user-1",
-      "507f1f77bcf86cd799439011",
+      "3fa85f64-5717-4562-b3fc-2c963f66beef",
       undefined,
       50
     );
@@ -150,14 +159,16 @@ describe("ImportsController", () => {
     // @ts-expect-error - mock ImportsService for unit testing
     const controller = new ImportsController(mockService);
 
-    expect(() => controller.preview(user, "507f1f77bcf86cd799439011", { limit: "500" })).toThrow();
+    expect(() =>
+      controller.preview(user, "3fa85f64-5717-4562-b3fc-2c963f66beef", { limit: "500" })
+    ).toThrow();
     expect(mockService.preview).not.toHaveBeenCalled();
   });
 
   it("updates a staged row with a validated patch", async () => {
     const updatedRow = {
-      id: "507f1f77bcf86cd799439013",
-      batchId: "507f1f77bcf86cd799439011",
+      id: "3fa85f64-5717-4562-b3fc-2c963f66bef0",
+      batchId: "3fa85f64-5717-4562-b3fc-2c963f66beef",
       rowNumber: 1,
       raw: {},
       problems: [],
@@ -170,16 +181,16 @@ describe("ImportsController", () => {
 
     const result = await controller.updateRow(
       user,
-      "507f1f77bcf86cd799439011",
-      "507f1f77bcf86cd799439013",
+      "3fa85f64-5717-4562-b3fc-2c963f66beef",
+      "3fa85f64-5717-4562-b3fc-2c963f66bef0",
       { include: false }
     );
 
     expect(result).toEqual(updatedRow);
     expect(mockService.updateRow).toHaveBeenCalledWith(
       "user-1",
-      "507f1f77bcf86cd799439011",
-      "507f1f77bcf86cd799439013",
+      "3fa85f64-5717-4562-b3fc-2c963f66beef",
+      "3fa85f64-5717-4562-b3fc-2c963f66bef0",
       { include: false }
     );
   });
@@ -190,7 +201,12 @@ describe("ImportsController", () => {
     const controller = new ImportsController(mockService);
 
     expect(() =>
-      controller.updateRow(user, "507f1f77bcf86cd799439011", "507f1f77bcf86cd799439013", {})
+      controller.updateRow(
+        user,
+        "3fa85f64-5717-4562-b3fc-2c963f66beef",
+        "3fa85f64-5717-4562-b3fc-2c963f66bef0",
+        {}
+      )
     ).toThrow();
     expect(mockService.updateRow).not.toHaveBeenCalled();
   });
@@ -200,10 +216,13 @@ describe("ImportsController", () => {
     // @ts-expect-error - mock ImportsService for unit testing
     const controller = new ImportsController(mockService);
 
-    const result = await controller.commit(user, "507f1f77bcf86cd799439011");
+    const result = await controller.commit(user, "3fa85f64-5717-4562-b3fc-2c963f66beef");
 
     expect(result).toEqual(sampleBatch);
-    expect(mockService.commitBatch).toHaveBeenCalledWith("user-1", "507f1f77bcf86cd799439011");
+    expect(mockService.commitBatch).toHaveBeenCalledWith(
+      "user-1",
+      "3fa85f64-5717-4562-b3fc-2c963f66beef"
+    );
   });
 
   it("reverts a batch", async () => {
@@ -211,9 +230,12 @@ describe("ImportsController", () => {
     // @ts-expect-error - mock ImportsService for unit testing
     const controller = new ImportsController(mockService);
 
-    const result = await controller.revert(user, "507f1f77bcf86cd799439011");
+    const result = await controller.revert(user, "3fa85f64-5717-4562-b3fc-2c963f66beef");
 
     expect(result).toEqual(sampleBatch);
-    expect(mockService.revertBatch).toHaveBeenCalledWith("user-1", "507f1f77bcf86cd799439011");
+    expect(mockService.revertBatch).toHaveBeenCalledWith(
+      "user-1",
+      "3fa85f64-5717-4562-b3fc-2c963f66beef"
+    );
   });
 });

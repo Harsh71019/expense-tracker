@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import { parseTransactionFilters, serializeTransactionFilters } from "./filters";
 
-const accountId = "507f1f77bcf86cd799439011";
-const categoryId = "507f1f77bcf86cd799439012";
+const accountId = "3fa85f64-5717-4562-b3fc-2c963f66beef";
+const categoryId = "3fa85f64-5717-4562-b3fc-2c963f66beff";
 
 describe("transaction URL filters", () => {
   it("parses valid route state into the shared list-query contract", () => {
@@ -14,7 +14,7 @@ describe("transaction URL filters", () => {
         from: "2026-07-01T00:00:00.000Z",
         to: "2026-07-16T00:00:00.000Z",
         q: "groceries",
-        cursor: "2026-07-10T00:00:00.000Z_507f1f77bcf86cd799439010",
+        cursor: "2026-07-10T00:00:00.000Z_3fa85f64-5717-4562-b3fc-2c963f66be10",
         limit: "25"
       })
     ).toEqual({
@@ -23,15 +23,15 @@ describe("transaction URL filters", () => {
       from: new Date("2026-07-01T00:00:00.000Z"),
       to: new Date("2026-07-16T00:00:00.000Z"),
       q: "groceries",
-      cursor: "2026-07-10T00:00:00.000Z_507f1f77bcf86cd799439010",
+      cursor: "2026-07-10T00:00:00.000Z_3fa85f64-5717-4562-b3fc-2c963f66be10",
       limit: 25
     });
   });
 
   it("uses the first repeated value and keeps the documented default limit", () => {
-    expect(parseTransactionFilters({ accountId: [accountId, "507f1f77bcf86cd799439013"] })).toEqual(
-      { accountId, limit: 50 }
-    );
+    expect(
+      parseTransactionFilters({ accountId: [accountId, "3fa85f64-5717-4562-b3fc-2c963f66bef0"] })
+    ).toEqual({ accountId, limit: 50 });
   });
 
   it("fails closed for malformed URL state", () => {
@@ -52,13 +52,13 @@ describe("transaction URL filters", () => {
         limit: 50
       })
     ).toBe(
-      "accountId=507f1f77bcf86cd799439011&categoryId=507f1f77bcf86cd799439012&from=2026-07-01T00%3A00%3A00.000Z&to=2026-07-16T00%3A00%3A00.000Z&q=groceries+%26+household&cursor=cursor-1"
+      "accountId=3fa85f64-5717-4562-b3fc-2c963f66beef&categoryId=3fa85f64-5717-4562-b3fc-2c963f66beff&from=2026-07-01T00%3A00%3A00.000Z&to=2026-07-16T00%3A00%3A00.000Z&q=groceries+%26+household&cursor=cursor-1"
     );
   });
 
   it("includes a non-default page size", () => {
     expect(serializeTransactionFilters({ accountId, limit: 25 })).toBe(
-      "accountId=507f1f77bcf86cd799439011&limit=25"
+      "accountId=3fa85f64-5717-4562-b3fc-2c963f66beef&limit=25"
     );
   });
 });

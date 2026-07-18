@@ -23,7 +23,6 @@ describe("RollupsRefreshService", () => {
     await insertTestUser(testDb.db, "user-a");
 
     process.env.DATABASE_URL = testDb.connectionUri;
-    process.env.MONGODB_URI = "mongodb://localhost:27017/unused-rollups-refresh-test";
     process.env.REDIS_URL = "redis://127.0.0.1:6379/11";
     process.env.TRUSTED_ORIGINS = "http://localhost:3000";
     process.env.BETTER_AUTH_SECRET = "test-secret-long-enough-32-chars-long";

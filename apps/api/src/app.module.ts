@@ -1,5 +1,4 @@
 import { Module } from "@nestjs/common";
-import { MongooseModule } from "@nestjs/mongoose";
 import { ScheduleModule } from "@nestjs/schedule";
 import { LoggerModule } from "nestjs-pino";
 import pino from "pino";
@@ -32,15 +31,6 @@ import { TransactionsModule } from "./transactions/transactions.module.js";
   imports: [
     RuntimeConfigModule,
     DbModule,
-    MongooseModule.forRootAsync({
-      inject: [RuntimeConfigService],
-      useFactory: (config: RuntimeConfigService) => ({
-        uri: config.env.MONGODB_URI,
-        maxPoolSize: 10,
-        monitorCommands: true,
-        serverSelectionTimeoutMS: 5_000
-      })
-    }),
     RedisModule,
     IdempotencyModule,
     BalancesModule,
@@ -75,8 +65,7 @@ import { TransactionsModule } from "./transactions/transactions.module.js";
               "req.body.password",
               "*.password",
               "*.secret",
-              "*.token",
-              "*.mongoUri"
+              "*.token"
             ],
             censor: "[REDACTED]"
           },

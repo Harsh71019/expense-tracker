@@ -1,7 +1,9 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { MongoMemoryReplSet } from "mongodb-memory-server";
 import { NestFactory } from "@nestjs/core";
 import type { INestApplicationContext } from "@nestjs/common";
+
+import { createTestDb } from "./support/postgres-test-db.js";
+import type { TestDb } from "./support/postgres-test-db.js";
 
 /**
  * Boots the real AppModule through Nest's DI container — the same mechanism
@@ -16,13 +18,12 @@ import type { INestApplicationContext } from "@nestjs/common";
  * that catches it before `pnpm dev`/deploy does.
  */
 describe("AppModule bootstraps through Nest's DI container", () => {
-  let replicaSet: MongoMemoryReplSet | undefined;
+  let testDb: TestDb;
   let app: INestApplicationContext | undefined;
 
   beforeAll(async () => {
-    replicaSet = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
-    process.env.MONGODB_URI = replicaSet.getUri("vyaya_bootstrap_test");
-    process.env.DATABASE_URL = "postgres://test:test@localhost:5432/test";
+    testDb = await createTestDb();
+    process.env.DATABASE_URL = testDb.connectionUri;
     process.env.REDIS_URL = "redis://127.0.0.1:6379/13";
     process.env.TRUSTED_ORIGINS = "http://localhost:3000";
     process.env.BETTER_AUTH_SECRET = "test-secret-long-enough-32-chars-long";
@@ -30,11 +31,11 @@ describe("AppModule bootstraps through Nest's DI container", () => {
 
     const { AppModule } = await import("../../src/app.module.js");
     app = await NestFactory.createApplicationContext(AppModule, { logger: false });
-  }, 30_000);
+  }, 60_000);
 
   afterAll(async () => {
     if (app !== undefined) await app.close();
-    if (replicaSet !== undefined) await replicaSet.stop();
+    await testDb.teardown();
   });
 
   it("resolves every provider the worker process depends on", async () => {

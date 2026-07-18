@@ -1,7 +1,6 @@
 import { z } from "zod";
 
 import { AccountIdSchema } from "./account.js";
-import { migratingIdSchema } from "./id.js";
 import { PageInfoSchema } from "./pagination.js";
 
 const SignedMinorSchema = z
@@ -19,7 +18,7 @@ export const AssetKindSchema = z.enum([
   "investment"
 ]);
 
-export const AssetIdSchema = migratingIdSchema();
+export const AssetIdSchema = z.string().uuid("Asset id must be a UUID.");
 
 export const CreateAssetSchema = z
   .object({
@@ -72,7 +71,7 @@ export const CreateValuationSchema = z.object({
 });
 
 export const ValuationSchema = CreateValuationSchema.extend({
-  id: migratingIdSchema(),
+  id: z.string().uuid("Valuation id must be a UUID."),
   assetId: AssetIdSchema,
   userId: z.string().min(1),
   createdAt: z.coerce.date()

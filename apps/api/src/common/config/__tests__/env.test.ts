@@ -6,6 +6,7 @@ describe("parseRuntimeEnv", () => {
   it("applies safe defaults to a valid environment", () => {
     const environment = parseRuntimeEnv({
       MONGODB_URI: "mongodb://localhost:27017/vyaya",
+      DATABASE_URL: "postgres://test:test@localhost:5432/vyaya",
       REDIS_URL: "redis://localhost:6379",
       TRUSTED_ORIGINS: "http://localhost:3000",
       BETTER_AUTH_SECRET: "a-very-long-test-secret-that-is-safe",

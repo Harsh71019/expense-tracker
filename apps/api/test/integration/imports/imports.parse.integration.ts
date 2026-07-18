@@ -25,6 +25,7 @@ class TestRuntimeConfig implements RuntimeConfigService {
     LOG_LEVEL: "info" as const,
     SERVICE_ROLE: "worker" as const,
     MONGODB_URI: "mongodb://localhost:27017/test",
+    DATABASE_URL: "postgres://test:test@localhost:5432/test",
     REDIS_URL: TEST_REDIS_URL,
     APP_TIMEZONE: "Asia/Kolkata" as const,
     TRUSTED_ORIGINS: "http://localhost:3000",

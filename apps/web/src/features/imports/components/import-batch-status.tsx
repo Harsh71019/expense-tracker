@@ -7,8 +7,8 @@ const statuses: Record<
   ImportBatchStatus,
   Readonly<{ label: string; variant: "pending" | "success" | "reversed" | "problem" }>
 > = {
-  pending: { label: "Parsing", variant: "pending" },
-  staged: { label: "Ready to review", variant: "pending" },
+  pending: { label: "Pending", variant: "pending" },
+  staged: { label: "Staged", variant: "pending" },
   committed: { label: "Committed", variant: "success" },
   reverted: { label: "Reverted", variant: "reversed" },
   failed: { label: "Failed", variant: "problem" }

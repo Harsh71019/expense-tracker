@@ -22,8 +22,3 @@ export const getImportBatches = cache(async (): Promise<ImportBatch[]> => {
     return [];
   }
 });
-
-export async function getImportBatch(batchId: string): Promise<ImportBatch | undefined> {
-  const batches = await getImportBatches();
-  return batches.find((batch) => batch.id === batchId);
-}

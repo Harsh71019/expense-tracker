@@ -13,15 +13,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **Vyaya** — a personal expense tracker built as an append-only, double-entry-style ledger, where correctness of money math is the product. pnpm workspace monorepo:
 
 ```
-apps/api          NestJS REST API — Better Auth, MongoDB (Mongoose), BullMQ workers, crons
+apps/api          NestJS REST API — Better Auth, PostgreSQL (Drizzle ORM), BullMQ workers, crons
 apps/web           Next.js App Router frontend (SSR, server components)
 packages/shared    zod schemas + types shared by both apps (single source of truth)
 packages/config     shared tsconfig
-migrations/        migrate-mongo files (ordered, additive-only — indexes/validators live here, never in app code)
+apps/api/drizzle/  drizzle-kit migrations (ordered, additive-only — schema changes live here, never applied by hand)
 infra/redis/        local Redis compose service
 ```
 
-Runtime: Node 24.18.x, pnpm workspaces, MongoDB (replica set — required for multi-document transactions), Redis (BullMQ). Deployed via `deploy.sh` to a home-lab Proxmox LXC behind nginx.
+Runtime: Node 24.18.x, pnpm workspaces, PostgreSQL 18 (Drizzle ORM), Redis (BullMQ). Deployed via `deploy.sh` to a home-lab Proxmox LXC behind nginx.
 
 ## Commands
 
@@ -36,7 +36,7 @@ pnpm test                    # vitest unit tests across all workspaces
 pnpm test:integration        # apps/api only — vitest against vitest.integration.config.ts
 pnpm build                   # builds @vyaya/api then @vyaya/web
 pnpm format / format:check   # prettier
-pnpm migrate                 # migrate-mongo up, via apps/api, using migrate-mongo-config.cjs
+pnpm migrate                 # drizzle-kit migrate, via apps/api
 pnpm verify:migrations       # scripts/verify-migrations.ts
 ```
 
@@ -51,7 +51,7 @@ pnpm --filter @vyaya/web lint / typecheck / dev / build
 
 Notes:
 
-- `pnpm test:integration` spins up MongoDB in **replica-set mode** (via `mongodb-memory-server`) because multi-document transactions must be exercised for real — see `MONGODB_URI` handling in CI (`.github/workflows/ci.yml`) and `vitest.integration.config.ts`.
+- `pnpm test:integration` spins up a real **Postgres instance via testcontainers** (one container per test file, migrated fresh) because transactions must be exercised for real — see `vitest.integration.config.ts` and `apps/api/test/integration/support/postgres-test-db.ts`.
 - CI runs, in order: `lint` → `typecheck` → `test` → `test:integration` → `verify:migrations` → `build` → Trivy filesystem scan. Match this locally before pushing.
 - `AGENTS.md` references `pnpm test:e2e` and `pnpm gen:client` as part of the definition of done — these are not yet wired up as root scripts. If a task needs them, add the script rather than assuming it exists silently.
 - Env vars are validated at boot via zod (`apps/api/src/common/config/env.ts`); see `env.example` for the full list and comments on LAN/TLS cookie behavior. A missing/invalid var fails startup immediately, not at first use.
@@ -64,7 +64,7 @@ Notes:
 - `common/config/` — zod-validated runtime env (`RuntimeEnvSchema`), `RuntimeConfigModule`/`Service`
 - `common/redis/` — Redis module/service (BullMQ backing)
 - `common/errors/` — domain error base class + RFC 7807 problem+json exception filter
-- `common/mongo-txn/`, `common/time/` — directories exist but are currently empty; these are the designated homes for the `withTxn` helper and `Asia/Kolkata` date utilities described in `AGENTS.md` §3/§4 — implement there, don't scatter equivalents elsewhere
+- `common/db/` — Drizzle wiring (`db.module.ts`), the `withTxn` helper (`db-txn.ts`) described in `AGENTS.md` §3; `common/time/` holds the `Asia/Kolkata` date utilities from `AGENTS.md` §4
 - `health/` — `/healthz` liveness endpoint
 - `worker.ts` / `worker-health.ts` — separate BullMQ worker process entrypoint
 
@@ -76,7 +76,7 @@ Notes:
 
 - **Money is always integer paise** (`amountMinor`), never floats; use `packages/shared/money.ts`.
 - **The ledger is append-only** — no updates/deletes of monetary fields or transaction docs; corrections are compensating reversal entries.
-- **Every money write is one MongoDB transaction** (insert + balance `$inc` + audit entry), via a `withTxn` helper — never call `startSession` directly in business code.
+- **Every money write is one Postgres transaction** (insert + balance update + audit entry), via a `withTxn` helper — never open a transaction directly in business code.
 - **Every repository method takes `userId` as a required first parameter.** `userId` comes only from the session (`@CurrentUser()`), never from a request body.
 - **No `any`, no `as` casts (except `as const`), no `!`, no `enum`, no `@ts-ignore`.** `pnpm typecheck` must be clean.
-- New indexes/validators/collections go through a `migrate-mongo` migration in `migrations/`, never applied by hand or from application code.
+- New tables/columns/indexes go through a `drizzle-kit` migration in `apps/api/drizzle/`, never applied by hand or from application code.

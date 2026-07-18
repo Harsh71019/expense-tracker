@@ -1,7 +1,6 @@
 import { createHash } from "node:crypto";
 
 import { Inject, Injectable } from "@nestjs/common";
-import { InjectConnection } from "@nestjs/mongoose";
 import {
   ALLOWED_IMPORT_FILE_EXTENSIONS,
   ALLOWED_IMPORT_MIME_TYPES,
@@ -21,7 +20,6 @@ import type {
   UpdateStagedRow
 } from "@vyaya/shared";
 import { parse } from "csv-parse/sync";
-import type { Connection } from "mongoose";
 import { z } from "zod";
 
 import { AccountRepository } from "../accounts/account.repository.js";
@@ -30,12 +28,11 @@ import { CategoryRuleRepository } from "../category-rules/category-rule.reposito
 import { suggestCategory } from "../category-rules/suggest-category.js";
 import { DATABASE_CONNECTION } from "../common/db/db.module.js";
 import type { DrizzleDb } from "../common/db/db.module.js";
-import { withTxn as withPgTxn } from "../common/db/db-txn.js";
+import { withTxn } from "../common/db/db-txn.js";
 import { EntityNotFoundError } from "../common/errors/entity-not-found.error.js";
 import { ImportAlreadyCommittedError } from "../common/errors/import-already-committed.error.js";
 import { ImportBatchNotReadyError } from "../common/errors/import-batch-not-ready.error.js";
 import { InvalidImportFileError } from "../common/errors/invalid-import-file.error.js";
-import { withTxn } from "../common/mongo-txn.js";
 import { TransactionRepository } from "../transactions/transaction.repository.js";
 import { computeDedupeHash } from "./dedupe-hash.js";
 import { ImportBatchRepository } from "./import-batch.repository.js";
@@ -53,7 +50,6 @@ const RawCsvRecordsSchema = z.array(z.record(z.string(), z.string()));
 @Injectable()
 export class ImportsService {
   constructor(
-    @InjectConnection() private readonly connection: Connection,
     @Inject(DATABASE_CONNECTION) private readonly db: DrizzleDb,
     private readonly batches: ImportBatchRepository,
     private readonly stagedRows: StagedRowRepository,
@@ -245,9 +241,9 @@ export class ImportsService {
   }
 
   /**
-   * Chunks of 200 rows, each chunk = one Mongo transaction (insert +
-   * balance $inc + stats + audit), per BACKEND.md §4. Resumable: rows whose
-   * dedupeHash already landed (from a previous, interrupted run) are
+   * Chunks of 200 rows, each chunk = one Postgres transaction (insert +
+   * balance update + stats + audit), per BACKEND.md §4. Resumable: rows
+   * whose dedupeHash already landed (from a previous, interrupted run) are
    * pre-filtered out via the same bulk findExistingDedupeHashes query the
    * parse job uses, so re-invoking a partially-committed batch only
    * processes what's left — never double-posts. The batch stays "staged"
@@ -281,17 +277,7 @@ export class ImportsService {
         0
       );
 
-      // transactions/accounts/audit are Postgres (this task); import_batches is still
-      // Mongo (Task 18 not done yet) -- can no longer be one atomic transaction across
-      // both databases. Split: the ledger write (insert + balance + audit) commits
-      // atomically in Postgres first, then stats.committed is incremented in its own
-      // Mongo transaction. Safe with the existing resumability design (see this
-      // method's docstring): if the process crashes between the two, stats.committed
-      // undercounts, but findExistingDedupeHashes on the next invocation still
-      // correctly sees the already-landed rows (Postgres is the source of truth) and
-      // skips them -- stats drift is cosmetic, never a double-post. Resolved once
-      // import_batches is itself ported to Postgres.
-      await withPgTxn(this.db, async (tx) => {
+      await withTxn(this.db, async (tx) => {
         await this.transactions.insertImportedRows(userId, batch.accountId, batchId, rows, tx);
         if (netMinor !== 0) {
           const applied = await this.accounts.applyBalanceDelta(
@@ -306,10 +292,8 @@ export class ImportsService {
           chunkSize: chunk.length,
           netMinor
         });
+        await this.batches.incrementCommittedCount(batchId, chunk.length, tx);
       });
-      await withTxn(this.connection, (session) =>
-        this.batches.incrementCommittedCount(batchId, chunk.length, session)
-      );
     }
 
     await this.batches.markCommitted(batchId);
@@ -345,10 +329,7 @@ export class ImportsService {
         0
       );
 
-      // See commitBatch's comment above -- same split, same reasoning. revertBatch
-      // has no Mongo-side counter to update per chunk (markReverted happens once,
-      // after the loop), so this is just the ledger write moving to Postgres.
-      await withPgTxn(this.db, async (tx) => {
+      await withTxn(this.db, async (tx) => {
         await this.transactions.insertBulkReversals(userId, chunk, tx);
         if (netMinor !== 0) {
           const applied = await this.accounts.applyBalanceDelta(

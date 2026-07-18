@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -9,8 +9,7 @@ const mocks = vi.hoisted(() => ({
   fetchNextPage: vi.fn(),
   hasNextPage: true,
   fetching: false,
-  isError: false,
-  mutate: vi.fn()
+  isError: false
 }));
 
 vi.mock("next/navigation", () => ({
@@ -58,31 +57,69 @@ vi.mock("../hooks/use-txn-list", () => ({
     fetchNextPage: mocks.fetchNextPage
   })
 }));
-vi.mock("../hooks/use-reverse-txn", () => ({
-  useReverseTxn: () => ({ mutate: mocks.mutate, isPending: false })
+
+// The drawer/sheet have their own dedicated tests; here we only verify TxnList opens the right
+// one with the right data, so their real hook dependencies don't need to be mocked here too.
+vi.mock("./txn-detail-drawer", () => ({
+  TxnDetailDrawer: ({
+    transaction: txn,
+    onClose
+  }: {
+    transaction: { description: string };
+    onClose: () => void;
+  }) => (
+    <div role="dialog" aria-label="detail-drawer">
+      {txn.description}
+      <button onClick={onClose}>close-drawer</button>
+    </div>
+  )
+}));
+vi.mock("./create-txn-sheet", () => ({
+  CreateTxnSheet: ({ onClose }: { onClose: () => void }) => (
+    <div role="dialog" aria-label="create-sheet">
+      <button onClick={onClose}>close-sheet</button>
+    </div>
+  )
 }));
 
 describe("TxnList", () => {
   const page = { items: [], pageInfo: { nextCursor: null, hasMore: false, limit: 50 } };
-  it("shows transaction actions, pagination, and refresh errors", async () => {
+
+  it("opens the detail drawer on row click, paginates, and surfaces refresh errors", async () => {
     const user = userEvent.setup();
     mocks.empty = false;
     mocks.hasNextPage = true;
     mocks.isError = true;
     render(<TxnList filters={{ limit: 50 }} initialPage={page} />);
-    await user.click(screen.getByRole("button", { name: "Undo" }));
+
+    await user.click(screen.getByRole("button", { name: /Refund/ }));
+    const drawer = screen.getByRole("dialog", { name: "detail-drawer" });
+    expect(drawer).toBeVisible();
+    expect(within(drawer).getByText("Refund")).toBeVisible();
+
     await user.click(screen.getByRole("button", { name: "Load more" }));
-    expect(mocks.mutate).toHaveBeenCalledWith(transaction.id);
     expect(mocks.fetchNextPage).toHaveBeenCalled();
     expect(screen.getByText(/Could not refresh/)).toBeVisible();
   });
+
+  it("opens the create sheet from the New entry button", async () => {
+    const user = userEvent.setup();
+    mocks.empty = false;
+    mocks.isError = false;
+    render(<TxnList filters={{ limit: 50 }} initialPage={page} />);
+
+    await user.click(screen.getByRole("button", { name: /New entry/ }));
+    expect(screen.getByRole("dialog", { name: "create-sheet" })).toBeVisible();
+  });
+
   it("uses the empty state when no rows are returned", () => {
     mocks.empty = true;
     mocks.hasNextPage = false;
     mocks.isError = false;
     render(<TxnList filters={{ limit: 50 }} initialPage={page} />);
-    expect(screen.getByRole("heading", { name: "Your ledger is clear" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "No transactions match" })).toBeVisible();
   });
+
   it("disables pagination while the next page is loading", () => {
     mocks.empty = false;
     mocks.hasNextPage = true;

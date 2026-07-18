@@ -19,34 +19,42 @@ const base = {
   updatedAt: new Date()
 };
 
+const category = {
+  id: "507f1f77bcf86cd799439099",
+  userId: "user-1",
+  name: "Food & Dining",
+  kind: "expense" as const,
+  isArchived: false,
+  createdAt: new Date(),
+  updatedAt: new Date()
+};
+
 describe("TxnRow", () => {
-  it("renders a posted amount and undo action", async () => {
+  it("renders the amount, category, and opens the detail drawer on click", async () => {
     const user = userEvent.setup();
-    const onReverse = vi.fn();
-    render(
-      <TxnRow
-        transaction={{ ...base, status: "posted" }}
-        originalDescription={undefined}
-        onReverse={onReverse}
-        isReversing={false}
-      />
-    );
+    const onOpen = vi.fn();
+    const transaction = { ...base, status: "posted" as const };
+    render(<TxnRow transaction={transaction} category={category} onOpen={onOpen} />);
+
     expect(screen.getByText("−₹20.00")).toBeVisible();
-    await user.click(screen.getByRole("button", { name: "Undo" }));
-    expect(onReverse).toHaveBeenCalledWith(base.id);
+    expect(screen.getByText("Food & Dining")).toBeVisible();
+    await user.click(screen.getByRole("button", { name: /Chai/ }));
+    expect(onOpen).toHaveBeenCalledWith(transaction);
   });
 
-  it("makes reversed and reversal linkage explicit", () => {
+  it("shows a dash for an uncategorized transaction", () => {
+    render(
+      <TxnRow transaction={{ ...base, status: "posted" }} category={undefined} onOpen={vi.fn()} />
+    );
+    expect(screen.getByText("—")).toBeVisible();
+  });
+
+  it("makes reversed and reversal status explicit", () => {
     const { rerender } = render(
-      <TxnRow
-        transaction={{ ...base, status: "reversed" }}
-        originalDescription={undefined}
-        onReverse={vi.fn()}
-        isReversing={false}
-      />
+      <TxnRow transaction={{ ...base, status: "reversed" }} category={category} onOpen={vi.fn()} />
     );
     expect(screen.getByText("Reversed")).toBeVisible();
-    expect(screen.queryByRole("button", { name: "Undo" })).toBeNull();
+
     rerender(
       <TxnRow
         transaction={{
@@ -55,11 +63,26 @@ describe("TxnRow", () => {
           status: "reversal",
           reversalOf: base.id
         }}
-        originalDescription="Chai"
-        onReverse={vi.fn()}
-        isReversing={false}
+        category={category}
+        onOpen={vi.fn()}
       />
     );
-    expect(screen.getByText(/Reversal of: Chai/)).toBeVisible();
+    expect(screen.getByText("Reversal entry")).toBeVisible();
+  });
+
+  it("shows a source badge for non-manual entries only", () => {
+    const { rerender } = render(
+      <TxnRow
+        transaction={{ ...base, status: "posted", source: "csv_import" }}
+        category={category}
+        onOpen={vi.fn()}
+      />
+    );
+    expect(screen.getByText("CSV")).toBeVisible();
+
+    rerender(
+      <TxnRow transaction={{ ...base, status: "posted" }} category={category} onOpen={vi.fn()} />
+    );
+    expect(screen.queryByText("Manual")).toBeNull();
   });
 });

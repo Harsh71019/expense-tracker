@@ -2,159 +2,145 @@
 
 import type { ListTransactionsQuery } from "@vyaya/shared";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import type { FormEvent, ReactNode } from "react";
+import { useEffect, useState } from "react";
+import type { ReactNode } from "react";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useAccounts } from "@/features/accounts";
 import { useCategories } from "@/features/categories";
 
 import { serializeTransactionFilters } from "../model/filters";
 
-type FilterDraft = Readonly<{
-  query: string;
-  from: string;
-  to: string;
-  accountId: string;
-  categoryId: string;
-}>;
+const SEARCH_DEBOUNCE_MS = 400;
 
 function toDateInputValue(value: Date | undefined): string {
   return value === undefined ? "" : value.toISOString().slice(0, 10);
 }
 
-function toFilterDraft(filters: ListTransactionsQuery): FilterDraft {
-  return {
-    query: filters.q ?? "",
-    from: toDateInputValue(filters.from),
-    to: toDateInputValue(filters.to),
-    accountId: filters.accountId ?? "",
-    categoryId: filters.categoryId ?? ""
-  };
+function parseDate(value: string): Date | undefined {
+  return value === "" ? undefined : new Date(`${value}T00:00:00.000Z`);
 }
 
-function parseDate(value: string): Date | undefined {
-  if (value === "") {
-    return undefined;
-  }
-  return new Date(`${value}T00:00:00.000Z`);
-}
+const selectClasses =
+  "rounded-lg border border-border bg-surface-muted px-3 py-2.5 text-sm font-medium text-foreground outline-none transition-colors duration-150 focus:border-accent focus:ring-2 focus:ring-accent/30";
 
 export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuery }>): ReactNode {
   const router = useRouter();
   const accounts = useAccounts();
   const categories = useCategories();
-  const [draft, setDraft] = useState<FilterDraft>(() => toFilterDraft(filters));
+  const [query, setQuery] = useState(filters.q ?? "");
+
+  // Re-syncs from the URL when it changes out from under us (e.g. Clear, back button) —
+  // deliberately excludes `query` itself so this doesn't fight the debounce below.
+  useEffect(() => {
+    setQuery(filters.q ?? "");
+  }, [filters.q]);
+
+  function navigate(overrides: Partial<ListTransactionsQuery>): void {
+    const next = serializeTransactionFilters({ ...filters, ...overrides, cursor: undefined });
+    router.push(next === "" ? "/transactions" : `/transactions?${next}`);
+  }
+
+  useEffect(() => {
+    const trimmed = query.trim();
+    if (trimmed === (filters.q ?? "")) return;
+    const timeout = setTimeout(() => {
+      navigate({ q: trimmed === "" ? undefined : trimmed });
+    }, SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timeout);
+  }, [query]);
+
   const isFiltered =
-    draft.query !== "" ||
-    draft.from !== "" ||
-    draft.to !== "" ||
-    draft.accountId !== "" ||
-    draft.categoryId !== "";
-
-  function navigate(next: FilterDraft): void {
-    const query = serializeTransactionFilters({
-      ...filters,
-      q: next.query.trim() === "" ? undefined : next.query.trim(),
-      from: parseDate(next.from),
-      to: parseDate(next.to),
-      accountId: next.accountId === "" ? undefined : next.accountId,
-      categoryId: next.categoryId === "" ? undefined : next.categoryId,
-      cursor: undefined
-    });
-    router.push(query === "" ? "/transactions" : `/transactions?${query}`);
-  }
-
-  function submit(event: FormEvent<HTMLFormElement>): void {
-    event.preventDefault();
-    navigate(draft);
-  }
+    filters.q !== undefined ||
+    filters.accountId !== undefined ||
+    filters.categoryId !== undefined ||
+    filters.from !== undefined ||
+    filters.to !== undefined;
 
   function clear(): void {
-    const empty: FilterDraft = { query: "", from: "", to: "", accountId: "", categoryId: "" };
-    setDraft(empty);
-    navigate(empty);
+    setQuery("");
+    router.push("/transactions");
   }
 
   return (
-    <form
-      className="mb-6 grid gap-4 rounded-xl border border-border bg-surface-elevated p-5 sm:grid-cols-2 lg:grid-cols-3 lg:items-end"
-      onSubmit={submit}
-    >
-      <Input
-        id="transaction-query"
-        label="Search description"
-        placeholder="Chai, rent, groceries…"
-        value={draft.query}
-        onChange={(event) => setDraft((current) => ({ ...current, query: event.target.value }))}
-      />
-      <label className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
-        Account
-        <select
-          className="rounded-lg border border-border bg-surface px-3.5 py-2.5 text-sm normal-case tracking-normal"
-          value={draft.accountId}
-          onChange={(event) =>
-            setDraft((current) => ({ ...current, accountId: event.target.value }))
-          }
-        >
-          <option value="">All accounts</option>
-          {draft.accountId !== "" &&
-          !(accounts.data ?? []).some((item) => item.id === draft.accountId) ? (
-            <option value={draft.accountId}>Archived or unavailable</option>
-          ) : null}
-          {(accounts.data ?? []).map((item) => (
-            <option key={item.id} value={item.id}>
-              {item.name}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
-        Category
-        <select
-          className="rounded-lg border border-border bg-surface px-3.5 py-2.5 text-sm normal-case tracking-normal"
-          value={draft.categoryId}
-          onChange={(event) =>
-            setDraft((current) => ({ ...current, categoryId: event.target.value }))
-          }
-        >
-          <option value="">All categories</option>
-          {draft.categoryId !== "" &&
-          !(categories.data ?? []).some((item) => item.id === draft.categoryId) ? (
-            <option value={draft.categoryId}>Archived or unavailable</option>
-          ) : null}
-          {(categories.data ?? []).map((item) => (
-            <option key={item.id} value={item.id}>
-              {item.name} · {item.kind}
-            </option>
-          ))}
-        </select>
-      </label>
-      <Input
-        id="transaction-from"
-        label="From"
-        type="date"
-        value={draft.from}
-        onChange={(event) => setDraft((current) => ({ ...current, from: event.target.value }))}
-      />
-      <Input
-        id="transaction-to"
-        label="To"
-        type="date"
-        value={draft.to}
-        onChange={(event) => setDraft((current) => ({ ...current, to: event.target.value }))}
-      />
-      <div className="flex gap-2 sm:mb-0.5">
-        <Button type="submit" className="flex-1 sm:flex-none">
-          Filter
-        </Button>
-        {isFiltered ? (
-          <Button type="button" variant="secondary" onClick={clear}>
-            Clear
-          </Button>
-        ) : null}
+    <div className="mb-4 flex flex-wrap items-center gap-2.5 rounded-2xl border border-border bg-surface-elevated p-3">
+      <div className="flex min-w-52 flex-1 items-center gap-2 rounded-lg border border-border bg-surface-muted px-3">
+        <span className="text-foreground-muted" aria-hidden="true">
+          ⌕
+        </span>
+        <input
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Search description…"
+          aria-label="Search description"
+          className="w-full bg-transparent py-2.5 text-sm text-foreground outline-none placeholder:text-foreground-muted/60"
+        />
       </div>
-    </form>
+      <select
+        aria-label="Filter by account"
+        className={selectClasses}
+        value={filters.accountId ?? ""}
+        onChange={(event) =>
+          navigate({ accountId: event.target.value === "" ? undefined : event.target.value })
+        }
+      >
+        <option value="">All accounts</option>
+        {filters.accountId !== undefined &&
+        !(accounts.data ?? []).some((account) => account.id === filters.accountId) ? (
+          <option value={filters.accountId}>Archived or unavailable</option>
+        ) : null}
+        {(accounts.data ?? []).map((account) => (
+          <option key={account.id} value={account.id}>
+            {account.name}
+          </option>
+        ))}
+      </select>
+      <select
+        aria-label="Filter by category"
+        className={selectClasses}
+        value={filters.categoryId ?? ""}
+        onChange={(event) =>
+          navigate({ categoryId: event.target.value === "" ? undefined : event.target.value })
+        }
+      >
+        <option value="">All categories</option>
+        {filters.categoryId !== undefined &&
+        !(categories.data ?? []).some((category) => category.id === filters.categoryId) ? (
+          <option value={filters.categoryId}>Archived or unavailable</option>
+        ) : null}
+        {(categories.data ?? []).map((category) => (
+          <option key={category.id} value={category.id}>
+            {category.name}
+          </option>
+        ))}
+      </select>
+      <div className="flex items-center gap-1.5 rounded-lg border border-border bg-surface-muted px-2.5">
+        <input
+          type="date"
+          aria-label="From date"
+          value={toDateInputValue(filters.from)}
+          onChange={(event) => navigate({ from: parseDate(event.target.value) })}
+          className="bg-transparent py-2.5 font-mono text-xs text-foreground outline-none"
+        />
+        <span className="text-xs text-foreground-muted" aria-hidden="true">
+          →
+        </span>
+        <input
+          type="date"
+          aria-label="To date"
+          value={toDateInputValue(filters.to)}
+          onChange={(event) => navigate({ to: parseDate(event.target.value) })}
+          className="bg-transparent py-2.5 font-mono text-xs text-foreground outline-none"
+        />
+      </div>
+      {isFiltered ? (
+        <button
+          type="button"
+          onClick={clear}
+          className="rounded-lg px-2.5 py-2 text-sm font-medium text-foreground-muted hover:text-foreground"
+        >
+          Clear
+        </button>
+      ) : null}
+    </div>
   );
 }

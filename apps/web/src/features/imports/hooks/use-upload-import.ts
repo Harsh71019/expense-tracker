@@ -21,6 +21,10 @@ export function useUploadImport(): UseMutationResult<ImportBatch, Error, UploadI
       body.append("accountId", accountId);
       body.append("mapping", JSON.stringify(mapping));
       try {
+        if (process.env.NEXT_PUBLIC_MOCK_API === "1") {
+          const { ensureMockWorkerStarted } = await import("@/mocks/browser");
+          await ensureMockWorkerStarted();
+        }
         // Generated multipart types model a binary File as string, so this single FormData boundary uses fetch.
         const response = await fetch("/api/v1/imports", {
           method: "POST",

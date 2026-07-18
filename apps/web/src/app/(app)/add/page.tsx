@@ -8,7 +8,7 @@ export default function AddTransactionPage(): ReactNode {
     <div className="space-y-5">
       <div className="flex justify-end">
         <Link
-          href="/transfers/new"
+          href="/transfers"
           className="rounded-xl border border-border bg-surface-elevated px-4 py-2.5 text-sm font-semibold transition-colors hover:border-accent/40"
         >
           Transfer between accounts

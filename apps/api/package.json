@@ -12,7 +12,10 @@
     "test:integration": "vitest run --passWithNoTests --config vitest.integration.config.ts",
     "test:e2e": "vitest run --passWithNoTests --config vitest.e2e.config.ts",
     "migrate": "migrate-mongo up -f ../../migrate-mongo-config.cjs",
-    "migrate:status": "migrate-mongo status -f ../../migrate-mongo-config.cjs"
+    "migrate:status": "migrate-mongo status -f ../../migrate-mongo-config.cjs",
+    "drizzle:generate": "drizzle-kit generate",
+    "drizzle:migrate": "drizzle-kit migrate",
+    "drizzle:check": "drizzle-kit check"
   },
   "dependencies": {
     "@asteasolutions/zod-to-openapi": "^8.5.0",

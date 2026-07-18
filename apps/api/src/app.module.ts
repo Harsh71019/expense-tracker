@@ -7,6 +7,7 @@ import pino from "pino";
 import { BalancesModule } from "./balances/balances.module.js";
 import { RuntimeConfigModule } from "./common/config/runtime-config.module.js";
 import { RuntimeConfigService } from "./common/config/runtime-config.service.js";
+import { DbModule } from "./common/db/db.module.js";
 import { LoggingContextService } from "./common/logging/logging-context.service.js";
 import { LoggingModule } from "./common/logging/logging.module.js";
 import { IdempotencyModule } from "./common/idempotency/idempotency.module.js";
@@ -30,6 +31,7 @@ import { TransactionsModule } from "./transactions/transactions.module.js";
 @Module({
   imports: [
     RuntimeConfigModule,
+    DbModule,
     MongooseModule.forRootAsync({
       inject: [RuntimeConfigService],
       useFactory: (config: RuntimeConfigService) => ({

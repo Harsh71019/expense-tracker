@@ -88,8 +88,8 @@ describe("ImportsService commit/revert", () => {
       replicaSet.getUri("vyaya_imports_commit_revert_test")
     ).asPromise();
 
-    // import_batches/staged_rows/category_rules are still Mongo (Tasks 15/18/19 not
-    // done); accounts/transactions/audit_log moved to Postgres in Task 11.
+    // import_batches/staged_rows are still Mongo (Tasks 18/19 not done);
+    // accounts/transactions/audit_log/category_rules moved to Postgres (Tasks 11/15).
     pgTestDb = await createTestDb();
     for (const userId of [
       "user-commit-1",
@@ -109,7 +109,7 @@ describe("ImportsService commit/revert", () => {
     transactions = new TransactionRepository(pgTestDb.db);
     accounts = new AccountRepository(pgTestDb.db);
     const audit = new AuditRepository(pgTestDb.db);
-    const categoryRules = new CategoryRuleRepository(connection);
+    const categoryRules = new CategoryRuleRepository(pgTestDb.db);
     const queue = new ImportsQueue(new TestRuntimeConfig());
     service = new ImportsService(
       connection,

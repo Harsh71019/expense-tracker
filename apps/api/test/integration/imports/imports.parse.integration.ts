@@ -8,6 +8,7 @@ import { Redis } from "ioredis";
 import { AccountRepository } from "../../../src/accounts/account.repository.js";
 import { AuditRepository } from "../../../src/audit/audit.repository.js";
 import { CategoryRuleRepository } from "../../../src/category-rules/category-rule.repository.js";
+import { CategoryRepository } from "../../../src/categories/category.repository.js";
 import { RuntimeConfigService } from "../../../src/common/config/runtime-config.service.js";
 import { ImportBatchRepository } from "../../../src/imports/import-batch.repository.js";
 import { StagedRowRepository } from "../../../src/imports/staged-row.repository.js";
@@ -72,8 +73,8 @@ describe("Imports parse pipeline (real BullMQ worker against real Redis)", () =>
     flushClient = new Redis(TEST_REDIS_URL);
     await flushClient.flushdb();
 
-    // import_batches/staged_rows/category_rules are still Mongo (Tasks 15/18/19 not
-    // done); accounts/transactions/audit_log moved to Postgres in Task 11.
+    // import_batches/staged_rows are still Mongo (Tasks 18/19 not done);
+    // accounts/transactions/audit_log/category_rules moved to Postgres (Tasks 11/15).
     pgTestDb = await createTestDb();
     await insertTestUser(pgTestDb.db, "user-a");
     await insertTestUser(pgTestDb.db, "user-suggest");
@@ -83,7 +84,7 @@ describe("Imports parse pipeline (real BullMQ worker against real Redis)", () =>
     const transactions = new TransactionRepository(pgTestDb.db);
     const accounts = new AccountRepository(pgTestDb.db);
     const audit = new AuditRepository(pgTestDb.db);
-    const categoryRules = new CategoryRuleRepository(connection);
+    const categoryRules = new CategoryRuleRepository(pgTestDb.db);
     const config = new TestRuntimeConfig();
     backgroundQueue = new ImportsQueue(config);
     const service = new ImportsService(
@@ -171,7 +172,7 @@ describe("Imports parse pipeline (real BullMQ worker against real Redis)", () =>
     const transactions = new TransactionRepository(nonNullPgTestDb(pgTestDb).db);
     const accounts = new AccountRepository(nonNullPgTestDb(pgTestDb).db);
     const audit = new AuditRepository(nonNullPgTestDb(pgTestDb).db);
-    const categoryRules = new CategoryRuleRepository(nonNullConnection(connection));
+    const categoryRules = new CategoryRuleRepository(nonNullPgTestDb(pgTestDb).db);
     const service = new ImportsService(
       nonNullConnection(connection),
       nonNullPgTestDb(pgTestDb).db,
@@ -208,7 +209,7 @@ describe("Imports parse pipeline (real BullMQ worker against real Redis)", () =>
     const transactions = new TransactionRepository(nonNullPgTestDb(pgTestDb).db);
     const accounts = new AccountRepository(nonNullPgTestDb(pgTestDb).db);
     const audit = new AuditRepository(nonNullPgTestDb(pgTestDb).db);
-    const categoryRules = new CategoryRuleRepository(nonNullConnection(connection));
+    const categoryRules = new CategoryRuleRepository(nonNullPgTestDb(pgTestDb).db);
     const service = new ImportsService(
       nonNullConnection(connection),
       nonNullPgTestDb(pgTestDb).db,
@@ -221,7 +222,10 @@ describe("Imports parse pipeline (real BullMQ worker against real Redis)", () =>
       nonNullQueue(backgroundQueue)
     );
 
-    const foodCategoryId = "0123456789abcdef0123456f";
+    const categories = new CategoryRepository(nonNullPgTestDb(pgTestDb).db);
+    const foodCategoryId = (
+      await categories.create("user-suggest", { name: "Food", kind: "expense" })
+    ).id;
     await categoryRules.create("user-suggest", { pattern: "Chai", categoryId: foodCategoryId });
 
     const batch = await repository.create(

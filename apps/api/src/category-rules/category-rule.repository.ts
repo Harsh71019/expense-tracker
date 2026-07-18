@@ -1,85 +1,52 @@
-import { Injectable } from "@nestjs/common";
-import { InjectConnection } from "@nestjs/mongoose";
+import { Inject, Injectable } from "@nestjs/common";
 import {
   CategoryRuleSchema,
   type CategoryRule,
   type CategoryRuleId,
   type CreateCategoryRule
 } from "@vyaya/shared";
-import { Types } from "mongoose";
-import type { Connection } from "mongoose";
+import { and, eq } from "drizzle-orm";
 
-import type { MongoSession } from "../common/mongo-txn.js";
-
-const CATEGORY_RULES_COLLECTION = "category_rules";
+import { DATABASE_CONNECTION } from "../common/db/db.module.js";
+import type { DrizzleDb } from "../common/db/db.module.js";
+import { categoryRules } from "../common/db/schema/index.js";
+import type { DbTx } from "../common/db/db-txn.js";
 
 @Injectable()
 export class CategoryRuleRepository {
-  constructor(@InjectConnection() private readonly connection: Connection) {}
+  constructor(@Inject(DATABASE_CONNECTION) private readonly db: DrizzleDb) {}
 
-  async create(
-    userId: string,
-    input: CreateCategoryRule,
-    session?: MongoSession
-  ): Promise<CategoryRule> {
+  async create(userId: string, input: CreateCategoryRule, tx?: DbTx): Promise<CategoryRule> {
     const now = new Date();
-    const document = {
-      userId,
-      pattern: input.pattern,
-      categoryId: input.categoryId,
-      createdAt: now,
-      updatedAt: now
-    };
-    const result = await this.database()
-      .collection(CATEGORY_RULES_COLLECTION)
-      .insertOne(document, session === undefined ? {} : { session });
-    return this.toCategoryRule({ _id: result.insertedId, ...document });
+    const executor = tx ?? this.db;
+    const [row] = await executor
+      .insert(categoryRules)
+      .values({
+        userId,
+        pattern: input.pattern,
+        categoryId: input.categoryId,
+        createdAt: now,
+        updatedAt: now
+      })
+      .returning();
+    return CategoryRuleSchema.parse(row);
   }
 
   async list(userId: string): Promise<CategoryRule[]> {
-    const rules = await this.database()
-      .collection(CATEGORY_RULES_COLLECTION)
-      .find({ userId })
-      .sort({ pattern: 1 })
-      .toArray();
-    return rules.map((rule) => this.toCategoryRule(rule));
+    const rows = await this.db
+      .select()
+      .from(categoryRules)
+      .where(eq(categoryRules.userId, userId))
+      .orderBy(categoryRules.pattern);
+    return rows.map((row) => CategoryRuleSchema.parse(row));
   }
 
-  async delete(userId: string, ruleId: CategoryRuleId, session?: MongoSession): Promise<boolean> {
-    const result = await this.database()
-      .collection(CATEGORY_RULES_COLLECTION)
-      .deleteOne(
-        { _id: new Types.ObjectId(ruleId), userId },
-        session === undefined ? {} : { session }
-      );
-    return result.deletedCount === 1;
+  async delete(userId: string, ruleId: CategoryRuleId, tx?: DbTx): Promise<boolean> {
+    const executor = tx ?? this.db;
+    const rows = await executor
+      .delete(categoryRules)
+      .where(and(eq(categoryRules.id, ruleId), eq(categoryRules.userId, userId)))
+      .returning({ id: categoryRules.id });
+    return rows.length === 1;
   }
-
-  private toCategoryRule(value: Record<string, unknown>): CategoryRule {
-    const { _id, categoryId, ...rest } = value;
-    return CategoryRuleSchema.parse({
-      id: objectIdString(_id),
-      categoryId,
-      ...rest
-    });
-  }
-
-  private database(): NonNullable<Connection["db"]> {
-    const database = this.connection.db;
-    if (database === undefined) {
-      throw new Error("MongoDB connection is not ready");
-    }
-    return database;
-  }
-}
-
-function objectIdString(value: unknown): string {
-  if (typeof value !== "object" || value === null || !("toString" in value)) {
-    throw new Error("MongoDB document contains an invalid ObjectId.");
-  }
-  const stringify = value.toString;
-  if (typeof stringify !== "function") {
-    throw new Error("MongoDB document contains an invalid ObjectId.");
-  }
-  return stringify.call(value);
 }

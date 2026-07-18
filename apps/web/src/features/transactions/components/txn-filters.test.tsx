@@ -1,6 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { TxnFilters } from "./txn-filters";
 
@@ -17,26 +16,36 @@ vi.mock("@/features/categories", () => ({
 }));
 
 describe("TxnFilters", () => {
-  it("keeps search and date filters in the transaction URL", async () => {
-    const user = userEvent.setup();
-    render(<TxnFilters filters={{ limit: 50 }} />);
-
-    await user.type(screen.getByLabelText("Search description"), "chai");
-    fireEvent.change(screen.getByLabelText("From"), { target: { value: "2026-07-01" } });
-    fireEvent.change(screen.getByLabelText("To"), { target: { value: "2026-07-16" } });
-    await user.click(screen.getByRole("button", { name: "Filter" }));
-
-    expect(mocks.push).toHaveBeenCalledWith(
-      "/transactions?from=2026-07-01T00%3A00%3A00.000Z&to=2026-07-16T00%3A00%3A00.000Z&q=chai"
-    );
+  beforeEach(() => {
+    mocks.push.mockReset();
+    vi.useFakeTimers();
   });
 
-  it("clears active filters back to the canonical ledger URL", async () => {
-    const user = userEvent.setup();
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("debounces search input before updating the URL", () => {
+    render(<TxnFilters filters={{ limit: 50 }} />);
+
+    fireEvent.change(screen.getByLabelText("Search description"), { target: { value: "chai" } });
+    expect(mocks.push).not.toHaveBeenCalled();
+
+    vi.advanceTimersByTime(400);
+    expect(mocks.push).toHaveBeenCalledWith("/transactions?q=chai");
+  });
+
+  it("applies date filters immediately on change", () => {
+    render(<TxnFilters filters={{ limit: 50 }} />);
+
+    fireEvent.change(screen.getByLabelText("From date"), { target: { value: "2026-07-01" } });
+    expect(mocks.push).toHaveBeenCalledWith("/transactions?from=2026-07-01T00%3A00%3A00.000Z");
+  });
+
+  it("clears active filters back to the canonical ledger URL", () => {
     render(<TxnFilters filters={{ q: "chai", limit: 50 }} />);
 
-    await user.click(screen.getByRole("button", { name: "Clear" }));
-
+    fireEvent.click(screen.getByRole("button", { name: "Clear" }));
     expect(mocks.push).toHaveBeenCalledWith("/transactions");
   });
 });

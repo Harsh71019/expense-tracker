@@ -5,6 +5,7 @@
   "scripts": {
     "build": "next build",
     "dev": "next dev",
+    "dev:mock": "NEXT_PUBLIC_MOCK_API=1 next dev",
     "lint": "eslint --config ../../eslint.config.mjs --no-warn-ignored --max-warnings=0 src/ e2e/ tests/",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
@@ -34,7 +35,14 @@
     "@vitejs/plugin-react": "5.2.0",
     "@vyaya/config": "workspace:*",
     "jsdom": "latest",
+    "msw": "^2.15.0",
+    "openapi-msw": "^2.0.0",
     "tailwindcss": "latest",
     "typescript": "beta"
+  },
+  "msw": {
+    "workerDirectory": [
+      "public"
+    ]
   }
 }

@@ -1,80 +1,55 @@
-import { Injectable } from "@nestjs/common";
-import { InjectConnection } from "@nestjs/mongoose";
+import { Inject, Injectable } from "@nestjs/common";
 import {
   DEFAULT_USER_PROFILE,
   UserProfileSchema,
   UserProfileUpdateSchema,
   type UserProfile
 } from "@vyaya/shared";
-import type { Connection } from "mongoose";
+import { eq } from "drizzle-orm";
 
-const USER_PROFILES_COLLECTION = "user_profiles";
+import { DATABASE_CONNECTION } from "../common/db/db.module.js";
+import type { DrizzleDb } from "../common/db/db.module.js";
+import { userProfiles } from "../common/db/schema/index.js";
 
 @Injectable()
 export class UserProfileRepository {
-  constructor(@InjectConnection() private readonly connection: Connection) {}
+  constructor(@Inject(DATABASE_CONNECTION) private readonly db: DrizzleDb) {}
 
   async findByUserId(userId: string): Promise<UserProfile | null> {
-    const profile = await this.database().collection(USER_PROFILES_COLLECTION).findOne({ userId });
-
-    return profile === null ? null : UserProfileSchema.parse(profile);
+    const [row] = await this.db.select().from(userProfiles).where(eq(userProfiles.userId, userId));
+    return row === undefined ? null : UserProfileSchema.parse(row);
   }
 
   async create(userId: string, displayName: string): Promise<UserProfile> {
     const now = new Date();
-    const profile = UserProfileSchema.parse({
-      userId,
-      displayName,
-      ...DEFAULT_USER_PROFILE,
-      createdAt: now,
-      updatedAt: now
-    });
-
-    await this.database().collection(USER_PROFILES_COLLECTION).insertOne(profile);
-    return profile;
+    const [row] = await this.db
+      .insert(userProfiles)
+      .values({ userId, displayName, ...DEFAULT_USER_PROFILE, createdAt: now, updatedAt: now })
+      .returning();
+    return UserProfileSchema.parse(row);
   }
 
   async ensure(userId: string, displayName: string): Promise<UserProfile> {
     const now = new Date();
-    const profile = UserProfileSchema.parse({
-      userId,
-      displayName,
-      ...DEFAULT_USER_PROFILE,
-      createdAt: now,
-      updatedAt: now
-    });
-
-    await this.database()
-      .collection(USER_PROFILES_COLLECTION)
-      .updateOne({ userId }, { $setOnInsert: profile }, { upsert: true });
+    await this.db
+      .insert(userProfiles)
+      .values({ userId, displayName, ...DEFAULT_USER_PROFILE, createdAt: now, updatedAt: now })
+      .onConflictDoNothing({ target: userProfiles.userId });
 
     const savedProfile = await this.findByUserId(userId);
     if (savedProfile === null) {
       throw new Error("User profile was not persisted");
     }
-
     return savedProfile;
   }
 
   async update(userId: string, input: unknown): Promise<UserProfile | null> {
     const update = UserProfileUpdateSchema.parse(input);
-    const result = await this.database()
-      .collection(USER_PROFILES_COLLECTION)
-      .findOneAndUpdate(
-        { userId },
-        { $set: { ...update, updatedAt: new Date() } },
-        { returnDocument: "after" }
-      );
-
-    return result === null ? null : UserProfileSchema.parse(result);
-  }
-
-  private database(): NonNullable<Connection["db"]> {
-    const database = this.connection.db;
-    if (database === undefined) {
-      throw new Error("MongoDB connection is not ready");
-    }
-
-    return database;
+    const [row] = await this.db
+      .update(userProfiles)
+      .set({ ...update, updatedAt: new Date() })
+      .where(eq(userProfiles.userId, userId))
+      .returning();
+    return row === undefined ? null : UserProfileSchema.parse(row);
   }
 }

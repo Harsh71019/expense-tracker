@@ -5,6 +5,7 @@ import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { Pool } from "pg";
 
 import * as authSchema from "../../../src/common/db/auth-schema.js";
+import { user } from "../../../src/common/db/auth-schema.js";
 import * as schema from "../../../src/common/db/schema/index.js";
 import type { DrizzleDb } from "../../../src/common/db/db.module.js";
 
@@ -45,4 +46,21 @@ export async function createTestDb(): Promise<TestDb> {
       await container.stop();
     }
   };
+}
+
+/**
+ * Every domain table's `userId` column is a real FK to Better Auth's
+ * `user` table now (unlike Mongo, which had no referential integrity) --
+ * a test that inserts a domain row for an arbitrary userId string (e.g.
+ * "user-a") needs a matching `user` row to exist first, or Postgres
+ * rejects the insert with a foreign key violation. Call this in
+ * `beforeAll`/`beforeEach` for every userId a test is about to write
+ * data under. Idempotent (`onConflictDoNothing`) so it's safe to call
+ * more than once for the same id.
+ */
+export async function insertTestUser(db: DrizzleDb, userId: string): Promise<void> {
+  await db
+    .insert(user)
+    .values({ id: userId, name: userId, email: `${userId}@test.local` })
+    .onConflictDoNothing({ target: user.id });
 }

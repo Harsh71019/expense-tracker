@@ -25,6 +25,8 @@ export type {
   CreateAsset,
   CreateValuation,
   NetWorth,
+  NetWorthAccount,
+  NetWorthAsset,
   Valuation,
   ValuationPage,
   ValuationSource

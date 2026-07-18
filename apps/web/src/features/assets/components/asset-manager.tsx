@@ -1,229 +1,169 @@
 "use client";
 
-import {
-  AssetKindSchema,
-  CreateAssetSchema,
-  type Asset,
-  type AssetKind,
-  type NetWorth
-} from "@vyaya/shared";
-import Link from "next/link";
+import type { Asset, AssetKind, NetWorth } from "@vyaya/shared";
 import { useState } from "react";
-import type { FormEvent, ReactNode } from "react";
+import type { ReactNode } from "react";
+import { toast } from "sonner";
 
-import { AmountInput } from "@/components/ui/amount-input";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Input } from "@/components/ui/input";
-import { SignedMoney } from "@/components/ui/money";
 import { useNetWorth } from "@/features/net-worth/hooks/use-net-worth";
 
-import { useCreateAsset } from "../hooks/use-asset-mutations";
+import { useCloseAsset } from "../hooks/use-asset-mutations";
 import { useAssets } from "../hooks/use-assets";
-import {
-  assetKindLabel,
-  assetKinds,
-  calendarDateInIndia,
-  parseBasisPoints
-} from "../model/asset-form";
+import { ASSET_KIND_ORDER, ASSET_KIND_SHORT_LABEL } from "../model/asset-visuals";
+import { AddValuationDialog } from "./add-valuation-dialog";
+import { AssetCard } from "./asset-card";
+import { AssetHistoryDrawer } from "./asset-history-drawer";
+import { CloseAssetDialog } from "./close-asset-dialog";
+import { CreateAssetDrawer } from "./create-asset-drawer";
+import { NetWorthHero } from "./net-worth-hero";
 
-function todayInIndia(): string {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(new Date());
-}
-
-export function AssetManager({
-  initialAssets,
-  initialNetWorth
-}: {
+type AssetManagerProps = Readonly<{
   initialAssets: Asset[];
   initialNetWorth: NetWorth | null;
-}): ReactNode {
+}>;
+
+export function AssetManager({ initialAssets, initialNetWorth }: AssetManagerProps): ReactNode {
   const assets = useAssets(initialAssets);
   const netWorth = useNetWorth(initialNetWorth ?? undefined);
-  const create = useCreateAsset();
-  const [showForm, setShowForm] = useState(initialAssets.length === 0);
-  const [kind, setKind] = useState<AssetKind>("investment");
-  const [name, setName] = useState("");
-  const [openedAt, setOpenedAt] = useState(todayInIndia);
-  const [maturityAt, setMaturityAt] = useState("");
-  const [rate, setRate] = useState("");
-  const [quantity, setQuantity] = useState("");
-  const [valueMinor, setValueMinor] = useState(0);
-  const [error, setError] = useState<string>();
+  const closeAsset = useCloseAsset();
 
-  async function submit(event: FormEvent<HTMLFormElement>): Promise<void> {
-    event.preventDefault();
-    const annualRateBps = rate === "" ? undefined : parseBasisPoints(rate);
-    if (rate !== "" && annualRateBps === undefined) {
-      setError("Enter an annual rate from 0 to 100 with at most two decimal places.");
-      return;
-    }
-    const quantityMilliUnits = quantity === "" ? undefined : Number(quantity);
-    const parsed = CreateAssetSchema.safeParse({
-      kind,
-      name,
-      openedAt: calendarDateInIndia(openedAt),
-      openingValueMinor: kind === "loan_liability" ? -valueMinor : valueMinor,
-      ...(kind === "fixed_deposit" && maturityAt !== ""
-        ? { maturityAt: calendarDateInIndia(maturityAt) }
-        : {}),
-      ...(kind === "fixed_deposit" && annualRateBps !== undefined ? { annualRateBps } : {}),
-      ...((kind === "gold" || kind === "silver") && quantityMilliUnits !== undefined
-        ? { quantityMilliUnits }
-        : {})
-    });
-    if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? "Check the asset details.");
-      return;
-    }
+  const [filter, setFilter] = useState<AssetKind | "all">("all");
+  const [createOpen, setCreateOpen] = useState(false);
+  const [valuationTarget, setValuationTarget] = useState<Asset>();
+  const [historyTarget, setHistoryTarget] = useState<Asset>();
+  const [closeTarget, setCloseTarget] = useState<Asset>();
+
+  const open = (assets.data ?? initialAssets).filter((asset) => !asset.isClosed);
+  const counts: Partial<Record<AssetKind, number>> = {};
+  for (const asset of open) {
+    counts[asset.kind] = (counts[asset.kind] ?? 0) + 1;
+  }
+  const visibleKinds = ASSET_KIND_ORDER.filter((kind) => (counts[kind] ?? 0) > 0);
+  const shown = filter === "all" ? open : open.filter((asset) => asset.kind === filter);
+
+  async function confirmClose(): Promise<void> {
+    if (closeTarget === undefined) return;
     try {
-      await create.mutateAsync(parsed.data);
-      setName("");
-      setValueMinor(0);
-      setMaturityAt("");
-      setRate("");
-      setQuantity("");
-      setShowForm(false);
-      setError(undefined);
-    } catch (caught: unknown) {
-      setError(caught instanceof Error ? caught.message : "Could not create this asset.");
+      await closeAsset.mutateAsync(closeTarget.id);
+      setCloseTarget(undefined);
+    } catch {
+      toast.error("Could not close this asset");
     }
   }
 
-  const items = assets.data ?? initialAssets;
   return (
-    <section className="space-y-6">
-      <header className="flex flex-wrap items-end justify-between gap-4">
+    <section className="space-y-7">
+      <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">Assets and liabilities</h1>
-          <p className="mt-1.5 text-sm text-foreground-muted">
-            Values are immutable snapshots; closing preserves all history.
+          <p className="font-mono text-[11px] font-bold tracking-[2px] text-accent">
+            LEDGER · NET WORTH
+          </p>
+          <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+            Assets &amp; net worth
+          </h1>
+          <p className="mt-2 max-w-xl text-sm leading-relaxed text-foreground-muted">
+            Everything of value beyond your day-to-day accounts — loans, deposits, metals,
+            investments — valued over time and rolled into one number.
           </p>
         </div>
-        <Button type="button" onClick={() => setShowForm((value) => !value)}>
-          {showForm ? "Close form" : "Add asset"}
+        <Button type="button" onClick={() => setCreateOpen(true)}>
+          <span className="mr-1 text-base leading-none">+</span> New asset
         </Button>
       </header>
 
-      {showForm ? (
-        <form
-          className="space-y-5 rounded-xl border border-border bg-surface-elevated p-5 sm:p-7"
-          onSubmit={submit}
-        >
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
-              Kind
-              <select
-                className="rounded-lg border border-border bg-surface px-3.5 py-2.5 text-sm"
-                value={kind}
-                onChange={(event) => {
-                  const parsed = AssetKindSchema.safeParse(event.target.value);
-                  if (parsed.success) setKind(parsed.data);
-                }}
-              >
-                {assetKinds.map((item) => (
-                  <option key={item.value} value={item.value}>
-                    {item.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <Input
-              id="asset-name"
-              label="Name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-            <Input
-              id="asset-opened"
-              label="Opened date (Asia/Kolkata)"
-              type="date"
-              value={openedAt}
-              onChange={(event) => setOpenedAt(event.target.value)}
-            />
-            {kind === "fixed_deposit" ? (
-              <>
-                <Input
-                  id="asset-maturity"
-                  label="Maturity date (optional)"
-                  type="date"
-                  value={maturityAt}
-                  onChange={(event) => setMaturityAt(event.target.value)}
-                />
-                <Input
-                  id="asset-rate"
-                  label="Annual rate % (optional)"
-                  inputMode="decimal"
-                  value={rate}
-                  onChange={(event) => setRate(event.target.value)}
-                />
-              </>
-            ) : null}
-            {kind === "gold" || kind === "silver" ? (
-              <Input
-                id="asset-quantity"
-                label="Quantity in milli-units (optional)"
-                type="number"
-                min="1"
-                step="1"
-                value={quantity}
-                onChange={(event) => setQuantity(event.target.value)}
-              />
-            ) : null}
-          </div>
-          <AmountInput
-            id="asset-opening-value"
-            label={kind === "loan_liability" ? "Amount owed" : "Opening value"}
-            value={valueMinor}
-            onChange={setValueMinor}
-          />
-          {kind === "loan_liability" ? (
-            <p className="text-sm text-foreground-muted">
-              This is stored as a negative liability and reduces net worth.
-            </p>
-          ) : null}
-          {error === undefined ? null : (
-            <p role="alert" className="text-sm text-expense">
-              {error}
-            </p>
-          )}
-          <Button type="submit" disabled={create.isPending}>
-            {create.isPending ? "Creating…" : "Create asset with opening valuation"}
-          </Button>
-        </form>
-      ) : null}
+      {netWorth.data === undefined ? null : <NetWorthHero netWorth={netWorth.data} />}
 
-      {items.length === 0 ? (
+      <div className="flex flex-wrap items-center gap-1">
+        <button
+          type="button"
+          aria-pressed={filter === "all"}
+          onClick={() => setFilter("all")}
+          className={`inline-flex items-center gap-2 rounded-lg border px-3.5 py-2 text-sm font-semibold transition-colors duration-150 ${
+            filter === "all"
+              ? "border-accent bg-accent-glow text-accent"
+              : "border-transparent text-foreground-muted hover:bg-surface-muted/60"
+          }`}
+        >
+          All
+          <span
+            className={`rounded-[5px] px-1.5 py-0.5 font-mono text-[11px] font-semibold ${
+              filter === "all" ? "text-accent" : "bg-surface-muted text-foreground-muted"
+            }`}
+          >
+            {open.length}
+          </span>
+        </button>
+        {visibleKinds.map((kind) => {
+          const active = filter === kind;
+          return (
+            <button
+              key={kind}
+              type="button"
+              aria-pressed={active}
+              onClick={() => setFilter(kind)}
+              className={`inline-flex items-center gap-2 rounded-lg border px-3.5 py-2 text-sm font-semibold transition-colors duration-150 ${
+                active
+                  ? "border-accent bg-accent-glow text-accent"
+                  : "border-transparent text-foreground-muted hover:bg-surface-muted/60"
+              }`}
+            >
+              {ASSET_KIND_SHORT_LABEL[kind]}
+              <span
+                className={`rounded-[5px] px-1.5 py-0.5 font-mono text-[11px] font-semibold ${
+                  active ? "text-accent" : "bg-surface-muted text-foreground-muted"
+                }`}
+              >
+                {counts[kind]}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {shown.length === 0 ? (
         <EmptyState
           title="No active assets"
           description="Add an asset or liability to include it in net worth."
+          action={
+            <Button type="button" onClick={() => setCreateOpen(true)}>
+              New asset
+            </Button>
+          }
         />
       ) : (
-        <div className="divide-y divide-border overflow-hidden rounded-xl border border-border">
-          {items.map((asset) => {
-            const current = netWorth.data?.assets.find((value) => value.assetId === asset.id);
-            return (
-              <Link
-                key={asset.id}
-                href={`/assets/${asset.id}`}
-                className="relative flex items-center justify-between gap-4 px-4 py-3.5 transition-colors hover:bg-surface-muted/50"
-              >
-                <span className="absolute inset-y-0 left-0 w-[3px] bg-accent" aria-hidden="true" />
-                <div className="min-w-0 pl-2">
-                  <p className="truncate text-sm font-semibold text-foreground">{asset.name}</p>
-                  <p className="mt-0.5 font-mono text-[10px] tracking-wider text-foreground-muted uppercase">
-                    {assetKindLabel(asset.kind)}
-                  </p>
-                </div>
-                {current === undefined ? (
-                  <span className="shrink-0 text-sm text-foreground-muted">No valuation</span>
-                ) : (
-                  <SignedMoney minor={current.valueMinor} size="lg" />
-                )}
-              </Link>
-            );
-          })}
+        <div className="grid gap-4.5 sm:grid-cols-2 lg:grid-cols-3">
+          {shown.map((asset) => (
+            <AssetCard
+              key={asset.id}
+              asset={asset}
+              netWorthEntry={netWorth.data?.assets.find((entry) => entry.assetId === asset.id)}
+              onAddValuation={setValuationTarget}
+              onHistory={setHistoryTarget}
+              onClose={setCloseTarget}
+            />
+          ))}
         </div>
+      )}
+
+      {createOpen ? <CreateAssetDrawer onClose={() => setCreateOpen(false)} /> : null}
+
+      {valuationTarget === undefined ? null : (
+        <AddValuationDialog asset={valuationTarget} onClose={() => setValuationTarget(undefined)} />
+      )}
+
+      {historyTarget === undefined ? null : (
+        <AssetHistoryDrawer asset={historyTarget} onClose={() => setHistoryTarget(undefined)} />
+      )}
+
+      {closeTarget === undefined ? null : (
+        <CloseAssetDialog
+          asset={closeTarget}
+          isPending={closeAsset.isPending}
+          onCancel={() => setCloseTarget(undefined)}
+          onConfirm={() => void confirmClose()}
+        />
       )}
     </section>
   );

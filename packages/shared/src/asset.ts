@@ -113,4 +113,6 @@ export type ValuationSource = z.infer<typeof ValuationSourceSchema>;
 export type CreateValuation = z.infer<typeof CreateValuationSchema>;
 export type Valuation = z.infer<typeof ValuationSchema>;
 export type ValuationPage = z.infer<typeof ValuationPageSchema>;
+export type NetWorthAccount = z.infer<typeof NetWorthAccountSchema>;
+export type NetWorthAsset = z.infer<typeof NetWorthAssetSchema>;
 export type NetWorth = z.infer<typeof NetWorthSchema>;

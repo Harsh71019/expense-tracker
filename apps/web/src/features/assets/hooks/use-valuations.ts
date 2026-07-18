@@ -9,11 +9,11 @@ import { qk } from "@/lib/query/keys";
 
 export function useValuations(
   assetId: string,
-  initialData: ValuationPage
+  initialData?: ValuationPage
 ): UseQueryResult<ValuationPage, Error> {
   return useQuery({
     queryKey: qk.assetValuations(assetId),
-    initialData,
+    ...(initialData === undefined ? {} : { initialData }),
     queryFn: async (): Promise<ValuationPage> => {
       const result = await apiClient.GET("/v1/assets/{assetId}/valuations", {
         params: { path: { assetId } }

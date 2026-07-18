@@ -2,7 +2,13 @@ import { getSessionCookie } from "better-auth/cookies";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
+import { isMockApiEnabled } from "./mocks/enabled";
+
 export function proxy(request: NextRequest): NextResponse {
+  if (isMockApiEnabled) {
+    return NextResponse.next();
+  }
+
   const sessionCookie = getSessionCookie(request);
 
   const hasSessionToken = request.cookies

@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { debug } from "../debug";
 import { generateRequestId } from "../request-id";
+import { isMockApiEnabled, MOCK_USER_EMAIL, MOCK_USER_ID } from "../../mocks/enabled";
 import { getApiBaseUrl } from "./base-url";
 
 const SessionResponseSchema = z
@@ -18,6 +19,10 @@ const SessionResponseSchema = z
 export type ServerSession = z.infer<typeof SessionResponseSchema>;
 
 export const getSession = cache(async (): Promise<ServerSession> => {
+  if (isMockApiEnabled) {
+    return { user: { id: MOCK_USER_ID, email: MOCK_USER_EMAIL } };
+  }
+
   const cookieStore = await cookies();
   const reqId = generateRequestId();
 

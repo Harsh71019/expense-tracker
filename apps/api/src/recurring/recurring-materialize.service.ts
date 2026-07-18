@@ -1,8 +1,6 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { InjectConnection } from "@nestjs/mongoose";
 import { Cron } from "@nestjs/schedule";
 import { computeNextOccurrence, type RecurringRule } from "@vyaya/shared";
-import type { Connection } from "mongoose";
 import { Logger } from "nestjs-pino";
 
 import { AccountRepository } from "../accounts/account.repository.js";
@@ -10,10 +8,9 @@ import { AuditRepository } from "../audit/audit.repository.js";
 import { RuntimeConfigService } from "../common/config/runtime-config.service.js";
 import { DATABASE_CONNECTION } from "../common/db/db.module.js";
 import type { DrizzleDb } from "../common/db/db.module.js";
-import { withTxn as withPgTxn } from "../common/db/db-txn.js";
+import { withTxn } from "../common/db/db-txn.js";
 import { EntityNotFoundError } from "../common/errors/entity-not-found.error.js";
 import { LogEvent } from "../common/logging/events.js";
-import { withTxn as withMongoTxn } from "../common/mongo-txn.js";
 import { toISTCalendarDate } from "../common/time/ist.js";
 import { parseExplicitDate } from "../common/time/parse-date.js";
 import { TransactionRepository } from "../transactions/transaction.repository.js";
@@ -28,26 +25,17 @@ type MaterializeLogger = Pick<Logger, "log" | "error">;
  * running as the worker — same SERVICE_ROLE-guarded no-op pattern as
  * NotificationSweepService.
  *
- * recurring_rules is still Mongo (Task 21 not done yet); accounts/
- * transactions/audit are Postgres (this task). Claim, post, and pause used
- * to be one atomic Mongo transaction -- can't be anymore, they're two
- * different databases. Split into three steps instead of one: claim (Mongo)
- * -> post (Postgres) -> pause (Mongo, only if the rrule is exhausted). If the
- * process crashes between claim and post, the rule's nextRunAt has already
- * advanced but nothing got posted -- a missed occurrence, not a duplicate
- * one. That ordering is deliberate: nothing here assigns the posted
- * transaction an idempotencyKey (it never did, even before this migration),
- * so claimRun's compare-and-swap is the only duplicate-post guard that
- * exists -- posting before claiming would risk a duplicate (double-charged
- * money data) on a crash-and-retry, which is worse than a missed one
- * (recoverable, and the whole point of `balances.verify`, Task 23, existing).
- * Resolved once recurring_rules is itself ported to Postgres and claim+post
- * can be one transaction again.
+ * Claim (CAS on nextRunAt), post, and pause are one atomic Postgres
+ * transaction — recurring_rules/accounts/transactions/audit_log are all
+ * Postgres now (Task 21), so there's no cross-database split needed here
+ * anymore. Still no idempotencyKey on the posted transaction (never had
+ * one, even before this migration) — claimRun's compare-and-swap remains
+ * the only duplicate-post guard, which is why it still runs first, inside
+ * the same transaction as the post it guards.
  */
 @Injectable()
 export class RecurringMaterializeService {
   constructor(
-    @InjectConnection() private readonly connection: Connection,
     @Inject(DATABASE_CONNECTION) private readonly db: DrizzleDb,
     private readonly config: RuntimeConfigService,
     private readonly rules: RecurringRuleRepository,
@@ -76,12 +64,16 @@ export class RecurringMaterializeService {
   private async materializeOne(rule: RecurringRule): Promise<void> {
     const next = computeNextOccurrence(rule.rrule, rule.startAt, rule.nextRunAt);
 
-    const claimed = await withMongoTxn(this.connection, (session) =>
-      this.rules.claimRun(rule.userId, rule.id, rule.nextRunAt, next ?? rule.nextRunAt, session)
-    );
-    if (!claimed) return; // already materialized by a concurrent/retried run
+    const posted = await withTxn(this.db, async (tx) => {
+      const claimed = await this.rules.claimRun(
+        rule.userId,
+        rule.id,
+        rule.nextRunAt,
+        next ?? rule.nextRunAt,
+        tx
+      );
+      if (!claimed) return null; // already materialized by a concurrent/retried run
 
-    const posted = await withPgTxn(this.db, async (tx) => {
       const deltaMinor =
         rule.template.type === "income" ? rule.template.amountMinor : -rule.template.amountMinor;
       if (
@@ -112,14 +104,15 @@ export class RecurringMaterializeService {
         "recurring"
       );
       await this.audit.record(rule.userId, "recurring.materialize", posted.id, tx);
+
+      if (next === null) {
+        await this.rules.pause(rule.userId, rule.id, tx);
+      }
+
       return posted;
     });
 
-    if (next === null) {
-      await withMongoTxn(this.connection, (session) =>
-        this.rules.pause(rule.userId, rule.id, session)
-      );
-    }
+    if (posted === null) return;
 
     this.logger.log(
       { event: LogEvent.RecurringMaterialized, ruleId: rule.id, txnId: posted.id },

@@ -1,12 +1,12 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { InjectConnection } from "@nestjs/mongoose";
 import { Cron } from "@nestjs/schedule";
-import type { Connection } from "mongoose";
 import { Logger } from "nestjs-pino";
 
 import { RuntimeConfigService } from "../common/config/runtime-config.service.js";
+import { DATABASE_CONNECTION } from "../common/db/db.module.js";
+import type { DrizzleDb } from "../common/db/db.module.js";
+import { withTxn } from "../common/db/db-txn.js";
 import { LogEvent } from "../common/logging/events.js";
-import { withTxn } from "../common/mongo-txn.js";
 import { NotificationOutboxRepository } from "../notifications/notification-outbox.repository.js";
 import { BalanceVerifyRepository } from "./balance-verify.repository.js";
 
@@ -24,7 +24,7 @@ type BalanceVerifyLogger = Pick<Logger, "log" | "error">;
 @Injectable()
 export class BalanceVerifyService {
   constructor(
-    @InjectConnection() private readonly connection: Connection,
+    @Inject(DATABASE_CONNECTION) private readonly db: DrizzleDb,
     private readonly config: RuntimeConfigService,
     private readonly balances: BalanceVerifyRepository,
     private readonly outbox: NotificationOutboxRepository,
@@ -48,7 +48,7 @@ export class BalanceVerifyService {
 
       driftCount += 1;
       const driftMinor = account.balanceMinor - expectedBalanceMinor;
-      await withTxn(this.connection, (session) =>
+      await withTxn(this.db, (tx) =>
         this.outbox.enqueue(
           account.userId,
           "balance_drift",
@@ -59,7 +59,7 @@ export class BalanceVerifyService {
             actualBalanceMinor: account.balanceMinor,
             driftMinor
           },
-          session
+          tx
         )
       );
       this.logger.error(

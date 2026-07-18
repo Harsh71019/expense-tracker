@@ -1,7 +1,4 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { MongoMemoryReplSet } from "mongodb-memory-server";
-import { createConnection } from "mongoose";
-import type { Connection } from "mongoose";
 
 import { AccountRepository } from "../../../src/accounts/account.repository.js";
 import { CategoryRepository } from "../../../src/categories/category.repository.js";
@@ -14,32 +11,24 @@ import { createTestDb, insertTestUser } from "../support/postgres-test-db.js";
 import type { TestDb } from "../support/postgres-test-db.js";
 
 describe("RecurringRuleService", () => {
-  let replicaSet: MongoMemoryReplSet | undefined;
-  let connection: Connection | undefined;
-  let pgTestDb: TestDb | undefined;
-  let service: RecurringRuleService | undefined;
-  let accountId: string | undefined;
-  let categoryId: string | undefined;
+  let testDb: TestDb;
+  let service: RecurringRuleService;
+  let accountId: string;
+  let categoryId: string;
 
   beforeAll(async () => {
-    replicaSet = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
-    connection = await createConnection(
-      replicaSet.getUri("vyaya_recurring_service_test")
-    ).asPromise();
-    // categories is already Postgres-backed (Task 10); accounts/recurring_rules are
-    // still Mongo (Tasks 11/21 not done yet) -- two separate test databases.
-    pgTestDb = await createTestDb();
-    await insertTestUser(pgTestDb.db, "user-a");
-    const accounts = new AccountRepository(pgTestDb.db);
-    const categories = new CategoryRepository(pgTestDb.db);
+    testDb = await createTestDb();
+    await insertTestUser(testDb.db, "user-a");
+    const accounts = new AccountRepository(testDb.db);
+    const categories = new CategoryRepository(testDb.db);
     service = new RecurringRuleService(
-      connection,
-      new RecurringRuleRepository(connection),
+      testDb.db,
+      new RecurringRuleRepository(testDb.db),
       accounts,
       categories
     );
 
-    const account = await withTxn(pgTestDb.db, (tx) =>
+    const account = await withTxn(testDb.db, (tx) =>
       accounts.create(
         "user-a",
         { name: "HDFC Savings", type: "bank", openingBalanceMinor: 100_000 },
@@ -52,16 +41,14 @@ describe("RecurringRuleService", () => {
   }, 60_000);
 
   afterAll(async () => {
-    if (connection !== undefined) await connection.close();
-    if (replicaSet !== undefined) await replicaSet.stop();
-    if (pgTestDb !== undefined) await pgTestDb.teardown();
+    await testDb.teardown();
   });
 
   it("creates a rule and seeds nextRunAt from the rrule/startAt", async () => {
-    const created = await recurringRuleService(service).create("user-a", {
+    const created = await service.create("user-a", {
       template: {
-        accountId: requireId(accountId),
-        categoryId: requireId(categoryId),
+        accountId,
+        categoryId,
         type: "expense",
         amountMinor: 150_000,
         description: "Rent",
@@ -78,9 +65,8 @@ describe("RecurringRuleService", () => {
 
   it("rejects a rule whose account does not belong to the user", async () => {
     await expect(
-      recurringRuleService(service).create("user-a", {
+      service.create("user-a", {
         template: {
-          // accounts is Postgres-backed (Task 11) -- a nonexistent id must be valid uuid syntax.
           accountId: "3fa85f64-5717-4562-b3fc-2c963f66beef",
           type: "expense",
           amountMinor: 1_000,
@@ -95,9 +81,9 @@ describe("RecurringRuleService", () => {
 
   it("rejects a well-formed rrule that produces no occurrences", async () => {
     await expect(
-      recurringRuleService(service).create("user-a", {
+      service.create("user-a", {
         template: {
-          accountId: requireId(accountId),
+          accountId,
           type: "expense",
           amountMinor: 1_000,
           description: "Never fires",
@@ -110,18 +96,18 @@ describe("RecurringRuleService", () => {
   });
 
   it("lists only the calling user's rules", async () => {
-    const rules = await recurringRuleService(service).list("user-a");
+    const rules = await service.list("user-a");
     expect(rules.length).toBeGreaterThan(0);
     expect(rules.every((rule) => rule.userId === "user-a")).toBe(true);
 
-    const otherUsersRules = await recurringRuleService(service).list("user-b");
+    const otherUsersRules = await service.list("user-b");
     expect(otherUsersRules).toEqual([]);
   });
 
   it("a template-only patch leaves tags untouched (no accidental reset to [])", async () => {
-    const created = await recurringRuleService(service).create("user-a", {
+    const created = await service.create("user-a", {
       template: {
-        accountId: requireId(accountId),
+        accountId,
         type: "expense",
         amountMinor: 5_000,
         description: "Netflix",
@@ -131,7 +117,7 @@ describe("RecurringRuleService", () => {
       startAt: new Date("2026-08-15T00:00:00.000Z")
     });
 
-    const updated = await recurringRuleService(service).update("user-a", created.id, {
+    const updated = await service.update("user-a", created.id, {
       template: { amountMinor: 6_500 }
     });
 
@@ -141,9 +127,9 @@ describe("RecurringRuleService", () => {
   });
 
   it("changing the rrule recomputes nextRunAt", async () => {
-    const created = await recurringRuleService(service).create("user-a", {
+    const created = await service.create("user-a", {
       template: {
-        accountId: requireId(accountId),
+        accountId,
         type: "expense",
         amountMinor: 2_000,
         description: "Gym",
@@ -153,7 +139,7 @@ describe("RecurringRuleService", () => {
       startAt: new Date("2026-08-01T00:00:00.000Z")
     });
 
-    const updated = await recurringRuleService(service).update("user-a", created.id, {
+    const updated = await service.update("user-a", created.id, {
       rrule: "FREQ=WEEKLY;BYDAY=MO"
     });
 
@@ -163,14 +149,14 @@ describe("RecurringRuleService", () => {
 
   it("throws EntityNotFoundError when updating a rule that does not exist", async () => {
     await expect(
-      recurringRuleService(service).update("user-a", "507f1f77bcf86cd799439011", { isPaused: true })
+      service.update("user-a", "3fa85f64-5717-4562-b3fc-2c963f66beef", { isPaused: true })
     ).rejects.toThrow(EntityNotFoundError);
   });
 
   it("does not allow updating another user's rule", async () => {
-    const created = await recurringRuleService(service).create("user-a", {
+    const created = await service.create("user-a", {
       template: {
-        accountId: requireId(accountId),
+        accountId,
         type: "expense",
         amountMinor: 3_000,
         description: "Private",
@@ -180,18 +166,8 @@ describe("RecurringRuleService", () => {
       startAt: new Date("2026-08-05T00:00:00.000Z")
     });
 
-    await expect(
-      recurringRuleService(service).update("someone-else", created.id, { isPaused: true })
-    ).rejects.toThrow(EntityNotFoundError);
+    await expect(service.update("someone-else", created.id, { isPaused: true })).rejects.toThrow(
+      EntityNotFoundError
+    );
   });
 });
-
-function recurringRuleService(service: RecurringRuleService | undefined): RecurringRuleService {
-  if (service === undefined) throw new Error("Recurring rule service is not ready");
-  return service;
-}
-
-function requireId(id: string | undefined): string {
-  if (id === undefined) throw new Error("Fixture id is not ready");
-  return id;
-}

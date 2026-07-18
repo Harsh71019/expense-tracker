@@ -1,5 +1,4 @@
-import { Injectable } from "@nestjs/common";
-import { InjectConnection } from "@nestjs/mongoose";
+import { Inject, Injectable } from "@nestjs/common";
 import {
   RecurringRuleSchema,
   type CreateRecurringRule,
@@ -7,73 +6,67 @@ import {
   type RecurringRuleId,
   type UpdateRecurringRule
 } from "@vyaya/shared";
-import { Types } from "mongoose";
-import type { Connection } from "mongoose";
+import { and, asc, eq, lte } from "drizzle-orm";
 
-import type { MongoSession } from "../common/mongo-txn.js";
-
-const RECURRING_RULES_COLLECTION = "recurring_rules";
+import { DATABASE_CONNECTION } from "../common/db/db.module.js";
+import type { DrizzleDb } from "../common/db/db.module.js";
+import { recurringRules } from "../common/db/schema/index.js";
+import { stripNulls } from "../common/db/strip-nulls.js";
+import type { DbTx } from "../common/db/db-txn.js";
 
 @Injectable()
 export class RecurringRuleRepository {
-  constructor(@InjectConnection() private readonly connection: Connection) {}
+  constructor(@Inject(DATABASE_CONNECTION) private readonly db: DrizzleDb) {}
 
   async create(
     userId: string,
     input: CreateRecurringRule,
     nextRunAt: Date,
-    session: MongoSession
+    tx: DbTx
   ): Promise<RecurringRule> {
     const now = new Date();
-    const category =
-      input.template.categoryId === undefined ? {} : { categoryId: input.template.categoryId };
-    const document = {
-      userId,
-      template: {
-        // accountId references Postgres's accounts table (Task 11) -- stored as a
-        // plain opaque string, not cast to a Mongo ObjectId, same fix as the
-        // categories/accounts cross-repo casting bug from Task 10.
-        accountId: input.template.accountId,
-        ...category,
-        type: input.template.type,
-        amountMinor: input.template.amountMinor,
-        description: input.template.description,
-        tags: input.template.tags
-      },
-      rrule: input.rrule,
-      startAt: input.startAt,
-      nextRunAt,
-      isPaused: false,
-      createdAt: now,
-      updatedAt: now
-    };
-    const result = await this.database()
-      .collection(RECURRING_RULES_COLLECTION)
-      .insertOne(document, { session });
-    return this.toRecurringRule({ _id: result.insertedId, ...document });
+    const [row] = await tx
+      .insert(recurringRules)
+      .values({
+        userId,
+        templateAccountId: input.template.accountId,
+        templateCategoryId: input.template.categoryId ?? null,
+        templateType: input.template.type,
+        templateAmountMinor: input.template.amountMinor,
+        templateDescription: input.template.description,
+        templateTags: input.template.tags,
+        rrule: input.rrule,
+        startAt: input.startAt,
+        nextRunAt,
+        isPaused: false,
+        createdAt: now,
+        updatedAt: now
+      })
+      .returning();
+    if (row === undefined) throw new Error("Recurring rule insert did not return a row.");
+    return toRecurringRule(row);
   }
 
   async list(userId: string): Promise<RecurringRule[]> {
-    const rules = await this.database()
-      .collection(RECURRING_RULES_COLLECTION)
-      .find({ userId })
-      .sort({ createdAt: 1 })
-      .toArray();
-    return rules.map((rule) => this.toRecurringRule(rule));
+    const rows = await this.db
+      .select()
+      .from(recurringRules)
+      .where(eq(recurringRules.userId, userId))
+      .orderBy(asc(recurringRules.createdAt));
+    return rows.map(toRecurringRule);
   }
 
   async findById(
     userId: string,
     ruleId: RecurringRuleId,
-    session?: MongoSession
+    tx?: DbTx
   ): Promise<RecurringRule | null> {
-    const rule = await this.database()
-      .collection(RECURRING_RULES_COLLECTION)
-      .findOne(
-        { _id: new Types.ObjectId(ruleId), userId },
-        session === undefined ? {} : { session }
-      );
-    return rule === null ? null : this.toRecurringRule(rule);
+    const executor = tx ?? this.db;
+    const [row] = await executor
+      .select()
+      .from(recurringRules)
+      .where(and(eq(recurringRules.id, ruleId), eq(recurringRules.userId, userId)));
+    return row === undefined ? null : toRecurringRule(row);
   }
 
   /**
@@ -89,35 +82,31 @@ export class RecurringRuleRepository {
     ruleId: RecurringRuleId,
     patch: UpdateRecurringRule,
     nextRunAt: Date | undefined,
-    session: MongoSession
+    tx: DbTx
   ): Promise<RecurringRule | null> {
     const set: Record<string, unknown> = { updatedAt: new Date() };
-    if (patch.template?.accountId !== undefined) {
-      set["template.accountId"] = patch.template.accountId;
-    }
+    if (patch.template?.accountId !== undefined) set.templateAccountId = patch.template.accountId;
     if (patch.template?.categoryId !== undefined) {
-      set["template.categoryId"] = patch.template.categoryId;
+      set.templateCategoryId = patch.template.categoryId;
     }
-    if (patch.template?.type !== undefined) set["template.type"] = patch.template.type;
+    if (patch.template?.type !== undefined) set.templateType = patch.template.type;
     if (patch.template?.amountMinor !== undefined) {
-      set["template.amountMinor"] = patch.template.amountMinor;
+      set.templateAmountMinor = patch.template.amountMinor;
     }
     if (patch.template?.description !== undefined) {
-      set["template.description"] = patch.template.description;
+      set.templateDescription = patch.template.description;
     }
-    if (patch.template?.tags !== undefined) set["template.tags"] = patch.template.tags;
+    if (patch.template?.tags !== undefined) set.templateTags = patch.template.tags;
     if (patch.rrule !== undefined) set.rrule = patch.rrule;
     if (patch.isPaused !== undefined) set.isPaused = patch.isPaused;
     if (nextRunAt !== undefined) set.nextRunAt = nextRunAt;
 
-    const result = await this.database()
-      .collection(RECURRING_RULES_COLLECTION)
-      .findOneAndUpdate(
-        { _id: new Types.ObjectId(ruleId), userId },
-        { $set: set },
-        { session, returnDocument: "after" }
-      );
-    return result === null ? null : this.toRecurringRule(result);
+    const [row] = await tx
+      .update(recurringRules)
+      .set(set)
+      .where(and(eq(recurringRules.id, ruleId), eq(recurringRules.userId, userId)))
+      .returning();
+    return row === undefined ? null : toRecurringRule(row);
   }
 
   /**
@@ -130,11 +119,11 @@ export class RecurringRuleRepository {
    * terms than 01:00 IST on day D.
    */
   async findDue(asOf: Date): Promise<RecurringRule[]> {
-    const rules = await this.database()
-      .collection(RECURRING_RULES_COLLECTION)
-      .find({ isPaused: false, nextRunAt: { $lte: asOf } })
-      .toArray();
-    return rules.map((rule) => this.toRecurringRule(rule));
+    const rows = await this.db
+      .select()
+      .from(recurringRules)
+      .where(and(eq(recurringRules.isPaused, false), lte(recurringRules.nextRunAt, asOf)));
+    return rows.map(toRecurringRule);
   }
 
   /**
@@ -149,18 +138,20 @@ export class RecurringRuleRepository {
     ruleId: RecurringRuleId,
     expectedNextRunAt: Date,
     newNextRunAt: Date,
-    session: MongoSession
+    tx: DbTx
   ): Promise<boolean> {
-    const result = await this.database()
-      .collection(RECURRING_RULES_COLLECTION)
-      .updateOne(
-        { _id: new Types.ObjectId(ruleId), userId, nextRunAt: expectedNextRunAt },
-        {
-          $set: { nextRunAt: newNextRunAt, lastRunAt: expectedNextRunAt, updatedAt: new Date() }
-        },
-        { session }
-      );
-    return result.modifiedCount === 1;
+    const rows = await tx
+      .update(recurringRules)
+      .set({ nextRunAt: newNextRunAt, lastRunAt: expectedNextRunAt, updatedAt: new Date() })
+      .where(
+        and(
+          eq(recurringRules.id, ruleId),
+          eq(recurringRules.userId, userId),
+          eq(recurringRules.nextRunAt, expectedNextRunAt)
+        )
+      )
+      .returning({ id: recurringRules.id });
+    return rows.length === 1;
   }
 
   /**
@@ -170,57 +161,33 @@ export class RecurringRuleRepository {
    * already-due date, which would make every subsequent sweep re-claim and
    * fail forever.
    */
-  async pause(userId: string, ruleId: RecurringRuleId, session: MongoSession): Promise<void> {
-    await this.database()
-      .collection(RECURRING_RULES_COLLECTION)
-      .updateOne(
-        { _id: new Types.ObjectId(ruleId), userId },
-        { $set: { isPaused: true, updatedAt: new Date() } },
-        { session }
-      );
-  }
-
-  private toRecurringRule(value: Record<string, unknown>): RecurringRule {
-    const { _id, template, ...rest } = value;
-    return RecurringRuleSchema.parse({
-      id: objectIdString(_id),
-      template: toTemplate(template),
-      ...rest
-    });
-  }
-
-  private database(): NonNullable<Connection["db"]> {
-    const database = this.connection.db;
-    if (database === undefined) {
-      throw new Error("MongoDB connection is not ready");
-    }
-    return database;
+  async pause(userId: string, ruleId: RecurringRuleId, tx: DbTx): Promise<void> {
+    await tx
+      .update(recurringRules)
+      .set({ isPaused: true, updatedAt: new Date() })
+      .where(and(eq(recurringRules.id, ruleId), eq(recurringRules.userId, userId)));
   }
 }
 
-function toTemplate(value: unknown): Record<string, unknown> {
-  if (!isRecord(value)) {
-    throw new Error("Recurring rule document is missing its template.");
-  }
-  const { accountId, categoryId, ...rest } = value;
-  if (typeof accountId !== "string") {
-    throw new Error("Recurring rule template is missing a string accountId.");
-  }
-  const category = categoryId === undefined ? {} : { categoryId };
-  return { accountId, ...category, ...rest };
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
-
-function objectIdString(value: unknown): string {
-  if (typeof value !== "object" || value === null || !("toString" in value)) {
-    throw new Error("MongoDB document contains an invalid ObjectId.");
-  }
-  const stringify = value.toString;
-  if (typeof stringify !== "function") {
-    throw new Error("MongoDB document contains an invalid ObjectId.");
-  }
-  return stringify.call(value);
+function toRecurringRule(row: typeof recurringRules.$inferSelect): RecurringRule {
+  const stripped = stripNulls(row);
+  return RecurringRuleSchema.parse({
+    id: row.id,
+    userId: row.userId,
+    template: {
+      accountId: row.templateAccountId,
+      categoryId: stripped.templateCategoryId,
+      type: row.templateType,
+      amountMinor: row.templateAmountMinor,
+      description: row.templateDescription,
+      tags: row.templateTags
+    },
+    rrule: row.rrule,
+    startAt: row.startAt,
+    nextRunAt: row.nextRunAt,
+    lastRunAt: stripped.lastRunAt,
+    isPaused: row.isPaused,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt
+  });
 }

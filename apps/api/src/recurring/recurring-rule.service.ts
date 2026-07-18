@@ -1,5 +1,4 @@
-import { Injectable } from "@nestjs/common";
-import { InjectConnection } from "@nestjs/mongoose";
+import { Inject, Injectable } from "@nestjs/common";
 import {
   computeFirstOccurrence,
   computeNextOccurrence,
@@ -8,19 +7,20 @@ import {
   type RecurringRuleId,
   type UpdateRecurringRule
 } from "@vyaya/shared";
-import type { Connection } from "mongoose";
 
 import { AccountRepository } from "../accounts/account.repository.js";
 import { CategoryRepository } from "../categories/category.repository.js";
+import { DATABASE_CONNECTION } from "../common/db/db.module.js";
+import type { DrizzleDb } from "../common/db/db.module.js";
+import { withTxn } from "../common/db/db-txn.js";
 import { EntityNotFoundError } from "../common/errors/entity-not-found.error.js";
 import { InvalidRecurringRuleError } from "../common/errors/invalid-recurring-rule.error.js";
-import { withTxn } from "../common/mongo-txn.js";
 import { RecurringRuleRepository } from "./recurring-rule.repository.js";
 
 @Injectable()
 export class RecurringRuleService {
   constructor(
-    @InjectConnection() private readonly connection: Connection,
+    @Inject(DATABASE_CONNECTION) private readonly db: DrizzleDb,
     private readonly rules: RecurringRuleRepository,
     private readonly accounts: AccountRepository,
     private readonly categories: CategoryRepository
@@ -33,17 +33,13 @@ export class RecurringRuleService {
    * archive.
    */
   async create(userId: string, input: CreateRecurringRule): Promise<RecurringRule> {
-    return withTxn(this.connection, async (session) => {
-      // accounts/categories are already Postgres-backed (Tasks 10-11) while this
-      // transaction is still Mongo -- out-of-transaction reads, not participating in
-      // the transaction below; resolved once this repository is itself ported to
-      // Postgres.
-      if (!(await this.accounts.exists(userId, input.template.accountId))) {
+    return withTxn(this.db, async (tx) => {
+      if (!(await this.accounts.exists(userId, input.template.accountId, tx))) {
         throw new EntityNotFoundError("Account");
       }
       if (
         input.template.categoryId !== undefined &&
-        !(await this.categories.exists(userId, input.template.categoryId))
+        !(await this.categories.exists(userId, input.template.categoryId, tx))
       ) {
         throw new EntityNotFoundError("Category");
       }
@@ -51,7 +47,7 @@ export class RecurringRuleService {
       const nextRunAt = computeFirstOccurrence(input.rrule, input.startAt);
       if (nextRunAt === null) throw new InvalidRecurringRuleError();
 
-      return this.rules.create(userId, input, nextRunAt, session);
+      return this.rules.create(userId, input, nextRunAt, tx);
     });
   }
 
@@ -64,20 +60,19 @@ export class RecurringRuleService {
     ruleId: RecurringRuleId,
     patch: UpdateRecurringRule
   ): Promise<RecurringRule> {
-    return withTxn(this.connection, async (session) => {
-      const current = await this.rules.findById(userId, ruleId, session);
+    return withTxn(this.db, async (tx) => {
+      const current = await this.rules.findById(userId, ruleId, tx);
       if (current === null) throw new EntityNotFoundError("Recurring rule");
 
-      // out-of-transaction reads against accounts/categories -- see the comment on the create() path above
       if (
         patch.template?.accountId !== undefined &&
-        !(await this.accounts.exists(userId, patch.template.accountId))
+        !(await this.accounts.exists(userId, patch.template.accountId, tx))
       ) {
         throw new EntityNotFoundError("Account");
       }
       if (
         patch.template?.categoryId !== undefined &&
-        !(await this.categories.exists(userId, patch.template.categoryId))
+        !(await this.categories.exists(userId, patch.template.categoryId, tx))
       ) {
         throw new EntityNotFoundError("Category");
       }
@@ -89,7 +84,7 @@ export class RecurringRuleService {
         nextRunAt = computed;
       }
 
-      const updated = await this.rules.update(userId, ruleId, patch, nextRunAt, session);
+      const updated = await this.rules.update(userId, ruleId, patch, nextRunAt, tx);
       if (updated === null) throw new EntityNotFoundError("Recurring rule");
       return updated;
     });

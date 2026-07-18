@@ -2,15 +2,18 @@
 
 import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
-import { type ListTransactionsQuery, type TransactionPage } from "@vyaya/shared";
+import { type ListTransactionsQuery, type Transaction, type TransactionPage } from "@vyaya/shared";
+import { useState } from "react";
 import type { ReactNode } from "react";
 
-import { useReverseTxn } from "../hooks/use-reverse-txn";
 import { useTxnList } from "../hooks/use-txn-list";
+import { CreateTxnSheet } from "./create-txn-sheet";
+import { TxnDetailDrawer } from "./txn-detail-drawer";
 import { TxnFilters } from "./txn-filters";
-import { TxnRow } from "./txn-row";
+import { TXN_ROW_GRID, TxnRow } from "./txn-row";
 import { TransferRow } from "./transfer-row";
 import { useAccounts } from "@/features/accounts";
+import { useCategories } from "@/features/categories";
 import { useReverseTransfer } from "@/features/transfers";
 
 export function TxnList({
@@ -18,14 +21,15 @@ export function TxnList({
   initialPage
 }: Readonly<{ filters: ListTransactionsQuery; initialPage: TransactionPage }>): ReactNode {
   const list = useTxnList(filters, initialPage);
-  const reverse = useReverseTxn();
   const reverseTransfer = useReverseTransfer();
   const accounts = useAccounts();
+  const categories = useCategories();
+  const [createOpen, setCreateOpen] = useState(false);
+  const [selected, setSelected] = useState<Transaction>();
+
   const transactions = (list.data?.pages ?? [initialPage]).flatMap((page) => page.items);
-  const descriptions = new Map(
-    transactions.map((transaction) => [transaction.id, transaction.description])
-  );
-  const transferLegs = new Map<string, typeof transactions>();
+  const categoryById = new Map((categories.data ?? []).map((category) => [category.id, category]));
+  const transferLegs = new Map<string, Transaction[]>();
   for (const transaction of transactions) {
     if (transaction.transferGroupId !== undefined) {
       const current = transferLegs.get(transaction.transferGroupId) ?? [];
@@ -36,50 +40,76 @@ export function TxnList({
 
   return (
     <section className="animate-fade-in">
-      <div className="mb-6 flex items-baseline justify-between gap-4">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">Transactions</h1>
-        <p className="font-mono text-[10px] font-bold tracking-wider text-foreground-muted uppercase">
-          {transactions.length} entries shown
-        </p>
-      </div>
+      <header className="mb-7 flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <p className="font-mono text-[11px] font-bold tracking-[0.2em] text-accent uppercase">
+            Ledger
+          </p>
+          <h1 className="mt-1.5 text-3xl font-bold tracking-tight text-foreground">Transactions</h1>
+          <p className="mt-2 max-w-md text-sm text-foreground-muted">
+            Every entry, append-only. Corrections happen by reversal, never by editing amounts.
+          </p>
+        </div>
+        <Button type="button" onClick={() => setCreateOpen(true)}>
+          <span className="mr-1 text-base leading-none">+</span> New entry
+        </Button>
+      </header>
+
       <TxnFilters filters={filters} />
+
+      <p className="mb-3 font-mono text-xs font-medium text-foreground-muted">
+        {transactions.length} {transactions.length === 1 ? "transaction" : "transactions"} · sorted
+        by date
+      </p>
+
       {transactions.length === 0 ? (
         <EmptyState
-          title="Your ledger is clear"
-          description="Every entry you add will appear here — with its full audit trail."
+          title="No transactions match"
+          description="Try widening the date range or clearing filters."
         />
       ) : (
-        <div className="divide-y divide-border overflow-hidden rounded-xl border border-border">
-          {transactions.map((transaction) => {
-            if (transaction.transferGroupId !== undefined) {
-              if (renderedTransfers.has(transaction.transferGroupId)) return null;
-              renderedTransfers.add(transaction.transferGroupId);
+        <div className="overflow-hidden rounded-2xl border border-border bg-surface-elevated">
+          <div
+            className={`${TXN_ROW_GRID} border-b border-border px-5 py-3.5 font-mono text-[10px] font-bold tracking-wider text-foreground-muted uppercase`}
+          >
+            <div>Description</div>
+            <div>Category</div>
+            <div>Date</div>
+            <div className="text-right">Amount</div>
+          </div>
+          <div className="divide-y divide-border">
+            {transactions.map((transaction) => {
+              if (transaction.transferGroupId !== undefined) {
+                if (renderedTransfers.has(transaction.transferGroupId)) return null;
+                renderedTransfers.add(transaction.transferGroupId);
+                return (
+                  <TransferRow
+                    key={transaction.transferGroupId}
+                    legs={transferLegs.get(transaction.transferGroupId) ?? [transaction]}
+                    accounts={accounts.data ?? []}
+                    onOpen={setSelected}
+                    onReverse={(groupId) => reverseTransfer.mutate(groupId)}
+                    isReversing={reverseTransfer.isPending}
+                  />
+                );
+              }
               return (
-                <TransferRow
-                  key={transaction.transferGroupId}
-                  legs={transferLegs.get(transaction.transferGroupId) ?? [transaction]}
-                  accounts={accounts.data ?? []}
-                  onReverse={(groupId) => reverseTransfer.mutate(groupId)}
-                  isReversing={reverseTransfer.isPending}
+                <TxnRow
+                  key={transaction.id}
+                  transaction={transaction}
+                  category={
+                    transaction.categoryId === undefined
+                      ? undefined
+                      : categoryById.get(transaction.categoryId)
+                  }
+                  onOpen={setSelected}
                 />
               );
-            }
-            return (
-              <TxnRow
-                key={transaction.id}
-                transaction={transaction}
-                originalDescription={
-                  transaction.reversalOf === undefined
-                    ? undefined
-                    : descriptions.get(transaction.reversalOf)
-                }
-                onReverse={(transactionId) => reverse.mutate(transactionId)}
-                isReversing={reverse.isPending}
-              />
-            );
-          })}
+            })}
+          </div>
         </div>
       )}
+
       {list.hasNextPage ? (
         <div className="mt-5 flex justify-center">
           <Button
@@ -95,6 +125,15 @@ export function TxnList({
       {list.isError ? (
         <p className="mt-4 text-center text-sm text-expense">Could not refresh the ledger.</p>
       ) : null}
+
+      {createOpen ? <CreateTxnSheet onClose={() => setCreateOpen(false)} /> : null}
+      {selected === undefined ? null : (
+        <TxnDetailDrawer
+          key={selected.id}
+          transaction={selected}
+          onClose={() => setSelected(undefined)}
+        />
+      )}
     </section>
   );
 }

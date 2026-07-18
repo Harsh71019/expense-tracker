@@ -1,9 +1,9 @@
 import { z } from "zod";
 
+import { migratingIdSchema } from "./id.js";
+
 export const CategoryKindSchema = z.enum(["expense", "income"]);
-export const CategoryIdSchema = z
-  .string()
-  .regex(/^[a-f\d]{24}$/i, "Category id must be a MongoDB ObjectId.");
+export const CategoryIdSchema = migratingIdSchema();
 
 export const CreateCategorySchema = z.object({
   name: z.string().trim().min(1).max(80),

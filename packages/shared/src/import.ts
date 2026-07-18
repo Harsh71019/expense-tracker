@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { AccountIdSchema } from "./account.js";
 import { CategoryIdSchema } from "./category.js";
+import { migratingIdSchema } from "./id.js";
 import { PageInfoSchema } from "./pagination.js";
 import { TransactionTypeSchema } from "./transaction.js";
 
@@ -20,13 +21,9 @@ export const DateFormatSchema = z.enum(["DD/MM/YYYY", "MM/DD/YYYY", "YYYY-MM-DD"
 
 export const AmountConventionSchema = z.enum(["single_signed", "debit_credit_cols"]);
 
-export const ImportBatchIdSchema = z
-  .string()
-  .regex(/^[a-f\d]{24}$/i, "Import batch id must be a MongoDB ObjectId.");
+export const ImportBatchIdSchema = migratingIdSchema();
 
-export const StagedRowIdSchema = z
-  .string()
-  .regex(/^[a-f\d]{24}$/i, "Staged row id must be a MongoDB ObjectId.");
+export const StagedRowIdSchema = migratingIdSchema();
 
 export const ColumnMappingSchema = z
   .object({

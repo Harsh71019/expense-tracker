@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { AccountIdSchema } from "./account.js";
 import { CategoryIdSchema } from "./category.js";
+import { migratingIdSchema } from "./id.js";
 import { PageInfoSchema } from "./pagination.js";
 
 const MinorAmountSchema = z.number().int().min(1).max(Number.MAX_SAFE_INTEGER);
@@ -9,9 +10,7 @@ const MinorAmountSchema = z.number().int().min(1).max(Number.MAX_SAFE_INTEGER);
 export const TransactionTypeSchema = z.enum(["expense", "income"]);
 export const TransactionStatusSchema = z.enum(["posted", "reversed", "reversal"]);
 export const TransactionSourceSchema = z.enum(["manual", "csv_import", "recurring", "api"]);
-export const TransactionIdSchema = z
-  .string()
-  .regex(/^[a-f\d]{24}$/i, "Transaction id must be a MongoDB ObjectId.");
+export const TransactionIdSchema = migratingIdSchema();
 
 export const CreateTransactionSchema = z.object({
   accountId: AccountIdSchema,
@@ -23,9 +22,7 @@ export const CreateTransactionSchema = z.object({
   tags: z.array(z.string().trim().min(1).max(40)).max(20).default([])
 });
 
-export const TransferGroupIdSchema = z
-  .string()
-  .regex(/^[a-f\d]{24}$/i, "Transfer group id must be a MongoDB ObjectId.");
+export const TransferGroupIdSchema = migratingIdSchema();
 
 export const TransactionSchema = CreateTransactionSchema.extend({
   id: TransactionIdSchema,

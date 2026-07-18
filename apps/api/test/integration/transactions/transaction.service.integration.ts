@@ -14,10 +14,13 @@ import { IdempotencyRepository } from "../../../src/common/idempotency/idempoten
 import { IdempotencyService } from "../../../src/common/idempotency/idempotency.service.js";
 import { EntityNotFoundError } from "../../../src/common/errors/entity-not-found.error.js";
 import { TransactionNotReversibleError } from "../../../src/common/errors/transaction-not-reversible.error.js";
+import { createTestDb, insertTestUser } from "../support/postgres-test-db.js";
+import type { TestDb } from "../support/postgres-test-db.js";
 
 describe("TransactionService", () => {
   let replicaSet: MongoMemoryReplSet | undefined;
   let connection: Connection | undefined;
+  let pgTestDb: TestDb | undefined;
   let transactions: TransactionService | undefined;
   let transactionMutations: TransactionMutationService | undefined;
   let transactionRepository: TransactionRepository | undefined;
@@ -29,8 +32,12 @@ describe("TransactionService", () => {
   beforeAll(async () => {
     replicaSet = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
     connection = await createConnection(replicaSet.getUri("vyaya_transactions_test")).asPromise();
+    // categories is already Postgres-backed (Task 10); accounts/transactions/audit are
+    // still Mongo (Tasks 11/14/12 not done yet) -- two separate test databases.
+    pgTestDb = await createTestDb();
+    await insertTestUser(pgTestDb.db, "user-a");
     const accountRepository = new AccountRepository(connection);
-    categoryRepository = new CategoryRepository(connection);
+    categoryRepository = new CategoryRepository(pgTestDb.db);
     transactionRepository = new TransactionRepository(connection);
     transactions = new TransactionService(
       connection,
@@ -67,11 +74,12 @@ describe("TransactionService", () => {
     foodCategoryId = food.id;
     const travel = await categoryRepository.create("user-a", { name: "Travel", kind: "expense" });
     travelCategoryId = travel.id;
-  });
+  }, 60_000);
 
   afterAll(async () => {
     if (connection !== undefined) await connection.close();
     if (replicaSet !== undefined) await replicaSet.stop();
+    if (pgTestDb !== undefined) await pgTestDb.teardown();
   });
 
   it("makes five identical submissions create one ledger entry and one balance change", async () => {
@@ -164,7 +172,9 @@ describe("TransactionService", () => {
         "user-a",
         {
           accountId: existingAccountId(accountId),
-          categoryId: "0123456789abcdef01234567",
+          // categories is Postgres-backed (Task 10) -- a nonexistent category id must be
+          // valid uuid syntax, unlike accountId above (still Mongo, ObjectId hex).
+          categoryId: "3fa85f64-5717-4562-b3fc-2c963f66beef",
           type: "expense",
           amountMinor: 500,
           occurredAt: new Date("2026-07-12T09:00:00.000Z"),
@@ -298,7 +308,7 @@ describe("TransactionService", () => {
 
     await expect(
       service.update("user-a", created.transaction.id, {
-        categoryId: "0123456789abcdef01234567"
+        categoryId: "3fa85f64-5717-4562-b3fc-2c963f66beef"
       })
     ).rejects.toThrow("Category not found.");
   });

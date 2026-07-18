@@ -26,7 +26,7 @@ export class CategoryRuleRepository {
     const document = {
       userId,
       pattern: input.pattern,
-      categoryId: new Types.ObjectId(input.categoryId),
+      categoryId: input.categoryId,
       createdAt: now,
       updatedAt: now
     };
@@ -59,7 +59,7 @@ export class CategoryRuleRepository {
     const { _id, categoryId, ...rest } = value;
     return CategoryRuleSchema.parse({
       id: objectIdString(_id),
-      categoryId: objectIdString(categoryId),
+      categoryId,
       ...rest
     });
   }

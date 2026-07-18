@@ -37,9 +37,12 @@ export class RecurringRuleService {
       if (!(await this.accounts.exists(userId, input.template.accountId, session))) {
         throw new EntityNotFoundError("Account");
       }
+      // categories is already Postgres-backed (Task 10) while this transaction is still
+      // Mongo -- out-of-transaction read, not participating in the transaction below;
+      // resolved once this repository is itself ported to Postgres.
       if (
         input.template.categoryId !== undefined &&
-        !(await this.categories.exists(userId, input.template.categoryId, session))
+        !(await this.categories.exists(userId, input.template.categoryId))
       ) {
         throw new EntityNotFoundError("Category");
       }
@@ -70,9 +73,10 @@ export class RecurringRuleService {
       ) {
         throw new EntityNotFoundError("Account");
       }
+      // out-of-transaction read against categories -- see the comment on the create() path above
       if (
         patch.template?.categoryId !== undefined &&
-        !(await this.categories.exists(userId, patch.template.categoryId, session))
+        !(await this.categories.exists(userId, patch.template.categoryId))
       ) {
         throw new EntityNotFoundError("Category");
       }

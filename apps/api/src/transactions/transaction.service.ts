@@ -43,9 +43,15 @@ export class TransactionService {
   ): Promise<CreateTransactionResult> {
     try {
       const transaction = await withTxn(this.connection, async (session) => {
+        // categories is already Postgres-backed (Task 10) while this transaction is still
+        // Mongo -- can't pass `session` across databases, so this check runs as its own
+        // out-of-transaction read rather than participating in the transaction below. A
+        // category deleted in the instant between this check and the write below would
+        // slip through; acceptable during the migration (temporary, single-user app),
+        // resolved once this repository is itself ported to Postgres and can pass `tx`.
         if (
           input.categoryId !== undefined &&
-          !(await this.categories.exists(userId, input.categoryId, session))
+          !(await this.categories.exists(userId, input.categoryId))
         ) {
           throw new EntityNotFoundError("Category");
         }
@@ -124,10 +130,11 @@ export class TransactionService {
     if (before === null) throw new EntityNotFoundError("Transaction");
     if (before.transferGroupId !== undefined) throw new TransferMetadataRequiresGroupError();
 
+    // out-of-transaction read against categories -- see the comment on the create() path above
     if (
       patch.categoryId !== undefined &&
       patch.categoryId !== null &&
-      !(await this.categories.exists(userId, patch.categoryId, session))
+      !(await this.categories.exists(userId, patch.categoryId))
     ) {
       throw new EntityNotFoundError("Category");
     }

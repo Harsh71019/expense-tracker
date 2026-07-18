@@ -26,9 +26,7 @@ export class RecurringRuleRepository {
   ): Promise<RecurringRule> {
     const now = new Date();
     const category =
-      input.template.categoryId === undefined
-        ? {}
-        : { categoryId: new Types.ObjectId(input.template.categoryId) };
+      input.template.categoryId === undefined ? {} : { categoryId: input.template.categoryId };
     const document = {
       userId,
       template: {
@@ -95,7 +93,7 @@ export class RecurringRuleRepository {
       set["template.accountId"] = new Types.ObjectId(patch.template.accountId);
     }
     if (patch.template?.categoryId !== undefined) {
-      set["template.categoryId"] = new Types.ObjectId(patch.template.categoryId);
+      set["template.categoryId"] = patch.template.categoryId;
     }
     if (patch.template?.type !== undefined) set["template.type"] = patch.template.type;
     if (patch.template?.amountMinor !== undefined) {
@@ -202,7 +200,7 @@ function toTemplate(value: unknown): Record<string, unknown> {
     throw new Error("Recurring rule document is missing its template.");
   }
   const { accountId, categoryId, ...rest } = value;
-  const category = categoryId === undefined ? {} : { categoryId: objectIdString(categoryId) };
+  const category = categoryId === undefined ? {} : { categoryId };
   return { accountId: objectIdString(accountId), ...category, ...rest };
 }
 

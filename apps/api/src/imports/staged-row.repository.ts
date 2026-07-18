@@ -53,7 +53,7 @@ export class StagedRowRepository {
       ...(row.dedupeHash === undefined ? {} : { dedupeHash: row.dedupeHash }),
       ...(row.suggestedCategoryId === undefined
         ? {}
-        : { suggestedCategoryId: new Types.ObjectId(row.suggestedCategoryId) }),
+        : { suggestedCategoryId: row.suggestedCategoryId }),
       problems: row.problems,
       isDuplicate: row.isDuplicate,
       include: row.include,
@@ -127,7 +127,7 @@ export class StagedRowRepository {
       if (patch.suggestedCategoryId === null) {
         unset.suggestedCategoryId = "";
       } else {
-        set.suggestedCategoryId = new Types.ObjectId(patch.suggestedCategoryId);
+        set.suggestedCategoryId = patch.suggestedCategoryId;
       }
     }
 
@@ -147,9 +147,7 @@ export class StagedRowRepository {
     return StagedRowSchema.parse({
       id: objectIdString(_id),
       batchId: objectIdString(batchId),
-      ...(suggestedCategoryId === undefined
-        ? {}
-        : { suggestedCategoryId: objectIdString(suggestedCategoryId) }),
+      ...(suggestedCategoryId === undefined ? {} : { suggestedCategoryId }),
       ...rest
     });
   }

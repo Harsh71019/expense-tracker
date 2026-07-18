@@ -30,7 +30,7 @@ const StoredTransactionSchema = z.object({
   _id: z.unknown(),
   userId: z.string(),
   accountId: z.unknown(),
-  categoryId: z.unknown().optional(),
+  categoryId: z.string().optional(),
   type: z.enum(["expense", "income"]),
   amountMinor: z.number().int().positive(),
   occurredAt: z.date(),
@@ -60,8 +60,7 @@ export class TransactionRepository {
     source: TransactionSource = "manual"
   ): Promise<Transaction> {
     const now = new Date();
-    const category =
-      input.categoryId === undefined ? {} : { categoryId: new Types.ObjectId(input.categoryId) };
+    const category = input.categoryId === undefined ? {} : { categoryId: input.categoryId };
     const idempotency = idempotencyKey === undefined ? {} : { idempotencyKey };
     const transfer =
       transferGroupId === undefined ? {} : { transferGroupId: new Types.ObjectId(transferGroupId) };
@@ -98,9 +97,7 @@ export class TransactionRepository {
     const filter: Record<string, unknown> = {
       userId,
       ...(query.accountId === undefined ? {} : { accountId: new Types.ObjectId(query.accountId) }),
-      ...(query.categoryId === undefined
-        ? {}
-        : { categoryId: new Types.ObjectId(query.categoryId) }),
+      ...(query.categoryId === undefined ? {} : { categoryId: query.categoryId }),
       ...(Object.keys(occurredAtRange).length === 0 ? {} : { occurredAt: occurredAtRange }),
       ...(query.q === undefined
         ? {}
@@ -200,7 +197,7 @@ export class TransactionRepository {
       if (patch.categoryId === null) {
         unset.categoryId = "";
       } else {
-        set.categoryId = new Types.ObjectId(patch.categoryId);
+        set.categoryId = patch.categoryId;
       }
     }
 
@@ -228,10 +225,7 @@ export class TransactionRepository {
     transferGroupId?: string
   ): Promise<Transaction> {
     const now = new Date();
-    const category =
-      original.categoryId === undefined
-        ? {}
-        : { categoryId: new Types.ObjectId(original.categoryId) };
+    const category = original.categoryId === undefined ? {} : { categoryId: original.categoryId };
     const transfer =
       transferGroupId === undefined ? {} : { transferGroupId: new Types.ObjectId(transferGroupId) };
     const document = {
@@ -279,7 +273,7 @@ export class TransactionRepository {
     const documents = rows.map((row) => ({
       userId,
       accountId: new Types.ObjectId(accountId),
-      ...(row.categoryId === undefined ? {} : { categoryId: new Types.ObjectId(row.categoryId) }),
+      ...(row.categoryId === undefined ? {} : { categoryId: row.categoryId }),
       type: row.type,
       amountMinor: row.amountMinor,
       currency: "INR" as const,
@@ -324,10 +318,7 @@ export class TransactionRepository {
     const now = new Date();
     const pairs = originals.map((original) => ({ original, reversalId: new Types.ObjectId() }));
     const documents = pairs.map(({ original, reversalId }) => {
-      const category =
-        original.categoryId === undefined
-          ? {}
-          : { categoryId: new Types.ObjectId(original.categoryId) };
+      const category = original.categoryId === undefined ? {} : { categoryId: original.categoryId };
       return {
         _id: reversalId,
         userId,
@@ -407,8 +398,7 @@ export class TransactionRepository {
 
   private toTransaction(value: unknown): Transaction {
     const stored = StoredTransactionSchema.parse(value);
-    const category =
-      stored.categoryId === undefined ? {} : { categoryId: objectIdString(stored.categoryId) };
+    const category = stored.categoryId === undefined ? {} : { categoryId: stored.categoryId };
     const idempotency =
       stored.idempotencyKey === undefined ? {} : { idempotencyKey: stored.idempotencyKey };
     const reversalOf =

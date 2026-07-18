@@ -38,7 +38,10 @@ export class CategoryRuleMutationService {
       key,
       CategoryRuleSchema,
       async (session) => {
-        if (!(await this.categories.exists(userId, input.categoryId, session))) {
+        // categories is already Postgres-backed (Task 10) while this transaction is
+        // still Mongo -- out-of-transaction read, not participating in the transaction
+        // below; resolved once this repository is itself ported to Postgres.
+        if (!(await this.categories.exists(userId, input.categoryId))) {
           throw new EntityNotFoundError("Category");
         }
         return this.rules.create(userId, input, session);

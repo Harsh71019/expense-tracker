@@ -10,7 +10,11 @@ export const idempotencyRecords = pgTable(
       .references(() => user.id),
     operation: text("operation").notNull(),
     key: uuid("key").notNull(),
-    result: jsonb("result").notNull(),
+    // Not .notNull(): a JS `null` result (e.g. an archive/delete operation's
+    // IdempotentResult<null>) is sent by the pg driver as SQL NULL for a
+    // jsonb column, not the JSON `null` literal -- nullable here reflects
+    // that reality rather than fighting it.
+    result: jsonb("result"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull()
   },
   (table) => [primaryKey({ columns: [table.userId, table.operation, table.key] })]

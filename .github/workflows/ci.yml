@@ -2,8 +2,18 @@ name: CI
 
 on:
   pull_request:
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
+      - "LICENSE"
+      - ".gitignore"
   push:
     branches: [main]
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
+      - "LICENSE"
+      - ".gitignore"
 
 jobs:
   verify:
@@ -26,13 +36,44 @@ jobs:
           node-version: 24.18.0
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm lint
-      - run: pnpm typecheck
-      - run: pnpm test
-      - run: pnpm test:integration
-      - run: pnpm verify:migrations
-      - run: pnpm build
-      - uses: aquasecurity/trivy-action@master
+
+      - name: Build shared package
+        run: pnpm --filter @vyaya/shared build
+
+      - name: "Lint — shared"
+        run: pnpm --filter @vyaya/shared lint
+      - name: "Lint — backend (api)"
+        run: pnpm --filter @vyaya/api lint
+      - name: "Lint — frontend (web)"
+        run: pnpm --filter @vyaya/web lint
+
+      - name: "Typecheck — shared"
+        run: pnpm --filter @vyaya/shared typecheck
+      - name: "Typecheck — backend (api)"
+        run: pnpm --filter @vyaya/api typecheck
+      - name: "Typecheck — frontend (web)"
+        run: pnpm --filter @vyaya/web typecheck
+
+      - name: "Unit tests — shared"
+        run: pnpm --filter @vyaya/shared test
+      - name: "Unit tests — backend (api)"
+        run: pnpm --filter @vyaya/api test
+      - name: "Unit tests — frontend (web)"
+        run: pnpm --filter @vyaya/web test
+
+      - name: "Integration tests — backend (api)"
+        run: pnpm --filter @vyaya/api test:integration
+
+      - name: "Migration verification — backend"
+        run: pnpm verify:migrations
+
+      - name: "Build — backend (api)"
+        run: pnpm --filter @vyaya/api build
+      - name: "Build — frontend (web)"
+        run: pnpm --filter @vyaya/web build
+
+      - name: "Security scan (Trivy)"
+        uses: aquasecurity/trivy-action@master
         with:
           scan-type: fs
           severity: CRITICAL

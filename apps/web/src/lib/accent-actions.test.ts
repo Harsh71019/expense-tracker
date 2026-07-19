@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { INITIAL_ACCENT_ACTION_STATE } from "./accent";
-import { resetAccentPreference, saveCustomAccent, selectAccentPreset } from "./accent-actions";
+import { applyAccentPreference, resetAccentPreference } from "./accent-actions";
 
 const mocks = vi.hoisted(
   (): { set: ReturnType<typeof vi.fn>; delete: ReturnType<typeof vi.fn> } => ({
@@ -22,9 +22,13 @@ describe("accent actions", () => {
 
   it("stores a validated preset", async () => {
     const formData = new FormData();
-    formData.set("accent", "ocean");
+    formData.set("accentSelection", "ocean");
 
-    await selectAccentPreset(formData);
+    await expect(applyAccentPreference(INITIAL_ACCENT_ACTION_STATE, formData)).resolves.toEqual({
+      status: "success",
+      message: "Applied preset.",
+      appliedKey: "preset:ocean"
+    });
 
     expect(mocks.set).toHaveBeenCalledWith(
       "vyaya-accent",
@@ -35,9 +39,13 @@ describe("accent actions", () => {
 
   it("ignores an invalid preset boundary value", async () => {
     const formData = new FormData();
-    formData.set("accent", "red; path=/");
+    formData.set("accentSelection", "red; path=/");
 
-    await selectAccentPreset(formData);
+    await expect(applyAccentPreference(INITIAL_ACCENT_ACTION_STATE, formData)).resolves.toEqual({
+      status: "error",
+      message: "Choose a valid accent color.",
+      appliedKey: null
+    });
 
     expect(mocks.set).not.toHaveBeenCalled();
     expect(mocks.delete).not.toHaveBeenCalled();
@@ -45,11 +53,13 @@ describe("accent actions", () => {
 
   it("normalizes and stores a custom color", async () => {
     const formData = new FormData();
+    formData.set("accentSelection", "custom");
     formData.set("accentColor", "rgb(29, 78, 216)");
 
-    await expect(saveCustomAccent(INITIAL_ACCENT_ACTION_STATE, formData)).resolves.toEqual({
+    await expect(applyAccentPreference(INITIAL_ACCENT_ACTION_STATE, formData)).resolves.toEqual({
       status: "success",
-      message: "Applied custom accent #1d4ed8."
+      message: "Applied custom accent #1d4ed8.",
+      appliedKey: "custom:1d4ed8"
     });
     expect(mocks.set).toHaveBeenCalledWith(
       "vyaya-accent",
@@ -60,9 +70,10 @@ describe("accent actions", () => {
 
   it("rejects malformed custom input without changing the cookie", async () => {
     const formData = new FormData();
+    formData.set("accentSelection", "custom");
     formData.set("accentColor", "var(--expense)");
 
-    const result = await saveCustomAccent(INITIAL_ACCENT_ACTION_STATE, formData);
+    const result = await applyAccentPreference(INITIAL_ACCENT_ACTION_STATE, formData);
 
     expect(result.status).toBe("error");
     expect(mocks.set).not.toHaveBeenCalled();
@@ -71,21 +82,23 @@ describe("accent actions", () => {
 
   it("treats the original green as the default instead of a custom preference", async () => {
     const formData = new FormData();
+    formData.set("accentSelection", "custom");
     formData.set("accentColor", "#0f9d63");
 
-    await expect(saveCustomAccent(INITIAL_ACCENT_ACTION_STATE, formData)).resolves.toEqual({
+    await expect(applyAccentPreference(INITIAL_ACCENT_ACTION_STATE, formData)).resolves.toEqual({
       status: "success",
-      message: "Applied Vyaya default."
+      message: "Applied Vyaya default.",
+      appliedKey: "default"
     });
     expect(mocks.delete).toHaveBeenCalledWith("vyaya-accent");
     expect(mocks.set).not.toHaveBeenCalled();
   });
 
-  it("deletes the cookie for the default preset and reset action", async () => {
+  it("deletes the cookie for the default selection and reset action", async () => {
     const formData = new FormData();
-    formData.set("accent", "default");
+    formData.set("accentSelection", "default");
 
-    await selectAccentPreset(formData);
+    await applyAccentPreference(INITIAL_ACCENT_ACTION_STATE, formData);
     await resetAccentPreference();
 
     expect(mocks.delete).toHaveBeenCalledTimes(2);

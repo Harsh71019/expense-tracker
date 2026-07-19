@@ -22,13 +22,18 @@ test.describe("accent preference", () => {
 
     await page.goto("/more");
     await page.getByRole("button", { name: /Ocean blue/ }).click();
+    await expect(page.getByRole("button", { name: "Apply color" })).toBeEnabled();
+    await page.getByRole("button", { name: "Apply color" }).click();
+    await expect(page.getByRole("button", { name: "Applied" })).toBeDisabled();
     await expect(page.locator("html")).toHaveAttribute("data-accent", "ocean");
 
     await page.reload();
     await expect(page.locator("html")).toHaveAttribute("data-accent", "ocean");
 
     await page.getByLabel("Hex, RGB, or HSL").fill("rgb(255, 0, 0)");
-    await page.getByRole("button", { name: "Apply custom color" }).click();
+    await expect(page.getByRole("button", { name: "Apply color" })).toBeEnabled();
+    await page.getByRole("button", { name: "Apply color" }).click();
+    await expect(page.getByRole("button", { name: "Applied" })).toBeDisabled();
     await expect(page.locator("html")).toHaveAttribute("data-accent", "custom");
     await expect
       .poll(() =>
@@ -40,12 +45,14 @@ test.describe("accent preference", () => {
 
     await page.reload();
     await expect(page.getByLabel("Hex, RGB, or HSL")).toHaveValue("#ff0000");
+    await expect(page.getByRole("button", { name: "Applied" })).toBeDisabled();
 
     await page.getByRole("button", { name: /Vyaya green/ }).click();
-    await expect.poll(() => page.locator("html").getAttribute("data-accent")).toBeNull();
     await expect(page.getByLabel("Hex, RGB, or HSL")).toHaveValue("#0f9d63");
+    await expect(page.getByRole("button", { name: "Apply color" })).toBeEnabled();
 
-    await page.getByRole("button", { name: "Apply custom color" }).click();
+    await page.getByRole("button", { name: "Apply color" }).click();
+    await expect(page.getByRole("button", { name: "Applied" })).toBeDisabled();
     await expect.poll(() => page.locator("html").getAttribute("data-accent")).toBeNull();
   });
 });

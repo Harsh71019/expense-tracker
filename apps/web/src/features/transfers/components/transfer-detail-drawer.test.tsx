@@ -15,7 +15,7 @@ vi.mock("../hooks/use-transfers", () => ({
 
 const accounts = [
   {
-    id: "507f1f77bcf86cd799439001",
+    id: "3fa85f64-5717-4562-b3fc-2c963f66be01",
     userId: "user-1",
     name: "HDFC Savings",
     type: "bank" as const,
@@ -27,7 +27,7 @@ const accounts = [
     updatedAt: new Date()
   },
   {
-    id: "507f1f77bcf86cd799439002",
+    id: "3fa85f64-5717-4562-b3fc-2c963f66be02",
     userId: "user-1",
     name: "Zerodha Stocks",
     type: "investment" as const,
@@ -41,7 +41,7 @@ const accounts = [
 ];
 
 const from = {
-  id: "507f1f77bcf86cd799439011",
+  id: "3fa85f64-5717-4562-b3fc-2c963f66beef",
   userId: "user-1",
   transferGroupId: "grp-1",
   accountId: accounts[0]?.id ?? "",
@@ -59,7 +59,7 @@ const from = {
 
 const to = {
   ...from,
-  id: "507f1f77bcf86cd799439012",
+  id: "3fa85f64-5717-4562-b3fc-2c963f66beff",
   accountId: accounts[1]?.id ?? "",
   type: "income" as const
 };

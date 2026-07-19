@@ -6,9 +6,9 @@ import { describe, expect, it, vi } from "vitest";
 import { RevertConfirmDialog } from "./revert-confirm-dialog";
 
 const batch: ImportBatch = {
-  id: "507f1f77bcf86cd799439021",
+  id: "3fa85f64-5717-4562-b3fc-2c963f66be21",
   userId: "u1",
-  accountId: "507f1f77bcf86cd799439011",
+  accountId: "3fa85f64-5717-4562-b3fc-2c963f66beef",
   filename: "HDFC-Statement-May.csv",
   fileHash: "hash",
   mapping: {

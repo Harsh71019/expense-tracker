@@ -6,16 +6,16 @@ import { describe, expect, it, vi } from "vitest";
 import { RuleRow } from "./rule-row";
 
 const rule: CategoryRule = {
-  id: "507f1f77bcf86cd799439021",
+  id: "3fa85f64-5717-4562-b3fc-2c963f66be21",
   userId: "u1",
   pattern: "swiggy",
-  categoryId: "507f1f77bcf86cd799439011",
+  categoryId: "3fa85f64-5717-4562-b3fc-2c963f66beef",
   createdAt: new Date("2026-05-02T12:10:00.000Z"),
   updatedAt: new Date("2026-05-02T12:10:00.000Z")
 };
 
 const category: Category = {
-  id: "507f1f77bcf86cd799439011",
+  id: "3fa85f64-5717-4562-b3fc-2c963f66beef",
   userId: "u1",
   name: "Restaurants",
   kind: "expense",

@@ -6,10 +6,20 @@ import { CreateTxnSheet } from "./create-txn-sheet";
 
 const mocks = vi.hoisted(() => ({
   mutateAsync: vi.fn(),
-  accounts: [{ id: "507f1f77bcf86cd799439011", name: "Cash", isArchived: false }],
+  accounts: [{ id: "3fa85f64-5717-4562-b3fc-2c963f66beef", name: "Cash", isArchived: false }],
   categories: [
-    { id: "507f1f77bcf86cd799439012", name: "Groceries", kind: "expense", isArchived: false },
-    { id: "507f1f77bcf86cd799439013", name: "Salary", kind: "income", isArchived: false }
+    {
+      id: "3fa85f64-5717-4562-b3fc-2c963f66beff",
+      name: "Groceries",
+      kind: "expense",
+      isArchived: false
+    },
+    {
+      id: "3fa85f64-5717-4562-b3fc-2c963f66bef0",
+      name: "Salary",
+      kind: "income",
+      isArchived: false
+    }
   ],
   pending: false
 }));

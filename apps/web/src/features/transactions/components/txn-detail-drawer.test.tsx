@@ -8,10 +8,10 @@ const mocks = vi.hoisted(() => ({
   mutateAsync: vi.fn(),
   reverseMutate: vi.fn(),
   reversePending: false,
-  accounts: [{ id: "507f1f77bcf86cd799439012", name: "HDFC Bank" }],
+  accounts: [{ id: "3fa85f64-5717-4562-b3fc-2c963f66beff", name: "HDFC Bank" }],
   categories: [
-    { id: "507f1f77bcf86cd799439021", name: "Groceries", isArchived: false },
-    { id: "507f1f77bcf86cd799439022", name: "Dining", isArchived: false }
+    { id: "3fa85f64-5717-4562-b3fc-2c963f66be21", name: "Groceries", isArchived: false },
+    { id: "3fa85f64-5717-4562-b3fc-2c963f66be22", name: "Dining", isArchived: false }
   ]
 }));
 
@@ -27,10 +27,10 @@ vi.mock("../hooks/use-txn", () => ({
 }));
 
 const base = {
-  id: "507f1f77bcf86cd799439011",
+  id: "3fa85f64-5717-4562-b3fc-2c963f66beef",
   userId: "user-1",
-  accountId: "507f1f77bcf86cd799439012",
-  categoryId: "507f1f77bcf86cd799439021",
+  accountId: "3fa85f64-5717-4562-b3fc-2c963f66beff",
+  categoryId: "3fa85f64-5717-4562-b3fc-2c963f66be21",
   type: "expense" as const,
   amountMinor: 34_200,
   occurredAt: new Date("2026-07-13T08:00:00.000Z"),
@@ -65,7 +65,7 @@ describe("TxnDetailDrawer", () => {
 
     expect(mocks.mutateAsync).toHaveBeenCalledWith({
       transactionId: base.id,
-      patch: { categoryId: "507f1f77bcf86cd799439022" }
+      patch: { categoryId: "3fa85f64-5717-4562-b3fc-2c963f66be22" }
     });
     expect(onClose).toHaveBeenCalled();
   });

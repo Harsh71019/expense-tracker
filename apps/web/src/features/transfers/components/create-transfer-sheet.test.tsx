@@ -7,9 +7,9 @@ import { CreateTransferSheet } from "./create-transfer-sheet";
 const mocks = vi.hoisted(() => ({
   mutateAsync: vi.fn(),
   accounts: [
-    { id: "507f1f77bcf86cd799439001", name: "HDFC Savings", isArchived: false },
-    { id: "507f1f77bcf86cd799439002", name: "Zerodha Stocks", isArchived: false },
-    { id: "507f1f77bcf86cd799439003", name: "Cash Wallet", isArchived: false }
+    { id: "3fa85f64-5717-4562-b3fc-2c963f66be01", name: "HDFC Savings", isArchived: false },
+    { id: "3fa85f64-5717-4562-b3fc-2c963f66be02", name: "Zerodha Stocks", isArchived: false },
+    { id: "3fa85f64-5717-4562-b3fc-2c963f66be03", name: "Cash Wallet", isArchived: false }
   ],
   pending: false
 }));

@@ -6,7 +6,7 @@ import { describe, expect, it, vi } from "vitest";
 import { CreateRuleRow } from "./create-rule-row";
 
 const groceries: Category = {
-  id: "507f1f77bcf86cd799439011",
+  id: "3fa85f64-5717-4562-b3fc-2c963f66beef",
   userId: "u1",
   name: "Groceries",
   kind: "expense",

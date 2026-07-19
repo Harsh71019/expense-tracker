@@ -7,7 +7,7 @@ import { CategoryCard } from "./category-card";
 
 function category(overrides: Partial<Category> = {}): Category {
   return {
-    id: "507f1f77bcf86cd799439011",
+    id: "3fa85f64-5717-4562-b3fc-2c963f66beef",
     userId: "u1",
     name: "Food & Dining",
     kind: "expense",
@@ -37,7 +37,7 @@ describe("CategoryCard", () => {
     const onArchive = vi.fn();
     const parent = category();
     const child = category({
-      id: "507f1f77bcf86cd799439012",
+      id: "3fa85f64-5717-4562-b3fc-2c963f66beff",
       name: "Groceries",
       parentId: parent.id
     });
@@ -51,8 +51,16 @@ describe("CategoryCard", () => {
   it("pluralises the subcategory count", () => {
     const parent = category();
     const children = [
-      category({ id: "507f1f77bcf86cd799439012", name: "Groceries", parentId: parent.id }),
-      category({ id: "507f1f77bcf86cd799439013", name: "Restaurants", parentId: parent.id })
+      category({
+        id: "3fa85f64-5717-4562-b3fc-2c963f66beff",
+        name: "Groceries",
+        parentId: parent.id
+      }),
+      category({
+        id: "3fa85f64-5717-4562-b3fc-2c963f66bef0",
+        name: "Restaurants",
+        parentId: parent.id
+      })
     ];
     render(<CategoryCard parent={parent} subcategories={children} onArchive={vi.fn()} />);
 

@@ -34,12 +34,12 @@ function makeAccount(
 }
 
 const accounts = [
-  makeAccount("507f1f77bcf86cd799439001", "HDFC Bank"),
-  makeAccount("507f1f77bcf86cd799439002", "Cash Wallet")
+  makeAccount("3fa85f64-5717-4562-b3fc-2c963f66be01", "HDFC Bank"),
+  makeAccount("3fa85f64-5717-4562-b3fc-2c963f66be02", "Cash Wallet")
 ];
 
 const from = {
-  id: "507f1f77bcf86cd799439011",
+  id: "3fa85f64-5717-4562-b3fc-2c963f66beef",
   userId: "user-1",
   transferGroupId: "grp-1",
   accountId: accounts[0]?.id ?? "",
@@ -57,7 +57,7 @@ const from = {
 
 const to = {
   ...from,
-  id: "507f1f77bcf86cd799439012",
+  id: "3fa85f64-5717-4562-b3fc-2c963f66beff",
   accountId: accounts[1]?.id ?? "",
   type: "income" as const
 };

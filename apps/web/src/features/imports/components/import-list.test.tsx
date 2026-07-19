@@ -6,7 +6,7 @@ import { describe, expect, it, vi } from "vitest";
 import { ImportList } from "./import-list";
 
 const account: Account = {
-  id: "507f1f77bcf86cd799439011",
+  id: "3fa85f64-5717-4562-b3fc-2c963f66beef",
   userId: "u1",
   name: "HDFC Savings",
   type: "bank",
@@ -20,7 +20,7 @@ const account: Account = {
 
 function batch(overrides: Partial<ImportBatch> = {}): ImportBatch {
   return {
-    id: "507f1f77bcf86cd799439021",
+    id: "3fa85f64-5717-4562-b3fc-2c963f66be21",
     userId: "u1",
     accountId: account.id,
     filename: "HDFC-Statement-Jun.csv",

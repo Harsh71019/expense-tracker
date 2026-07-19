@@ -29,15 +29,18 @@ Add an **Appearance** section to the authenticated `/more` page. It should conta
 
 - A labeled **Accent color** group with a small set of named color swatches.
 - A visible selected state using a check mark and border, not color alone.
-- Accessible names such as “Vyaya green” and “Ocean blue”; raw hex values are not user-facing labels.
+- Accessible preset names such as “Vyaya green” and “Ocean blue”.
+- A **Custom color** option with a native color picker and a text field that accepts hex, RGB, or HSL input.
+- A preview that shows the normalized color and its light/dark variants before it is applied.
+- An inline validation or contrast message when the submitted value cannot be used safely.
 - A **Reset to Vyaya default** action. It should be disabled or omitted while the default is already selected.
 - Immediate application after selection. A full navigation refresh caused by the existing server-action pattern is acceptable for the first implementation.
 
 The default option must be named **Vyaya green** and shown first. Selecting it and using the reset action have the same result: remove the accent-preference cookie and let the application fall back to the built-in colors.
 
-## Initial palette
+## Preset palette
 
-Only curated presets are supported. Arbitrary color input is out of scope because it makes contrast, focus visibility, and dark-mode behavior unpredictable.
+Curated presets provide fast, reviewed choices. Custom input supplements these presets; it does not replace them.
 
 | ID        | Label         | Theme | Accent    | Strong    | Foreground | Glow                        |
 | --------- | ------------- | ----- | --------- | --------- | ---------- | --------------------------- |
@@ -56,22 +59,52 @@ The original Vyaya green accent and strong hues remain unchanged. The default li
 
 Red is intentionally not offered because it is already the expense/error color. Green continues to represent income even when another accent is selected.
 
+## Custom color input
+
+The custom option supports these input forms:
+
+- Native `<input type="color">`, which submits `#rrggbb`.
+- Hex text: `#rgb` or `#rrggbb`.
+- RGB text: `rgb(r, g, b)` with integer channels from `0` through `255`.
+- HSL text: `hsl(h, s%, l%)`, with hue normalized into `0` through `359` and saturation/lightness from `0%` through `100%`.
+
+Input is parsed by owned, pure utilities and normalized to lowercase `#rrggbb` before persistence. Do not add a color library for this small grammar. Alpha values, eight/four-digit hex, CSS color names, `var()`, `url()`, gradients, and arbitrary CSS expressions are rejected.
+
+The user chooses one base color. The application deterministically derives theme-safe tokens from it:
+
+1. Convert the normalized RGB color to HSL.
+2. Preserve hue and saturation where possible, but adjust lightness until the accent has at least `3:1` contrast against the theme surface.
+3. Select either `#ffffff` or `#04140d` as `accent-foreground`, requiring at least `4.5:1` contrast.
+4. Derive `accent-strong` by moving lightness farther from the active theme surface; it must pass the same text and boundary checks.
+5. Derive `accent-glow` from the final theme accent at `0.15` alpha.
+6. Produce and preview separate light and dark token sets from the same saved base color.
+
+If a requested value needs adjustment, the UI should say that Vyaya tuned it for readable contrast and show the applied result. If the algorithm cannot produce a compliant result, reject the submission and keep the previous accent. The conversion and adjustment functions must be deterministic, side-effect-free, and covered with boundary tests.
+
+A custom red is allowed because the user explicitly requested a free-form color, but the UI should warn that it may resemble expense/error states. Ledger direction and errors must continue to use labels, signs, icons, and other non-color indicators.
+
 ## Preference and rendering model
 
-Use a dedicated cookie named `vyaya-accent` containing only a known preset ID. Do not store raw CSS, hex values, or an unchecked user string.
+Use a dedicated cookie named `vyaya-accent` containing a validated preset or normalized custom value:
+
+- Preset: `preset:ocean`.
+- Custom: `custom:1d4ed8` (canonical six-digit hex without `#`).
+- Default: no cookie.
 
 - Cookie attributes: `path=/`, `maxAge=31536000`, `sameSite=lax`.
 - Missing, malformed, or unsupported values resolve to `default`.
 - Reset deletes the cookie instead of writing `default`, preserving the existing CSS fallback as the source of truth.
-- The root layout reads both theme and accent preferences and renders `data-accent` only for a non-default valid selection.
-- CSS selectors combine `data-theme` and `data-accent` so every preset has explicit light and dark values.
+- The root layout reads both theme and accent preferences before rendering.
+- A preset renders its known `data-accent` value; CSS selectors combine `data-theme` and `data-accent` so every preset has explicit light and dark values.
+- A custom value is parsed again on the server and converted into separate light and dark token sets. The root receives `data-accent="custom"` plus typed, namespaced properties such as `--custom-accent-light` and `--custom-accent-dark`; never interpolate the original cookie or form string into HTML or CSS.
+- `globals.css` maps the light or dark custom-property set onto the four effective accent tokens using the existing system media query and explicit `data-theme` overrides. This preserves system-theme behavior before hydration.
 - System light/dark preference still works when no explicit theme cookie exists.
 - The preference is browser-local, matching the current theme behavior. Cross-device account syncing is a separate backend feature and is not part of this work.
 
 Suggested type boundary:
 
 ```ts
-export const ACCENTS = {
+export const ACCENT_PRESETS = {
   default: "default",
   ocean: "ocean",
   indigo: "indigo",
@@ -79,10 +112,15 @@ export const ACCENTS = {
   amber: "amber"
 } as const;
 
-export type Accent = (typeof ACCENTS)[keyof typeof ACCENTS];
+export type AccentPreset = (typeof ACCENT_PRESETS)[keyof typeof ACCENT_PRESETS];
+
+export type AccentPreference =
+  | { kind: "default" }
+  | { kind: "preset"; preset: Exclude<AccentPreset, "default"> }
+  | { kind: "custom"; color: `#${string}` };
 ```
 
-Cookie values must be narrowed with an `isAccent()` runtime check before use. This preference does not require an API DTO or a shared-package schema because it never crosses the Next.js frontend boundary.
+The template-literal type does not validate a color by itself. Form and cookie values remain `unknown` until the strict parser returns an `AccentPreference`; no cast may substitute for that runtime check. A typed interface extending React's `CSSProperties` should model the eight namespaced light/dark custom properties without an assertion. This preference does not require an API DTO or a shared-package schema because it never crosses the Next.js frontend boundary.
 
 ## Token behavior
 
@@ -115,21 +153,26 @@ apps/web/src/
 ├─ app/(app)/more/page.tsx
 ├─ components/ui/accent-picker/
 │  ├─ accent-picker.tsx
+│  ├─ custom-accent-input.tsx
 │  ├─ index.ts
 │  └─ __tests__/accent-picker.test.tsx
 └─ lib/
    ├─ accent.ts
+   ├─ accent-color.ts
+   ├─ accent-color.test.ts
    ├─ accent-actions.ts
    └─ accent-server.ts
 ```
 
-The route remains a server component. The picker should use server actions, just like the existing theme toggle, and should not introduce a new client state library or handwritten API call.
+The route remains a server component. The form should use server actions, just like the existing theme toggle. A small client leaf may synchronize the native picker, text field, and preview, but the server action is authoritative and repeats all parsing and validation. Do not introduce a new state library, dependency, or handwritten API call. Without JavaScript, the text field and submit action must still work; only live preview is enhanced.
 
 ## Accessibility requirements
 
 - Text and icons on a solid accent background meet WCAG AA contrast: at least `4.5:1` for normal text and `3:1` for large text.
 - Focus indicators and component boundaries meet at least `3:1` contrast against adjacent colors in both themes.
 - Each swatch is a real button or radio control with an accessible name and selected state.
+- The native picker has a persistent text label; the normalized text value is available to screen readers.
+- Parsing and contrast errors are associated with the custom input and announced through an `aria-live="polite"` region.
 - Selection is indicated by text/check mark/border in addition to hue.
 - The control is fully keyboard operable and retains a visible focus ring.
 - Accent changes must not be the only way any ledger state or money direction is communicated.
@@ -138,57 +181,69 @@ The route remains a server component. The picker should use server actions, just
 ## Error and fallback behavior
 
 - Unknown cookie value: render the default and allow the next selection/reset to repair the cookie.
+- Malformed, out-of-range, alpha-bearing, or CSS-like custom input: reject it with a field-specific validation message and retain the current preference.
+- Valid custom input that needs contrast adjustment: show the adjusted preview and persist the original normalized base so both theme variants can be re-derived from one source.
 - Server action failure: keep the previous selection and expose the failure through the form/action error pattern used by the frontend; do not optimistically claim success.
 - CSS missing for a new preset: the base green variables remain the safe fallback.
+- Custom token generation failure: omit the custom properties and fall back to the original Vyaya green.
 - JavaScript disabled: selection still works through the server-action form submission.
 
 ## Tests
 
 ### Unit and component tests
 
-- `isAccent()` accepts every supported ID and rejects unknown/empty values.
+- The preset guard accepts every supported ID and rejects unknown/empty values.
+- Hex, RGB, and HSL parsers accept the documented grammar, normalize equivalent values to the same lowercase six-digit hex, and reject alpha, non-finite, out-of-range, and CSS-expression input.
+- RGB/HSL conversion covers hue wraparound, achromatic colors, channel boundaries, and round-trip rounding.
+- Custom token derivation is deterministic and meets the surface, foreground, and strong-state contrast thresholds in both themes, including black, white, and mid-luminance inputs.
+- Cookie serialization and parsing round-trip every preset and valid custom value without trusting unchecked text.
 - Server preference loading returns `null` or `default` for missing and invalid cookies, following the final helper contract.
-- Selecting a preset writes the expected cookie attributes.
+- Selecting a preset or custom color writes the expected normalized cookie and attributes.
 - Reset deletes the cookie.
-- The picker exposes all preset names, marks the current selection, and provides the reset behavior.
-- The root layout applies no `data-accent` attribute for the default and the correct attribute for a valid custom preference.
+- The picker exposes all preset names and custom controls, marks the current selection, reports validation, and provides the reset behavior.
+- The root layout applies no override for the default, the correct `data-accent` for a preset, and only validated derived custom properties for a custom preference.
 - Existing light/dark theme tests continue to pass for every accent state.
 
 ### End-to-end checks
 
 - Choose a non-default accent, navigate to another route, and confirm it persists.
+- Submit equivalent custom colors as hex, RGB, HSL, and through the native picker; confirm each resolves to the same saved color.
+- Enter malformed and injection-shaped values and confirm they are rejected without changing the current accent.
+- Choose very light, dark, and mid-luminance custom colors and confirm the preview and applied variants meet contrast requirements.
 - Reload directly into a route and confirm the selected accent is present on first paint.
-- Switch between light and dark mode and confirm both variants of the selected preset apply.
+- Switch between light and dark mode and confirm both variants of the selected preset or custom color apply.
 - Reset and confirm the original light and dark Vyaya green colors return.
 - Inject an invalid cookie and confirm the app renders safely with the default.
 - Run automated accessibility checks for the appearance controls in both themes.
 
 ## Implementation sequence
 
-1. Define the accent IDs, labels, runtime guard, cookie constant, and cookie read/write/reset helpers.
-2. Add explicit CSS token overrides for every preset in light, dark, and system-theme paths.
-3. Read the accent preference in the root layout and emit the validated `data-accent` attribute.
-4. Add the accessible picker to `/more` and export it through the UI component barrel.
-5. Decouple semantic income color from the selected accent while preserving the current default appearance.
-6. Add unit, layout, component, and end-to-end coverage.
-7. Run `pnpm lint && pnpm typecheck && pnpm test && pnpm test:integration`; include `pnpm test:e2e` because the authenticated `/more` route changes.
+1. Define the preset IDs, discriminated preference type, strict color parsers, normalization, contrast utilities, cookie constant, and cookie read/write/reset helpers.
+2. Test hex/RGB/HSL boundary handling and deterministic light/dark custom-token generation before wiring UI.
+3. Add explicit CSS token overrides for every preset in light, dark, and system-theme paths.
+4. Read the accent preference in the root layout and emit either the validated preset attribute or typed, derived custom properties.
+5. Add the accessible preset and custom picker to `/more`, including native picker, text input, previews, validation, and reset; export it through the UI component barrel.
+6. Decouple semantic income color from the selected accent while preserving the current default appearance.
+7. Add layout, component, security-fallback, accessibility, and end-to-end coverage.
+8. Run `pnpm lint && pnpm typecheck && pnpm test && pnpm test:integration`; include `pnpm test:e2e` because the authenticated `/more` route changes.
 
 ## Acceptance criteria
 
 - Vyaya green remains the appearance for users who have never chosen an accent.
-- A user can select any supported preset from `/more` and see it applied throughout the frontend.
+- A user can select a preset or provide a custom accent through a native picker, hex, RGB, or HSL input on `/more` and see it applied throughout the frontend.
+- Equivalent color formats normalize to the same saved six-digit hex value.
+- Custom input always produces contrast-compliant, deterministic light and dark variants or is rejected without changing the current preference.
 - The selection persists across navigation and reloads without a first-paint color flash.
 - A user can restore the original accent colors with one reset action.
-- Light mode, dark mode, and system theme each render a deliberate variant of every preset.
+- Light mode, dark mode, and system theme each render a deliberate variant of every preset and custom color.
 - Income, expense, reversal, error, category, and chart colors retain their existing semantics.
-- Invalid preference data always falls back to the original accent safely.
+- Invalid preference or custom color data always falls back to the original accent safely and cannot inject CSS or markup.
 - All supported foreground/background combinations meet the documented contrast requirements.
 - No backend endpoint, database field, migration, dependency, or generated API-client change is introduced.
 
 ## Non-goals
 
-- Free-form hex, RGB, HSL, or color-picker input.
-- User-created palettes or separate accent choices per theme.
+- Saving multiple named custom palettes or separate custom choices per theme.
 - Cross-device/account-synced appearance preferences.
 - Changing ledger semantics, category colors, chart palettes, or PWA icons.
 - Replacing the existing light/dark theme control.

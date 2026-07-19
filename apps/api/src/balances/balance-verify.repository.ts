@@ -27,20 +27,23 @@ export class BalanceVerifyRepository {
    * "posted" filter (those read *current* state, this reconstructs *history*).
    */
   async sumDeltasByAccount(): Promise<Map<string, number>> {
-    // `::int`, not `::bigint` -- node-postgres returns bigint columns as
-    // strings (JS numbers can't safely hold the full bigint range), which
-    // silently turned `openingBalanceMinor + deltasByAccount.get(...)` into
-    // string concatenation (e.g. "10000" + "-2000" -> "10000-2000") and
-    // flagged every account with any transaction as drifted. Same `::int`
-    // convention as MonthlyRollupRepository -- personal-finance amounts
-    // never approach the int4 ceiling (~21.4M INR in paise).
+    // `::bigint`, not `::int` -- an `::int` SUM aggregate overflows past
+    // ~2.1B paise (~21.4M INR) lifetime net on an account, well within the
+    // Number.MAX_SAFE_INTEGER range amountMinor is declared valid up to
+    // (packages/shared/src/account.ts), even though no single transaction
+    // approaches it. node-postgres returns bigint/::bigint-cast columns as
+    // JS strings (JS numbers can't safely hold the full bigint range) --
+    // Number() the result explicitly below rather than letting
+    // `openingBalanceMinor + deltasByAccount.get(...)` silently do string
+    // concatenation (e.g. "10000" + "-2000" -> "10000-2000"), which is what
+    // an un-widened `::int` avoided only by capping the range too low.
     const rows = await this.db
       .select({
         accountId: transactions.accountId,
-        netMinor: sql<number>`coalesce(sum(case when ${transactions.type} = 'income' then ${transactions.amountMinor} else -${transactions.amountMinor} end), 0)::int`
+        netMinor: sql<string>`coalesce(sum(case when ${transactions.type} = 'income' then ${transactions.amountMinor} else -${transactions.amountMinor} end), 0)::bigint`
       })
       .from(transactions)
       .groupBy(transactions.accountId);
-    return new Map(rows.map((row) => [row.accountId, row.netMinor]));
+    return new Map(rows.map((row) => [row.accountId, Number(row.netMinor)]));
   }
 }

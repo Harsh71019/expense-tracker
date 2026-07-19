@@ -34,11 +34,20 @@ export class MonthlyRollupRepository {
       sql`${istMonth} = ${month}`
     );
 
+    // `::bigint`, not `::int` -- amountMinor is declared valid up to
+    // Number.MAX_SAFE_INTEGER (packages/shared/src/transaction.ts), and a
+    // SUM aggregate over many rows can exceed int4's ~2.1B ceiling (~21.4M
+    // INR in paise) well within that declared range, even though no single
+    // row does. node-postgres returns bigint/::bigint-cast columns as JS
+    // strings (see BalanceVerifyRepository.sumDeltasByAccount) -- Number()
+    // each aggregate explicitly below; these sums stay far under
+    // Number.MAX_SAFE_INTEGER at personal-finance scale, so the conversion
+    // is lossless.
     const byCategoryRows = await this.db
       .select({
         categoryId: transactions.categoryId,
-        spentMinor: sql<number>`coalesce(sum(case when ${transactions.type} = 'expense' then ${transactions.amountMinor} else 0 end), 0)::int`,
-        incomeMinor: sql<number>`coalesce(sum(case when ${transactions.type} = 'income' then ${transactions.amountMinor} else 0 end), 0)::int`,
+        spentMinor: sql<string>`coalesce(sum(case when ${transactions.type} = 'expense' then ${transactions.amountMinor} else 0 end), 0)::bigint`,
+        incomeMinor: sql<string>`coalesce(sum(case when ${transactions.type} = 'income' then ${transactions.amountMinor} else 0 end), 0)::bigint`,
         txnCount: sql<number>`count(*)::int`
       })
       .from(transactions)
@@ -48,7 +57,7 @@ export class MonthlyRollupRepository {
     const byAccountRows = await this.db
       .select({
         accountId: transactions.accountId,
-        netMinor: sql<number>`coalesce(sum(case when ${transactions.type} = 'income' then ${transactions.amountMinor} else -${transactions.amountMinor} end), 0)::int`
+        netMinor: sql<string>`coalesce(sum(case when ${transactions.type} = 'income' then ${transactions.amountMinor} else -${transactions.amountMinor} end), 0)::bigint`
       })
       .from(transactions)
       .where(baseWhere)
@@ -56,8 +65,8 @@ export class MonthlyRollupRepository {
 
     const [totalsRow] = await this.db
       .select({
-        totalExpenseMinor: sql<number>`coalesce(sum(case when ${transactions.type} = 'expense' then ${transactions.amountMinor} else 0 end), 0)::int`,
-        totalIncomeMinor: sql<number>`coalesce(sum(case when ${transactions.type} = 'income' then ${transactions.amountMinor} else 0 end), 0)::int`
+        totalExpenseMinor: sql<string>`coalesce(sum(case when ${transactions.type} = 'expense' then ${transactions.amountMinor} else 0 end), 0)::bigint`,
+        totalIncomeMinor: sql<string>`coalesce(sum(case when ${transactions.type} = 'income' then ${transactions.amountMinor} else 0 end), 0)::bigint`
       })
       .from(transactions)
       .where(baseWhere);
@@ -67,13 +76,16 @@ export class MonthlyRollupRepository {
       month,
       byCategory: byCategoryRows.map((row) => ({
         ...(row.categoryId === null ? {} : { categoryId: row.categoryId }),
-        spentMinor: row.spentMinor,
-        incomeMinor: row.incomeMinor,
+        spentMinor: Number(row.spentMinor),
+        incomeMinor: Number(row.incomeMinor),
         txnCount: row.txnCount
       })),
-      byAccount: byAccountRows.map((row) => ({ accountId: row.accountId, netMinor: row.netMinor })),
-      totalExpenseMinor: totalsRow?.totalExpenseMinor ?? 0,
-      totalIncomeMinor: totalsRow?.totalIncomeMinor ?? 0,
+      byAccount: byAccountRows.map((row) => ({
+        accountId: row.accountId,
+        netMinor: Number(row.netMinor)
+      })),
+      totalExpenseMinor: Number(totalsRow?.totalExpenseMinor ?? 0),
+      totalIncomeMinor: Number(totalsRow?.totalIncomeMinor ?? 0),
       computedAt: new Date()
     };
 

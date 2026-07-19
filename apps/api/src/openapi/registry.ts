@@ -58,7 +58,11 @@ import {
   UpdateStagedRowSchema,
   UserProfileSchema,
   MonthSchema,
-  MonthlyRollupSchema
+  MonthlyRollupSchema,
+  CreateRecurringRuleSchema,
+  RecurringRuleIdSchema,
+  RecurringRuleSchema,
+  UpdateRecurringRuleSchema
 } from "@vyaya/shared";
 import { z } from "zod";
 
@@ -82,6 +86,7 @@ const StagedRow = StagedRowSchema.meta({ id: "StagedRow" });
 const StagedRowPage = StagedRowPageSchema.meta({ id: "StagedRowPage" });
 const UserProfile = UserProfileSchema.meta({ id: "UserProfile" });
 const MonthlyRollup = MonthlyRollupSchema.meta({ id: "MonthlyRollup" });
+const RecurringRule = RecurringRuleSchema.meta({ id: "RecurringRule" });
 
 const accountId = z.object({ accountId: AccountIdSchema });
 const categoryId = z.object({ categoryId: CategoryIdSchema });
@@ -95,6 +100,7 @@ const importBatchAndRowId = z.object({
   stagedRowId: StagedRowIdSchema
 });
 const month = z.object({ month: MonthSchema });
+const recurringRuleId = z.object({ ruleId: RecurringRuleIdSchema });
 const json = (schema: z.ZodType): { content: { "application/json": { schema: z.ZodType } } } => ({
   content: { "application/json": { schema } }
 });
@@ -517,6 +523,51 @@ registry.registerPath({
   responses: {
     200: { description: "Current user profile", ...json(UserProfile) },
     404: { description: "Profile not found", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/v1/recurring",
+  security: secured,
+  responses: {
+    200: { description: "Recurring rules", ...json(z.array(RecurringRule)) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "post",
+  path: "/v1/recurring",
+  security: secured,
+  request: { body: json(CreateRecurringRuleSchema), headers: idempotencyKeyHeaders },
+  responses: {
+    200: {
+      description: "Idempotent replay of the created recurring rule",
+      headers: replayedHeaders,
+      ...json(RecurringRule)
+    },
+    201: { description: "Created recurring rule", ...json(RecurringRule) },
+    404: { description: "Account or category not found", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "patch",
+  path: "/v1/recurring/{ruleId}",
+  security: secured,
+  request: {
+    params: recurringRuleId,
+    body: json(UpdateRecurringRuleSchema),
+    headers: idempotencyKeyHeaders
+  },
+  responses: {
+    200: {
+      description: "Updated recurring rule, or idempotent replay",
+      headers: optionalReplayHeaders,
+      ...json(RecurringRule)
+    },
+    404: { description: "Recurring rule, account, or category not found", ...json(ProblemDetails) },
     ...problemResponses
   }
 });

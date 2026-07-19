@@ -24,6 +24,8 @@ describe("OpenApiController", () => {
       expect(paths).toContain("/v1/category-rules/{ruleId}");
       expect(paths).toContain("/v1/export/csv");
       expect(paths).toContain("/v1/profile");
+      expect(paths).toContain("/v1/recurring");
+      expect(paths).toContain("/v1/recurring/{ruleId}");
       expect(paths).toContain("/v1/imports/accounts/{accountId}/mapping");
     });
 
@@ -40,7 +42,9 @@ describe("OpenApiController", () => {
         spec.paths?.["/v1/assets"]?.post,
         spec.paths?.["/v1/assets/{assetId}/close"]?.post,
         spec.paths?.["/v1/assets/{assetId}/valuations"]?.post,
-        spec.paths?.["/v1/transactions/{transactionId}"]?.patch
+        spec.paths?.["/v1/transactions/{transactionId}"]?.patch,
+        spec.paths?.["/v1/recurring"]?.post,
+        spec.paths?.["/v1/recurring/{ruleId}"]?.patch
       ];
 
       for (const operation of mutationOperations) {

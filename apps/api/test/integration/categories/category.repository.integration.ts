@@ -40,4 +40,23 @@ describe("CategoryRepository tenancy and archive behavior", () => {
     await categories.archive("user-a", cat.id);
     expect(await categories.exists("user-a", cat.id)).toBe(false);
   });
+
+  it("rejects a second root category with the same name for the same user", async () => {
+    await categories.create("user-a", { name: "Utilities", kind: "expense" });
+    await expect(
+      categories.create("user-a", { name: "Utilities", kind: "expense" })
+    ).rejects.toThrow();
+  });
+
+  it("allows the same category name under two different parents", async () => {
+    const parentA = await categories.create("user-a", { name: "Home", kind: "expense" });
+    const parentB = await categories.create("user-a", { name: "Work", kind: "expense" });
+
+    await expect(
+      categories.create("user-a", { name: "Supplies", kind: "expense", parentId: parentA.id })
+    ).resolves.toMatchObject({ name: "Supplies", parentId: parentA.id });
+    await expect(
+      categories.create("user-a", { name: "Supplies", kind: "expense", parentId: parentB.id })
+    ).resolves.toMatchObject({ name: "Supplies", parentId: parentB.id });
+  });
 });

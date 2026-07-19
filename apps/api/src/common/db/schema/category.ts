@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import { boolean, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
 import { user } from "../auth-schema.js";
@@ -20,10 +21,15 @@ export const categories = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull()
   },
   (table) => [
-    uniqueIndex("categories_user_id_parent_id_name_unique").on(
-      table.userId,
-      table.parentId,
-      table.name
-    )
+    // A plain unique index on (userId, parentId, name) treats every NULL parentId as
+    // distinct, so it never rejects two root categories (parentId IS NULL) with the same
+    // name -- split into two partial indexes: one for categories under a real parent, one
+    // for root categories, each enforcing uniqueness within its own scope.
+    uniqueIndex("categories_user_id_parent_id_name_unique")
+      .on(table.userId, table.parentId, table.name)
+      .where(sql`${table.parentId} IS NOT NULL`),
+    uniqueIndex("categories_user_id_name_root_unique")
+      .on(table.userId, table.name)
+      .where(sql`${table.parentId} IS NULL`)
   ]
 );

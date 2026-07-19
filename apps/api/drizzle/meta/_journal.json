@@ -29,6 +29,13 @@
       "when": 1784436252798,
       "tag": "0003_transaction_ledger_fks",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1784441890959,
+      "tag": "0004_category_root_uniqueness",
+      "breakpoints": true
     }
   ]
 }

@@ -9,6 +9,8 @@ export type LogContext = Readonly<{
   batchId?: string;
   txnId?: string;
   traceId?: string;
+  apiKeyId?: string;
+  apiKeyPrefix?: string;
 }>;
 
 @Injectable()

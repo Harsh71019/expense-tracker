@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  ::selection { background: rgba(52,211,153,0.3); }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes checkPop { 0% { transform: scale(0.4); opacity: 0; } 60% { transform: scale(1.12); } 100% { transform: scale(1); opacity: 1; } }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</helmet>
+<div style="{{ pageStyle }}">
+  <div style="max-width: 620px; margin: 0 auto; padding: 56px 32px 96px;">
+
+    <header style="margin-bottom: 30px;">
+      <div style="{{ eyebrowStyle }}">LEDGER · EXPORT</div>
+      <h1 style="{{ h1Style }}">Export transactions</h1>
+      <p style="{{ subStyle }}">Download your posted transactions as a CSV. Pick a date range, or export everything.</p>
+    </header>
+
+    <div style="{{ cardStyle }}">
+      <div style="{{ fileRowStyle }}">
+        <div style="{{ fileIconStyle }}">CSV</div>
+        <div style="flex: 1; min-width: 0;">
+          <div style="{{ fileNameStyle }}">{{ filename }}</div>
+          <div style="{{ fileMetaStyle }}">{{ scopeSummary }}</div>
+        </div>
+      </div>
+
+      <label style="{{ fieldLabelStyle }}">Date range</label>
+      <div style="display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 18px;">
+        <sc-for list="{{ presets }}" as="p" hint-placeholder-count="4">
+          <button onClick="{{ p.onClick }}" style="{{ p.style }}">{{ p.label }}</button>
+        </sc-for>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+        <div>
+          <label style="{{ subLabelStyle }}">From</label>
+          <input type="date" value="{{ fromDate }}" onChange="{{ onFrom }}" style="{{ dateStyle }}">
+        </div>
+        <div>
+          <label style="{{ subLabelStyle }}">To</label>
+          <input type="date" value="{{ toDate }}" onChange="{{ onTo }}" style="{{ dateStyle }}">
+        </div>
+      </div>
+
+      <sc-if value="{{ hasRangeError }}" hint-placeholder-val="{{ false }}">
+        <div style="{{ errorBoxStyle }}"><span>⚠</span>{{ rangeError }}</div>
+      </sc-if>
+
+      <div style="{{ noteStyle }}">
+        <span style="{{ noteIconStyle }}">ⓘ</span>
+        <span>Leave both dates empty to export your entire history. Only posted transactions are included.</span>
+      </div>
+
+      <button onClick="{{ download }}" style="{{ downloadBtnStyle }}">
+        <sc-if value="{{ isIdle }}" hint-placeholder-val="{{ true }}">
+          <span style="display: inline-flex; align-items: center; gap: 9px;"><span style="font-size: 16px;">↧</span> Download CSV</span>
+        </sc-if>
+        <sc-if value="{{ isBusy }}" hint-placeholder-val="{{ false }}">
+          <span style="display: inline-flex; align-items: center; gap: 9px;"><span style="{{ spinnerStyle }}"></span> Preparing…</span>
+        </sc-if>
+        <sc-if value="{{ isDone }}" hint-placeholder-val="{{ false }}">
+          <span style="display: inline-flex; align-items: center; gap: 9px;"><span style="{{ checkStyle }}">✓</span> Downloaded</span>
+        </sc-if>
+      </button>
+    </div>
+
+    <sc-if value="{{ isDone }}" hint-placeholder-val="{{ false }}">
+      <div style="{{ doneNoteStyle }}">Saved <strong style="color: inherit;">{{ filename }}</strong> to your downloads. <button onClick="{{ reset }}" style="{{ againBtnStyle }}">Export another range</button></div>
+    </sc-if>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:620,&quot;height&quot;:720}}">
+class Component extends DCLogic {
+  state = { dark: true, from: '', to: '', preset: 'all', status: 'idle' };
+
+  fmtDate(d) { return d ? new Date(d + 'T00:00:00').toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : null; }
+  iso(d) { return d.toISOString().slice(0, 10); }
+
+  renderVals() {
+    const dark = this.state.dark;
+    const t = this.theme(dark);
+    const S = this.state;
+
+    const rangeError = (S.from && S.to && S.to < S.from) ? "The 'to' date is before the 'from' date." : null;
+
+    let scopeSummary;
+    if (rangeError) scopeSummary = 'Fix the date range to continue';
+    else if (!S.from && !S.to) scopeSummary = 'All transactions · entire history';
+    else if (S.from && S.to) scopeSummary = `${this.fmtDate(S.from)} → ${this.fmtDate(S.to)}`;
+    else if (S.from) scopeSummary = `From ${this.fmtDate(S.from)} onward`;
+    else scopeSummary = `Up to ${this.fmtDate(S.to)}`;
+
+    let filename = 'transactions';
+    if (S.from || S.to) filename += `_${S.from || 'start'}_${S.to || 'today'}`;
+    filename += '.csv';
+
+    const presetDefs = [['all','All time'],['this_month','This month'],['last_month','Last month'],['this_year','This year'],['last_year','Last year']];
+    const presets = presetDefs.map(([k, l]) => {
+      const sel = S.preset === k;
+      return {
+        label: l,
+        onClick: () => this.applyPreset(k),
+        style: `font: 600 13px 'Inter Tight'; padding: 9px 15px; border-radius: 9px; cursor: pointer; border: 1px solid ${sel ? t.green : t.border}; background: ${sel ? t.greenSoft : t.input}; color: ${sel ? t.green : t.dim};`,
+      };
+    });
+
+    return {
+      pageStyle: `min-height: 100vh; background: ${t.bg}; font-family: 'Inter Tight', sans-serif; -webkit-font-smoothing: antialiased;`,
+      eyebrowStyle: `font: 600 11px 'JetBrains Mono'; letter-spacing: 2px; color: ${t.green}; margin-bottom: 8px;`,
+      h1Style: `font: 700 34px 'Inter Tight'; letter-spacing: -1.2px; color: ${t.fg}; margin: 0 0 10px;`,
+      subStyle: `font: 400 15px 'Inter Tight'; color: ${t.dim}; margin: 0; line-height: 1.55;`,
+
+      cardStyle: `background: ${t.panel}; border: 1px solid ${t.border}; border-radius: 20px; padding: 28px; animation: fadeUp .35s ease both;`,
+      fileRowStyle: `display: flex; align-items: center; gap: 15px; padding-bottom: 22px; margin-bottom: 22px; border-bottom: 1px solid ${t.border};`,
+      fileIconStyle: `width: 52px; height: 52px; border-radius: 13px; display: grid; place-items: center; font: 700 13px 'JetBrains Mono'; letter-spacing: 0.5px; color: ${t.green}; background: ${t.greenSoft}; border: 1px solid ${this.tint(t.green, 0.25)}; flex-shrink: 0;`,
+      fileNameStyle: `font: 600 16px 'JetBrains Mono'; color: ${t.fg}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;`,
+      fileMetaStyle: `font: 500 13px 'Inter Tight'; color: ${t.dim}; margin-top: 3px;`,
+      filename, scopeSummary,
+
+      fieldLabelStyle: `display: block; font: 600 12px 'Inter Tight'; color: ${t.fg}; margin: 0 0 10px;`,
+      subLabelStyle: `display: block; font: 600 11px 'Inter Tight'; color: ${t.dim}; margin: 0 0 7px;`,
+      presets,
+      dateStyle: `width: 100%; background: ${t.input}; border: 1px solid ${t.border}; border-radius: 11px; padding: 12px 14px; font: 500 14px 'JetBrains Mono'; color: ${t.fg}; outline: none; color-scheme: ${dark ? 'dark' : 'light'};`,
+      fromDate: S.from, toDate: S.to,
+      onFrom: (e) => this.setState({ from: e.target.value, preset: 'custom', status: 'idle' }),
+      onTo: (e) => this.setState({ to: e.target.value, preset: 'custom', status: 'idle' }),
+
+      hasRangeError: !!rangeError,
+      rangeError: rangeError || '',
+      errorBoxStyle: `display: flex; align-items: center; gap: 8px; margin-top: 14px; background: ${t.dangerSoft}; border: 1px solid ${t.dangerBorder}; border-radius: 10px; padding: 11px 14px; font: 500 13px 'Inter Tight'; color: ${t.danger};`,
+
+      noteStyle: `display: flex; align-items: flex-start; gap: 9px; margin: 22px 0 24px; font: 400 13px 'Inter Tight'; color: ${t.dim}; line-height: 1.5;`,
+      noteIconStyle: `color: ${t.green}; flex-shrink: 0;`,
+
+      isIdle: S.status === 'idle',
+      isBusy: S.status === 'busy',
+      isDone: S.status === 'done',
+      download: () => this.download(),
+      downloadBtnStyle: `width: 100%; font: 600 15px 'Inter Tight'; color: ${t.onGreen}; background: ${rangeError ? t.greenSoft : t.green}; border: none; border-radius: 12px; padding: 15px; cursor: ${rangeError ? 'not-allowed' : 'pointer'}; opacity: ${rangeError ? 0.5 : 1}; box-shadow: ${rangeError ? 'none' : '0 8px 24px ' + t.greenGlow};`,
+      spinnerStyle: `width: 15px; height: 15px; border-radius: 50%; border: 2px solid ${this.tint(t.onGreen, 0.3)}; border-top-color: ${t.onGreen}; display: inline-block; animation: spin .7s linear infinite;`,
+      checkStyle: `display: inline-grid; place-items: center; width: 18px; height: 18px; font-size: 12px; animation: checkPop .3s ease both;`,
+
+      doneNoteStyle: `margin-top: 18px; font: 400 13.5px 'Inter Tight'; color: ${t.dim}; line-height: 1.6; text-align: center; animation: fadeUp .3s ease both;`,
+      againBtnStyle: `font: 600 13.5px 'Inter Tight'; color: ${t.green}; background: none; border: none; cursor: pointer; padding: 0;`,
+      reset: () => this.setState({ status: 'idle' }),
+
+      toggleTheme: () => this.setState({ dark: !dark }),
+    };
+  }
+
+  applyPreset(k) {
+    const now = new Date(2026, 6, 19);
+    let from = '', to = '';
+    if (k === 'this_month') { from = this.iso(new Date(2026, 6, 1)); to = this.iso(now); }
+    else if (k === 'last_month') { from = this.iso(new Date(2026, 5, 1)); to = this.iso(new Date(2026, 5, 30)); }
+    else if (k === 'this_year') { from = this.iso(new Date(2026, 0, 1)); to = this.iso(now); }
+    else if (k === 'last_year') { from = this.iso(new Date(2025, 0, 1)); to = this.iso(new Date(2025, 11, 31)); }
+    this.setState({ preset: k, from, to, status: 'idle' });
+  }
+
+  download() {
+    const S = this.state;
+    if (S.from && S.to && S.to < S.from) return;
+    this.setState({ status: 'busy' });
+    setTimeout(() => this.setState({ status: 'done' }), 900);
+  }
+
+  tint(hex, a) {
+    const n = parseInt(hex.slice(1), 16);
+    return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
+  }
+
+  theme(dark) {
+    if (dark) {
+      return { bg: '#000000', panel: '#0a0d0b', input: '#0f120f', chip: '#12160f', border: '#1c2320', fg: '#f2f5f2', dim: '#71817a', green: '#34d399', greenSoft: 'rgba(52,211,153,0.12)', greenGlow: 'rgba(52,211,153,0.25)', onGreen: '#04140d', danger: '#f87171', dangerSoft: 'rgba(248,113,113,0.09)', dangerBorder: 'rgba(248,113,113,0.32)' };
+    }
+    return { bg: '#f6f8f6', panel: '#ffffff', input: '#f4f7f4', chip: '#f0f4f0', border: '#e2e8e3', fg: '#0d1512', dim: '#6b7a72', green: '#0f9d63', greenSoft: 'rgba(15,157,99,0.10)', greenGlow: 'rgba(15,157,99,0.20)', onGreen: '#ffffff', danger: '#dc2626', dangerSoft: 'rgba(220,38,38,0.06)', dangerBorder: 'rgba(220,38,38,0.28)' };
+  }
+}
+</script>
+</body>
+</html>

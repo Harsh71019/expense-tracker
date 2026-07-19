@@ -1,3 +1,5 @@
+import "server-only";
+
 import { cookies } from "next/headers";
 
 import { ACCENT_COOKIE_NAME, parseAccentCookie } from "./accent";

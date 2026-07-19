@@ -39,7 +39,7 @@ export function useTxnList(
     TransactionPage,
     Error,
     InfiniteData<TransactionPage, string | null>,
-    readonly ["txns", ListTransactionsQuery],
+    ReturnType<typeof qk.txns>,
     string | null
   >({
     queryKey: qk.txns(filters),

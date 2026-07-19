@@ -15,7 +15,7 @@ export default async function AuthLayout({
         <ThemeToggle current={theme} compact />
       </div>
 
-      <section className="relative flex min-h-screen items-center justify-center overflow-hidden px-5 py-12 sm:px-10 lg:px-16 xl:px-24 animate-fade-in">
+      <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-5 py-12 sm:px-10 lg:px-16 xl:px-24 animate-fade-in">
         <span
           aria-hidden="true"
           className="pointer-events-none absolute -top-32 -right-20 h-[480px] w-[480px] animate-float-glow rounded-full bg-accent-glow blur-3xl"
@@ -49,7 +49,7 @@ export default async function AuthLayout({
             Protected by end-to-end encryption · India (INR)
           </p>
         </div>
-      </section>
+      </main>
 
       <aside
         className="relative m-3.5 hidden overflow-hidden rounded-3xl lg:block"

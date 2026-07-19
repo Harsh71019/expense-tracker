@@ -26,11 +26,13 @@ export function useArchiveAccount(): UseMutationResult<void, Error, string> {
         throw toNetworkError(error);
       }
     },
-    onSuccess: async () => {
+    onSuccess: () => {
       setIdempotencyKey(generateRequestId());
+    },
+    onSettled: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: qk.accounts() }),
-        queryClient.invalidateQueries({ queryKey: ["txns"] }),
+        queryClient.invalidateQueries({ queryKey: qk.transactionLists() }),
         queryClient.invalidateQueries({ queryKey: qk.netWorth() })
       ]);
     }

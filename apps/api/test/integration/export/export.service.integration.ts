@@ -128,4 +128,17 @@ describe("ExportService", () => {
     });
     expect(csv.trim().split("\r\n")).toHaveLength(1); // header only
   });
+
+  it("never includes another user's transactions in an unbounded export", async () => {
+    // Both fixture users have posted transactions by this point ("Snacks" for
+    // user-export, "January" for user-range) — an unscoped query in
+    // ExportService would leak one user's ledger into the other's CSV.
+    const exportUserCsv = await exportService.generateCsv("user-export", {});
+    expect(exportUserCsv).not.toContain("January");
+    expect(exportUserCsv).toContain("Snacks");
+
+    const rangeUserCsv = await exportService.generateCsv("user-range", {});
+    expect(rangeUserCsv).not.toContain("Snacks");
+    expect(rangeUserCsv).toContain("January");
+  });
 });

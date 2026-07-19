@@ -1,6 +1,6 @@
 "use client";
 
-import { parseMinor } from "@vyaya/shared";
+import { formatMinorInput, parseMinor } from "@vyaya/shared";
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 
@@ -25,11 +25,11 @@ export function SignedAmountField({
   magnitudeMinor,
   onChange
 }: SignedAmountFieldProps): ReactNode {
-  const [draft, setDraft] = useState(() => (magnitudeMinor / 100).toFixed(2));
+  const [draft, setDraft] = useState(() => formatMinorInput(magnitudeMinor));
   const [error, setError] = useState<string>();
 
   useEffect(() => {
-    setDraft((magnitudeMinor / 100).toFixed(2));
+    setDraft(formatMinorInput(magnitudeMinor));
   }, [magnitudeMinor]);
 
   function commit(): void {

@@ -53,7 +53,7 @@ vi.mock("@/features/profile/server/get-profile", () => ({ getProfile: async () =
 vi.mock("@/features/reports", () => ({
   ReportPage: () => <h1>Monthly report</h1>,
   getMonthlyRollup: async () => null,
-  defaultReportMonth: () => "2026-06"
+  reportMonthFromParam: () => "2026-06"
 }));
 vi.mock("@/features/transactions", () => ({
   parseTransactionFilters: () => ({ limit: 50 }),
@@ -143,7 +143,7 @@ describe("route shells", () => {
     render(await TransactionsPage({ searchParams: Promise.resolve({}) }));
     expect(screen.getByRole("heading", { name: "Transactions" })).toBeVisible();
 
-    render(await ReportsPage());
+    render(await ReportsPage({ searchParams: Promise.resolve({}) }));
     expect(screen.getByRole("heading", { name: "Monthly report" })).toBeVisible();
 
     render(await RecurringPage());

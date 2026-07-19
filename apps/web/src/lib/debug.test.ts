@@ -2,8 +2,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 async function loadDebug(): Promise<typeof import("./debug").debug> {
   vi.resetModules();
-  const module = await import("./debug");
-  return module.debug;
+  const debugModule = await import("./debug");
+  return debugModule.debug;
 }
 
 describe("debug logger", () => {

@@ -21,7 +21,7 @@ vi.mock("@/features/accounts", () => ({
 vi.mock("@/features/categories", () => ({
   useCategories: () => ({ data: [] })
 }));
-vi.mock("@/features/transfers", () => ({
+vi.mock("@/features/transfers/hooks/use-transfers", () => ({
   useReverseTransfer: () => ({ mutate: vi.fn(), isPending: false })
 }));
 

@@ -75,8 +75,10 @@ export function useCreateRecurringRule(): ReturnType<
         throw toNetworkError(error);
       }
     },
-    onSuccess: async () => {
+    onSuccess: () => {
       setKey(generateRequestId());
+    },
+    onSettled: async () => {
       await client.invalidateQueries({ queryKey: qk.recurringRules() });
     }
   });
@@ -126,8 +128,10 @@ export function useUpdateRecurringRule(): ReturnType<
         throw toNetworkError(error);
       }
     },
-    onSuccess: async () => {
+    onSuccess: () => {
       setKey(generateRequestId());
+    },
+    onSettled: async () => {
       await client.invalidateQueries({ queryKey: qk.recurringRules() });
     }
   });

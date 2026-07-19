@@ -1,6 +1,19 @@
 const MONTH_FORMAT = /^(\d{4})-(\d{2})$/;
 
+export function isMonthKey(value: string): boolean {
+  const match = MONTH_FORMAT.exec(value);
+  if (match === null) return false;
+  const month = Number(match[2]);
+  return month >= 1 && month <= 12;
+}
+
+export function reportMonthFromParam(value: string | string[] | undefined): string {
+  const candidate = Array.isArray(value) ? value[0] : value;
+  return candidate !== undefined && isMonthKey(candidate) ? candidate : defaultReportMonth();
+}
+
 function parseMonth(month: string): { year: number; monthIndex: number } {
+  if (!isMonthKey(month)) throw new RangeError(`Invalid month key: ${month}`);
   const match = MONTH_FORMAT.exec(month);
   if (match === null) throw new RangeError(`Invalid month key: ${month}`);
   const year = Number(match[1]);

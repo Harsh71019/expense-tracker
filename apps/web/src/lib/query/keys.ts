@@ -1,8 +1,13 @@
 import type { ListTransactionsQuery } from "@vyaya/shared";
 
+const transactionRoot = ["transactions"] as const;
+
 export const qk = {
-  txns: (filters: ListTransactionsQuery) => ["txns", filters] as const,
-  txn: (transactionId: string) => ["txn", transactionId] as const,
+  transactions: () => transactionRoot,
+  transactionLists: () => [...transactionRoot, "list"] as const,
+  txns: (filters: ListTransactionsQuery) => [...transactionRoot, "list", filters] as const,
+  transactionDetails: () => [...transactionRoot, "detail"] as const,
+  txn: (transactionId: string) => [...transactionRoot, "detail", transactionId] as const,
   accounts: () => ["accounts"] as const,
   categories: () => ["categories"] as const,
   categoryRules: () => ["category-rules"] as const,

@@ -34,11 +34,13 @@ export function useCreateCategory(): UseMutationResult<Category, Error, CreateCa
         throw toNetworkError(error);
       }
     },
-    onSuccess: async () => {
+    onSuccess: () => {
       setKey(generateRequestId());
+    },
+    onSettled: async () => {
       await Promise.all([
         client.invalidateQueries({ queryKey: qk.categories() }),
-        client.invalidateQueries({ queryKey: ["txns"] }),
+        client.invalidateQueries({ queryKey: qk.transactionLists() }),
         client.invalidateQueries({ queryKey: qk.categoryRules() })
       ]);
     }
@@ -60,11 +62,13 @@ export function useArchiveCategory(): UseMutationResult<void, Error, string> {
         throw toNetworkError(error);
       }
     },
-    onSuccess: async () => {
+    onSuccess: () => {
       setKey(generateRequestId());
+    },
+    onSettled: async () => {
       await Promise.all([
         client.invalidateQueries({ queryKey: qk.categories() }),
-        client.invalidateQueries({ queryKey: ["txns"] }),
+        client.invalidateQueries({ queryKey: qk.transactionLists() }),
         client.invalidateQueries({ queryKey: qk.categoryRules() })
       ]);
     }

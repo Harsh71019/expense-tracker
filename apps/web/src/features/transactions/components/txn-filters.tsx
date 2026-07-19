@@ -44,10 +44,15 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
     const trimmed = query.trim();
     if (trimmed === (filters.q ?? "")) return;
     const timeout = setTimeout(() => {
-      navigate({ q: trimmed === "" ? undefined : trimmed });
+      const next = serializeTransactionFilters({
+        ...filters,
+        q: trimmed === "" ? undefined : trimmed,
+        cursor: undefined
+      });
+      router.push(next === "" ? "/transactions" : `/transactions?${next}`);
     }, SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(timeout);
-  }, [query]);
+  }, [filters, query, router]);
 
   const isFiltered =
     filters.q !== undefined ||

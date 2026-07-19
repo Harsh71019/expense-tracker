@@ -90,7 +90,13 @@ export type {
   UpdateStagedRow,
   UploadImportMetadata
 } from "./import.js";
-export { formatMinor, isMinorAmount, parseMinor } from "./money.js";
+export {
+  formatMinor,
+  formatMinorInput,
+  formatSignedCompactMinor,
+  isMinorAmount,
+  parseMinor
+} from "./money.js";
 export type { MinorAmount } from "./money.js";
 export { PageInfoSchema } from "./pagination.js";
 export type { PageInfo } from "./pagination.js";

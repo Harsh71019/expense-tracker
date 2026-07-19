@@ -49,8 +49,10 @@ export function useCreateCategoryRule(): ReturnType<
         throw toNetworkError(error);
       }
     },
-    onSuccess: async () => {
+    onSuccess: () => {
       setKey(generateRequestId());
+    },
+    onSettled: async () => {
       await client.invalidateQueries({ queryKey: qk.categoryRules() });
     }
   });
@@ -71,8 +73,10 @@ export function useDeleteCategoryRule(): ReturnType<typeof useMutation<void, Err
         throw toNetworkError(error);
       }
     },
-    onSuccess: async () => {
+    onSuccess: () => {
       setKey(generateRequestId());
+    },
+    onSettled: async () => {
       await client.invalidateQueries({ queryKey: qk.categoryRules() });
     }
   });

@@ -1,6 +1,6 @@
 # Accent Color Preferences
 
-> Status: proposed
+> Status: implemented 2026-07-19
 >
 > Scope: frontend-only personalization
 >
@@ -44,18 +44,18 @@ Curated presets provide fast, reviewed choices. Custom input supplements these p
 
 | ID        | Label         | Theme | Accent    | Strong    | Foreground | Glow                        |
 | --------- | ------------- | ----- | --------- | --------- | ---------- | --------------------------- |
-| `default` | Vyaya green   | Light | `#0f9d63` | `#128051` | `#04140d`  | `rgba(15, 157, 99, 0.15)`   |
+| `default` | Vyaya green   | Light | `#0f9d63` | `#10a367` | `#04140d`  | `rgba(15, 157, 99, 0.15)`   |
 | `default` | Vyaya green   | Dark  | `#34d399` | `#2cb382` | `#04140d`  | `rgba(52, 211, 153, 0.15)`  |
 | `ocean`   | Ocean blue    | Light | `#1d4ed8` | `#1e40af` | `#ffffff`  | `rgba(29, 78, 216, 0.15)`   |
 | `ocean`   | Ocean blue    | Dark  | `#60a5fa` | `#3b82f6` | `#071426`  | `rgba(96, 165, 250, 0.15)`  |
 | `indigo`  | Ledger indigo | Light | `#4338ca` | `#3730a3` | `#ffffff`  | `rgba(67, 56, 202, 0.15)`   |
-| `indigo`  | Ledger indigo | Dark  | `#818cf8` | `#6366f1` | `#0b1028`  | `rgba(129, 140, 248, 0.15)` |
+| `indigo`  | Ledger indigo | Dark  | `#818cf8` | `#6d70f3` | `#0b1028`  | `rgba(129, 140, 248, 0.15)` |
 | `violet`  | Mumbai violet | Light | `#7e22ce` | `#6b21a8` | `#ffffff`  | `rgba(126, 34, 206, 0.15)`  |
 | `violet`  | Mumbai violet | Dark  | `#c084fc` | `#a855f7` | `#1b0826`  | `rgba(192, 132, 252, 0.15)` |
 | `amber`   | Saffron amber | Light | `#b45309` | `#92400e` | `#ffffff`  | `rgba(180, 83, 9, 0.15)`    |
 | `amber`   | Saffron amber | Dark  | `#fbbf24` | `#f59e0b` | `#211300`  | `rgba(251, 191, 36, 0.15)`  |
 
-The original Vyaya green accent and strong hues remain unchanged. The default light `accent-foreground` changes from white to `#04140d`: white on `#0f9d63` has only about `3.49:1` contrast, while the dark ink has about `5.42:1`. This corrects an existing accessibility issue without replacing the original default accent color.
+The original Vyaya green accent hues remain unchanged. The default light `accent-foreground` changes from white to `#04140d`: white on `#0f9d63` has only about `3.49:1` contrast, while the dark ink has about `5.42:1`. The light hover value moves within the same green hue from `#128051` to `#10a367` so it also remains readable with the dark foreground. These adjustments correct an existing accessibility issue without replacing the original default accent color.
 
 Red is intentionally not offered because it is already the expense/error color. Green continues to represent income even when another accent is selected.
 

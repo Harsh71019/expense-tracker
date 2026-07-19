@@ -1,3 +1,4 @@
+export * from "./accent-picker";
 export * from "./amount-input";
 export * from "./badge";
 export * from "./button";

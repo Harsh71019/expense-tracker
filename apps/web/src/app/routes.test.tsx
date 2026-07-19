@@ -20,6 +20,7 @@ const mocks = vi.hoisted(
 
 vi.mock("@/lib/api/session", () => ({ getSession: async () => mocks.session }));
 vi.mock("@/lib/theme-server", () => ({ getStoredTheme: async () => null }));
+vi.mock("@/lib/accent-server", () => ({ getStoredAccent: async () => ({ kind: "default" }) }));
 vi.mock("@/features/auth", () => ({
   LoginForm: () => <p>Mock login form</p>,
   SignOutButton: () => <button>Sign out</button>

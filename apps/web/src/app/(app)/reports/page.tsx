@@ -1,11 +1,9 @@
 import type { ReactNode } from "react";
-import { notFound } from "next/navigation";
 
-import { NetWorthSummary } from "@/features/net-worth";
-import { getNetWorth } from "@/features/net-worth/server/get-net-worth";
+import { ReportPage, defaultReportMonth, getMonthlyRollup } from "@/features/reports";
 
 export default async function ReportsPage(): Promise<ReactNode> {
-  const netWorth = await getNetWorth();
-  if (netWorth === null) notFound();
-  return <NetWorthSummary initialData={netWorth} />;
+  const month = defaultReportMonth();
+  const rollup = await getMonthlyRollup(month);
+  return <ReportPage initialMonth={month} initialRollup={rollup} />;
 }

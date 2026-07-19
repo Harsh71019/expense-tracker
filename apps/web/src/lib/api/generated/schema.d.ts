@@ -2102,6 +2102,79 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/v1/reports/monthly/{month}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          month: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Monthly rollup */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["MonthlyRollup"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/v1/export/csv": {
     parameters: {
       query?: never;
@@ -2679,6 +2752,24 @@ export interface components {
         /** Format: date-time */
         valuedAt: string | null;
       }[];
+    };
+    MonthlyRollup: {
+      userId: string;
+      month: string;
+      byCategory: {
+        categoryId?: string;
+        spentMinor: number;
+        incomeMinor: number;
+        txnCount: number;
+      }[];
+      byAccount: {
+        accountId: string;
+        netMinor: number;
+      }[];
+      totalExpenseMinor: number;
+      totalIncomeMinor: number;
+      /** Format: date-time */
+      computedAt: string | null;
     };
     UserProfile: {
       userId: string;

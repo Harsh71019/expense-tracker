@@ -12,6 +12,7 @@ import { exportHandlers } from "./export";
 import { importHandlers } from "./imports";
 import { netWorthHandlers } from "./net-worth";
 import { profileHandlers } from "./profile";
+import { reportHandlers } from "./reports";
 import { transactionHandlers } from "./transactions";
 import { transferHandlers } from "./transfers";
 
@@ -34,6 +35,7 @@ export function createHandlers(baseUrl: string, store: MockStore): HttpHandler[]
     ...netWorthHandlers(http, store),
     ...importHandlers(http, store),
     ...exportHandlers(http, store),
-    ...profileHandlers(http, store)
+    ...profileHandlers(http, store),
+    ...reportHandlers(http, store)
   ];
 }

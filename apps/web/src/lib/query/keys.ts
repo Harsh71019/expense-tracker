@@ -11,5 +11,6 @@ export const qk = {
   netWorth: () => ["net-worth"] as const,
   importBatches: () => ["import-batches"] as const,
   importPreview: (batchId: string) => ["import-preview", batchId] as const,
-  importMapping: (accountId: string) => ["import-mapping", accountId] as const
+  importMapping: (accountId: string) => ["import-mapping", accountId] as const,
+  monthlyRollup: (month: string) => ["monthly-rollup", month] as const
 } as const;

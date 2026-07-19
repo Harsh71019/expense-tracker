@@ -19,12 +19,17 @@ export type AccentPreference =
   | { kind: "preset"; preset: Exclude<AccentPreset, "default"> }
   | { kind: "custom"; color: NormalizedHex };
 
-export type AccentActionState =
-  | { status: "idle"; message: "" }
-  | { status: "error"; message: string }
-  | { status: "success"; message: string };
+export interface AccentActionState {
+  status: "idle" | "error" | "success";
+  message: string;
+  appliedKey: string | null;
+}
 
-export const INITIAL_ACCENT_ACTION_STATE: AccentActionState = { status: "idle", message: "" };
+export const INITIAL_ACCENT_ACTION_STATE: AccentActionState = {
+  status: "idle",
+  message: "",
+  appliedKey: null
+};
 
 export function isAccentPreset(value: string | undefined): value is AccentPreset {
   return (
@@ -67,4 +72,8 @@ export function serializeAccentPreference(preference: AccentPreference): string 
     return `preset:${preference.preset}`;
   }
   return `custom:${preference.color.slice(1)}`;
+}
+
+export function accentPreferenceKey(preference: AccentPreference): string {
+  return serializeAccentPreference(preference) ?? ACCENT_PRESETS.default;
 }

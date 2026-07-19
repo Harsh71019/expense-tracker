@@ -34,9 +34,9 @@ Add an **Appearance** section to the authenticated `/more` page. It should conta
 - A preview that shows the normalized color and its light/dark variants before it is applied.
 - An inline validation or contrast message when the submitted value cannot be used safely.
 - A **Reset to Vyaya default** action. It should be disabled or omitted while the default is already selected.
-- Immediate application after selection. A full navigation refresh caused by the existing server-action pattern is acceptable for the first implementation.
+- A single action button for presets and custom colors. It reads **Apply color** after a selection changes, **Applying…** during the server action, and **Applied** once the active preference matches the staged selection.
 
-The default option must be named **Vyaya green** and shown first. Selecting it and using the reset action have the same result: remove the accent-preference cookie and let the application fall back to the built-in colors.
+The default option must be named **Vyaya green** and shown first. Selecting it and pressing **Apply color**, or using the reset action, have the same result: remove the accent-preference cookie and let the application fall back to the built-in colors. Changing a preset, text value, or native picker after a successful submission returns the button from **Applied** to **Apply color**.
 
 ## Preset palette
 
@@ -153,7 +153,7 @@ apps/web/src/
 ├─ app/(app)/more/page.tsx
 ├─ components/ui/accent-picker/
 │  ├─ accent-picker.tsx
-│  ├─ custom-accent-input.tsx
+│  ├─ accent-preference-form.tsx
 │  ├─ index.ts
 │  └─ __tests__/accent-picker.test.tsx
 └─ lib/
@@ -230,7 +230,8 @@ The route remains a server component. The form should use server actions, just l
 ## Acceptance criteria
 
 - Vyaya green remains the appearance for users who have never chosen an accent.
-- A user can select a preset or provide a custom accent through a native picker, hex, RGB, or HSL input on `/more` and see it applied throughout the frontend.
+- A user can select a preset or provide a custom accent through a native picker, hex, RGB, or HSL input on `/more`, press one **Apply color** action, and see it applied throughout the frontend.
+- The action reports **Applied** after success and returns to **Apply color** as soon as the staged selection changes.
 - Equivalent color formats normalize to the same saved six-digit hex value.
 - Custom input always produces contrast-compliant, deterministic light and dark variants or is rejected without changing the current preference.
 - The selection persists across navigation and reloads without a first-paint color flash.

@@ -6,14 +6,12 @@ import { AccentPreferenceForm } from "./accent-preference-form";
 
 export function AccentPicker({ current }: Readonly<{ current: AccentPreference }>): ReactNode {
   return (
-    <section className="space-y-4 rounded-xl border border-border bg-surface-elevated p-5 sm:p-6">
+    <section className="space-y-5 rounded-xl border border-border bg-surface-muted/50 p-4 sm:p-5">
       <header>
-        <p className="font-mono text-[10px] font-bold tracking-[0.2em] text-accent uppercase">
-          Appearance
-        </p>
-        <h2 className="mt-1 text-lg font-semibold text-foreground">Accent color</h2>
-        <p className="mt-1 text-sm text-foreground-muted">
-          Choose a preset or create a custom accent. Money and status colors stay unchanged.
+        <h3 className="text-sm font-semibold text-foreground">Accent color</h3>
+        <p className="mt-1 text-xs leading-relaxed text-foreground-muted sm:text-sm">
+          Recolors buttons, links, active navigation, focus rings, and decorative highlights. Income
+          green, expense/error red, and category colors never change.
         </p>
       </header>
 

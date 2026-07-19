@@ -35,7 +35,11 @@ export function SignOutButton({ compact = false }: Readonly<{ compact?: boolean 
         disabled={isSigningOut}
         aria-label={compact ? "Sign out" : undefined}
         title={compact ? "Sign out" : undefined}
-        className={compact ? "h-10 w-10 px-0 text-base" : undefined}
+        className={
+          compact
+            ? "h-10 w-10 border-expense/30 bg-expense/5 px-0 text-base text-expense hover:border-expense/50 hover:text-expense"
+            : "min-h-11 border-expense/30 bg-expense/5 text-expense hover:border-expense/50 hover:bg-expense/10 hover:text-expense"
+        }
       >
         {compact ? (
           <>

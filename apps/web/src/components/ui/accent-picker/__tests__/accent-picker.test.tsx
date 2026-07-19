@@ -31,7 +31,7 @@ describe("AccentPicker", () => {
       "aria-pressed",
       "false"
     );
-    expect(screen.getByLabelText("Hex, RGB, or HSL")).toHaveValue("#0f9d63");
+    expect(screen.getByLabelText("Hex, RGB, or HSL")).toHaveValue("");
     expect(screen.getByRole("button", { name: "Applied" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Reset to Vyaya default" })).toBeDisabled();
   });
@@ -45,7 +45,8 @@ describe("AccentPicker", () => {
     await user.type(input, "rgb(255, 0, 0)");
     const apply = screen.getByRole("button", { name: "Apply color" });
 
-    expect(screen.getByText("Light · #ff0000")).toBeVisible();
+    expect(screen.getByRole("region", { name: "Accent preview" })).toBeVisible();
+    expect(screen.getByText("Light")).toBeVisible();
     expect(screen.getByText(/may resemble expense and error colors/i)).toBeVisible();
     expect(apply).toBeEnabled();
 
@@ -70,7 +71,11 @@ describe("AccentPicker", () => {
     render(<AccentPicker current={{ kind: "default" }} />);
 
     await user.click(screen.getByRole("button", { name: /Ocean blue/ }));
-    expect(screen.getByLabelText("Hex, RGB, or HSL")).toHaveValue("#1d4ed8");
+    expect(screen.getByLabelText("Hex, RGB, or HSL")).toHaveValue("");
+    expect(screen.getByRole("button", { name: /Ocean blue/ })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
     expect(screen.getByRole("button", { name: "Apply color" })).toBeEnabled();
 
     await user.click(screen.getByRole("button", { name: "Apply color" }));
@@ -85,7 +90,7 @@ describe("AccentPicker", () => {
     render(<AccentPicker current={{ kind: "custom", color: "#ff0000" }} />);
 
     await user.click(screen.getByRole("button", { name: /Vyaya green/ }));
-    expect(screen.getByLabelText("Hex, RGB, or HSL")).toHaveValue("#0f9d63");
+    expect(screen.getByLabelText("Hex, RGB, or HSL")).toHaveValue("");
     expect(screen.getByRole("button", { name: "Apply color" })).toBeEnabled();
 
     await user.click(screen.getByRole("button", { name: "Apply color" }));

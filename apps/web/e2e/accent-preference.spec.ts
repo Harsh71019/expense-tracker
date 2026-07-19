@@ -20,7 +20,7 @@ test.describe("accent preference", () => {
     await page.getByRole("button", { name: "Sign in" }).click();
     await expect(page).toHaveURL("/");
 
-    await page.goto("/more");
+    await page.goto("/settings");
     await page.getByRole("button", { name: /Ocean blue/ }).click();
     await expect(page.getByRole("button", { name: "Apply color" })).toBeEnabled();
     await page.getByRole("button", { name: "Apply color" }).click();
@@ -48,7 +48,7 @@ test.describe("accent preference", () => {
     await expect(page.getByRole("button", { name: "Applied" })).toBeDisabled();
 
     await page.getByRole("button", { name: /Vyaya green/ }).click();
-    await expect(page.getByLabel("Hex, RGB, or HSL")).toHaveValue("#0f9d63");
+    await expect(page.getByLabel("Hex, RGB, or HSL")).toHaveValue("");
     await expect(page.getByRole("button", { name: "Apply color" })).toBeEnabled();
 
     await page.getByRole("button", { name: "Apply color" }).click();

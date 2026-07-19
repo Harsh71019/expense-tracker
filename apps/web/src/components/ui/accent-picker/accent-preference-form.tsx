@@ -23,15 +23,60 @@ type AccentSelection = AccentPreset | "custom";
 interface PresetOption {
   id: AccentPreset;
   label: string;
-  preview: string;
+  light: string;
+  dark: string;
+  lightForeground: string;
+  darkForeground: string;
 }
 
+interface AccentPreviewTokens {
+  light: { accent: string; foreground: string };
+  dark: { accent: string; foreground: string };
+}
+
+const DEFAULT_PRESET: PresetOption = {
+  id: ACCENT_PRESETS.default,
+  label: "Vyaya green",
+  light: DEFAULT_ACCENT_COLOR,
+  dark: "#34d399",
+  lightForeground: "#04140d",
+  darkForeground: "#04140d"
+};
+
 const PRESET_OPTIONS: readonly PresetOption[] = [
-  { id: ACCENT_PRESETS.default, label: "Vyaya green", preview: DEFAULT_ACCENT_COLOR },
-  { id: ACCENT_PRESETS.ocean, label: "Ocean blue", preview: "#1d4ed8" },
-  { id: ACCENT_PRESETS.indigo, label: "Ledger indigo", preview: "#4338ca" },
-  { id: ACCENT_PRESETS.violet, label: "Mumbai violet", preview: "#7e22ce" },
-  { id: ACCENT_PRESETS.amber, label: "Saffron amber", preview: "#b45309" }
+  DEFAULT_PRESET,
+  {
+    id: ACCENT_PRESETS.ocean,
+    label: "Ocean blue",
+    light: "#1d4ed8",
+    dark: "#60a5fa",
+    lightForeground: "#ffffff",
+    darkForeground: "#071426"
+  },
+  {
+    id: ACCENT_PRESETS.indigo,
+    label: "Ledger indigo",
+    light: "#4338ca",
+    dark: "#818cf8",
+    lightForeground: "#ffffff",
+    darkForeground: "#0b1028"
+  },
+  {
+    id: ACCENT_PRESETS.violet,
+    label: "Mumbai violet",
+    light: "#7e22ce",
+    dark: "#c084fc",
+    lightForeground: "#ffffff",
+    darkForeground: "#1b0826"
+  },
+  {
+    id: ACCENT_PRESETS.amber,
+    label: "Saffron amber",
+    light: "#b45309",
+    dark: "#fbbf24",
+    lightForeground: "#ffffff",
+    darkForeground: "#211300"
+  }
 ];
 
 function initialSelection(current: AccentPreference): AccentSelection {
@@ -41,16 +86,12 @@ function initialSelection(current: AccentPreference): AccentSelection {
   return current.kind === "preset" ? current.preset : ACCENT_PRESETS.default;
 }
 
-function initialColor(current: AccentPreference): string {
-  if (current.kind === "custom") {
-    return current.color;
-  }
-  if (current.kind === "preset") {
-    return (
-      PRESET_OPTIONS.find((option) => option.id === current.preset)?.preview ?? DEFAULT_ACCENT_COLOR
-    );
-  }
-  return DEFAULT_ACCENT_COLOR;
+function initialInput(current: AccentPreference): string {
+  return current.kind === "custom" ? current.color : "";
+}
+
+function presetOption(selection: AccentPreset): PresetOption {
+  return PRESET_OPTIONS.find((option) => option.id === selection) ?? DEFAULT_PRESET;
 }
 
 function selectedPreference(
@@ -73,33 +114,97 @@ function selectedPreference(
     : { kind: "custom", color: parsed.color };
 }
 
+function previewTokens(selection: AccentSelection, input: string): AccentPreviewTokens | null {
+  if (selection === "custom") {
+    const parsed = parseColorInput(input);
+    if (!parsed.success) {
+      return null;
+    }
+    const tokens = deriveCustomAccentTokens(parsed.color);
+    return {
+      light: { accent: tokens.light.accent, foreground: tokens.light.foreground },
+      dark: { accent: tokens.dark.accent, foreground: tokens.dark.foreground }
+    };
+  }
+
+  const option = presetOption(selection);
+  return {
+    light: { accent: option.light, foreground: option.lightForeground },
+    dark: { accent: option.dark, foreground: option.darkForeground }
+  };
+}
+
+function ThemePreview({
+  label,
+  dark,
+  tokens
+}: Readonly<{
+  label: "Light" | "Dark";
+  dark: boolean;
+  tokens: { accent: string; foreground: string };
+}>): ReactNode {
+  return (
+    <div
+      className={`rounded-xl border p-4 ${dark ? "border-[#1c2320] bg-black" : "border-[#e2e8e3] bg-white"}`}
+    >
+      <p
+        className={`font-mono text-[9px] font-semibold tracking-[0.16em] uppercase ${dark ? "text-[#71817a]" : "text-[#6b7a72]"}`}
+      >
+        {label}
+      </p>
+      <span
+        className="mt-3 inline-flex rounded-lg px-3 py-2 text-xs font-semibold"
+        style={{ backgroundColor: tokens.accent, color: tokens.foreground }}
+      >
+        Primary button
+      </span>
+      <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-semibold">
+        <span style={{ color: tokens.accent }}>A link</span>
+        <span
+          className="rounded-md px-2 py-1"
+          style={{ backgroundColor: `${tokens.accent}1f`, color: tokens.accent }}
+        >
+          Active tab
+        </span>
+      </div>
+      <div className="mt-3 flex gap-3 font-mono text-xs font-semibold">
+        <span className={dark ? "text-[#34d399]" : "text-[#16a34a]"}>+₹8,500</span>
+        <span className={dark ? "text-[#f87171]" : "text-[#dc2626]"}>−₹450</span>
+      </div>
+    </div>
+  );
+}
+
 export function AccentPreferenceForm({
   current
 }: Readonly<{ current: AccentPreference }>): ReactNode {
   const [selection, setSelection] = useState<AccentSelection>(initialSelection(current));
-  const [input, setInput] = useState<string>(initialColor(current));
+  const [input, setInput] = useState<string>(initialInput(current));
   const [state, formAction, pending] = useActionState(
     applyAccentPreference,
     INITIAL_ACCENT_ACTION_STATE
   );
   const parsed = parseColorInput(input);
-  const tokens = parsed.success ? deriveCustomAccentTokens(parsed.color) : null;
-  const pickerValue = parsed.success ? parsed.color : DEFAULT_ACCENT_COLOR;
+  const preview = previewTokens(selection, input);
+  const selectedPreset = selection === "custom" ? null : presetOption(selection);
+  const pickerValue =
+    selection === "custom" && parsed.success
+      ? parsed.color
+      : (selectedPreset?.light ?? DEFAULT_ACCENT_COLOR);
   const preference = selectedPreference(selection, input);
   const selectionKey = preference === null ? null : accentPreferenceKey(preference);
   const currentKey = accentPreferenceKey(current);
-  const isApplied =
-    selectionKey !== null &&
-    (selectionKey === currentKey ||
-      (state.status === "success" && state.appliedKey === selectionKey));
+  const activeKey =
+    state.status === "success" && state.appliedKey !== null ? state.appliedKey : currentKey;
+  const isApplied = selectionKey !== null && selectionKey === activeKey;
   const customIsInvalid = selection === "custom" && !parsed.success;
   const localMessage =
     selection === "custom" && parsed.success && resemblesExpenseColor(parsed.color)
       ? "This accent may resemble expense and error colors. Ledger signs and labels remain unchanged."
       : selection === "custom" &&
           parsed.success &&
-          tokens !== null &&
-          (tokens.light.accent !== parsed.color || tokens.dark.accent !== parsed.color)
+          preview !== null &&
+          (preview.light.accent !== parsed.color || preview.dark.accent !== parsed.color)
         ? "Vyaya tuned the light and dark variants for readable contrast."
         : "";
   const actionMessage =
@@ -108,10 +213,11 @@ export function AccentPreferenceForm({
       : "";
   const message = customIsInvalid ? parsed.message : actionMessage || localMessage;
   const isError = customIsInvalid || state.status === "error";
+  const resetDisabled = activeKey === ACCENT_PRESETS.default;
 
   function choosePreset(option: PresetOption): void {
     setSelection(option.id);
-    setInput(option.preview);
+    setInput("");
   }
 
   function changeCustomInput(value: string): void {
@@ -120,125 +226,130 @@ export function AccentPreferenceForm({
   }
 
   return (
-    <div className="space-y-4">
-      <form action={formAction} className="space-y-4">
-        <input type="hidden" name="accentSelection" value={selection} />
+    <form action={formAction} className="space-y-5">
+      <input type="hidden" name="accentSelection" value={selection} />
 
-        <fieldset>
-          <legend className="sr-only">Accent color presets</legend>
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
-            {PRESET_OPTIONS.map((option) => {
-              const selected = selection === option.id;
-              return (
-                <button
-                  key={option.id}
-                  type="button"
-                  aria-pressed={selected}
-                  onClick={() => choosePreset(option)}
-                  className={`flex min-h-11 items-center gap-3 rounded-lg border px-3 py-2.5 text-left text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-                    selected
-                      ? "border-accent bg-accent-glow text-foreground"
-                      : "border-border bg-surface hover:border-accent/50"
-                  }`}
+      <fieldset>
+        <legend className="sr-only">Accent color presets</legend>
+        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-5">
+          {PRESET_OPTIONS.map((option) => {
+            const selected = selection === option.id;
+            return (
+              <button
+                key={option.id}
+                type="button"
+                aria-pressed={selected}
+                onClick={() => choosePreset(option)}
+                className={`flex min-h-24 flex-col items-center gap-2 rounded-xl border p-2.5 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface ${
+                  selected
+                    ? "border-accent bg-accent-glow text-foreground"
+                    : "border-border bg-surface-elevated text-foreground-muted hover:border-accent/40 hover:text-foreground"
+                }`}
+              >
+                <span
+                  className="grid h-10 w-full place-items-center rounded-lg"
+                  style={{ background: `linear-gradient(135deg, ${option.light}, ${option.dark})` }}
+                  aria-hidden="true"
                 >
-                  <span
-                    className="h-6 w-6 shrink-0 rounded-full border border-black/15"
-                    style={{ backgroundColor: option.preview }}
-                    aria-hidden="true"
-                  />
-                  <span className="min-w-0 flex-1">{option.label}</span>
                   {selected ? (
-                    <span aria-hidden="true" className="text-accent">
+                    <span className="text-base font-bold" style={{ color: option.lightForeground }}>
                       ✓
                     </span>
                   ) : null}
-                </button>
-              );
-            })}
+                </span>
+                <span className="text-[11px] leading-tight font-semibold">{option.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </fieldset>
+
+      <section
+        className={`rounded-xl border p-4 transition-colors ${selection === "custom" ? "border-accent bg-accent-glow/30" : "border-border bg-surface-elevated"}`}
+      >
+        <div className="flex items-center justify-between gap-3">
+          <h3 className="text-sm font-semibold text-foreground">Custom color</h3>
+          {selection === "custom" ? (
+            <span className="rounded-md border border-accent/30 bg-accent-glow px-2 py-0.5 font-mono text-[9px] font-semibold tracking-wider text-accent uppercase">
+              Staged
+            </span>
+          ) : null}
+        </div>
+
+        <div className="mt-3 flex items-stretch gap-2.5">
+          <label className="shrink-0">
+            <span className="sr-only">Choose a custom accent color</span>
+            <input
+              type="color"
+              aria-label="Choose a custom accent color"
+              value={pickerValue}
+              onChange={(event) => changeCustomInput(event.target.value)}
+              className="h-12 w-14 cursor-pointer rounded-lg border border-border bg-surface-muted p-1"
+            />
+          </label>
+          <label htmlFor="custom-accent" className="min-w-0 flex-1">
+            <span className="sr-only">Hex, RGB, or HSL</span>
+            <input
+              id="custom-accent"
+              name="accentColor"
+              value={input}
+              onFocus={() => setSelection("custom")}
+              onChange={(event) => changeCustomInput(event.target.value)}
+              aria-label="Hex, RGB, or HSL"
+              aria-describedby="custom-accent-help custom-accent-status"
+              aria-invalid={isError}
+              placeholder="#1d4ed8"
+              autoComplete="off"
+              spellCheck={false}
+              className="h-12 w-full rounded-lg border border-border bg-surface-muted px-3.5 font-mono text-sm text-foreground transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
+            />
+          </label>
+        </div>
+
+        <p id="custom-accent-help" className="mt-2 text-xs leading-relaxed text-foreground-muted">
+          Accepts #1d4ed8, rgb(29, 78, 216), or hsl(224, 76%, 48%). No alpha, gradients, or color
+          names.
+        </p>
+      </section>
+
+      <section aria-label="Accent preview">
+        <p className="mb-2 font-mono text-[10px] font-semibold tracking-[0.14em] text-foreground-muted uppercase">
+          Preview · works in both themes
+        </p>
+        {preview === null ? (
+          <div className="rounded-xl border border-dashed border-border bg-surface-elevated p-5 text-sm text-foreground-muted">
+            Enter a valid custom color to see its light and dark previews.
           </div>
-        </fieldset>
-
-        <section className="space-y-4 rounded-xl border border-border bg-surface p-4">
-          <header>
-            <h3 className="text-sm font-semibold text-foreground">Custom color</h3>
-            <p className="mt-1 text-xs text-foreground-muted">
-              Choose a preset or edit a custom value, then apply the color.
-            </p>
-          </header>
-
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-            <label className="flex min-h-11 items-center gap-3 text-sm font-semibold text-foreground">
-              <input
-                type="color"
-                aria-label="Choose a custom accent color"
-                value={pickerValue}
-                onChange={(event) => changeCustomInput(event.target.value)}
-                className="h-11 w-14 cursor-pointer rounded-lg border border-border bg-surface-elevated p-1"
-              />
-              Color picker
-            </label>
-
-            <label htmlFor="custom-accent" className="flex min-w-0 flex-1 flex-col gap-1.5">
-              <span className="font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
-                Hex, RGB, or HSL
-              </span>
-              <input
-                id="custom-accent"
-                name="accentColor"
-                value={input}
-                onFocus={() => setSelection("custom")}
-                onChange={(event) => changeCustomInput(event.target.value)}
-                aria-describedby="custom-accent-help custom-accent-status"
-                aria-invalid={isError}
-                placeholder="#1d4ed8"
-                autoComplete="off"
-                spellCheck={false}
-                className="w-full rounded-lg border border-border bg-surface-elevated px-3.5 py-2.5 font-mono text-sm text-foreground transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
-              />
-            </label>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2">
+            <ThemePreview label="Light" dark={false} tokens={preview.light} />
+            <ThemePreview label="Dark" dark tokens={preview.dark} />
           </div>
+        )}
+      </section>
 
-          <p id="custom-accent-help" className="text-xs text-foreground-muted">
-            Examples: #1d4ed8, rgb(29, 78, 216), or hsl(224, 76%, 48%). Vyaya adjusts lightness when
-            needed for readable contrast.
-          </p>
-
-          {tokens === null ? null : (
-            <div className="grid grid-cols-2 gap-3" aria-label="Accent preview">
-              <div
-                className="rounded-lg border border-border p-3 text-center text-xs font-semibold"
-                style={{ backgroundColor: tokens.light.accent, color: tokens.light.foreground }}
-              >
-                Light · {tokens.light.accent}
-              </div>
-              <div
-                className="rounded-lg border border-border p-3 text-center text-xs font-semibold"
-                style={{ backgroundColor: tokens.dark.accent, color: tokens.dark.foreground }}
-              >
-                Dark · {tokens.dark.accent}
-              </div>
-            </div>
-          )}
-
-          <p
-            id="custom-accent-status"
-            aria-live="polite"
-            className={`min-h-5 text-xs ${isError ? "text-expense" : "text-foreground-muted"}`}
+      <div className="flex flex-col gap-3 border-t border-border pt-5 sm:flex-row sm:items-center">
+        <p
+          id="custom-accent-status"
+          aria-live="polite"
+          className={`min-h-5 flex-1 text-xs ${isError ? "text-expense" : "text-foreground-muted"}`}
+        >
+          {message}
+        </p>
+        <div className="flex flex-col-reverse gap-2 sm:flex-row">
+          <Button
+            type="submit"
+            formAction={resetAccentPreference}
+            variant="secondary"
+            disabled={resetDisabled || pending}
           >
-            {message}
-          </p>
-        </section>
-
-        <Button type="submit" disabled={customIsInvalid || pending || isApplied}>
-          {pending ? "Applying…" : isApplied ? "Applied" : "Apply color"}
-        </Button>
-      </form>
-
-      <form action={resetAccentPreference}>
-        <Button type="submit" variant="secondary" disabled={current.kind === "default"}>
-          Reset to Vyaya default
-        </Button>
-      </form>
-    </div>
+            Reset to Vyaya default
+          </Button>
+          <Button type="submit" disabled={customIsInvalid || pending || isApplied}>
+            {pending ? "Applying…" : isApplied ? "Applied" : "Apply color"}
+          </Button>
+        </div>
+      </div>
+    </form>
   );
 }

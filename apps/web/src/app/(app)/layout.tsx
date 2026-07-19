@@ -12,7 +12,7 @@ const navItems = [
   { href: "/transactions", label: "Transactions", icon: "≡" },
   { href: "/add", label: "Add", icon: "+" },
   { href: "/reports", label: "Reports", icon: "◔" },
-  { href: "/more", label: "More", icon: "•••" }
+  { href: "/settings", label: "Settings", icon: "⚙" }
 ] as const;
 
 export default async function AppLayout({

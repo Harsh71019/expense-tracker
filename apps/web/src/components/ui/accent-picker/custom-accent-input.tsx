@@ -4,7 +4,7 @@ import { useActionState, useState } from "react";
 import type { ReactNode } from "react";
 
 import { saveCustomAccent } from "../../../lib/accent-actions";
-import { INITIAL_ACCENT_ACTION_STATE } from "../../../lib/accent";
+import { DEFAULT_ACCENT_COLOR, INITIAL_ACCENT_ACTION_STATE } from "../../../lib/accent";
 import {
   deriveCustomAccentTokens,
   parseColorInput,
@@ -13,19 +13,17 @@ import {
 import type { NormalizedHex } from "../../../lib/accent-color";
 import { Button } from "../button";
 
-const DEFAULT_PICKER_COLOR: NormalizedHex = "#0f9d63";
-
 export function CustomAccentInput({
   current
 }: Readonly<{ current: NormalizedHex | null }>): ReactNode {
-  const [input, setInput] = useState<string>(current ?? DEFAULT_PICKER_COLOR);
+  const [input, setInput] = useState<string>(current ?? DEFAULT_ACCENT_COLOR);
   const [state, formAction, pending] = useActionState(
     saveCustomAccent,
     INITIAL_ACCENT_ACTION_STATE
   );
   const parsed = parseColorInput(input);
   const tokens = parsed.success ? deriveCustomAccentTokens(parsed.color) : null;
-  const pickerValue = parsed.success ? parsed.color : DEFAULT_PICKER_COLOR;
+  const pickerValue = parsed.success ? parsed.color : DEFAULT_ACCENT_COLOR;
   const localMessage =
     parsed.success && resemblesExpenseColor(parsed.color)
       ? "This accent may resemble expense and error colors. Ledger signs and labels remain unchanged."
@@ -39,6 +37,13 @@ export function CustomAccentInput({
 
   return (
     <form action={formAction} className="space-y-4 rounded-xl border border-border bg-surface p-4">
+      <header>
+        <h3 className="text-sm font-semibold text-foreground">Custom color</h3>
+        <p className="mt-1 text-xs text-foreground-muted">
+          Presets above apply immediately. Use this form only for a custom value.
+        </p>
+      </header>
+
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
         <label className="flex min-h-11 items-center gap-3 text-sm font-semibold text-foreground">
           <input

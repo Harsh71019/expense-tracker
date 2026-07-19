@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import {
   ACCENT_COOKIE_NAME,
   ACCENT_PRESETS,
+  DEFAULT_ACCENT_COLOR,
   isAccentPreset,
   serializeAccentPreference
 } from "./accent";
@@ -49,6 +50,11 @@ export async function saveCustomAccent(
   const parsed = parseColorInput(formData.get("accentColor"));
   if (!parsed.success) {
     return { status: "error", message: parsed.message };
+  }
+
+  if (parsed.color === DEFAULT_ACCENT_COLOR) {
+    await persistAccent({ kind: "default" });
+    return { status: "success", message: "Applied Vyaya default." };
   }
 
   await persistAccent({ kind: "custom", color: parsed.color });

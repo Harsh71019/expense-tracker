@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 import { resetAccentPreference, selectAccentPreset } from "../../../lib/accent-actions";
-import { ACCENT_PRESETS } from "../../../lib/accent";
+import { ACCENT_PRESETS, DEFAULT_ACCENT_COLOR } from "../../../lib/accent";
 import type { AccentPreference, AccentPreset } from "../../../lib/accent";
 import { Button } from "../button";
 import { CustomAccentInput } from "./custom-accent-input";
@@ -13,7 +13,7 @@ interface PresetOption {
 }
 
 const PRESET_OPTIONS: readonly PresetOption[] = [
-  { id: ACCENT_PRESETS.default, label: "Vyaya green", preview: "#0f9d63" },
+  { id: ACCENT_PRESETS.default, label: "Vyaya green", preview: DEFAULT_ACCENT_COLOR },
   { id: ACCENT_PRESETS.ocean, label: "Ocean blue", preview: "#1d4ed8" },
   { id: ACCENT_PRESETS.indigo, label: "Ledger indigo", preview: "#4338ca" },
   { id: ACCENT_PRESETS.violet, label: "Mumbai violet", preview: "#7e22ce" },
@@ -25,6 +25,13 @@ function presetIsSelected(current: AccentPreference, preset: AccentPreset): bool
     return current.kind === "default";
   }
   return current.kind === "preset" && current.preset === preset;
+}
+
+function customInputKey(current: AccentPreference): string {
+  if (current.kind === "custom") {
+    return `custom:${current.color}`;
+  }
+  return current.kind === "preset" ? `preset:${current.preset}` : "default";
 }
 
 export function AccentPicker({ current }: Readonly<{ current: AccentPreference }>): ReactNode {
@@ -77,7 +84,10 @@ export function AccentPicker({ current }: Readonly<{ current: AccentPreference }
         </fieldset>
       </form>
 
-      <CustomAccentInput current={current.kind === "custom" ? current.color : null} />
+      <CustomAccentInput
+        key={customInputKey(current)}
+        current={current.kind === "custom" ? current.color : null}
+      />
 
       <form action={resetAccentPreference}>
         <Button type="submit" variant="secondary" disabled={current.kind === "default"}>

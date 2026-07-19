@@ -69,6 +69,18 @@ describe("accent actions", () => {
     expect(mocks.delete).not.toHaveBeenCalled();
   });
 
+  it("treats the original green as the default instead of a custom preference", async () => {
+    const formData = new FormData();
+    formData.set("accentColor", "#0f9d63");
+
+    await expect(saveCustomAccent(INITIAL_ACCENT_ACTION_STATE, formData)).resolves.toEqual({
+      status: "success",
+      message: "Applied Vyaya default."
+    });
+    expect(mocks.delete).toHaveBeenCalledWith("vyaya-accent");
+    expect(mocks.set).not.toHaveBeenCalled();
+  });
+
   it("deletes the cookie for the default preset and reset action", async () => {
     const formData = new FormData();
     formData.set("accent", "default");

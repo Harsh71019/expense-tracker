@@ -9,7 +9,7 @@ test.describe("accent preference", () => {
     "E2E_TEST_EMAIL / E2E_TEST_PASSWORD not set"
   );
 
-  test("selects, persists, customizes, and resets the accent", async ({ page }) => {
+  test("selects, persists, customizes, and restores the default accent", async ({ page }) => {
     if (email === undefined || password === undefined) {
       throw new Error("E2E_TEST_EMAIL / E2E_TEST_PASSWORD not set");
     }
@@ -41,7 +41,11 @@ test.describe("accent preference", () => {
     await page.reload();
     await expect(page.getByLabel("Hex, RGB, or HSL")).toHaveValue("#ff0000");
 
-    await page.getByRole("button", { name: "Reset to Vyaya default" }).click();
+    await page.getByRole("button", { name: /Vyaya green/ }).click();
+    await expect.poll(() => page.locator("html").getAttribute("data-accent")).toBeNull();
+    await expect(page.getByLabel("Hex, RGB, or HSL")).toHaveValue("#0f9d63");
+
+    await page.getByRole("button", { name: "Apply custom color" }).click();
     await expect.poll(() => page.locator("html").getAttribute("data-accent")).toBeNull();
   });
 });

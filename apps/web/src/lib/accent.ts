@@ -1,7 +1,8 @@
-import { parseColorInput } from "./accent-color";
 import type { NormalizedHex } from "./accent-color";
+import { parseColorInput } from "./accent-color";
 
 export const ACCENT_COOKIE_NAME = "vyaya-accent";
+export const DEFAULT_ACCENT_COLOR: NormalizedHex = "#0f9d63";
 
 export const ACCENT_PRESETS = {
   default: "default",

@@ -54,4 +54,18 @@ describe("AccentPicker", () => {
     expect(screen.getByLabelText("Hex, RGB, or HSL")).toHaveValue("#1d4ed8");
     expect(screen.getByRole("button", { name: "Reset to Vyaya default" })).toBeEnabled();
   });
+
+  it("clears stale custom input when the active preference returns to default", async () => {
+    const user = userEvent.setup();
+    const view = render(<AccentPicker current={{ kind: "custom", color: "#ff0000" }} />);
+    const input = screen.getByLabelText("Hex, RGB, or HSL");
+
+    await user.clear(input);
+    await user.type(input, "#4338ca");
+    expect(input).toHaveValue("#4338ca");
+
+    view.rerender(<AccentPicker current={{ kind: "default" }} />);
+
+    expect(screen.getByLabelText("Hex, RGB, or HSL")).toHaveValue("#0f9d63");
+  });
 });

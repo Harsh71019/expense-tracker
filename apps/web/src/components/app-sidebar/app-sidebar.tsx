@@ -19,7 +19,7 @@ const navItems = [
   { href: "/imports", label: "Imports", icon: "↥" },
   { href: "/assets", label: "Assets", icon: "◈" },
   { href: "/reports", label: "Reports", icon: "◔" },
-  { href: "/more", label: "More", icon: "•••" }
+  { href: "/settings", label: "Settings", icon: "⚙" }
 ] as const;
 
 function initials(email: string): string {
@@ -87,7 +87,7 @@ export function AppSidebar({
         <ThemeToggle current={theme} compact={compact} />
 
         <Link
-          href="/more"
+          href="/settings"
           title={compact ? "Account" : undefined}
           aria-label={compact ? "Account" : undefined}
           className={`flex items-center gap-2.5 rounded-xl border border-border bg-surface px-2.5 py-2 transition-colors duration-150 hover:border-accent/40 ${compact ? "justify-center" : ""}`}

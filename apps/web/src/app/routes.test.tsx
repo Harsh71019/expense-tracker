@@ -4,8 +4,8 @@ import { describe, expect, it, vi } from "vitest";
 
 import AddTransactionPage from "./(app)/add/page";
 import DashboardPage from "./(app)/page";
-import MorePage from "./(app)/more/page";
 import ReportsPage from "./(app)/reports/page";
+import SettingsPage from "./(app)/settings/page";
 import TransactionsPage from "./(app)/transactions/page";
 import AuthLayout from "./(auth)/layout";
 import LoginPage from "./(auth)/login/page";
@@ -66,7 +66,8 @@ describe("route shells", () => {
     expect(screen.getByRole("heading", { name: "Overview" })).toBeVisible();
     expect(screen.getByText("harsh@example.com")).toBeVisible();
 
-    render(await MorePage());
+    render(await SettingsPage());
+    expect(screen.getByRole("heading", { name: "Settings" })).toBeVisible();
     expect(screen.getByText("Signed in as")).toBeVisible();
     expect(screen.getAllByText("harsh@example.com")).toHaveLength(2);
   });

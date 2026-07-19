@@ -6,6 +6,7 @@ import {
   ACCENT_COOKIE_NAME,
   ACCENT_PRESETS,
   DEFAULT_ACCENT_COLOR,
+  accentPreferenceKey,
   isAccentPreset,
   serializeAccentPreference
 } from "./accent";
@@ -28,35 +29,56 @@ async function persistAccent(preference: AccentPreference): Promise<void> {
   cookieStore.set(ACCENT_COOKIE_NAME, serialized, COOKIE_OPTIONS);
 }
 
-export async function selectAccentPreset(formData: FormData): Promise<void> {
-  const value = formData.get("accent");
-  if (typeof value !== "string" || !isAccentPreset(value)) {
-    return;
-  }
-
-  await persistAccent(
-    value === ACCENT_PRESETS.default ? { kind: "default" } : { kind: "preset", preset: value }
-  );
-}
-
 export async function resetAccentPreference(): Promise<void> {
   await persistAccent({ kind: "default" });
 }
 
-export async function saveCustomAccent(
+export async function applyAccentPreference(
   _previousState: AccentActionState,
   formData: FormData
 ): Promise<AccentActionState> {
+  const selection = formData.get("accentSelection");
+  if (typeof selection !== "string") {
+    return { status: "error", message: "Choose an accent color.", appliedKey: null };
+  }
+
+  if (isAccentPreset(selection)) {
+    const preference: AccentPreference =
+      selection === ACCENT_PRESETS.default
+        ? { kind: "default" }
+        : { kind: "preset", preset: selection };
+    await persistAccent(preference);
+    return {
+      status: "success",
+      message: selection === ACCENT_PRESETS.default ? "Applied Vyaya default." : "Applied preset.",
+      appliedKey: accentPreferenceKey(preference)
+    };
+  }
+
+  if (selection !== "custom") {
+    return { status: "error", message: "Choose a valid accent color.", appliedKey: null };
+  }
+
   const parsed = parseColorInput(formData.get("accentColor"));
   if (!parsed.success) {
-    return { status: "error", message: parsed.message };
+    return { status: "error", message: parsed.message, appliedKey: null };
   }
 
   if (parsed.color === DEFAULT_ACCENT_COLOR) {
-    await persistAccent({ kind: "default" });
-    return { status: "success", message: "Applied Vyaya default." };
+    const preference: AccentPreference = { kind: "default" };
+    await persistAccent(preference);
+    return {
+      status: "success",
+      message: "Applied Vyaya default.",
+      appliedKey: accentPreferenceKey(preference)
+    };
   }
 
-  await persistAccent({ kind: "custom", color: parsed.color });
-  return { status: "success", message: `Applied custom accent ${parsed.color}.` };
+  const preference: AccentPreference = { kind: "custom", color: parsed.color };
+  await persistAccent(preference);
+  return {
+    status: "success",
+    message: `Applied custom accent ${parsed.color}.`,
+    appliedKey: accentPreferenceKey(preference)
+  };
 }

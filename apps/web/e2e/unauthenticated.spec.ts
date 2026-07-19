@@ -1,3 +1,4 @@
+import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
 // These specs only exercise the proxy's cookie-presence check (src/proxy.ts) and
@@ -23,5 +24,11 @@ test.describe("unauthenticated access", () => {
     await expect(page.getByLabel("Email")).toBeVisible();
     await expect(page.getByLabel("Password")).toBeVisible();
     await expect(page.getByRole("button", { name: "Sign in" })).toBeVisible();
+  });
+
+  test("has no automatically detectable accessibility violations on sign-in", async ({ page }) => {
+    await page.goto("/login");
+    const scan = await new AxeBuilder({ page }).analyze();
+    expect(scan.violations).toEqual([]);
   });
 });

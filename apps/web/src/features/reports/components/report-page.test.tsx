@@ -7,8 +7,10 @@ import { ReportPage } from "./report-page";
 
 const mocks = vi.hoisted(() => {
   const rollupsByMonth = new Map<string, MonthlyRollup | null>();
-  return { rollupsByMonth, isLoading: false };
+  return { rollupsByMonth, isLoading: false, replace: vi.fn() };
 });
+
+vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: mocks.replace }) }));
 
 vi.mock("../hooks/use-monthly-rollup", () => ({
   useMonthlyRollup: (month: string) => ({
@@ -40,6 +42,7 @@ describe("ReportPage", () => {
   beforeEach(() => {
     mocks.rollupsByMonth.clear();
     mocks.isLoading = false;
+    mocks.replace.mockReset();
   });
 
   it("shows the full report body when a rollup is available", () => {
@@ -74,5 +77,6 @@ describe("ReportPage", () => {
     expect(screen.getByText("SPENT")).toBeVisible();
     await user.click(screen.getByRole("button", { name: "May 26" }));
     expect(screen.getByText("No rollup for May 2026")).toBeVisible();
+    expect(mocks.replace).toHaveBeenCalledWith("/reports?month=2026-05", { scroll: false });
   });
 });

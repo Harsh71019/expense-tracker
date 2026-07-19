@@ -52,17 +52,3 @@ export function assetNamePlaceholder(kind: AssetKind): string {
   if (kind === "loan_receivable" || kind === "loan_liability") return "e.g. Loan to Rohan";
   return "e.g. Mutual fund SIP";
 }
-
-export function formatCompactMinor(minor: number): string {
-  const negative = minor < 0;
-  const rupees = Math.abs(minor) / 100;
-  let formatted: string;
-  if (rupees >= 1_00_00_000) {
-    formatted = `${(rupees / 1_00_00_000).toFixed(2)} Cr`;
-  } else if (rupees >= 1_00_000) {
-    formatted = `${(rupees / 1_00_000).toFixed(2)} L`;
-  } else {
-    formatted = rupees.toLocaleString("en-IN");
-  }
-  return `${negative ? "−" : ""}₹${formatted}`;
-}

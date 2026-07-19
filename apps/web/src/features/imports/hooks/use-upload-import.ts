@@ -41,9 +41,11 @@ export function useUploadImport(): UseMutationResult<ImportBatch, Error, UploadI
         throw toNetworkError(error);
       }
     },
-    onSuccess: async (_batch, request) => {
-      await queryClient.invalidateQueries({ queryKey: qk.importMapping(request.accountId) });
-    },
-    onSettled: () => void queryClient.invalidateQueries({ queryKey: qk.importBatches() })
+    onSettled: async (_batch, _error, request) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: qk.importMapping(request.accountId) }),
+        queryClient.invalidateQueries({ queryKey: qk.importBatches() })
+      ]);
+    }
   });
 }

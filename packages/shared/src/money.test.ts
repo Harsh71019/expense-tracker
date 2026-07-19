@@ -1,7 +1,7 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
-import { formatMinor, parseMinor } from "./money.js";
+import { formatMinor, formatMinorInput, formatSignedCompactMinor, parseMinor } from "./money.js";
 
 describe("INR money utilities", () => {
   it.each([
@@ -20,6 +20,13 @@ describe("INR money utilities", () => {
 
   it("formats paise using Indian grouping without display-string arithmetic", () => {
     expect(formatMinor(12_500_050)).toBe("₹1,25,000.50");
+    expect(formatMinorInput(12_500_050)).toBe("125000.50");
+  });
+
+  it("formats signed compact values without client-side money arithmetic", () => {
+    expect(formatSignedCompactMinor(12_500_050)).toBe("₹1.25 L");
+    expect(formatSignedCompactMinor(-1_250_000_000)).toBe("−₹1.25 Cr");
+    expect(formatSignedCompactMinor(12_345)).toBe("₹123.45");
   });
 
   it("round-trips 10,000 safe integer paise values", () => {

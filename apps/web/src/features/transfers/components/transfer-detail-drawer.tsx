@@ -5,7 +5,7 @@ import { useState } from "react";
 import type { ReactNode } from "react";
 
 import { Money } from "@/components/ui/money";
-import { ReverseConfirmDialog } from "@/features/transactions";
+import { ReverseConfirmDialog } from "@/features/transactions/components/reverse-confirm-dialog";
 
 import { useReverseTransfer } from "../hooks/use-transfers";
 

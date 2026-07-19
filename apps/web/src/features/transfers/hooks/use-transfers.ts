@@ -43,11 +43,13 @@ export function useCreateTransfer(): ReturnType<
         throw toNetworkError(error);
       }
     },
-    onSuccess: async () => {
+    onSuccess: () => {
       setKey(generateRequestId());
+    },
+    onSettled: async () => {
       await Promise.all([
         client.invalidateQueries({ queryKey: qk.accounts() }),
-        client.invalidateQueries({ queryKey: ["txns"] }),
+        client.invalidateQueries({ queryKey: qk.transactionLists() }),
         client.invalidateQueries({ queryKey: qk.netWorth() })
       ]);
     }
@@ -76,7 +78,7 @@ export function useReverseTransfer(): ReturnType<
     onSettled: async () => {
       await Promise.all([
         client.invalidateQueries({ queryKey: qk.accounts() }),
-        client.invalidateQueries({ queryKey: ["txns"] }),
+        client.invalidateQueries({ queryKey: qk.transactionLists() }),
         client.invalidateQueries({ queryKey: qk.netWorth() })
       ]);
     }

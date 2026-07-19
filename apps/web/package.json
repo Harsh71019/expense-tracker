@@ -6,7 +6,8 @@
     "build": "next build",
     "dev": "next dev",
     "dev:mock": "NEXT_PUBLIC_MOCK_API=1 next dev",
-    "lint": "eslint --config ../../eslint.config.mjs --no-warn-ignored --max-warnings=0 src/ e2e/ tests/",
+    "check:circular": "madge --circular --extensions ts,tsx --ts-config tsconfig.json src",
+    "lint": "eslint --config eslint.config.mjs --no-warn-ignored --max-warnings=0 src/ e2e/ tests/",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
     "test:coverage": "vitest run --coverage",
@@ -23,10 +24,12 @@
     "react": "latest",
     "react-dom": "latest",
     "react-hook-form": "^7.81.0",
+    "server-only": "^0.0.1",
     "sonner": "^2.0.7",
     "zod": "latest"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.12.1",
     "@playwright/test": "latest",
     "@tailwindcss/postcss": "latest",
     "@testing-library/jest-dom": "latest",

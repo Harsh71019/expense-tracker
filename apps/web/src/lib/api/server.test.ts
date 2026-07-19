@@ -20,7 +20,20 @@ describe("getServerApiClient", () => {
 
     expect(mocks.createClient).toHaveBeenCalledWith({
       baseUrl: "http://localhost:3000/api",
-      headers: { cookie: "vyaya.session=abc", "x-request-id": "request-1" }
+      headers: { cookie: "vyaya.session=abc", "x-request-id": "request-1" },
+      fetch: expect.any(Function)
     });
+  });
+
+  it("disables Next.js caching for mutable API reads", async () => {
+    vi.resetModules();
+    const response = new Response(null, { status: 204 });
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(response);
+    const { noStoreFetch } = await import("./server");
+    const request = new Request("http://localhost:4000/api/v1/accounts");
+
+    await expect(noStoreFetch(request)).resolves.toBe(response);
+    expect(fetchMock).toHaveBeenCalledWith(request, { cache: "no-store" });
+    fetchMock.mockRestore();
   });
 });

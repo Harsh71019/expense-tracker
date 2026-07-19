@@ -3,8 +3,10 @@ import { describe, expect, it } from "vitest";
 import {
   currentMonthInIndia,
   defaultReportMonth,
+  isMonthKey,
   monthLabel,
   recentMonths,
+  reportMonthFromParam,
   shiftMonth
 } from "./month";
 
@@ -37,6 +39,20 @@ describe("recentMonths", () => {
 describe("defaultReportMonth", () => {
   it("is exactly one month before the current month", () => {
     expect(defaultReportMonth()).toBe(shiftMonth(currentMonthInIndia(), -1));
+  });
+});
+
+describe("reportMonthFromParam", () => {
+  it("accepts a valid bookmarkable month", () => {
+    expect(isMonthKey("2026-06")).toBe(true);
+    expect(reportMonthFromParam("2026-06")).toBe("2026-06");
+    expect(reportMonthFromParam(["2026-05", "2026-04"])).toBe("2026-05");
+  });
+
+  it("falls back for missing or invalid months", () => {
+    expect(isMonthKey("2026-13")).toBe(false);
+    expect(reportMonthFromParam("2026-13")).toBe(defaultReportMonth());
+    expect(reportMonthFromParam(undefined)).toBe(defaultReportMonth());
   });
 });
 

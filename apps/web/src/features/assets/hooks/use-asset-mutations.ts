@@ -47,11 +47,12 @@ export function useCreateAsset(): ReturnType<typeof useMutation<Asset, Error, Cr
         throw toNetworkError(error);
       }
     },
-    onSuccess: async (asset) => {
+    onSuccess: () => {
       setKey(generateRequestId());
+    },
+    onSettled: async () => {
       await Promise.all([
         client.invalidateQueries({ queryKey: qk.assets() }),
-        client.invalidateQueries({ queryKey: qk.assetValuations(asset.id) }),
         client.invalidateQueries({ queryKey: qk.netWorth() })
       ]);
     }
@@ -83,10 +84,12 @@ export function useCreateValuation(): ReturnType<
         throw toNetworkError(error);
       }
     },
-    onSuccess: async (valuation) => {
+    onSuccess: () => {
       setKey(generateRequestId());
+    },
+    onSettled: async (_valuation, _error, request) => {
       await Promise.all([
-        client.invalidateQueries({ queryKey: qk.assetValuations(valuation.assetId) }),
+        client.invalidateQueries({ queryKey: qk.assetValuations(request.assetId) }),
         client.invalidateQueries({ queryKey: qk.netWorth() })
       ]);
     }
@@ -108,8 +111,10 @@ export function useCloseAsset(): ReturnType<typeof useMutation<void, Error, stri
         throw toNetworkError(error);
       }
     },
-    onSuccess: async () => {
+    onSuccess: () => {
       setKey(generateRequestId());
+    },
+    onSettled: async () => {
       await Promise.all([
         client.invalidateQueries({ queryKey: qk.assets() }),
         client.invalidateQueries({ queryKey: qk.netWorth() })

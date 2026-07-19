@@ -14,7 +14,7 @@ import { TXN_ROW_GRID, TxnRow } from "./txn-row";
 import { TransferRow } from "./transfer-row";
 import { useAccounts } from "@/features/accounts";
 import { useCategories } from "@/features/categories";
-import { useReverseTransfer } from "@/features/transfers";
+import { useReverseTransfer } from "@/features/transfers/hooks/use-transfers";
 
 export function TxnList({
   filters,

@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 
 import { useAccounts } from "@/features/accounts";
-import { useTxnList } from "@/features/transactions";
+import { useTxnList } from "@/features/transactions/hooks/use-txn-list";
 
 import { CreateTransferSheet } from "./create-transfer-sheet";
 import { TransferDetailDrawer } from "./transfer-detail-drawer";
@@ -22,16 +22,17 @@ export function TransferList({
   const accounts = useAccounts();
   const [createOpen, setCreateOpen] = useState(false);
   const [selected, setSelected] = useState<Transaction[]>();
+  const { fetchNextPage, hasNextPage, isFetchingNextPage } = list;
 
   // The mock/design shows every transfer with no pagination UI — transfers are comparatively
   // rare, so unlike the main transaction ledger it's reasonable to just fetch every page rather
   // than require manual "Load more" clicks. This also avoids splitting a group's two legs (which
   // always share the same occurredAt) across a page boundary and having one leg go unrendered.
   useEffect(() => {
-    if (list.hasNextPage && !list.isFetchingNextPage) {
-      void list.fetchNextPage();
+    if (hasNextPage && !isFetchingNextPage) {
+      void fetchNextPage();
     }
-  }, [list.hasNextPage, list.isFetchingNextPage, list.fetchNextPage]);
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   const transactions = (list.data?.pages ?? [initialPage]).flatMap((page) => page.items);
   const legsByGroup = new Map<string, Transaction[]>();

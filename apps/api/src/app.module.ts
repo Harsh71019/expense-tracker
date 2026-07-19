@@ -1,7 +1,11 @@
 import { Module } from "@nestjs/common";
+import { APP_GUARD } from "@nestjs/core";
 import { ScheduleModule } from "@nestjs/schedule";
+import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
+import type { ExecutionContext } from "@nestjs/common";
 import { LoggerModule } from "nestjs-pino";
 import pino from "pino";
+import type { Request } from "express";
 
 import { BalancesModule } from "./balances/balances.module.js";
 import { RuntimeConfigModule } from "./common/config/runtime-config.module.js";
@@ -11,6 +15,8 @@ import { LoggingContextService } from "./common/logging/logging-context.service.
 import { LoggingModule } from "./common/logging/logging.module.js";
 import { IdempotencyModule } from "./common/idempotency/idempotency.module.js";
 import { RedisModule } from "./common/redis/redis.module.js";
+import { RedisService } from "./common/redis/redis.service.js";
+import { RedisThrottlerStorage } from "./common/throttler/redis-throttler.storage.js";
 import { AuthModule } from "./auth/auth.module.js";
 import { AccountsModule } from "./accounts/accounts.module.js";
 import { AssetsModule } from "./assets/assets.module.js";
@@ -27,6 +33,13 @@ import { ReportsModule } from "./reports/reports.module.js";
 import { UserProfilesModule } from "./user-profiles/user-profiles.module.js";
 import { TransactionsModule } from "./transactions/transactions.module.js";
 
+const UNTHROTTLED_PATHS = new Set(["/api/healthz", "/api/readyz"]);
+
+function isUnthrottledRequest(context: ExecutionContext): boolean {
+  const request = context.switchToHttp().getRequest<Request>();
+  return UNTHROTTLED_PATHS.has(request.path);
+}
+
 @Module({
   imports: [
     RuntimeConfigModule,
@@ -36,6 +49,14 @@ import { TransactionsModule } from "./transactions/transactions.module.js";
     BalancesModule,
     LoggingModule,
     ScheduleModule.forRoot(),
+    ThrottlerModule.forRootAsync({
+      inject: [RedisService],
+      useFactory: (redis: RedisService) => ({
+        skipIf: isUnthrottledRequest,
+        storage: new RedisThrottlerStorage(redis),
+        throttlers: [{ ttl: 60_000, limit: 300, blockDuration: 60_000 }]
+      })
+    }),
     NotificationsModule,
     UserProfilesModule,
     AuthModule,
@@ -83,6 +104,7 @@ import { TransactionsModule } from "./transactions/transactions.module.js";
       })
     }),
     HealthModule
-  ]
+  ],
+  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }]
 })
 export class AppModule {}

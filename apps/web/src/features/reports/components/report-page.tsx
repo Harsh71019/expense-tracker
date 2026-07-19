@@ -1,6 +1,7 @@
 "use client";
 
 import type { MonthlyRollup } from "@vyaya/shared";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { ReactNode } from "react";
 
@@ -31,6 +32,7 @@ const computedAtFormatter = new Intl.DateTimeFormat("en-IN", {
 type ReportPageProps = Readonly<{ initialMonth: string; initialRollup: MonthlyRollup | null }>;
 
 export function ReportPage({ initialMonth, initialRollup }: ReportPageProps): ReactNode {
+  const router = useRouter();
   const [month, setMonth] = useState(initialMonth);
   const rollupQuery = useMonthlyRollup(month, month === initialMonth ? initialRollup : undefined);
   const accounts = useAccounts();
@@ -39,6 +41,11 @@ export function ReportPage({ initialMonth, initialRollup }: ReportPageProps): Re
   const today = currentMonthInIndia();
   const months = recentMonths(today, MONTH_CHIP_COUNT);
   const rollup = rollupQuery.data;
+
+  function selectMonth(nextMonth: string): void {
+    setMonth(nextMonth);
+    router.replace(`/reports?month=${encodeURIComponent(nextMonth)}`, { scroll: false });
+  }
 
   return (
     <section>
@@ -62,9 +69,9 @@ export function ReportPage({ initialMonth, initialRollup }: ReportPageProps): Re
           months={months}
           selected={month}
           canGoNext={month < today}
-          onSelect={setMonth}
-          onPrev={() => setMonth((current) => shiftMonth(current, -1))}
-          onNext={() => setMonth((current) => shiftMonth(current, 1))}
+          onSelect={selectMonth}
+          onPrev={() => selectMonth(shiftMonth(month, -1))}
+          onNext={() => selectMonth(shiftMonth(month, 1))}
         />
 
         {rollupQuery.isLoading ? (

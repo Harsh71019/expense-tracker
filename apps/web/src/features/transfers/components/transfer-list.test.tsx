@@ -52,7 +52,7 @@ const mocks = vi.hoisted(() => {
 
 vi.mock("@/features/accounts", () => ({ useAccounts: () => ({ data: [] }) }));
 
-vi.mock("@/features/transactions", () => ({
+vi.mock("@/features/transactions/hooks/use-txn-list", () => ({
   useTxnList: () => ({
     data: {
       pages: [{ items: mocks.items, pageInfo: { nextCursor: null, hasMore: false, limit: 100 } }]

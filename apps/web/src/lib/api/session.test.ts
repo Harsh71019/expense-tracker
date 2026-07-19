@@ -15,8 +15,8 @@ vi.mock("../debug", () => ({
 
 async function loadGetSession(): Promise<() => Promise<unknown>> {
   vi.resetModules();
-  const module = await import("./session");
-  return module.getSession;
+  const sessionModule = await import("./session");
+  return sessionModule.getSession;
 }
 
 describe("getSession", () => {

@@ -30,6 +30,14 @@ jobs:
           --health-retries 5
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: "Secret scan (gitleaks)"
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v5
         with:
@@ -44,8 +52,12 @@ jobs:
         run: pnpm --filter @vyaya/shared lint
       - name: "Lint — backend (api)"
         run: pnpm --filter @vyaya/api lint
+      - name: "Architecture — backend circular dependencies"
+        run: pnpm --filter @vyaya/api check:circular
       - name: "Lint — frontend (web)"
         run: pnpm --filter @vyaya/web lint
+      - name: "Architecture — frontend circular dependencies"
+        run: pnpm --filter @vyaya/web check:circular
 
       - name: "Typecheck — shared"
         run: pnpm --filter @vyaya/shared typecheck

@@ -1,3 +1,5 @@
+import { formatMinorInput } from "@vyaya/shared";
+
 import type { components } from "@/lib/api/generated/schema";
 import { MOCK_USER_ID } from "@/mocks/enabled";
 
@@ -2348,8 +2350,8 @@ function seedImportBatch(store: MockStore): void {
       raw: {
         Date: "01/01/2026",
         Narration: row.description,
-        "Withdrawal Amt.": row.type === "expense" ? String(row.amountMinor / 100) : "",
-        "Deposit Amt.": row.type === "income" ? String(row.amountMinor / 100) : ""
+        "Withdrawal Amt.": row.type === "expense" ? formatMinorInput(row.amountMinor) : "",
+        "Deposit Amt.": row.type === "income" ? formatMinorInput(row.amountMinor) : ""
       },
       parsed: {
         occurredAt: daysAgo(row.daysAgo),
@@ -2416,8 +2418,7 @@ function seedImportBatch2(store: MockStore): void {
       raw: {
         "Transaction Date": "2026-01-15",
         Description: row.description,
-        Amount:
-          row.type === "income" ? String(row.amountMinor / 100) : String(-(row.amountMinor / 100))
+        Amount: `${row.type === "income" ? "" : "-"}${formatMinorInput(row.amountMinor)}`
       },
       parsed: {
         occurredAt: daysAgo(row.daysAgo),

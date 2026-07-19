@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Money } from "@/components/ui/money";
 import { useAccounts } from "@/features/accounts";
 import { useCategories } from "@/features/categories";
-import { useReverseTransfer } from "@/features/transfers";
+import { useReverseTransfer } from "@/features/transfers/hooks/use-transfers";
 
 import { useReverseTxn } from "../hooks/use-reverse-txn";
 import { useTxn, useUpdateTxn } from "../hooks/use-txn";

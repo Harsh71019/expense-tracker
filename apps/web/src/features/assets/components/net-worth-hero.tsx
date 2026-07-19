@@ -1,11 +1,9 @@
 "use client";
 
-import type { NetWorth } from "@vyaya/shared";
+import { formatSignedCompactMinor, type NetWorth } from "@vyaya/shared";
 import type { ReactNode } from "react";
 
 import { SignedMoney } from "@/components/ui/money";
-
-import { formatCompactMinor } from "../model/asset-visuals";
 
 const dateFormatter = new Intl.DateTimeFormat("en-IN", {
   day: "2-digit",
@@ -37,8 +35,8 @@ export function NetWorthHero({ netWorth }: Readonly<{ netWorth: NetWorth }>): Re
             <SignedMoney minor={netWorth.netWorthMinor} size="hero" />
           </div>
           <p className="mt-2 text-[13px] font-medium text-foreground-muted">
-            as of {dateFormatter.format(netWorth.asOf)} · {formatCompactMinor(accountsMinor)} in
-            accounts + {formatCompactMinor(assetsMinor)} in assets
+            as of {dateFormatter.format(netWorth.asOf)} · {formatSignedCompactMinor(accountsMinor)}
+            in accounts + {formatSignedCompactMinor(assetsMinor)} in assets
           </p>
         </div>
         <div className="flex flex-wrap gap-3.5">
@@ -47,7 +45,7 @@ export function NetWorthHero({ netWorth }: Readonly<{ netWorth: NetWorth }>): Re
               ASSETS
             </p>
             <p className="mt-1.5 font-mono text-xl font-bold tracking-tight text-foreground">
-              {formatCompactMinor(assetsTotal)}
+              {formatSignedCompactMinor(assetsTotal)}
             </p>
             <p className="mt-1 text-[11px] font-medium text-foreground-muted">
               {positiveAssets.length} open
@@ -60,7 +58,7 @@ export function NetWorthHero({ netWorth }: Readonly<{ netWorth: NetWorth }>): Re
             <p
               className={`mt-1.5 font-mono text-xl font-bold tracking-tight ${liabTotal < 0 ? "text-expense" : "text-foreground"}`}
             >
-              {formatCompactMinor(liabTotal)}
+              {formatSignedCompactMinor(liabTotal)}
             </p>
             <p className="mt-1 text-[11px] font-medium text-foreground-muted">
               {liabilities.length} loans owed

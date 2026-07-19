@@ -53,10 +53,12 @@ export function useUpdateTxn(): ReturnType<typeof useMutation<Transaction, Error
         throw toNetworkError(error);
       }
     },
-    onSuccess: async (transaction) => {
+    onSuccess: (transaction) => {
       setKey(generateRequestId());
       client.setQueryData(qk.txn(transaction.id), transaction);
-      await client.invalidateQueries({ queryKey: ["txns"] });
+    },
+    onSettled: async () => {
+      await client.invalidateQueries({ queryKey: qk.transactionLists() });
     }
   });
 }

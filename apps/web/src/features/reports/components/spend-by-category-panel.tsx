@@ -1,7 +1,5 @@
-import type { Category, MonthlyRollup } from "@vyaya/shared";
+import { formatSignedCompactMinor, type Category, type MonthlyRollup } from "@vyaya/shared";
 import type { ReactNode } from "react";
-
-import { formatCompactMinor } from "@/features/assets";
 
 import { rollupCategoryMeta } from "../model/rollup-category";
 import { DonutChart } from "./donut-chart";
@@ -30,7 +28,7 @@ export function SpendByCategoryPanel({ rollup, categories }: SpendByCategoryPane
       <DonutChart
         slices={rows.map((row) => ({ value: row.spentMinor, color: row.meta.color }))}
         size={190}
-        centerValue={formatCompactMinor(rollup.totalExpenseMinor)}
+        centerValue={formatSignedCompactMinor(rollup.totalExpenseMinor)}
         centerLabel="total spend"
       />
       <div className="mt-4.5 flex flex-col gap-2.5">

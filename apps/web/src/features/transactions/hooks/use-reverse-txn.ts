@@ -38,7 +38,7 @@ export function useReverseTxn(): ReturnType<typeof useMutation<Transaction, Erro
       toast.error(error.message || "Failed to reverse transaction");
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: ["txns"] });
+      void queryClient.invalidateQueries({ queryKey: qk.transactions() });
       void queryClient.invalidateQueries({ queryKey: qk.accounts() });
       void queryClient.invalidateQueries({ queryKey: qk.netWorth() });
     }

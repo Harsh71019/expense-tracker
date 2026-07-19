@@ -6,7 +6,7 @@ import {
   DateFormatSchema,
   type ColumnMapping
 } from "@vyaya/shared";
-import { useEffect, useState } from "react";
+import { useEffect, useEffectEvent, useState } from "react";
 import type { ReactNode } from "react";
 
 import { useSavedImportMapping } from "../hooks/use-saved-import-mapping";
@@ -84,10 +84,11 @@ export function MapStep({ accountId, accountName, onChange }: MapStepProps): Rea
       ? undefined
       : fromMapping(savedMapping.data.mapping);
   const effectiveDraft = dirty ? draft : (savedDraft ?? draft);
+  const notifyChange = useEffectEvent(onChange);
 
   useEffect(() => {
     const parsed = ColumnMappingSchema.safeParse(toMapping(effectiveDraft));
-    onChange(
+    notifyChange(
       parsed.success ? parsed.data : undefined,
       parsed.success ? undefined : (parsed.error.issues[0]?.message ?? "Check column mapping.")
     );

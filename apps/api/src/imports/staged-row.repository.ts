@@ -1,5 +1,4 @@
-import { Injectable } from "@nestjs/common";
-import { InjectConnection } from "@nestjs/mongoose";
+import { Inject, Injectable } from "@nestjs/common";
 import {
   StagedRowSchema,
   type ImportBatchId,
@@ -7,13 +6,13 @@ import {
   type StagedRowId,
   type UpdateStagedRow
 } from "@vyaya/shared";
-import { Types } from "mongoose";
-import type { Connection } from "mongoose";
+import { and, asc, eq, gt, isNotNull } from "drizzle-orm";
 import { z } from "zod";
 
+import { DATABASE_CONNECTION } from "../common/db/db.module.js";
+import type { DrizzleDb } from "../common/db/db.module.js";
+import { stagedRows } from "../common/db/schema/index.js";
 import { InvalidCursorError } from "../common/errors/invalid-cursor.error.js";
-
-const STAGED_ROWS_COLLECTION = "staged_rows";
 
 export type NewStagedRow = Omit<StagedRow, "id" | "batchId">;
 
@@ -26,7 +25,7 @@ const CursorPayloadSchema = z.object({ rowNumber: z.number().int().positive() })
 
 @Injectable()
 export class StagedRowRepository {
-  constructor(@InjectConnection() private readonly connection: Connection) {}
+  constructor(@Inject(DATABASE_CONNECTION) private readonly db: DrizzleDb) {}
 
   /**
    * Clears any staged rows left behind by a previous, incomplete attempt at
@@ -36,31 +35,29 @@ export class StagedRowRepository {
    * "clear then rewrite," not by per-row skip logic.
    */
   async deleteAllForBatch(batchId: ImportBatchId): Promise<void> {
-    await this.database()
-      .collection(STAGED_ROWS_COLLECTION)
-      .deleteMany({ batchId: new Types.ObjectId(batchId) });
+    await this.db.delete(stagedRows).where(eq(stagedRows.batchId, batchId));
   }
 
   async insertMany(batchId: ImportBatchId, rows: readonly NewStagedRow[]): Promise<void> {
     if (rows.length === 0) return;
-
     const now = new Date();
-    const documents = rows.map((row) => ({
-      batchId: new Types.ObjectId(batchId),
-      rowNumber: row.rowNumber,
-      raw: row.raw,
-      ...(row.parsed === undefined ? {} : { parsed: row.parsed }),
-      ...(row.dedupeHash === undefined ? {} : { dedupeHash: row.dedupeHash }),
-      ...(row.suggestedCategoryId === undefined
-        ? {}
-        : { suggestedCategoryId: new Types.ObjectId(row.suggestedCategoryId) }),
-      problems: row.problems,
-      isDuplicate: row.isDuplicate,
-      include: row.include,
-      createdAt: now
-    }));
-
-    await this.database().collection(STAGED_ROWS_COLLECTION).insertMany(documents);
+    await this.db.insert(stagedRows).values(
+      rows.map((row) => ({
+        batchId,
+        rowNumber: row.rowNumber,
+        raw: row.raw,
+        parsedOccurredAt: row.parsed?.occurredAt ?? null,
+        parsedAmountMinor: row.parsed?.amountMinor ?? null,
+        parsedType: row.parsed?.type ?? null,
+        parsedDescription: row.parsed?.description ?? null,
+        dedupeHash: row.dedupeHash ?? null,
+        suggestedCategoryId: row.suggestedCategoryId ?? null,
+        problems: [...row.problems],
+        isDuplicate: row.isDuplicate,
+        include: row.include,
+        createdAt: now
+      }))
+    );
   }
 
   async findByBatchId(
@@ -69,22 +66,20 @@ export class StagedRowRepository {
     limit: number
   ): Promise<StagedRowPageResult> {
     const afterRowNumber = cursor === undefined ? null : decodeCursor(cursor);
-    const filter: Record<string, unknown> = {
-      batchId: new Types.ObjectId(batchId),
-      ...(afterRowNumber === null ? {} : { rowNumber: { $gt: afterRowNumber } })
-    };
+    const conditions = [eq(stagedRows.batchId, batchId)];
+    if (afterRowNumber !== null) conditions.push(gt(stagedRows.rowNumber, afterRowNumber));
 
-    const documents = await this.database()
-      .collection(STAGED_ROWS_COLLECTION)
-      .find(filter)
-      .sort({ rowNumber: 1 })
-      .limit(limit + 1)
-      .toArray();
+    const rows = await this.db
+      .select()
+      .from(stagedRows)
+      .where(and(...conditions))
+      .orderBy(asc(stagedRows.rowNumber))
+      .limit(limit + 1);
 
-    const page = documents.slice(0, limit);
-    const items = page.map((document) => this.toStagedRow(document));
+    const page = rows.slice(0, limit);
+    const items = page.map(toStagedRow);
     const last = items.at(-1);
-    const hasMore = documents.length > limit;
+    const hasMore = rows.length > limit;
     const nextCursor = hasMore && last !== undefined ? encodeCursor(last.rowNumber) : null;
 
     return { items, pageInfo: { nextCursor, hasMore, limit } };
@@ -97,23 +92,20 @@ export class StagedRowRepository {
    * marks a row includable when it parsed cleanly and wasn't a duplicate).
    */
   async findIncludableForBatch(batchId: ImportBatchId): Promise<StagedRow[]> {
-    const documents = await this.database()
-      .collection(STAGED_ROWS_COLLECTION)
-      .find({ batchId: new Types.ObjectId(batchId), include: true })
-      .sort({ rowNumber: 1 })
-      .toArray();
-    return documents.map((document) => this.toStagedRow(document));
+    const rows = await this.db
+      .select()
+      .from(stagedRows)
+      .where(and(eq(stagedRows.batchId, batchId), eq(stagedRows.include, true)))
+      .orderBy(asc(stagedRows.rowNumber));
+    return rows.map(toStagedRow);
   }
 
   /**
    * Toggling `include`/`suggestedCategoryId` — the preview screen's edits.
-   * A row with no `parsed` data (it failed to parse) can never be flipped to
+   * A row with no parsed data (it failed to parse) can never be flipped to
    * `include: true` — there's nothing committable on it, and commitBatch's
    * findIncludableForBatch assumes every includable row has parsed data.
-   * Enforced in the filter itself rather than the caller: a row that
-   * doesn't satisfy that invariant simply doesn't match, so this returns
-   * null exactly like "row not found" does — safe by construction, not by
-   * trusting every call site to remember to check.
+   * Enforced in the filter itself rather than the caller.
    */
   async updateRow(
     batchId: ImportBatchId,
@@ -121,46 +113,48 @@ export class StagedRowRepository {
     patch: UpdateStagedRow
   ): Promise<StagedRow | null> {
     const set: Record<string, unknown> = {};
-    const unset: Record<string, ""> = {};
     if (patch.include !== undefined) set.include = patch.include;
     if (patch.suggestedCategoryId !== undefined) {
-      if (patch.suggestedCategoryId === null) {
-        unset.suggestedCategoryId = "";
-      } else {
-        set.suggestedCategoryId = new Types.ObjectId(patch.suggestedCategoryId);
-      }
+      set.suggestedCategoryId = patch.suggestedCategoryId;
     }
 
-    const requiresParsed = patch.include === true ? { parsed: { $exists: true } } : {};
-    const result = await this.database()
-      .collection(STAGED_ROWS_COLLECTION)
-      .findOneAndUpdate(
-        { _id: new Types.ObjectId(rowId), batchId: new Types.ObjectId(batchId), ...requiresParsed },
-        { $set: set, ...(Object.keys(unset).length === 0 ? {} : { $unset: unset }) },
-        { returnDocument: "after" }
-      );
-    return result === null ? null : this.toStagedRow(result);
-  }
+    const conditions = [eq(stagedRows.id, rowId), eq(stagedRows.batchId, batchId)];
+    if (patch.include === true) conditions.push(isNotNull(stagedRows.parsedOccurredAt));
 
-  private toStagedRow(value: Record<string, unknown>): StagedRow {
-    const { _id, batchId, suggestedCategoryId, ...rest } = value;
-    return StagedRowSchema.parse({
-      id: objectIdString(_id),
-      batchId: objectIdString(batchId),
-      ...(suggestedCategoryId === undefined
-        ? {}
-        : { suggestedCategoryId: objectIdString(suggestedCategoryId) }),
-      ...rest
-    });
+    const [row] = await this.db
+      .update(stagedRows)
+      .set(set)
+      .where(and(...conditions))
+      .returning();
+    return row === undefined ? null : toStagedRow(row);
   }
+}
 
-  private database(): NonNullable<Connection["db"]> {
-    const database = this.connection.db;
-    if (database === undefined) {
-      throw new Error("MongoDB connection is not ready");
-    }
-    return database;
-  }
+function toStagedRow(row: typeof stagedRows.$inferSelect): StagedRow {
+  const parsed =
+    row.parsedOccurredAt === null ||
+    row.parsedAmountMinor === null ||
+    row.parsedType === null ||
+    row.parsedDescription === null
+      ? undefined
+      : {
+          occurredAt: row.parsedOccurredAt,
+          amountMinor: row.parsedAmountMinor,
+          type: row.parsedType,
+          description: row.parsedDescription
+        };
+  return StagedRowSchema.parse({
+    id: row.id,
+    batchId: row.batchId,
+    rowNumber: row.rowNumber,
+    raw: row.raw,
+    parsed,
+    dedupeHash: row.dedupeHash ?? undefined,
+    suggestedCategoryId: row.suggestedCategoryId ?? undefined,
+    problems: row.problems,
+    isDuplicate: row.isDuplicate,
+    include: row.include
+  });
 }
 
 function encodeCursor(rowNumber: number): string {
@@ -176,15 +170,4 @@ function decodeCursor(cursor: string): number {
   } catch {
     throw new InvalidCursorError();
   }
-}
-
-function objectIdString(value: unknown): string {
-  if (typeof value !== "object" || value === null || !("toString" in value)) {
-    throw new Error("MongoDB document contains an invalid ObjectId.");
-  }
-  const stringify = value.toString;
-  if (typeof stringify !== "function") {
-    throw new Error("MongoDB document contains an invalid ObjectId.");
-  }
-  return stringify.call(value);
 }

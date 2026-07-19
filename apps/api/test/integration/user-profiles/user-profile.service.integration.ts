@@ -1,34 +1,28 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { MongoMemoryReplSet } from "mongodb-memory-server";
-import { createConnection } from "mongoose";
-import type { Connection } from "mongoose";
+
 import { EntityNotFoundError } from "../../../src/common/errors/entity-not-found.error.js";
 import { UserProfileRepository } from "../../../src/user-profiles/user-profile.repository.js";
 import { UserProfileService } from "../../../src/user-profiles/user-profile.service.js";
+import { createTestDb, insertTestUser } from "../support/postgres-test-db.js";
+import type { TestDb } from "../support/postgres-test-db.js";
 
 describe("UserProfileService", () => {
-  let replicaSet: MongoMemoryReplSet | undefined;
-  let connection: Connection | undefined;
-  let userProfileService: UserProfileService | undefined;
+  let testDb: TestDb;
+  let userProfileService: UserProfileService;
 
   beforeAll(async () => {
-    replicaSet = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
-    connection = await createConnection(
-      replicaSet.getUri("vyaya_user_profile_service_test")
-    ).asPromise();
-    const repository = new UserProfileRepository(connection);
+    testDb = await createTestDb();
+    const repository = new UserProfileRepository(testDb.db);
     userProfileService = new UserProfileService(repository);
-  });
+    await insertTestUser(testDb.db, "user-1");
+  }, 60_000);
 
   afterAll(async () => {
-    if (connection !== undefined) await connection.close();
-    if (replicaSet !== undefined) await replicaSet.stop();
+    await testDb.teardown();
   });
 
   it("ensures and retrieves a user profile correctly", async () => {
-    const service = getUserProfileService(userProfileService);
-
-    const profile = await service.ensure("user-1", "Harsh");
+    const profile = await userProfileService.ensure("user-1", "Harsh");
     expect(profile).toMatchObject({
       userId: "user-1",
       displayName: "Harsh",
@@ -36,18 +30,11 @@ describe("UserProfileService", () => {
       timezone: "Asia/Kolkata"
     });
 
-    const retrieved = await service.get("user-1");
+    const retrieved = await userProfileService.get("user-1");
     expect(retrieved).toEqual(profile);
   });
 
   it("throws EntityNotFoundError if the profile does not exist", async () => {
-    const service = getUserProfileService(userProfileService);
-
-    await expect(service.get("non-existent-user")).rejects.toThrow(EntityNotFoundError);
+    await expect(userProfileService.get("non-existent-user")).rejects.toThrow(EntityNotFoundError);
   });
 });
-
-function getUserProfileService(service: UserProfileService | undefined): UserProfileService {
-  if (service === undefined) throw new Error("UserProfile service is not ready");
-  return service;
-}

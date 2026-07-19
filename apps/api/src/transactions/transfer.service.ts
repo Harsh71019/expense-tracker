@@ -1,18 +1,17 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { InjectConnection } from "@nestjs/mongoose";
 import { type CreateTransfer, type Transaction, type TransferGroupId } from "@vyaya/shared";
-import { Types } from "mongoose";
-import type { Connection } from "mongoose";
 import { Logger } from "nestjs-pino";
-import { z } from "zod";
 
 import { AccountRepository } from "../accounts/account.repository.js";
 import { AuditRepository } from "../audit/audit.repository.js";
+import { DATABASE_CONNECTION } from "../common/db/db.module.js";
+import type { DrizzleDb } from "../common/db/db.module.js";
+import { withTxn } from "../common/db/db-txn.js";
 import { EntityNotFoundError } from "../common/errors/entity-not-found.error.js";
 import { TransactionNotReversibleError } from "../common/errors/transaction-not-reversible.error.js";
-import { withTxn } from "../common/mongo-txn.js";
 import { LogEvent } from "../common/logging/events.js";
 import { TransactionRepository } from "./transaction.repository.js";
+import { isUniqueViolation } from "./transaction.service.js";
 
 export type TransferResult = Readonly<{
   transferGroupId: string;
@@ -32,7 +31,7 @@ type TransferLogger = Pick<Logger, "log" | "warn">;
 @Injectable()
 export class TransferService {
   constructor(
-    @InjectConnection() private readonly connection: Connection,
+    @Inject(DATABASE_CONNECTION) private readonly db: DrizzleDb,
     private readonly accounts: AccountRepository,
     private readonly transactions: TransactionRepository,
     private readonly audit: AuditRepository,
@@ -45,29 +44,24 @@ export class TransferService {
     idempotencyKey: string | undefined
   ): Promise<TransferResult> {
     try {
-      const transfer = await withTxn(this.connection, async (session) => {
+      const transfer = await withTxn(this.db, async (tx) => {
         if (
           !(await this.accounts.applyBalanceDelta(
             userId,
             input.fromAccountId,
             -input.amountMinor,
-            session
+            tx
           ))
         ) {
           throw new EntityNotFoundError("Account");
         }
         if (
-          !(await this.accounts.applyBalanceDelta(
-            userId,
-            input.toAccountId,
-            input.amountMinor,
-            session
-          ))
+          !(await this.accounts.applyBalanceDelta(userId, input.toAccountId, input.amountMinor, tx))
         ) {
           throw new EntityNotFoundError("Account");
         }
 
-        const transferGroupId = new Types.ObjectId().toString();
+        const transferGroupId = crypto.randomUUID();
         const fromTransaction = await this.transactions.create(
           userId,
           {
@@ -79,7 +73,7 @@ export class TransferService {
             tags: input.tags
           },
           idempotencyKey,
-          session,
+          tx,
           transferGroupId
         );
         const toTransaction = await this.transactions.create(
@@ -93,12 +87,12 @@ export class TransferService {
             tags: input.tags
           },
           undefined,
-          session,
+          tx,
           transferGroupId
         );
 
-        await this.audit.record(userId, "transfer.create", fromTransaction.id, session);
-        await this.audit.record(userId, "transfer.create", toTransaction.id, session);
+        await this.audit.record(userId, "transfer.create", fromTransaction.id, tx);
+        await this.audit.record(userId, "transfer.create", toTransaction.id, tx);
 
         return { transferGroupId, fromTransaction, toTransaction };
       });
@@ -114,7 +108,7 @@ export class TransferService {
       );
       return { ...transfer, replayed: false };
     } catch (error) {
-      if (idempotencyKey === undefined || !isDuplicateKeyError(error)) throw error;
+      if (idempotencyKey === undefined || !isUniqueViolation(error)) throw error;
       const fromTransaction = await this.transactions.findByIdempotencyKey(userId, idempotencyKey);
       if (fromTransaction === null || fromTransaction.transferGroupId === undefined) throw error;
       const legs = await this.transactions.findLegsByTransferGroupId(
@@ -142,11 +136,11 @@ export class TransferService {
 
   async reverse(userId: string, transferGroupId: TransferGroupId): Promise<TransferReverseResult> {
     try {
-      const reversal = await withTxn(this.connection, async (session) => {
+      const reversal = await withTxn(this.db, async (tx) => {
         const legs = await this.transactions.findPostedLegsByTransferGroupId(
           userId,
           transferGroupId,
-          session
+          tx
         );
         if (legs.length !== 2) {
           const existing = await this.transactions.findLegsByTransferGroupId(
@@ -157,25 +151,23 @@ export class TransferService {
           throw new TransactionNotReversibleError();
         }
 
-        const newTransferGroupId = new Types.ObjectId().toString();
+        const newTransferGroupId = crypto.randomUUID();
         const reversedLegs: Transaction[] = [];
         for (const leg of legs) {
           const reversalLeg = await this.transactions.createReversal(
             userId,
             leg,
-            session,
+            tx,
             newTransferGroupId
           );
-          if (!(await this.transactions.markReversed(userId, leg.id, reversalLeg.id, session))) {
+          if (!(await this.transactions.markReversed(userId, leg.id, reversalLeg.id, tx))) {
             throw new TransactionNotReversibleError();
           }
           const deltaMinor = leg.type === "expense" ? leg.amountMinor : -leg.amountMinor;
-          if (
-            !(await this.accounts.applyBalanceDelta(userId, leg.accountId, deltaMinor, session))
-          ) {
+          if (!(await this.accounts.applyBalanceDelta(userId, leg.accountId, deltaMinor, tx))) {
             throw new EntityNotFoundError("Account");
           }
-          await this.audit.record(userId, "transfer.reverse", reversalLeg.id, session);
+          await this.audit.record(userId, "transfer.reverse", reversalLeg.id, tx);
           reversedLegs.push(reversalLeg);
         }
 
@@ -216,8 +208,4 @@ function legsPair(
     throw new TransactionNotReversibleError();
   }
   return { transferGroupId, legs: [first, second] };
-}
-
-function isDuplicateKeyError(error: unknown): boolean {
-  return z.object({ code: z.literal(11000) }).safeParse(error).success;
 }

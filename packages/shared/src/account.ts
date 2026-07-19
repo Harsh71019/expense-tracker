@@ -8,9 +8,7 @@ const AccountBalanceMinorSchema = z
 
 export const AccountTypeSchema = z.enum(["bank", "credit_card", "cash", "wallet", "investment"]);
 
-export const AccountIdSchema = z
-  .string()
-  .regex(/^[a-f\d]{24}$/i, "Account id must be a MongoDB ObjectId.");
+export const AccountIdSchema = z.string().uuid("Account id must be a UUID.");
 
 export const CreateAccountSchema = z.object({
   name: z.string().trim().min(1).max(80),

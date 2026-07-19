@@ -1,5 +1,4 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { InjectConnection } from "@nestjs/mongoose";
 import {
   type CreateTransaction,
   type ListTransactionsQuery,
@@ -8,17 +7,18 @@ import {
   type TransactionPage,
   type UpdateTransaction
 } from "@vyaya/shared";
-import type { Connection } from "mongoose";
 import { Logger } from "nestjs-pino";
-import { z } from "zod";
 
 import { AccountRepository } from "../accounts/account.repository.js";
 import { AuditRepository } from "../audit/audit.repository.js";
 import { CategoryRepository } from "../categories/category.repository.js";
+import { DATABASE_CONNECTION } from "../common/db/db.module.js";
+import type { DrizzleDb } from "../common/db/db.module.js";
+import { withTxn } from "../common/db/db-txn.js";
+import type { DbTx } from "../common/db/db-txn.js";
 import { EntityNotFoundError } from "../common/errors/entity-not-found.error.js";
 import { TransactionNotReversibleError } from "../common/errors/transaction-not-reversible.error.js";
 import { TransferMetadataRequiresGroupError } from "../common/errors/transfer-metadata-requires-group.error.js";
-import { withTxn, type MongoSession } from "../common/mongo-txn.js";
 import { LogEvent } from "../common/logging/events.js";
 import { TransactionRepository } from "./transaction.repository.js";
 
@@ -28,7 +28,7 @@ type TransactionLogger = Pick<Logger, "log" | "warn">;
 @Injectable()
 export class TransactionService {
   constructor(
-    @InjectConnection() private readonly connection: Connection,
+    @Inject(DATABASE_CONNECTION) private readonly db: DrizzleDb,
     private readonly accounts: AccountRepository,
     private readonly categories: CategoryRepository,
     private readonly transactions: TransactionRepository,
@@ -42,23 +42,21 @@ export class TransactionService {
     idempotencyKey: string | undefined
   ): Promise<CreateTransactionResult> {
     try {
-      const transaction = await withTxn(this.connection, async (session) => {
+      const transaction = await withTxn(this.db, async (tx) => {
         if (
           input.categoryId !== undefined &&
-          !(await this.categories.exists(userId, input.categoryId, session))
+          !(await this.categories.exists(userId, input.categoryId, tx))
         ) {
           throw new EntityNotFoundError("Category");
         }
 
         const deltaMinor = input.type === "income" ? input.amountMinor : -input.amountMinor;
-        if (
-          !(await this.accounts.applyBalanceDelta(userId, input.accountId, deltaMinor, session))
-        ) {
+        if (!(await this.accounts.applyBalanceDelta(userId, input.accountId, deltaMinor, tx))) {
           throw new EntityNotFoundError("Account");
         }
 
-        const created = await this.transactions.create(userId, input, idempotencyKey, session);
-        await this.audit.record(userId, "transaction.create", created.id, session);
+        const created = await this.transactions.create(userId, input, idempotencyKey, tx);
+        await this.audit.record(userId, "transaction.create", created.id, tx);
         return created;
       });
       this.logger.log(
@@ -73,7 +71,7 @@ export class TransactionService {
       );
       return { transaction, replayed: false };
     } catch (error) {
-      if (idempotencyKey === undefined || !isDuplicateKeyError(error)) throw error;
+      if (idempotencyKey === undefined || !isUniqueViolation(error)) throw error;
       const transaction = await this.transactions.findByIdempotencyKey(userId, idempotencyKey);
       if (transaction === null) throw error;
       this.logger.warn(
@@ -103,8 +101,8 @@ export class TransactionService {
     transactionId: TransactionId,
     patch: UpdateTransaction
   ): Promise<Transaction> {
-    const updated = await withTxn(this.connection, (session) =>
-      this.updateInSession(userId, transactionId, patch, session)
+    const updated = await withTxn(this.db, (tx) =>
+      this.updateInTx(userId, transactionId, patch, tx)
     );
 
     this.logger.log(
@@ -114,33 +112,28 @@ export class TransactionService {
     return updated;
   }
 
-  async updateInSession(
+  async updateInTx(
     userId: string,
     transactionId: TransactionId,
     patch: UpdateTransaction,
-    session: MongoSession
+    tx: DbTx
   ): Promise<Transaction> {
-    const before = await this.transactions.findById(userId, transactionId, session);
+    const before = await this.transactions.findById(userId, transactionId, tx);
     if (before === null) throw new EntityNotFoundError("Transaction");
     if (before.transferGroupId !== undefined) throw new TransferMetadataRequiresGroupError();
 
     if (
       patch.categoryId !== undefined &&
       patch.categoryId !== null &&
-      !(await this.categories.exists(userId, patch.categoryId, session))
+      !(await this.categories.exists(userId, patch.categoryId, tx))
     ) {
       throw new EntityNotFoundError("Category");
     }
 
-    const after = await this.transactions.updateNonMonetaryFields(
-      userId,
-      transactionId,
-      patch,
-      session
-    );
+    const after = await this.transactions.updateNonMonetaryFields(userId, transactionId, patch, tx);
     if (after === null) throw new EntityNotFoundError("Transaction");
 
-    await this.audit.record(userId, "transaction.update", after.id, session, {
+    await this.audit.record(userId, "transaction.update", after.id, tx, {
       before: {
         description: before.description,
         tags: before.tags,
@@ -154,28 +147,26 @@ export class TransactionService {
 
   async reverse(userId: string, transactionId: TransactionId): Promise<CreateTransactionResult> {
     try {
-      const transaction = await withTxn(this.connection, async (session) => {
-        const original = await this.transactions.findPostedById(userId, transactionId, session);
+      const transaction = await withTxn(this.db, async (tx) => {
+        const original = await this.transactions.findPostedById(userId, transactionId, tx);
         if (original === null) {
-          const existing = await this.transactions.findById(userId, transactionId, session);
+          const existing = await this.transactions.findById(userId, transactionId, tx);
           if (existing === null) throw new EntityNotFoundError("Transaction");
           throw new TransactionNotReversibleError();
         }
 
-        const reversal = await this.transactions.createReversal(userId, original, session);
-        if (!(await this.transactions.markReversed(userId, original.id, reversal.id, session))) {
+        const reversal = await this.transactions.createReversal(userId, original, tx);
+        if (!(await this.transactions.markReversed(userId, original.id, reversal.id, tx))) {
           throw new TransactionNotReversibleError();
         }
 
         const deltaMinor =
           original.type === "expense" ? original.amountMinor : -original.amountMinor;
-        if (
-          !(await this.accounts.applyBalanceDelta(userId, original.accountId, deltaMinor, session))
-        ) {
+        if (!(await this.accounts.applyBalanceDelta(userId, original.accountId, deltaMinor, tx))) {
           throw new EntityNotFoundError("Account");
         }
 
-        await this.audit.record(userId, "transaction.reverse", reversal.id, session);
+        await this.audit.record(userId, "transaction.reverse", reversal.id, tx);
         return reversal;
       });
       this.logger.log(
@@ -199,6 +190,12 @@ export class TransactionService {
   }
 }
 
-function isDuplicateKeyError(error: unknown): boolean {
-  return z.object({ code: z.literal(11000) }).safeParse(error).success;
+export function isUniqueViolation(error: unknown): boolean {
+  // drizzle-orm wraps the driver's pg error in a DrizzleQueryError, with the
+  // real PostgresError (carrying `.code`) on `.cause` -- unwrap one level
+  // before giving up, mirroring how Node's own `cause` chaining works.
+  if (typeof error !== "object" || error === null) return false;
+  if ("code" in error && error.code === "23505") return true;
+  if ("cause" in error) return isUniqueViolation(error.cause);
+  return false;
 }

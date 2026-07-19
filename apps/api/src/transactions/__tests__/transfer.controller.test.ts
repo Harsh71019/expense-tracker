@@ -16,7 +16,7 @@ describe("TransferController", () => {
 
   it("returns the bare transfer and sets Location on a fresh create", async () => {
     const mockResult = {
-      transferGroupId: "507f1f77bcf86cd799439099",
+      transferGroupId: "3fa85f64-5717-4562-b3fc-2c963f66be99",
       fromTransaction: { id: "txn-from" },
       toTransaction: { id: "txn-to" },
       replayed: false
@@ -26,8 +26,8 @@ describe("TransferController", () => {
     // @ts-expect-error - mock TransferService for unit testing
     const controller = new TransferController(mockService);
     const body = {
-      fromAccountId: "507f1f77bcf86cd799439011",
-      toAccountId: "507f1f77bcf86cd799439012",
+      fromAccountId: "3fa85f64-5717-4562-b3fc-2c963f66beef",
+      toAccountId: "3fa85f64-5717-4562-b3fc-2c963f66beff",
       amountMinor: 10_000,
       occurredAt: "2026-07-12T09:00:00.000Z",
       description: "ATM withdrawal"
@@ -39,7 +39,7 @@ describe("TransferController", () => {
     const result = await controller.create(user, body, key, response);
 
     expect(result).toEqual({
-      transferGroupId: "507f1f77bcf86cd799439099",
+      transferGroupId: "3fa85f64-5717-4562-b3fc-2c963f66be99",
       fromTransaction: { id: "txn-from" },
       toTransaction: { id: "txn-to" }
     });
@@ -48,8 +48,8 @@ describe("TransferController", () => {
     expect(mockService.create).toHaveBeenCalledWith(
       "user-1",
       {
-        fromAccountId: "507f1f77bcf86cd799439011",
-        toAccountId: "507f1f77bcf86cd799439012",
+        fromAccountId: "3fa85f64-5717-4562-b3fc-2c963f66beef",
+        toAccountId: "3fa85f64-5717-4562-b3fc-2c963f66beff",
         amountMinor: 10_000,
         occurredAt: new Date("2026-07-12T09:00:00.000Z"),
         description: "ATM withdrawal",
@@ -61,7 +61,7 @@ describe("TransferController", () => {
 
   it("returns 200 with Idempotency-Replayed on a replayed create", async () => {
     const mockResult = {
-      transferGroupId: "507f1f77bcf86cd799439099",
+      transferGroupId: "3fa85f64-5717-4562-b3fc-2c963f66be99",
       fromTransaction: { id: "txn-from" },
       toTransaction: { id: "txn-to" },
       replayed: true
@@ -74,8 +74,8 @@ describe("TransferController", () => {
     const result = await controller.create(
       user,
       {
-        fromAccountId: "507f1f77bcf86cd799439011",
-        toAccountId: "507f1f77bcf86cd799439012",
+        fromAccountId: "3fa85f64-5717-4562-b3fc-2c963f66beef",
+        toAccountId: "3fa85f64-5717-4562-b3fc-2c963f66beff",
         amountMinor: 10_000,
         occurredAt: "2026-07-12T09:00:00.000Z",
         description: "ATM withdrawal"
@@ -86,7 +86,7 @@ describe("TransferController", () => {
     );
 
     expect(result).toEqual({
-      transferGroupId: "507f1f77bcf86cd799439099",
+      transferGroupId: "3fa85f64-5717-4562-b3fc-2c963f66be99",
       fromTransaction: { id: "txn-from" },
       toTransaction: { id: "txn-to" }
     });
@@ -96,7 +96,7 @@ describe("TransferController", () => {
 
   it("returns the bare transfer reversal", async () => {
     const mockResult = {
-      transferGroupId: "507f1f77bcf86cd799439099",
+      transferGroupId: "3fa85f64-5717-4562-b3fc-2c963f66be99",
       legs: [{ id: "txn-a" }, { id: "txn-b" }],
       replayed: false
     };
@@ -104,18 +104,21 @@ describe("TransferController", () => {
 
     // @ts-expect-error - mock TransferService for unit testing
     const controller = new TransferController(mockService);
-    const result = await controller.reverse(user, "507f1f77bcf86cd799439099");
+    const result = await controller.reverse(user, "3fa85f64-5717-4562-b3fc-2c963f66be99");
 
     expect(result).toEqual({
-      transferGroupId: "507f1f77bcf86cd799439099",
+      transferGroupId: "3fa85f64-5717-4562-b3fc-2c963f66be99",
       legs: [{ id: "txn-a" }, { id: "txn-b" }]
     });
-    expect(mockService.reverse).toHaveBeenCalledWith("user-1", "507f1f77bcf86cd799439099");
+    expect(mockService.reverse).toHaveBeenCalledWith(
+      "user-1",
+      "3fa85f64-5717-4562-b3fc-2c963f66be99"
+    );
   });
 
   it("marks a natural group-reversal replay in the response header", async () => {
     const mockResult = {
-      transferGroupId: "507f1f77bcf86cd799439099",
+      transferGroupId: "3fa85f64-5717-4562-b3fc-2c963f66be99",
       legs: [{ id: "txn-a" }, { id: "txn-b" }],
       replayed: true
     };
@@ -126,7 +129,7 @@ describe("TransferController", () => {
 
     await controller.reverse(
       user,
-      "507f1f77bcf86cd799439099",
+      "3fa85f64-5717-4562-b3fc-2c963f66be99",
       // @ts-expect-error - mock Response for unit testing
       response
     );
@@ -144,8 +147,8 @@ describe("TransferController", () => {
       controller.create(
         user,
         {
-          fromAccountId: "507f1f77bcf86cd799439011",
-          toAccountId: "507f1f77bcf86cd799439011",
+          fromAccountId: "3fa85f64-5717-4562-b3fc-2c963f66beef",
+          toAccountId: "3fa85f64-5717-4562-b3fc-2c963f66beef",
           amountMinor: 10_000,
           occurredAt: "2026-07-12T09:00:00.000Z",
           description: "Self transfer"
@@ -168,8 +171,8 @@ describe("TransferController", () => {
       controller.create(
         user,
         {
-          fromAccountId: "507f1f77bcf86cd799439011",
-          toAccountId: "507f1f77bcf86cd799439012",
+          fromAccountId: "3fa85f64-5717-4562-b3fc-2c963f66beef",
+          toAccountId: "3fa85f64-5717-4562-b3fc-2c963f66beff",
           amountMinor: 10_000,
           occurredAt: "2026-07-12T09:00:00.000Z",
           description: "ATM withdrawal"
@@ -192,8 +195,8 @@ describe("TransferController", () => {
       controller.create(
         user,
         {
-          fromAccountId: "507f1f77bcf86cd799439011",
-          toAccountId: "507f1f77bcf86cd799439012",
+          fromAccountId: "3fa85f64-5717-4562-b3fc-2c963f66beef",
+          toAccountId: "3fa85f64-5717-4562-b3fc-2c963f66beff",
           amountMinor: 10_000,
           occurredAt: "2026-07-12T09:00:00.000Z",
           description: "ATM withdrawal"

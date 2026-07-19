@@ -9,7 +9,7 @@ import {
 } from "./recurring.js";
 
 const VALID_TEMPLATE = {
-  accountId: "507f1f77bcf86cd799439011",
+  accountId: "3fa85f64-5717-4562-b3fc-2c963f66beef",
   type: "expense",
   amountMinor: 150_000,
   description: "Rent"

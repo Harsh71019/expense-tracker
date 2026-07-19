@@ -1,130 +1,76 @@
-import { Injectable } from "@nestjs/common";
-import { InjectConnection } from "@nestjs/mongoose";
+import { Inject, Injectable } from "@nestjs/common";
 import { ValuationSchema, type AssetId, type CreateValuation, type Valuation } from "@vyaya/shared";
-import { Types } from "mongoose";
-import type { Connection } from "mongoose";
-import { z } from "zod";
+import { and, desc, eq, inArray } from "drizzle-orm";
 
-import type { MongoSession } from "../common/mongo-txn.js";
-
-const VALUATIONS_COLLECTION = "asset_valuations";
-
-const StoredValuationSchema = z.object({
-  _id: z.unknown(),
-  userId: z.string(),
-  assetId: z.unknown(),
-  valueMinor: z.number().int(),
-  valuedAt: z.date(),
-  source: z.enum(["manual", "maturity_projection"]),
-  createdAt: z.date()
-});
-
-const LatestValuationSchema = z.object({
-  _id: z.unknown(),
-  valueMinor: z.number().int(),
-  valuedAt: z.date()
-});
+import { DATABASE_CONNECTION } from "../common/db/db.module.js";
+import type { DrizzleDb } from "../common/db/db.module.js";
+import { assetValuations } from "../common/db/schema/index.js";
+import type { DbTx } from "../common/db/db-txn.js";
 
 @Injectable()
 export class ValuationRepository {
-  constructor(@InjectConnection() private readonly connection: Connection) {}
+  constructor(@Inject(DATABASE_CONNECTION) private readonly db: DrizzleDb) {}
 
   async create(
     userId: string,
     assetId: AssetId,
     input: CreateValuation,
-    session: MongoSession
+    tx: DbTx
   ): Promise<Valuation> {
-    const document = {
-      userId,
-      assetId: new Types.ObjectId(assetId),
-      valueMinor: input.valueMinor,
-      valuedAt: input.valuedAt,
-      source: input.source,
-      createdAt: new Date()
-    };
-    const result = await this.database()
-      .collection(VALUATIONS_COLLECTION)
-      .insertOne(document, { session });
-    return this.toValuation({ _id: result.insertedId, ...document });
+    const [row] = await tx
+      .insert(assetValuations)
+      .values({
+        userId,
+        assetId,
+        valueMinor: input.valueMinor,
+        valuedAt: input.valuedAt,
+        source: input.source,
+        createdAt: new Date()
+      })
+      .returning();
+    if (row === undefined) throw new Error("Valuation insert did not return a row.");
+    return ValuationSchema.parse(row);
   }
 
   async listByAsset(userId: string, assetId: AssetId): Promise<Valuation[]> {
-    const documents = await this.database()
-      .collection(VALUATIONS_COLLECTION)
-      .find({ userId, assetId: new Types.ObjectId(assetId) })
-      .sort({ valuedAt: -1, _id: -1 })
-      .toArray();
-    return documents.map((document) => this.toValuation(document));
+    const rows = await this.db
+      .select()
+      .from(assetValuations)
+      .where(and(eq(assetValuations.userId, userId), eq(assetValuations.assetId, assetId)))
+      .orderBy(desc(assetValuations.valuedAt), desc(assetValuations.id));
+    return rows.map((row) => ValuationSchema.parse(row));
   }
 
+  /**
+   * Postgres's `DISTINCT ON` is the idiomatic replacement for Mongo's
+   * `$group`-with-`$first`, but the pinned drizzle-orm version (0.45.2) has
+   * no `.distinctOn()` query-builder method (checked: absent from
+   * pg-core's select builder) -- fall back to an in-memory dedupe over a
+   * single ORDER BY query instead. Revisit if drizzle-orm is upgraded.
+   */
   async findLatestForAssets(
     userId: string,
     assetIds: readonly AssetId[]
   ): Promise<Map<string, { valueMinor: number; valuedAt: Date }>> {
     if (assetIds.length === 0) return new Map();
 
-    const documents = await this.database()
-      .collection(VALUATIONS_COLLECTION)
-      .aggregate([
-        {
-          $match: {
-            userId,
-            assetId: { $in: assetIds.map((assetId) => new Types.ObjectId(assetId)) }
-          }
-        },
-        { $sort: { assetId: 1, valuedAt: -1, _id: -1 } },
-        {
-          $group: {
-            _id: "$assetId",
-            valueMinor: { $first: "$valueMinor" },
-            valuedAt: { $first: "$valuedAt" }
-          }
-        }
-      ])
-      .toArray();
+    const rows = await this.db
+      .select({
+        assetId: assetValuations.assetId,
+        valueMinor: assetValuations.valueMinor,
+        valuedAt: assetValuations.valuedAt
+      })
+      .from(assetValuations)
+      .where(
+        and(eq(assetValuations.userId, userId), inArray(assetValuations.assetId, [...assetIds]))
+      )
+      .orderBy(assetValuations.assetId, desc(assetValuations.valuedAt), desc(assetValuations.id));
 
     const latest = new Map<string, { valueMinor: number; valuedAt: Date }>();
-    for (const document of documents) {
-      const parsed = LatestValuationSchema.parse(document);
-      latest.set(objectIdString(parsed._id), {
-        valueMinor: parsed.valueMinor,
-        valuedAt: parsed.valuedAt
-      });
+    for (const row of rows) {
+      if (latest.has(row.assetId)) continue;
+      latest.set(row.assetId, { valueMinor: row.valueMinor, valuedAt: row.valuedAt });
     }
     return latest;
   }
-
-  private toValuation(value: unknown): Valuation {
-    const stored = StoredValuationSchema.parse(value);
-    return ValuationSchema.parse({
-      id: objectIdString(stored._id),
-      userId: stored.userId,
-      assetId: objectIdString(stored.assetId),
-      valueMinor: stored.valueMinor,
-      valuedAt: stored.valuedAt,
-      source: stored.source,
-      createdAt: stored.createdAt
-    });
-  }
-
-  private database(): NonNullable<Connection["db"]> {
-    const database = this.connection.db;
-    if (database === undefined) {
-      throw new Error("MongoDB connection is not ready");
-    }
-
-    return database;
-  }
-}
-
-function objectIdString(value: unknown): string {
-  if (typeof value !== "object" || value === null || !("toString" in value)) {
-    throw new Error("MongoDB document contains an invalid ObjectId.");
-  }
-  const stringify = value.toString;
-  if (typeof stringify !== "function") {
-    throw new Error("MongoDB document contains an invalid ObjectId.");
-  }
-  return stringify.call(value);
 }

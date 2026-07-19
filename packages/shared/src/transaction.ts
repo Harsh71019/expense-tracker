@@ -9,9 +9,7 @@ const MinorAmountSchema = z.number().int().min(1).max(Number.MAX_SAFE_INTEGER);
 export const TransactionTypeSchema = z.enum(["expense", "income"]);
 export const TransactionStatusSchema = z.enum(["posted", "reversed", "reversal"]);
 export const TransactionSourceSchema = z.enum(["manual", "csv_import", "recurring", "api"]);
-export const TransactionIdSchema = z
-  .string()
-  .regex(/^[a-f\d]{24}$/i, "Transaction id must be a MongoDB ObjectId.");
+export const TransactionIdSchema = z.string().uuid("Transaction id must be a UUID.");
 
 export const CreateTransactionSchema = z.object({
   accountId: AccountIdSchema,
@@ -23,9 +21,7 @@ export const CreateTransactionSchema = z.object({
   tags: z.array(z.string().trim().min(1).max(40)).max(20).default([])
 });
 
-export const TransferGroupIdSchema = z
-  .string()
-  .regex(/^[a-f\d]{24}$/i, "Transfer group id must be a MongoDB ObjectId.");
+export const TransferGroupIdSchema = z.string().uuid("Transfer group id must be a UUID.");
 
 export const TransactionSchema = CreateTransactionSchema.extend({
   id: TransactionIdSchema,

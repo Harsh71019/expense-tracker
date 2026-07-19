@@ -33,7 +33,7 @@ vi.mock("../hooks/use-category-mutations", () => ({
 
 function category(overrides: Partial<Category> = {}): Category {
   return {
-    id: "507f1f77bcf86cd799439011",
+    id: "3fa85f64-5717-4562-b3fc-2c963f66beef",
     userId: "u1",
     name: "Food & Dining",
     kind: "expense",
@@ -62,9 +62,9 @@ describe("CategoryManager", () => {
     const user = userEvent.setup();
     mocks.categories = [
       category(),
-      category({ id: "507f1f77bcf86cd799439012", name: "Old", isArchived: true }),
+      category({ id: "3fa85f64-5717-4562-b3fc-2c963f66beff", name: "Old", isArchived: true }),
       category({
-        id: "507f1f77bcf86cd799439013",
+        id: "3fa85f64-5717-4562-b3fc-2c963f66bef0",
         name: "Salary",
         kind: "income"
       })

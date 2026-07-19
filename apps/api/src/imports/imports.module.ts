@@ -8,11 +8,18 @@ import { ImportsController } from "./imports.controller.js";
 import { ImportsQueue } from "./imports.queue.js";
 import { ImportsService } from "./imports.service.js";
 import { StagedRowRepository } from "./staged-row.repository.js";
+import { StagedRowsCleanupCron } from "./staged-rows-cleanup.cron.js";
 
 @Module({
   imports: [TransactionsModule, AccountsModule, CategoryRulesModule],
   controllers: [ImportsController],
-  providers: [ImportBatchRepository, StagedRowRepository, ImportsQueue, ImportsService],
+  providers: [
+    ImportBatchRepository,
+    StagedRowRepository,
+    ImportsQueue,
+    ImportsService,
+    StagedRowsCleanupCron
+  ],
   exports: [ImportBatchRepository, StagedRowRepository, ImportsQueue, ImportsService]
 })
 export class ImportsModule {}

@@ -8,7 +8,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ImportWizard } from "./import-wizard";
 
 const account: Account = {
-  id: "507f1f77bcf86cd799439011",
+  id: "3fa85f64-5717-4562-b3fc-2c963f66beef",
   userId: "u1",
   name: "HDFC Savings",
   type: "bank",
@@ -21,7 +21,7 @@ const account: Account = {
 };
 
 const category: Category = {
-  id: "507f1f77bcf86cd799439012",
+  id: "3fa85f64-5717-4562-b3fc-2c963f66beff",
   userId: "u1",
   name: "Groceries",
   kind: "expense",
@@ -32,7 +32,7 @@ const category: Category = {
 
 function makeBatch(overrides: Partial<ImportBatch> = {}): ImportBatch {
   return {
-    id: "507f1f77bcf86cd799439021",
+    id: "3fa85f64-5717-4562-b3fc-2c963f66be21",
     userId: "u1",
     accountId: account.id,
     filename: "HDFC-Statement-Jun.csv",
@@ -148,7 +148,7 @@ describe("ImportWizard", () => {
     mocks.commitMutateAsync.mockResolvedValue({ ...uploaded, status: "committed" });
     mocks.stagedRows = [
       {
-        id: "507f1f77bcf86cd799439031",
+        id: "3fa85f64-5717-4562-b3fc-2c963f66be31",
         batchId: uploaded.id,
         rowNumber: 1,
         raw: {},

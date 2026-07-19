@@ -1,48 +1,45 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { MongoMemoryReplSet } from "mongodb-memory-server";
-import { createConnection } from "mongoose";
-import type { Connection } from "mongoose";
+import { and, eq } from "drizzle-orm";
 
 import { AuditRepository } from "../../../src/audit/audit.repository.js";
 import { AssetRepository } from "../../../src/assets/asset.repository.js";
 import { AssetService } from "../../../src/assets/asset.service.js";
 import { AssetMutationService } from "../../../src/assets/asset-mutation.service.js";
 import { ValuationRepository } from "../../../src/assets/valuation.repository.js";
-import { IdempotencyRepository } from "../../../src/common/idempotency/idempotency.repository.js";
-import { IdempotencyService } from "../../../src/common/idempotency/idempotency.service.js";
+import { assetValuations, auditLog } from "../../../src/common/db/schema/index.js";
+import { IdempotencyPostgresRepository } from "../../../src/common/idempotency/idempotency-postgres.repository.js";
+import { IdempotencyPostgresService } from "../../../src/common/idempotency/idempotency-postgres.service.js";
+import { createTestDb, insertTestUser } from "../support/postgres-test-db.js";
+import type { TestDb } from "../support/postgres-test-db.js";
 
 describe("AssetService", () => {
-  let replicaSet: MongoMemoryReplSet | undefined;
-  let connection: Connection | undefined;
-  let service: AssetService | undefined;
-  let mutations: AssetMutationService | undefined;
+  let testDb: TestDb;
+  let service: AssetService;
+  let mutations: AssetMutationService;
 
   beforeAll(async () => {
-    replicaSet = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
-    connection = await createConnection(replicaSet.getUri("vyaya_assets_test")).asPromise();
+    testDb = await createTestDb();
+    for (const userId of ["user-a", "user-b", "user-idempotent"]) {
+      await insertTestUser(testDb.db, userId);
+    }
     service = new AssetService(
-      connection,
-      new AssetRepository(connection),
-      new ValuationRepository(connection),
-      new AuditRepository(connection)
+      testDb.db,
+      new AssetRepository(testDb.db),
+      new ValuationRepository(testDb.db),
+      new AuditRepository(testDb.db)
     );
     mutations = new AssetMutationService(
-      connection,
       service,
-      new IdempotencyService(new IdempotencyRepository(connection))
+      new IdempotencyPostgresService(testDb.db, new IdempotencyPostgresRepository(testDb.db))
     );
-    await connectedDatabase(connection)
-      .collection("idempotency_records")
-      .createIndex({ userId: 1, operation: 1, key: 1 }, { unique: true });
-  });
+  }, 60_000);
 
   afterAll(async () => {
-    if (connection !== undefined) await connection.close();
-    if (replicaSet !== undefined) await replicaSet.stop();
+    await testDb.teardown();
   });
 
   it("creates an asset with its opening valuation and an audit entry, atomically", async () => {
-    const asset = await assetService(service).create("user-a", {
+    const asset = await service.create("user-a", {
       kind: "fixed_deposit",
       name: "HDFC FD",
       openedAt: new Date("2026-01-01T00:00:00.000Z"),
@@ -53,19 +50,27 @@ describe("AssetService", () => {
 
     expect(asset).toMatchObject({ kind: "fixed_deposit", name: "HDFC FD", isClosed: false });
 
-    const valuationDoc = await connectedDatabase(connection)
-      .collection("asset_valuations")
-      .findOne({ userId: "user-a", assetId: { $exists: true } });
-    expect(valuationDoc).toMatchObject({ valueMinor: 100_000_00, source: "manual" });
+    const [valuationRow] = await testDb.db
+      .select()
+      .from(assetValuations)
+      .where(and(eq(assetValuations.userId, "user-a"), eq(assetValuations.assetId, asset.id)));
+    expect(valuationRow).toMatchObject({ valueMinor: 100_000_00, source: "manual" });
 
-    const auditDoc = await connectedDatabase(connection)
-      .collection("audit_log")
-      .findOne({ userId: "user-a", action: "asset.create", entityId: asset.id });
-    expect(auditDoc).toMatchObject({ meta: { valueMinor: 100_000_00 } });
+    const [auditDoc] = await testDb.db
+      .select()
+      .from(auditLog)
+      .where(
+        and(
+          eq(auditLog.userId, "user-a"),
+          eq(auditLog.action, "asset.create"),
+          eq(auditLog.entityId, asset.id)
+        )
+      );
+    expect(auditDoc?.meta).toMatchObject({ valueMinor: 100_000_00 });
   });
 
   it("lists only open assets for the requesting user", async () => {
-    const asset = await assetService(service).create("user-b", {
+    const asset = await service.create("user-b", {
       kind: "gold",
       name: "Gold coins",
       openedAt: new Date("2026-02-01T00:00:00.000Z"),
@@ -73,26 +78,26 @@ describe("AssetService", () => {
       openingValueMinor: 40_000_00
     });
 
-    const before = await assetService(service).listValuations("user-b", asset.id);
+    const before = await service.listValuations("user-b", asset.id);
     expect(before.items).toHaveLength(1);
 
-    let list = await assetService(service).list("user-b");
+    let list = await service.list("user-b");
     expect(list.map((a) => a.id)).toContain(asset.id);
 
-    await assetService(service).close("user-b", asset.id);
+    await service.close("user-b", asset.id);
 
-    list = await assetService(service).list("user-b");
+    list = await service.list("user-b");
     expect(list.map((a) => a.id)).not.toContain(asset.id);
   });
 
   it("throws when closing an asset that does not exist", async () => {
-    await expect(assetService(service).close("user-a", "507f1f77bcf86cd799439011")).rejects.toThrow(
+    await expect(service.close("user-a", "3fa85f64-5717-4562-b3fc-2c963f66beef")).rejects.toThrow(
       "Asset not found."
     );
   });
 
   it("rejects a negative valuation on a non-liability asset", async () => {
-    const asset = await assetService(service).create("user-a", {
+    const asset = await service.create("user-a", {
       kind: "investment",
       name: "Index fund",
       openedAt: new Date("2026-03-01T00:00:00.000Z"),
@@ -100,7 +105,7 @@ describe("AssetService", () => {
     });
 
     await expect(
-      assetService(service).addValuation("user-a", asset.id, {
+      service.addValuation("user-a", asset.id, {
         valueMinor: -1_000_00,
         valuedAt: new Date("2026-06-01T00:00:00.000Z"),
         source: "manual"
@@ -109,26 +114,26 @@ describe("AssetService", () => {
   });
 
   it("accepts a negative valuation on a loan_liability asset", async () => {
-    const asset = await assetService(service).create("user-a", {
+    const asset = await service.create("user-a", {
       kind: "loan_liability",
       name: "Personal loan",
       openedAt: new Date("2026-03-01T00:00:00.000Z"),
       openingValueMinor: -50_000_00
     });
 
-    const valuation = await assetService(service).addValuation("user-a", asset.id, {
+    const valuation = await service.addValuation("user-a", asset.id, {
       valueMinor: -40_000_00,
       valuedAt: new Date("2026-06-01T00:00:00.000Z"),
       source: "manual"
     });
 
     expect(valuation.valueMinor).toBe(-40_000_00);
-    const history = await assetService(service).listValuations("user-a", asset.id);
+    const history = await service.listValuations("user-a", asset.id);
     expect(history.items.map((v) => v.valueMinor)).toEqual([-40_000_00, -50_000_00]);
   });
 
   it("does not allow adding a valuation to another user's asset", async () => {
-    const asset = await assetService(service).create("user-a", {
+    const asset = await service.create("user-a", {
       kind: "silver",
       name: "Silver bars",
       openedAt: new Date("2026-04-01T00:00:00.000Z"),
@@ -136,7 +141,7 @@ describe("AssetService", () => {
     });
 
     await expect(
-      assetService(service).addValuation("someone-else", asset.id, {
+      service.addValuation("someone-else", asset.id, {
         valueMinor: 11_000_00,
         valuedAt: new Date("2026-06-01T00:00:00.000Z"),
         source: "manual"
@@ -145,16 +150,16 @@ describe("AssetService", () => {
   });
 
   it("does not allow adding a valuation to a closed asset", async () => {
-    const asset = await assetService(service).create("user-a", {
+    const asset = await service.create("user-a", {
       kind: "investment",
       name: "Closed fund",
       openedAt: new Date("2026-04-01T00:00:00.000Z"),
       openingValueMinor: 15_000_00
     });
-    await assetService(service).close("user-a", asset.id);
+    await service.close("user-a", asset.id);
 
     await expect(
-      assetService(service).addValuation("user-a", asset.id, {
+      service.addValuation("user-a", asset.id, {
         valueMinor: 16_000_00,
         valuedAt: new Date("2026-06-01T00:00:00.000Z"),
         source: "manual"
@@ -163,10 +168,9 @@ describe("AssetService", () => {
   });
 
   it("replays asset create, valuation append, and close across five attempts each", async () => {
-    const mutation = assetMutations(mutations);
     const creates = await Promise.all(
       Array.from({ length: 5 }, () =>
-        mutation.create(
+        mutations.create(
           "user-idempotent",
           {
             kind: "investment",
@@ -182,14 +186,15 @@ describe("AssetService", () => {
     const assetId = creates[0]?.result.id;
     if (assetId === undefined) throw new Error("Expected a created asset");
     expect(
-      await connectedDatabase(connection)
-        .collection("asset_valuations")
-        .countDocuments({ userId: "user-idempotent" })
-    ).toBe(1);
+      await testDb.db
+        .select()
+        .from(assetValuations)
+        .where(eq(assetValuations.userId, "user-idempotent"))
+    ).toHaveLength(1);
 
     const valuations = await Promise.all(
       Array.from({ length: 5 }, () =>
-        mutation.addValuation(
+        mutations.addValuation(
           "user-idempotent",
           assetId,
           {
@@ -203,38 +208,22 @@ describe("AssetService", () => {
     );
     expect(valuations.filter((result) => !result.replayed)).toHaveLength(1);
     expect(
-      await connectedDatabase(connection)
-        .collection("asset_valuations")
-        .countDocuments({ userId: "user-idempotent" })
-    ).toBe(2);
+      await testDb.db
+        .select()
+        .from(assetValuations)
+        .where(eq(assetValuations.userId, "user-idempotent"))
+    ).toHaveLength(2);
 
     const closes = await Promise.all(
       Array.from({ length: 5 }, () =>
-        mutation.close("user-idempotent", assetId, "99999999-aaaa-4999-8999-999999999999")
+        mutations.close("user-idempotent", assetId, "99999999-aaaa-4999-8999-999999999999")
       )
     );
     expect(closes.filter((result) => !result.replayed)).toHaveLength(1);
-    expect(
-      await connectedDatabase(connection)
-        .collection("audit_log")
-        .countDocuments({ userId: "user-idempotent" })
-    ).toBe(3);
+    const auditRows = await testDb.db
+      .select()
+      .from(auditLog)
+      .where(eq(auditLog.userId, "user-idempotent"));
+    expect(auditRows).toHaveLength(3);
   });
 });
-
-function assetService(service: AssetService | undefined): AssetService {
-  if (service === undefined) throw new Error("Asset service is not ready");
-  return service;
-}
-
-function assetMutations(service: AssetMutationService | undefined): AssetMutationService {
-  if (service === undefined) throw new Error("Asset mutation service is not ready");
-  return service;
-}
-
-function connectedDatabase(connection: Connection | undefined): NonNullable<Connection["db"]> {
-  if (connection === undefined) throw new Error("MongoDB connection is not ready");
-  const database = connection.db;
-  if (database === undefined) throw new Error("MongoDB database is not ready");
-  return database;
-}

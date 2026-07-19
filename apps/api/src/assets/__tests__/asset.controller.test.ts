@@ -7,7 +7,7 @@ function mockResponse() {
 }
 
 const sampleAsset = {
-  id: "507f1f77bcf86cd799439011",
+  id: "3fa85f64-5717-4562-b3fc-2c963f66beef",
   userId: "user-1",
   kind: "fixed_deposit" as const,
   name: "HDFC FD",
@@ -38,7 +38,7 @@ describe("AssetController", () => {
     expect(result).toEqual(sampleAsset);
     expect(response.setHeader).toHaveBeenCalledWith(
       "Location",
-      "/api/v1/assets/507f1f77bcf86cd799439011"
+      "/api/v1/assets/3fa85f64-5717-4562-b3fc-2c963f66beef"
     );
     expect(mockService.create).toHaveBeenCalledWith("user-1", {
       kind: "fixed_deposit",
@@ -64,16 +64,19 @@ describe("AssetController", () => {
     // @ts-expect-error - mock AssetService for unit testing
     const controller = new AssetController(mockService);
 
-    await controller.close(user, "507f1f77bcf86cd799439011");
+    await controller.close(user, "3fa85f64-5717-4562-b3fc-2c963f66beef");
 
-    expect(mockService.close).toHaveBeenCalledWith("user-1", "507f1f77bcf86cd799439011");
+    expect(mockService.close).toHaveBeenCalledWith(
+      "user-1",
+      "3fa85f64-5717-4562-b3fc-2c963f66beef"
+    );
   });
 
   it("adds a valuation and sets the Location header", async () => {
     const valuation = {
-      id: "507f1f77bcf86cd799439022",
+      id: "3fa85f64-5717-4562-b3fc-2c963f66be22",
       userId: "user-1",
-      assetId: "507f1f77bcf86cd799439011",
+      assetId: "3fa85f64-5717-4562-b3fc-2c963f66beef",
       valueMinor: 105_000_00,
       valuedAt: new Date(),
       source: "manual" as const,
@@ -86,7 +89,7 @@ describe("AssetController", () => {
 
     const result = await controller.addValuation(
       user,
-      "507f1f77bcf86cd799439011",
+      "3fa85f64-5717-4562-b3fc-2c963f66beef",
       { valueMinor: 105_000_00, valuedAt: "2026-06-01T00:00:00.000Z" },
       // @ts-expect-error - mock Response for unit testing
       response
@@ -95,13 +98,17 @@ describe("AssetController", () => {
     expect(result).toEqual(valuation);
     expect(response.setHeader).toHaveBeenCalledWith(
       "Location",
-      "/api/v1/assets/507f1f77bcf86cd799439011/valuations/507f1f77bcf86cd799439022"
+      "/api/v1/assets/3fa85f64-5717-4562-b3fc-2c963f66beef/valuations/3fa85f64-5717-4562-b3fc-2c963f66be22"
     );
-    expect(mockService.addValuation).toHaveBeenCalledWith("user-1", "507f1f77bcf86cd799439011", {
-      valueMinor: 105_000_00,
-      valuedAt: new Date("2026-06-01T00:00:00.000Z"),
-      source: "manual"
-    });
+    expect(mockService.addValuation).toHaveBeenCalledWith(
+      "user-1",
+      "3fa85f64-5717-4562-b3fc-2c963f66beef",
+      {
+        valueMinor: 105_000_00,
+        valuedAt: new Date("2026-06-01T00:00:00.000Z"),
+        source: "manual"
+      }
+    );
   });
 
   it("lists valuation history for an asset", async () => {
@@ -110,15 +117,18 @@ describe("AssetController", () => {
     // @ts-expect-error - mock AssetService for unit testing
     const controller = new AssetController(mockService);
 
-    const result = await controller.listValuations(user, "507f1f77bcf86cd799439011");
+    const result = await controller.listValuations(user, "3fa85f64-5717-4562-b3fc-2c963f66beef");
 
     expect(result).toEqual(page);
-    expect(mockService.listValuations).toHaveBeenCalledWith("user-1", "507f1f77bcf86cd799439011");
+    expect(mockService.listValuations).toHaveBeenCalledWith(
+      "user-1",
+      "3fa85f64-5717-4562-b3fc-2c963f66beef"
+    );
   });
 
   it("uses replay-aware asset mutation paths", async () => {
     const valuation = {
-      id: "507f1f77bcf86cd799439022",
+      id: "3fa85f64-5717-4562-b3fc-2c963f66be22",
       userId: "user-1",
       assetId: sampleAsset.id,
       valueMinor: 105_000_00,

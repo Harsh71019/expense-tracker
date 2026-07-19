@@ -1,75 +1,60 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { MongoMemoryReplSet } from "mongodb-memory-server";
-import { createConnection } from "mongoose";
-import type { Connection } from "mongoose";
+import { eq } from "drizzle-orm";
 
 import { AuditRepository } from "../../../src/audit/audit.repository.js";
-import { withTxn } from "../../../src/common/mongo-txn.js";
+import { withTxn } from "../../../src/common/db/db-txn.js";
+import { auditLog } from "../../../src/common/db/schema/index.js";
+import { createTestDb, insertTestUser } from "../support/postgres-test-db.js";
+import type { TestDb } from "../support/postgres-test-db.js";
 
 describe("AuditRepository", () => {
-  let replicaSet: MongoMemoryReplSet | undefined;
-  let connection: Connection | undefined;
-  let auditRepository: AuditRepository | undefined;
+  let testDb: TestDb;
+  let auditRepository: AuditRepository;
 
   beforeAll(async () => {
-    replicaSet = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
-    connection = await createConnection(replicaSet.getUri("vyaya_audit_test")).asPromise();
-    auditRepository = new AuditRepository(connection);
-  });
+    testDb = await createTestDb();
+    auditRepository = new AuditRepository(testDb.db);
+    await insertTestUser(testDb.db, "user-1");
+  }, 60_000);
 
   afterAll(async () => {
-    if (connection !== undefined) await connection.close();
-    if (replicaSet !== undefined) await replicaSet.stop();
+    await testDb.teardown();
   });
 
   it("records audit logs inside a transaction and commits successfully", async () => {
-    const repository = getAuditRepository(auditRepository);
-    const conn = getConnection(connection);
-
-    await withTxn(conn, async (session) => {
-      await repository.record("user-1", "test.action", "507f1f77bcf86cd799439011", session);
+    await withTxn(testDb.db, async (tx) => {
+      await auditRepository.record(
+        "user-1",
+        "test.action",
+        "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        tx
+      );
     });
 
-    const db = getDatabase(connection);
-    const logs = await db.collection("audit_log").find({ userId: "user-1" }).toArray();
+    const logs = await testDb.db.select().from(auditLog).where(eq(auditLog.userId, "user-1"));
     expect(logs.length).toBe(1);
     expect(logs[0]).toMatchObject({
       userId: "user-1",
       action: "test.action",
-      entityId: "507f1f77bcf86cd799439011"
+      entityId: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
     });
     expect(logs[0]?.at).toBeInstanceOf(Date);
   });
 
   it("rolls back audit log creation if the transaction aborts", async () => {
-    const repository = getAuditRepository(auditRepository);
-    const conn = getConnection(connection);
-
     await expect(
-      withTxn(conn, async (session) => {
-        await repository.record("user-1", "abort.action", "507f1f77bcf86cd799439012", session);
+      withTxn(testDb.db, async (tx) => {
+        await auditRepository.record(
+          "user-1",
+          "abort.action",
+          "3fa85f64-5717-4562-b3fc-2c963f66afa7",
+          tx
+        );
         throw new Error("Force Abort");
       })
     ).rejects.toThrow("Force Abort");
 
-    const db = getDatabase(connection);
-    const logs = await db.collection("audit_log").find({ action: "abort.action" }).toArray();
+    const logs = await testDb.db.select().from(auditLog).where(eq(auditLog.action, "abort.action"));
     expect(logs.length).toBe(0);
   });
 });
-
-function getAuditRepository(repository: AuditRepository | undefined): AuditRepository {
-  if (repository === undefined) throw new Error("Audit repository is not ready");
-  return repository;
-}
-
-function getConnection(connection: Connection | undefined): Connection {
-  if (connection === undefined) throw new Error("Connection is not ready");
-  return connection;
-}
-
-function getDatabase(connection: Connection | undefined): NonNullable<Connection["db"]> {
-  const database = getConnection(connection).db;
-  if (database === undefined) throw new Error("Database is not ready");
-  return database;
-}

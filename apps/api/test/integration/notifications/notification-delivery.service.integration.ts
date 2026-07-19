@@ -1,7 +1,4 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { MongoMemoryReplSet } from "mongodb-memory-server";
-import { createConnection } from "mongoose";
-import type { Connection } from "mongoose";
 
 import { NotificationOutboxRepository } from "../../../src/notifications/notification-outbox.repository.js";
 import { NotificationDeliveryService } from "../../../src/notifications/notification-delivery.service.js";
@@ -9,7 +6,9 @@ import type {
   NotificationAdapter,
   NotificationDelivery
 } from "../../../src/notifications/notification-adapter.js";
-import { withTxn } from "../../../src/common/mongo-txn.js";
+import { withTxn } from "../../../src/common/db/db-txn.js";
+import { createTestDb, insertTestUser } from "../support/postgres-test-db.js";
+import type { TestDb } from "../support/postgres-test-db.js";
 
 /** Records every send() call instead of hitting a real ntfy/Telegram channel. */
 class RecordingAdapter implements NotificationAdapter {
@@ -31,31 +30,27 @@ class RecordingAdapter implements NotificationAdapter {
 }
 
 describe("NotificationDeliveryService", () => {
-  let replicaSet: MongoMemoryReplSet | undefined;
-  let connection: Connection | undefined;
-  let outbox: NotificationOutboxRepository | undefined;
+  let testDb: TestDb;
+  let outbox: NotificationOutboxRepository;
 
   beforeAll(async () => {
-    replicaSet = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
-    connection = await createConnection(
-      replicaSet.getUri("vyaya_notification_delivery_test")
-    ).asPromise();
-    outbox = new NotificationOutboxRepository(connection);
+    testDb = await createTestDb();
+    for (const userId of ["user-1", "user-2", "user-3"]) {
+      await insertTestUser(testDb.db, userId);
+    }
+    outbox = new NotificationOutboxRepository(testDb.db);
   });
 
   afterAll(async () => {
-    if (connection !== undefined) await connection.close();
-    if (replicaSet !== undefined) await replicaSet.stop();
+    await testDb.teardown();
   });
 
   it("sends via the adapter and marks the outbox entry sent", async () => {
-    const repository = getOutbox(outbox);
-    const conn = getConnection(connection);
     const adapter = new RecordingAdapter();
-    const service = new NotificationDeliveryService(repository, adapter);
+    const service = new NotificationDeliveryService(outbox, adapter);
 
-    const entry = await withTxn(conn, (session) =>
-      repository.enqueue("user-1", "budget_alert", { budgetId: "b1" }, session)
+    const entry = await withTxn(testDb.db, (tx) =>
+      outbox.enqueue("user-1", "budget_alert", { budgetId: "b1" }, tx)
     );
 
     await service.deliver(entry.id);
@@ -63,31 +58,28 @@ describe("NotificationDeliveryService", () => {
     expect(adapter.sent).toEqual([
       { userId: "user-1", type: "budget_alert", payload: { budgetId: "b1" } }
     ]);
-    const stored = await repository.findById(entry.id);
+    const stored = await outbox.findById(entry.id);
     expect(stored?.status).toBe("sent");
     expect(stored?.sentAt).toBeInstanceOf(Date);
   });
 
   it("is a no-op when the notification no longer exists", async () => {
-    const repository = getOutbox(outbox);
     const adapter = new RecordingAdapter();
-    const service = new NotificationDeliveryService(repository, adapter);
+    const service = new NotificationDeliveryService(outbox, adapter);
 
-    await service.deliver("507f1f77bcf86cd799439011");
+    await service.deliver("3fa85f64-5717-4562-b3fc-2c963f66beef");
 
     expect(adapter.sent).toEqual([]);
   });
 
   it("is a no-op when the notification is already sent (duplicate delivery job)", async () => {
-    const repository = getOutbox(outbox);
-    const conn = getConnection(connection);
     const adapter = new RecordingAdapter();
-    const service = new NotificationDeliveryService(repository, adapter);
+    const service = new NotificationDeliveryService(outbox, adapter);
 
-    const entry = await withTxn(conn, (session) =>
-      repository.enqueue("user-2", "balance_drift", { accountId: "a1" }, session)
+    const entry = await withTxn(testDb.db, (tx) =>
+      outbox.enqueue("user-2", "balance_drift", { accountId: "a1" }, tx)
     );
-    await repository.markSent(entry.id);
+    await outbox.markSent(entry.id);
 
     await service.deliver(entry.id);
 
@@ -95,31 +87,17 @@ describe("NotificationDeliveryService", () => {
   });
 
   it("propagates the adapter error and leaves the entry pending so BullMQ retries", async () => {
-    const repository = getOutbox(outbox);
-    const conn = getConnection(connection);
     const adapter = new RecordingAdapter();
-    const service = new NotificationDeliveryService(repository, adapter);
+    const service = new NotificationDeliveryService(outbox, adapter);
 
-    const entry = await withTxn(conn, (session) =>
-      repository.enqueue("user-3", "monthly_report", { month: "2026-07" }, session)
+    const entry = await withTxn(testDb.db, (tx) =>
+      outbox.enqueue("user-3", "monthly_report", { month: "2026-07" }, tx)
     );
     adapter.failNextCall();
 
     await expect(service.deliver(entry.id)).rejects.toThrow("adapter down");
 
-    const stored = await repository.findById(entry.id);
+    const stored = await outbox.findById(entry.id);
     expect(stored?.status).toBe("pending");
   });
 });
-
-function getOutbox(
-  repository: NotificationOutboxRepository | undefined
-): NotificationOutboxRepository {
-  if (repository === undefined) throw new Error("Notification outbox repository is not ready");
-  return repository;
-}
-
-function getConnection(connection: Connection | undefined): Connection {
-  if (connection === undefined) throw new Error("Connection is not ready");
-  return connection;
-}

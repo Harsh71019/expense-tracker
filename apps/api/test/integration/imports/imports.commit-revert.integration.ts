@@ -1,22 +1,24 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { MongoMemoryReplSet } from "mongodb-memory-server";
-import { createConnection, Types } from "mongoose";
-import type { Connection } from "mongoose";
+import { and, eq, inArray } from "drizzle-orm";
 import type { ColumnMapping } from "@vyaya/shared";
 
 import { AccountRepository } from "../../../src/accounts/account.repository.js";
 import { AuditRepository } from "../../../src/audit/audit.repository.js";
 import { CategoryRuleRepository } from "../../../src/category-rules/category-rule.repository.js";
 import { RuntimeConfigService } from "../../../src/common/config/runtime-config.service.js";
+import { accounts as accountsTable, auditLog } from "../../../src/common/db/schema/index.js";
+import { transactions as transactionsTable } from "../../../src/common/db/schema/index.js";
+import { withTxn } from "../../../src/common/db/db-txn.js";
 import { EntityNotFoundError } from "../../../src/common/errors/entity-not-found.error.js";
 import { ImportBatchNotReadyError } from "../../../src/common/errors/import-batch-not-ready.error.js";
-import { withTxn } from "../../../src/common/mongo-txn.js";
 import { ImportBatchRepository } from "../../../src/imports/import-batch.repository.js";
 import { ImportsQueue } from "../../../src/imports/imports.queue.js";
 import { ImportsService } from "../../../src/imports/imports.service.js";
 import { StagedRowRepository } from "../../../src/imports/staged-row.repository.js";
 import type { NewStagedRow } from "../../../src/imports/staged-row.repository.js";
 import { TransactionRepository } from "../../../src/transactions/transaction.repository.js";
+import { createTestDb, insertTestUser } from "../support/postgres-test-db.js";
+import type { TestDb } from "../support/postgres-test-db.js";
 
 class TestRuntimeConfig implements RuntimeConfigService {
   env = {
@@ -24,8 +26,8 @@ class TestRuntimeConfig implements RuntimeConfigService {
     API_PORT: 4000,
     LOG_LEVEL: "info" as const,
     SERVICE_ROLE: "api" as const,
-    MONGODB_URI: "mongodb://localhost:27017/test",
-    REDIS_URL: "redis://127.0.0.1:6379/9",
+    DATABASE_URL: "postgres://test:test@localhost:5432/test",
+    REDIS_URL: "redis://127.0.0.1:6379/15",
     APP_TIMEZONE: "Asia/Kolkata" as const,
     TRUSTED_ORIGINS: "http://localhost:3000",
     GIT_SHA: "test-sha",
@@ -67,29 +69,37 @@ function includableRow(overrides: Partial<NewStagedRow> = {}): NewStagedRow {
 }
 
 describe("ImportsService commit/revert", () => {
-  let replicaSet: MongoMemoryReplSet | undefined;
-  let connection: Connection | undefined;
-  let service: ImportsService | undefined;
-  let batches: ImportBatchRepository | undefined;
-  let stagedRows: StagedRowRepository | undefined;
-  let transactions: TransactionRepository | undefined;
-  let accounts: AccountRepository | undefined;
+  let testDb: TestDb;
+  let service: ImportsService;
+  let batches: ImportBatchRepository;
+  let stagedRows: StagedRowRepository;
+  let transactions: TransactionRepository;
+  let accounts: AccountRepository;
 
   beforeAll(async () => {
-    replicaSet = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
-    connection = await createConnection(
-      replicaSet.getUri("vyaya_imports_commit_revert_test")
-    ).asPromise();
+    testDb = await createTestDb();
+    for (const userId of [
+      "user-commit-1",
+      "user-commit-resume",
+      "user-commit-guard",
+      "user-commit-owner",
+      "user-revert-1",
+      "user-revert-resume",
+      "user-revert-guard",
+      "user-revert-owner"
+    ]) {
+      await insertTestUser(testDb.db, userId);
+    }
 
-    batches = new ImportBatchRepository(connection);
-    stagedRows = new StagedRowRepository(connection);
-    transactions = new TransactionRepository(connection);
-    accounts = new AccountRepository(connection);
-    const audit = new AuditRepository(connection);
-    const categoryRules = new CategoryRuleRepository(connection);
+    batches = new ImportBatchRepository(testDb.db);
+    stagedRows = new StagedRowRepository(testDb.db);
+    transactions = new TransactionRepository(testDb.db);
+    accounts = new AccountRepository(testDb.db);
+    const audit = new AuditRepository(testDb.db);
+    const categoryRules = new CategoryRuleRepository(testDb.db);
     const queue = new ImportsQueue(new TestRuntimeConfig());
     service = new ImportsService(
-      connection,
+      testDb.db,
       batches,
       stagedRows,
       transactions,
@@ -101,17 +111,12 @@ describe("ImportsService commit/revert", () => {
   }, 30_000);
 
   afterAll(async () => {
-    if (connection !== undefined) await connection.close();
-    if (replicaSet !== undefined) await replicaSet.stop();
+    await testDb.teardown();
   });
 
   async function seedAccount(userId: string, openingBalanceMinor = 100_000): Promise<string> {
-    const account = await withTxn(nonNull(connection), (session) =>
-      nonNull(accounts).create(
-        userId,
-        { name: "Test Account", type: "bank", openingBalanceMinor },
-        session
-      )
+    const account = await withTxn(testDb.db, (tx) =>
+      accounts.create(userId, { name: "Test Account", type: "bank", openingBalanceMinor }, tx)
     );
     return account.id;
   }
@@ -121,15 +126,15 @@ describe("ImportsService commit/revert", () => {
     accountId: string,
     rows: NewStagedRow[]
   ): Promise<string> {
-    const batch = await nonNull(batches).create(
+    const batch = await batches.create(
       userId,
       accountId,
       "statement.csv",
       `sha256:${Math.random().toString(36).slice(2)}`,
       MAPPING
     );
-    await nonNull(stagedRows).insertMany(batch.id, rows);
-    await nonNull(batches).markParsed(batch.id, "staged", {
+    await stagedRows.insertMany(batch.id, rows);
+    await batches.markParsed(batch.id, "staged", {
       total: rows.length,
       staged: rows.length,
       duplicates: 0,
@@ -154,26 +159,27 @@ describe("ImportsService commit/revert", () => {
       }) // income 5_000
     ]);
 
-    const committed = await nonNull(service).commitBatch(userId, batchId);
+    const committed = await service.commitBatch(userId, batchId);
 
     expect(committed.status).toBe("committed");
     expect(committed.committedAt).toBeInstanceOf(Date);
     expect(committed.stats.committed).toBe(2);
 
-    const posted = await nonNull(transactions).findPostedByImportBatchId(userId, batchId);
+    const posted = await transactions.findPostedByImportBatchId(userId, batchId);
     expect(posted).toHaveLength(2);
     expect(posted.every((txn) => txn.source === "csv_import")).toBe(true);
 
-    const account = await connectedDatabase(connection)
-      .collection("accounts")
-      .findOne({ _id: new Types.ObjectId(accountId) });
+    const [account] = await testDb.db
+      .select()
+      .from(accountsTable)
+      .where(eq(accountsTable.id, accountId));
     // net = -2_000 (expense) + 5_000 (income) = +3_000
     expect(account).toMatchObject({ balanceMinor: 103_000 });
 
-    const auditEntries = await connectedDatabase(connection)
-      .collection("audit_log")
-      .find({ userId, action: "import.commit" })
-      .toArray();
+    const auditEntries = await testDb.db
+      .select()
+      .from(auditLog)
+      .where(and(eq(auditLog.userId, userId), eq(auditLog.action, "import.commit")));
     expect(auditEntries.length).toBeGreaterThan(0);
   });
 
@@ -190,9 +196,9 @@ describe("ImportsService commit/revert", () => {
     // Simulate a crash after chunk 1 of a resumed run: land row 1's
     // transaction directly (bypassing commitBatch) while the batch stays
     // "staged", exactly like an interrupted commit would leave things.
-    const [firstRow] = await nonNull(stagedRows).findIncludableForBatch(batchId);
-    await withTxn(nonNull(connection), (session) =>
-      nonNull(transactions).insertImportedRows(
+    const [firstRow] = await stagedRows.findIncludableForBatch(batchId);
+    await withTxn(testDb.db, (tx) =>
+      transactions.insertImportedRows(
         userId,
         accountId,
         batchId,
@@ -205,13 +211,13 @@ describe("ImportsService commit/revert", () => {
             dedupeHash: nonNull(nonNull(firstRow).dedupeHash)
           }
         ],
-        session
+        tx
       )
     );
-    const committed = await nonNull(service).commitBatch(userId, batchId);
+    const committed = await service.commitBatch(userId, batchId);
 
     expect(committed.status).toBe("committed");
-    const posted = await nonNull(transactions).findPostedByImportBatchId(userId, batchId);
+    const posted = await transactions.findPostedByImportBatchId(userId, batchId);
     // Exactly 3 transactions total — the pre-landed one was not duplicated.
     expect(posted).toHaveLength(rows.length);
     const dedupeHashes = new Set(rows.map((row) => row.dedupeHash));
@@ -222,7 +228,7 @@ describe("ImportsService commit/revert", () => {
   it("rejects committing a batch that is not staged", async () => {
     const userId = "user-commit-guard";
     const accountId = await seedAccount(userId);
-    const batch = await nonNull(batches).create(
+    const batch = await batches.create(
       userId,
       accountId,
       "pending.csv",
@@ -230,9 +236,7 @@ describe("ImportsService commit/revert", () => {
       MAPPING
     );
 
-    await expect(nonNull(service).commitBatch(userId, batch.id)).rejects.toThrow(
-      ImportBatchNotReadyError
-    );
+    await expect(service.commitBatch(userId, batch.id)).rejects.toThrow(ImportBatchNotReadyError);
   });
 
   it("404s committing another user's batch", async () => {
@@ -240,9 +244,7 @@ describe("ImportsService commit/revert", () => {
     const accountId = await seedAccount(ownerId);
     const batchId = await seedStagedBatch(ownerId, accountId, [includableRow()]);
 
-    await expect(nonNull(service).commitBatch("someone-else", batchId)).rejects.toThrow(
-      EntityNotFoundError
-    );
+    await expect(service.commitBatch("someone-else", batchId)).rejects.toThrow(EntityNotFoundError);
   });
 
   it("reverts a committed batch: reverses every posted transaction and restores the balance", async () => {
@@ -260,30 +262,32 @@ describe("ImportsService commit/revert", () => {
         }
       })
     ]);
-    await nonNull(service).commitBatch(userId, batchId);
+    await service.commitBatch(userId, batchId);
 
-    const balanceAfterCommit = await connectedDatabase(connection)
-      .collection("accounts")
-      .findOne({ _id: new Types.ObjectId(accountId) });
+    const [balanceAfterCommit] = await testDb.db
+      .select()
+      .from(accountsTable)
+      .where(eq(accountsTable.id, accountId));
     expect(balanceAfterCommit).toMatchObject({ balanceMinor: 103_000 });
 
-    const reverted = await nonNull(service).revertBatch(userId, batchId);
+    const reverted = await service.revertBatch(userId, batchId);
 
     expect(reverted.status).toBe("reverted");
     expect(reverted.revertedAt).toBeInstanceOf(Date);
 
-    const balanceAfterRevert = await connectedDatabase(connection)
-      .collection("accounts")
-      .findOne({ _id: new Types.ObjectId(accountId) });
+    const [balanceAfterRevert] = await testDb.db
+      .select()
+      .from(accountsTable)
+      .where(eq(accountsTable.id, accountId));
     expect(balanceAfterRevert).toMatchObject({ balanceMinor: 100_000 });
 
-    const stillPosted = await nonNull(transactions).findPostedByImportBatchId(userId, batchId);
+    const stillPosted = await transactions.findPostedByImportBatchId(userId, batchId);
     expect(stillPosted).toHaveLength(0);
 
-    const auditEntries = await connectedDatabase(connection)
-      .collection("audit_log")
-      .find({ userId, action: "import.revert" })
-      .toArray();
+    const auditEntries = await testDb.db
+      .select()
+      .from(auditLog)
+      .where(and(eq(auditLog.userId, userId), eq(auditLog.action, "import.revert")));
     expect(auditEntries.length).toBeGreaterThan(0);
   });
 
@@ -294,28 +298,36 @@ describe("ImportsService commit/revert", () => {
       includableRow({ rowNumber: 1 }),
       includableRow({ rowNumber: 2 })
     ]);
-    await nonNull(service).commitBatch(userId, batchId);
+    await service.commitBatch(userId, batchId);
 
     // Simulate a crash mid-revert: reverse only the first posted txn
     // directly, leaving the batch status at "committed" (as a real
     // mid-revert crash would).
-    const posted = await nonNull(transactions).findPostedByImportBatchId(userId, batchId);
+    const posted = await transactions.findPostedByImportBatchId(userId, batchId);
     const [firstPosted] = posted;
-    await withTxn(nonNull(connection), (session) =>
-      nonNull(transactions).insertBulkReversals(userId, [nonNull(firstPosted)], session)
+    await withTxn(testDb.db, (tx) =>
+      transactions.insertBulkReversals(userId, [nonNull(firstPosted)], tx)
     );
 
-    const reverted = await nonNull(service).revertBatch(userId, batchId);
+    const reverted = await service.revertBatch(userId, batchId);
 
     expect(reverted.status).toBe("reverted");
-    const stillPosted = await nonNull(transactions).findPostedByImportBatchId(userId, batchId);
+    const stillPosted = await transactions.findPostedByImportBatchId(userId, batchId);
     expect(stillPosted).toHaveLength(0);
 
     // Exactly one reversal per original — not two for the pre-reversed one.
-    const reversals = await connectedDatabase(connection)
-      .collection("transactions")
-      .find({ userId, reversalOf: { $in: posted.map((txn) => new Types.ObjectId(txn.id)) } })
-      .toArray();
+    const reversals = await testDb.db
+      .select()
+      .from(transactionsTable)
+      .where(
+        and(
+          eq(transactionsTable.userId, userId),
+          inArray(
+            transactionsTable.reversalOf,
+            posted.map((txn) => txn.id)
+          )
+        )
+      );
     expect(reversals).toHaveLength(2);
   });
 
@@ -324,20 +336,16 @@ describe("ImportsService commit/revert", () => {
     const accountId = await seedAccount(userId);
     const batchId = await seedStagedBatch(userId, accountId, [includableRow()]);
 
-    await expect(nonNull(service).revertBatch(userId, batchId)).rejects.toThrow(
-      ImportBatchNotReadyError
-    );
+    await expect(service.revertBatch(userId, batchId)).rejects.toThrow(ImportBatchNotReadyError);
   });
 
   it("404s reverting another user's batch", async () => {
     const ownerId = "user-revert-owner";
     const accountId = await seedAccount(ownerId);
     const batchId = await seedStagedBatch(ownerId, accountId, [includableRow()]);
-    await nonNull(service).commitBatch(ownerId, batchId);
+    await service.commitBatch(ownerId, batchId);
 
-    await expect(nonNull(service).revertBatch("someone-else", batchId)).rejects.toThrow(
-      EntityNotFoundError
-    );
+    await expect(service.revertBatch("someone-else", batchId)).rejects.toThrow(EntityNotFoundError);
   });
 });
 
@@ -346,12 +354,4 @@ function nonNull<T>(value: T | undefined): T {
     throw new Error("Test fixture is not ready");
   }
   return value;
-}
-
-function connectedDatabase(connection: Connection | undefined): NonNullable<Connection["db"]> {
-  const database = nonNull(connection).db;
-  if (database === undefined) {
-    throw new Error("MongoDB database is not ready");
-  }
-  return database;
 }

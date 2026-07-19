@@ -1,21 +1,51 @@
 services:
-  # One-shot: runs migrate-mongo up, exits 0. Gates everything else.
-  migrate:
-    image: vyaya-api:local
-    build:
-      context: .
-      dockerfile: apps/api/Dockerfile
-    command:
-      ["node_modules/migrate-mongo/bin/migrate-mongo.js", "up", "-f", "migrate-mongo-config.cjs"]
+  postgres:
+    image: postgres:18-alpine
+    restart: unless-stopped
     env_file: .env
+    environment:
+      POSTGRES_DB: vyaya
+      POSTGRES_USER: vyaya
+    ports:
+      # Bind to loopback by default -- reachable as localhost:5433 for local dev (matches
+      # .env.development.local.example) and from the deploy host itself, but not from the
+      # LAN/internet. Set POSTGRES_BIND_ADDR=0.0.0.0 in .env only if you deliberately need to
+      # reach this Postgres from another machine (e.g. a GUI client on your LAN) -- never in
+      # production, where the app containers are the only intended clients.
+      - "${POSTGRES_BIND_ADDR:-127.0.0.1}:5433:5432"
+    volumes:
+      - vyaya-postgres-data:/var/lib/postgresql
     networks:
       - vyaya-net
-    restart: "no"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vyaya -d vyaya"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
     logging: &json_logging
       driver: json-file
       options:
         max-size: 10m
         max-file: "3"
+
+  # One-shot: runs drizzle-kit migrate, exits 0. Gates everything else.
+  migrate:
+    image: vyaya-api:local
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    # node_modules/.bin/drizzle-kit is a POSIX shell shim (pnpm's bin wrapper) --
+    # this image's fixed entrypoint runs `node <args>` directly, which can't
+    # execute a shell script. Invoke drizzle-kit's real JS entrypoint instead.
+    command: ["node_modules/drizzle-kit/bin.cjs", "migrate"]
+    env_file: .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - vyaya-net
+    restart: "no"
+    logging: *json_logging
 
   api:
     image: vyaya-api:local
@@ -118,3 +148,6 @@ services:
 networks:
   vyaya-net:
     driver: bridge
+
+volumes:
+  vyaya-postgres-data:

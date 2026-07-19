@@ -45,9 +45,7 @@ function isRRuleConstructor(value: unknown): value is RRuleConstructor {
   return typeof value === "function";
 }
 
-export const RecurringRuleIdSchema = z
-  .string()
-  .regex(/^[a-f\d]{24}$/i, "Recurring rule id must be a MongoDB ObjectId.");
+export const RecurringRuleIdSchema = z.string().uuid("Recurring rule id must be a UUID.");
 
 export const RecurringRuleTemplateSchema = z.object({
   accountId: AccountIdSchema,

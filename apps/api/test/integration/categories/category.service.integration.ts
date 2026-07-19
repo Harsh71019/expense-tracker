@@ -1,49 +1,44 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { MongoMemoryReplSet } from "mongodb-memory-server";
-import { createConnection, Types } from "mongoose";
-import type { Connection } from "mongoose";
+import { and, eq } from "drizzle-orm";
+
 import { CategoryRepository } from "../../../src/categories/category.repository.js";
 import { CategoryService } from "../../../src/categories/category.service.js";
 import { CategoryMutationService } from "../../../src/categories/category-mutation.service.js";
-import { IdempotencyRepository } from "../../../src/common/idempotency/idempotency.repository.js";
-import { IdempotencyService } from "../../../src/common/idempotency/idempotency.service.js";
+import { IdempotencyPostgresRepository } from "../../../src/common/idempotency/idempotency-postgres.repository.js";
+import { IdempotencyPostgresService } from "../../../src/common/idempotency/idempotency-postgres.service.js";
 import { EntityNotFoundError } from "../../../src/common/errors/entity-not-found.error.js";
+import { categories } from "../../../src/common/db/schema/index.js";
+import { createTestDb, insertTestUser } from "../support/postgres-test-db.js";
+import type { TestDb } from "../support/postgres-test-db.js";
 
 describe("CategoryService", () => {
-  let replicaSet: MongoMemoryReplSet | undefined;
-  let connection: Connection | undefined;
-  let categoryService: CategoryService | undefined;
-  let categoryMutations: CategoryMutationService | undefined;
+  let testDb: TestDb;
+  let categoryService: CategoryService;
+  let categoryMutations: CategoryMutationService;
 
   beforeAll(async () => {
-    replicaSet = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
-    connection = await createConnection(
-      replicaSet.getUri("vyaya_category_service_test")
-    ).asPromise();
-    const repository = new CategoryRepository(connection);
+    testDb = await createTestDb();
+    const repository = new CategoryRepository(testDb.db);
     categoryService = new CategoryService(repository);
     categoryMutations = new CategoryMutationService(
-      connection,
       repository,
-      new IdempotencyService(new IdempotencyRepository(connection))
+      new IdempotencyPostgresService(testDb.db, new IdempotencyPostgresRepository(testDb.db))
     );
-    await connectedDatabase(connection)
-      .collection("idempotency_records")
-      .createIndex({ userId: 1, operation: 1, key: 1 }, { unique: true });
-  });
+    await insertTestUser(testDb.db, "user-a");
+    await insertTestUser(testDb.db, "user-b");
+    await insertTestUser(testDb.db, "user-parent");
+    await insertTestUser(testDb.db, "user-category-idempotent");
+  }, 60_000);
 
   afterAll(async () => {
-    if (connection !== undefined) await connection.close();
-    if (replicaSet !== undefined) await replicaSet.stop();
+    await testDb.teardown();
   });
 
   it("creates and lists categories scoped by user", async () => {
-    const service = getCategoryService(categoryService);
+    const catA = await categoryService.create("user-a", { name: "Food", kind: "expense" });
+    const catB = await categoryService.create("user-b", { name: "Salary", kind: "income" });
 
-    const catA = await service.create("user-a", { name: "Food", kind: "expense" });
-    const catB = await service.create("user-b", { name: "Salary", kind: "income" });
-
-    const listA = await service.list("user-a");
+    const listA = await categoryService.list("user-a");
     expect(listA.length).toBe(1);
     expect(listA[0]).toMatchObject({
       id: catA.id,
@@ -52,7 +47,7 @@ describe("CategoryService", () => {
       kind: "expense"
     });
 
-    const listB = await service.list("user-b");
+    const listB = await categoryService.list("user-b");
     expect(listB.length).toBe(1);
     expect(listB[0]).toMatchObject({
       id: catB.id,
@@ -63,26 +58,23 @@ describe("CategoryService", () => {
   });
 
   it("archives a category successfully and throws EntityNotFoundError if non-existent or owned by another user", async () => {
-    const service = getCategoryService(categoryService);
-
-    const cat = await service.create("user-a", { name: "Travel", kind: "expense" });
+    const cat = await categoryService.create("user-a", { name: "Travel", kind: "expense" });
 
     // Trying to archive user-a's category as user-b should fail
-    await expect(service.archive("user-b", cat.id)).rejects.toThrow(EntityNotFoundError);
+    await expect(categoryService.archive("user-b", cat.id)).rejects.toThrow(EntityNotFoundError);
 
     // Archiving as the correct user should succeed
-    await expect(service.archive("user-a", cat.id)).resolves.toBeUndefined();
+    await expect(categoryService.archive("user-a", cat.id)).resolves.toBeUndefined();
 
     // Archiving it again should fail since it's already archived
-    await expect(service.archive("user-a", cat.id)).rejects.toThrow(EntityNotFoundError);
+    await expect(categoryService.archive("user-a", cat.id)).rejects.toThrow(EntityNotFoundError);
   });
 
   it("enforces parent kind equality", async () => {
-    const service = getCategoryService(categoryService);
-    const parent = await service.create("user-parent", { name: "Salary", kind: "income" });
+    const parent = await categoryService.create("user-parent", { name: "Salary", kind: "income" });
 
     await expect(
-      service.create("user-parent", {
+      categoryService.create("user-parent", {
         name: "Dining",
         kind: "expense",
         parentId: parent.id
@@ -91,10 +83,9 @@ describe("CategoryService", () => {
   });
 
   it("creates and archives exactly once across five identical mutation attempts", async () => {
-    const mutations = getCategoryMutations(categoryMutations);
     const creates = await Promise.all(
       Array.from({ length: 5 }, () =>
-        mutations.create(
+        categoryMutations.create(
           "user-category-idempotent",
           { name: "Subscriptions", kind: "expense" },
           "33333333-aaaa-4333-8333-333333333333"
@@ -106,14 +97,22 @@ describe("CategoryService", () => {
     const categoryId = creates[0]?.result.id;
     if (categoryId === undefined) throw new Error("Expected a created category");
     expect(
-      await connectedDatabase(connection)
-        .collection("categories")
-        .countDocuments({ userId: "user-category-idempotent", name: "Subscriptions" })
+      (
+        await testDb.db
+          .select()
+          .from(categories)
+          .where(
+            and(
+              eq(categories.userId, "user-category-idempotent"),
+              eq(categories.name, "Subscriptions")
+            )
+          )
+      ).length
     ).toBe(1);
 
     const archives = await Promise.all(
       Array.from({ length: 5 }, () =>
-        mutations.archive(
+        categoryMutations.archive(
           "user-category-idempotent",
           categoryId,
           "44444444-aaaa-4444-8444-444444444444"
@@ -123,28 +122,12 @@ describe("CategoryService", () => {
 
     expect(archives.filter((result) => !result.replayed)).toHaveLength(1);
     expect(
-      await connectedDatabase(connection)
-        .collection("categories")
-        .countDocuments({ _id: new Types.ObjectId(categoryId), isArchived: true })
+      (
+        await testDb.db
+          .select()
+          .from(categories)
+          .where(and(eq(categories.id, categoryId), eq(categories.isArchived, true)))
+      ).length
     ).toBe(1);
   });
 });
-
-function getCategoryService(service: CategoryService | undefined): CategoryService {
-  if (service === undefined) throw new Error("Category service is not ready");
-  return service;
-}
-
-function getCategoryMutations(
-  service: CategoryMutationService | undefined
-): CategoryMutationService {
-  if (service === undefined) throw new Error("Category mutation service is not ready");
-  return service;
-}
-
-function connectedDatabase(connection: Connection | undefined): NonNullable<Connection["db"]> {
-  if (connection === undefined) throw new Error("MongoDB connection is not ready");
-  const database = connection.db;
-  if (database === undefined) throw new Error("MongoDB database is not ready");
-  return database;
-}

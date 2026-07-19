@@ -1,7 +1,6 @@
 import { createHash } from "node:crypto";
 
-import { Injectable } from "@nestjs/common";
-import { InjectConnection } from "@nestjs/mongoose";
+import { Inject, Injectable } from "@nestjs/common";
 import {
   ALLOWED_IMPORT_FILE_EXTENSIONS,
   ALLOWED_IMPORT_MIME_TYPES,
@@ -21,18 +20,19 @@ import type {
   UpdateStagedRow
 } from "@vyaya/shared";
 import { parse } from "csv-parse/sync";
-import type { Connection } from "mongoose";
 import { z } from "zod";
 
 import { AccountRepository } from "../accounts/account.repository.js";
 import { AuditRepository } from "../audit/audit.repository.js";
 import { CategoryRuleRepository } from "../category-rules/category-rule.repository.js";
 import { suggestCategory } from "../category-rules/suggest-category.js";
+import { DATABASE_CONNECTION } from "../common/db/db.module.js";
+import type { DrizzleDb } from "../common/db/db.module.js";
+import { withTxn } from "../common/db/db-txn.js";
 import { EntityNotFoundError } from "../common/errors/entity-not-found.error.js";
 import { ImportAlreadyCommittedError } from "../common/errors/import-already-committed.error.js";
 import { ImportBatchNotReadyError } from "../common/errors/import-batch-not-ready.error.js";
 import { InvalidImportFileError } from "../common/errors/invalid-import-file.error.js";
-import { withTxn } from "../common/mongo-txn.js";
 import { TransactionRepository } from "../transactions/transaction.repository.js";
 import { computeDedupeHash } from "./dedupe-hash.js";
 import { ImportBatchRepository } from "./import-batch.repository.js";
@@ -50,7 +50,7 @@ const RawCsvRecordsSchema = z.array(z.record(z.string(), z.string()));
 @Injectable()
 export class ImportsService {
   constructor(
-    @InjectConnection() private readonly connection: Connection,
+    @Inject(DATABASE_CONNECTION) private readonly db: DrizzleDb,
     private readonly batches: ImportBatchRepository,
     private readonly stagedRows: StagedRowRepository,
     private readonly transactions: TransactionRepository,
@@ -241,9 +241,9 @@ export class ImportsService {
   }
 
   /**
-   * Chunks of 200 rows, each chunk = one Mongo transaction (insert +
-   * balance $inc + stats + audit), per BACKEND.md §4. Resumable: rows whose
-   * dedupeHash already landed (from a previous, interrupted run) are
+   * Chunks of 200 rows, each chunk = one Postgres transaction (insert +
+   * balance update + stats + audit), per BACKEND.md §4. Resumable: rows
+   * whose dedupeHash already landed (from a previous, interrupted run) are
    * pre-filtered out via the same bulk findExistingDedupeHashes query the
    * parse job uses, so re-invoking a partially-committed batch only
    * processes what's left — never double-posts. The batch stays "staged"
@@ -277,22 +277,22 @@ export class ImportsService {
         0
       );
 
-      await withTxn(this.connection, async (session) => {
-        await this.transactions.insertImportedRows(userId, batch.accountId, batchId, rows, session);
+      await withTxn(this.db, async (tx) => {
+        await this.transactions.insertImportedRows(userId, batch.accountId, batchId, rows, tx);
         if (netMinor !== 0) {
           const applied = await this.accounts.applyBalanceDelta(
             userId,
             batch.accountId,
             netMinor,
-            session
+            tx
           );
           if (!applied) throw new EntityNotFoundError("Account");
         }
-        await this.batches.incrementCommittedCount(batchId, chunk.length, session);
-        await this.audit.record(userId, "import.commit", batchId, session, {
+        await this.audit.record(userId, "import.commit", batchId, tx, {
           chunkSize: chunk.length,
           netMinor
         });
+        await this.batches.incrementCommittedCount(batchId, chunk.length, tx);
       });
     }
 
@@ -329,18 +329,18 @@ export class ImportsService {
         0
       );
 
-      await withTxn(this.connection, async (session) => {
-        await this.transactions.insertBulkReversals(userId, chunk, session);
+      await withTxn(this.db, async (tx) => {
+        await this.transactions.insertBulkReversals(userId, chunk, tx);
         if (netMinor !== 0) {
           const applied = await this.accounts.applyBalanceDelta(
             userId,
             batch.accountId,
             netMinor,
-            session
+            tx
           );
           if (!applied) throw new EntityNotFoundError("Account");
         }
-        await this.audit.record(userId, "import.revert", batchId, session, {
+        await this.audit.record(userId, "import.revert", batchId, tx, {
           chunkSize: chunk.length,
           netMinor
         });

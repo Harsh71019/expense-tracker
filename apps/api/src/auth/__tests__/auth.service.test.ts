@@ -37,7 +37,7 @@ class MockRuntimeConfigService implements RuntimeConfigService {
     API_PORT: 4000,
     LOG_LEVEL: "info" as const,
     SERVICE_ROLE: "api" as const,
-    MONGODB_URI: "mongodb://localhost:27017/test",
+    DATABASE_URL: "postgres://test:test@localhost:5432/test",
     REDIS_URL: "redis://localhost:6379",
     APP_TIMEZONE: "Asia/Kolkata" as const,
     TRUSTED_ORIGINS: "http://localhost:3000",
@@ -56,12 +56,6 @@ class MockRuntimeConfigService implements RuntimeConfigService {
 describe("AuthService", () => {
   it("instantiates betterAuth with configuration and hooks", async () => {
     const mockDb = {};
-    const mockClient = {
-      db: () => mockDb
-    };
-    const mockConnection = {
-      getClient: () => mockClient
-    };
 
     const mockConfig = new MockRuntimeConfigService();
     const mockRedis = {};
@@ -73,7 +67,7 @@ describe("AuthService", () => {
     };
 
     // @ts-expect-error - mock dependencies for unit testing
-    new AuthService(mockConnection, mockConfig, mockRedis, mockUserProfileService, mockLogger);
+    new AuthService(mockDb, mockConfig, mockRedis, mockUserProfileService, mockLogger);
 
     expect(betterAuthMockConfig).not.toBeNull();
     if (

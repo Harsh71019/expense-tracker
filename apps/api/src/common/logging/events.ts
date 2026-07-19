@@ -15,7 +15,8 @@ export const LogEvent = {
   RollupsRefreshed: "rollups.refreshed",
   RollupRefreshFailed: "rollups.refresh_failed",
   BalanceDriftDetected: "balances.drift_detected",
-  BalancesVerified: "balances.verified"
+  BalancesVerified: "balances.verified",
+  StagedRowsCleaned: "imports.staged_rows_cleaned"
 } as const;
 
 export type LogEvent = (typeof LogEvent)[keyof typeof LogEvent];

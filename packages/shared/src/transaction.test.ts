@@ -10,15 +10,15 @@ describe("CreateTransferSchema", () => {
   it("accepts a transfer between two distinct accounts", () => {
     expect(
       CreateTransferSchema.parse({
-        fromAccountId: "507f1f77bcf86cd799439011",
-        toAccountId: "507f1f77bcf86cd799439012",
+        fromAccountId: "3fa85f64-5717-4562-b3fc-2c963f66beef",
+        toAccountId: "3fa85f64-5717-4562-b3fc-2c963f66beff",
         amountMinor: 10_000,
         occurredAt: "2026-07-12T09:00:00.000Z",
         description: "ATM withdrawal"
       })
     ).toMatchObject({
-      fromAccountId: "507f1f77bcf86cd799439011",
-      toAccountId: "507f1f77bcf86cd799439012",
+      fromAccountId: "3fa85f64-5717-4562-b3fc-2c963f66beef",
+      toAccountId: "3fa85f64-5717-4562-b3fc-2c963f66beff",
       amountMinor: 10_000,
       tags: []
     });
@@ -27,8 +27,8 @@ describe("CreateTransferSchema", () => {
   it("rejects a transfer where the source and destination account are the same", () => {
     expect(() =>
       CreateTransferSchema.parse({
-        fromAccountId: "507f1f77bcf86cd799439011",
-        toAccountId: "507f1f77bcf86cd799439011",
+        fromAccountId: "3fa85f64-5717-4562-b3fc-2c963f66beef",
+        toAccountId: "3fa85f64-5717-4562-b3fc-2c963f66beef",
         amountMinor: 10_000,
         occurredAt: "2026-07-12T09:00:00.000Z",
         description: "Self transfer"

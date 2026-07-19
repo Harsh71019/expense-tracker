@@ -2,9 +2,7 @@ import { z } from "zod";
 
 import { CategoryIdSchema } from "./category.js";
 
-export const CategoryRuleIdSchema = z
-  .string()
-  .regex(/^[a-f\d]{24}$/i, "Category rule id must be a MongoDB ObjectId.");
+export const CategoryRuleIdSchema = z.string().uuid("Category rule id must be a UUID.");
 
 export const CreateCategoryRuleSchema = z.object({
   /** Case-insensitive substring matched against a transaction description. */

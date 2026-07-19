@@ -1,0 +1,4 @@
+ALTER TABLE "transactions" ALTER COLUMN "import_batch_id" SET DATA TYPE uuid USING "import_batch_id"::uuid;--> statement-breakpoint
+ALTER TABLE "transactions" ADD CONSTRAINT "transactions_reversal_of_transactions_id_fk" FOREIGN KEY ("reversal_of") REFERENCES "public"."transactions"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "transactions" ADD CONSTRAINT "transactions_reversed_by_transactions_id_fk" FOREIGN KEY ("reversed_by") REFERENCES "public"."transactions"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "transactions" ADD CONSTRAINT "transactions_import_batch_id_import_batches_id_fk" FOREIGN KEY ("import_batch_id") REFERENCES "public"."import_batches"("id") ON DELETE no action ON UPDATE no action;

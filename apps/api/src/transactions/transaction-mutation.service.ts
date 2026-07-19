@@ -1,25 +1,20 @@
 import { Injectable } from "@nestjs/common";
-import { InjectConnection } from "@nestjs/mongoose";
 import {
   TransactionSchema,
   type Transaction,
   type TransactionId,
   type UpdateTransaction
 } from "@vyaya/shared";
-import type { Connection } from "mongoose";
 
-import {
-  IdempotencyService,
-  type IdempotentResult
-} from "../common/idempotency/idempotency.service.js";
+import { IdempotencyPostgresService } from "../common/idempotency/idempotency-postgres.service.js";
+import type { IdempotentResult } from "../common/idempotency/idempotency-postgres.service.js";
 import { TransactionService } from "./transaction.service.js";
 
 @Injectable()
 export class TransactionMutationService {
   constructor(
-    @InjectConnection() private readonly connection: Connection,
     private readonly transactions: TransactionService,
-    private readonly idempotency: IdempotencyService
+    private readonly idempotency: IdempotencyPostgresService
   ) {}
 
   update(
@@ -29,12 +24,11 @@ export class TransactionMutationService {
     key: string
   ): Promise<IdempotentResult<Transaction>> {
     return this.idempotency.execute(
-      this.connection,
       userId,
       "transaction.metadata.update",
       key,
       TransactionSchema,
-      (session) => this.transactions.updateInSession(userId, transactionId, patch, session)
+      (tx) => this.transactions.updateInTx(userId, transactionId, patch, tx)
     );
   }
 }

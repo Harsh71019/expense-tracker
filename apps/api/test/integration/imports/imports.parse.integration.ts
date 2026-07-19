@@ -1,22 +1,25 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
-import { MongoMemoryReplSet } from "mongodb-memory-server";
-import { createConnection, Types } from "mongoose";
-import type { Connection } from "mongoose";
+import { eq } from "drizzle-orm";
 import type { ColumnMapping } from "@vyaya/shared";
 import { Redis } from "ioredis";
 
 import { AccountRepository } from "../../../src/accounts/account.repository.js";
 import { AuditRepository } from "../../../src/audit/audit.repository.js";
 import { CategoryRuleRepository } from "../../../src/category-rules/category-rule.repository.js";
+import { CategoryRepository } from "../../../src/categories/category.repository.js";
 import { RuntimeConfigService } from "../../../src/common/config/runtime-config.service.js";
+import { withTxn } from "../../../src/common/db/db-txn.js";
+import { stagedRows as stagedRowsTable } from "../../../src/common/db/schema/index.js";
 import { ImportBatchRepository } from "../../../src/imports/import-batch.repository.js";
 import { StagedRowRepository } from "../../../src/imports/staged-row.repository.js";
 import { ImportsQueue } from "../../../src/imports/imports.queue.js";
 import { ImportsService } from "../../../src/imports/imports.service.js";
 import { startImportsWorker } from "../../../src/imports/imports.processor.js";
 import { TransactionRepository } from "../../../src/transactions/transaction.repository.js";
+import { createTestDb, insertTestUser } from "../support/postgres-test-db.js";
+import type { TestDb } from "../support/postgres-test-db.js";
 
-const TEST_REDIS_URL = "redis://127.0.0.1:6379/9";
+const TEST_REDIS_URL = "redis://127.0.0.1:6379/10";
 
 class TestRuntimeConfig implements RuntimeConfigService {
   env = {
@@ -24,7 +27,7 @@ class TestRuntimeConfig implements RuntimeConfigService {
     API_PORT: 4000,
     LOG_LEVEL: "info" as const,
     SERVICE_ROLE: "worker" as const,
-    MONGODB_URI: "mongodb://localhost:27017/test",
+    DATABASE_URL: "postgres://test:test@localhost:5432/test",
     REDIS_URL: TEST_REDIS_URL,
     APP_TIMEZONE: "Asia/Kolkata" as const,
     TRUSTED_ORIGINS: "http://localhost:3000",
@@ -55,29 +58,32 @@ const CSV = [
 ].join("\n");
 
 describe("Imports parse pipeline (real BullMQ worker against real Redis)", () => {
-  let replicaSet: MongoMemoryReplSet | undefined;
-  let connection: Connection | undefined;
-  let batches: ImportBatchRepository | undefined;
-  let flushClient: Redis | undefined;
-  let worker: ReturnType<typeof startImportsWorker> | undefined;
-  let backgroundQueue: ImportsQueue | undefined;
+  let testDb: TestDb;
+  let batches: ImportBatchRepository;
+  let flushClient: Redis;
+  let worker: ReturnType<typeof startImportsWorker>;
+  let backgroundQueue: ImportsQueue;
+  let accountIdA: string;
+  let accountIdSuggest: string;
 
   beforeAll(async () => {
-    replicaSet = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
-    connection = await createConnection(replicaSet.getUri("vyaya_imports_parse_test")).asPromise();
     flushClient = new Redis(TEST_REDIS_URL);
     await flushClient.flushdb();
 
-    batches = new ImportBatchRepository(connection);
-    const stagedRows = new StagedRowRepository(connection);
-    const transactions = new TransactionRepository(connection);
-    const accounts = new AccountRepository(connection);
-    const audit = new AuditRepository(connection);
-    const categoryRules = new CategoryRuleRepository(connection);
+    testDb = await createTestDb();
+    await insertTestUser(testDb.db, "user-a");
+    await insertTestUser(testDb.db, "user-suggest");
+
+    batches = new ImportBatchRepository(testDb.db);
+    const stagedRows = new StagedRowRepository(testDb.db);
+    const transactions = new TransactionRepository(testDb.db);
+    const accounts = new AccountRepository(testDb.db);
+    const audit = new AuditRepository(testDb.db);
+    const categoryRules = new CategoryRuleRepository(testDb.db);
     const config = new TestRuntimeConfig();
     backgroundQueue = new ImportsQueue(config);
     const service = new ImportsService(
-      connection,
+      testDb.db,
       batches,
       stagedRows,
       transactions,
@@ -88,30 +94,45 @@ describe("Imports parse pipeline (real BullMQ worker against real Redis)", () =>
     );
     const logger = { log: () => undefined, error: () => undefined };
 
+    accountIdA = (
+      await withTxn(testDb.db, (tx) =>
+        accounts.create(
+          "user-a",
+          { name: "HDFC Savings", type: "bank", openingBalanceMinor: 0 },
+          tx
+        )
+      )
+    ).id;
+    accountIdSuggest = (
+      await withTxn(testDb.db, (tx) =>
+        accounts.create(
+          "user-suggest",
+          { name: "HDFC Savings", type: "bank", openingBalanceMinor: 0 },
+          tx
+        )
+      )
+    ).id;
+
     worker = startImportsWorker(config, service, logger);
     await worker.waitUntilReady();
   }, 30_000);
 
   afterAll(async () => {
-    if (worker !== undefined) await worker.close();
-    if (backgroundQueue !== undefined) await backgroundQueue.onModuleDestroy();
-    if (flushClient !== undefined) {
-      await flushClient.flushdb();
-      await flushClient.quit();
-    }
-    if (connection !== undefined) await connection.close();
-    if (replicaSet !== undefined) await replicaSet.stop();
+    await worker.close();
+    await backgroundQueue.onModuleDestroy();
+    await flushClient.flushdb();
+    await flushClient.quit();
+    await testDb.teardown();
   });
 
   afterEach(async () => {
-    if (flushClient !== undefined) await flushClient.flushdb();
+    await flushClient.flushdb();
   });
 
   it("parses an uploaded CSV into staged_rows and flips the batch to staged", async () => {
-    const repository = importBatchRepository(batches);
-    const batch = await repository.create(
+    const batch = await batches.create(
       "user-a",
-      "0123456789abcdef01234567",
+      accountIdA,
       "hdfc-july.csv",
       "sha256:parse-e2e",
       MAPPING
@@ -122,102 +143,105 @@ describe("Imports parse pipeline (real BullMQ worker against real Redis)", () =>
     await queue.enqueueParse({
       batchId: batch.id,
       userId: "user-a",
-      accountId: "0123456789abcdef01234567",
+      accountId: accountIdA,
       mapping: MAPPING,
       fileContentBase64: Buffer.from(CSV, "utf8").toString("base64")
     });
 
-    const staged = await waitForStatus(repository, batch.id, "staged");
+    const staged = await waitForStatus(batches, batch.id, "staged");
     expect(staged).toMatchObject({
       status: "staged",
       stats: { total: 2, staged: 2, duplicates: 0, committed: 0 }
     });
 
-    const rows = await connectedDatabase(connection)
-      .collection("staged_rows")
-      .find({ batchId: new Types.ObjectId(batch.id) })
-      .sort({ rowNumber: 1 })
-      .toArray();
+    const rows = await testDb.db
+      .select()
+      .from(stagedRowsTable)
+      .where(eq(stagedRowsTable.batchId, batch.id))
+      .orderBy(stagedRowsTable.rowNumber);
     expect(rows).toHaveLength(2);
     expect(rows[0]).toMatchObject({
       rowNumber: 1,
       isDuplicate: false,
-      parsed: { amountMinor: 2_000, type: "expense", description: "Chai Point" }
+      parsedAmountMinor: 2_000,
+      parsedType: "expense",
+      parsedDescription: "Chai Point"
     });
     expect(rows[1]).toMatchObject({
       rowNumber: 2,
-      parsed: { amountMinor: 5_000_000, type: "income", description: "Salary" }
+      parsedAmountMinor: 5_000_000,
+      parsedType: "income",
+      parsedDescription: "Salary"
     });
 
     await queue.onModuleDestroy();
   }, 20_000);
 
   it("re-parsing the same batch (a BullMQ retry) clears and re-derives staged_rows instead of duplicating them", async () => {
-    const repository = importBatchRepository(batches);
-    const database = connectedDatabase(connection);
-    const stagedRows = new StagedRowRepository(nonNullConnection(connection));
-    const transactions = new TransactionRepository(nonNullConnection(connection));
-    const accounts = new AccountRepository(nonNullConnection(connection));
-    const audit = new AuditRepository(nonNullConnection(connection));
-    const categoryRules = new CategoryRuleRepository(nonNullConnection(connection));
+    const stagedRows = new StagedRowRepository(testDb.db);
+    const transactions = new TransactionRepository(testDb.db);
+    const accounts = new AccountRepository(testDb.db);
+    const audit = new AuditRepository(testDb.db);
+    const categoryRules = new CategoryRuleRepository(testDb.db);
     const service = new ImportsService(
-      nonNullConnection(connection),
-      repository,
+      testDb.db,
+      batches,
       stagedRows,
       transactions,
       accounts,
       audit,
       categoryRules,
-      nonNullQueue(backgroundQueue)
+      backgroundQueue
     );
 
-    const batch = await repository.create(
+    const batch = await batches.create(
       "user-a",
-      "0123456789abcdef01234567",
+      accountIdA,
       "retry.csv",
       "sha256:retry-e2e",
       MAPPING
     );
 
-    await service.parseFile(batch.id, "user-a", "0123456789abcdef01234567", MAPPING, CSV);
-    await service.parseFile(batch.id, "user-a", "0123456789abcdef01234567", MAPPING, CSV);
+    await service.parseFile(batch.id, "user-a", accountIdA, MAPPING, CSV);
+    await service.parseFile(batch.id, "user-a", accountIdA, MAPPING, CSV);
 
     expect(
-      await database
-        .collection("staged_rows")
-        .countDocuments({ batchId: new Types.ObjectId(batch.id) })
+      (await testDb.db.select().from(stagedRowsTable).where(eq(stagedRowsTable.batchId, batch.id)))
+        .length
     ).toBe(2);
   });
 
   it("applies a matching category rule's suggestion during parse", async () => {
-    const repository = importBatchRepository(batches);
-    const stagedRows = new StagedRowRepository(nonNullConnection(connection));
-    const transactions = new TransactionRepository(nonNullConnection(connection));
-    const accounts = new AccountRepository(nonNullConnection(connection));
-    const audit = new AuditRepository(nonNullConnection(connection));
-    const categoryRules = new CategoryRuleRepository(nonNullConnection(connection));
+    const stagedRows = new StagedRowRepository(testDb.db);
+    const transactions = new TransactionRepository(testDb.db);
+    const accounts = new AccountRepository(testDb.db);
+    const audit = new AuditRepository(testDb.db);
+    const categoryRules = new CategoryRuleRepository(testDb.db);
     const service = new ImportsService(
-      nonNullConnection(connection),
-      repository,
+      testDb.db,
+      batches,
       stagedRows,
       transactions,
       accounts,
       audit,
       categoryRules,
-      nonNullQueue(backgroundQueue)
+      backgroundQueue
     );
 
-    const foodCategoryId = "0123456789abcdef0123456f";
+    const categories = new CategoryRepository(testDb.db);
+    const foodCategoryId = (
+      await categories.create("user-suggest", { name: "Food", kind: "expense" })
+    ).id;
     await categoryRules.create("user-suggest", { pattern: "Chai", categoryId: foodCategoryId });
 
-    const batch = await repository.create(
+    const batch = await batches.create(
       "user-suggest",
-      "0123456789abcdef01234567",
+      accountIdSuggest,
       "suggest.csv",
       "sha256:suggest-e2e",
       MAPPING
     );
-    await service.parseFile(batch.id, "user-suggest", "0123456789abcdef01234567", MAPPING, CSV);
+    await service.parseFile(batch.id, "user-suggest", accountIdSuggest, MAPPING, CSV);
 
     const page = await stagedRows.findByBatchId(batch.id, undefined, 10);
     expect(page.items[0]).toMatchObject({ suggestedCategoryId: foodCategoryId });
@@ -239,35 +263,4 @@ async function waitForStatus(
     }
     await new Promise((resolve) => setTimeout(resolve, 100));
   }
-}
-
-function importBatchRepository(
-  repository: ImportBatchRepository | undefined
-): ImportBatchRepository {
-  if (repository === undefined) {
-    throw new Error("Import batch repository is not ready");
-  }
-  return repository;
-}
-
-function nonNullQueue(queue: ImportsQueue | undefined): ImportsQueue {
-  if (queue === undefined) {
-    throw new Error("Imports queue is not ready");
-  }
-  return queue;
-}
-
-function nonNullConnection(connection: Connection | undefined): Connection {
-  if (connection === undefined) {
-    throw new Error("MongoDB connection is not ready");
-  }
-  return connection;
-}
-
-function connectedDatabase(connection: Connection | undefined): NonNullable<Connection["db"]> {
-  const database = nonNullConnection(connection).db;
-  if (database === undefined) {
-    throw new Error("MongoDB database is not ready");
-  }
-  return database;
 }

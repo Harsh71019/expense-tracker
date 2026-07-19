@@ -74,7 +74,7 @@ describe("route shells", () => {
   it("renders the current balance for active accounts", async () => {
     mocks.accounts = [
       {
-        id: "507f1f77bcf86cd799439011",
+        id: "3fa85f64-5717-4562-b3fc-2c963f66beef",
         userId: "user-1",
         name: "Cash",
         type: "cash",
@@ -98,7 +98,7 @@ describe("route shells", () => {
   it("formats negative balances and plural account labels", async () => {
     mocks.accounts = [
       {
-        id: "507f1f77bcf86cd799439011",
+        id: "3fa85f64-5717-4562-b3fc-2c963f66beef",
         userId: "user-1",
         name: "Card",
         type: "credit_card",
@@ -110,7 +110,7 @@ describe("route shells", () => {
         updatedAt: new Date()
       },
       {
-        id: "507f1f77bcf86cd799439012",
+        id: "3fa85f64-5717-4562-b3fc-2c963f66beff",
         userId: "user-1",
         name: "Cash",
         type: "cash",

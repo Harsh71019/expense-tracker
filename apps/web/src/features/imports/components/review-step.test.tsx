@@ -36,7 +36,7 @@ vi.mock("../hooks/use-update-staged-row", () => ({
 }));
 
 const groceries: Category = {
-  id: "507f1f77bcf86cd799439012",
+  id: "3fa85f64-5717-4562-b3fc-2c963f66beff",
   userId: "u1",
   name: "Groceries",
   kind: "expense",
@@ -47,8 +47,8 @@ const groceries: Category = {
 
 function row(overrides: Partial<StagedRow> = {}): StagedRow {
   return {
-    id: "507f1f77bcf86cd799439031",
-    batchId: "507f1f77bcf86cd799439021",
+    id: "3fa85f64-5717-4562-b3fc-2c963f66be31",
+    batchId: "3fa85f64-5717-4562-b3fc-2c963f66be21",
     rowNumber: 1,
     raw: { Date: "01/07/2026" },
     parsed: {
@@ -89,7 +89,7 @@ describe("ReviewStep", () => {
     mocks.rows = [
       row(),
       row({
-        id: "507f1f77bcf86cd799439032",
+        id: "3fa85f64-5717-4562-b3fc-2c963f66be32",
         rowNumber: 2,
         isDuplicate: true,
         parsed: {

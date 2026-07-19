@@ -1,5 +1,4 @@
 import { Injectable } from "@nestjs/common";
-import { InjectConnection } from "@nestjs/mongoose";
 import {
   AssetSchema,
   ValuationSchema,
@@ -9,42 +8,28 @@ import {
   type CreateValuation,
   type Valuation
 } from "@vyaya/shared";
-import type { Connection } from "mongoose";
 import { z } from "zod";
 
-import {
-  IdempotencyService,
-  type IdempotentResult
-} from "../common/idempotency/idempotency.service.js";
+import { IdempotencyPostgresService } from "../common/idempotency/idempotency-postgres.service.js";
+import type { IdempotentResult } from "../common/idempotency/idempotency-postgres.service.js";
 import { AssetService } from "./asset.service.js";
 
 @Injectable()
 export class AssetMutationService {
   constructor(
-    @InjectConnection() private readonly connection: Connection,
     private readonly assets: AssetService,
-    private readonly idempotency: IdempotencyService
+    private readonly idempotency: IdempotencyPostgresService
   ) {}
 
   create(userId: string, input: CreateAsset, key: string): Promise<IdempotentResult<Asset>> {
-    return this.idempotency.execute(
-      this.connection,
-      userId,
-      "asset.create",
-      key,
-      AssetSchema,
-      (session) => this.assets.createInSession(userId, input, session)
+    return this.idempotency.execute(userId, "asset.create", key, AssetSchema, (tx) =>
+      this.assets.createInTx(userId, input, tx)
     );
   }
 
   close(userId: string, assetId: AssetId, key: string): Promise<IdempotentResult<null>> {
-    return this.idempotency.execute(
-      this.connection,
-      userId,
-      "asset.close",
-      key,
-      z.null(),
-      (session) => this.assets.closeInSession(userId, assetId, session)
+    return this.idempotency.execute(userId, "asset.close", key, z.null(), (tx) =>
+      this.assets.closeInTx(userId, assetId, tx)
     );
   }
 
@@ -54,13 +39,8 @@ export class AssetMutationService {
     input: CreateValuation,
     key: string
   ): Promise<IdempotentResult<Valuation>> {
-    return this.idempotency.execute(
-      this.connection,
-      userId,
-      "asset.valuation.create",
-      key,
-      ValuationSchema,
-      (session) => this.assets.addValuationInSession(userId, assetId, input, session)
+    return this.idempotency.execute(userId, "asset.valuation.create", key, ValuationSchema, (tx) =>
+      this.assets.addValuationInTx(userId, assetId, input, tx)
     );
   }
 }

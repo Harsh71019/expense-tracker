@@ -1,80 +1,83 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { MongoMemoryReplSet } from "mongodb-memory-server";
-import { createConnection, Types } from "mongoose";
-import type { Connection } from "mongoose";
+import { and, eq } from "drizzle-orm";
 
 import { AccountRepository } from "../../../src/accounts/account.repository.js";
 import { AuditRepository } from "../../../src/audit/audit.repository.js";
 import { RuntimeConfigService } from "../../../src/common/config/runtime-config.service.js";
-import { withTxn } from "../../../src/common/mongo-txn.js";
+import { withTxn } from "../../../src/common/db/db-txn.js";
+import {
+  accounts,
+  auditLog,
+  recurringRules,
+  transactions as transactionsTable
+} from "../../../src/common/db/schema/index.js";
 import { RecurringMaterializeService } from "../../../src/recurring/recurring-materialize.service.js";
 import { RecurringRuleRepository } from "../../../src/recurring/recurring-rule.repository.js";
 import { RecurringRuleService } from "../../../src/recurring/recurring-rule.service.js";
 import { TransactionRepository } from "../../../src/transactions/transaction.repository.js";
 import { CategoryRepository } from "../../../src/categories/category.repository.js";
+import { createTestDb, insertTestUser } from "../support/postgres-test-db.js";
+import type { TestDb } from "../support/postgres-test-db.js";
 
 const NOOP_LOGGER = { log: () => undefined, error: () => undefined };
 
 describe("RecurringMaterializeService", () => {
-  let replicaSet: MongoMemoryReplSet | undefined;
-  let connection: Connection | undefined;
-  let accounts: AccountRepository | undefined;
-  let rules: RecurringRuleRepository | undefined;
-  let ruleService: RecurringRuleService | undefined;
-  let accountId: string | undefined;
+  let testDb: TestDb;
+  let accounts_: AccountRepository;
+  let rules: RecurringRuleRepository;
+  let ruleService: RecurringRuleService;
+  let accountId: string;
 
   beforeAll(async () => {
-    replicaSet = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
-    process.env.MONGODB_URI = replicaSet.getUri("vyaya_recurring_materialize_test");
-    process.env.REDIS_URL = "redis://127.0.0.1:6379/9";
+    testDb = await createTestDb();
+    await insertTestUser(testDb.db, "user-a");
+
+    process.env.DATABASE_URL = testDb.connectionUri;
+    process.env.REDIS_URL = "redis://127.0.0.1:6379/12";
     process.env.TRUSTED_ORIGINS = "http://localhost:3000";
     process.env.BETTER_AUTH_SECRET = "test-secret-long-enough-32-chars-long";
     process.env.BETTER_AUTH_URL = "http://localhost:4000";
 
-    connection = await createConnection(
-      replicaSet.getUri("vyaya_recurring_materialize_test")
-    ).asPromise();
-    accounts = new AccountRepository(connection);
-    rules = new RecurringRuleRepository(connection);
+    accounts_ = new AccountRepository(testDb.db);
+    rules = new RecurringRuleRepository(testDb.db);
     ruleService = new RecurringRuleService(
-      connection,
+      testDb.db,
       rules,
-      accounts,
-      new CategoryRepository(connection)
+      accounts_,
+      new CategoryRepository(testDb.db)
     );
 
-    const account = await withTxn(connectedConnection(connection), (session) =>
-      requireAccounts(accounts).create(
+    const account = await withTxn(testDb.db, (tx) =>
+      accounts_.create(
         "user-a",
         { name: "HDFC Savings", type: "bank", openingBalanceMinor: 500_000 },
-        session
+        tx
       )
     );
     accountId = account.id;
-  });
+  }, 60_000);
 
   afterAll(async () => {
-    if (connection !== undefined) await connection.close();
-    if (replicaSet !== undefined) await replicaSet.stop();
+    await testDb.teardown();
   });
 
   function newMaterializer(serviceRole: "api" | "worker"): RecurringMaterializeService {
     process.env.SERVICE_ROLE = serviceRole;
     return new RecurringMaterializeService(
-      connectedConnection(connection),
+      testDb.db,
       new RuntimeConfigService(),
-      requireRules(rules),
-      requireAccounts(accounts),
-      new TransactionRepository(connectedConnection(connection)),
-      new AuditRepository(connectedConnection(connection)),
+      rules,
+      accounts_,
+      new TransactionRepository(testDb.db),
+      new AuditRepository(testDb.db),
       NOOP_LOGGER
     );
   }
 
   it("is a no-op when SERVICE_ROLE is not worker", async () => {
-    const rule = await requireRuleService(ruleService).create("user-a", {
+    const rule = await ruleService.create("user-a", {
       template: {
-        accountId: requireId(accountId),
+        accountId,
         type: "expense",
         amountMinor: 150_000,
         description: "Rent (api-role guard test)",
@@ -86,7 +89,7 @@ describe("RecurringMaterializeService", () => {
 
     await newMaterializer("api").materialize();
 
-    const stored = await requireRules(rules).findById("user-a", rule.id);
+    const stored = await rules.findById("user-a", rule.id);
     expect(stored?.nextRunAt.toISOString()).toBe(rule.nextRunAt.toISOString());
     expect(stored?.lastRunAt).toBeUndefined();
 
@@ -94,15 +97,16 @@ describe("RecurringMaterializeService", () => {
     // created them — pause this one so later tests' worker-role sweeps in
     // this same suite don't also pick it up (it's still "due" by design,
     // since the point of this test was that the guard left it untouched).
-    await connectedDatabase(connection)
-      .collection("recurring_rules")
-      .updateOne({ userId: "user-a", _id: toObjectId(rule.id) }, { $set: { isPaused: true } });
+    await testDb.db
+      .update(recurringRules)
+      .set({ isPaused: true })
+      .where(and(eq(recurringRules.userId, "user-a"), eq(recurringRules.id, rule.id)));
   });
 
   it("posts the templated txn, updates the balance, and advances nextRunAt", async () => {
-    const rule = await requireRuleService(ruleService).create("user-a", {
+    const rule = await ruleService.create("user-a", {
       template: {
-        accountId: requireId(accountId),
+        accountId,
         type: "expense",
         amountMinor: 150_000,
         description: "Rent",
@@ -112,67 +116,86 @@ describe("RecurringMaterializeService", () => {
       startAt: new Date("2020-02-01T00:00:00.000Z")
     });
 
-    const before = await connectedDatabase(connection)
-      .collection("accounts")
-      .findOne({ _id: toObjectId(requireId(accountId)) });
-    const balanceBefore = requireNumber(before?.balanceMinor);
+    const balanceBefore = await accountBalance();
 
     await newMaterializer("worker").materialize();
 
-    const stored = await requireRules(rules).findById("user-a", rule.id);
+    const stored = await rules.findById("user-a", rule.id);
     expect(stored?.nextRunAt.toISOString()).toBe("2020-03-01T00:00:00.000Z");
     expect(stored?.lastRunAt?.toISOString()).toBe(rule.nextRunAt.toISOString());
 
-    const txn = await connectedDatabase(connection)
-      .collection("transactions")
-      .findOne({ userId: "user-a", description: "Rent", source: "recurring" });
-    expect(txn).toMatchObject({
-      amountMinor: 150_000,
-      type: "expense",
-      occurredAt: rule.nextRunAt
-    });
+    const [txn] = await testDb.db
+      .select()
+      .from(transactionsTable)
+      .where(
+        and(
+          eq(transactionsTable.userId, "user-a"),
+          eq(transactionsTable.description, "Rent"),
+          eq(transactionsTable.source, "recurring")
+        )
+      );
+    expect(txn).toMatchObject({ amountMinor: 150_000, type: "expense" });
+    expect(txn?.occurredAt.toISOString()).toBe(rule.nextRunAt.toISOString());
 
-    const after = await connectedDatabase(connection)
-      .collection("accounts")
-      .findOne({ _id: toObjectId(requireId(accountId)) });
-    expect(requireNumber(after?.balanceMinor)).toBe(balanceBefore - 150_000);
+    expect(await accountBalance()).toBe(balanceBefore - 150_000);
 
-    const audit = await connectedDatabase(connection)
-      .collection("audit_log")
-      .findOne({ userId: "user-a", action: "recurring.materialize" });
-    expect(audit).not.toBeNull();
+    const [audit] = await testDb.db
+      .select()
+      .from(auditLog)
+      .where(and(eq(auditLog.userId, "user-a"), eq(auditLog.action, "recurring.materialize")));
+    expect(audit).not.toBeUndefined();
   });
 
   it("posting the same due rule concurrently five times posts exactly one transaction", async () => {
-    const rule = await requireRuleService(ruleService).create("user-a", {
+    // Yearly (not monthly-since-2020): the claim's post-CAS nextRunAt must land
+    // comfortably in the future, or a straggler among the 5 concurrent
+    // materialize() calls -- each doing its own findDue() read -- can land
+    // *after* the winner's commit and legitimately observe the next occurrence
+    // as still due too (a real re-materialization, not a CAS failure), posting
+    // a second time. A monthly rule anchored to 2020 has many such overdue
+    // periods relative to "today"; this flaked on CI where scheduling jitter
+    // widened that window. Anchoring to this Jan 1st means the next occurrence
+    // (next Jan 1st) is always many months out, so every concurrent call races
+    // the exact same nextRunAt -- what this test is actually about.
+    const startAt = new Date(Date.UTC(new Date().getUTCFullYear(), 0, 1));
+    const rule = await ruleService.create("user-a", {
       template: {
-        accountId: requireId(accountId),
+        accountId,
         type: "expense",
         amountMinor: 5_000,
         description: "Netflix",
         tags: []
       },
-      rrule: "FREQ=MONTHLY;BYMONTHDAY=1",
-      startAt: new Date("2020-04-01T00:00:00.000Z")
+      rrule: "FREQ=YEARLY;BYMONTH=1;BYMONTHDAY=1",
+      startAt
     });
 
     process.env.SERVICE_ROLE = "worker";
     const materializer = newMaterializer("worker");
     await Promise.all(Array.from({ length: 5 }, () => materializer.materialize()));
 
-    const count = await connectedDatabase(connection)
-      .collection("transactions")
-      .countDocuments({ userId: "user-a", description: "Netflix", source: "recurring" });
-    expect(count).toBe(1);
+    const posted = await testDb.db
+      .select()
+      .from(transactionsTable)
+      .where(
+        and(
+          eq(transactionsTable.userId, "user-a"),
+          eq(transactionsTable.description, "Netflix"),
+          eq(transactionsTable.source, "recurring")
+        )
+      );
+    expect(posted.length).toBe(1);
 
-    const stored = await requireRules(rules).findById("user-a", rule.id);
-    expect(stored?.nextRunAt.toISOString()).toBe("2020-05-01T00:00:00.000Z");
+    const stored = await rules.findById("user-a", rule.id);
+    expect(stored?.nextRunAt.toISOString()).toBe(
+      new Date(Date.UTC(startAt.getUTCFullYear() + 1, 0, 1)).toISOString()
+    );
   });
 
   it("pauses a rule once its COUNT-limited rrule is exhausted", async () => {
-    await requireRuleService(ruleService).create("user-a", {
+    await ruleService.create("user-a", {
       template: {
-        accountId: requireId(accountId),
+        accountId,
         type: "expense",
         amountMinor: 1_000,
         description: "Short-lived subscription",
@@ -184,49 +207,58 @@ describe("RecurringMaterializeService", () => {
 
     await newMaterializer("worker").materialize();
 
-    const stored = await connectedDatabase(connection)
-      .collection("recurring_rules")
-      .findOne({ userId: "user-a", "template.description": "Short-lived subscription" });
+    const [stored] = await testDb.db
+      .select()
+      .from(recurringRules)
+      .where(
+        and(
+          eq(recurringRules.userId, "user-a"),
+          eq(recurringRules.templateDescription, "Short-lived subscription")
+        )
+      );
     expect(stored).toMatchObject({ isPaused: true });
   });
+
+  it("posting a rule at its final (COUNT-limited) occurrence concurrently five times posts exactly one transaction", async () => {
+    // Regression test: on the last occurrence, claimRun's nextRunAt SET is a
+    // no-op (there's no next occurrence to advance to), so without isPaused
+    // in the CAS predicate a second concurrent claim would still match after
+    // the winner commits, since the row's nextRunAt never changed.
+    const rule = await ruleService.create("user-a", {
+      template: {
+        accountId,
+        type: "expense",
+        amountMinor: 2_000,
+        description: "One-time gym fee",
+        tags: []
+      },
+      rrule: "FREQ=MONTHLY;BYMONTHDAY=1;COUNT=1",
+      startAt: new Date("2020-07-01T00:00:00.000Z")
+    });
+
+    process.env.SERVICE_ROLE = "worker";
+    const materializer = newMaterializer("worker");
+    await Promise.all(Array.from({ length: 5 }, () => materializer.materialize()));
+
+    const posted = await testDb.db
+      .select()
+      .from(transactionsTable)
+      .where(
+        and(
+          eq(transactionsTable.userId, "user-a"),
+          eq(transactionsTable.description, "One-time gym fee"),
+          eq(transactionsTable.source, "recurring")
+        )
+      );
+    expect(posted.length).toBe(1);
+
+    const stored = await rules.findById("user-a", rule.id);
+    expect(stored?.isPaused).toBe(true);
+  });
+
+  async function accountBalance(): Promise<number> {
+    const [account] = await testDb.db.select().from(accounts).where(eq(accounts.id, accountId));
+    if (account === undefined) throw new Error("Account fixture not found");
+    return account.balanceMinor;
+  }
 });
-
-function requireRuleService(service: RecurringRuleService | undefined): RecurringRuleService {
-  if (service === undefined) throw new Error("Recurring rule service is not ready");
-  return service;
-}
-
-function requireRules(rules: RecurringRuleRepository | undefined): RecurringRuleRepository {
-  if (rules === undefined) throw new Error("Recurring rule repository is not ready");
-  return rules;
-}
-
-function requireAccounts(accounts: AccountRepository | undefined): AccountRepository {
-  if (accounts === undefined) throw new Error("Account repository is not ready");
-  return accounts;
-}
-
-function requireId(id: string | undefined): string {
-  if (id === undefined) throw new Error("Fixture id is not ready");
-  return id;
-}
-
-function requireNumber(value: unknown): number {
-  if (typeof value !== "number") throw new Error("Expected a numeric field.");
-  return value;
-}
-
-function connectedConnection(connection: Connection | undefined): Connection {
-  if (connection === undefined) throw new Error("MongoDB connection is not ready");
-  return connection;
-}
-
-function connectedDatabase(connection: Connection | undefined): NonNullable<Connection["db"]> {
-  const database = connectedConnection(connection).db;
-  if (database === undefined) throw new Error("MongoDB database is not ready");
-  return database;
-}
-
-function toObjectId(id: string): InstanceType<typeof Types.ObjectId> {
-  return new Types.ObjectId(id);
-}

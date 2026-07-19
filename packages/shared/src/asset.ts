@@ -18,9 +18,7 @@ export const AssetKindSchema = z.enum([
   "investment"
 ]);
 
-export const AssetIdSchema = z
-  .string()
-  .regex(/^[a-f\d]{24}$/i, "Asset id must be a MongoDB ObjectId.");
+export const AssetIdSchema = z.string().uuid("Asset id must be a UUID.");
 
 export const CreateAssetSchema = z
   .object({
@@ -73,7 +71,7 @@ export const CreateValuationSchema = z.object({
 });
 
 export const ValuationSchema = CreateValuationSchema.extend({
-  id: z.string().regex(/^[a-f\d]{24}$/i, "Valuation id must be a MongoDB ObjectId."),
+  id: z.string().uuid("Valuation id must be a UUID."),
   assetId: AssetIdSchema,
   userId: z.string().min(1),
   createdAt: z.coerce.date()

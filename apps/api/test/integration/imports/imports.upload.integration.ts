@@ -1,7 +1,5 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
-import { MongoMemoryReplSet } from "mongodb-memory-server";
-import { createConnection, Types } from "mongoose";
-import type { Connection } from "mongoose";
+import { eq } from "drizzle-orm";
 import type { ColumnMapping } from "@vyaya/shared";
 import { Redis } from "ioredis";
 
@@ -10,12 +8,16 @@ import { AuditRepository } from "../../../src/audit/audit.repository.js";
 import { CategoryRuleRepository } from "../../../src/category-rules/category-rule.repository.js";
 import { ImportAlreadyCommittedError } from "../../../src/common/errors/import-already-committed.error.js";
 import { RuntimeConfigService } from "../../../src/common/config/runtime-config.service.js";
+import { importBatches } from "../../../src/common/db/schema/index.js";
+import { withTxn } from "../../../src/common/db/db-txn.js";
 import { EntityNotFoundError } from "../../../src/common/errors/entity-not-found.error.js";
 import { ImportBatchRepository } from "../../../src/imports/import-batch.repository.js";
 import { StagedRowRepository } from "../../../src/imports/staged-row.repository.js";
 import { ImportsQueue } from "../../../src/imports/imports.queue.js";
 import { ImportsService } from "../../../src/imports/imports.service.js";
 import { TransactionRepository } from "../../../src/transactions/transaction.repository.js";
+import { createTestDb, insertTestUser } from "../support/postgres-test-db.js";
+import type { TestDb } from "../support/postgres-test-db.js";
 
 const TEST_REDIS_URL = "redis://127.0.0.1:6379/9";
 
@@ -25,7 +27,7 @@ class TestRuntimeConfig implements RuntimeConfigService {
     API_PORT: 4000,
     LOG_LEVEL: "info" as const,
     SERVICE_ROLE: "api" as const,
-    MONGODB_URI: "mongodb://localhost:27017/test",
+    DATABASE_URL: "postgres://test:test@localhost:5432/test",
     REDIS_URL: TEST_REDIS_URL,
     APP_TIMEZONE: "Asia/Kolkata" as const,
     TRUSTED_ORIGINS: "http://localhost:3000",
@@ -52,28 +54,32 @@ const MAPPING: ColumnMapping = {
 const CSV = "Txn Date,Narration,Amount\n04/07/2026,Chai Point,-20.00\n";
 
 describe("ImportsService.createBatch", () => {
-  let replicaSet: MongoMemoryReplSet | undefined;
-  let connection: Connection | undefined;
-  let service: ImportsService | undefined;
-  let batches: ImportBatchRepository | undefined;
-  let queue: ImportsQueue | undefined;
-  let flushClient: Redis | undefined;
+  let testDb: TestDb;
+  let service: ImportsService;
+  let accounts: AccountRepository;
+  let queue: ImportsQueue;
+  let flushClient: Redis;
+  let accountIdA: string;
+  let accountIdB: string;
 
   beforeAll(async () => {
-    replicaSet = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
-    connection = await createConnection(replicaSet.getUri("vyaya_imports_upload_test")).asPromise();
     flushClient = new Redis(TEST_REDIS_URL);
     await flushClient.flushdb();
 
-    batches = new ImportBatchRepository(connection);
-    const stagedRows = new StagedRowRepository(connection);
-    const transactions = new TransactionRepository(connection);
-    const accounts = new AccountRepository(connection);
-    const audit = new AuditRepository(connection);
-    const categoryRules = new CategoryRuleRepository(connection);
+    testDb = await createTestDb();
+    for (const userId of ["user-a", "user-b", "mapping-owner"]) {
+      await insertTestUser(testDb.db, userId);
+    }
+
+    const batches = new ImportBatchRepository(testDb.db);
+    const stagedRows = new StagedRowRepository(testDb.db);
+    const transactions = new TransactionRepository(testDb.db);
+    accounts = new AccountRepository(testDb.db);
+    const audit = new AuditRepository(testDb.db);
+    const categoryRules = new CategoryRuleRepository(testDb.db);
     queue = new ImportsQueue(new TestRuntimeConfig());
     service = new ImportsService(
-      connection,
+      testDb.db,
       batches,
       stagedRows,
       transactions,
@@ -82,26 +88,42 @@ describe("ImportsService.createBatch", () => {
       categoryRules,
       queue
     );
+
+    accountIdA = (
+      await withTxn(testDb.db, (tx) =>
+        accounts.create(
+          "user-a",
+          { name: "HDFC Savings", type: "bank", openingBalanceMinor: 0 },
+          tx
+        )
+      )
+    ).id;
+    accountIdB = (
+      await withTxn(testDb.db, (tx) =>
+        accounts.create(
+          "user-b",
+          { name: "ICICI Savings", type: "bank", openingBalanceMinor: 0 },
+          tx
+        )
+      )
+    ).id;
   }, 30_000);
 
   afterAll(async () => {
-    if (queue !== undefined) await queue.onModuleDestroy();
-    if (flushClient !== undefined) {
-      await flushClient.flushdb();
-      await flushClient.quit();
-    }
-    if (connection !== undefined) await connection.close();
-    if (replicaSet !== undefined) await replicaSet.stop();
+    await queue.onModuleDestroy();
+    await flushClient.flushdb();
+    await flushClient.quit();
+    await testDb.teardown();
   });
 
   afterEach(async () => {
-    if (flushClient !== undefined) await flushClient.flushdb();
+    await flushClient.flushdb();
   });
 
   it("creates a pending batch and enqueues a parse job", async () => {
-    const created = await nonNull(service).createBatch(
+    const created = await service.createBatch(
       "user-a",
-      "0123456789abcdef01234567",
+      accountIdA,
       "hdfc-july.csv",
       "text/csv",
       Buffer.from(CSV, "utf8"),
@@ -110,15 +132,15 @@ describe("ImportsService.createBatch", () => {
 
     expect(created).toMatchObject({ status: "pending", filename: "hdfc-july.csv" });
 
-    const job = await waitForJob(nonNull(flushClient), created.id);
+    const job = await waitForJob(flushClient, created.id);
     expect(job).toBe(true);
   });
 
   it("rejects the exact same bytes once the prior batch has been committed", async () => {
     const buffer = Buffer.from(CSV + "05/07/2026,Salary,50000.00\n", "utf8");
-    const first = await nonNull(service).createBatch(
+    const first = await service.createBatch(
       "user-a",
-      "0123456789abcdef01234567",
+      accountIdA,
       "already-committed.csv",
       "text/csv",
       buffer,
@@ -127,14 +149,15 @@ describe("ImportsService.createBatch", () => {
 
     // Simulate what the (not-yet-built) commit endpoint will eventually do —
     // no commit endpoint exists yet, so drive the state directly.
-    await connectedDatabase(connection)
-      .collection("import_batches")
-      .updateOne({ _id: new Types.ObjectId(first.id) }, { $set: { status: "committed" } });
+    await testDb.db
+      .update(importBatches)
+      .set({ status: "committed" })
+      .where(eq(importBatches.id, first.id));
 
     await expect(
-      nonNull(service).createBatch(
+      service.createBatch(
         "user-a",
-        "0123456789abcdef01234567",
+        accountIdA,
         "already-committed.csv",
         "text/csv",
         buffer,
@@ -145,22 +168,23 @@ describe("ImportsService.createBatch", () => {
 
   it("allows re-uploading the exact same bytes after the prior batch was reverted (Gate 3)", async () => {
     const buffer = Buffer.from(CSV + "06/07/2026,Refund,1000.00\n", "utf8");
-    const first = await nonNull(service).createBatch(
+    const first = await service.createBatch(
       "user-a",
-      "0123456789abcdef01234567",
+      accountIdA,
       "reverted-then-reimported.csv",
       "text/csv",
       buffer,
       MAPPING
     );
 
-    await connectedDatabase(connection)
-      .collection("import_batches")
-      .updateOne({ _id: new Types.ObjectId(first.id) }, { $set: { status: "reverted" } });
+    await testDb.db
+      .update(importBatches)
+      .set({ status: "reverted" })
+      .where(eq(importBatches.id, first.id));
 
-    const second = await nonNull(service).createBatch(
+    const second = await service.createBatch(
       "user-a",
-      "0123456789abcdef01234567",
+      accountIdA,
       "reverted-then-reimported.csv",
       "text/csv",
       buffer,
@@ -173,64 +197,35 @@ describe("ImportsService.createBatch", () => {
 
   it("does not let one user's committed upload block another user's identical file", async () => {
     const buffer = Buffer.from(CSV, "utf8");
-    const ownerBatch = await nonNull(service).createBatch(
+    const ownerBatch = await service.createBatch(
       "user-a",
-      "0123456789abcdef01234567",
+      accountIdA,
       "shared-bytes.csv",
       "text/csv",
       buffer,
       MAPPING
     );
-    await connectedDatabase(connection)
-      .collection("import_batches")
-      .updateOne({ _id: new Types.ObjectId(ownerBatch.id) }, { $set: { status: "committed" } });
+    await testDb.db
+      .update(importBatches)
+      .set({ status: "committed" })
+      .where(eq(importBatches.id, ownerBatch.id));
 
     await expect(
-      nonNull(service).createBatch(
-        "user-b",
-        "0123456789abcdef01234568",
-        "shared-bytes.csv",
-        "text/csv",
-        buffer,
-        MAPPING
-      )
+      service.createBatch("user-b", accountIdB, "shared-bytes.csv", "text/csv", buffer, MAPPING)
     ).resolves.toMatchObject({ status: "pending" });
   });
 
   it("returns saved mappings only for an active account owned by the requester", async () => {
-    const accountId = new Types.ObjectId();
-    await connectedDatabase(connection).collection("accounts").insertOne({
-      _id: accountId,
-      userId: "mapping-owner",
-      name: "HDFC",
-      type: "bank",
-      currency: "INR",
-      openingBalanceMinor: 0,
-      balanceMinor: 0,
-      isArchived: false,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    });
-    await connectedDatabase(connection)
-      .collection("import_batches")
-      .insertOne({
-        userId: "mapping-owner",
-        accountId,
-        filename: "mapping.csv",
-        fileHash: "mapping-hash",
-        mapping: MAPPING,
-        status: "staged",
-        stats: { total: 0, staged: 0, duplicates: 0, committed: 0 },
-        createdAt: new Date(),
-        updatedAt: new Date()
-      });
+    const account = await withTxn(testDb.db, (tx) =>
+      accounts.create("mapping-owner", { name: "HDFC", type: "bank", openingBalanceMinor: 0 }, tx)
+    );
+    const batches = new ImportBatchRepository(testDb.db);
+    await batches.create("mapping-owner", account.id, "mapping.csv", "mapping-hash", MAPPING);
 
-    await expect(
-      nonNull(service).getSavedMapping("mapping-owner", accountId.toString())
-    ).resolves.toEqual(MAPPING);
-    await expect(
-      nonNull(service).getSavedMapping("someone-else", accountId.toString())
-    ).rejects.toThrow(EntityNotFoundError);
+    await expect(service.getSavedMapping("mapping-owner", account.id)).resolves.toEqual(MAPPING);
+    await expect(service.getSavedMapping("someone-else", account.id)).rejects.toThrow(
+      EntityNotFoundError
+    );
   });
 });
 
@@ -242,19 +237,4 @@ async function waitForJob(redis: Redis, jobId: string, timeoutMs = 5_000): Promi
     if (Date.now() > deadline) return false;
     await new Promise((resolve) => setTimeout(resolve, 100));
   }
-}
-
-function nonNull<T>(value: T | undefined): T {
-  if (value === undefined) {
-    throw new Error("Test fixture is not ready");
-  }
-  return value;
-}
-
-function connectedDatabase(connection: Connection | undefined): NonNullable<Connection["db"]> {
-  const database = nonNull(connection).db;
-  if (database === undefined) {
-    throw new Error("MongoDB database is not ready");
-  }
-  return database;
 }

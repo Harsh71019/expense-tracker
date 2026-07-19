@@ -5,9 +5,9 @@ import { describe, expect, it, vi } from "vitest";
 import { TxnRow } from "./txn-row";
 
 const base = {
-  id: "507f1f77bcf86cd799439011",
+  id: "3fa85f64-5717-4562-b3fc-2c963f66beef",
   userId: "user-1",
-  accountId: "507f1f77bcf86cd799439012",
+  accountId: "3fa85f64-5717-4562-b3fc-2c963f66beff",
   type: "expense" as const,
   amountMinor: 2_000,
   occurredAt: new Date("2026-07-16T08:00:00.000Z"),
@@ -20,7 +20,7 @@ const base = {
 };
 
 const category = {
-  id: "507f1f77bcf86cd799439099",
+  id: "3fa85f64-5717-4562-b3fc-2c963f66be99",
   userId: "user-1",
   name: "Food & Dining",
   kind: "expense" as const,
@@ -59,7 +59,7 @@ describe("TxnRow", () => {
       <TxnRow
         transaction={{
           ...base,
-          id: "507f1f77bcf86cd799439013",
+          id: "3fa85f64-5717-4562-b3fc-2c963f66bef0",
           status: "reversal",
           reversalOf: base.id
         }}

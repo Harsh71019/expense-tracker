@@ -1,8 +1,11 @@
 import { Global, Module } from "@nestjs/common";
 
-import { IdempotencyRepository } from "./idempotency.repository.js";
-import { IdempotencyService } from "./idempotency.service.js";
+import { IdempotencyPostgresRepository } from "./idempotency-postgres.repository.js";
+import { IdempotencyPostgresService } from "./idempotency-postgres.service.js";
 
 @Global()
-@Module({ providers: [IdempotencyRepository, IdempotencyService], exports: [IdempotencyService] })
+@Module({
+  providers: [IdempotencyPostgresRepository, IdempotencyPostgresService],
+  exports: [IdempotencyPostgresService]
+})
 export class IdempotencyModule {}

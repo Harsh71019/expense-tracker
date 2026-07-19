@@ -1,5 +1,4 @@
-import { Injectable } from "@nestjs/common";
-import { InjectConnection } from "@nestjs/mongoose";
+import { Inject, Injectable } from "@nestjs/common";
 import {
   ColumnMappingSchema,
   ImportBatchSchema,
@@ -10,18 +9,17 @@ import {
   type ImportBatchStats,
   type ImportBatchStatus
 } from "@vyaya/shared";
-import { Types } from "mongoose";
-import type { Connection } from "mongoose";
+import { and, desc, eq, sql } from "drizzle-orm";
 
-import type { MongoSession } from "../common/mongo-txn.js";
-
-const IMPORT_BATCHES_COLLECTION = "import_batches";
-
-const EMPTY_STATS: ImportBatchStats = { total: 0, staged: 0, duplicates: 0, committed: 0 };
+import { DATABASE_CONNECTION } from "../common/db/db.module.js";
+import type { DrizzleDb } from "../common/db/db.module.js";
+import { importBatches } from "../common/db/schema/index.js";
+import { stripNulls } from "../common/db/strip-nulls.js";
+import type { DbTx } from "../common/db/db-txn.js";
 
 @Injectable()
 export class ImportBatchRepository {
-  constructor(@InjectConnection() private readonly connection: Connection) {}
+  constructor(@Inject(DATABASE_CONNECTION) private readonly db: DrizzleDb) {}
 
   async create(
     userId: string,
@@ -31,42 +29,50 @@ export class ImportBatchRepository {
     mapping: ColumnMapping
   ): Promise<ImportBatch> {
     const now = new Date();
-    const document = {
-      userId,
-      accountId: new Types.ObjectId(accountId),
-      filename,
-      fileHash,
-      mapping,
-      status: "pending" as const,
-      stats: EMPTY_STATS,
-      createdAt: now,
-      updatedAt: now
-    };
-    const result = await this.database().collection(IMPORT_BATCHES_COLLECTION).insertOne(document);
-    return this.toImportBatch({ _id: result.insertedId, ...document });
+    const [row] = await this.db
+      .insert(importBatches)
+      .values({
+        userId,
+        accountId,
+        filename,
+        fileHash,
+        mapping,
+        status: "pending",
+        statsTotal: 0,
+        statsStaged: 0,
+        statsDuplicates: 0,
+        statsCommitted: 0,
+        createdAt: now,
+        updatedAt: now
+      })
+      .returning();
+    if (row === undefined) throw new Error("Import batch insert did not return a row.");
+    return toImportBatch(row);
   }
 
   async findById(userId: string, batchId: ImportBatchId): Promise<ImportBatch | null> {
-    const batch = await this.database()
-      .collection(IMPORT_BATCHES_COLLECTION)
-      .findOne({ _id: new Types.ObjectId(batchId), userId });
-    return batch === null ? null : this.toImportBatch(batch);
+    const [row] = await this.db
+      .select()
+      .from(importBatches)
+      .where(and(eq(importBatches.id, batchId), eq(importBatches.userId, userId)));
+    return row === undefined ? null : toImportBatch(row);
   }
 
   async findByFileHash(userId: string, fileHash: string): Promise<ImportBatch | null> {
-    const batch = await this.database()
-      .collection(IMPORT_BATCHES_COLLECTION)
-      .findOne({ userId, fileHash });
-    return batch === null ? null : this.toImportBatch(batch);
+    const [row] = await this.db
+      .select()
+      .from(importBatches)
+      .where(and(eq(importBatches.userId, userId), eq(importBatches.fileHash, fileHash)));
+    return row === undefined ? null : toImportBatch(row);
   }
 
   async list(userId: string): Promise<ImportBatch[]> {
-    const batches = await this.database()
-      .collection(IMPORT_BATCHES_COLLECTION)
-      .find({ userId })
-      .sort({ createdAt: -1 })
-      .toArray();
-    return batches.map((batch) => this.toImportBatch(batch));
+    const rows = await this.db
+      .select()
+      .from(importBatches)
+      .where(eq(importBatches.userId, userId))
+      .orderBy(desc(importBatches.createdAt));
+    return rows.map(toImportBatch);
   }
 
   /**
@@ -79,32 +85,34 @@ export class ImportBatchRepository {
     userId: string,
     accountId: AccountId
   ): Promise<ColumnMapping | null> {
-    const batch = await this.database()
-      .collection(IMPORT_BATCHES_COLLECTION)
-      .findOne(
-        { userId, accountId: new Types.ObjectId(accountId) },
-        { sort: { createdAt: -1 }, projection: { mapping: 1 } }
-      );
-    return batch === null ? null : ColumnMappingSchema.parse(batch.mapping);
+    const [row] = await this.db
+      .select({ mapping: importBatches.mapping })
+      .from(importBatches)
+      .where(and(eq(importBatches.userId, userId), eq(importBatches.accountId, accountId)))
+      .orderBy(desc(importBatches.createdAt))
+      .limit(1);
+    return row === undefined ? null : ColumnMappingSchema.parse(row.mapping);
   }
 
   /**
    * Only the parse job transitions a batch out of "pending" — never a controller.
-   * Not wrapped in a Mongo transaction: staged_rows/import_batches are disposable,
-   * re-derivable staging data (not the ledger), and the parse job re-clears +
-   * re-parses from scratch on every retry, so partial writes here are safe.
    */
   async markParsed(
     batchId: ImportBatchId,
     status: Extract<ImportBatchStatus, "staged" | "failed">,
     stats: ImportBatchStats
   ): Promise<void> {
-    await this.database()
-      .collection(IMPORT_BATCHES_COLLECTION)
-      .updateOne(
-        { _id: new Types.ObjectId(batchId), status: "pending" },
-        { $set: { status, stats, updatedAt: new Date() } }
-      );
+    await this.db
+      .update(importBatches)
+      .set({
+        status,
+        statsTotal: stats.total,
+        statsStaged: stats.staged,
+        statsDuplicates: stats.duplicates,
+        statsCommitted: stats.committed,
+        updatedAt: new Date()
+      })
+      .where(and(eq(importBatches.id, batchId), eq(importBatches.status, "pending")));
   }
 
   /**
@@ -112,64 +120,51 @@ export class ImportBatchRepository {
    * transaction — so a mid-commit crash leaves stats.committed exactly
    * matching what actually landed, never ahead of it.
    */
-  async incrementCommittedCount(
-    batchId: ImportBatchId,
-    delta: number,
-    session: MongoSession
-  ): Promise<void> {
-    await this.database()
-      .collection(IMPORT_BATCHES_COLLECTION)
-      .updateOne(
-        { _id: new Types.ObjectId(batchId) },
-        { $inc: { "stats.committed": delta }, $set: { updatedAt: new Date() } },
-        { session }
-      );
+  async incrementCommittedCount(batchId: ImportBatchId, delta: number, tx: DbTx): Promise<void> {
+    await tx
+      .update(importBatches)
+      .set({
+        statsCommitted: sql`${importBatches.statsCommitted} + ${delta}`,
+        updatedAt: new Date()
+      })
+      .where(eq(importBatches.id, batchId));
   }
 
   /** Only after every includable row has landed — never mid-commit. */
   async markCommitted(batchId: ImportBatchId): Promise<void> {
-    await this.database()
-      .collection(IMPORT_BATCHES_COLLECTION)
-      .updateOne(
-        { _id: new Types.ObjectId(batchId), status: "staged" },
-        { $set: { status: "committed", committedAt: new Date(), updatedAt: new Date() } }
-      );
+    await this.db
+      .update(importBatches)
+      .set({ status: "committed", committedAt: new Date(), updatedAt: new Date() })
+      .where(and(eq(importBatches.id, batchId), eq(importBatches.status, "staged")));
   }
 
   async markReverted(batchId: ImportBatchId): Promise<void> {
-    await this.database()
-      .collection(IMPORT_BATCHES_COLLECTION)
-      .updateOne(
-        { _id: new Types.ObjectId(batchId), status: "committed" },
-        { $set: { status: "reverted", revertedAt: new Date(), updatedAt: new Date() } }
-      );
-  }
-
-  private toImportBatch(value: Record<string, unknown>): ImportBatch {
-    const { _id, accountId, ...rest } = value;
-    return ImportBatchSchema.parse({
-      id: objectIdString(_id),
-      accountId: objectIdString(accountId),
-      ...rest
-    });
-  }
-
-  private database(): NonNullable<Connection["db"]> {
-    const database = this.connection.db;
-    if (database === undefined) {
-      throw new Error("MongoDB connection is not ready");
-    }
-    return database;
+    await this.db
+      .update(importBatches)
+      .set({ status: "reverted", revertedAt: new Date(), updatedAt: new Date() })
+      .where(and(eq(importBatches.id, batchId), eq(importBatches.status, "committed")));
   }
 }
 
-function objectIdString(value: unknown): string {
-  if (typeof value !== "object" || value === null || !("toString" in value)) {
-    throw new Error("MongoDB document contains an invalid ObjectId.");
-  }
-  const stringify = value.toString;
-  if (typeof stringify !== "function") {
-    throw new Error("MongoDB document contains an invalid ObjectId.");
-  }
-  return stringify.call(value);
+function toImportBatch(row: typeof importBatches.$inferSelect): ImportBatch {
+  const stripped = stripNulls(row);
+  return ImportBatchSchema.parse({
+    id: row.id,
+    userId: row.userId,
+    accountId: row.accountId,
+    filename: row.filename,
+    fileHash: row.fileHash,
+    mapping: row.mapping,
+    status: row.status,
+    stats: {
+      total: row.statsTotal,
+      staged: row.statsStaged,
+      duplicates: row.statsDuplicates,
+      committed: row.statsCommitted
+    },
+    committedAt: stripped.committedAt,
+    revertedAt: stripped.revertedAt,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt
+  });
 }

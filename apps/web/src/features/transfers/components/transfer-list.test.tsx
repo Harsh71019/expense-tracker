@@ -8,7 +8,7 @@ const mocks = vi.hoisted(() => {
   const noTags: string[] = [];
   const base = {
     userId: "user-1",
-    accountId: "507f1f77bcf86cd799439001",
+    accountId: "3fa85f64-5717-4562-b3fc-2c963f66be01",
     amountMinor: 5_000_00,
     currency: "INR" as const,
     occurredAt: new Date("2026-07-10T08:00:00.000Z"),
@@ -20,21 +20,21 @@ const mocks = vi.hoisted(() => {
   };
   const transferLegA1 = {
     ...base,
-    id: "507f1f77bcf86cd799439011",
+    id: "3fa85f64-5717-4562-b3fc-2c963f66beef",
     transferGroupId: "grp-1",
     type: "expense" as const,
     description: "Monthly SIP top-up"
   };
   const transferLegA2 = {
     ...base,
-    id: "507f1f77bcf86cd799439012",
+    id: "3fa85f64-5717-4562-b3fc-2c963f66beff",
     transferGroupId: "grp-1",
     type: "income" as const,
     description: "Monthly SIP top-up"
   };
   const plainTxn = {
     ...base,
-    id: "507f1f77bcf86cd799439013",
+    id: "3fa85f64-5717-4562-b3fc-2c963f66bef0",
     type: "expense" as const,
     description: "Not a transfer"
   };

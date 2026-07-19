@@ -23,7 +23,7 @@ describe("MonthlyRollupSchema", () => {
       userId: "user-a",
       month: "2026-07",
       byCategory: [{ spentMinor: 5_000, incomeMinor: 0, txnCount: 2 }],
-      byAccount: [{ accountId: "507f1f77bcf86cd799439011", netMinor: -5_000 }],
+      byAccount: [{ accountId: "3fa85f64-5717-4562-b3fc-2c963f66beef", netMinor: -5_000 }],
       totalExpenseMinor: 5_000,
       totalIncomeMinor: 0,
       computedAt: "2026-08-02T02:00:00.000Z"

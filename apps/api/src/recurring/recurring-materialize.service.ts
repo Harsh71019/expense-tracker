@@ -1,16 +1,16 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { InjectConnection } from "@nestjs/mongoose";
 import { Cron } from "@nestjs/schedule";
 import { computeNextOccurrence, type RecurringRule } from "@vyaya/shared";
-import type { Connection } from "mongoose";
 import { Logger } from "nestjs-pino";
 
 import { AccountRepository } from "../accounts/account.repository.js";
 import { AuditRepository } from "../audit/audit.repository.js";
 import { RuntimeConfigService } from "../common/config/runtime-config.service.js";
+import { DATABASE_CONNECTION } from "../common/db/db.module.js";
+import type { DrizzleDb } from "../common/db/db.module.js";
+import { withTxn } from "../common/db/db-txn.js";
 import { EntityNotFoundError } from "../common/errors/entity-not-found.error.js";
 import { LogEvent } from "../common/logging/events.js";
-import { withTxn } from "../common/mongo-txn.js";
 import { toISTCalendarDate } from "../common/time/ist.js";
 import { parseExplicitDate } from "../common/time/parse-date.js";
 import { TransactionRepository } from "../transactions/transaction.repository.js";
@@ -20,15 +20,24 @@ type MaterializeLogger = Pick<Logger, "log" | "error">;
 
 /**
  * BACKEND.md §6 `recurring.materialize` (01:00 IST): posts each due rule's
- * templated txn in its own transaction and advances nextRunAt in the same
- * txn. Registered once via AppModule (both api and worker processes discover
- * @Cron() providers), but only acts when running as the worker — same
- * SERVICE_ROLE-guarded no-op pattern as NotificationSweepService.
+ * templated txn and advances nextRunAt. Registered once via AppModule (both
+ * api and worker processes discover @Cron() providers), but only acts when
+ * running as the worker — same SERVICE_ROLE-guarded no-op pattern as
+ * NotificationSweepService.
+ *
+ * Claim (CAS on nextRunAt + isPaused, with pause folded into the same
+ * statement — see claimRun) and post are one atomic Postgres transaction —
+ * recurring_rules/accounts/transactions/audit_log are all Postgres now
+ * (Task 21), so there's no cross-database split needed here anymore. Still
+ * no idempotencyKey on the posted transaction (never had one, even before
+ * this migration) — claimRun's compare-and-swap remains the only
+ * duplicate-post guard, which is why it still runs first, inside the same
+ * transaction as the post it guards.
  */
 @Injectable()
 export class RecurringMaterializeService {
   constructor(
-    @InjectConnection() private readonly connection: Connection,
+    @Inject(DATABASE_CONNECTION) private readonly db: DrizzleDb,
     private readonly config: RuntimeConfigService,
     private readonly rules: RecurringRuleRepository,
     private readonly accounts: AccountRepository,
@@ -54,14 +63,16 @@ export class RecurringMaterializeService {
   }
 
   private async materializeOne(rule: RecurringRule): Promise<void> {
-    const created = await withTxn(this.connection, async (session) => {
-      const next = computeNextOccurrence(rule.rrule, rule.startAt, rule.nextRunAt);
+    const next = computeNextOccurrence(rule.rrule, rule.startAt, rule.nextRunAt);
+
+    const posted = await withTxn(this.db, async (tx) => {
       const claimed = await this.rules.claimRun(
         rule.userId,
         rule.id,
         rule.nextRunAt,
         next ?? rule.nextRunAt,
-        session
+        next === null,
+        tx
       );
       if (!claimed) return null; // already materialized by a concurrent/retried run
 
@@ -72,7 +83,7 @@ export class RecurringMaterializeService {
           rule.userId,
           rule.template.accountId,
           deltaMinor,
-          session
+          tx
         ))
       ) {
         throw new EntityNotFoundError("Account");
@@ -90,22 +101,19 @@ export class RecurringMaterializeService {
           tags: rule.template.tags
         },
         undefined,
-        session,
+        tx,
         undefined,
         "recurring"
       );
-      await this.audit.record(rule.userId, "recurring.materialize", posted.id, session);
-
-      if (next === null) {
-        await this.rules.pause(rule.userId, rule.id, session);
-      }
+      await this.audit.record(rule.userId, "recurring.materialize", posted.id, tx);
 
       return posted;
     });
 
-    if (created === null) return;
+    if (posted === null) return;
+
     this.logger.log(
-      { event: LogEvent.RecurringMaterialized, ruleId: rule.id, txnId: created.id },
+      { event: LogEvent.RecurringMaterialized, ruleId: rule.id, txnId: posted.id },
       "recurring rule materialized"
     );
   }

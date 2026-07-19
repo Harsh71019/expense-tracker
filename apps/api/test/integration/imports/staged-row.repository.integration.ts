@@ -1,10 +1,24 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { MongoMemoryReplSet } from "mongodb-memory-server";
-import { createConnection, Types } from "mongoose";
-import type { Connection } from "mongoose";
+import { eq } from "drizzle-orm";
+import type { ColumnMapping } from "@vyaya/shared";
 
+import { AccountRepository } from "../../../src/accounts/account.repository.js";
+import { CategoryRepository } from "../../../src/categories/category.repository.js";
+import { withTxn } from "../../../src/common/db/db-txn.js";
+import { stagedRows as stagedRowsTable } from "../../../src/common/db/schema/index.js";
+import { ImportBatchRepository } from "../../../src/imports/import-batch.repository.js";
 import type { NewStagedRow } from "../../../src/imports/staged-row.repository.js";
 import { StagedRowRepository } from "../../../src/imports/staged-row.repository.js";
+import { createTestDb, insertTestUser } from "../support/postgres-test-db.js";
+import type { TestDb } from "../support/postgres-test-db.js";
+
+const MAPPING: ColumnMapping = {
+  date: "Txn Date",
+  description: "Narration",
+  amount: "Amount",
+  dateFormat: "DD/MM/YYYY",
+  amountConvention: "single_signed"
+};
 
 function row(overrides: Partial<NewStagedRow> = {}): NewStagedRow {
   return {
@@ -18,33 +32,50 @@ function row(overrides: Partial<NewStagedRow> = {}): NewStagedRow {
 }
 
 describe("StagedRowRepository", () => {
-  let replicaSet: MongoMemoryReplSet | undefined;
-  let connection: Connection | undefined;
-  let rows: StagedRowRepository | undefined;
+  let testDb: TestDb;
+  let rows: StagedRowRepository;
+  let batches: ImportBatchRepository;
+  let accountId: string;
+  let categoryId: string;
 
   beforeAll(async () => {
-    replicaSet = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
-    connection = await createConnection(replicaSet.getUri("vyaya_staged_rows_test")).asPromise();
-    rows = new StagedRowRepository(connection);
-  });
+    testDb = await createTestDb();
+    await insertTestUser(testDb.db, "user-a");
+    rows = new StagedRowRepository(testDb.db);
+    batches = new ImportBatchRepository(testDb.db);
+    const accounts = new AccountRepository(testDb.db);
+    const categories = new CategoryRepository(testDb.db);
+    accountId = (
+      await withTxn(testDb.db, (tx) =>
+        accounts.create(
+          "user-a",
+          { name: "Test Account", type: "bank", openingBalanceMinor: 0 },
+          tx
+        )
+      )
+    ).id;
+    categoryId = (await categories.create("user-a", { name: "Food", kind: "expense" })).id;
+  }, 60_000);
 
   afterAll(async () => {
-    if (connection !== undefined) await connection.close();
-    if (replicaSet !== undefined) await replicaSet.stop();
+    await testDb.teardown();
   });
 
+  async function newBatchId(fileHash: string): Promise<string> {
+    const batch = await batches.create("user-a", accountId, "statement.csv", fileHash, MAPPING);
+    return batch.id;
+  }
+
   it("inserts nothing for an empty batch instead of erroring on an empty insertMany", async () => {
-    const repository = stagedRowRepository(rows);
-    const batchId = new Types.ObjectId().toString();
-    await expect(repository.insertMany(batchId, [])).resolves.toBeUndefined();
+    const batchId = await newBatchId("sha256:empty");
+    await expect(rows.insertMany(batchId, [])).resolves.toBeUndefined();
   });
 
   it("bulk-inserts staged rows scoped to their batch", async () => {
-    const repository = stagedRowRepository(rows);
-    const batchId = new Types.ObjectId().toString();
-    const otherBatchId = new Types.ObjectId().toString();
+    const batchId = await newBatchId("sha256:bulk");
+    const otherBatchId = await newBatchId("sha256:bulk-other");
 
-    await repository.insertMany(batchId, [
+    await rows.insertMany(batchId, [
       row({ rowNumber: 1 }),
       row({
         rowNumber: 2,
@@ -57,65 +88,64 @@ describe("StagedRowRepository", () => {
         dedupeHash: "hash-2"
       })
     ]);
-    await repository.insertMany(otherBatchId, [row({ rowNumber: 1 })]);
+    await rows.insertMany(otherBatchId, [row({ rowNumber: 1 })]);
 
-    const stored = await connectedDatabase(connection)
-      .collection("staged_rows")
-      .find({ batchId: new Types.ObjectId(batchId) })
-      .sort({ rowNumber: 1 })
-      .toArray();
+    const stored = await testDb.db
+      .select()
+      .from(stagedRowsTable)
+      .where(eq(stagedRowsTable.batchId, batchId))
+      .orderBy(stagedRowsTable.rowNumber);
 
     expect(stored).toHaveLength(2);
     expect(stored[0]).toMatchObject({ rowNumber: 1, include: true, isDuplicate: false });
     expect(stored[1]).toMatchObject({ rowNumber: 2, dedupeHash: "hash-2" });
-    expect(stored[1]?.parsed).toMatchObject({ amountMinor: 2_000, type: "expense" });
+    expect(stored[1]).toMatchObject({ parsedAmountMinor: 2_000, parsedType: "expense" });
   });
 
   it("clears only the target batch's rows, leaving other batches untouched", async () => {
-    const repository = stagedRowRepository(rows);
-    const batchId = new Types.ObjectId().toString();
-    const otherBatchId = new Types.ObjectId().toString();
-    await repository.insertMany(batchId, [row({ rowNumber: 1 })]);
-    await repository.insertMany(otherBatchId, [row({ rowNumber: 1 })]);
+    const batchId = await newBatchId("sha256:clear");
+    const otherBatchId = await newBatchId("sha256:clear-other");
+    await rows.insertMany(batchId, [row({ rowNumber: 1 })]);
+    await rows.insertMany(otherBatchId, [row({ rowNumber: 1 })]);
 
-    await repository.deleteAllForBatch(batchId);
+    await rows.deleteAllForBatch(batchId);
 
-    const database = connectedDatabase(connection);
     expect(
-      await database
-        .collection("staged_rows")
-        .countDocuments({ batchId: new Types.ObjectId(batchId) })
+      (await testDb.db.select().from(stagedRowsTable).where(eq(stagedRowsTable.batchId, batchId)))
+        .length
     ).toBe(0);
     expect(
-      await database
-        .collection("staged_rows")
-        .countDocuments({ batchId: new Types.ObjectId(otherBatchId) })
+      (
+        await testDb.db
+          .select()
+          .from(stagedRowsTable)
+          .where(eq(stagedRowsTable.batchId, otherBatchId))
+      ).length
     ).toBe(1);
   });
 
   it("paginates by rowNumber and the cursor never crosses into another batch", async () => {
-    const repository = stagedRowRepository(rows);
-    const batchId = new Types.ObjectId().toString();
-    const otherBatchId = new Types.ObjectId().toString();
-    await repository.insertMany(
+    const batchId = await newBatchId("sha256:paginate");
+    const otherBatchId = await newBatchId("sha256:paginate-other");
+    await rows.insertMany(
       batchId,
       Array.from({ length: 5 }, (_unused, index) => row({ rowNumber: index + 1 }))
     );
-    await repository.insertMany(otherBatchId, [row({ rowNumber: 1 })]);
+    await rows.insertMany(otherBatchId, [row({ rowNumber: 1 })]);
 
-    const firstPage = await repository.findByBatchId(batchId, undefined, 2);
+    const firstPage = await rows.findByBatchId(batchId, undefined, 2);
     expect(firstPage.items.map((item) => item.rowNumber)).toEqual([1, 2]);
     expect(firstPage.pageInfo.hasMore).toBe(true);
     expect(firstPage.pageInfo.nextCursor).not.toBeNull();
 
-    const secondPage = await repository.findByBatchId(
+    const secondPage = await rows.findByBatchId(
       batchId,
       firstPage.pageInfo.nextCursor ?? undefined,
       2
     );
     expect(secondPage.items.map((item) => item.rowNumber)).toEqual([3, 4]);
 
-    const thirdPage = await repository.findByBatchId(
+    const thirdPage = await rows.findByBatchId(
       batchId,
       secondPage.pageInfo.nextCursor ?? undefined,
       2
@@ -126,33 +156,30 @@ describe("StagedRowRepository", () => {
   });
 
   it("updateRow toggles include and sets/clears suggestedCategoryId, scoped to its batch", async () => {
-    const repository = stagedRowRepository(rows);
-    const batchId = new Types.ObjectId().toString();
-    const otherBatchId = new Types.ObjectId().toString();
-    await repository.insertMany(batchId, [row({ rowNumber: 1 })]);
-    const [inserted] = (await repository.findByBatchId(batchId, undefined, 10)).items;
+    const batchId = await newBatchId("sha256:update");
+    const otherBatchId = await newBatchId("sha256:update-other");
+    await rows.insertMany(batchId, [row({ rowNumber: 1 })]);
+    const [inserted] = (await rows.findByBatchId(batchId, undefined, 10)).items;
     const rowId = nonNull(inserted).id;
 
-    expect(await repository.updateRow(batchId, rowId, { include: false })).toMatchObject({
+    expect(await rows.updateRow(batchId, rowId, { include: false })).toMatchObject({
       include: false
     });
 
-    const categoryId = new Types.ObjectId().toString();
-    const withCategory = await repository.updateRow(batchId, rowId, {
+    const withCategory = await rows.updateRow(batchId, rowId, {
       suggestedCategoryId: categoryId
     });
     expect(withCategory).toMatchObject({ suggestedCategoryId: categoryId });
 
-    const cleared = await repository.updateRow(batchId, rowId, { suggestedCategoryId: null });
+    const cleared = await rows.updateRow(batchId, rowId, { suggestedCategoryId: null });
     expect(cleared?.suggestedCategoryId).toBeUndefined();
 
-    expect(await repository.updateRow(otherBatchId, rowId, { include: false })).toBeNull();
+    expect(await rows.updateRow(otherBatchId, rowId, { include: false })).toBeNull();
   });
 
   it("updateRow refuses to set include: true on a row with no parsed data", async () => {
-    const repository = stagedRowRepository(rows);
-    const batchId = new Types.ObjectId().toString();
-    await repository.insertMany(batchId, [
+    const batchId = await newBatchId("sha256:no-parsed");
+    await rows.insertMany(batchId, [
       row({
         rowNumber: 1,
         parsed: undefined,
@@ -162,16 +189,15 @@ describe("StagedRowRepository", () => {
         include: false
       })
     ]);
-    const [inserted] = (await repository.findByBatchId(batchId, undefined, 10)).items;
+    const [inserted] = (await rows.findByBatchId(batchId, undefined, 10)).items;
     const rowId = nonNull(inserted).id;
 
-    expect(await repository.updateRow(batchId, rowId, { include: true })).toBeNull();
+    expect(await rows.updateRow(batchId, rowId, { include: true })).toBeNull();
 
     // Editing its category is still fine — only flipping it includable is blocked.
-    const categoryId = new Types.ObjectId().toString();
-    expect(
-      await repository.updateRow(batchId, rowId, { suggestedCategoryId: categoryId })
-    ).toMatchObject({ suggestedCategoryId: categoryId, include: false });
+    expect(await rows.updateRow(batchId, rowId, { suggestedCategoryId: categoryId })).toMatchObject(
+      { suggestedCategoryId: categoryId, include: false }
+    );
   });
 });
 
@@ -180,22 +206,4 @@ function nonNull<T>(value: T | undefined): T {
     throw new Error("Expected a staged row to exist");
   }
   return value;
-}
-
-function stagedRowRepository(repository: StagedRowRepository | undefined): StagedRowRepository {
-  if (repository === undefined) {
-    throw new Error("Staged row repository is not ready");
-  }
-  return repository;
-}
-
-function connectedDatabase(connection: Connection | undefined): NonNullable<Connection["db"]> {
-  if (connection === undefined) {
-    throw new Error("MongoDB connection is not ready");
-  }
-  const database = connection.db;
-  if (database === undefined) {
-    throw new Error("MongoDB database is not ready");
-  }
-  return database;
 }

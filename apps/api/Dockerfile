@@ -15,16 +15,12 @@ RUN --mount=type=cache,id=vyaya-pnpm-store,target=/pnpm/store \
   && pnpm install --frozen-lockfile
 
 COPY apps/api apps/api
-COPY migrations migrations
-COPY migrate-mongo-config.cjs migrate-mongo-config.cjs
 COPY packages/shared packages/shared
 
 RUN pnpm --filter @vyaya/shared build \
   && pnpm --filter @vyaya/api build \
   && pnpm --filter @vyaya/api deploy --legacy --prod /app \
-  && cp -R apps/api/dist /app/dist \
-  && cp migrate-mongo-config.cjs /app/migrate-mongo-config.cjs \
-  && cp -R migrations /app/migrations
+  && cp -R apps/api/dist /app/dist
 
 FROM gcr.io/distroless/nodejs24-debian12:nonroot
 

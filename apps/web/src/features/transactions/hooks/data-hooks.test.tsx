@@ -12,9 +12,9 @@ vi.mock("@/lib/api/client", () => ({ apiClient: mocks }));
 
 const timestamp = new Date("2026-07-16T00:00:00.000Z");
 const transaction: Transaction = {
-  id: "507f1f77bcf86cd799439013",
+  id: "3fa85f64-5717-4562-b3fc-2c963f66bef0",
   userId: "user-1",
-  accountId: "507f1f77bcf86cd799439011",
+  accountId: "3fa85f64-5717-4562-b3fc-2c963f66beef",
   type: "expense",
   amountMinor: 2_000,
   occurredAt: timestamp,
@@ -33,7 +33,7 @@ const problem = {
   title: "Conflict",
   status: 409,
   detail: "Already reversed",
-  instance: "/api/v1/transactions/507f1f77bcf86cd799439013/reverse",
+  instance: "/api/v1/transactions/3fa85f64-5717-4562-b3fc-2c963f66bef0/reverse",
   code: "txn.already_reversed",
   reqId: "request-1",
   timestamp,

@@ -1,0 +1,1 @@
+ALTER TABLE "idempotency_records" ALTER COLUMN "result" DROP NOT NULL;

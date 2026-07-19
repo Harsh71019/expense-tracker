@@ -1,5 +1,4 @@
-import { Injectable } from "@nestjs/common";
-import { InjectConnection } from "@nestjs/mongoose";
+import { Inject, Injectable } from "@nestjs/common";
 import {
   type Asset,
   type AssetId,
@@ -8,37 +7,39 @@ import {
   type Valuation,
   type ValuationPage
 } from "@vyaya/shared";
-import type { Connection } from "mongoose";
 
 import { AuditRepository } from "../audit/audit.repository.js";
+import { DATABASE_CONNECTION } from "../common/db/db.module.js";
+import type { DrizzleDb } from "../common/db/db.module.js";
+import { withTxn } from "../common/db/db-txn.js";
+import type { DbTx } from "../common/db/db-txn.js";
 import { EntityNotFoundError } from "../common/errors/entity-not-found.error.js";
 import { InvalidValuationSignError } from "../common/errors/invalid-valuation-sign.error.js";
-import { withTxn, type MongoSession } from "../common/mongo-txn.js";
 import { AssetRepository } from "./asset.repository.js";
 import { ValuationRepository } from "./valuation.repository.js";
 
 @Injectable()
 export class AssetService {
   constructor(
-    @InjectConnection() private readonly connection: Connection,
+    @Inject(DATABASE_CONNECTION) private readonly db: DrizzleDb,
     private readonly assets: AssetRepository,
     private readonly valuations: ValuationRepository,
     private readonly audit: AuditRepository
   ) {}
 
   async create(userId: string, input: CreateAsset): Promise<Asset> {
-    return withTxn(this.connection, (session) => this.createInSession(userId, input, session));
+    return withTxn(this.db, (tx) => this.createInTx(userId, input, tx));
   }
 
-  async createInSession(userId: string, input: CreateAsset, session: MongoSession): Promise<Asset> {
-    const asset = await this.assets.create(userId, input, session);
+  async createInTx(userId: string, input: CreateAsset, tx: DbTx): Promise<Asset> {
+    const asset = await this.assets.create(userId, input, tx);
     const valuation = await this.valuations.create(
       userId,
       asset.id,
       { valueMinor: input.openingValueMinor, valuedAt: input.openedAt, source: "manual" },
-      session
+      tx
     );
-    await this.audit.record(userId, "asset.create", asset.id, session, {
+    await this.audit.record(userId, "asset.create", asset.id, tx, {
       valuationId: valuation.id,
       valueMinor: valuation.valueMinor
     });
@@ -50,30 +51,28 @@ export class AssetService {
   }
 
   async close(userId: string, assetId: AssetId): Promise<void> {
-    await withTxn(this.connection, (session) => this.closeInSession(userId, assetId, session));
+    await withTxn(this.db, (tx) => this.closeInTx(userId, assetId, tx));
   }
 
-  async closeInSession(userId: string, assetId: AssetId, session: MongoSession): Promise<null> {
-    if (!(await this.assets.close(userId, assetId, session))) {
+  async closeInTx(userId: string, assetId: AssetId, tx: DbTx): Promise<null> {
+    if (!(await this.assets.close(userId, assetId, tx))) {
       throw new EntityNotFoundError("Asset");
     }
-    await this.audit.record(userId, "asset.close", assetId, session);
+    await this.audit.record(userId, "asset.close", assetId, tx);
     return null;
   }
 
   async addValuation(userId: string, assetId: AssetId, input: CreateValuation): Promise<Valuation> {
-    return withTxn(this.connection, (session) =>
-      this.addValuationInSession(userId, assetId, input, session)
-    );
+    return withTxn(this.db, (tx) => this.addValuationInTx(userId, assetId, input, tx));
   }
 
-  async addValuationInSession(
+  async addValuationInTx(
     userId: string,
     assetId: AssetId,
     input: CreateValuation,
-    session: MongoSession
+    tx: DbTx
   ): Promise<Valuation> {
-    const asset = await this.assets.findOpenById(userId, assetId, session);
+    const asset = await this.assets.findOpenById(userId, assetId, tx);
     if (asset === null) {
       throw new EntityNotFoundError("Asset");
     }
@@ -81,8 +80,8 @@ export class AssetService {
       throw new InvalidValuationSignError();
     }
 
-    const valuation = await this.valuations.create(userId, assetId, input, session);
-    await this.audit.record(userId, "asset.valuation.create", valuation.id, session, {
+    const valuation = await this.valuations.create(userId, assetId, input, tx);
+    await this.audit.record(userId, "asset.valuation.create", valuation.id, tx, {
       assetId,
       valueMinor: valuation.valueMinor
     });

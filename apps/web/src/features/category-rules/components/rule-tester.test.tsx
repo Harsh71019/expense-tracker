@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import { RuleTester } from "./rule-tester";
 
 const restaurants: Category = {
-  id: "507f1f77bcf86cd799439011",
+  id: "3fa85f64-5717-4562-b3fc-2c963f66beef",
   userId: "u1",
   name: "Restaurants",
   kind: "expense",
@@ -18,7 +18,7 @@ const restaurants: Category = {
 };
 
 const swiggyRule: CategoryRule = {
-  id: "507f1f77bcf86cd799439021",
+  id: "3fa85f64-5717-4562-b3fc-2c963f66be21",
   userId: "u1",
   pattern: "swiggy",
   categoryId: restaurants.id,

@@ -41,14 +41,15 @@ Migration via `drizzle-kit generate`, next number in sequence (`0005_...`), addi
 `AuthGuard.canActivate` extended:
 
 1. `@Public()` → allow (unchanged).
-2. `Authorization: Bearer <key>` present → call `auth.api.verifyApiKey({body:{key, permissions: requiredScopesFromRouteMetadata}})`.
-   - Invalid/expired/disabled key → 401 `UnauthenticatedError` (existing error type, unchanged).
-   - Valid key but missing a required scope → new 403 `InsufficientScopeError`.
-   - Success → `request.authUser = {id: key.userId}`, `request.authMethod = "api-key"` (for audit/log context), continue exactly like the session path.
+2. `Authorization: Bearer <key>` present → call `auth.api.verifyApiKey({body:{key}})` — **no `permissions` passed in.** The scope check is done ourselves against the returned `key.permissions`, not delegated to the plugin's internal permission-check response: better-auth's docs don't enumerate `verifyApiKey`'s `error.code` values, so a bad-key-vs-missing-scope distinction can't be assumed to exist in a form we can branch on. Doing the comparison in our own code means both the 401 and 403 branches are ours to control and test, regardless of what the plugin does internally.
+   - `valid: false` (bad/expired/disabled key) → 401 `UnauthenticatedError` (existing error type, unchanged). Rate-limited is a case of this that needs its own branch — see below.
+   - `valid: true` but `key.permissions` doesn't cover the route's `@RequireScopes()` requirement → new 403 `InsufficientScopeError`.
+   - Rate limit exceeded → 429 with a `Retry-After` header, **not** 401 — a 401 would read to n8n as "key revoked," causing it to stop retrying instead of backing off. See open risk #4 for how this is detected.
+   - Success → `request.authUser = {id: key.userId}`, `request.authMethod = "api-key"`, plus `apiKeyId`/`apiKeyPrefix` set on `LoggingContextService` (extend `LogContext` in `logging-context.service.ts` the same way `userId` is set today) so every log line from an API-key-authenticated request identifies which key was used, for audit.
 3. No `Authorization` header → existing session cookie path via `getSession`, unchanged.
 4. Route has no `@RequireScopes()` metadata → API-key requests are always rejected (403) regardless of key validity. Key-auth is an allowlist of routes, never a blanket session-equivalent.
 
-New `apps/api/src/auth/require-scopes.decorator.ts`: `@RequireScopes({transactions:["write"]})`, read via `Reflector`, same pattern as the existing `IS_PUBLIC_KEY`/`@Public()`.
+New `apps/api/src/auth/require-scopes.decorator.ts`: `@RequireScopes({transactions:["write"]})`, read via `Reflector`, same pattern as the existing `IS_PUBLIC_KEY`/`@Public()`. **`@RequireScopes()` only ever *permits* key-auth on that route with the listed scopes — it never restricts session-cookie users.** A session user hits the route with full access regardless of the decorator; the decorator's only effect is on requests authenticated via `Authorization: Bearer`. Easy to misread as a restriction, so this is the one thing to get right when reading the guard code.
 
 Applied in v1 to exactly three routes: `POST /v1/transactions` (`transactions:write`), `GET /v1/categories` (`categories:read`), `GET /v1/accounts` (`accounts:read`).
 
@@ -76,7 +77,7 @@ Page contents:
 - "Create key" form: name input, checkboxes for the three known scopes, optional expiry date picker.
 - On create, the raw key is shown once in a copy-box with an explicit "won't be shown again" warning, then the user returns to the list.
 
-Uses the existing browser `apiClient` (`openapi-fetch`, generated from the OpenAPI schema). The create-key mutation sends an `Idempotency-Key` header, matching the existing `useCreateTxn`-style convention for create mutations. Add `"key"` to `SENSITIVE_KEYS` in `src/lib/sentry-scrub.ts` so the raw key value never leaks into Sentry breadcrumbs.
+Uses the existing browser `apiClient` (`openapi-fetch`, generated from the OpenAPI schema). **No `Idempotency-Key` header on the create-key mutation** — unlike `useCreateTxn` et al., this isn't just "replay returns nothing useful." `IdempotencyPostgresService.execute` persists the full response body into the idempotency-records table (`idempotency-postgres.service.ts:41`) so it can replay it later; if create-key's response (which contains the raw secret) went through that path, the plaintext key would sit in a second table indefinitely. Double-submit protection here is client-side only (disable the submit button while the request is pending) — acceptable because, unlike a duplicate transaction, a duplicate key is harmless (delete the extra one). Add `"key"` to `SENSITIVE_KEYS` in `src/lib/sentry-scrub.ts` so the raw key value never leaks into Sentry breadcrumbs.
 
 ## Testing
 
@@ -89,6 +90,7 @@ Uses the existing browser `apiClient` (`openapi-fetch`, generated from the OpenA
 1. Exact `apikey` table columns for the installed better-auth 1.6.23 — run `npx @better-auth/cli generate` and reconcile against the column list above before writing the migration.
 2. Whether `auth.api.updateApiKey` exists on this plugin version for soft-revoke, or only `deleteApiKey` (hard delete) is available.
 3. Exact `customAPIKeyGetter` signature for Bearer-prefix stripping.
+4. How `verifyApiKey` signals a rate-limit breach on 1.6.23 — read the plugin source at implementation time. Two fallback designs depending on what's found: (a) if `error.code` (or equivalent) distinguishes rate-limited from not-found/expired/disabled, map it straight to 429 with `Retry-After` computed from the key's `rateLimitTimeWindow` (conservative: full window, since an exact reset timestamp isn't confirmed available); (b) if it doesn't distinguish, do the rate-limit check ourselves in the guard using the `remaining`/`rateLimitMax`/`rateLimitTimeWindow`/`lastRequest` columns off the `key` object `verifyApiKey` returns, instead of trusting the plugin's internal enforcement decision.
 
 ## Out of scope for v1
 

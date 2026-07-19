@@ -173,4 +173,37 @@ describe("MonthlyRollupRepository", () => {
     const userIds = await rollups.distinctUserIds();
     expect(userIds).toEqual(expect.arrayContaining(["user-a", "user-b"]));
   });
+
+  it("sums past the int4 ceiling without truncating or wrapping", async () => {
+    // Each individual amountMinor stays well under int4's ~2.1B ceiling, but the
+    // three together push the SUM aggregate past it -- a ::int cast here would
+    // wrap this to a negative number (or truncate) instead of erroring, which is
+    // exactly why it's silent in production without a test like this one.
+    await create({
+      type: "income",
+      amountMinor: 1_200_000_000,
+      occurredAt: "2026-10-05T09:00:00.000Z",
+      description: "Large income 1"
+    });
+    await create({
+      type: "income",
+      amountMinor: 1_200_000_000,
+      occurredAt: "2026-10-10T09:00:00.000Z",
+      description: "Large income 2"
+    });
+    await create({
+      type: "expense",
+      amountMinor: 1_000_000_000,
+      occurredAt: "2026-10-15T09:00:00.000Z",
+      description: "Large expense"
+    });
+
+    const rollup = await rollups.recompute("user-a", "2026-10");
+
+    expect(rollup.totalIncomeMinor).toBe(2_400_000_000);
+    expect(rollup.totalExpenseMinor).toBe(1_000_000_000);
+
+    const account = rollup.byAccount.find((entry) => entry.accountId === accountId);
+    expect(account?.netMinor).toBe(2_400_000_000 - 1_000_000_000);
+  });
 });

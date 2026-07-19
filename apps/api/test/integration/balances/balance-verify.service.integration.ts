@@ -22,6 +22,7 @@ const NOOP_LOGGER = { log: () => undefined, error: () => undefined };
 describe("BalanceVerifyService", () => {
   let testDb: TestDb;
   let accounts: AccountRepository;
+  let transactionsRepo: TransactionRepository;
   let outbox: NotificationOutboxRepository;
   let driftedAccountId: string;
   let cleanAccountId: string;
@@ -39,6 +40,7 @@ describe("BalanceVerifyService", () => {
 
     accounts = new AccountRepository(testDb.db);
     const transactions = new TransactionRepository(testDb.db);
+    transactionsRepo = transactions;
     outbox = new NotificationOutboxRepository(testDb.db);
 
     /**
@@ -163,6 +165,53 @@ describe("BalanceVerifyService", () => {
     // second sweep re-flags it — this cron has no "already notified" memory,
     // matching BACKEND.md's framing as a repeated self-audit, not a one-shot.
     expect(entries).toHaveLength(2);
+  });
+
+  it("sumDeltasByAccount sums past the int4 ceiling without truncating or wrapping", async () => {
+    // Each individual amountMinor stays well under int4's ~2.1B ceiling, but the
+    // two together push the SUM aggregate past it -- a ::int cast here would wrap
+    // this to a negative number instead of erroring, which is exactly why it's
+    // silent in production without a test like this one.
+    const account = await withTxn(testDb.db, (tx) =>
+      accounts.create(
+        "user-a",
+        { name: "High Balance Account", type: "bank", openingBalanceMinor: 0 },
+        tx
+      )
+    );
+    await withTxn(testDb.db, (tx) =>
+      transactionsRepo.create(
+        "user-a",
+        {
+          accountId: account.id,
+          type: "income",
+          amountMinor: 1_200_000_000,
+          occurredAt: new Date("2026-07-11T09:00:00.000Z"),
+          description: "Large income 1",
+          tags: []
+        },
+        undefined,
+        tx
+      )
+    );
+    await withTxn(testDb.db, (tx) =>
+      transactionsRepo.create(
+        "user-a",
+        {
+          accountId: account.id,
+          type: "income",
+          amountMinor: 1_200_000_000,
+          occurredAt: new Date("2026-07-12T09:00:00.000Z"),
+          description: "Large income 2",
+          tags: []
+        },
+        undefined,
+        tx
+      )
+    );
+
+    const deltas = await new BalanceVerifyRepository(testDb.db).sumDeltasByAccount();
+    expect(deltas.get(account.id)).toBe(2_400_000_000);
   });
 });
 

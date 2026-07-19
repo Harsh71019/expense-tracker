@@ -14,9 +14,8 @@ import { useTxn, useUpdateTxn } from "../hooks/use-txn";
 import { ReverseConfirmDialog } from "./reverse-confirm-dialog";
 
 const dateFormatter = new Intl.DateTimeFormat("en-IN", {
-  day: "2-digit",
-  month: "short",
-  year: "numeric",
+  dateStyle: "medium",
+  timeStyle: "short",
   timeZone: "Asia/Kolkata"
 });
 

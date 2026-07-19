@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 let betterAuthMockConfig: {
   baseURL?: string;
   emailAndPassword?: { disableSignUp: boolean };
+  plugins?: ReadonlyArray<{ id: string; options?: Record<string, unknown> }>;
   databaseHooks?: {
     user?: {
       create?: {
@@ -25,6 +26,12 @@ vi.mock("better-auth/minimal", () => {
 vi.mock("../redis-secondary-storage.js", () => {
   return {
     createRedisSecondaryStorage: vi.fn().mockReturnValue({})
+  };
+});
+
+vi.mock("@better-auth/api-key", () => {
+  return {
+    apiKey: vi.fn().mockImplementation((options) => ({ id: "api-key", options }))
   };
 });
 
@@ -93,5 +100,27 @@ describe("AuthService", () => {
       { error: expect.any(Error), userId: "user-1" },
       expect.stringContaining("failed")
     );
+  });
+
+  it("registers the apiKey plugin with a user-scoped, database-backed, rate-limited config", async () => {
+    const mockDb = {};
+    const mockConfig = new MockRuntimeConfigService();
+    const mockRedis = {};
+    const mockUserProfileService = { ensure: vi.fn().mockResolvedValue(undefined) };
+    const mockLogger = { warn: vi.fn() };
+
+    // @ts-expect-error - mock dependencies for unit testing
+    new AuthService(mockDb, mockConfig, mockRedis, mockUserProfileService, mockLogger);
+
+    expect(betterAuthMockConfig).not.toBeNull();
+    const plugins = betterAuthMockConfig?.plugins ?? [];
+    const apiKeyPlugin = plugins.find((plugin) => plugin.id === "api-key");
+    expect(apiKeyPlugin).toBeDefined();
+    expect(apiKeyPlugin?.options).toMatchObject({
+      references: "user",
+      requireName: true,
+      defaultPrefix: "ak_",
+      rateLimit: { enabled: true, timeWindow: 60_000, maxRequests: 100 }
+    });
   });
 });

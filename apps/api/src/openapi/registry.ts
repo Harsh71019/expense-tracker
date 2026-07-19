@@ -56,7 +56,9 @@ import {
   StagedRowPageSchema,
   StagedRowSchema,
   UpdateStagedRowSchema,
-  UserProfileSchema
+  UserProfileSchema,
+  MonthSchema,
+  MonthlyRollupSchema
 } from "@vyaya/shared";
 import { z } from "zod";
 
@@ -79,6 +81,7 @@ const AccountImportMapping = AccountImportMappingSchema.meta({ id: "AccountImpor
 const StagedRow = StagedRowSchema.meta({ id: "StagedRow" });
 const StagedRowPage = StagedRowPageSchema.meta({ id: "StagedRowPage" });
 const UserProfile = UserProfileSchema.meta({ id: "UserProfile" });
+const MonthlyRollup = MonthlyRollupSchema.meta({ id: "MonthlyRollup" });
 
 const accountId = z.object({ accountId: AccountIdSchema });
 const categoryId = z.object({ categoryId: CategoryIdSchema });
@@ -91,6 +94,7 @@ const importBatchAndRowId = z.object({
   importBatchId: ImportBatchIdSchema,
   stagedRowId: StagedRowIdSchema
 });
+const month = z.object({ month: MonthSchema });
 const json = (schema: z.ZodType): { content: { "application/json": { schema: z.ZodType } } } => ({
   content: { "application/json": { schema } }
 });
@@ -471,6 +475,18 @@ registry.registerPath({
   security: secured,
   responses: {
     200: { description: "Net worth summary", ...json(NetWorth) },
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/v1/reports/monthly/{month}",
+  security: secured,
+  request: { params: month },
+  responses: {
+    200: { description: "Monthly rollup", ...json(MonthlyRollup) },
+    404: { description: "Not found", ...json(ProblemDetails) },
     ...problemResponses
   }
 });

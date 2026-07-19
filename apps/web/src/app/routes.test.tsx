@@ -43,16 +43,10 @@ vi.mock("@/features/profile", () => ({
   )
 }));
 vi.mock("@/features/profile/server/get-profile", () => ({ getProfile: async () => null }));
-vi.mock("@/features/net-worth", () => ({
-  NetWorthSummary: () => <h1>Net worth</h1>
-}));
-vi.mock("@/features/net-worth/server/get-net-worth", () => ({
-  getNetWorth: async () => ({
-    asOf: new Date(),
-    netWorthMinor: 0,
-    accounts: [],
-    assets: []
-  })
+vi.mock("@/features/reports", () => ({
+  ReportPage: () => <h1>Monthly report</h1>,
+  getMonthlyRollup: async () => null,
+  defaultReportMonth: () => "2026-06"
 }));
 vi.mock("@/features/transactions", () => ({
   parseTransactionFilters: () => ({ limit: 50 }),
@@ -142,7 +136,7 @@ describe("route shells", () => {
     expect(screen.getByRole("heading", { name: "Transactions" })).toBeVisible();
 
     render(await ReportsPage());
-    expect(screen.getByRole("heading", { name: "Net worth" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Monthly report" })).toBeVisible();
   });
 
   it("renders the auth, login, and not-found shells", async () => {

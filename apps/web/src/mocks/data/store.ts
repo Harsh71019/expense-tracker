@@ -11,6 +11,7 @@ export type AssetDto = components["schemas"]["Asset"];
 export type ValuationDto = components["schemas"]["Valuation"];
 export type ImportBatchDto = components["schemas"]["ImportBatch"];
 export type StagedRowDto = components["schemas"]["StagedRow"];
+export type MonthlyRollupDto = components["schemas"]["MonthlyRollup"];
 export type UserProfileDto = components["schemas"]["UserProfile"];
 export type TransferDto = components["schemas"]["Transfer"];
 export type TransferReversalDto = components["schemas"]["TransferReversal"];
@@ -45,6 +46,7 @@ export interface MockStore {
   valuations: ValuationDto[];
   importBatches: ImportBatchDto[];
   stagedRows: StagedRowDto[];
+  monthlyRollups: MonthlyRollupDto[];
   profile: UserProfileDto;
   /** accountId -> the mapping last used for a successful import to that account. */
   savedMappings: Map<string, ColumnMappingDto>;
@@ -89,6 +91,10 @@ export function findTransaction(
 
 export function findImportBatch(store: MockStore, batchId: string): ImportBatchDto | undefined {
   return store.importBatches.find((batch) => batch.id === batchId);
+}
+
+export function findMonthlyRollup(store: MockStore, month: string): MonthlyRollupDto | undefined {
+  return store.monthlyRollups.find((rollup) => rollup.month === month);
 }
 
 /** Mirrors apps/api transaction-mutation.service.ts: income adds, expense subtracts. */
@@ -1750,6 +1756,7 @@ export function createMockStore(): MockStore {
     valuations: [],
     importBatches: [],
     stagedRows: [],
+    monthlyRollups: [],
     profile: {
       userId: MOCK_USER_ID,
       displayName: "Mock User",
@@ -1791,6 +1798,7 @@ export function createMockStore(): MockStore {
   seedAssetsAndValuations(store);
   seedImportBatch(store);
   seedImportBatch2(store);
+  seedMonthlyRollups(store);
 
   return store;
 }
@@ -2346,6 +2354,107 @@ function seedImportBatch2(store: MockStore): void {
       problems: [],
       isDuplicate: false,
       include: true
+    });
+  }
+}
+
+/** First-of-month, `monthsAgo` calendar months before the current one, as a YYYY-MM key. */
+function monthKey(monthsAgo: number): string {
+  const date = new Date();
+  date.setDate(1);
+  date.setMonth(date.getMonth() - monthsAgo);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+
+/** ~02:15 on the 1st of the month after `monthsAgo` closed — when the rollup cron would have run. */
+function monthComputedAt(monthsAgo: number): string {
+  const date = new Date();
+  date.setDate(1);
+  date.setMonth(date.getMonth() - monthsAgo + 1);
+  date.setHours(2, 15, 0, 0);
+  return date.toISOString();
+}
+
+/**
+ * Rollups are a cron-computed cache in the real system (BACKEND.md §6), never
+ * derived live — so these are seeded as standalone snapshots rather than
+ * aggregated from seedTransactions, which only covers the last ~60 days and
+ * wouldn't cover both rollup months below.
+ */
+function seedMonthlyRollups(store: MockStore): void {
+  const categoryIdFor = (name: string): string | undefined =>
+    store.categories.find((category) => category.name === name)?.id;
+  const accountIdFor = (name: string): string =>
+    store.accounts.find((account) => account.name === name)?.id ?? name;
+
+  const rollups: ReadonlyArray<{
+    monthsAgo: number;
+    byCategory: ReadonlyArray<{
+      categoryName: string | null;
+      spentMinor: number;
+      txnCount: number;
+    }>;
+    totalIncomeMinor: number;
+    byAccount: ReadonlyArray<{ accountName: string; netMinor: number }>;
+  }> = [
+    {
+      monthsAgo: 1,
+      byCategory: [
+        { categoryName: "Food & Dining", spentMinor: 1_842_000, txnCount: 14 },
+        { categoryName: "Groceries", spentMinor: 1_256_000, txnCount: 9 },
+        { categoryName: "Transport", spentMinor: 984_500, txnCount: 22 },
+        { categoryName: "Utilities", spentMinor: 745_000, txnCount: 4 },
+        { categoryName: "Shopping", spentMinor: 189_000, txnCount: 3 },
+        { categoryName: null, spentMinor: 826_000, txnCount: 7 }
+      ],
+      totalIncomeMinor: 8_500_000,
+      byAccount: [
+        { accountName: "HDFC Bank", netMinor: 1_657_500 },
+        { accountName: "ICICI Credit Card", netMinor: -2_340_000 },
+        { accountName: "Cash Wallet", netMinor: -184_000 },
+        { accountName: "SBI Savings", netMinor: 0 }
+      ]
+    },
+    {
+      monthsAgo: 2,
+      byCategory: [
+        { categoryName: "Groceries", spentMinor: 1_620_000, txnCount: 12 },
+        { categoryName: "Transport", spentMinor: 1_140_000, txnCount: 26 },
+        { categoryName: "Food & Dining", spentMinor: 980_000, txnCount: 7 },
+        { categoryName: "Utilities", spentMinor: 720_000, txnCount: 4 },
+        { categoryName: null, spentMinor: 1_460_000, txnCount: 5 }
+      ],
+      totalIncomeMinor: 8_500_000,
+      byAccount: [
+        { accountName: "HDFC Bank", netMinor: 2_580_000 },
+        { accountName: "ICICI Credit Card", netMinor: -1_420_000 },
+        { accountName: "Cash Wallet", netMinor: -90_000 }
+      ]
+    }
+  ];
+
+  for (const rollup of rollups) {
+    const byCategory = rollup.byCategory.map((category) => {
+      const categoryId =
+        category.categoryName === null ? undefined : categoryIdFor(category.categoryName);
+      return {
+        ...(categoryId === undefined ? {} : { categoryId }),
+        spentMinor: category.spentMinor,
+        incomeMinor: 0,
+        txnCount: category.txnCount
+      };
+    });
+    store.monthlyRollups.push({
+      userId: store.profile.userId,
+      month: monthKey(rollup.monthsAgo),
+      byCategory,
+      byAccount: rollup.byAccount.map((account) => ({
+        accountId: accountIdFor(account.accountName),
+        netMinor: account.netMinor
+      })),
+      totalExpenseMinor: rollup.byCategory.reduce((sum, category) => sum + category.spentMinor, 0),
+      totalIncomeMinor: rollup.totalIncomeMinor,
+      computedAt: monthComputedAt(rollup.monthsAgo)
     });
   }
 }

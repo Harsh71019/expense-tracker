@@ -58,9 +58,10 @@ New domain module `apps/api/src/api-keys/` — a thin wrapper over better-auth's
 
 - `POST /v1/api-keys` — body `{name, permissions, expiresAt?}`. `permissions` validated against a shared taxonomy const in `packages/shared` (only the three known resource/action pairs are accepted — zod-enforced, so a request can't ask for a scope that doesn't exist yet). Calls `auth.api.createApiKey({body:{userId, name, permissions, expiresIn, prefix:"ak_"}})`. Response includes the raw key value **once**; it is never persisted, logged, or retrievable again.
 - `GET /v1/api-keys` — lists the current user's keys: `id, name, start, permissions, createdAt, expiresAt, lastRequest, enabled`. Never returns `key`/hash.
+- `PATCH /v1/api-keys/:id` — body `{name?, permissions?}`, same taxonomy validation as create. Calls `auth.api.updateApiKey({body:{keyId, name, permissions}})`. Edits scopes/name on a live key in place — no key regeneration, no re-pasting into n8n. Safe only because this route (like the others) is session-only; an API key can never elevate its own permissions.
 - `DELETE /v1/api-keys/:id` — soft-revoke via `auth.api.updateApiKey({body:{keyId, enabled:false}})` (not a hard delete), preserving the `lastRequest`/`requestCount` audit trail. No un-revoke in the v1 UI. **Verify `updateApiKey` exists on the installed plugin version** — fall back to `deleteApiKey` (hard delete) if not.
 
-All three routes are session-only (no `@RequireScopes` metadata) — an API key can never call these, so a leaked key can't mint more keys or revoke its siblings.
+All four routes are session-only (no `@RequireScopes` metadata) — an API key can never call these, so a leaked key can't mint more keys, escalate its own scopes, or revoke its siblings.
 
 zod schemas (`CreateApiKeyRequest`, `ApiKeyResponse`, `CreateApiKeyResponse`) live in `packages/shared`, shared with the web client per existing convention.
 
@@ -71,7 +72,7 @@ New feature slice `apps/web/src/features/api-keys/` (`server/hooks/components/mo
 Must match existing design language (`border-border bg-surface-elevated` cards, font-mono uppercase accent labels, existing button/table patterns) — check sibling settings pages before styling anything new.
 
 Page contents:
-- Table of keys: name, scope chips, created, last used, expiry, revoke button with confirmation.
+- Table of keys: name, scope chips, created, last used, expiry, edit button (name + scopes, via `PATCH`), revoke button with confirmation.
 - "Create key" form: name input, checkboxes for the three known scopes, optional expiry date picker.
 - On create, the raw key is shown once in a copy-box with an explicit "won't be shown again" warning, then the user returns to the list.
 
@@ -80,7 +81,7 @@ Uses the existing browser `apiClient` (`openapi-fetch`, generated from the OpenA
 ## Testing
 
 - **Unit:** guard scope-check logic (valid key + correct scope → pass; valid key + wrong scope → 403; expired/disabled key → 401; route without `@RequireScopes` + valid key → 403); `api-keys.service` permission-taxonomy validation rejects unknown scopes.
-- **Integration** (`test:integration`, real Postgres via testcontainers): create a key via session, call `POST /v1/transactions` with the key → succeeds; call `POST /v1/api-keys` with the same key → 403 (key-auth can't manage keys); revoked key → 401; cross-tenant probe (reusing the pattern from AGENTS.md's AuthZ suite) confirms a key from user A can't touch user B's data even with matching scopes, because `userId` comes from the verified key, never the request.
+- **Integration** (`test:integration`, real Postgres via testcontainers): create a key via session, call `POST /v1/transactions` with the key → succeeds; call `POST /v1/api-keys` and `PATCH /v1/api-keys/:id` with the same key → 403 each (key-auth can't manage keys or escalate its own scopes); revoked key → 401; cross-tenant probe (reusing the pattern from AGENTS.md's AuthZ suite) confirms a key from user A can't touch user B's data even with matching scopes, because `userId` comes from the verified key, never the request.
 - **OpenAPI:** register an `Authorization: Bearer` security scheme in `registry.ts`, documented on the three scoped routes.
 
 ## Open risks to verify at implementation start

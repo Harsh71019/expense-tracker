@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 import "./globals.css";
+import { accentChoiceStyle, accentDataAttribute } from "../lib/accent-style";
+import { getStoredAccent } from "../lib/accent-server";
 import { getStoredTheme } from "../lib/theme-server";
 import { QueryProvider } from "../lib/query/provider";
 import { Toaster } from "../components/ui/sonner";
@@ -28,12 +30,14 @@ export const metadata: Metadata = {
 export default async function RootLayout({
   children
 }: Readonly<{ children: ReactNode }>): Promise<ReactNode> {
-  const theme = await getStoredTheme();
+  const [theme, accent] = await Promise.all([getStoredTheme(), getStoredAccent()]);
 
   return (
     <html
       lang="en-IN"
       data-theme={theme ?? undefined}
+      data-accent={accentDataAttribute(accent)}
+      style={accentChoiceStyle(accent)}
       className={`${interTight.variable} ${jetbrainsMono.variable}`}
     >
       {/* ColorZilla injects cz-shortcut-listen on body before React hydrates. */}

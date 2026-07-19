@@ -9,8 +9,8 @@
   --color-foreground-muted: #6b7a72;
 
   --color-accent: #0f9d63;
-  --color-accent-strong: #128051;
-  --color-accent-foreground: #ffffff;
+  --color-accent-strong: #10a367;
+  --color-accent-foreground: #04140d;
   --color-accent-glow: rgba(15, 157, 99, 0.15);
 
   --color-income: #0f9d63;
@@ -101,8 +101,8 @@
   --color-foreground-muted: #6b7a72;
 
   --color-accent: #0f9d63;
-  --color-accent-strong: #128051;
-  --color-accent-foreground: #ffffff;
+  --color-accent-strong: #10a367;
+  --color-accent-foreground: #04140d;
   --color-accent-glow: rgba(15, 157, 99, 0.15);
 
   --color-income: #0f9d63;
@@ -126,6 +126,81 @@
   --color-income: #34d399;
   --color-expense: #f87171;
   --color-reversed: #71817a;
+}
+
+/* Presets define both variants once; the mapping below selects the active theme. */
+:root[data-accent="ocean"] {
+  --accent-choice-light: #1d4ed8;
+  --accent-choice-light-strong: #1e40af;
+  --accent-choice-light-foreground: #ffffff;
+  --accent-choice-light-glow: rgba(29, 78, 216, 0.15);
+  --accent-choice-dark: #60a5fa;
+  --accent-choice-dark-strong: #3b82f6;
+  --accent-choice-dark-foreground: #071426;
+  --accent-choice-dark-glow: rgba(96, 165, 250, 0.15);
+}
+
+:root[data-accent="indigo"] {
+  --accent-choice-light: #4338ca;
+  --accent-choice-light-strong: #3730a3;
+  --accent-choice-light-foreground: #ffffff;
+  --accent-choice-light-glow: rgba(67, 56, 202, 0.15);
+  --accent-choice-dark: #818cf8;
+  --accent-choice-dark-strong: #6d70f3;
+  --accent-choice-dark-foreground: #0b1028;
+  --accent-choice-dark-glow: rgba(129, 140, 248, 0.15);
+}
+
+:root[data-accent="violet"] {
+  --accent-choice-light: #7e22ce;
+  --accent-choice-light-strong: #6b21a8;
+  --accent-choice-light-foreground: #ffffff;
+  --accent-choice-light-glow: rgba(126, 34, 206, 0.15);
+  --accent-choice-dark: #c084fc;
+  --accent-choice-dark-strong: #a855f7;
+  --accent-choice-dark-foreground: #1b0826;
+  --accent-choice-dark-glow: rgba(192, 132, 252, 0.15);
+}
+
+:root[data-accent="amber"] {
+  --accent-choice-light: #b45309;
+  --accent-choice-light-strong: #92400e;
+  --accent-choice-light-foreground: #ffffff;
+  --accent-choice-light-glow: rgba(180, 83, 9, 0.15);
+  --accent-choice-dark: #fbbf24;
+  --accent-choice-dark-strong: #f59e0b;
+  --accent-choice-dark-foreground: #211300;
+  --accent-choice-dark-glow: rgba(251, 191, 36, 0.15);
+}
+
+:root[data-accent] {
+  --color-accent: var(--accent-choice-light);
+  --color-accent-strong: var(--accent-choice-light-strong);
+  --color-accent-foreground: var(--accent-choice-light-foreground);
+  --color-accent-glow: var(--accent-choice-light-glow);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-accent] {
+    --color-accent: var(--accent-choice-dark);
+    --color-accent-strong: var(--accent-choice-dark-strong);
+    --color-accent-foreground: var(--accent-choice-dark-foreground);
+    --color-accent-glow: var(--accent-choice-dark-glow);
+  }
+}
+
+:root[data-theme="light"][data-accent] {
+  --color-accent: var(--accent-choice-light);
+  --color-accent-strong: var(--accent-choice-light-strong);
+  --color-accent-foreground: var(--accent-choice-light-foreground);
+  --color-accent-glow: var(--accent-choice-light-glow);
+}
+
+:root[data-theme="dark"][data-accent] {
+  --color-accent: var(--accent-choice-dark);
+  --color-accent-strong: var(--accent-choice-dark-strong);
+  --color-accent-foreground: var(--accent-choice-dark-foreground);
+  --color-accent-glow: var(--accent-choice-dark-glow);
 }
 
 body {

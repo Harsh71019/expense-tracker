@@ -1,9 +1,11 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 
+import { AccentPicker } from "@/components/ui/accent-picker";
 import { SignOutButton } from "@/features/auth";
 import { ProfileSummary } from "@/features/profile";
 import { getProfile } from "@/features/profile/server/get-profile";
+import { getStoredAccent } from "@/lib/accent-server";
 import { getSession } from "@/lib/api/session";
 
 const settingsLinks = [
@@ -16,7 +18,11 @@ const settingsLinks = [
 ] as const;
 
 export default async function MorePage(): Promise<ReactNode> {
-  const [session, profile] = await Promise.all([getSession(), getProfile()]);
+  const [session, profile, accent] = await Promise.all([
+    getSession(),
+    getProfile(),
+    getStoredAccent()
+  ]);
   const email = session?.user.email ?? "";
 
   return (
@@ -24,6 +30,8 @@ export default async function MorePage(): Promise<ReactNode> {
       <h1 className="text-xl font-semibold tracking-tight text-foreground">Your account</h1>
 
       <ProfileSummary profile={profile} email={email} />
+
+      <AccentPicker current={accent} />
 
       <div className="overflow-hidden rounded-xl border border-border">
         <Link

@@ -56,7 +56,7 @@ Mutation hooks that create resources (e.g. `useCreateTxn`) require an idempotenc
 
 ### Money & theme
 
-Never format `amountMinor` by hand — use `<Money>`/`<SignedMoney>` (`src/components/ui/money`) or `formatMinor()` from `@vyaya/shared`, matching the backend's paise-based integer money invariant. Theme (`light`/`dark`) is cookie-backed (`vyaya-theme`, `src/lib/theme*.ts`), read server-side in the root layout to set `data-theme` before hydration, toggled via a server action (`toggleTheme`) — there is no client-side flash-of-unstyled-theme handling needed because it's resolved before first paint.
+Never format `amountMinor` by hand — use `<Money>`/`<SignedMoney>` (`src/components/ui/money`) or `formatMinor()` from `@vyaya/shared`, matching the backend's paise-based integer money invariant. Theme (`light`/`dark`) is cookie-backed (`vyaya-theme`, `src/lib/theme*.ts`), read server-side in the root layout to set `data-theme` before hydration, toggled via a server action (`toggleTheme`) — there is no client-side flash-of-unstyled-theme handling needed because it's resolved before first paint. Accent preference follows the same SSR model through `vyaya-accent` and `src/lib/accent*.ts`; custom input is strictly parsed and converted into derived CSS variables before rendering. Keep income, expense, reversal, category, and chart colors independent from the chosen accent.
 
 ### Debug logging & Sentry
 

@@ -5,6 +5,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "gen:openapi": "tsx scripts/generate-openapi.ts",
+    "seed": "tsx --env-file=../../.env --env-file-if-exists=../../.env.development.local scripts/seed.ts",
     "dev": "tsc -p tsconfig.json && concurrently -k -n tsc,node -c blue,green \"tsc --watch -p tsconfig.json --preserveWatchOutput\" \"node --env-file=../../.env --env-file-if-exists=../../.env.development.local --watch --watch-path=dist --watch-path=../../packages/shared/dist dist/main.js\"",
     "lint": "eslint --config ../../eslint.config.mjs --no-warn-ignored --max-warnings=0 src/ test/",
     "typecheck": "tsc --noEmit -p tsconfig.test.json",

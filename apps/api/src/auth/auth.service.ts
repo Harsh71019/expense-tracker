@@ -10,12 +10,14 @@ import { RedisService } from "../common/redis/redis.service.js";
 import { UserProfileService } from "../user-profiles/user-profile.service.js";
 import { createRedisSecondaryStorage } from "./redis-secondary-storage.js";
 
+type AuthLogger = Pick<Logger, "warn">;
+
 export function createAuth(
   db: DrizzleDb,
   config: RuntimeConfigService,
   redis: RedisService,
   profiles: UserProfileService,
-  logger: Logger
+  logger: AuthLogger
 ) {
   return betterAuth({
     baseURL: config.env.BETTER_AUTH_URL,

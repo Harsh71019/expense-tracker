@@ -38,6 +38,8 @@ pnpm build                   # builds @vyaya/api then @vyaya/web
 pnpm format / format:check   # prettier
 pnpm migrate                 # drizzle-kit migrate, via apps/api
 pnpm verify:migrations       # scripts/verify-migrations.ts
+pnpm gen:client               # regenerates apps/api/openapi.json + apps/web's typed API client
+pnpm --filter @vyaya/api seed # seeds demo accounts/transactions against DATABASE_URL
 ```
 
 Single-package/single-test commands:

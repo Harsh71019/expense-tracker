@@ -5,11 +5,11 @@ A personal expense tracker built as an **append-only, double-entry-style ledger*
 pnpm workspace monorepo:
 
 ```
-apps/api          NestJS REST API — Better Auth, MongoDB (Mongoose), BullMQ workers, crons
+apps/api           NestJS REST API — Better Auth, PostgreSQL (Drizzle ORM), BullMQ workers, crons
 apps/web           Next.js App Router frontend (SSR, server components)
 packages/shared    zod schemas + types shared by both apps (single source of truth)
 packages/config     shared tsconfig
-migrations/        migrate-mongo files (ordered, additive-only)
+apps/api/drizzle/  drizzle-kit migrations (ordered, additive-only)
 infra/redis/        local Redis compose service
 ```
 
@@ -33,14 +33,14 @@ See `BACKEND.md` for the full target architecture, `AGENTS.md` for the non-negot
 - **Balance verification** — weekly consistency-check cron comparing ledger vs. computed balances
 - **CSV export**
 - **Standardized API errors** — RFC 7807 problem+json, typed `DomainError` codes throughout, per-field validation errors
-- **Health checks** — `/healthz` (liveness), `/readyz` (Mongo/Redis ping)
+- **Health checks** — `/healthz` (liveness), `/readyz` (Postgres/Redis ping)
+- **OpenAPI spec + generated client** — `pnpm gen:client` generates `apps/api/openapi.json` (via `@asteasolutions/zod-to-openapi`) and a typed `apps/web/src/lib/api/generated/schema.d.ts` from it
 
-Every money write is atomic (single MongoDB transaction: insert + balance update + audit entry), and all amounts are stored as integer paise — never floats.
+Every money write is atomic (single PostgreSQL transaction: insert + balance update + audit entry, via the `withTxn` helper), and all amounts are stored as integer paise — never floats.
 
-**Frontend (`apps/web`) — early scaffolding, not wired up yet:**
+**Frontend (`apps/web`) — wired up to the backend:**
 
-- Login page (working, via Better Auth client SDK)
-- `transactions`, `reports`, `add`, `more` routes exist but currently render `<ComingSoon>` placeholders — no data fetching, no API client, not connected to the backend above yet
+Real routes under `app/(app)/` (dashboard, `transactions`, `transactions/[transactionId]`, `add`, `accounts`, `categories`, `category-rules`, `assets`, `assets/[assetId]`, `transfers`, `imports`, `export`, `reports`, `more`), each fetching real data through generated-client server loaders under the matching `features/*/server/`. No frontend UI yet for recurring rules — the backend module exists (`apps/api/src/recurring/`) but no `features/recurring` counterpart has been built.
 
 ## Installing and running
 
@@ -48,15 +48,25 @@ Every money write is atomic (single MongoDB transaction: insert + balance update
 
 - Node `24.18.x` (see `.nvmrc`)
 - pnpm `10.28.1`
-- MongoDB, running as a **replica set** (required for multi-document transactions)
-- Redis (for BullMQ)
+- Docker (for a local PostgreSQL 18 container and Redis — see below; not needed if you point `DATABASE_URL`/`REDIS_URL` at instances you already have running)
 
 **Local setup:**
 
 ```bash
-pnpm i                        # install all workspace deps
-cp env.example .env           # fill in MongoDB URI, Redis URL, Better Auth secret, etc.
-pnpm migrate                  # run migrate-mongo migrations
+pnpm i
+pnpm --filter @vyaya/shared build   # root lint/typecheck/test scripts assume this is already built
+
+cp env.example .env
+# set POSTGRES_PASSWORD in .env (e.g. `local-dev-password`, matching .env.development.local.example below)
+cp .env.development.local.example .env.development.local   # host-native `pnpm dev` overrides: localhost
+                                                             # ports instead of Docker service names, since
+                                                             # .env itself stays Docker-Compose-shaped
+
+docker compose --env-file .env up -d postgres   # local Postgres 18 only, published on localhost:5433
+cd infra/redis && cp .env.example .env && docker compose up -d && cd ../..   # local Redis
+
+pnpm migrate                  # drizzle-kit migrate — applies apps/api/drizzle/*.sql
+pnpm --filter @vyaya/api seed # optional: seeds demo accounts/transactions for local login
 pnpm dev                      # runs apps/api and apps/web dev servers in parallel
 ```
 
@@ -68,10 +78,14 @@ Env vars are validated at boot via zod (`apps/api/src/common/config/env.ts`) —
 pnpm lint                     # eslint across all workspaces, zero warnings allowed
 pnpm typecheck                # tsc --noEmit across all workspaces, zero errors
 pnpm test                     # vitest unit tests across all workspaces
-pnpm test:integration         # apps/api only, spins up MongoDB in replica-set mode
+pnpm test:integration         # apps/api only — spins up a real Postgres via testcontainers, one container
+                               # per test file (needs a working Docker daemon, but not the `postgres`
+                               # compose service above — testcontainers manages its own)
 pnpm build                    # builds @vyaya/shared, @vyaya/api, @vyaya/web
-pnpm format                   # prettier --write
+pnpm format / format:check    # prettier
 pnpm verify:migrations        # sanity-checks migration ordering/state
+pnpm gen:client                # regenerates apps/api/openapi.json + apps/web's typed API client
+                               # from it — run after changing any API route's zod schemas
 ```
 
 Single-package/single-test commands:
@@ -84,30 +98,30 @@ pnpm --filter @vyaya/web lint / typecheck / dev / build
 
 CI (`.github/workflows/ci.yml`) runs, in order: `lint` → `typecheck` → `test` → `test:integration` → `verify:migrations` → `build` → Trivy filesystem scan. Match this locally before pushing.
 
-**Docker (production-style):**
+**Docker (production-style, full stack):**
 
 ```bash
-docker compose up
+docker compose --env-file .env build
+docker compose --env-file .env run --rm migrate   # applies migrations, exits; gates everything else
+docker compose --env-file .env up -d
 ```
 
-Runs `migrate` (one-shot, gates everything else) → `api` + `worker` → `web`, all behind an `nginx` reverse proxy (the only exposed container). See `docker-compose.yml` and `DEPLOYMENT-VYAYA.md`.
+Brings up `postgres` + `migrate` (one-shot) → `api` + `worker` → `web`, all behind an `nginx` reverse proxy (the only exposed container, `localhost:3006`). Postgres's port is bound to loopback by default (`localhost:5433`, not reachable from the LAN/internet) — see `POSTGRES_BIND_ADDR` in `env.example` if you need it reachable from another machine for local dev. See `docker-compose.yml` and `docs/DEPLOYMENT-VYAYA.md`.
 
 ## Current issues
 
 Verified against the actual codebase (not just the design docs, which lag behind — `HANDOFF.md` in particular describes an earlier state than what's implemented):
 
-- **Frontend isn't wired to the backend** — this is the biggest gap. The API supports transactions, imports, recurring rules, reports, etc., but the corresponding frontend routes are `<ComingSoon>` stubs with no data fetching and no API client.
-- **No dependency pinning on tooling** — `vitest`, `typescript`, and several other devDependencies are pinned to `"latest"`/`"beta"`. A plain `pnpm i` can pull a broken prerelease (observed firsthand: it resolved Vite `8.1.4`, whose oxc transform has a tsconfig-resolution bug against this pnpm-symlinked monorepo layout, breaking all `apps/api` integration tests and one `apps/web` unit suite — a tooling failure, not a code bug. Pinning known-good versions would remove this risk for every future contributor).
+- **No recurring-rules UI** — the backend module (`apps/api/src/recurring/`) is fully built, but `apps/web` has no matching `features/recurring` — the nightly materializer cron runs, but rules can only be created/managed via the API directly today.
+- **No dependency pinning on tooling** — `typescript`, and several other devDependencies across the workspaces are pinned to `"latest"`/`"beta"`. A plain `pnpm i` can pull a broken prerelease (observed firsthand: it resolved Vite `8.1.4`, whose oxc transform has a tsconfig-resolution bug against this pnpm-symlinked monorepo layout, breaking all `apps/api` integration tests and one `apps/web` unit suite — a tooling failure, not a code bug. Pinning known-good versions would remove this risk for every future contributor).
 - **Root `typecheck`/`lint`/`test` scripts assume `@vyaya/shared` is already built** — on a fresh clone, run `pnpm --filter @vyaya/shared build` once before those scripts will pass; only `pnpm dev`/`pnpm build` build it automatically.
 - **No rate limiting on auth routes** — `IMPLEMENTATION-PLAN.md`'s Phase 1 gate calls for Redis-backed throttling (429 on repeated login attempts); no throttler is wired up in the code yet.
-- **No OpenAPI spec / generated API client** — `pnpm gen:client` referenced in `AGENTS.md` isn't wired up; not blocking yet only because the frontend isn't consuming the API at all currently.
 
 ## TODO
 
-- **Wire the frontend to the backend** — replace the `<ComingSoon>` stubs (`transactions`, `reports`, `add`, `more`) with real data fetching against the already-built API
+- **Recurring-rules UI** — build `apps/web/src/features/recurring` against the already-built API
 - **Rate limiting on auth routes** (Redis-backed throttler)
-- **OpenAPI spec + generated frontend client**, replacing ad-hoc fetch calls once the frontend starts consuming the API
 - **Salary/income module** (`SALARY-MODULE.md`) — profiles, effective-dated versions, materializer, payday/proration logic, reconciliation; entirely unbuilt
 - **Observability** — OpenTelemetry, `/metrics`, `explain()` query-budget CI check
 - **Auth hardening** — passkeys, 2FA
-- **Pin volatile dev dependencies** (`vitest`, `typescript`, etc.) instead of `"latest"`/`"beta"`, to keep fresh installs reproducible
+- **Pin volatile dev dependencies** (`typescript`, etc.) instead of `"latest"`/`"beta"`, to keep fresh installs reproducible

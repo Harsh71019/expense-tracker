@@ -13,11 +13,11 @@ Drop-in section for `DEPLOYMENT.md`. Same LXC, same conventions, port **3006**.
 
 |              | Taskflow / JS Mastery             | Vyaya                                                                                      |
 | ------------ | --------------------------------- | ------------------------------------------------------------------------------------------ |
-| Containers   | 2 (nginx SPA + Express)           | 5 (nginx proxy + Next.js SSR + NestJS API + BullMQ worker + Redis)                         |
+| Containers   | 2 (nginx SPA + Express)           | 6 (nginx proxy + Next.js SSR + NestJS API + BullMQ worker + PostgreSQL + one-shot `migrate`) |
 | Frontend     | Vite static build served by nginx | Next.js **server** — nginx proxies to it, doesn't serve files                              |
 | Exposed port | nginx :80 → host                  | same, nginx :80 → host **3006** (only exposed container)                                   |
 | Deploy       | `git pull && up -d --build`       | same, **plus** one-shot `migrate` container runs before restart, **plus** smoke test after |
-| State        | none local                        | shared Redis volume (queues) + MongoDB Atlas                                               |
+| State        | none local                        | shared Redis volume (queues) + local PostgreSQL volume (named volume, host-backed)          |
 
 ### Container map
 
@@ -26,13 +26,13 @@ Browser → nginx:3006
              ├── /api/*         → api:4000   (NestJS — includes /api/auth/* Better Auth)
              ├── /admin/queues  → api:4000   (Bull Board, auth-guarded)
              └── /*             → web:3000   (Next.js SSR)
-worker  → shared Redis + Atlas   (crons, CSV parsing, notifications — no exposed port)
-migrate → runs `migrate-mongo up`, exits    (gates api/worker startup)
+worker  → shared Redis + Postgres   (crons, CSV parsing, notifications — no exposed port)
+migrate → runs `drizzle-kit migrate`, exits    (gates api/worker startup)
 ```
 
 ### `.env` (at `/opt/apps/vyaya/.env`)
 
-See `.env.example` in the repo. The two footguns:
+See `env.example` in the repo. The two footguns:
 
 ```
 AUTH_COOKIE_SECURE=false      # same reason as Taskflow's COOKIE_SECURE=false —
@@ -47,7 +47,7 @@ TRUSTED_ORIGINS=http://192.168.0.226:3006   # Better Auth CSRF origin check;
 # Clone
 ssh root@192.168.0.226 "git clone https://github.com/Harsh71019/vyaya.git /opt/apps/vyaya"
 
-# Write .env (copy from .env.example, fill secrets)
+# Write .env (copy from env.example, fill secrets)
 ssh root@192.168.0.226 "vim /opt/apps/vyaya/.env && chmod 600 /opt/apps/vyaya/.env"
 
 # Deploy (builds, migrates, starts, health-checks, smoke-tests)
@@ -59,13 +59,13 @@ ssh root@192.168.0.226 "sed -i 's/DISABLE_SIGNUP=false/DISABLE_SIGNUP=true/' /op
 
 ### Local foundation check
 
-Copy `.env.example` to `.env`, then set `MONGODB_URI` to the Atlas **`vyaya-stg`** URI and `REDIS_URL=redis://host.docker.internal:6379/2` to use the Homebrew Redis service running on your Mac. If your local Redis requires authentication, add its URL-encoded password to that URL.
+Copy `env.example` to `.env`, set a `POSTGRES_PASSWORD`, and point `REDIS_URL` at `redis://host.docker.internal:6379/2` to use the Homebrew Redis service running on your Mac (if your local Redis requires authentication, add its URL-encoded password to that URL).
 
 ```bash
-docker compose up --build
+docker compose --env-file .env up --build
 ```
 
-Local Compose deliberately uses Atlas staging rather than a local MongoDB container. Never use the production `vyaya` URI for development or test data.
+Postgres now runs as its own container in this same Compose stack (named volume, not an external service) — there's no separate staging database to point at. Never point `DATABASE_URL` at the production `vyaya` database for development or test data; use this stack's own local container instead.
 
 ### Shared Redis infrastructure
 
@@ -134,11 +134,11 @@ ssh root@192.168.0.226 "cd /opt/apps/vyaya && git checkout <sha> && docker compo
 The app's business crons (recurring txns, rollups, alerts) run **inside the worker** via BullMQ — nothing needed on the host. Only the backup lives at host level so it works even if the app is down:
 
 ```cron
-# Nightly Atlas dump → NAS (04:00 IST)
+# Nightly Postgres dump → NAS (04:00 IST)
 0 4 * * * /opt/apps/vyaya/deploy/backup.sh >> /var/log/vyaya-backup.log 2>&1
 ```
 
-`backup.sh`: `mongodump --uri="$MONGODB_URI" --archive | gzip > /mnt/nas/backups/vyaya/$(date +\%F).gz` + retention prune (30 daily / 12 monthly) + weekly `rclone` offsite.
+`backup.sh`: `docker compose --env-file /opt/apps/vyaya/.env exec -T postgres pg_dump -U vyaya -d vyaya | gzip > /mnt/nas/backups/vyaya/$(date +\%F).sql.gz` + retention prune (30 daily / 12 monthly) + weekly `rclone` offsite. Runs against the `postgres` container directly (not the host's published port, which is loopback-only per `POSTGRES_BIND_ADDR` in `env.example`) — `docker compose exec` works from the host regardless of that binding.
 
 ### Notes
 

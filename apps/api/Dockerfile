@@ -20,9 +20,7 @@ COPY packages/shared packages/shared
 RUN pnpm --filter @vyaya/shared build \
   && pnpm --filter @vyaya/api build \
   && pnpm --filter @vyaya/api deploy --legacy --prod /app \
-  && cp -R apps/api/dist /app/dist \
-  && cp apps/api/drizzle.config.ts /app/drizzle.config.ts \
-  && cp -R apps/api/drizzle /app/drizzle
+  && cp -R apps/api/dist /app/dist
 
 FROM gcr.io/distroless/nodejs24-debian12:nonroot
 

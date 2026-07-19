@@ -29,7 +29,10 @@ services:
     build:
       context: .
       dockerfile: apps/api/Dockerfile
-    command: ["node_modules/.bin/drizzle-kit", "migrate"]
+    # node_modules/.bin/drizzle-kit is a POSIX shell shim (pnpm's bin wrapper) --
+    # this image's fixed entrypoint runs `node <args>` directly, which can't
+    # execute a shell script. Invoke drizzle-kit's real JS entrypoint instead.
+    command: ["node_modules/drizzle-kit/bin.cjs", "migrate"]
     env_file: .env
     depends_on:
       postgres:

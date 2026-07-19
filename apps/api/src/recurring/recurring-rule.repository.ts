@@ -132,40 +132,42 @@ export class RecurringRuleRepository {
    * retried run that already advanced it fails this CAS and skips posting —
    * this *is* the "ruleId + scheduledDate" idempotency key from BACKEND.md
    * §6, expressed as a compare-and-swap instead of a separate unique index.
+   *
+   * `pause` folds the "COUNT/UNTIL exhausted" pause into this same CAS
+   * (rather than a separate post-claim update) because on a rule's final
+   * occurrence `newNextRunAt` equals `expectedNextRunAt` — there's no next
+   * occurrence to advance to. Without `isPaused = false` also in the
+   * predicate, a concurrent duplicate run's UPDATE would still match after
+   * the winner commits (the row's `nextRunAt` never changed), claiming and
+   * posting a second time. Setting `isPaused` in the same statement gives
+   * the loser something that *did* change to fail against.
    */
   async claimRun(
     userId: string,
     ruleId: RecurringRuleId,
     expectedNextRunAt: Date,
     newNextRunAt: Date,
+    pause: boolean,
     tx: DbTx
   ): Promise<boolean> {
     const rows = await tx
       .update(recurringRules)
-      .set({ nextRunAt: newNextRunAt, lastRunAt: expectedNextRunAt, updatedAt: new Date() })
+      .set({
+        nextRunAt: newNextRunAt,
+        lastRunAt: expectedNextRunAt,
+        isPaused: pause,
+        updatedAt: new Date()
+      })
       .where(
         and(
           eq(recurringRules.id, ruleId),
           eq(recurringRules.userId, userId),
-          eq(recurringRules.nextRunAt, expectedNextRunAt)
+          eq(recurringRules.nextRunAt, expectedNextRunAt),
+          eq(recurringRules.isPaused, false)
         )
       )
       .returning({ id: recurringRules.id });
     return rows.length === 1;
-  }
-
-  /**
-   * Used by the materializer when a rule's rrule has no further occurrence
-   * (COUNT/UNTIL exhausted) after the one just posted — pausing removes it
-   * from findDue's future scans instead of leaving nextRunAt stuck at an
-   * already-due date, which would make every subsequent sweep re-claim and
-   * fail forever.
-   */
-  async pause(userId: string, ruleId: RecurringRuleId, tx: DbTx): Promise<void> {
-    await tx
-      .update(recurringRules)
-      .set({ isPaused: true, updatedAt: new Date() })
-      .where(and(eq(recurringRules.id, ruleId), eq(recurringRules.userId, userId)));
   }
 }
 

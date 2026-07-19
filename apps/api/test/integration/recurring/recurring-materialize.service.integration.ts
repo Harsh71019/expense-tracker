@@ -147,6 +147,17 @@ describe("RecurringMaterializeService", () => {
   });
 
   it("posting the same due rule concurrently five times posts exactly one transaction", async () => {
+    // Yearly (not monthly-since-2020): the claim's post-CAS nextRunAt must land
+    // comfortably in the future, or a straggler among the 5 concurrent
+    // materialize() calls -- each doing its own findDue() read -- can land
+    // *after* the winner's commit and legitimately observe the next occurrence
+    // as still due too (a real re-materialization, not a CAS failure), posting
+    // a second time. A monthly rule anchored to 2020 has many such overdue
+    // periods relative to "today"; this flaked on CI where scheduling jitter
+    // widened that window. Anchoring to this Jan 1st means the next occurrence
+    // (next Jan 1st) is always many months out, so every concurrent call races
+    // the exact same nextRunAt -- what this test is actually about.
+    const startAt = new Date(Date.UTC(new Date().getUTCFullYear(), 0, 1));
     const rule = await ruleService.create("user-a", {
       template: {
         accountId,
@@ -155,8 +166,8 @@ describe("RecurringMaterializeService", () => {
         description: "Netflix",
         tags: []
       },
-      rrule: "FREQ=MONTHLY;BYMONTHDAY=1",
-      startAt: new Date("2020-04-01T00:00:00.000Z")
+      rrule: "FREQ=YEARLY;BYMONTH=1;BYMONTHDAY=1",
+      startAt
     });
 
     process.env.SERVICE_ROLE = "worker";
@@ -176,7 +187,9 @@ describe("RecurringMaterializeService", () => {
     expect(posted.length).toBe(1);
 
     const stored = await rules.findById("user-a", rule.id);
-    expect(stored?.nextRunAt.toISOString()).toBe("2020-05-01T00:00:00.000Z");
+    expect(stored?.nextRunAt.toISOString()).toBe(
+      new Date(Date.UTC(startAt.getUTCFullYear() + 1, 0, 1)).toISOString()
+    );
   });
 
   it("pauses a rule once its COUNT-limited rrule is exhausted", async () => {
@@ -204,6 +217,43 @@ describe("RecurringMaterializeService", () => {
         )
       );
     expect(stored).toMatchObject({ isPaused: true });
+  });
+
+  it("posting a rule at its final (COUNT-limited) occurrence concurrently five times posts exactly one transaction", async () => {
+    // Regression test: on the last occurrence, claimRun's nextRunAt SET is a
+    // no-op (there's no next occurrence to advance to), so without isPaused
+    // in the CAS predicate a second concurrent claim would still match after
+    // the winner commits, since the row's nextRunAt never changed.
+    const rule = await ruleService.create("user-a", {
+      template: {
+        accountId,
+        type: "expense",
+        amountMinor: 2_000,
+        description: "One-time gym fee",
+        tags: []
+      },
+      rrule: "FREQ=MONTHLY;BYMONTHDAY=1;COUNT=1",
+      startAt: new Date("2020-07-01T00:00:00.000Z")
+    });
+
+    process.env.SERVICE_ROLE = "worker";
+    const materializer = newMaterializer("worker");
+    await Promise.all(Array.from({ length: 5 }, () => materializer.materialize()));
+
+    const posted = await testDb.db
+      .select()
+      .from(transactionsTable)
+      .where(
+        and(
+          eq(transactionsTable.userId, "user-a"),
+          eq(transactionsTable.description, "One-time gym fee"),
+          eq(transactionsTable.source, "recurring")
+        )
+      );
+    expect(posted.length).toBe(1);
+
+    const stored = await rules.findById("user-a", rule.id);
+    expect(stored?.isPaused).toBe(true);
   });
 
   async function accountBalance(): Promise<number> {

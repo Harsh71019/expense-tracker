@@ -25,13 +25,14 @@ type MaterializeLogger = Pick<Logger, "log" | "error">;
  * running as the worker — same SERVICE_ROLE-guarded no-op pattern as
  * NotificationSweepService.
  *
- * Claim (CAS on nextRunAt), post, and pause are one atomic Postgres
- * transaction — recurring_rules/accounts/transactions/audit_log are all
- * Postgres now (Task 21), so there's no cross-database split needed here
- * anymore. Still no idempotencyKey on the posted transaction (never had
- * one, even before this migration) — claimRun's compare-and-swap remains
- * the only duplicate-post guard, which is why it still runs first, inside
- * the same transaction as the post it guards.
+ * Claim (CAS on nextRunAt + isPaused, with pause folded into the same
+ * statement — see claimRun) and post are one atomic Postgres transaction —
+ * recurring_rules/accounts/transactions/audit_log are all Postgres now
+ * (Task 21), so there's no cross-database split needed here anymore. Still
+ * no idempotencyKey on the posted transaction (never had one, even before
+ * this migration) — claimRun's compare-and-swap remains the only
+ * duplicate-post guard, which is why it still runs first, inside the same
+ * transaction as the post it guards.
  */
 @Injectable()
 export class RecurringMaterializeService {
@@ -70,6 +71,7 @@ export class RecurringMaterializeService {
         rule.id,
         rule.nextRunAt,
         next ?? rule.nextRunAt,
+        next === null,
         tx
       );
       if (!claimed) return null; // already materialized by a concurrent/retried run
@@ -104,10 +106,6 @@ export class RecurringMaterializeService {
         "recurring"
       );
       await this.audit.record(rule.userId, "recurring.materialize", posted.id, tx);
-
-      if (next === null) {
-        await this.rules.pause(rule.userId, rule.id, tx);
-      }
 
       return posted;
     });

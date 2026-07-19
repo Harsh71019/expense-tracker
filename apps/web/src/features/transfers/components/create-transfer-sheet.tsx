@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAccounts } from "@/features/accounts";
+import { toDatetimeLocalValue } from "@/lib/datetime-local";
 import { ValidationError } from "@/lib/errors";
 
 import { useCreateTransfer } from "../hooks/use-transfers";
@@ -30,10 +31,6 @@ function fieldErrorName(path: string): keyof CreateTransfer | null {
   return null;
 }
 
-function todayInputValue(): string {
-  return new Date().toISOString().slice(0, 10);
-}
-
 export function CreateTransferSheet({ onClose }: Readonly<{ onClose: () => void }>): ReactNode {
   const accounts = useAccounts();
   const create = useCreateTransfer();
@@ -43,7 +40,7 @@ export function CreateTransferSheet({ onClose }: Readonly<{ onClose: () => void 
       fromAccountId: "",
       toAccountId: "",
       amountMinor: 0,
-      occurredAt: new Date(`${todayInputValue()}T00:00:00.000Z`),
+      occurredAt: new Date(),
       description: "",
       tags: []
     }
@@ -233,15 +230,15 @@ export function CreateTransferSheet({ onClose }: Readonly<{ onClose: () => void 
             htmlFor="create-transfer-date"
             className="mt-5 block font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase"
           >
-            Date
+            Date & time
           </label>
           <input
             id="create-transfer-date"
-            type="date"
+            type="datetime-local"
             className={`${selectClasses} mt-1.5`}
-            value={form.watch("occurredAt").toISOString().slice(0, 10)}
+            value={toDatetimeLocalValue(form.watch("occurredAt"))}
             onChange={(event) =>
-              form.setValue("occurredAt", new Date(`${event.target.value}T00:00:00.000Z`), {
+              form.setValue("occurredAt", new Date(event.target.value), {
                 shouldValidate: true
               })
             }

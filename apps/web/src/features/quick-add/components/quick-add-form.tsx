@@ -8,6 +8,7 @@ import type { ReactNode } from "react";
 import { AmountInput } from "@/components/ui/amount-input";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toDatetimeLocalValue } from "@/lib/datetime-local";
 import { ValidationError } from "@/lib/errors";
 import { toast } from "sonner";
 
@@ -211,7 +212,7 @@ export function QuickAddForm(): ReactNode {
           <input
             type="datetime-local"
             className={inputClasses}
-            value={form.watch("occurredAt").toISOString().slice(0, 16)}
+            value={toDatetimeLocalValue(form.watch("occurredAt"))}
             onChange={(event) =>
               form.setValue("occurredAt", new Date(event.target.value), { shouldValidate: true })
             }

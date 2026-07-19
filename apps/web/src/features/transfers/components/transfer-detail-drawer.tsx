@@ -10,9 +10,8 @@ import { ReverseConfirmDialog } from "@/features/transactions";
 import { useReverseTransfer } from "../hooks/use-transfers";
 
 const dateFormatter = new Intl.DateTimeFormat("en-IN", {
-  day: "2-digit",
-  month: "short",
-  year: "numeric",
+  dateStyle: "medium",
+  timeStyle: "short",
   timeZone: "Asia/Kolkata"
 });
 

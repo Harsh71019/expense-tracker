@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  ::selection { background: rgba(52,211,153,0.3); }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</helmet>
+<div style="{{ pageStyle }}">
+  <div style="max-width: 880px; margin: 0 auto; padding: 40px 32px 96px;">
+
+    <header style="display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; margin-bottom: 30px;">
+      <div>
+        <div style="{{ eyebrowStyle }}">VYAYA · SETTINGS</div>
+        <h1 style="{{ h1Style }}">Settings</h1>
+      </div>
+      <button onClick="{{ toggleTheme }}" style="{{ themeBtnStyle }}">{{ themeLabel }}</button>
+    </header>
+
+    <!-- PROFILE SUMMARY -->
+    <div style="{{ profileCardStyle }}">
+      <div style="{{ avatarStyle }}">AR</div>
+      <div style="flex: 1; min-width: 0;">
+        <div style="{{ profileNameStyle }}">Aarav Rao</div>
+        <div style="{{ profileMailStyle }}">aarav@example.com</div>
+        <div style="{{ profileMetaStyle }}">English (India) · Asia/Kolkata (IST)</div>
+      </div>
+    </div>
+
+    <!-- APPEARANCE -->
+    <div style="{{ sectionStyle }}">
+      <div style="{{ sectionTitleStyle }}">Appearance</div>
+      <p style="{{ sectionSubStyle }}">Personalize how Vyaya looks. These preferences are saved to this browser only.</p>
+
+      <div style="{{ subCardStyle }}">
+        <div style="{{ subLabelStyle }}">Theme</div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px;">
+          <sc-for list="{{ themeToggle }}" as="th" hint-placeholder-count="3">
+            <button onClick="{{ th.onClick }}" style="{{ th.style }}">
+              <span style="font-size: 15px;">{{ th.icon }}</span>{{ th.label }}
+            </button>
+          </sc-for>
+        </div>
+      </div>
+
+      <!-- ACCENT COLOR -->
+      <div style="{{ subCardStyle }}">
+        <div style="{{ subLabelStyle }}">Accent color</div>
+        <p style="{{ accentIntroStyle }}">Recolors buttons, links, active navigation, focus rings, and decorative highlights. Income green, expense/error red, and your category colors never change.</p>
+
+        <div style="{{ swatchGridStyle }}">
+          <sc-for list="{{ presetSwatches }}" as="s" hint-placeholder-count="5">
+            <button onClick="{{ s.onClick }}" style="{{ s.style }}" aria-pressed="{{ s.selected }}">
+              <div style="{{ s.chipStyle }}">
+                <sc-if value="{{ s.selected }}" hint-placeholder-val="{{ false }}">
+                  <span style="{{ s.checkStyle }}">✓</span>
+                </sc-if>
+              </div>
+              <span style="{{ s.labelStyle }}">{{ s.label }}</span>
+            </button>
+          </sc-for>
+        </div>
+
+        <!-- CUSTOM -->
+        <div style="{{ customBoxStyle }}">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+            <div style="{{ customTitleStyle }}">Custom color</div>
+            <sc-if value="{{ customActive }}" hint-placeholder-val="{{ false }}">
+              <span style="{{ customActiveBadgeStyle }}">STAGED</span>
+            </sc-if>
+          </div>
+          <div style="display: flex; gap: 10px; margin-top: 12px; align-items: stretch;">
+            <input type="color" value="{{ pickerValue }}" onChange="{{ onPicker }}" style="{{ pickerStyle }}">
+            <input value="{{ customText }}" onChange="{{ onCustomText }}" onFocus="{{ onCustomFocus }}" placeholder="#1d4ed8" style="{{ customInputStyle }}">
+          </div>
+          <div style="{{ helperStyle }}">Accepts <span style="{{ codeStyle }}">#1d4ed8</span>, <span style="{{ codeStyle }}">rgb(29, 78, 216)</span>, or <span style="{{ codeStyle }}">hsl(224, 76%, 48%)</span>. No alpha, gradients, or color names.</div>
+
+          <sc-if value="{{ hasCustomError }}" hint-placeholder-val="{{ false }}">
+            <div style="{{ errorLineStyle }}"><span>⚠</span> {{ customError }}</div>
+          </sc-if>
+          <sc-if value="{{ hasContrastWarn }}" hint-placeholder-val="{{ false }}">
+            <div style="{{ warnLineStyle }}"><span>◑</span> {{ contrastWarn }}</div>
+          </sc-if>
+          <sc-if value="{{ hasRedWarn }}" hint-placeholder-val="{{ false }}">
+            <div style="{{ warnLineStyle }}"><span>◑</span> This red resembles expense and error colors. Amount signs, labels, and icons still carry the real meaning.</div>
+          </sc-if>
+        </div>
+
+        <!-- PREVIEW: both themes -->
+        <div style="{{ previewLabelStyle }}">PREVIEW · works in both themes</div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div style="{{ previewLightStyle }}">
+            <div style="{{ previewChromeStyle }}">LIGHT</div>
+            <div style="{{ pvLightBtnStyle }}">Primary button</div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-top: 10px;">
+              <a href="#" onClick="{{ noop }}" style="{{ pvLightLinkStyle }}">A link</a>
+              <span style="{{ pvLightChipStyle }}">Active tab</span>
+            </div>
+            <div style="display: flex; gap: 12px; margin-top: 12px;">
+              <span style="{{ incomeSampleStyle }}">+₹8,500</span>
+              <span style="{{ expenseSampleStyle }}">−₹450</span>
+            </div>
+          </div>
+          <div style="{{ previewDarkStyle }}">
+            <div style="{{ previewChromeDarkStyle }}">DARK</div>
+            <div style="{{ pvDarkBtnStyle }}">Primary button</div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-top: 10px;">
+              <a href="#" onClick="{{ noop }}" style="{{ pvDarkLinkStyle }}">A link</a>
+              <span style="{{ pvDarkChipStyle }}">Active tab</span>
+            </div>
+            <div style="display: flex; gap: 12px; margin-top: 12px;">
+              <span style="{{ incomeSampleStyle }}">+₹8,500</span>
+              <span style="{{ expenseSampleStyle }}">−₹450</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- APPLY -->
+        <div style="{{ applyRowStyle }}">
+          <div aria-live="polite" style="{{ liveRegionStyle }}">{{ liveMessage }}</div>
+          <div style="flex: 1;"></div>
+          <button onClick="{{ resetDefault }}" style="{{ resetBtnStyle }}" disabled="{{ resetDisabled }}">Reset to Vyaya default</button>
+          <button onClick="{{ applyColor }}" style="{{ applyBtnStyle }}" disabled="{{ applyDisabled }}">{{ applyLabel }}</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MANAGE VYAYA -->
+    <div style="{{ sectionStyle }}">
+      <div style="{{ sectionTitleStyle }}">Manage Vyaya</div>
+      <div style="{{ manageGridStyle }}">
+        <sc-for list="{{ manageLinks }}" as="m" hint-placeholder-count="8">
+          <button onClick="{{ noop }}" style="{{ m.style }}">
+            <span style="{{ m.iconStyle }}">{{ m.icon }}</span>
+            <div style="flex: 1; text-align: left; min-width: 0;">
+              <div style="{{ m.titleStyle }}">{{ m.title }}</div>
+              <div style="{{ m.descStyle }}">{{ m.desc }}</div>
+            </div>
+            <span style="{{ m.arrowStyle }}">→</span>
+          </button>
+        </sc-for>
+      </div>
+    </div>
+
+    <!-- ACCOUNT ACTIONS -->
+    <div style="{{ signOutRowStyle }}">
+      <div>
+        <div style="{{ signOutTitleStyle }}">Signed in as Aarav Rao</div>
+        <div style="{{ signOutSubStyle }}">aarav@example.com · this browser</div>
+      </div>
+      <button onClick="{{ noop }}" style="{{ signOutBtnStyle }}">Sign out</button>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:880,&quot;height&quot;:980}}">
+class Component extends DCLogic {
+  state = {
+    dark: true,
+    themePref: 'system',
+    activeAccent: 'preset:default',   // persisted preference
+    staged: 'preset:default',         // staged selection
+    customText: '',
+    customError: null,
+    applyStatus: 'idle',              // idle | applying | applied
+    liveMessage: '',
+  };
+
+  PRESETS = {
+    default: { label: 'Vyaya green', light: '#0f9d63', dark: '#34d399' },
+    ocean:   { label: 'Ocean blue',  light: '#1d4ed8', dark: '#60a5fa' },
+    indigo:  { label: 'Ledger indigo', light: '#4338ca', dark: '#818cf8' },
+    violet:  { label: 'Mumbai violet', light: '#7e22ce', dark: '#c084fc' },
+    amber:   { label: 'Saffron amber', light: '#b45309', dark: '#fbbf24' },
+  };
+
+  // ---------- color parsing ----------
+  clamp(n, lo, hi) { return Math.max(lo, Math.min(hi, n)); }
+  toHex2(n) { return this.clamp(Math.round(n), 0, 255).toString(16).padStart(2, '0'); }
+  hslToHex(h, s, l) {
+    s /= 100; l /= 100;
+    const k = n => (n + h / 30) % 12;
+    const a = s * Math.min(l, 1 - l);
+    const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+    return '#' + this.toHex2(f(0) * 255) + this.toHex2(f(8) * 255) + this.toHex2(f(4) * 255);
+  }
+  parseColor(raw) {
+    if (!raw) return null;
+    const s = raw.trim().toLowerCase();
+    let m;
+    if ((m = s.match(/^#([0-9a-f]{3})$/))) return '#' + m[1].split('').map(c => c + c).join('');
+    if ((m = s.match(/^#([0-9a-f]{6})$/))) return '#' + m[1];
+    if ((m = s.match(/^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/))) {
+      const [r, g, b] = [m[1], m[2], m[3]].map(Number);
+      if (r > 255 || g > 255 || b > 255) return null;
+      return '#' + this.toHex2(r) + this.toHex2(g) + this.toHex2(b);
+    }
+    if ((m = s.match(/^hsl\(\s*(\d{1,3})\s*,\s*(\d{1,3})%\s*,\s*(\d{1,3})%\s*\)$/))) {
+      const [h, sa, l] = [m[1], m[2], m[3]].map(Number);
+      if (h > 360 || sa > 100 || l > 100) return null;
+      return this.hslToHex(h, sa, l);
+    }
+    return null;
+  }
+  lum(hex) {
+    const n = parseInt(hex.slice(1), 16);
+    const ch = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map(v => {
+      v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * ch[0] + 0.7152 * ch[1] + 0.0722 * ch[2];
+  }
+  contrast(a, b) { const la = this.lum(a), lb = this.lum(b); return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05); }
+  onColor(hex) { return this.contrast(hex, '#ffffff') >= this.contrast(hex, '#04140d') ? '#ffffff' : '#04140d'; }
+  isRed(hex) {
+    const n = parseInt(hex.slice(1), 16);
+    const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+    return r > 150 && g < 90 && b < 90;
+  }
+  tint(hex, a) {
+    const n = parseInt(hex.slice(1), 16);
+    return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
+  }
+  // resolve a preference string to {light, dark}
+  resolve(pref) {
+    if (pref.startsWith('preset:')) {
+      const p = this.PRESETS[pref.slice(7)] || this.PRESETS.default;
+      return { light: p.light, dark: p.dark };
+    }
+    const hex = '#' + pref.slice(7);
+    return { light: hex, dark: hex };
+  }
+  accentFor(pref, dark) { const r = this.resolve(pref); return dark ? r.dark : r.light; }
+
+  renderVals() {
+    const dark = this.state.dark;
+    const S = this.state;
+    // ACTIVE accent drives the live UI chrome
+    const accent = this.accentFor(S.activeAccent, dark);
+    const onAccent = this.onColor(accent);
+    const t = this.theme(dark, accent);
+
+    // staged parse for custom
+    const stagedIsCustom = S.staged.startsWith('custom:');
+    let parsedCustom = null, customError = null, contrastWarn = null;
+    if (S.customText.trim()) {
+      parsedCustom = this.parseColor(S.customText);
+      if (!parsedCustom) customError = 'Not a supported color. Use hex, rgb(), or hsl() — no names, alpha, or gradients.';
+    }
+    // preview values from staged
+    let stagedLight, stagedDark, stagedRed = false;
+    if (stagedIsCustom && parsedCustom) {
+      stagedLight = parsedCustom; stagedDark = parsedCustom; stagedRed = this.isRed(parsedCustom);
+      const cL = this.contrast(parsedCustom, '#ffffff');
+      if (cL < 3) contrastWarn = 'Low contrast on light backgrounds — Vyaya will darken this for text and buttons to stay readable.';
+    } else {
+      const r = this.resolve(S.staged); stagedLight = r.light; stagedDark = r.dark;
+    }
+
+    // apply button lifecycle
+    const stagedValid = !stagedIsCustom || (!!parsedCustom);
+    const normalizedStaged = stagedIsCustom && parsedCustom ? 'custom:' + parsedCustom.slice(1) : S.staged;
+    const matchesActive = normalizedStaged === S.activeAccent;
+    let applyLabel = 'Apply color', applyDisabled = false;
+    if (S.applyStatus === 'applying') { applyLabel = 'Applying…'; applyDisabled = true; }
+    else if (matchesActive && S.applyStatus === 'applied') { applyLabel = 'Applied'; applyDisabled = true; }
+    else if (matchesActive) { applyLabel = 'Applied'; applyDisabled = true; }
+    else if (!stagedValid) { applyLabel = 'Apply color'; applyDisabled = true; }
+
+    const isDefaultActive = S.activeAccent === 'preset:default';
+
+    const base = {
+      pageStyle: `min-height: 100vh; background: ${t.bg}; font-family: 'Inter Tight', sans-serif; -webkit-font-smoothing: antialiased;`,
+      eyebrowStyle: `font: 600 11px 'JetBrains Mono'; letter-spacing: 2px; color: ${accent}; margin-bottom: 8px;`,
+      h1Style: `font: 700 34px 'Inter Tight'; letter-spacing: -1.2px; color: ${t.fg}; margin: 0;`,
+      themeLabel: dark ? '☀ Light' : '☾ Dark',
+      toggleTheme: () => this.setState({ dark: !dark }),
+      themeBtnStyle: `font: 500 13px 'Inter Tight'; color: ${t.fg}; background: ${t.chip}; border: 1px solid ${t.border}; border-radius: 9px; padding: 10px 14px; cursor: pointer;`,
+      noop: (e) => { if (e && e.preventDefault) e.preventDefault(); },
+
+      profileCardStyle: `display: flex; align-items: center; gap: 18px; background: ${t.panel}; border: 1px solid ${t.border}; border-radius: 18px; padding: 22px 24px; margin-bottom: 20px; animation: fadeUp .3s ease both;`,
+      avatarStyle: `width: 60px; height: 60px; border-radius: 16px; display: grid; place-items: center; font: 700 20px 'JetBrains Mono'; color: ${onAccent}; background: ${accent}; flex-shrink: 0;`,
+      profileNameStyle: `font: 700 20px 'Inter Tight'; letter-spacing: -0.4px; color: ${t.fg};`,
+      profileMailStyle: `font: 500 14px 'Inter Tight'; color: ${t.dim}; margin-top: 2px;`,
+      profileMetaStyle: `font: 500 12px 'JetBrains Mono'; color: ${t.faint}; margin-top: 8px;`,
+
+      sectionStyle: `background: ${t.panel}; border: 1px solid ${t.border}; border-radius: 18px; padding: 24px; margin-bottom: 20px; animation: fadeUp .35s ease both;`,
+      sectionTitleStyle: `font: 700 18px 'Inter Tight'; letter-spacing: -0.4px; color: ${t.fg};`,
+      sectionSubStyle: `font: 400 13.5px 'Inter Tight'; color: ${t.dim}; margin: 6px 0 0; line-height: 1.5;`,
+      subCardStyle: `background: ${t.input}; border: 1px solid ${t.border}; border-radius: 14px; padding: 18px; margin-top: 16px;`,
+      subLabelStyle: `font: 600 13px 'Inter Tight'; color: ${t.fg};`,
+
+      themeToggle: [['light','Light','☀'],['dark','Dark','☾'],['system','System','⌘']].map(([k,l,ic]) => {
+        const sel = S.themePref === k;
+        return {
+          label: l, icon: ic,
+          onClick: () => this.setState({ themePref: k, dark: k === 'dark' ? true : k === 'light' ? false : dark }),
+          style: `display: inline-flex; align-items: center; gap: 8px; font: 600 13px 'Inter Tight'; padding: 10px 16px; min-height: 44px; border-radius: 10px; cursor: pointer; border: 1px solid ${sel ? accent : t.border}; background: ${sel ? this.tint(accent, dark ? 0.16 : 0.1) : t.panel}; color: ${sel ? accent : t.dim};`,
+        };
+      }),
+
+      accentIntroStyle: `font: 400 13px 'Inter Tight'; color: ${t.dim}; margin: 4px 0 16px; line-height: 1.5;`,
+      swatchGridStyle: `display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px;`,
+      presetSwatches: Object.keys(this.PRESETS).map(id => {
+        const p = this.PRESETS[id];
+        const pref = 'preset:' + id;
+        const sel = S.staged === pref;
+        const chipColor = dark ? p.dark : p.light;
+        return {
+          label: p.label,
+          selected: sel,
+          onClick: () => this.stagePreset(pref),
+          style: `display: flex; flex-direction: column; align-items: center; gap: 9px; padding: 14px 8px; min-height: 44px; border-radius: 13px; cursor: pointer; border: 1px solid ${sel ? chipColor : t.border}; background: ${sel ? this.tint(chipColor, dark ? 0.14 : 0.08) : t.panel};`,
+          chipStyle: `width: 100%; height: 40px; border-radius: 9px; display: grid; place-items: center; background: linear-gradient(135deg, ${p.light}, ${p.dark});`,
+          checkStyle: `font-size: 16px; font-weight: 700; color: ${this.onColor(p.light)};`,
+          labelStyle: `font: 600 11px 'Inter Tight'; text-align: center; color: ${sel ? t.fg : t.dim}; line-height: 1.2;`,
+        };
+      }),
+
+      customActive: stagedIsCustom,
+      customBoxStyle: `margin-top: 16px; padding: 16px; background: ${t.panel}; border: 1px solid ${stagedIsCustom ? accent : t.border}; border-radius: 13px;`,
+      customTitleStyle: `font: 600 13px 'Inter Tight'; color: ${t.fg};`,
+      customActiveBadgeStyle: `font: 600 9px 'JetBrains Mono'; letter-spacing: 1px; color: ${accent}; background: ${this.tint(accent, 0.14)}; border: 1px solid ${this.tint(accent, 0.3)}; border-radius: 5px; padding: 2px 7px;`,
+      pickerValue: parsedCustom || (stagedIsCustom ? stagedLight : this.resolve(S.staged).light),
+      onPicker: (e) => this.stageCustom(e.target.value, true),
+      pickerStyle: `width: 52px; height: 46px; padding: 3px; border: 1px solid ${t.border}; border-radius: 10px; background: ${t.input}; cursor: pointer;`,
+      customText: S.customText,
+      onCustomText: (e) => this.stageCustom(e.target.value, false),
+      onCustomFocus: () => { if (!S.staged.startsWith('custom:')) this.setState({ staged: 'custom:pending' }); },
+      customInputStyle: `flex: 1; background: ${t.input}; border: 1px solid ${customError ? t.danger : t.border}; border-radius: 10px; padding: 12px 14px; font: 500 14px 'JetBrains Mono'; color: ${t.fg}; outline: none;`,
+      helperStyle: `font: 400 11.5px 'Inter Tight'; color: ${t.faint}; margin-top: 9px; line-height: 1.5;`,
+      codeStyle: `font: 500 11px 'JetBrains Mono'; color: ${t.dim}; background: ${t.chip}; border-radius: 4px; padding: 1px 5px;`,
+      hasCustomError: !!customError,
+      customError: customError || '',
+      errorLineStyle: `display: flex; align-items: center; gap: 7px; margin-top: 10px; font: 500 12.5px 'Inter Tight'; color: ${t.danger};`,
+      hasContrastWarn: !!contrastWarn,
+      contrastWarn: contrastWarn || '',
+      hasRedWarn: stagedRed,
+      warnLineStyle: `display: flex; align-items: flex-start; gap: 7px; margin-top: 10px; font: 500 12.5px 'Inter Tight'; color: ${t.amber}; line-height: 1.45;`,
+
+      // preview
+      previewLabelStyle: `font: 600 10px 'JetBrains Mono'; letter-spacing: 1.2px; color: ${t.dim}; margin: 20px 0 10px;`,
+      previewLightStyle: `background: #ffffff; border: 1px solid #e2e8e3; border-radius: 14px; padding: 16px;`,
+      previewDarkStyle: `background: #000000; border: 1px solid #1c2320; border-radius: 14px; padding: 16px;`,
+      previewChromeStyle: `font: 600 9px 'JetBrains Mono'; letter-spacing: 1px; color: #6b7a72; margin-bottom: 12px;`,
+      previewChromeDarkStyle: `font: 600 9px 'JetBrains Mono'; letter-spacing: 1px; color: #71817a; margin-bottom: 12px;`,
+      pvLightBtnStyle: `display: inline-block; font: 600 13px 'Inter Tight'; color: ${this.onColor(this.readable(stagedLight, '#ffffff'))}; background: ${this.readable(stagedLight, '#ffffff')}; border-radius: 9px; padding: 9px 16px;`,
+      pvDarkBtnStyle: `display: inline-block; font: 600 13px 'Inter Tight'; color: ${this.onColor(stagedDark)}; background: ${stagedDark}; border-radius: 9px; padding: 9px 16px;`,
+      pvLightLinkStyle: `font: 600 13px 'Inter Tight'; color: ${this.readable(stagedLight, '#ffffff')}; text-decoration: none;`,
+      pvDarkLinkStyle: `font: 600 13px 'Inter Tight'; color: ${stagedDark}; text-decoration: none;`,
+      pvLightChipStyle: `font: 600 11px 'Inter Tight'; color: ${this.readable(stagedLight, '#ffffff')}; background: ${this.tint(this.readable(stagedLight, '#ffffff'), 0.12)}; border-radius: 6px; padding: 4px 9px;`,
+      pvDarkChipStyle: `font: 600 11px 'Inter Tight'; color: ${stagedDark}; background: ${this.tint(stagedDark, 0.16)}; border-radius: 6px; padding: 4px 9px;`,
+      incomeSampleStyle: `font: 600 13px 'JetBrains Mono'; color: #16a34a;`,
+      expenseSampleStyle: `font: 600 13px 'JetBrains Mono'; color: #dc2626;`,
+
+      // apply
+      applyRowStyle: `display: flex; align-items: center; gap: 12px; margin-top: 20px; flex-wrap: wrap;`,
+      liveRegionStyle: `font: 500 12.5px 'Inter Tight'; color: ${t.dim};`,
+      liveMessage: S.liveMessage,
+      resetDisabled: isDefaultActive,
+      resetBtnStyle: `font: 500 13px 'Inter Tight'; color: ${isDefaultActive ? t.faint : t.fg}; background: ${t.chip}; border: 1px solid ${t.border}; border-radius: 10px; padding: 11px 16px; cursor: ${isDefaultActive ? 'not-allowed' : 'pointer'}; opacity: ${isDefaultActive ? 0.5 : 1};`,
+      resetDefault: () => this.resetDefault(),
+      applyLabel, applyDisabled,
+      applyBtnStyle: applyDisabled
+        ? `font: 600 14px 'Inter Tight'; color: ${onAccent}; background: ${this.tint(accent, 0.4)}; border: none; border-radius: 10px; padding: 11px 20px; cursor: not-allowed; opacity: 0.65;`
+        : `font: 600 14px 'Inter Tight'; color: ${onAccent}; background: ${accent}; border: none; border-radius: 10px; padding: 11px 20px; cursor: pointer; box-shadow: 0 8px 24px ${this.tint(accent, 0.3)};`,
+      applyColor: () => this.applyColor(),
+
+      // manage
+      manageGridStyle: `display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 16px;`,
+      manageLinks: [
+        ['▦','Accounts','Bank, card, cash, wallets'],
+        ['◎','Categories','Classification taxonomy'],
+        ['⌁','Category rules','Auto-categorize imports'],
+        ['↻','Recurring','Scheduled transactions'],
+        ['◈','Assets','Net worth & valuations'],
+        ['⤢','Transfers','Move between accounts'],
+        ['↧','Imports','CSV statement imports'],
+        ['↥','Export','Download as CSV'],
+      ].map(([ic, title, desc]) => ({
+        icon: ic, title, desc,
+        style: `display: flex; align-items: center; gap: 13px; padding: 15px 16px; min-height: 44px; border-radius: 13px; cursor: pointer; border: 1px solid ${t.border}; background: ${t.input};`,
+        iconStyle: `width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; font-size: 16px; color: ${accent}; background: ${this.tint(accent, dark ? 0.16 : 0.1)}; flex-shrink: 0;`,
+        titleStyle: `font: 600 14px 'Inter Tight'; color: ${t.fg};`,
+        descStyle: `font: 500 11.5px 'Inter Tight'; color: ${t.dim}; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;`,
+        arrowStyle: `font: 500 15px 'JetBrains Mono'; color: ${t.faint};`,
+      })),
+
+      signOutRowStyle: `display: flex; align-items: center; justify-content: space-between; gap: 16px; background: ${t.panel}; border: 1px solid ${t.dangerBorder}; border-radius: 16px; padding: 18px 22px; animation: fadeUp .4s ease both;`,
+      signOutTitleStyle: `font: 600 15px 'Inter Tight'; color: ${t.fg};`,
+      signOutSubStyle: `font: 500 12.5px 'Inter Tight'; color: ${t.dim}; margin-top: 3px;`,
+      signOutBtnStyle: `font: 600 14px 'Inter Tight'; color: ${t.danger}; background: ${t.dangerSoft}; border: 1px solid ${t.dangerBorder}; border-radius: 10px; padding: 11px 20px; min-height: 44px; cursor: pointer;`,
+    };
+
+    return base;
+  }
+
+  // darken a color until it has >=4.5 contrast on the given bg (for readable light-theme text/buttons)
+  readable(hex, bg) {
+    let c = hex;
+    let guard = 0;
+    while (this.contrast(c, bg) < 4.5 && guard < 24) {
+      const n = parseInt(c.slice(1), 16);
+      let r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+      r = Math.round(r * 0.9); g = Math.round(g * 0.9); b = Math.round(b * 0.9);
+      c = '#' + this.toHex2(r) + this.toHex2(g) + this.toHex2(b);
+      guard++;
+    }
+    return c;
+  }
+
+  stagePreset(pref) {
+    this.setState({ staged: pref, customText: '', customError: null, applyStatus: 'idle' });
+  }
+  stageCustom(text, fromPicker) {
+    this.setState({ staged: 'custom:pending', customText: text, applyStatus: 'idle' });
+  }
+  applyColor() {
+    const S = this.state;
+    let normalized = S.staged;
+    if (S.staged.startsWith('custom:')) {
+      const parsed = this.parseColor(S.customText);
+      if (!parsed) { this.setState({ liveMessage: 'Could not apply — the custom color is invalid.' }); return; }
+      normalized = 'custom:' + parsed.slice(1);
+    }
+    if (normalized === S.activeAccent) return;
+    this.setState({ applyStatus: 'applying', liveMessage: 'Applying accent color…' });
+    setTimeout(() => {
+      // "preset:default" removes the override — treated the same, active becomes default
+      this.setState({ activeAccent: normalized, staged: normalized, applyStatus: 'applied',
+        customText: normalized.startsWith('custom:') ? '#' + normalized.slice(7) : '',
+        liveMessage: normalized === 'preset:default' ? 'Restored Vyaya green.' : 'Accent color applied.' });
+    }, 700);
+  }
+  resetDefault() {
+    if (this.state.activeAccent === 'preset:default') return;
+    this.setState({ applyStatus: 'applying', liveMessage: 'Restoring default…' });
+    setTimeout(() => {
+      this.setState({ activeAccent: 'preset:default', staged: 'preset:default', customText: '', applyStatus: 'applied', liveMessage: 'Restored Vyaya green.' });
+    }, 500);
+  }
+
+  theme(dark, accent) {
+    if (dark) {
+      return { bg: '#000000', panel: '#0a0d0b', input: '#0f120f', chip: '#12160f', border: '#1c2320', fg: '#f2f5f2', dim: '#71817a', faint: '#4a554f', danger: '#f87171', dangerSoft: 'rgba(248,113,113,0.09)', dangerBorder: 'rgba(248,113,113,0.28)', amber: '#fbbf24' };
+    }
+    return { bg: '#f6f8f6', panel: '#ffffff', input: '#f4f7f4', chip: '#f0f4f0', border: '#e2e8e3', fg: '#0d1512', dim: '#6b7a72', faint: '#aab4ad', danger: '#dc2626', dangerSoft: 'rgba(220,38,38,0.06)', dangerBorder: 'rgba(220,38,38,0.24)', amber: '#b45309' };
+  }
+}
+</script>
+</body>
+</html>

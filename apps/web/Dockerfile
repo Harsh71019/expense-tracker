@@ -29,6 +29,7 @@ FROM gcr.io/distroless/nodejs24-debian12:nonroot
 WORKDIR /app
 COPY --chown=nonroot:nonroot --from=build /workspace/apps/web/.next/standalone ./
 COPY --chown=nonroot:nonroot --from=build /workspace/apps/web/.next/static ./apps/web/.next/static
+COPY --chown=nonroot:nonroot --from=build /workspace/apps/web/public ./apps/web/public
 
 ARG INTERNAL_API_URL=http://api:4000/api
 ENV INTERNAL_API_URL=$INTERNAL_API_URL

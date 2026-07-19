@@ -7,10 +7,16 @@ import { RecurringMaterializeService } from "./recurring-materialize.service.js"
 import { RecurringRuleController } from "./recurring-rule.controller.js";
 import { RecurringRuleRepository } from "./recurring-rule.repository.js";
 import { RecurringRuleService } from "./recurring-rule.service.js";
+import { RecurringRuleMutationService } from "./recurring-rule-mutation.service.js";
 
 @Module({
   imports: [AccountsModule, CategoriesModule, TransactionsModule],
   controllers: [RecurringRuleController],
-  providers: [RecurringRuleRepository, RecurringRuleService, RecurringMaterializeService]
+  providers: [
+    RecurringRuleRepository,
+    RecurringRuleService,
+    RecurringRuleMutationService,
+    RecurringMaterializeService
+  ]
 })
 export class RecurringModule {}

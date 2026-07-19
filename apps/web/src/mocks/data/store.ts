@@ -15,6 +15,7 @@ export type MonthlyRollupDto = components["schemas"]["MonthlyRollup"];
 export type UserProfileDto = components["schemas"]["UserProfile"];
 export type TransferDto = components["schemas"]["Transfer"];
 export type TransferReversalDto = components["schemas"]["TransferReversal"];
+export type RecurringRuleDto = components["schemas"]["RecurringRule"];
 /** Generated-schema shape, distinct from `@vyaya/shared`'s `ColumnMapping` — see toColumnMappingDto in handlers/imports.ts. */
 export type ColumnMappingDto = ImportBatchDto["mapping"];
 
@@ -35,6 +36,7 @@ export interface MockIdempotency {
   assets: Map<string, AssetDto>;
   assetClose: Set<string>;
   valuations: Map<string, ValuationDto>;
+  recurringRules: Map<string, RecurringRuleDto>;
 }
 
 export interface MockStore {
@@ -47,6 +49,7 @@ export interface MockStore {
   importBatches: ImportBatchDto[];
   stagedRows: StagedRowDto[];
   monthlyRollups: MonthlyRollupDto[];
+  recurringRules: RecurringRuleDto[];
   profile: UserProfileDto;
   /** accountId -> the mapping last used for a successful import to that account. */
   savedMappings: Map<string, ColumnMappingDto>;
@@ -62,6 +65,7 @@ export interface MockStore {
   nextValuationId: () => string;
   nextImportBatchId: () => string;
   nextStagedRowId: () => string;
+  nextRecurringRuleId: () => string;
 }
 
 function daysAgo(days: number): string {
@@ -1746,6 +1750,7 @@ export function createMockStore(): MockStore {
   const nextValuationId = createIdGenerator("5a");
   const nextImportBatchId = createIdGenerator("1b");
   const nextStagedRowId = createIdGenerator("5b");
+  const nextRecurringRuleId = createIdGenerator("e0");
 
   const store: MockStore = {
     accounts: [],
@@ -1757,6 +1762,7 @@ export function createMockStore(): MockStore {
     importBatches: [],
     stagedRows: [],
     monthlyRollups: [],
+    recurringRules: [],
     profile: {
       userId: MOCK_USER_ID,
       displayName: "Mock User",
@@ -1778,7 +1784,8 @@ export function createMockStore(): MockStore {
       transfers: new Map(),
       assets: new Map(),
       assetClose: new Set(),
-      valuations: new Map()
+      valuations: new Map(),
+      recurringRules: new Map()
     },
     nextAccountId,
     nextCategoryId,
@@ -1788,11 +1795,13 @@ export function createMockStore(): MockStore {
     nextAssetId,
     nextValuationId,
     nextImportBatchId,
-    nextStagedRowId
+    nextStagedRowId,
+    nextRecurringRuleId
   };
 
   seedAccounts(store);
   seedCategories(store);
+  seedRecurringRules(store);
   seedCategoryRules(store);
   seedTransactions(store);
   seedAssetsAndValuations(store);
@@ -1873,6 +1882,72 @@ function seedCategories(store: MockStore): void {
       name,
       kind: "income",
       isArchived: false,
+      createdAt,
+      updatedAt: createdAt
+    });
+  }
+}
+
+function seedRecurringRules(store: MockStore): void {
+  const templates: ReadonlyArray<{
+    accountName: string;
+    categoryName: string;
+    type: "expense" | "income";
+    amountMinor: number;
+    description: string;
+    rrule: string;
+    isPaused: boolean;
+  }> = [
+    {
+      accountName: "HDFC Bank",
+      categoryName: "Rent",
+      type: "expense",
+      amountMinor: 32_000_00,
+      description: "Monthly rent",
+      rrule: "FREQ=MONTHLY;BYMONTHDAY=1",
+      isPaused: false
+    },
+    {
+      accountName: "HDFC Bank",
+      categoryName: "Salary",
+      type: "income",
+      amountMinor: 125_000_00,
+      description: "Salary credit",
+      rrule: "FREQ=MONTHLY;BYMONTHDAY=28",
+      isPaused: false
+    },
+    {
+      accountName: "ICICI Credit Card",
+      categoryName: "Subscriptions",
+      type: "expense",
+      amountMinor: 649_00,
+      description: "Streaming subscription",
+      rrule: "FREQ=MONTHLY;BYMONTHDAY=12",
+      isPaused: true
+    }
+  ];
+
+  for (const template of templates) {
+    const account = store.accounts.find((candidate) => candidate.name === template.accountName);
+    const category = store.categories.find((candidate) => candidate.name === template.categoryName);
+    if (account === undefined || category === undefined) continue;
+    const createdAt = daysAgo(75);
+    store.recurringRules.push({
+      id: store.nextRecurringRuleId(),
+      userId: store.profile.userId,
+      template: {
+        accountId: account.id,
+        categoryId: category.id,
+        type: template.type,
+        amountMinor: template.amountMinor,
+        description: template.description,
+        tags: []
+      },
+      rrule: template.rrule,
+      startAt: daysAgo(180),
+      nextRunAt: daysAgo(-8),
+      lastRunAt: daysAgo(22),
+      isPaused: template.isPaused,
       createdAt,
       updatedAt: createdAt
     });

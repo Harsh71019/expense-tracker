@@ -1535,6 +1535,95 @@
           }
         },
         "required": ["userId", "displayName", "locale", "timezone", "createdAt", "updatedAt"]
+      },
+      "RecurringRule": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-f\\d]{24}$/i"
+          },
+          "userId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "template": {
+            "type": "object",
+            "properties": {
+              "accountId": {
+                "type": "string",
+                "pattern": "^[a-f\\d]{24}$/i"
+              },
+              "categoryId": {
+                "type": "string",
+                "pattern": "^[a-f\\d]{24}$/i"
+              },
+              "type": {
+                "type": "string",
+                "enum": ["expense", "income"]
+              },
+              "amountMinor": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 40
+                },
+                "maxItems": 20,
+                "default": []
+              }
+            },
+            "required": ["accountId", "type", "amountMinor", "description"]
+          },
+          "rrule": {
+            "type": "string",
+            "minLength": 1
+          },
+          "startAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "nextRunAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "lastRunAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "isPaused": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "template",
+          "rrule",
+          "startAt",
+          "nextRunAt",
+          "isPaused",
+          "createdAt",
+          "updatedAt"
+        ]
       }
     },
     "parameters": {}
@@ -4258,6 +4347,351 @@
           },
           "404": {
             "description": "Profile not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/recurring": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Recurring rules",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RecurringRule"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "Idempotency-Key",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "template": {
+                    "type": "object",
+                    "properties": {
+                      "accountId": {
+                        "type": "string",
+                        "pattern": "^[a-f\\d]{24}$/i"
+                      },
+                      "categoryId": {
+                        "type": "string",
+                        "pattern": "^[a-f\\d]{24}$/i"
+                      },
+                      "type": {
+                        "type": "string",
+                        "enum": ["expense", "income"]
+                      },
+                      "amountMinor": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 9007199254740991
+                      },
+                      "description": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 500
+                      },
+                      "tags": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 40
+                        },
+                        "maxItems": 20,
+                        "default": []
+                      }
+                    },
+                    "required": ["accountId", "type", "amountMinor", "description"]
+                  },
+                  "rrule": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "startAt": {
+                    "type": ["string", "null"],
+                    "format": "date-time"
+                  }
+                },
+                "required": ["template", "rrule", "startAt"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Idempotent replay of the created recurring rule",
+            "headers": {
+              "Idempotency-Replayed": {
+                "schema": {
+                  "type": "string",
+                  "enum": ["true"]
+                },
+                "required": true
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecurringRule"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created recurring rule",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecurringRule"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Account or category not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/recurring/{ruleId}": {
+      "patch": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f\\d]{24}$/i"
+            },
+            "required": true,
+            "name": "ruleId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "Idempotency-Key",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "template": {
+                    "type": "object",
+                    "properties": {
+                      "accountId": {
+                        "type": "string",
+                        "pattern": "^[a-f\\d]{24}$/i"
+                      },
+                      "categoryId": {
+                        "type": "string",
+                        "pattern": "^[a-f\\d]{24}$/i"
+                      },
+                      "type": {
+                        "type": "string",
+                        "enum": ["expense", "income"]
+                      },
+                      "amountMinor": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 9007199254740991
+                      },
+                      "description": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 500
+                      },
+                      "tags": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 40
+                        },
+                        "maxItems": 20
+                      }
+                    }
+                  },
+                  "rrule": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "isPaused": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated recurring rule, or idempotent replay",
+            "headers": {
+              "Idempotency-Replayed": {
+                "schema": {
+                  "type": "string",
+                  "enum": ["true"]
+                },
+                "required": false
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecurringRule"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurring rule, account, or category not found",
             "content": {
               "application/json": {
                 "schema": {

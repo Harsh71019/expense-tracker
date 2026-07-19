@@ -19,7 +19,7 @@
     }
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "rm -rf dist *.tsbuildinfo && tsc -p tsconfig.build.json",
     "dev": "tsc --watch -p tsconfig.build.json --preserveWatchOutput",
     "lint": "eslint --config ../../eslint.config.mjs --no-warn-ignored --max-warnings=0 src/",
     "typecheck": "tsc --noEmit",

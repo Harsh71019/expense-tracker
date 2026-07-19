@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  ::selection { background: rgba(52,211,153,0.3); }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes overlayIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes drawerIn { from { transform: translateX(24px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+</style>
+</helmet>
+<div style="{{ pageStyle }}">
+  <div style="max-width: 1080px; margin: 0 auto; padding: 40px 32px 96px;">
+
+    <header style="display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; margin-bottom: 30px;">
+      <div>
+        <div style="{{ eyebrowStyle }}">LEDGER · AUTOMATION</div>
+        <h1 style="{{ h1Style }}">Recurring</h1>
+        <p style="{{ subStyle }}">Rent, salary, subscriptions — set the amount and schedule once, and each occurrence posts itself. Pause anytime.</p>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <button onClick="{{ toggleTheme }}" style="{{ themeBtnStyle }}">{{ themeLabel }}</button>
+        <button onClick="{{ openCreate }}" style="{{ primaryBtnStyle }}"><span style="font-size: 18px; line-height: 1; margin-right: 2px;">+</span> New rule</button>
+      </div>
+    </header>
+
+    <sc-if value="{{ hasRules }}" hint-placeholder-val="{{ true }}">
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <sc-for list="{{ rules }}" as="r" hint-placeholder-count="4">
+          <div style="{{ r.rowStyle }}">
+            <div style="{{ r.iconStyle }}">{{ r.icon }}</div>
+            <div style="flex: 1; min-width: 0;">
+              <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <span style="{{ r.nameStyle }}">{{ r.description }}</span>
+                <span style="{{ r.typeBadgeStyle }}">{{ r.typeLabel }}</span>
+                <sc-if value="{{ r.paused }}" hint-placeholder-val="{{ false }}">
+                  <span style="{{ pausedBadgeStyle }}">PAUSED</span>
+                </sc-if>
+              </div>
+              <div style="{{ r.metaStyle }}">{{ r.schedule }} · {{ r.account }}</div>
+              <div style="{{ r.runStyle }}">
+                <sc-if value="{{ r.paused }}" hint-placeholder-val="{{ false }}">
+                  <span>Paused — no upcoming runs</span>
+                </sc-if>
+                <sc-if value="{{ r.active }}" hint-placeholder-val="{{ true }}">
+                  <span>Next {{ r.nextRun }}</span>
+                </sc-if>
+                <sc-if value="{{ r.hasLast }}" hint-placeholder-val="{{ false }}">
+                  <span style="{{ dotSepStyle }}">·</span><span>Last posted {{ r.lastRun }}</span>
+                </sc-if>
+              </div>
+            </div>
+            <div style="text-align: right; flex-shrink: 0;">
+              <div style="{{ r.amountStyle }}">{{ r.amount }}</div>
+              <div style="{{ r.perStyle }}">{{ r.per }}</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+              <button onClick="{{ r.onTogglePause }}" style="{{ r.pauseBtnStyle }}">{{ r.pauseLabel }}</button>
+              <button onClick="{{ r.onEdit }}" style="{{ editBtnStyle }}">Edit</button>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+      <div style="{{ zeroStateStyle }}">
+        <div style="{{ zeroIconStyle }}">↻</div>
+        <div style="{{ zeroTitleStyle }}">No recurring rules yet</div>
+        <p style="{{ zeroBodyStyle }}">Automate the transactions that happen like clockwork. Add your first rule and it'll post on schedule.</p>
+        <button onClick="{{ openCreate }}" style="{{ primaryBtnStyle }}"><span style="font-size: 18px; line-height: 1; margin-right: 2px;">+</span> New rule</button>
+      </div>
+    </sc-if>
+
+  </div>
+
+  <!-- CREATE / EDIT DRAWER -->
+  <sc-if value="{{ formOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="{{ overlayStyle }}" onClick="{{ closeForm }}">
+      <div style="{{ drawerStyle }}" onClick="{{ stop }}">
+        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;">
+          <div style="{{ sheetTitleStyle }}">{{ formTitle }}</div>
+          <button onClick="{{ closeForm }}" style="{{ xBtnStyle }}">✕</button>
+        </div>
+
+        <!-- TYPE -->
+        <label style="{{ fieldLabelStyle }}">Type</label>
+        <div style="display: flex; gap: 8px;">
+          <sc-for list="{{ typeToggle }}" as="tp" hint-placeholder-count="2">
+            <button onClick="{{ tp.onClick }}" style="{{ tp.style }}">{{ tp.label }}</button>
+          </sc-for>
+        </div>
+
+        <!-- AMOUNT -->
+        <label style="{{ fieldLabelStyle }}">Amount <span style="{{ fixedHintStyle }}">fixed every time</span></label>
+        <div style="{{ amountWrapStyle }}">
+          <span style="{{ amountSignStyle }}">{{ typeSign }}</span>
+          <span style="{{ rupeeSignStyle }}">₹</span>
+          <input value="{{ fAmount }}" onChange="{{ onFAmount }}" inputMode="decimal" placeholder="0.00" style="{{ amountInputStyle }}">
+        </div>
+
+        <!-- ACCOUNT + CATEGORY -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+          <div>
+            <label style="{{ fieldLabelStyle }}">Account</label>
+            <select value="{{ fAccount }}" onChange="{{ onFAccount }}" style="{{ selectStyle }}">
+              <sc-for list="{{ accountOptions }}" as="o" hint-placeholder-count="4">
+                <option value="{{ o.value }}">{{ o.label }}</option>
+              </sc-for>
+            </select>
+          </div>
+          <div>
+            <label style="{{ fieldLabelStyle }}">Category</label>
+            <select value="{{ fCategory }}" onChange="{{ onFCategory }}" style="{{ selectStyle }}">
+              <sc-for list="{{ categoryOptions }}" as="o" hint-placeholder-count="6">
+                <option value="{{ o.value }}">{{ o.label }}</option>
+              </sc-for>
+            </select>
+          </div>
+        </div>
+
+        <!-- DESCRIPTION -->
+        <label style="{{ fieldLabelStyle }}">Description</label>
+        <input value="{{ fDesc }}" onChange="{{ onFDesc }}" maxLength="500" placeholder="e.g. Flat rent" style="{{ inputStyle }}">
+
+        <!-- RRULE PICKER -->
+        <div style="{{ scheduleBoxStyle }}">
+          <div style="{{ scheduleTitleStyle }}">SCHEDULE</div>
+
+          <label style="{{ fieldLabelInnerStyle }}">Starts on</label>
+          <input type="date" value="{{ fStart }}" onChange="{{ onFStart }}" style="{{ dateStyle }}">
+
+          <label style="{{ fieldLabelInnerStyle }}">Repeats</label>
+          <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+            <sc-for list="{{ freqOptions }}" as="fq" hint-placeholder-count="5">
+              <button onClick="{{ fq.onClick }}" style="{{ fq.style }}">{{ fq.label }}</button>
+            </sc-for>
+          </div>
+
+          <!-- interval -->
+          <sc-if value="{{ showInterval }}" hint-placeholder-val="{{ true }}">
+            <div style="display: flex; align-items: center; gap: 10px; margin-top: 16px;">
+              <span style="{{ inlineLabelStyle }}">Every</span>
+              <input value="{{ fInterval }}" onChange="{{ onFInterval }}" inputMode="numeric" style="{{ intervalInputStyle }}">
+              <span style="{{ inlineLabelStyle }}">{{ intervalUnit }}</span>
+            </div>
+          </sc-if>
+
+          <!-- weekly: day-of-week -->
+          <sc-if value="{{ showWeekdays }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top: 16px;">
+              <label style="{{ fieldLabelInnerStyle }}">On these days</label>
+              <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                <sc-for list="{{ weekdayToggle }}" as="wd" hint-placeholder-count="7">
+                  <button onClick="{{ wd.onClick }}" style="{{ wd.style }}">{{ wd.label }}</button>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- monthly: day-of-month -->
+          <sc-if value="{{ showMonthday }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top: 16px;">
+              <label style="{{ fieldLabelInnerStyle }}">On day of month</label>
+              <div style="{{ monthdayGridStyle }}">
+                <sc-for list="{{ monthdayToggle }}" as="md" hint-placeholder-count="12">
+                  <button onClick="{{ md.onClick }}" style="{{ md.style }}">{{ md.label }}</button>
+                </sc-for>
+              </div>
+              <div style="{{ monthdayNoteStyle }}">Days past a month's length are skipped that month (e.g. the 31st in February).</div>
+            </div>
+          </sc-if>
+
+          <!-- yearly: month -->
+          <sc-if value="{{ showYearMonth }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top: 16px;">
+              <label style="{{ fieldLabelInnerStyle }}">In month</label>
+              <select value="{{ fYearMonth }}" onChange="{{ onFYearMonth }}" style="{{ selectStyle }}">
+                <sc-for list="{{ monthOptions }}" as="mo" hint-placeholder-count="12">
+                  <option value="{{ mo.value }}">{{ mo.label }}</option>
+                </sc-for>
+              </select>
+            </div>
+          </sc-if>
+
+          <!-- ends -->
+          <sc-if value="{{ showEnds }}" hint-placeholder-val="{{ true }}">
+            <div style="margin-top: 16px;">
+              <label style="{{ fieldLabelInnerStyle }}">Ends</label>
+              <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                <sc-for list="{{ endToggle }}" as="e" hint-placeholder-count="3">
+                  <button onClick="{{ e.onClick }}" style="{{ e.style }}">{{ e.label }}</button>
+                </sc-for>
+              </div>
+              <sc-if value="{{ showUntil }}" hint-placeholder-val="{{ false }}">
+                <input type="date" value="{{ fUntil }}" onChange="{{ onFUntil }}" style="{{ dateStyleTop }}">
+              </sc-if>
+              <sc-if value="{{ showCount }}" hint-placeholder-val="{{ false }}">
+                <div style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
+                  <span style="{{ inlineLabelStyle }}">After</span>
+                  <input value="{{ fCount }}" onChange="{{ onFCount }}" inputMode="numeric" style="{{ intervalInputStyle }}">
+                  <span style="{{ inlineLabelStyle }}">occurrences</span>
+                </div>
+              </sc-if>
+            </div>
+          </sc-if>
+
+          <!-- summary + rrule string -->
+          <div style="{{ summaryBoxStyle }}">
+            <div style="{{ summaryTextStyle }}">{{ scheduleSummary }}</div>
+            <div style="{{ rruleStringStyle }}">{{ rruleString }}</div>
+          </div>
+
+          <sc-if value="{{ hasScheduleError }}" hint-placeholder-val="{{ false }}">
+            <div style="{{ errorBoxStyle }}"><span style="{{ errorIconStyle }}">⚠</span>{{ scheduleError }}</div>
+          </sc-if>
+        </div>
+
+        <!-- FOOTER -->
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 26px;">
+          <button onClick="{{ closeForm }}" style="{{ ghostBtnStyle }}">Cancel</button>
+          <button onClick="{{ submitForm }}" style="{{ submitBtnStyle }}">{{ submitLabel }}</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1080,&quot;height&quot;:900}}">
+class Component extends DCLogic {
+  state = {
+    dark: true,
+    formOpen: false,
+    editId: null,
+    submitting: false,
+    // template
+    fType: 'expense', fAmount: '', fAccount: 'a1', fCategory: 'none', fDesc: '',
+    // schedule
+    fStart: '2026-08-01',
+    fFreq: 'MONTHLY', fInterval: '1',
+    fWeekdays: ['MO'], fMonthdays: [1], fYearMonth: 1,
+    fEndMode: 'never', fUntil: '', fCount: '12',
+  };
+
+  ACCOUNTS = { a1: 'HDFC Savings', a2: 'Axis Credit Card', a3: 'Cash Wallet', a5: 'Zerodha Stocks' };
+  CATS = {
+    c1: { name: 'Groceries', icon: '🛒' }, c2: { name: 'Transport', icon: '🚕' },
+    c3: { name: 'Restaurants', icon: '🍜' }, c4: { name: 'Utilities', icon: '💡' },
+    c7: { name: 'Subscriptions', icon: '🎬' }, c8: { name: 'Rent', icon: '🏠' }, c9: { name: 'Salary', icon: '💰' },
+  };
+  WEEKDAYS = [['MO','Mon'],['TU','Tue'],['WE','Wed'],['TH','Thu'],['FR','Fri'],['SA','Sat'],['SU','Sun']];
+  MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+  rules = [
+    { id: 'rr1', template: { accountId: 'a1', categoryId: 'c8', type: 'expense', amountMinor: 3500000, description: 'Flat rent' }, rrule: 'FREQ=MONTHLY;BYMONTHDAY=1', startAt: '2025-06-01', nextRunAt: '2026-08-01', lastRunAt: '2026-07-01', isPaused: false },
+    { id: 'rr2', template: { accountId: 'a1', categoryId: 'c9', type: 'income', amountMinor: 8500000, description: 'Salary' }, rrule: 'FREQ=MONTHLY;BYMONTHDAY=28', startAt: '2025-01-28', nextRunAt: '2026-07-28', lastRunAt: '2026-06-28', isPaused: false },
+    { id: 'rr3', template: { accountId: 'a2', categoryId: 'c7', type: 'expense', amountMinor: 64900, description: 'Netflix subscription' }, rrule: 'FREQ=MONTHLY;BYMONTHDAY=9', startAt: '2025-03-09', nextRunAt: '2026-08-09', lastRunAt: '2026-07-09', isPaused: false },
+    { id: 'rr4', template: { accountId: 'a1', categoryId: 'c4', type: 'expense', amountMinor: 120000, description: 'Gym membership' }, rrule: 'FREQ=WEEKLY;BYDAY=MO', startAt: '2026-05-04', nextRunAt: null, lastRunAt: '2026-06-15', isPaused: true },
+  ];
+
+  fmtDate(d) { return d ? new Date(d + 'T00:00:00').toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'; }
+  fmt(minor) {
+    const r = Math.floor(minor / 100).toLocaleString('en-IN');
+    return `₹${r}.${String(minor % 100).padStart(2, '0')}`;
+  }
+
+  // ---- RRULE serialize / parse / describe ----
+  buildRRule(s) {
+    const parts = [`FREQ=${s.fFreq}`];
+    const iv = parseInt(s.fInterval || '1', 10);
+    if (iv > 1) parts.push(`INTERVAL=${iv}`);
+    if (s.fFreq === 'WEEKLY' && s.fWeekdays.length) parts.push(`BYDAY=${s.fWeekdays.join(',')}`);
+    if (s.fFreq === 'MONTHLY' && s.fMonthdays.length) parts.push(`BYMONTHDAY=${s.fMonthdays.slice().sort((a,b)=>a-b).join(',')}`);
+    if (s.fFreq === 'YEARLY') { parts.push(`BYMONTH=${s.fYearMonth}`); parts.push(`BYMONTHDAY=${new Date(s.fStart+'T00:00:00').getDate()}`); }
+    if (s.fEndMode === 'until' && s.fUntil) parts.push(`UNTIL=${s.fUntil.replace(/-/g,'')}`);
+    if (s.fEndMode === 'count' && s.fCount) parts.push(`COUNT=${parseInt(s.fCount,10)}`);
+    return parts.join(';');
+  }
+  parseRRule(rrule, startAt) {
+    const map = {};
+    rrule.split(';').forEach(p => { const [k,v] = p.split('='); map[k] = v; });
+    const out = { fFreq: map.FREQ || 'MONTHLY', fInterval: map.INTERVAL || '1',
+      fWeekdays: map.BYDAY ? map.BYDAY.split(',') : ['MO'],
+      fMonthdays: map.BYMONTHDAY ? map.BYMONTHDAY.split(',').map(Number) : [new Date(startAt+'T00:00:00').getDate()],
+      fYearMonth: map.BYMONTH ? parseInt(map.BYMONTH,10) : (new Date(startAt+'T00:00:00').getMonth()+1),
+      fEndMode: 'never', fUntil: '', fCount: '12' };
+    if (map.UNTIL) { out.fEndMode = 'until'; out.fUntil = `${map.UNTIL.slice(0,4)}-${map.UNTIL.slice(4,6)}-${map.UNTIL.slice(6,8)}`; }
+    else if (map.COUNT) { out.fEndMode = 'count'; out.fCount = map.COUNT; }
+    return out;
+  }
+  describe(s) {
+    const iv = parseInt(s.fInterval || '1', 10);
+    const wdName = c => (this.WEEKDAYS.find(w => w[0] === c) || [c, c])[1];
+    let base;
+    if (s.fFreq === 'DAILY') base = iv === 1 ? 'Every day' : `Every ${iv} days`;
+    else if (s.fFreq === 'WEEKLY') {
+      const days = s.fWeekdays.slice().sort((a,b)=>['MO','TU','WE','TH','FR','SA','SU'].indexOf(a)-['MO','TU','WE','TH','FR','SA','SU'].indexOf(b)).map(wdName).join(', ');
+      base = (iv === 1 ? 'Weekly' : `Every ${iv} weeks`) + (days ? ` on ${days}` : '');
+    } else if (s.fFreq === 'MONTHLY') {
+      const dd = s.fMonthdays.slice().sort((a,b)=>a-b).map(this.ordinal).join(', ');
+      base = (iv === 1 ? 'Monthly' : `Every ${iv} months`) + (dd ? ` on the ${dd}` : '');
+    } else if (s.fFreq === 'YEARLY') {
+      base = `Every ${iv === 1 ? '' : iv + ' '}year${iv===1?'':'s'} in ${this.MONTHS[s.fYearMonth-1]}`;
+    } else base = s.fFreq;
+    if (s.fEndMode === 'until' && s.fUntil) base += `, until ${this.fmtDate(s.fUntil)}`;
+    if (s.fEndMode === 'count' && s.fCount) base += `, ${parseInt(s.fCount,10)} times`;
+    return base;
+  }
+  ordinal(n) {
+    const s = ['th','st','nd','rd'], v = n % 100;
+    return n + (s[(v-20)%10] || s[v] || s[0]);
+  }
+  scheduleErr(s) {
+    if (s.fFreq === 'WEEKLY' && s.fWeekdays.length === 0) return 'Pick at least one day of the week.';
+    if (s.fFreq === 'MONTHLY' && s.fMonthdays.length === 0) return 'Pick at least one day of the month.';
+    if (parseInt(s.fInterval || '1', 10) < 1) return 'Interval must be at least 1.';
+    if (s.fEndMode === 'until') {
+      if (!s.fUntil) return 'Choose an end date, or switch to Never.';
+      if (s.fUntil < s.fStart) return 'The end date is before the start date — that produces zero occurrences.';
+    }
+    if (s.fEndMode === 'count' && parseInt(s.fCount || '0', 10) < 1) return 'Occurrence count must be at least 1.';
+    return null;
+  }
+
+  renderVals() {
+    const dark = this.state.dark;
+    const t = this.theme(dark);
+    const S = this.state;
+
+    const rules = this.rules.map(r => {
+      const tp = r.template;
+      const meta = this.CATS[tp.categoryId];
+      const income = tp.type === 'income';
+      const sched = this.describe(this.parseRRule(r.rrule, r.startAt) && Object.assign({ fStart: r.startAt }, this.parseRRule(r.rrule, r.startAt)));
+      return {
+        description: tp.description,
+        icon: meta ? meta.icon : (income ? '💰' : '↻'),
+        typeLabel: income ? 'Income' : 'Expense',
+        paused: r.isPaused,
+        active: !r.isPaused,
+        schedule: sched,
+        account: this.ACCOUNTS[tp.accountId],
+        nextRun: this.fmtDate(r.nextRunAt),
+        hasLast: !!r.lastRunAt,
+        lastRun: this.fmtDate(r.lastRunAt),
+        amount: (income ? '+' : '−') + this.fmt(tp.amountMinor),
+        per: this.perLabel(r.rrule),
+        onTogglePause: () => this.togglePause(r.id),
+        onEdit: () => this.openEdit(r),
+        pauseLabel: r.isPaused ? 'Resume' : 'Pause',
+        rowStyle: `display: flex; align-items: center; gap: 16px; background: ${t.panel}; border: 1px solid ${t.border}; border-radius: 15px; padding: 18px 20px; opacity: ${r.isPaused ? 0.7 : 1}; animation: fadeUp .3s ease both;`,
+        iconStyle: `width: 46px; height: 46px; border-radius: 12px; display: grid; place-items: center; font-size: 21px; background: ${t.chip}; border: 1px solid ${t.border}; flex-shrink: 0;`,
+        nameStyle: `font: 600 16px 'Inter Tight'; color: ${t.fg};`,
+        typeBadgeStyle: `font: 600 9px 'JetBrains Mono'; letter-spacing: 0.8px; color: ${income ? t.green : t.dim}; background: ${income ? t.greenSoft : t.chip}; border: 1px solid ${t.border}; border-radius: 5px; padding: 2px 6px;`,
+        metaStyle: `font: 500 12.5px 'Inter Tight'; color: ${t.dim}; margin-top: 4px;`,
+        runStyle: `display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font: 500 11.5px 'JetBrains Mono'; color: ${r.isPaused ? t.amber : t.green}; margin-top: 6px;`,
+        amountStyle: `font: 600 18px 'JetBrains Mono'; color: ${income ? t.green : t.fg};`,
+        perStyle: `font: 500 11px 'Inter Tight'; color: ${t.dim}; margin-top: 2px;`,
+        pauseBtnStyle: `font: 500 13px 'Inter Tight'; color: ${r.isPaused ? t.green : t.dim}; background: ${t.chip}; border: 1px solid ${t.border}; border-radius: 9px; padding: 9px 14px; cursor: pointer;`,
+      };
+    });
+
+    const scheduleError = this.scheduleErr(S);
+    const rruleValid = !scheduleError;
+    const formValid = S.fDesc.trim() && parseFloat(S.fAmount || '0') > 0 && rruleValid;
+
+    const base = {
+      pageStyle: `min-height: 100vh; background: ${t.bg}; font-family: 'Inter Tight', sans-serif; -webkit-font-smoothing: antialiased;`,
+      eyebrowStyle: `font: 600 11px 'JetBrains Mono'; letter-spacing: 2px; color: ${t.green}; margin-bottom: 8px;`,
+      h1Style: `font: 700 38px 'Inter Tight'; letter-spacing: -1.4px; color: ${t.fg}; margin: 0 0 10px;`,
+      subStyle: `font: 400 15px 'Inter Tight'; color: ${t.dim}; margin: 0; max-width: 540px; line-height: 1.55;`,
+      themeLabel: dark ? '☀ Light' : '☾ Dark',
+      toggleTheme: () => this.setState({ dark: !dark }),
+      themeBtnStyle: `font: 500 13px 'Inter Tight'; color: ${t.fg}; background: ${t.chip}; border: 1px solid ${t.border}; border-radius: 9px; padding: 10px 14px; cursor: pointer;`,
+      primaryBtnStyle: `display: inline-flex; align-items: center; font: 600 14px 'Inter Tight'; color: ${t.onGreen}; background: ${t.green}; border: none; border-radius: 10px; padding: 11px 18px; cursor: pointer; box-shadow: 0 0 0 1px ${t.green}, 0 8px 24px ${t.greenGlow};`,
+
+      hasRules: rules.length > 0,
+      isEmpty: rules.length === 0,
+      rules,
+      pausedBadgeStyle: `font: 600 9px 'JetBrains Mono'; letter-spacing: 1px; color: ${t.amber}; background: ${t.amberSoft}; border: 1px solid ${t.amberBorder}; border-radius: 5px; padding: 2px 6px;`,
+      dotSepStyle: `color: ${t.dim};`,
+      editBtnStyle: `font: 600 13px 'Inter Tight'; color: ${t.fg}; background: ${t.chip}; border: 1px solid ${t.border}; border-radius: 9px; padding: 9px 14px; cursor: pointer;`,
+
+      zeroStateStyle: `display: flex; flex-direction: column; align-items: center; text-align: center; padding: 80px 24px; background: ${t.panel}; border: 1px dashed ${t.border}; border-radius: 18px;`,
+      zeroIconStyle: `width: 64px; height: 64px; border-radius: 16px; display: grid; place-items: center; font-size: 30px; color: ${t.green}; background: ${t.greenSoft}; margin-bottom: 20px;`,
+      zeroTitleStyle: `font: 700 22px 'Inter Tight'; color: ${t.fg}; margin-bottom: 8px;`,
+      zeroBodyStyle: `font: 400 15px 'Inter Tight'; color: ${t.dim}; max-width: 400px; line-height: 1.55; margin: 0 0 24px;`,
+
+      // form chrome
+      formOpen: S.formOpen,
+      formTitle: S.editId ? 'Edit rule' : 'New recurring rule',
+      submitLabel: S.submitting ? 'Saving…' : (S.editId ? 'Save changes' : 'Create rule'),
+      stop: (e) => e.stopPropagation(),
+      overlayStyle: `position: fixed; inset: 0; background: rgba(0,0,0,${dark ? 0.7 : 0.42}); backdrop-filter: blur(3px); display: flex; justify-content: flex-end; z-index: 50; animation: overlayIn .15s ease both;`,
+      drawerStyle: `width: 100%; max-width: 500px; height: 100vh; overflow-y: auto; background: ${t.panel}; border-left: 1px solid ${t.border}; padding: 28px; animation: drawerIn .24s cubic-bezier(.2,.8,.2,1) both;`,
+      xBtnStyle: `font-size: 15px; color: ${t.dim}; background: ${t.chip}; border: 1px solid ${t.border}; border-radius: 8px; width: 32px; height: 32px; cursor: pointer; flex-shrink: 0;`,
+      sheetTitleStyle: `font: 700 21px 'Inter Tight'; color: ${t.fg};`,
+      fieldLabelStyle: `display: block; font: 600 12px 'Inter Tight'; color: ${t.fg}; margin: 20px 0 8px;`,
+      fieldLabelInnerStyle: `display: block; font: 600 11px 'Inter Tight'; color: ${t.dim}; margin: 16px 0 8px;`,
+      inputStyle: `width: 100%; background: ${t.input}; border: 1px solid ${t.border}; border-radius: 11px; padding: 13px 14px; font: 500 15px 'Inter Tight'; color: ${t.fg}; outline: none;`,
+      selectStyle: `width: 100%; background: ${t.input}; border: 1px solid ${t.border}; border-radius: 11px; padding: 12px 13px; font: 500 14px 'Inter Tight'; color: ${t.fg}; cursor: pointer; outline: none;`,
+      dateStyle: `width: 100%; background: ${t.input}; border: 1px solid ${t.border}; border-radius: 11px; padding: 12px 14px; font: 500 14px 'JetBrains Mono'; color: ${t.fg}; outline: none; color-scheme: ${dark ? 'dark' : 'light'};`,
+      dateStyleTop: `width: 100%; background: ${t.input}; border: 1px solid ${t.border}; border-radius: 11px; padding: 12px 14px; font: 500 14px 'JetBrains Mono'; color: ${t.fg}; outline: none; margin-top: 10px; color-scheme: ${dark ? 'dark' : 'light'};`,
+      ghostBtnStyle: `font: 500 14px 'Inter Tight'; color: ${t.fg}; background: ${t.chip}; border: 1px solid ${t.border}; border-radius: 10px; padding: 11px 18px; cursor: pointer;`,
+      closeForm: () => this.setState({ formOpen: false }),
+      openCreate: () => this.openCreate(),
+
+      // type
+      typeToggle: ['expense', 'income'].map(k => {
+        const sel = S.fType === k;
+        return {
+          label: k === 'expense' ? 'Expense' : 'Income',
+          onClick: () => this.setState({ fType: k }),
+          style: `flex: 1; font: 600 14px 'Inter Tight'; padding: 11px; border-radius: 10px; cursor: pointer; border: 1px solid ${sel ? (k==='income'?t.green:t.border) : t.border}; background: ${sel ? (k==='income'?t.greenSoft:t.chip) : 'transparent'}; color: ${sel ? (k==='income'?t.green:t.fg) : t.dim};`,
+        };
+      }),
+      typeSign: S.fType === 'income' ? '+' : '−',
+      fixedHintStyle: `font-weight: 400; color: ${t.dim};`,
+      amountWrapStyle: `display: flex; align-items: center; gap: 6px; background: ${t.input}; border: 1px solid ${t.border}; border-radius: 11px; padding: 0 14px;`,
+      amountSignStyle: `font: 600 18px 'JetBrains Mono'; color: ${S.fType === 'income' ? t.green : t.dim};`,
+      rupeeSignStyle: `font: 500 17px 'JetBrains Mono'; color: ${t.dim};`,
+      amountInputStyle: `flex: 1; background: none; border: none; outline: none; padding: 13px 4px; font: 500 17px 'JetBrains Mono'; color: ${t.fg};`,
+      fAmount: S.fAmount, onFAmount: (e) => this.setState({ fAmount: e.target.value.replace(/[^0-9.]/g, '') }),
+      accountOptions: Object.entries(this.ACCOUNTS).map(([k,v]) => ({ value: k, label: v })),
+      categoryOptions: [{ value: 'none', label: 'Uncategorized' }, ...Object.entries(this.CATS).map(([k,v]) => ({ value: k, label: v.name }))],
+      fAccount: S.fAccount, onFAccount: (e) => this.setState({ fAccount: e.target.value }),
+      fCategory: S.fCategory, onFCategory: (e) => this.setState({ fCategory: e.target.value }),
+      fDesc: S.fDesc, onFDesc: (e) => this.setState({ fDesc: e.target.value }),
+
+      // schedule box
+      scheduleBoxStyle: `margin-top: 22px; background: ${t.input}; border: 1px solid ${t.border}; border-radius: 15px; padding: 18px 20px;`,
+      scheduleTitleStyle: `font: 600 10px 'JetBrains Mono'; letter-spacing: 1.5px; color: ${t.green};`,
+      fStart: S.fStart, onFStart: (e) => this.setState({ fStart: e.target.value }),
+
+      freqOptions: [['DAILY','Daily'],['WEEKLY','Weekly'],['MONTHLY','Monthly'],['YEARLY','Yearly']].map(([k,l]) => {
+        const sel = S.fFreq === k;
+        return {
+          label: l,
+          onClick: () => this.setState({ fFreq: k }),
+          style: `font: 600 13px 'Inter Tight'; padding: 9px 16px; border-radius: 9px; cursor: pointer; border: 1px solid ${sel ? t.green : t.border}; background: ${sel ? t.greenSoft : t.panel}; color: ${sel ? t.green : t.dim};`,
+        };
+      }),
+      showInterval: true,
+      intervalUnit: { DAILY: 'day(s)', WEEKLY: 'week(s)', MONTHLY: 'month(s)', YEARLY: 'year(s)' }[S.fFreq],
+      inlineLabelStyle: `font: 500 13px 'Inter Tight'; color: ${t.dim};`,
+      intervalInputStyle: `width: 64px; background: ${t.panel}; border: 1px solid ${t.border}; border-radius: 9px; padding: 9px 11px; font: 500 14px 'JetBrains Mono'; color: ${t.fg}; outline: none; text-align: center;`,
+      fInterval: S.fInterval, onFInterval: (e) => this.setState({ fInterval: e.target.value.replace(/[^0-9]/g, '') }),
+
+      showWeekdays: S.fFreq === 'WEEKLY',
+      weekdayToggle: this.WEEKDAYS.map(([code, label]) => {
+        const sel = S.fWeekdays.includes(code);
+        return {
+          label,
+          onClick: () => this.toggleWeekday(code),
+          style: `width: 46px; font: 600 12px 'Inter Tight'; padding: 9px 0; border-radius: 9px; cursor: pointer; border: 1px solid ${sel ? t.green : t.border}; background: ${sel ? t.greenSoft : t.panel}; color: ${sel ? t.green : t.dim};`,
+        };
+      }),
+
+      showMonthday: S.fFreq === 'MONTHLY',
+      monthdayGridStyle: `display: grid; grid-template-columns: repeat(10, 1fr); gap: 5px;`,
+      monthdayToggle: Array.from({ length: 31 }, (_, i) => i + 1).map(d => {
+        const sel = S.fMonthdays.includes(d);
+        return {
+          label: String(d),
+          onClick: () => this.toggleMonthday(d),
+          style: `aspect-ratio: 1; font: 600 11px 'JetBrains Mono'; border-radius: 7px; cursor: pointer; border: 1px solid ${sel ? t.green : t.border}; background: ${sel ? t.greenSoft : t.panel}; color: ${sel ? t.green : t.dim};`,
+        };
+      }),
+      monthdayNoteStyle: `font: 400 11px 'Inter Tight'; color: ${t.dim}; margin-top: 8px; line-height: 1.4;`,
+
+      showYearMonth: S.fFreq === 'YEARLY',
+      monthOptions: this.MONTHS.map((m, i) => ({ value: i + 1, label: m })),
+      fYearMonth: S.fYearMonth, onFYearMonth: (e) => this.setState({ fYearMonth: parseInt(e.target.value, 10) }),
+
+      showEnds: true,
+      endToggle: [['never','Never'],['until','On date'],['count','After N times']].map(([k,l]) => {
+        const sel = S.fEndMode === k;
+        return {
+          label: l,
+          onClick: () => this.setState({ fEndMode: k }),
+          style: `font: 600 13px 'Inter Tight'; padding: 9px 15px; border-radius: 9px; cursor: pointer; border: 1px solid ${sel ? t.green : t.border}; background: ${sel ? t.greenSoft : t.panel}; color: ${sel ? t.green : t.dim};`,
+        };
+      }),
+      showUntil: S.fEndMode === 'until',
+      showCount: S.fEndMode === 'count',
+      fUntil: S.fUntil, onFUntil: (e) => this.setState({ fUntil: e.target.value }),
+      fCount: S.fCount, onFCount: (e) => this.setState({ fCount: e.target.value.replace(/[^0-9]/g, '') }),
+
+      // summary
+      summaryBoxStyle: `margin-top: 18px; padding: 14px 16px; background: ${t.panel}; border: 1px solid ${t.border}; border-radius: 12px;`,
+      summaryTextStyle: `font: 600 14px 'Inter Tight'; color: ${t.fg};`,
+      scheduleSummary: this.describe(S),
+      rruleStringStyle: `font: 500 11.5px 'JetBrains Mono'; color: ${t.dim}; margin-top: 6px; word-break: break-all;`,
+      rruleString: 'RRULE:' + this.buildRRule(S) + '  ·  DTSTART=' + S.fStart,
+
+      hasScheduleError: !!scheduleError,
+      scheduleError: scheduleError || '',
+      errorBoxStyle: `display: flex; align-items: flex-start; gap: 8px; margin-top: 12px; background: ${t.dangerSoft}; border: 1px solid ${t.dangerBorder}; border-radius: 10px; padding: 11px 13px; font: 500 12.5px 'Inter Tight'; color: ${t.danger}; line-height: 1.45;`,
+      errorIconStyle: `flex-shrink: 0;`,
+
+      submitBtnStyle: (formValid && !S.submitting)
+        ? `font: 600 14px 'Inter Tight'; color: ${t.onGreen}; background: ${t.green}; border: none; border-radius: 10px; padding: 11px 20px; cursor: pointer; box-shadow: 0 8px 24px ${t.greenGlow};`
+        : `font: 600 14px 'Inter Tight'; color: ${t.onGreen}; background: ${t.greenSoft}; border: none; border-radius: 10px; padding: 11px 20px; cursor: not-allowed; opacity: 0.5;`,
+      submitForm: () => this.submitForm(),
+    };
+
+    return base;
+  }
+
+  perLabel(rrule) {
+    if (rrule.includes('FREQ=DAILY')) return 'per day';
+    if (rrule.includes('FREQ=WEEKLY')) return 'per week';
+    if (rrule.includes('FREQ=MONTHLY')) return 'per month';
+    if (rrule.includes('FREQ=YEARLY')) return 'per year';
+    return '';
+  }
+
+  openCreate() {
+    this.setState({ formOpen: true, editId: null, submitting: false,
+      fType: 'expense', fAmount: '', fAccount: 'a1', fCategory: 'none', fDesc: '',
+      fStart: '2026-08-01', fFreq: 'MONTHLY', fInterval: '1', fWeekdays: ['MO'], fMonthdays: [1], fYearMonth: 1,
+      fEndMode: 'never', fUntil: '', fCount: '12' });
+  }
+  openEdit(r) {
+    const tp = r.template;
+    const sched = this.parseRRule(r.rrule, r.startAt);
+    this.setState({ formOpen: true, editId: r.id, submitting: false,
+      fType: tp.type, fAmount: (tp.amountMinor / 100).toString(), fAccount: tp.accountId, fCategory: tp.categoryId || 'none', fDesc: tp.description,
+      fStart: r.startAt, ...sched });
+  }
+  toggleWeekday(code) {
+    const has = this.state.fWeekdays.includes(code);
+    this.setState({ fWeekdays: has ? this.state.fWeekdays.filter(c => c !== code) : [...this.state.fWeekdays, code] });
+  }
+  toggleMonthday(d) {
+    const has = this.state.fMonthdays.includes(d);
+    this.setState({ fMonthdays: has ? this.state.fMonthdays.filter(x => x !== d) : [...this.state.fMonthdays, d] });
+  }
+  togglePause(id) {
+    this.rules = this.rules.map(r => r.id === id ? { ...r, isPaused: !r.isPaused, nextRunAt: !r.isPaused ? null : '2026-08-01' } : r);
+    this.forceUpdate();
+  }
+  submitForm() {
+    if (this.state.submitting) return;
+    const S = this.state;
+    if (this.scheduleErr(S) || !S.fDesc.trim() || !(parseFloat(S.fAmount || '0') > 0)) return;
+    this.setState({ submitting: true });
+    const template = {
+      accountId: S.fAccount, categoryId: S.fCategory === 'none' ? null : S.fCategory,
+      type: S.fType, amountMinor: Math.round(parseFloat(S.fAmount) * 100), description: S.fDesc.trim(), tags: [],
+    };
+    const rrule = this.buildRRule(S);
+    if (S.editId) {
+      this.rules = this.rules.map(r => r.id === S.editId ? { ...r, template, rrule, startAt: S.fStart } : r);
+    } else {
+      this.rules = [{ id: 'rr' + Date.now(), template, rrule, startAt: S.fStart, nextRunAt: S.fStart, lastRunAt: null, isPaused: false }, ...this.rules];
+    }
+    setTimeout(() => this.setState({ formOpen: false, submitting: false }), 120);
+  }
+
+  theme(dark) {
+    if (dark) {
+      return { bg: '#000000', panel: '#0a0d0b', input: '#0f120f', chip: '#12160f', border: '#1c2320', fg: '#f2f5f2', dim: '#71817a', green: '#34d399', greenSoft: 'rgba(52,211,153,0.12)', greenGlow: 'rgba(52,211,153,0.22)', onGreen: '#04140d', amber: '#fbbf24', amberSoft: 'rgba(251,191,36,0.1)', amberBorder: 'rgba(251,191,36,0.3)', danger: '#f87171', dangerSoft: 'rgba(248,113,113,0.09)', dangerBorder: 'rgba(248,113,113,0.32)' };
+    }
+    return { bg: '#f6f8f6', panel: '#ffffff', input: '#f4f7f4', chip: '#f0f4f0', border: '#e2e8e3', fg: '#0d1512', dim: '#6b7a72', green: '#0f9d63', greenSoft: 'rgba(15,157,99,0.10)', greenGlow: 'rgba(15,157,99,0.16)', onGreen: '#ffffff', amber: '#b45309', amberSoft: 'rgba(180,83,9,0.08)', amberBorder: 'rgba(180,83,9,0.25)', danger: '#dc2626', dangerSoft: 'rgba(220,38,38,0.06)', dangerBorder: 'rgba(220,38,38,0.28)' };
+  }
+}
+</script>
+</body>
+</html>

@@ -428,6 +428,7 @@ export interface paths {
         content: {
           "application/json": {
             include?: boolean;
+            /** Format: uuid */
             suggestedCategoryId?: string | null;
           };
         };
@@ -790,6 +791,7 @@ export interface paths {
             name: string;
             /** @enum {string} */
             kind: "expense" | "income";
+            /** Format: uuid */
             parentId?: string;
             icon?: string;
             color?: string;
@@ -993,6 +995,7 @@ export interface paths {
         content: {
           "application/json": {
             pattern: string;
+            /** Format: uuid */
             categoryId: string;
           };
         };
@@ -1210,7 +1213,9 @@ export interface paths {
       requestBody?: {
         content: {
           "application/json": {
+            /** Format: uuid */
             accountId: string;
+            /** Format: uuid */
             categoryId?: string;
             /** @enum {string} */
             type: "expense" | "income";
@@ -1363,6 +1368,7 @@ export interface paths {
           "application/json": {
             description?: string;
             tags?: string[];
+            /** Format: uuid */
             categoryId?: string | null;
           };
         };
@@ -1531,7 +1537,9 @@ export interface paths {
       requestBody?: {
         content: {
           "application/json": {
+            /** Format: uuid */
             fromAccountId: string;
+            /** Format: uuid */
             toAccountId: string;
             amountMinor: number;
             /** Format: date-time */
@@ -2380,7 +2388,9 @@ export interface paths {
         content: {
           "application/json": {
             template: {
+              /** Format: uuid */
               accountId: string;
+              /** Format: uuid */
               categoryId?: string;
               /** @enum {string} */
               type: "expense" | "income";
@@ -2487,7 +2497,9 @@ export interface paths {
         content: {
           "application/json": {
             template?: {
+              /** Format: uuid */
               accountId?: string;
+              /** Format: uuid */
               categoryId?: string;
               /** @enum {string} */
               type?: "expense" | "income";
@@ -2551,6 +2563,297 @@ export interface paths {
     };
     trace?: never;
   };
+  "/v1/api-keys": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description API keys */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              id: string;
+              name: string;
+              start: string | null;
+              permissions: {
+                transactions?: "write"[];
+                categories?: "read"[];
+                accounts?: "read"[];
+              } | null;
+              enabled: boolean;
+              /** Format: date-time */
+              createdAt: string | null;
+              /** Format: date-time */
+              expiresAt: string | null;
+              /** Format: date-time */
+              lastRequest: string | null;
+            }[];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
+            name: string;
+            permissions: {
+              transactions?: "write"[];
+              categories?: "read"[];
+              accounts?: "read"[];
+            };
+            /** Format: date-time */
+            expiresAt?: string | null;
+          };
+        };
+      };
+      responses: {
+        /** @description Created API key (raw key shown once) */
+        201: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              id: string;
+              name: string;
+              start: string | null;
+              permissions: {
+                transactions?: "write"[];
+                categories?: "read"[];
+                accounts?: "read"[];
+              } | null;
+              enabled: boolean;
+              /** Format: date-time */
+              createdAt: string | null;
+              /** Format: date-time */
+              expiresAt: string | null;
+              /** Format: date-time */
+              lastRequest: string | null;
+              key: string;
+            };
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/api-keys/{keyId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          keyId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description API key revoked */
+        204: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    options?: never;
+    head?: never;
+    patch: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          keyId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
+            name?: string;
+            permissions?: {
+              transactions?: "write"[];
+              categories?: "read"[];
+              accounts?: "read"[];
+            };
+          };
+        };
+      };
+      responses: {
+        /** @description Updated API key */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              id: string;
+              name: string;
+              start: string | null;
+              permissions: {
+                transactions?: "write"[];
+                categories?: "read"[];
+                accounts?: "read"[];
+              } | null;
+              enabled: boolean;
+              /** Format: date-time */
+              createdAt: string | null;
+              /** Format: date-time */
+              expiresAt: string | null;
+              /** Format: date-time */
+              lastRequest: string | null;
+            };
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2560,6 +2863,7 @@ export interface components {
       /** @enum {string} */
       type: "bank" | "credit_card" | "cash" | "wallet" | "investment";
       openingBalanceMinor: number;
+      /** Format: uuid */
       id: string;
       userId: string;
       /** @enum {string} */
@@ -2586,6 +2890,8 @@ export interface components {
         | "common.internal"
         | "common.dependency_unavailable"
         | "auth.unauthenticated"
+        | "auth.insufficient_scope"
+        | "auth.rate_limited"
         | "txn.already_reversed"
         | "txn.transfer_metadata_requires_group"
         | "category.parent_kind_mismatch"
@@ -2607,8 +2913,10 @@ export interface components {
         | null;
     };
     ImportBatch: {
+      /** Format: uuid */
       id: string;
       userId: string;
+      /** Format: uuid */
       accountId: string;
       filename: string;
       fileHash: string;
@@ -2655,7 +2963,9 @@ export interface components {
     };
     StagedRowPage: {
       items: {
+        /** Format: uuid */
         id: string;
+        /** Format: uuid */
         batchId: string;
         rowNumber: number;
         raw: {
@@ -2670,6 +2980,7 @@ export interface components {
           description: string;
         };
         dedupeHash?: string;
+        /** Format: uuid */
         suggestedCategoryId?: string;
         problems: string[];
         isDuplicate: boolean;
@@ -2682,7 +2993,9 @@ export interface components {
       };
     };
     StagedRow: {
+      /** Format: uuid */
       id: string;
+      /** Format: uuid */
       batchId: string;
       rowNumber: number;
       raw: {
@@ -2697,6 +3010,7 @@ export interface components {
         description: string;
       };
       dedupeHash?: string;
+      /** Format: uuid */
       suggestedCategoryId?: string;
       problems: string[];
       isDuplicate: boolean;
@@ -2706,9 +3020,11 @@ export interface components {
       name: string;
       /** @enum {string} */
       kind: "expense" | "income";
+      /** Format: uuid */
       parentId?: string;
       icon?: string;
       color?: string;
+      /** Format: uuid */
       id: string;
       userId: string;
       isArchived: boolean;
@@ -2719,7 +3035,9 @@ export interface components {
     };
     CategoryRule: {
       pattern: string;
+      /** Format: uuid */
       categoryId: string;
+      /** Format: uuid */
       id: string;
       userId: string;
       /** Format: date-time */
@@ -2729,7 +3047,9 @@ export interface components {
     };
     TransactionPage: {
       items: {
+        /** Format: uuid */
         accountId: string;
+        /** Format: uuid */
         categoryId?: string;
         /** @enum {string} */
         type: "expense" | "income";
@@ -2739,6 +3059,7 @@ export interface components {
         description: string;
         /** @default [] */
         tags: string[];
+        /** Format: uuid */
         id: string;
         userId: string;
         /** @enum {string} */
@@ -2749,8 +3070,11 @@ export interface components {
         status: "posted" | "reversed" | "reversal";
         /** Format: uuid */
         idempotencyKey?: string;
+        /** Format: uuid */
         reversalOf?: string;
+        /** Format: uuid */
         reversedBy?: string;
+        /** Format: uuid */
         transferGroupId?: string;
         /** Format: date-time */
         createdAt: string | null;
@@ -2764,7 +3088,9 @@ export interface components {
       };
     };
     Transaction: {
+      /** Format: uuid */
       accountId: string;
+      /** Format: uuid */
       categoryId?: string;
       /** @enum {string} */
       type: "expense" | "income";
@@ -2774,6 +3100,7 @@ export interface components {
       description: string;
       /** @default [] */
       tags: string[];
+      /** Format: uuid */
       id: string;
       userId: string;
       /** @enum {string} */
@@ -2784,8 +3111,11 @@ export interface components {
       status: "posted" | "reversed" | "reversal";
       /** Format: uuid */
       idempotencyKey?: string;
+      /** Format: uuid */
       reversalOf?: string;
+      /** Format: uuid */
       reversedBy?: string;
+      /** Format: uuid */
       transferGroupId?: string;
       /** Format: date-time */
       createdAt: string | null;
@@ -2793,9 +3123,12 @@ export interface components {
       updatedAt: string | null;
     };
     Transfer: {
+      /** Format: uuid */
       transferGroupId: string;
       fromTransaction: {
+        /** Format: uuid */
         accountId: string;
+        /** Format: uuid */
         categoryId?: string;
         /** @enum {string} */
         type: "expense" | "income";
@@ -2805,6 +3138,7 @@ export interface components {
         description: string;
         /** @default [] */
         tags: string[];
+        /** Format: uuid */
         id: string;
         userId: string;
         /** @enum {string} */
@@ -2815,8 +3149,11 @@ export interface components {
         status: "posted" | "reversed" | "reversal";
         /** Format: uuid */
         idempotencyKey?: string;
+        /** Format: uuid */
         reversalOf?: string;
+        /** Format: uuid */
         reversedBy?: string;
+        /** Format: uuid */
         transferGroupId?: string;
         /** Format: date-time */
         createdAt: string | null;
@@ -2824,7 +3161,9 @@ export interface components {
         updatedAt: string | null;
       };
       toTransaction: {
+        /** Format: uuid */
         accountId: string;
+        /** Format: uuid */
         categoryId?: string;
         /** @enum {string} */
         type: "expense" | "income";
@@ -2834,6 +3173,7 @@ export interface components {
         description: string;
         /** @default [] */
         tags: string[];
+        /** Format: uuid */
         id: string;
         userId: string;
         /** @enum {string} */
@@ -2844,8 +3184,11 @@ export interface components {
         status: "posted" | "reversed" | "reversal";
         /** Format: uuid */
         idempotencyKey?: string;
+        /** Format: uuid */
         reversalOf?: string;
+        /** Format: uuid */
         reversedBy?: string;
+        /** Format: uuid */
         transferGroupId?: string;
         /** Format: date-time */
         createdAt: string | null;
@@ -2854,10 +3197,13 @@ export interface components {
       };
     };
     TransferReversal: {
+      /** Format: uuid */
       transferGroupId: string;
       legs: [
         {
+          /** Format: uuid */
           accountId: string;
+          /** Format: uuid */
           categoryId?: string;
           /** @enum {string} */
           type: "expense" | "income";
@@ -2867,6 +3213,7 @@ export interface components {
           description: string;
           /** @default [] */
           tags: string[];
+          /** Format: uuid */
           id: string;
           userId: string;
           /** @enum {string} */
@@ -2877,8 +3224,11 @@ export interface components {
           status: "posted" | "reversed" | "reversal";
           /** Format: uuid */
           idempotencyKey?: string;
+          /** Format: uuid */
           reversalOf?: string;
+          /** Format: uuid */
           reversedBy?: string;
+          /** Format: uuid */
           transferGroupId?: string;
           /** Format: date-time */
           createdAt: string | null;
@@ -2886,7 +3236,9 @@ export interface components {
           updatedAt: string | null;
         },
         {
+          /** Format: uuid */
           accountId: string;
+          /** Format: uuid */
           categoryId?: string;
           /** @enum {string} */
           type: "expense" | "income";
@@ -2896,6 +3248,7 @@ export interface components {
           description: string;
           /** @default [] */
           tags: string[];
+          /** Format: uuid */
           id: string;
           userId: string;
           /** @enum {string} */
@@ -2906,8 +3259,11 @@ export interface components {
           status: "posted" | "reversed" | "reversal";
           /** Format: uuid */
           idempotencyKey?: string;
+          /** Format: uuid */
           reversalOf?: string;
+          /** Format: uuid */
           reversedBy?: string;
+          /** Format: uuid */
           transferGroupId?: string;
           /** Format: date-time */
           createdAt: string | null;
@@ -2917,6 +3273,7 @@ export interface components {
       ];
     };
     Asset: {
+      /** Format: uuid */
       id: string;
       userId: string;
       /** @enum {string} */
@@ -2944,7 +3301,9 @@ export interface components {
        * @enum {string}
        */
       source: "manual" | "maturity_projection";
+      /** Format: uuid */
       id: string;
+      /** Format: uuid */
       assetId: string;
       userId: string;
       /** Format: date-time */
@@ -2960,7 +3319,9 @@ export interface components {
          * @enum {string}
          */
         source: "manual" | "maturity_projection";
+        /** Format: uuid */
         id: string;
+        /** Format: uuid */
         assetId: string;
         userId: string;
         /** Format: date-time */
@@ -2977,11 +3338,13 @@ export interface components {
       asOf: string | null;
       netWorthMinor: number;
       accounts: {
+        /** Format: uuid */
         accountId: string;
         name: string;
         balanceMinor: number;
       }[];
       assets: {
+        /** Format: uuid */
         assetId: string;
         name: string;
         /** @enum {string} */
@@ -2996,12 +3359,14 @@ export interface components {
       userId: string;
       month: string;
       byCategory: {
+        /** Format: uuid */
         categoryId?: string;
         spentMinor: number;
         incomeMinor: number;
         txnCount: number;
       }[];
       byAccount: {
+        /** Format: uuid */
         accountId: string;
         netMinor: number;
       }[];
@@ -3023,10 +3388,13 @@ export interface components {
       updatedAt: string | null;
     };
     RecurringRule: {
+      /** Format: uuid */
       id: string;
       userId: string;
       template: {
+        /** Format: uuid */
         accountId: string;
+        /** Format: uuid */
         categoryId?: string;
         /** @enum {string} */
         type: "expense" | "income";

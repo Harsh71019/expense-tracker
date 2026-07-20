@@ -114,7 +114,7 @@ describe("AuthGuard", () => {
     await expect(guard.canActivate(mockContext)).rejects.toThrow(UnauthenticatedError);
   });
 
-  it("authenticates via a valid Bearer API key on a scoped route", async () => {
+  it("authenticates via a valid Bearer API key whose permissions cover the required scope", async () => {
     const mockReflector = {
       getAllAndOverride: vi.fn((key: string) =>
         key === "requireScopes" ? { transactions: ["write"] } : false
@@ -126,7 +126,12 @@ describe("AuthGuard", () => {
           verifyApiKey: vi.fn().mockResolvedValue({
             valid: true,
             error: null,
-            key: { id: "key-1", referenceId: "user-1", prefix: "ak_" }
+            key: {
+              id: "key-1",
+              referenceId: "user-1",
+              prefix: "ak_",
+              permissions: { transactions: ["write"], categories: ["read"] }
+            }
           })
         }
       }
@@ -151,8 +156,12 @@ describe("AuthGuard", () => {
 
     expect(result).toBe(true);
     expect(mockRequest).toMatchObject({ authUser: { id: "user-1" }, authMethod: "api-key" });
+    // `permissions` is deliberately NOT passed to verifyApiKey -- the plugin's own
+    // permission check would collapse insufficient-scope into the same error.code as
+    // an invalid key (KEY_NOT_FOUND, confirmed by reading the installed source). The
+    // guard fetches the key's permissions and compares them itself, below.
     expect(mockAuthService.auth.api.verifyApiKey).toHaveBeenCalledWith({
-      body: { key: "ak_test123", permissions: { transactions: ["write"] } }
+      body: { key: "ak_test123" }
     });
     expect(mockLoggingContext.set).toHaveBeenCalledWith({
       userId: "user-1",
@@ -183,7 +192,7 @@ describe("AuthGuard", () => {
     expect(mockAuthService.auth.api.verifyApiKey).not.toHaveBeenCalled();
   });
 
-  it("throws InsufficientScopeError when verifyApiKey returns INSUFFICIENT_API_KEY_PERMISSIONS", async () => {
+  it("throws InsufficientScopeError when a valid key's permissions don't cover the required scope", async () => {
     const mockReflector = {
       getAllAndOverride: vi.fn((key: string) =>
         key === "requireScopes" ? { transactions: ["write"] } : false
@@ -193,43 +202,15 @@ describe("AuthGuard", () => {
       auth: {
         api: {
           verifyApiKey: vi.fn().mockResolvedValue({
-            valid: false,
-            error: { code: "INSUFFICIENT_API_KEY_PERMISSIONS" },
-            key: null
+            valid: true,
+            error: null,
+            key: {
+              id: "key-1",
+              referenceId: "user-1",
+              prefix: "ak_",
+              permissions: { categories: ["read"] }
+            }
           })
-        }
-      }
-    };
-    const guard = new AuthGuard(
-      // @ts-expect-error - mock services for unit testing
-      mockAuthService,
-      {},
-      mockReflector,
-      { set: vi.fn() }
-    );
-    const mockRequest = { headers: { authorization: "Bearer ak_test123" } };
-    const mockContext = {
-      getHandler: vi.fn(),
-      getClass: vi.fn(),
-      switchToHttp: vi.fn().mockReturnValue({ getRequest: vi.fn().mockReturnValue(mockRequest) })
-    };
-
-    // @ts-expect-error - mock ExecutionContext
-    await expect(guard.canActivate(mockContext)).rejects.toThrow(InsufficientScopeError);
-  });
-
-  it("throws InsufficientScopeError when verifyApiKey throws INSUFFICIENT_API_KEY_PERMISSIONS", async () => {
-    const mockReflector = {
-      getAllAndOverride: vi.fn((key: string) =>
-        key === "requireScopes" ? { transactions: ["write"] } : false
-      )
-    };
-    const mockAuthService = {
-      auth: {
-        api: {
-          verifyApiKey: vi
-            .fn()
-            .mockRejectedValue({ body: { code: "INSUFFICIENT_API_KEY_PERMISSIONS" } })
         }
       }
     };
@@ -262,7 +243,7 @@ describe("AuthGuard", () => {
         api: {
           verifyApiKey: vi.fn().mockResolvedValue({
             valid: false,
-            error: { code: "RATE_LIMIT_EXCEEDED", details: { tryAgainIn: 30_500 } },
+            error: { code: "RATE_LIMITED", details: { tryAgainIn: 30_500 } },
             key: null
           })
         }

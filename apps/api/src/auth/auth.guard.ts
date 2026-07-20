@@ -16,7 +16,12 @@ import { UserProfileService } from "../user-profiles/user-profile.service.js";
 
 export type AuthenticatedUser = Readonly<{ id: string }>;
 
-type VerifiedApiKey = Readonly<{ id: string; referenceId: string; prefix: string | null }>;
+type VerifiedApiKey = Readonly<{
+  id: string;
+  referenceId: string;
+  prefix: string | null;
+  permissions: Readonly<Record<string, readonly string[]>> | null;
+}>;
 
 type VerifyApiKeyResult = Readonly<{
   valid: boolean;
@@ -76,31 +81,30 @@ export class AuthGuard implements CanActivate {
 
   private async authenticateApiKey(
     key: string,
-    permissions: ApiKeyScopes,
+    requiredScopes: ApiKeyScopes,
     request: Request
   ): Promise<void> {
-    let result: VerifyApiKeyResult;
-    try {
-      const response = await this.authService.auth.api.verifyApiKey({
-        body: { key, permissions: toMutablePermissions(permissions) }
-      });
-      result = parseVerifyApiKeyResult(response);
-    } catch (error) {
-      if (errorCodeOf(error) === "INSUFFICIENT_API_KEY_PERMISSIONS") {
-        throw new InsufficientScopeError();
-      }
-      throw new UnauthenticatedError();
-    }
+    // `permissions` is deliberately NOT passed to verifyApiKey -- the plugin's own
+    // permission check (confirmed in its installed source) throws the exact same
+    // error.code, KEY_NOT_FOUND, whether the key is invalid or merely under-scoped,
+    // by design (denies a probing attacker an oracle for "real key, wrong scope" vs
+    // "fake key"). We check basic validity here, then compare the key's own
+    // `permissions` against the route's required scopes ourselves, below, so an
+    // under-scoped-but-real key gets a genuine 403 instead of an indistinguishable 401.
+    const response = await this.authService.auth.api.verifyApiKey({
+      body: { key }
+    });
+    const result = parseVerifyApiKeyResult(response);
 
-    if (result.error?.code === "INSUFFICIENT_API_KEY_PERMISSIONS") {
-      throw new InsufficientScopeError();
-    }
-    if (result.error?.code === "RATE_LIMIT_EXCEEDED") {
+    if (result.error?.code === "RATE_LIMITED") {
       const tryAgainInMs = result.error.details?.tryAgainIn ?? DEFAULT_RETRY_AFTER_MS;
       throw new RateLimitedError(Math.ceil(tryAgainInMs / 1000));
     }
     if (!result.valid || result.key === null) {
       throw new UnauthenticatedError();
+    }
+    if (!hasRequiredScopes(result.key.permissions, requiredScopes)) {
+      throw new InsufficientScopeError();
     }
 
     request.authUser = { id: result.key.referenceId };
@@ -113,16 +117,20 @@ export class AuthGuard implements CanActivate {
   }
 }
 
-function toMutablePermissions(scopes: ApiKeyScopes): Record<string, string[]> {
-  return Object.fromEntries(
-    Object.entries(scopes).map(([resource, actions]) => [resource, [...actions]])
-  );
-}
-
 function extractBearerKey(header: string | undefined): string | undefined {
   if (header === undefined || !header.startsWith("Bearer ")) return undefined;
   const key = header.slice("Bearer ".length).trim();
   return key.length > 0 ? key : undefined;
+}
+
+function hasRequiredScopes(
+  granted: Readonly<Record<string, readonly string[]>> | null,
+  required: ApiKeyScopes
+): boolean {
+  if (granted === null) return false;
+  return Object.entries(required).every(([resource, actions]) =>
+    actions.every((action) => granted[resource]?.includes(action) === true)
+  );
 }
 
 type UnknownRecord = Readonly<Record<string, unknown>>;
@@ -131,6 +139,10 @@ function isRecord(value: unknown): value is UnknownRecord {
   return typeof value === "object" && value !== null;
 }
 
+// The real `verifyApiKey` return type doesn't structurally match `VerifyApiKeyResult`
+// closely enough for a plain assignment, and this repo bans `as` assertions
+// (@typescript-eslint/consistent-type-assertions, assertionStyle: "never"), so we
+// narrow the unknown response with a runtime-validating parse instead of casting.
 function parseVerifyApiKeyResult(value: unknown): VerifyApiKeyResult {
   if (!isRecord(value)) {
     return { valid: false, error: null, key: null };
@@ -161,14 +173,18 @@ function parseVerifiedApiKey(value: unknown): VerifiedApiKey | null {
   return {
     id: value.id,
     referenceId: value.referenceId,
-    prefix: typeof value.prefix === "string" ? value.prefix : null
+    prefix: typeof value.prefix === "string" ? value.prefix : null,
+    permissions: parsePermissions(value.permissions)
   };
 }
 
-function errorCodeOf(value: unknown): string | undefined {
+function parsePermissions(value: unknown): Readonly<Record<string, readonly string[]>> | null {
   if (!isRecord(value)) {
-    return undefined;
+    return null;
   }
-  const body = isRecord(value.body) ? value.body : value;
-  return isRecord(body) && typeof body.code === "string" ? body.code : undefined;
+  const entries = Object.entries(value).filter(
+    (entry): entry is [string, string[]] =>
+      Array.isArray(entry[1]) && entry[1].every((item) => typeof item === "string")
+  );
+  return Object.fromEntries(entries);
 }

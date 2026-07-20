@@ -927,7 +927,7 @@ Note: the pre-existing test `"authenticates and ensures profile for valid sessio
 - [ ] **Step 4: Run tests to verify they pass**
 
 Run: `pnpm --filter @vyaya/api test -- src/auth/__tests__/auth.guard.test.ts`
-Expected: PASS — all 7 tests (3 pre-existing + 4 new) green.
+Expected: PASS — all 8 tests (3 pre-existing + 5 new) green.
 
 - [ ] **Step 5: Typecheck, lint, commit**
 

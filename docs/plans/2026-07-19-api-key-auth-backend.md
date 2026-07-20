@@ -568,7 +568,13 @@ git commit -m "feat(auth): add RequireScopes decorator, authMethod field, apiKey
 - Consumes: `REQUIRE_SCOPES_KEY`/`ApiKeyScopes` (Task 4), `InsufficientScopeError`/`RateLimitedError` (Task 3), `authMethod`/`LogContext.apiKeyId`/`apiKeyPrefix` (Task 4), `authService.auth.api.verifyApiKey` (Task 1).
 - Produces: on a successful key-auth request, `request.authUser = {id: <referenceId>}`, `request.authMethod = "api-key"` — Task 9's scoped routes and every downstream `@CurrentUser()` consumer rely on `authUser` being set identically regardless of which branch set it.
 
-This is the highest-risk task in this plan — the plugin's runtime source shows two different failure shapes for `verifyApiKey` (`RATE_LIMIT_EXCEEDED` is a normal return, `INSUFFICIENT_API_KEY_PERMISSIONS` is a thrown `APIError`, confirmed by reading the shipped `.mjs`; whether a *direct server-side call* — not through HTTP — actually propagates that throw as a catchable JS exception is inferred, not confirmed by execution). The guard code below handles both a thrown error and a returned `{valid:false, error}` for `INSUFFICIENT_API_KEY_PERMISSIONS` uniformly, so it's correct regardless of which channel it actually arrives through — Task 11's integration test is what actually exercises this against the real plugin.
+**Corrected after this task was first implemented and reviewed** — the original version of this section (based on a summarized web fetch of the package's source, not a direct read) claimed `verifyApiKey` sometimes throws and that its built-in permission check returns a distinguishable `INSUFFICIENT_API_KEY_PERMISSIONS` code. Both were wrong. Reading the actually-installed `node_modules/.../@better-auth/api-key/dist/index.mjs` directly (ground truth, not a summary) shows:
+
+- `verifyApiKey`'s endpoint handler wraps everything in try/catch and **always returns** `{valid, error, key}` — it never throws to the caller. No dual-channel handling needed.
+- If `permissions` is passed to `verifyApiKey` and the key doesn't have them, the plugin's own check throws — internally — `APIError.from("UNAUTHORIZED", API_KEY_ERROR_CODES.KEY_NOT_FOUND)`, which the endpoint's try/catch turns into `error.code === "KEY_NOT_FOUND"`. **The exact same code as an actually-invalid key.** This is deliberate (denies a probing attacker an oracle for "real key, wrong scope" vs "fake key"), but it means passing `permissions` into `verifyApiKey` cannot produce a distinct 403 — the guard below calls `verifyApiKey` with just `{key}` (skips the plugin's internal scope check, but still runs validity/expiry/disabled/rate-limit checks — those aren't gated on `permissions` being present) and compares `key.permissions` against the route's required scopes itself.
+- Rate limit denial's real code is `"RATE_LIMITED"` (confirmed in `consumeRateLimit`'s `throw new APIError("TOO_MANY_REQUESTS", {code:"RATE_LIMITED", details:{tryAgainIn}})`), not `"RATE_LIMIT_EXCEEDED"` — that's a different named entry in the plugin's error-code table, used only to build the *message* text. It's also caught by the same endpoint-level try/catch, so it surfaces as a normal return like everything else.
+
+This task is still the plan's highest-risk one — it's the guard gating every route in this API — but the risk is now "did we read the source correctly and implement the comparison right," not "which of two behaviors will a live call exhibit." Task 11's integration test (real plugin, real Postgres) still exercises this for real, including the specific claim that passing `permissions` to `verifyApiKey` produces `KEY_NOT_FOUND` rather than a scope-specific code — that assertion is what would have caught this mistake before it shipped, had it run first.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -582,7 +588,7 @@ import { RateLimitedError } from "../../common/errors/rate-limited.error.js";
 Add these tests inside the existing `describe("AuthGuard", ...)` block, after the last existing test:
 
 ```typescript
-  it("authenticates via a valid Bearer API key on a scoped route", async () => {
+  it("authenticates via a valid Bearer API key whose permissions cover the required scope", async () => {
     const mockReflector = {
       getAllAndOverride: vi.fn((key: string) =>
         key === "requireScopes" ? { transactions: ["write"] } : false
@@ -594,7 +600,12 @@ Add these tests inside the existing `describe("AuthGuard", ...)` block, after th
           verifyApiKey: vi.fn().mockResolvedValue({
             valid: true,
             error: null,
-            key: { id: "key-1", referenceId: "user-1", prefix: "ak_" }
+            key: {
+              id: "key-1",
+              referenceId: "user-1",
+              prefix: "ak_",
+              permissions: { transactions: ["write"], categories: ["read"] }
+            }
           })
         }
       }
@@ -619,8 +630,12 @@ Add these tests inside the existing `describe("AuthGuard", ...)` block, after th
 
     expect(result).toBe(true);
     expect(mockRequest).toMatchObject({ authUser: { id: "user-1" }, authMethod: "api-key" });
+    // `permissions` is deliberately NOT passed to verifyApiKey -- the plugin's own
+    // permission check would collapse insufficient-scope into the same error.code as
+    // an invalid key (KEY_NOT_FOUND, confirmed by reading the installed source). The
+    // guard fetches the key's permissions and compares them itself, below.
     expect(mockAuthService.auth.api.verifyApiKey).toHaveBeenCalledWith({
-      body: { key: "ak_test123", permissions: { transactions: ["write"] } }
+      body: { key: "ak_test123" }
     });
     expect(mockLoggingContext.set).toHaveBeenCalledWith({
       userId: "user-1",
@@ -651,7 +666,7 @@ Add these tests inside the existing `describe("AuthGuard", ...)` block, after th
     expect(mockAuthService.auth.api.verifyApiKey).not.toHaveBeenCalled();
   });
 
-  it("throws InsufficientScopeError when verifyApiKey returns INSUFFICIENT_API_KEY_PERMISSIONS", async () => {
+  it("throws InsufficientScopeError when a valid key's permissions don't cover the required scope", async () => {
     const mockReflector = {
       getAllAndOverride: vi.fn((key: string) =>
         key === "requireScopes" ? { transactions: ["write"] } : false
@@ -661,43 +676,15 @@ Add these tests inside the existing `describe("AuthGuard", ...)` block, after th
       auth: {
         api: {
           verifyApiKey: vi.fn().mockResolvedValue({
-            valid: false,
-            error: { code: "INSUFFICIENT_API_KEY_PERMISSIONS" },
-            key: null
+            valid: true,
+            error: null,
+            key: {
+              id: "key-1",
+              referenceId: "user-1",
+              prefix: "ak_",
+              permissions: { categories: ["read"] }
+            }
           })
-        }
-      }
-    };
-    const guard = new AuthGuard(
-      // @ts-expect-error - mock services for unit testing
-      mockAuthService,
-      {},
-      mockReflector,
-      { set: vi.fn() }
-    );
-    const mockRequest = { headers: { authorization: "Bearer ak_test123" } };
-    const mockContext = {
-      getHandler: vi.fn(),
-      getClass: vi.fn(),
-      switchToHttp: vi.fn().mockReturnValue({ getRequest: vi.fn().mockReturnValue(mockRequest) })
-    };
-
-    // @ts-expect-error - mock ExecutionContext
-    await expect(guard.canActivate(mockContext)).rejects.toThrow(InsufficientScopeError);
-  });
-
-  it("throws InsufficientScopeError when verifyApiKey throws INSUFFICIENT_API_KEY_PERMISSIONS", async () => {
-    const mockReflector = {
-      getAllAndOverride: vi.fn((key: string) =>
-        key === "requireScopes" ? { transactions: ["write"] } : false
-      )
-    };
-    const mockAuthService = {
-      auth: {
-        api: {
-          verifyApiKey: vi
-            .fn()
-            .mockRejectedValue({ body: { code: "INSUFFICIENT_API_KEY_PERMISSIONS" } })
         }
       }
     };
@@ -730,7 +717,7 @@ Add these tests inside the existing `describe("AuthGuard", ...)` block, after th
         api: {
           verifyApiKey: vi.fn().mockResolvedValue({
             valid: false,
-            error: { code: "RATE_LIMIT_EXCEEDED", details: { tryAgainIn: 30_500 } },
+            error: { code: "RATE_LIMITED", details: { tryAgainIn: 30_500 } },
             key: null
           })
         }
@@ -818,7 +805,12 @@ import { UserProfileService } from "../user-profiles/user-profile.service.js";
 
 export type AuthenticatedUser = Readonly<{ id: string }>;
 
-type VerifiedApiKey = Readonly<{ id: string; referenceId: string; prefix: string | null }>;
+type VerifiedApiKey = Readonly<{
+  id: string;
+  referenceId: string;
+  prefix: string | null;
+  permissions: Readonly<Record<string, readonly string[]>> | null;
+}>;
 
 type VerifyApiKeyResult = Readonly<{
   valid: boolean;
@@ -878,30 +870,29 @@ export class AuthGuard implements CanActivate {
 
   private async authenticateApiKey(
     key: string,
-    permissions: ApiKeyScopes,
+    requiredScopes: ApiKeyScopes,
     request: Request
   ): Promise<void> {
-    let result: VerifyApiKeyResult;
-    try {
-      result = (await this.authService.auth.api.verifyApiKey({
-        body: { key, permissions }
-      })) as VerifyApiKeyResult;
-    } catch (error) {
-      if (errorCodeOf(error) === "INSUFFICIENT_API_KEY_PERMISSIONS") {
-        throw new InsufficientScopeError();
-      }
-      throw new UnauthenticatedError();
-    }
+    // `permissions` is deliberately NOT passed to verifyApiKey -- the plugin's own
+    // permission check (confirmed in its installed source) throws the exact same
+    // error.code, KEY_NOT_FOUND, whether the key is invalid or merely under-scoped,
+    // by design (denies a probing attacker an oracle for "real key, wrong scope" vs
+    // "fake key"). We check basic validity here, then compare the key's own
+    // `permissions` against the route's required scopes ourselves, below, so an
+    // under-scoped-but-real key gets a genuine 403 instead of an indistinguishable 401.
+    const result = (await this.authService.auth.api.verifyApiKey({
+      body: { key }
+    })) as VerifyApiKeyResult;
 
-    if (result.error?.code === "INSUFFICIENT_API_KEY_PERMISSIONS") {
-      throw new InsufficientScopeError();
-    }
-    if (result.error?.code === "RATE_LIMIT_EXCEEDED") {
+    if (result.error?.code === "RATE_LIMITED") {
       const tryAgainInMs = result.error.details?.tryAgainIn ?? DEFAULT_RETRY_AFTER_MS;
       throw new RateLimitedError(Math.ceil(tryAgainInMs / 1000));
     }
     if (!result.valid || result.key === null) {
       throw new UnauthenticatedError();
+    }
+    if (!hasRequiredScopes(result.key.permissions, requiredScopes)) {
+      throw new InsufficientScopeError();
     }
 
     request.authUser = { id: result.key.referenceId };
@@ -920,12 +911,14 @@ function extractBearerKey(header: string | undefined): string | undefined {
   return key.length > 0 ? key : undefined;
 }
 
-function errorCodeOf(value: unknown): string | undefined {
-  if (typeof value !== "object" || value === null) return undefined;
-  const body = "body" in value ? (value as { body?: unknown }).body : value;
-  if (typeof body !== "object" || body === null) return undefined;
-  const code = (body as { code?: unknown }).code;
-  return typeof code === "string" ? code : undefined;
+function hasRequiredScopes(
+  granted: Readonly<Record<string, readonly string[]>> | null,
+  required: ApiKeyScopes
+): boolean {
+  if (granted === null) return false;
+  return Object.entries(required).every(([resource, actions]) =>
+    actions.every((action) => granted[resource]?.includes(action) === true)
+  );
 }
 ```
 
@@ -934,12 +927,12 @@ Note: the pre-existing test `"authenticates and ensures profile for valid sessio
 - [ ] **Step 4: Run tests to verify they pass**
 
 Run: `pnpm --filter @vyaya/api test -- src/auth/__tests__/auth.guard.test.ts`
-Expected: PASS — all 8 tests (3 pre-existing + 5 new) green.
+Expected: PASS — all 7 tests (3 pre-existing + 4 new) green.
 
 - [ ] **Step 5: Typecheck, lint, commit**
 
 Run: `pnpm --filter @vyaya/api typecheck && pnpm --filter @vyaya/api lint`
-Expected: clean. If `verifyApiKey`'s real return type doesn't structurally match `VerifyApiKeyResult` (e.g. the `as VerifyApiKeyResult` cast is flagged, or `permissions` in the request body isn't accepted at that shape), adjust `VerifyApiKeyResult`/the call to match what the compiler reports — this file is the one place in the plan where the real installed type takes precedence over what's written here.
+Expected: clean. If `verifyApiKey`'s real return type doesn't structurally match `VerifyApiKeyResult` (e.g. the `as VerifyApiKeyResult` cast is flagged, or the `key.permissions` shape differs), adjust `VerifyApiKeyResult`/the call to match what the compiler reports — this file is the one place in the plan where the real installed type takes precedence over what's written here. Note that this repo's ESLint config bans `as` assertions entirely (`@typescript-eslint/consistent-type-assertions` with `assertionStyle: "never"`) — if the cast gets flagged, replace it with a runtime-validating parse (e.g. a small structural check function) or `instanceof`/typeof narrowing rather than reintroducing `as`.
 
 ```bash
 git add apps/api/src/auth/auth.guard.ts apps/api/src/auth/__tests__/auth.guard.test.ts
@@ -1709,7 +1702,7 @@ git commit -m "feat(openapi): register bearerAuth scheme and /v1/api-keys paths"
 
 ---
 
-## Task 11: Integration tests against the real plugin (settles the throw-vs-return question for real)
+## Task 11: Integration tests against the real plugin
 
 **Files:**
 - Create: `apps/api/test/integration/api-keys/api-keys.integration.ts`
@@ -1788,26 +1781,40 @@ describe("api-key plugin integration", () => {
     expect(verified.key?.referenceId).toBe("user-a");
   });
 
-  it("settles the throw-vs-return question for INSUFFICIENT_API_KEY_PERMISSIONS", async () => {
+  it("verifyApiKey's own permission check collapses insufficient-scope into KEY_NOT_FOUND, same as an invalid key -- this is why AuthGuard (Task 5) never passes permissions to verifyApiKey and compares scopes itself", async () => {
     const created = await apiKeys.create("user-a", {
       name: "read-only",
       permissions: { categories: ["read"] }
     });
 
-    let observedCode: string | undefined;
-    try {
-      const result = await authService.auth.api.verifyApiKey({
-        body: { key: created.key, permissions: { transactions: ["write"] } }
-      });
-      observedCode = result.error?.code;
-    } catch (error: unknown) {
-      const body = (error as { body?: { code?: string } } | undefined)?.body;
-      observedCode = body?.code;
-    }
+    const verified = await authService.auth.api.verifyApiKey({
+      body: { key: created.key, permissions: { transactions: ["write"] } }
+    });
 
-    // Whichever channel it came through, AuthGuard (Task 5) checks both -- this
-    // assertion is what actually proves that design choice was necessary/correct.
-    expect(observedCode).toBe("INSUFFICIENT_API_KEY_PERMISSIONS");
+    expect(verified.valid).toBe(false);
+    expect(verified.error?.code).toBe("KEY_NOT_FOUND");
+  });
+
+  it("a rate-limited key's verifyApiKey call returns RATE_LIMITED with a positive tryAgainIn", async () => {
+    const created = await authService.auth.api.createApiKey({
+      body: {
+        userId: "user-a",
+        name: "rate-limited",
+        permissions: { accounts: ["read"] },
+        prefix: "ak_",
+        rateLimitEnabled: true,
+        rateLimitMax: 1,
+        rateLimitTimeWindow: 60_000
+      }
+    });
+
+    const first = await authService.auth.api.verifyApiKey({ body: { key: created.key } });
+    expect(first.valid).toBe(true);
+
+    const second = await authService.auth.api.verifyApiKey({ body: { key: created.key } });
+    expect(second.valid).toBe(false);
+    expect(second.error?.code).toBe("RATE_LIMITED");
+    expect(second.error?.details?.tryAgainIn).toBeGreaterThan(0);
   });
 
   it("a revoked (disabled) key fails verification", async () => {
@@ -1846,9 +1853,9 @@ describe("api-key plugin integration", () => {
 - [ ] **Step 2: Run the integration test**
 
 Run: `pnpm --filter @vyaya/api test:integration -- test/integration/api-keys/api-keys.integration.ts`
-Expected: PASS, all four tests green. This requires Docker (testcontainers spins up a real Postgres) — if it fails on container startup rather than an assertion, that's an environment issue, not a code issue.
+Expected: PASS, all five tests green. This requires Docker (testcontainers spins up a real Postgres) — if it fails on container startup rather than an assertion, that's an environment issue, not a code issue.
 
-If the second test (`settles the throw-vs-return question`) fails because `observedCode` is `undefined` (neither branch populated it), the actual code path differs from both hypotheses in the spec — read the raw `error`/`result` object (temporarily `console.log` it, run once, inspect, then remove the log) and adjust `errorCodeOf`/the guard's parsing in `apps/api/src/auth/auth.guard.ts` (Task 5) to match what's actually returned, then rerun this test and Task 5's unit tests together.
+If the `KEY_NOT_FOUND` collapse test fails with a different `error.code`, the plugin's behavior has changed from what Task 5 was built against (possible on a future `@better-auth/api-key` version bump) — this is a real signal to re-examine `AuthGuard.authenticateApiKey` (Task 5), not something to paper over by changing the assertion to match.
 
 If the fourth test's `apiKeys.update("user-b", ...)` doesn't throw (i.e., cross-tenant update silently succeeds instead of failing), that means the plugin's `apiKey.referenceId !== user.id` ownership check didn't fire as expected — stop and re-examine `ApiKeysService.update`/`revoke` in Task 7 before proceeding; this would be a real cross-tenant vulnerability, not a minor test adjustment.
 
@@ -1861,7 +1868,7 @@ Expected: all clean — this is the same sequence CI runs, per root `CLAUDE.md`.
 
 ```bash
 git add apps/api/test/integration/api-keys/api-keys.integration.ts
-git commit -m "test(api-keys): integration test against the real plugin, settles throw-vs-return question"
+git commit -m "test(api-keys): integration tests against the real plugin"
 ```
 
 ---

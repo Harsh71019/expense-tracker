@@ -23,6 +23,7 @@ import { z } from "zod";
 
 import type { AuthenticatedUser } from "../auth/auth.guard.js";
 import { CurrentUser } from "../auth/current-user.decorator.js";
+import { RequireScopes } from "../auth/require-scopes.decorator.js";
 import { TransactionService } from "./transaction.service.js";
 import { TransactionMutationService } from "./transaction-mutation.service.js";
 
@@ -49,6 +50,7 @@ export class TransactionController {
   }
 
   @Post()
+  @RequireScopes({ transactions: ["write"] })
   async create(
     @CurrentUser() user: AuthenticatedUser,
     @Body() body: unknown,

@@ -13,6 +13,7 @@ import { IdempotencyModule } from "./common/idempotency/idempotency.module.js";
 import { RedisModule } from "./common/redis/redis.module.js";
 import { AuthModule } from "./auth/auth.module.js";
 import { AccountsModule } from "./accounts/accounts.module.js";
+import { ApiKeysModule } from "./api-keys/api-keys.module.js";
 import { AssetsModule } from "./assets/assets.module.js";
 import { AuditModule } from "./audit/audit.module.js";
 import { CategoriesModule } from "./categories/categories.module.js";
@@ -40,6 +41,7 @@ import { TransactionsModule } from "./transactions/transactions.module.js";
     UserProfilesModule,
     AuthModule,
     AccountsModule,
+    ApiKeysModule,
     CategoriesModule,
     CategoryRulesModule,
     AuditModule,

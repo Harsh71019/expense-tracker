@@ -1,8 +1,11 @@
+import type { Logger } from "nestjs-pino";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { ApiKeysService } from "../../../src/api-keys/api-keys.service.js";
 import { AuthService } from "../../../src/auth/auth.service.js";
 import type { RuntimeConfigService } from "../../../src/common/config/runtime-config.service.js";
+import type { RedisService } from "../../../src/common/redis/redis.service.js";
+import type { UserProfileService } from "../../../src/user-profiles/user-profile.service.js";
 import { createTestDb, insertTestUser } from "../support/postgres-test-db.js";
 import type { TestDb } from "../support/postgres-test-db.js";
 
@@ -38,16 +41,20 @@ describe("api-key plugin integration", () => {
     await insertTestUser(testDb.db, "user-a");
     await insertTestUser(testDb.db, "user-b");
 
-    // @ts-expect-error - mock RedisService/UserProfileService/Logger for integration testing;
     // the api-key plugin defaults to database storage, never touches secondaryStorage
+    // @ts-expect-error - mock RedisService for integration testing
+    const redisMock: RedisService = {};
+    // @ts-expect-error - mock UserProfileService for integration testing
+    const profilesMock: UserProfileService = { ensure: async () => {} };
+    // @ts-expect-error - mock Logger for integration testing
+    const loggerMock: Logger = { warn: () => undefined };
+
     authService = new AuthService(
       testDb.db,
       new TestRuntimeConfigService(),
-      {},
-      { ensure: async () => {} },
-      {
-        warn: () => undefined
-      }
+      redisMock,
+      profilesMock,
+      loggerMock
     );
     apiKeys = new ApiKeysService(authService);
   }, 60_000);

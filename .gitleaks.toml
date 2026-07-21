@@ -1,0 +1,16 @@
+title = "Vyaya gitleaks config"
+
+[extend]
+useDefault = true
+
+# Known dummy/test-fixture values used across unit and integration tests and
+# design docs -- never real credentials. Allowlisted by exact value (not by
+# path) so this doesn't mask a real secret accidentally pasted into a test
+# file later, and survives commit rewrites (squash-merge, rebase).
+[allowlist]
+description = "Test-fixture secrets, not real credentials"
+regexes = [
+  '''sk_live_abc123def456''',
+  '''ak_verysecret123''',
+  '''test-secret-long-enough-32-chars-long''',
+]

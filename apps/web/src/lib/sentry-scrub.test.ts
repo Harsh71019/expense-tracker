@@ -38,7 +38,7 @@ describe("Sentry scrubbing", () => {
   it("redacts API keys from breadcrumbs", () => {
     const breadcrumb: Breadcrumb = {
       category: "api.key",
-      data: { key: "sk_live_abc123def456", status: 200 }
+      data: { key: "not-a-real-credential-just-a-test-fixture", status: 200 }
     };
 
     expect(scrubBreadcrumb(breadcrumb)).toMatchObject({

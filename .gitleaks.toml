@@ -10,7 +10,6 @@ useDefault = true
 [allowlist]
 description = "Test-fixture secrets, not real credentials"
 regexes = [
-  '''sk_live_abc123def456''',
   '''ak_verysecret123''',
   '''test-secret-long-enough-32-chars-long''',
 ]

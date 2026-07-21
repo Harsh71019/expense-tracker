@@ -60,6 +60,37 @@ describe("ApiKeyRow", () => {
     expect(screen.getByRole("button", { name: "Edit" })).toBeVisible();
   });
 
+  it("restores the real current permissions after a cancelled edit is reopened", async () => {
+    const user = userEvent.setup();
+    const onUpdate = vi.fn();
+    render(<ApiKeyRow apiKey={key} onRevoke={vi.fn()} onUpdate={onUpdate} isUpdating={false} />);
+
+    await user.click(screen.getByRole("button", { name: "Edit" }));
+    expect(screen.getByLabelText("Create transactions")).toBeChecked();
+    await user.click(screen.getByLabelText("Create transactions"));
+    expect(screen.getByLabelText("Create transactions")).not.toBeChecked();
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+
+    await user.click(screen.getByRole("button", { name: "Edit" }));
+    expect(screen.getByLabelText("Create transactions")).toBeChecked();
+    expect(onUpdate).not.toHaveBeenCalled();
+  });
+
+  it("shows an inline error and stays in edit mode when saving with no scopes selected", async () => {
+    const user = userEvent.setup();
+    const onUpdate = vi.fn();
+    render(<ApiKeyRow apiKey={key} onRevoke={vi.fn()} onUpdate={onUpdate} isUpdating={false} />);
+
+    await user.click(screen.getByRole("button", { name: "Edit" }));
+    await user.click(screen.getByLabelText("Create transactions"));
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    expect(screen.getByRole("alert")).toHaveTextContent("Select at least one scope.");
+    expect(onUpdate).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Save" })).toBeVisible();
+    expect(screen.getByLabelText("Name")).toHaveValue("n8n");
+  });
+
   it("shows a revoked badge and hides edit/revoke actions for a disabled key", () => {
     const revokedKey: ApiKey = { ...key, enabled: false };
     render(

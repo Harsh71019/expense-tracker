@@ -1,6 +1,6 @@
 "use client";
 
-import type { ApiKey, UpdateApiKey } from "@vyaya/shared";
+import { UpdateApiKeySchema, type ApiKey, type UpdateApiKey } from "@vyaya/shared";
 import { useState } from "react";
 import type { ReactNode } from "react";
 
@@ -32,6 +32,13 @@ export function ApiKeyRow({ apiKey, onRevoke, onUpdate, isUpdating }: ApiKeyRowP
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(apiKey.name);
   const [scopeIds, setScopeIds] = useState(() => permissionsToScopeIds(apiKey.permissions));
+  const [error, setError] = useState<string>();
+
+  function resetDraft(): void {
+    setName(apiKey.name);
+    setScopeIds(permissionsToScopeIds(apiKey.permissions));
+    setError(undefined);
+  }
 
   function toggleScope(id: string): void {
     setScopeIds((current) => {
@@ -46,7 +53,16 @@ export function ApiKeyRow({ apiKey, onRevoke, onUpdate, isUpdating }: ApiKeyRowP
   }
 
   function save(): void {
-    onUpdate(apiKey.id, { name, permissions: scopeIdsToPermissions(scopeIds) });
+    const parsed = UpdateApiKeySchema.safeParse({
+      name,
+      permissions: scopeIdsToPermissions(scopeIds)
+    });
+    if (!parsed.success) {
+      setError(parsed.error.issues[0]?.message ?? "Select at least one scope.");
+      return;
+    }
+    setError(undefined);
+    onUpdate(apiKey.id, parsed.data);
     setEditing(false);
   }
 
@@ -75,8 +91,20 @@ export function ApiKeyRow({ apiKey, onRevoke, onUpdate, isUpdating }: ApiKeyRowP
             </label>
           ))}
         </fieldset>
+        {error === undefined ? null : (
+          <p role="alert" className="text-sm text-expense">
+            {error}
+          </p>
+        )}
         <div className="flex justify-end gap-2.5">
-          <Button type="button" variant="secondary" onClick={() => setEditing(false)}>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => {
+              resetDraft();
+              setEditing(false);
+            }}
+          >
             Cancel
           </Button>
           <Button type="button" onClick={save} disabled={isUpdating}>
@@ -113,7 +141,10 @@ export function ApiKeyRow({ apiKey, onRevoke, onUpdate, isUpdating }: ApiKeyRowP
           <>
             <button
               type="button"
-              onClick={() => setEditing(true)}
+              onClick={() => {
+                resetDraft();
+                setEditing(true);
+              }}
               className="rounded-md px-1.5 py-1 text-sm font-medium text-foreground-muted transition-colors duration-150 hover:bg-surface-muted"
             >
               Edit

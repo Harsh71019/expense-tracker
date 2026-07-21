@@ -34,4 +34,15 @@ describe("Sentry scrubbing", () => {
     const stringBody: ErrorEvent = { type: undefined, request: { data: "not a form object" } };
     expect(scrubEvent(stringBody)).toBe(stringBody);
   });
+
+  it("redacts API keys from breadcrumbs", () => {
+    const breadcrumb: Breadcrumb = {
+      category: "api.key",
+      data: { key: "sk_live_abc123def456", status: 200 }
+    };
+
+    expect(scrubBreadcrumb(breadcrumb)).toMatchObject({
+      data: { key: "⟨text⟩", status: 200 }
+    });
+  });
 });

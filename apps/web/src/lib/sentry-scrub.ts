@@ -1,6 +1,6 @@
 import type { Breadcrumb, ErrorEvent } from "@sentry/nextjs";
 
-const SENSITIVE_KEYS = new Set(["amountMinor", "description", "password"]);
+const SENSITIVE_KEYS = new Set(["amountMinor", "description", "password", "key"]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);

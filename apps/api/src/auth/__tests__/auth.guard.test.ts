@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { AuthGuard } from "../auth.guard.js";
 import { UnauthenticatedError } from "../../common/errors/unauthenticated.error.js";
+import { InsufficientScopeError } from "../../common/errors/insufficient-scope.error.js";
+import { RateLimitedError } from "../../common/errors/rate-limited.error.js";
 
 describe("AuthGuard", () => {
   it("returns true immediately if the route is marked public", async () => {
@@ -106,6 +108,196 @@ describe("AuthGuard", () => {
       switchToHttp: vi.fn().mockReturnValue({
         getRequest: vi.fn().mockReturnValue(mockRequest)
       })
+    };
+
+    // @ts-expect-error - mock ExecutionContext
+    await expect(guard.canActivate(mockContext)).rejects.toThrow(UnauthenticatedError);
+  });
+
+  it("authenticates via a valid Bearer API key whose permissions cover the required scope", async () => {
+    const mockReflector = {
+      getAllAndOverride: vi.fn((key: string) =>
+        key === "requireScopes" ? { transactions: ["write"] } : false
+      )
+    };
+    const mockAuthService = {
+      auth: {
+        api: {
+          verifyApiKey: vi.fn().mockResolvedValue({
+            valid: true,
+            error: null,
+            key: {
+              id: "key-1",
+              referenceId: "user-1",
+              prefix: "ak_",
+              permissions: { transactions: ["write"], categories: ["read"] }
+            }
+          })
+        }
+      }
+    };
+    const mockLoggingContext = { set: vi.fn() };
+    const guard = new AuthGuard(
+      // @ts-expect-error - mock services for unit testing
+      mockAuthService,
+      {},
+      mockReflector,
+      mockLoggingContext
+    );
+    const mockRequest = { headers: { authorization: "Bearer ak_test123" } };
+    const mockContext = {
+      getHandler: vi.fn(),
+      getClass: vi.fn(),
+      switchToHttp: vi.fn().mockReturnValue({ getRequest: vi.fn().mockReturnValue(mockRequest) })
+    };
+
+    // @ts-expect-error - mock ExecutionContext
+    const result = await guard.canActivate(mockContext);
+
+    expect(result).toBe(true);
+    expect(mockRequest).toMatchObject({ authUser: { id: "user-1" }, authMethod: "api-key" });
+    // `permissions` is deliberately NOT passed to verifyApiKey -- the plugin's own
+    // permission check would collapse insufficient-scope into the same error.code as
+    // an invalid key (KEY_NOT_FOUND, confirmed by reading the installed source). The
+    // guard fetches the key's permissions and compares them itself, below.
+    expect(mockAuthService.auth.api.verifyApiKey).toHaveBeenCalledWith({
+      body: { key: "ak_test123" }
+    });
+    expect(mockLoggingContext.set).toHaveBeenCalledWith({
+      userId: "user-1",
+      apiKeyId: "key-1",
+      apiKeyPrefix: "ak_"
+    });
+  });
+
+  it("rejects a Bearer key on a route with no RequireScopes metadata, without calling verifyApiKey", async () => {
+    const mockReflector = { getAllAndOverride: vi.fn().mockReturnValue(undefined) };
+    const mockAuthService = { auth: { api: { verifyApiKey: vi.fn() } } };
+    const guard = new AuthGuard(
+      // @ts-expect-error - mock services for unit testing
+      mockAuthService,
+      {},
+      mockReflector,
+      { set: vi.fn() }
+    );
+    const mockRequest = { headers: { authorization: "Bearer ak_test123" } };
+    const mockContext = {
+      getHandler: vi.fn(),
+      getClass: vi.fn(),
+      switchToHttp: vi.fn().mockReturnValue({ getRequest: vi.fn().mockReturnValue(mockRequest) })
+    };
+
+    // @ts-expect-error - mock ExecutionContext
+    await expect(guard.canActivate(mockContext)).rejects.toThrow(InsufficientScopeError);
+    expect(mockAuthService.auth.api.verifyApiKey).not.toHaveBeenCalled();
+  });
+
+  it("throws InsufficientScopeError when a valid key's permissions don't cover the required scope", async () => {
+    const mockReflector = {
+      getAllAndOverride: vi.fn((key: string) =>
+        key === "requireScopes" ? { transactions: ["write"] } : false
+      )
+    };
+    const mockAuthService = {
+      auth: {
+        api: {
+          verifyApiKey: vi.fn().mockResolvedValue({
+            valid: true,
+            error: null,
+            key: {
+              id: "key-1",
+              referenceId: "user-1",
+              prefix: "ak_",
+              permissions: { categories: ["read"] }
+            }
+          })
+        }
+      }
+    };
+    const guard = new AuthGuard(
+      // @ts-expect-error - mock services for unit testing
+      mockAuthService,
+      {},
+      mockReflector,
+      { set: vi.fn() }
+    );
+    const mockRequest = { headers: { authorization: "Bearer ak_test123" } };
+    const mockContext = {
+      getHandler: vi.fn(),
+      getClass: vi.fn(),
+      switchToHttp: vi.fn().mockReturnValue({ getRequest: vi.fn().mockReturnValue(mockRequest) })
+    };
+
+    // @ts-expect-error - mock ExecutionContext
+    await expect(guard.canActivate(mockContext)).rejects.toThrow(InsufficientScopeError);
+  });
+
+  it("throws RateLimitedError with Retry-After derived from tryAgainIn", async () => {
+    const mockReflector = {
+      getAllAndOverride: vi.fn((key: string) =>
+        key === "requireScopes" ? { transactions: ["write"] } : false
+      )
+    };
+    const mockAuthService = {
+      auth: {
+        api: {
+          verifyApiKey: vi.fn().mockResolvedValue({
+            valid: false,
+            error: { code: "RATE_LIMITED", details: { tryAgainIn: 30_500 } },
+            key: null
+          })
+        }
+      }
+    };
+    const guard = new AuthGuard(
+      // @ts-expect-error - mock services for unit testing
+      mockAuthService,
+      {},
+      mockReflector,
+      { set: vi.fn() }
+    );
+    const mockRequest = { headers: { authorization: "Bearer ak_test123" } };
+    const mockContext = {
+      getHandler: vi.fn(),
+      getClass: vi.fn(),
+      switchToHttp: vi.fn().mockReturnValue({ getRequest: vi.fn().mockReturnValue(mockRequest) })
+    };
+
+    // @ts-expect-error - mock ExecutionContext
+    const error: unknown = await guard.canActivate(mockContext).catch((caught: unknown) => caught);
+    if (!(error instanceof RateLimitedError)) {
+      throw new Error("expected RateLimitedError");
+    }
+    expect(error.headers).toEqual({ "Retry-After": "31" });
+  });
+
+  it("throws UnauthenticatedError for an invalid/expired/disabled key", async () => {
+    const mockReflector = {
+      getAllAndOverride: vi.fn((key: string) =>
+        key === "requireScopes" ? { transactions: ["write"] } : false
+      )
+    };
+    const mockAuthService = {
+      auth: {
+        api: {
+          verifyApiKey: vi
+            .fn()
+            .mockResolvedValue({ valid: false, error: { code: "KEY_NOT_FOUND" }, key: null })
+        }
+      }
+    };
+    const guard = new AuthGuard(
+      // @ts-expect-error - mock services for unit testing
+      mockAuthService,
+      {},
+      mockReflector,
+      { set: vi.fn() }
+    );
+    const mockRequest = { headers: { authorization: "Bearer ak_test123" } };
+    const mockContext = {
+      getHandler: vi.fn(),
+      getClass: vi.fn(),
+      switchToHttp: vi.fn().mockReturnValue({ getRequest: vi.fn().mockReturnValue(mockRequest) })
     };
 
     // @ts-expect-error - mock ExecutionContext

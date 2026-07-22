@@ -40,6 +40,10 @@ export class ProblemJsonFilter implements ExceptionFilter {
       );
     }
 
+    if (exception instanceof DomainError && exception.headers !== undefined) {
+      response.set(exception.headers);
+    }
+
     response.status(problem.status).type("application/problem+json").send(problem);
   }
 }

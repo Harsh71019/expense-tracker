@@ -22,11 +22,14 @@ import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import {
   AccountIdSchema,
   AccountSchema,
+  ApiKeySchema,
   CategoryIdSchema,
   CategorySchema,
   CategoryRuleIdSchema,
   CategoryRuleSchema,
   CreateAccountSchema,
+  CreateApiKeyResponseSchema,
+  CreateApiKeySchema,
   CreateCategorySchema,
   CreateCategoryRuleSchema,
   CreateTransactionSchema,
@@ -62,6 +65,7 @@ import {
   CreateRecurringRuleSchema,
   RecurringRuleIdSchema,
   RecurringRuleSchema,
+  UpdateApiKeySchema,
   UpdateRecurringRuleSchema
 } from "@vyaya/shared";
 import { z } from "zod";
@@ -110,6 +114,7 @@ const problemResponses = {
   500: { description: "Internal error", ...json(ProblemDetails) }
 };
 const secured = [{ cookieAuth: [] }];
+const securedByKeyOrCookie = [{ cookieAuth: [] }, { bearerAuth: [] }];
 const idempotencyKeyHeaders = z.object({ "Idempotency-Key": z.string().uuid() });
 const replayedHeaders = z.object({ "Idempotency-Replayed": z.literal("true") });
 const optionalReplayHeaders = z.object({
@@ -119,7 +124,7 @@ const optionalReplayHeaders = z.object({
 registry.registerPath({
   method: "get",
   path: "/v1/accounts",
-  security: secured,
+  security: securedByKeyOrCookie,
   responses: { 200: { description: "Accounts", ...json(z.array(Account)) }, ...problemResponses }
 });
 registry.registerPath({
@@ -222,7 +227,7 @@ registry.registerPath({
 registry.registerPath({
   method: "get",
   path: "/v1/categories",
-  security: secured,
+  security: securedByKeyOrCookie,
   responses: { 200: { description: "Categories", ...json(z.array(Category)) }, ...problemResponses }
 });
 registry.registerPath({
@@ -308,7 +313,7 @@ registry.registerPath({
 registry.registerPath({
   method: "post",
   path: "/v1/transactions",
-  security: secured,
+  security: securedByKeyOrCookie,
   request: {
     body: json(CreateTransactionSchema),
     headers: z.object({ "Idempotency-Key": z.string().uuid() })
@@ -595,10 +600,51 @@ registry.registerPath({
   }
 });
 
+registry.registerPath({
+  method: "post",
+  path: "/v1/api-keys",
+  security: secured,
+  request: { body: json(CreateApiKeySchema) },
+  responses: {
+    201: {
+      description: "Created API key (raw key shown once)",
+      ...json(CreateApiKeyResponseSchema)
+    },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "get",
+  path: "/v1/api-keys",
+  security: secured,
+  responses: {
+    200: { description: "API keys", ...json(z.array(ApiKeySchema)) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "patch",
+  path: "/v1/api-keys/{keyId}",
+  security: secured,
+  request: { params: z.object({ keyId: z.string() }), body: json(UpdateApiKeySchema) },
+  responses: { 200: { description: "Updated API key", ...json(ApiKeySchema) }, ...problemResponses }
+});
+registry.registerPath({
+  method: "delete",
+  path: "/v1/api-keys/{keyId}",
+  security: secured,
+  request: { params: z.object({ keyId: z.string() }) },
+  responses: { 204: { description: "API key revoked" }, ...problemResponses }
+});
+
 registry.registerComponent("securitySchemes", "cookieAuth", {
   type: "apiKey",
   in: "cookie",
   name: "better-auth.session_token"
+});
+registry.registerComponent("securitySchemes", "bearerAuth", {
+  type: "http",
+  scheme: "bearer"
 });
 
 export { registry };

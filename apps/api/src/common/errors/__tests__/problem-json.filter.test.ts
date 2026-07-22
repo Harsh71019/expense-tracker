@@ -7,6 +7,7 @@ import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 
 import { EntityNotFoundError } from "../entity-not-found.error.js";
+import { RateLimitedError } from "../rate-limited.error.js";
 import { TransactionNotReversibleError } from "../transaction-not-reversible.error.js";
 import { ProblemJsonFilter } from "../problem-json.filter.js";
 
@@ -15,7 +16,8 @@ function mockHost(reqId: string) {
     getHeader: vi.fn().mockReturnValue(reqId),
     status: vi.fn(),
     type: vi.fn(),
-    send: vi.fn()
+    send: vi.fn(),
+    set: vi.fn()
   };
   response.status.mockReturnValue(response);
   response.type.mockReturnValue(response);
@@ -65,6 +67,18 @@ describe("ProblemJsonFilter", () => {
       retryable: false,
       reqId: "req-2"
     });
+  });
+
+  it("applies headers from a DomainError that carries them", () => {
+    // @ts-expect-error - mock Logger for unit testing
+    const filter = new ProblemJsonFilter(logger);
+    const { host, response } = mockHost("req-8");
+
+    // @ts-expect-error - mock ArgumentsHost for unit testing
+    filter.catch(new RateLimitedError(30), host);
+
+    expect(response.set).toHaveBeenCalledWith({ "Retry-After": "30" });
+    expect(response.status).toHaveBeenCalledWith(429);
   });
 
   it("maps TransactionNotReversibleError to 409 with txn.already_reversed", () => {

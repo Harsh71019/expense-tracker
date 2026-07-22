@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import type { AuthenticatedUser } from "../auth/auth.guard.js";
 import { CurrentUser } from "../auth/current-user.decorator.js";
+import { RequireScopes } from "../auth/require-scopes.decorator.js";
 import { CategoryService } from "./category.service.js";
 import { CategoryMutationService } from "./category-mutation.service.js";
 
@@ -32,6 +33,7 @@ export class CategoryController {
     return result.result;
   }
   @Get()
+  @RequireScopes({ categories: ["read"] })
   list(@CurrentUser() user: AuthenticatedUser): Promise<Category[]> {
     return this.categories.list(user.id);
   }

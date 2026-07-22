@@ -23,6 +23,12 @@ const settingsLinks = [
   { href: "/assets", label: "Assets", description: "Net worth and valuations", icon: "◈" },
   { href: "/transfers", label: "Transfers", description: "Move between accounts", icon: "⤢" },
   { href: "/imports", label: "Imports", description: "CSV statement imports", icon: "↧" },
+  {
+    href: "/settings/api-keys",
+    label: "API keys",
+    description: "Tokens for external apps",
+    icon: "⚿"
+  },
   { href: "/export", label: "Export", description: "Download transactions as CSV", icon: "↥" }
 ] as const;
 

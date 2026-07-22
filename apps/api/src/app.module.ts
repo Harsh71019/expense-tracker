@@ -19,6 +19,7 @@ import { RedisService } from "./common/redis/redis.service.js";
 import { RedisThrottlerStorage } from "./common/throttler/redis-throttler.storage.js";
 import { AuthModule } from "./auth/auth.module.js";
 import { AccountsModule } from "./accounts/accounts.module.js";
+import { ApiKeysModule } from "./api-keys/api-keys.module.js";
 import { AssetsModule } from "./assets/assets.module.js";
 import { AuditModule } from "./audit/audit.module.js";
 import { CategoriesModule } from "./categories/categories.module.js";
@@ -61,6 +62,7 @@ function isUnthrottledRequest(context: ExecutionContext): boolean {
     UserProfilesModule,
     AuthModule,
     AccountsModule,
+    ApiKeysModule,
     CategoriesModule,
     CategoryRulesModule,
     AuditModule,

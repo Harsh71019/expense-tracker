@@ -5,6 +5,8 @@ export const ErrorCodes = [
   "common.internal",
   "common.dependency_unavailable",
   "auth.unauthenticated",
+  "auth.insufficient_scope",
+  "auth.rate_limited",
   "txn.already_reversed",
   "txn.transfer_metadata_requires_group",
   "category.parent_kind_mismatch",

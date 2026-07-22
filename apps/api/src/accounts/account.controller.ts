@@ -3,6 +3,7 @@ import { AccountIdSchema, CreateAccountSchema, type Account } from "@vyaya/share
 
 import type { AuthenticatedUser } from "../auth/auth.guard.js";
 import { CurrentUser } from "../auth/current-user.decorator.js";
+import { RequireScopes } from "../auth/require-scopes.decorator.js";
 import { AccountService } from "./account.service.js";
 import { AccountMutationService } from "./account-mutation.service.js";
 import type { Response } from "express";
@@ -33,6 +34,7 @@ export class AccountController {
   }
 
   @Get()
+  @RequireScopes({ accounts: ["read"] })
   list(@CurrentUser() user: AuthenticatedUser): Promise<Account[]> {
     return this.accounts.list(user.id);
   }

@@ -29,6 +29,7 @@
     "@nestjs/throttler": "^6.5.0",
     "@vyaya/shared": "workspace:*",
     "better-auth": "latest",
+    "@better-auth/api-key": "latest",
     "bullmq": "latest",
     "cookie-parser": "latest",
     "csv-parse": "latest",

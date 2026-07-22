@@ -1,5 +1,6 @@
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { betterAuth } from "better-auth/minimal";
+import { apiKey } from "@better-auth/api-key";
 import { Inject, Injectable } from "@nestjs/common";
 import { Logger } from "nestjs-pino";
 
@@ -60,7 +61,16 @@ export function createAuth(
         "/sign-in/email": { window: 60, max: 10 },
         "/sign-up/email": { window: 60, max: 10 }
       }
-    }
+    },
+    plugins: [
+      apiKey({
+        references: "user",
+        requireName: true,
+        defaultPrefix: "ak_",
+        keyExpiration: { defaultExpiresIn: null },
+        rateLimit: { enabled: true, timeWindow: 60_000, maxRequests: 100 }
+      })
+    ]
   });
 }
 

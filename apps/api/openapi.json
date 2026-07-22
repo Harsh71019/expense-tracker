@@ -15,6 +15,10 @@
         "type": "apiKey",
         "in": "cookie",
         "name": "better-auth.session_token"
+      },
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer"
       }
     },
     "schemas": {
@@ -37,7 +41,7 @@
           },
           "id": {
             "type": "string",
-            "pattern": "^[a-f\\d]{24}$/i"
+            "format": "uuid"
           },
           "userId": {
             "type": "string",
@@ -106,6 +110,8 @@
               "common.internal",
               "common.dependency_unavailable",
               "auth.unauthenticated",
+              "auth.insufficient_scope",
+              "auth.rate_limited",
               "txn.already_reversed",
               "txn.transfer_metadata_requires_group",
               "category.parent_kind_mismatch",
@@ -163,7 +169,7 @@
         "properties": {
           "id": {
             "type": "string",
-            "pattern": "^[a-f\\d]{24}$/i"
+            "format": "uuid"
           },
           "userId": {
             "type": "string",
@@ -171,7 +177,7 @@
           },
           "accountId": {
             "type": "string",
-            "pattern": "^[a-f\\d]{24}$/i"
+            "format": "uuid"
           },
           "filename": {
             "type": "string",
@@ -321,11 +327,11 @@
               "properties": {
                 "id": {
                   "type": "string",
-                  "pattern": "^[a-f\\d]{24}$/i"
+                  "format": "uuid"
                 },
                 "batchId": {
                   "type": "string",
-                  "pattern": "^[a-f\\d]{24}$/i"
+                  "format": "uuid"
                 },
                 "rowNumber": {
                   "type": "integer",
@@ -363,7 +369,7 @@
                 },
                 "suggestedCategoryId": {
                   "type": "string",
-                  "pattern": "^[a-f\\d]{24}$/i"
+                  "format": "uuid"
                 },
                 "problems": {
                   "type": "array",
@@ -413,11 +419,11 @@
         "properties": {
           "id": {
             "type": "string",
-            "pattern": "^[a-f\\d]{24}$/i"
+            "format": "uuid"
           },
           "batchId": {
             "type": "string",
-            "pattern": "^[a-f\\d]{24}$/i"
+            "format": "uuid"
           },
           "rowNumber": {
             "type": "integer",
@@ -455,7 +461,7 @@
           },
           "suggestedCategoryId": {
             "type": "string",
-            "pattern": "^[a-f\\d]{24}$/i"
+            "format": "uuid"
           },
           "problems": {
             "type": "array",
@@ -486,7 +492,7 @@
           },
           "parentId": {
             "type": "string",
-            "pattern": "^[a-f\\d]{24}$/i"
+            "format": "uuid"
           },
           "icon": {
             "type": "string",
@@ -499,7 +505,7 @@
           },
           "id": {
             "type": "string",
-            "pattern": "^[a-f\\d]{24}$/i"
+            "format": "uuid"
           },
           "userId": {
             "type": "string",
@@ -529,11 +535,11 @@
           },
           "categoryId": {
             "type": "string",
-            "pattern": "^[a-f\\d]{24}$/i"
+            "format": "uuid"
           },
           "id": {
             "type": "string",
-            "pattern": "^[a-f\\d]{24}$/i"
+            "format": "uuid"
           },
           "userId": {
             "type": "string",
@@ -560,11 +566,11 @@
               "properties": {
                 "accountId": {
                   "type": "string",
-                  "pattern": "^[a-f\\d]{24}$/i"
+                  "format": "uuid"
                 },
                 "categoryId": {
                   "type": "string",
-                  "pattern": "^[a-f\\d]{24}$/i"
+                  "format": "uuid"
                 },
                 "type": {
                   "type": "string",
@@ -596,7 +602,7 @@
                 },
                 "id": {
                   "type": "string",
-                  "pattern": "^[a-f\\d]{24}$/i"
+                  "format": "uuid"
                 },
                 "userId": {
                   "type": "string",
@@ -620,15 +626,15 @@
                 },
                 "reversalOf": {
                   "type": "string",
-                  "pattern": "^[a-f\\d]{24}$/i"
+                  "format": "uuid"
                 },
                 "reversedBy": {
                   "type": "string",
-                  "pattern": "^[a-f\\d]{24}$/i"
+                  "format": "uuid"
                 },
                 "transferGroupId": {
                   "type": "string",
-                  "pattern": "^[a-f\\d]{24}$/i"
+                  "format": "uuid"
                 },
                 "createdAt": {
                   "type": ["string", "null"],
@@ -679,11 +685,11 @@
         "properties": {
           "accountId": {
             "type": "string",
-            "pattern": "^[a-f\\d]{24}$/i"
+            "format": "uuid"
           },
           "categoryId": {
             "type": "string",
-            "pattern": "^[a-f\\d]{24}$/i"
+            "format": "uuid"
           },
           "type": {
             "type": "string",
@@ -715,7 +721,7 @@
           },
           "id": {
             "type": "string",
-            "pattern": "^[a-f\\d]{24}$/i"
+            "format": "uuid"
           },
           "userId": {
             "type": "string",
@@ -739,15 +745,15 @@
           },
           "reversalOf": {
             "type": "string",
-            "pattern": "^[a-f\\d]{24}$/i"
+            "format": "uuid"
           },
           "reversedBy": {
             "type": "string",
-            "pattern": "^[a-f\\d]{24}$/i"
+            "format": "uuid"
           },
           "transferGroupId": {
             "type": "string",
-            "pattern": "^[a-f\\d]{24}$/i"
+            "format": "uuid"
           },
           "createdAt": {
             "type": ["string", "null"],
@@ -778,18 +784,18 @@
         "properties": {
           "transferGroupId": {
             "type": "string",
-            "pattern": "^[a-f\\d]{24}$/i"
+            "format": "uuid"
           },
           "fromTransaction": {
             "type": "object",
             "properties": {
               "accountId": {
                 "type": "string",
-                "pattern": "^[a-f\\d]{24}$/i"
+                "format": "uuid"
               },
               "categoryId": {
                 "type": "string",
-                "pattern": "^[a-f\\d]{24}$/i"
+                "format": "uuid"
               },
               "type": {
                 "type": "string",
@@ -821,7 +827,7 @@
               },
               "id": {
                 "type": "string",
-                "pattern": "^[a-f\\d]{24}$/i"
+                "format": "uuid"
               },
               "userId": {
                 "type": "string",
@@ -845,15 +851,15 @@
               },
               "reversalOf": {
                 "type": "string",
-                "pattern": "^[a-f\\d]{24}$/i"
+                "format": "uuid"
               },
               "reversedBy": {
                 "type": "string",
-                "pattern": "^[a-f\\d]{24}$/i"
+                "format": "uuid"
               },
               "transferGroupId": {
                 "type": "string",
-                "pattern": "^[a-f\\d]{24}$/i"
+                "format": "uuid"
               },
               "createdAt": {
                 "type": ["string", "null"],
@@ -884,11 +890,11 @@
             "properties": {
               "accountId": {
                 "type": "string",
-                "pattern": "^[a-f\\d]{24}$/i"
+                "format": "uuid"
               },
               "categoryId": {
                 "type": "string",
-                "pattern": "^[a-f\\d]{24}$/i"
+                "format": "uuid"
               },
               "type": {
                 "type": "string",
@@ -920,7 +926,7 @@
               },
               "id": {
                 "type": "string",
-                "pattern": "^[a-f\\d]{24}$/i"
+                "format": "uuid"
               },
               "userId": {
                 "type": "string",
@@ -944,15 +950,15 @@
               },
               "reversalOf": {
                 "type": "string",
-                "pattern": "^[a-f\\d]{24}$/i"
+                "format": "uuid"
               },
               "reversedBy": {
                 "type": "string",
-                "pattern": "^[a-f\\d]{24}$/i"
+                "format": "uuid"
               },
               "transferGroupId": {
                 "type": "string",
-                "pattern": "^[a-f\\d]{24}$/i"
+                "format": "uuid"
               },
               "createdAt": {
                 "type": ["string", "null"],
@@ -986,7 +992,7 @@
         "properties": {
           "transferGroupId": {
             "type": "string",
-            "pattern": "^[a-f\\d]{24}$/i"
+            "format": "uuid"
           },
           "legs": {
             "type": "array",
@@ -996,11 +1002,11 @@
                 "properties": {
                   "accountId": {
                     "type": "string",
-                    "pattern": "^[a-f\\d]{24}$/i"
+                    "format": "uuid"
                   },
                   "categoryId": {
                     "type": "string",
-                    "pattern": "^[a-f\\d]{24}$/i"
+                    "format": "uuid"
                   },
                   "type": {
                     "type": "string",
@@ -1032,7 +1038,7 @@
                   },
                   "id": {
                     "type": "string",
-                    "pattern": "^[a-f\\d]{24}$/i"
+                    "format": "uuid"
                   },
                   "userId": {
                     "type": "string",
@@ -1056,15 +1062,15 @@
                   },
                   "reversalOf": {
                     "type": "string",
-                    "pattern": "^[a-f\\d]{24}$/i"
+                    "format": "uuid"
                   },
                   "reversedBy": {
                     "type": "string",
-                    "pattern": "^[a-f\\d]{24}$/i"
+                    "format": "uuid"
                   },
                   "transferGroupId": {
                     "type": "string",
-                    "pattern": "^[a-f\\d]{24}$/i"
+                    "format": "uuid"
                   },
                   "createdAt": {
                     "type": ["string", "null"],
@@ -1095,11 +1101,11 @@
                 "properties": {
                   "accountId": {
                     "type": "string",
-                    "pattern": "^[a-f\\d]{24}$/i"
+                    "format": "uuid"
                   },
                   "categoryId": {
                     "type": "string",
-                    "pattern": "^[a-f\\d]{24}$/i"
+                    "format": "uuid"
                   },
                   "type": {
                     "type": "string",
@@ -1131,7 +1137,7 @@
                   },
                   "id": {
                     "type": "string",
-                    "pattern": "^[a-f\\d]{24}$/i"
+                    "format": "uuid"
                   },
                   "userId": {
                     "type": "string",
@@ -1155,15 +1161,15 @@
                   },
                   "reversalOf": {
                     "type": "string",
-                    "pattern": "^[a-f\\d]{24}$/i"
+                    "format": "uuid"
                   },
                   "reversedBy": {
                     "type": "string",
-                    "pattern": "^[a-f\\d]{24}$/i"
+                    "format": "uuid"
                   },
                   "transferGroupId": {
                     "type": "string",
-                    "pattern": "^[a-f\\d]{24}$/i"
+                    "format": "uuid"
                   },
                   "createdAt": {
                     "type": ["string", "null"],
@@ -1199,7 +1205,7 @@
         "properties": {
           "id": {
             "type": "string",
-            "pattern": "^[a-f\\d]{24}$/i"
+            "format": "uuid"
           },
           "userId": {
             "type": "string",
@@ -1280,11 +1286,11 @@
           },
           "id": {
             "type": "string",
-            "pattern": "^[a-f\\d]{24}$/i"
+            "format": "uuid"
           },
           "assetId": {
             "type": "string",
-            "pattern": "^[a-f\\d]{24}$/i"
+            "format": "uuid"
           },
           "userId": {
             "type": "string",
@@ -1321,11 +1327,11 @@
                 },
                 "id": {
                   "type": "string",
-                  "pattern": "^[a-f\\d]{24}$/i"
+                  "format": "uuid"
                 },
                 "assetId": {
                   "type": "string",
-                  "pattern": "^[a-f\\d]{24}$/i"
+                  "format": "uuid"
                 },
                 "userId": {
                   "type": "string",
@@ -1377,7 +1383,7 @@
               "properties": {
                 "accountId": {
                   "type": "string",
-                  "pattern": "^[a-f\\d]{24}$/i"
+                  "format": "uuid"
                 },
                 "name": {
                   "type": "string"
@@ -1398,7 +1404,7 @@
               "properties": {
                 "assetId": {
                   "type": "string",
-                  "pattern": "^[a-f\\d]{24}$/i"
+                  "format": "uuid"
                 },
                 "name": {
                   "type": "string"
@@ -1448,7 +1454,7 @@
               "properties": {
                 "categoryId": {
                   "type": "string",
-                  "pattern": "^[a-f\\d]{24}$/i"
+                  "format": "uuid"
                 },
                 "spentMinor": {
                   "type": "integer",
@@ -1473,7 +1479,7 @@
               "properties": {
                 "accountId": {
                   "type": "string",
-                  "pattern": "^[a-f\\d]{24}$/i"
+                  "format": "uuid"
                 },
                 "netMinor": {
                   "type": "integer"
@@ -1541,7 +1547,7 @@
         "properties": {
           "id": {
             "type": "string",
-            "pattern": "^[a-f\\d]{24}$/i"
+            "format": "uuid"
           },
           "userId": {
             "type": "string",
@@ -1552,11 +1558,11 @@
             "properties": {
               "accountId": {
                 "type": "string",
-                "pattern": "^[a-f\\d]{24}$/i"
+                "format": "uuid"
               },
               "categoryId": {
                 "type": "string",
-                "pattern": "^[a-f\\d]{24}$/i"
+                "format": "uuid"
               },
               "type": {
                 "type": "string",
@@ -1634,6 +1640,9 @@
         "security": [
           {
             "cookieAuth": []
+          },
+          {
+            "bearerAuth": []
           }
         ],
         "responses": {
@@ -1926,7 +1935,7 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^[a-f\\d]{24}$/i"
+              "format": "uuid"
             },
             "required": true,
             "name": "accountId",
@@ -1998,7 +2007,7 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^[a-f\\d]{24}$/i"
+              "format": "uuid"
             },
             "required": true,
             "name": "importBatchId",
@@ -2090,7 +2099,7 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^[a-f\\d]{24}$/i"
+              "format": "uuid"
             },
             "required": true,
             "name": "importBatchId",
@@ -2099,7 +2108,7 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^[a-f\\d]{24}$/i"
+              "format": "uuid"
             },
             "required": true,
             "name": "stagedRowId",
@@ -2117,7 +2126,7 @@
                   },
                   "suggestedCategoryId": {
                     "type": ["string", "null"],
-                    "pattern": "^[a-f\\d]{24}$/i"
+                    "format": "uuid"
                   }
                 }
               }
@@ -2189,7 +2198,7 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^[a-f\\d]{24}$/i"
+              "format": "uuid"
             },
             "required": true,
             "name": "importBatchId",
@@ -2271,7 +2280,7 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^[a-f\\d]{24}$/i"
+              "format": "uuid"
             },
             "required": true,
             "name": "importBatchId",
@@ -2353,7 +2362,7 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^[a-f\\d]{24}$/i"
+              "format": "uuid"
             },
             "required": true,
             "name": "accountId",
@@ -2430,6 +2439,9 @@
         "security": [
           {
             "cookieAuth": []
+          },
+          {
+            "bearerAuth": []
           }
         ],
         "responses": {
@@ -2512,7 +2524,7 @@
                   },
                   "parentId": {
                     "type": "string",
-                    "pattern": "^[a-f\\d]{24}$/i"
+                    "format": "uuid"
                   },
                   "icon": {
                     "type": "string",
@@ -2603,7 +2615,7 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^[a-f\\d]{24}$/i"
+              "format": "uuid"
             },
             "required": true,
             "name": "categoryId",
@@ -2758,7 +2770,7 @@
                   },
                   "categoryId": {
                     "type": "string",
-                    "pattern": "^[a-f\\d]{24}$/i"
+                    "format": "uuid"
                   }
                 },
                 "required": ["pattern", "categoryId"]
@@ -2850,7 +2862,7 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^[a-f\\d]{24}$/i"
+              "format": "uuid"
             },
             "required": true,
             "name": "ruleId",
@@ -2933,7 +2945,7 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^[a-f\\d]{24}$/i"
+              "format": "uuid"
             },
             "required": false,
             "name": "accountId",
@@ -2942,7 +2954,7 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^[a-f\\d]{24}$/i"
+              "format": "uuid"
             },
             "required": false,
             "name": "categoryId",
@@ -3044,6 +3056,9 @@
         "security": [
           {
             "cookieAuth": []
+          },
+          {
+            "bearerAuth": []
           }
         ],
         "parameters": [
@@ -3065,11 +3080,11 @@
                 "properties": {
                   "accountId": {
                     "type": "string",
-                    "pattern": "^[a-f\\d]{24}$/i"
+                    "format": "uuid"
                   },
                   "categoryId": {
                     "type": "string",
-                    "pattern": "^[a-f\\d]{24}$/i"
+                    "format": "uuid"
                   },
                   "type": {
                     "type": "string",
@@ -3170,7 +3185,7 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^[a-f\\d]{24}$/i"
+              "format": "uuid"
             },
             "required": true,
             "name": "transactionId",
@@ -3240,7 +3255,7 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^[a-f\\d]{24}$/i"
+              "format": "uuid"
             },
             "required": true,
             "name": "transactionId",
@@ -3278,7 +3293,7 @@
                   },
                   "categoryId": {
                     "type": ["string", "null"],
-                    "pattern": "^[a-f\\d]{24}$/i"
+                    "format": "uuid"
                   }
                 }
               }
@@ -3369,7 +3384,7 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^[a-f\\d]{24}$/i"
+              "format": "uuid"
             },
             "required": true,
             "name": "transactionId",
@@ -3475,11 +3490,11 @@
                 "properties": {
                   "fromAccountId": {
                     "type": "string",
-                    "pattern": "^[a-f\\d]{24}$/i"
+                    "format": "uuid"
                   },
                   "toAccountId": {
                     "type": "string",
-                    "pattern": "^[a-f\\d]{24}$/i"
+                    "format": "uuid"
                   },
                   "amountMinor": {
                     "type": "integer",
@@ -3582,7 +3597,7 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^[a-f\\d]{24}$/i"
+              "format": "uuid"
             },
             "required": true,
             "name": "transferGroupId",
@@ -3846,7 +3861,7 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^[a-f\\d]{24}$/i"
+              "format": "uuid"
             },
             "required": true,
             "name": "assetId",
@@ -3929,7 +3944,7 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^[a-f\\d]{24}$/i"
+              "format": "uuid"
             },
             "required": true,
             "name": "assetId",
@@ -4053,7 +4068,7 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^[a-f\\d]{24}$/i"
+              "format": "uuid"
             },
             "required": true,
             "name": "assetId",
@@ -4459,11 +4474,11 @@
                     "properties": {
                       "accountId": {
                         "type": "string",
-                        "pattern": "^[a-f\\d]{24}$/i"
+                        "format": "uuid"
                       },
                       "categoryId": {
                         "type": "string",
-                        "pattern": "^[a-f\\d]{24}$/i"
+                        "format": "uuid"
                       },
                       "type": {
                         "type": "string",
@@ -4590,7 +4605,7 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^[a-f\\d]{24}$/i"
+              "format": "uuid"
             },
             "required": true,
             "name": "ruleId",
@@ -4617,11 +4632,11 @@
                     "properties": {
                       "accountId": {
                         "type": "string",
-                        "pattern": "^[a-f\\d]{24}$/i"
+                        "format": "uuid"
                       },
                       "categoryId": {
                         "type": "string",
-                        "pattern": "^[a-f\\d]{24}$/i"
+                        "format": "uuid"
                       },
                       "type": {
                         "type": "string",
@@ -4692,6 +4707,504 @@
           },
           "404": {
             "description": "Recurring rule, account, or category not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/api-keys": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "permissions": {
+                    "type": "object",
+                    "properties": {
+                      "transactions": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "enum": ["write"]
+                        }
+                      },
+                      "categories": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "enum": ["read"]
+                        }
+                      },
+                      "accounts": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "enum": ["read"]
+                        }
+                      }
+                    }
+                  },
+                  "expiresAt": {
+                    "type": ["string", "null"],
+                    "format": "date-time"
+                  }
+                },
+                "required": ["name", "permissions"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created API key (raw key shown once)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "start": {
+                      "type": ["string", "null"]
+                    },
+                    "permissions": {
+                      "type": ["object", "null"],
+                      "properties": {
+                        "transactions": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": ["write"]
+                          }
+                        },
+                        "categories": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": ["read"]
+                          }
+                        },
+                        "accounts": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": ["read"]
+                          }
+                        }
+                      }
+                    },
+                    "enabled": {
+                      "type": "boolean"
+                    },
+                    "createdAt": {
+                      "type": ["string", "null"],
+                      "format": "date-time"
+                    },
+                    "expiresAt": {
+                      "type": ["string", "null"],
+                      "format": "date-time"
+                    },
+                    "lastRequest": {
+                      "type": ["string", "null"],
+                      "format": "date-time"
+                    },
+                    "key": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "start",
+                    "permissions",
+                    "enabled",
+                    "createdAt",
+                    "expiresAt",
+                    "lastRequest",
+                    "key"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "API keys",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "start": {
+                        "type": ["string", "null"]
+                      },
+                      "permissions": {
+                        "type": ["object", "null"],
+                        "properties": {
+                          "transactions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": ["write"]
+                            }
+                          },
+                          "categories": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": ["read"]
+                            }
+                          },
+                          "accounts": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": ["read"]
+                            }
+                          }
+                        }
+                      },
+                      "enabled": {
+                        "type": "boolean"
+                      },
+                      "createdAt": {
+                        "type": ["string", "null"],
+                        "format": "date-time"
+                      },
+                      "expiresAt": {
+                        "type": ["string", "null"],
+                        "format": "date-time"
+                      },
+                      "lastRequest": {
+                        "type": ["string", "null"],
+                        "format": "date-time"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "name",
+                      "start",
+                      "permissions",
+                      "enabled",
+                      "createdAt",
+                      "expiresAt",
+                      "lastRequest"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/api-keys/{keyId}": {
+      "patch": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "keyId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "permissions": {
+                    "type": "object",
+                    "properties": {
+                      "transactions": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "enum": ["write"]
+                        }
+                      },
+                      "categories": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "enum": ["read"]
+                        }
+                      },
+                      "accounts": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "enum": ["read"]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "start": {
+                      "type": ["string", "null"]
+                    },
+                    "permissions": {
+                      "type": ["object", "null"],
+                      "properties": {
+                        "transactions": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": ["write"]
+                          }
+                        },
+                        "categories": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": ["read"]
+                          }
+                        },
+                        "accounts": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": ["read"]
+                          }
+                        }
+                      }
+                    },
+                    "enabled": {
+                      "type": "boolean"
+                    },
+                    "createdAt": {
+                      "type": ["string", "null"],
+                      "format": "date-time"
+                    },
+                    "expiresAt": {
+                      "type": ["string", "null"],
+                      "format": "date-time"
+                    },
+                    "lastRequest": {
+                      "type": ["string", "null"],
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "start",
+                    "permissions",
+                    "enabled",
+                    "createdAt",
+                    "expiresAt",
+                    "lastRequest"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "keyId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "API key revoked"
+          },
+          "401": {
+            "description": "Unauthenticated",
             "content": {
               "application/json": {
                 "schema": {

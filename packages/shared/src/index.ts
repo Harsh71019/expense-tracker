@@ -6,6 +6,22 @@ export {
 } from "./account.js";
 export type { Account, AccountId, AccountType, CreateAccount } from "./account.js";
 export {
+  ApiKeyIdSchema,
+  ApiKeyPermissionsSchema,
+  ApiKeySchema,
+  CreateApiKeyResponseSchema,
+  CreateApiKeySchema,
+  UpdateApiKeySchema
+} from "./api-key.js";
+export type {
+  ApiKey,
+  ApiKeyId,
+  ApiKeyPermissions,
+  CreateApiKey,
+  CreateApiKeyResponse,
+  UpdateApiKey
+} from "./api-key.js";
+export {
   AssetIdSchema,
   AssetKindSchema,
   AssetSchema,

@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Money } from "@/components/ui/money";
 import { useAccounts } from "@/features/accounts";
-import { glyphFor, tint, useCategories } from "@/features/categories";
+import { glyphFor, IconGlyph, tint, useCategories } from "@/features/categories";
 
 import { useRecurringRules, useUpdateRecurringRule } from "../hooks/use-recurring-rules";
 import { describeSchedule, parseSchedule } from "../model/schedule";
@@ -199,11 +199,11 @@ function RecurringRuleCard({
         <div className="flex min-w-0 items-start gap-4">
           <span
             style={iconStyle}
-            className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-border text-lg ${
+            className={`grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-xl border border-border text-lg ${
               category?.color === undefined ? "bg-surface-muted" : ""
             }`}
           >
-            {icon}
+            <IconGlyph value={icon} size={20} />
           </span>
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">

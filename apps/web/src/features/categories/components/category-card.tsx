@@ -4,6 +4,7 @@ import type { Category } from "@vyaya/shared";
 import type { CSSProperties, ReactNode } from "react";
 
 import { glyphFor, lighten, tint } from "../model/palette";
+import { IconGlyph } from "./icon-glyph";
 
 const dateFormatter = new Intl.DateTimeFormat("en-IN", {
   day: "2-digit",
@@ -35,14 +36,14 @@ export function CategoryCard({ parent, subcategories, onArchive }: CategoryCardP
       <div className="flex items-start gap-4">
         <div
           style={swatchStyle(parent.color)}
-          className={`grid h-14 w-14 shrink-0 place-items-center rounded-[17px] text-2xl font-semibold ${
+          className={`grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-[17px] text-2xl font-semibold ${
             parent.color === undefined
               ? "bg-accent text-accent-foreground shadow-glow"
               : "text-white"
           }`}
           aria-hidden="true"
         >
-          {glyphFor(parent)}
+          <IconGlyph value={glyphFor(parent)} size={26} />
         </div>
         <div className="min-w-0 flex-1 pt-0.5">
           <h3 className="truncate text-xl font-bold tracking-tight text-foreground">
@@ -79,12 +80,12 @@ export function CategoryCard({ parent, subcategories, onArchive }: CategoryCardP
             >
               <span
                 style={swatchStyle(child.color)}
-                className={`grid h-5.5 w-5.5 place-items-center rounded-full text-xs ${
+                className={`grid h-5.5 w-5.5 place-items-center overflow-hidden rounded-full text-xs ${
                   child.color === undefined ? "bg-accent text-accent-foreground" : "text-white"
                 }`}
                 aria-hidden="true"
               >
-                {glyphFor(child)}
+                <IconGlyph value={glyphFor(child)} size={13} />
               </span>
               <span>{child.name}</span>
               <span className="text-[10px] text-foreground-muted">✕</span>

@@ -1,18 +1,3 @@
-export const ICON_CHOICES = [
-  "🍽",
-  "🛒",
-  "🚕",
-  "💡",
-  "🏠",
-  "⚕",
-  "🎬",
-  "✈",
-  "💰",
-  "📈",
-  "🎁",
-  "☕"
-] as const;
-
 export const COLOR_CHOICES = [
   "#f97316",
   "#3b82f6",

@@ -3,7 +3,7 @@
 import type { Category, CategoryRule } from "@vyaya/shared";
 import type { CSSProperties, ReactNode } from "react";
 
-import { glyphFor, lighten } from "@/features/categories";
+import { glyphFor, IconGlyph, lighten } from "@/features/categories";
 
 const dateFormatter = new Intl.DateTimeFormat("en-IN", {
   day: "2-digit",
@@ -36,12 +36,12 @@ export function RuleRow({ rule, category, onDelete }: RuleRowProps): ReactNode {
         <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface-muted py-1 pr-2.5 pl-1.5 text-[13px] font-semibold text-foreground">
           <span
             style={dotStyle(category?.color)}
-            className={`grid h-5 w-5 place-items-center rounded-full text-[11px] ${
+            className={`grid h-5 w-5 place-items-center overflow-hidden rounded-full text-[11px] ${
               category?.color === undefined ? "bg-accent text-accent-foreground" : "text-white"
             }`}
             aria-hidden="true"
           >
-            {category === undefined ? "?" : glyphFor(category)}
+            <IconGlyph value={category === undefined ? "?" : glyphFor(category)} size={11} />
           </span>
           {categoryName}
         </span>

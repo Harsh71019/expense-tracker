@@ -1,7 +1,7 @@
 import { formatMinor, type Category, type MonthlyRollup } from "@vyaya/shared";
 import type { CSSProperties, ReactNode } from "react";
 
-import { tint } from "@/features/categories";
+import { IconGlyph, tint } from "@/features/categories";
 
 import { rollupCategoryMeta } from "../model/rollup-category";
 
@@ -32,10 +32,10 @@ export function CategoryBreakdownPanel({
               <div className="mb-1.5 flex items-center gap-2.5">
                 <span
                   style={iconStyle}
-                  className="grid h-6.5 w-6.5 shrink-0 place-items-center rounded-lg text-sm"
+                  className="grid h-6.5 w-6.5 shrink-0 place-items-center overflow-hidden rounded-lg text-sm"
                   aria-hidden="true"
                 >
-                  {meta.icon}
+                  <IconGlyph value={meta.icon} size={14} />
                 </span>
                 <span className="text-sm font-semibold text-foreground">{meta.name}</span>
                 <span className="rounded-[5px] bg-surface-muted px-1.5 py-0.5 font-mono text-[11px] text-foreground-muted">

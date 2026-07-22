@@ -15,7 +15,9 @@ import { Input } from "@/components/ui/input";
 import { ValidationError } from "@/lib/errors";
 
 import { useCreateCategory } from "../hooks/use-category-mutations";
-import { COLOR_CHOICES, ICON_CHOICES } from "../model/palette";
+import { IconGlyph } from "./icon-glyph";
+import { ICON_CHOICES } from "../model/icon-registry";
+import { COLOR_CHOICES } from "../model/palette";
 
 const selectClasses =
   "w-full rounded-lg border border-border bg-surface-muted px-3.5 py-2.5 text-sm font-medium text-foreground transition-colors duration-150 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30";
@@ -214,19 +216,20 @@ export function CreateCategorySheet({
               >
                 ∅
               </button>
-              {ICON_CHOICES.map((glyph) => (
+              {ICON_CHOICES.map((key) => (
                 <button
-                  key={glyph}
+                  key={key}
                   type="button"
-                  aria-pressed={icon === glyph}
-                  onClick={() => setIcon(glyph)}
-                  className={`grid h-10 w-10 place-items-center rounded-lg border text-lg ${
-                    icon === glyph
-                      ? "border-accent bg-accent-glow"
-                      : "border-border bg-surface-muted"
+                  aria-label={key}
+                  aria-pressed={icon === key}
+                  onClick={() => setIcon(key)}
+                  className={`grid h-10 w-10 place-items-center rounded-lg border ${
+                    icon === key
+                      ? "border-accent bg-accent-glow text-accent"
+                      : "border-border bg-surface-muted text-foreground-muted"
                   }`}
                 >
-                  {glyph}
+                  <IconGlyph value={key} size={20} />
                 </button>
               ))}
             </div>
@@ -270,11 +273,11 @@ export function CreateCategorySheet({
             <div className="mt-2.5 flex items-center gap-3">
               <span
                 style={color === "" ? undefined : { backgroundColor: `${color}29` }}
-                className={`grid h-10 w-10 place-items-center rounded-lg text-base font-semibold text-foreground ${
+                className={`grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-lg text-base font-semibold text-foreground ${
                   color === "" ? "bg-surface-elevated" : ""
                 }`}
               >
-                {previewGlyph}
+                <IconGlyph value={previewGlyph} size={20} />
               </span>
               <span className="text-sm font-semibold text-foreground">
                 {name.trim() || "Category name"}

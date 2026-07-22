@@ -17,11 +17,13 @@ vi.mock("../hooks/use-recurring-rules", () => ({
 vi.mock("@/features/accounts", () => ({
   useAccounts: (accounts?: Account[]) => ({ data: accounts ?? [] })
 }));
-vi.mock("@/features/categories", () => ({
-  useCategories: (categories?: Category[]) => ({ data: categories ?? [] }),
-  glyphFor: (category: Category) => category.icon ?? category.name.charAt(0),
-  tint: () => "rgba(249, 115, 22, 0.16)"
-}));
+vi.mock("@/features/categories", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/categories")>();
+  return {
+    ...actual,
+    useCategories: (categories?: Category[]) => ({ data: categories ?? [] })
+  };
+});
 vi.mock("./recurring-rule-drawer", () => ({
   RecurringRuleDrawer: ({ rule }: { rule?: RecurringRule }) => (
     <div role="dialog">{rule === undefined ? "New recurring rule" : "Edit recurring rule"}</div>

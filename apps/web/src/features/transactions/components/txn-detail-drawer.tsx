@@ -7,7 +7,7 @@ import type { ReactNode } from "react";
 
 import { Money } from "@/components/ui/money";
 import { useAccounts } from "@/features/accounts";
-import { useCategories } from "@/features/categories";
+import { IconGlyph, useCategories } from "@/features/categories";
 
 import { useReverseTxn } from "../hooks/use-reverse-txn";
 import { useTxn, useUpdateTxn } from "../hooks/use-txn";
@@ -96,8 +96,8 @@ export function TxnDetailDrawer({
         >
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-3">
-              <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-border bg-surface-muted text-xl">
-                {categoryIcon(category, isIncome)}
+              <span className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-xl border border-border bg-surface-muted text-xl">
+                <IconGlyph value={categoryIcon(category, isIncome)} size={22} />
               </span>
               <div>
                 <p

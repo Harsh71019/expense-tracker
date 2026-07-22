@@ -18,9 +18,10 @@ vi.mock("next/navigation", () => ({
 vi.mock("@/features/accounts", () => ({
   useAccounts: () => ({ data: [] })
 }));
-vi.mock("@/features/categories", () => ({
-  useCategories: () => ({ data: [] })
-}));
+vi.mock("@/features/categories", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/categories")>();
+  return { ...actual, useCategories: () => ({ data: [] }) };
+});
 vi.mock("@/features/transfers/hooks/use-transfers", () => ({
   useReverseTransfer: () => ({ mutate: vi.fn(), isPending: false })
 }));

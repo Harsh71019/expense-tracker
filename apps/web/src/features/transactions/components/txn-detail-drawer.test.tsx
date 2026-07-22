@@ -16,7 +16,10 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@/features/accounts", () => ({ useAccounts: () => ({ data: mocks.accounts }) }));
-vi.mock("@/features/categories", () => ({ useCategories: () => ({ data: mocks.categories }) }));
+vi.mock("@/features/categories", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/categories")>();
+  return { ...actual, useCategories: () => ({ data: mocks.categories }) };
+});
 vi.mock("../hooks/use-reverse-txn", () => ({
   useReverseTxn: () => ({ mutate: mocks.reverseMutate, isPending: mocks.reversePending })
 }));

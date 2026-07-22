@@ -4,6 +4,7 @@ import type { Category, Transaction, TransactionSource } from "@vyaya/shared";
 import type { ReactNode } from "react";
 
 import { Money } from "@/components/ui/money";
+import { IconGlyph } from "@/features/categories";
 
 export const TXN_ROW_GRID = "grid grid-cols-[2.4fr_1fr_1fr_1.1fr] items-center gap-4";
 
@@ -41,8 +42,8 @@ export function TxnRow({ transaction, category, onOpen }: TxnRowProps): ReactNod
       }`}
     >
       <div className="flex min-w-0 items-center gap-3">
-        <span className="grid h-9.5 w-9.5 shrink-0 place-items-center rounded-[10px] border border-border bg-surface-muted text-base">
-          {icon}
+        <span className="grid h-9.5 w-9.5 shrink-0 place-items-center overflow-hidden rounded-[10px] border border-border bg-surface-muted text-base">
+          <IconGlyph value={icon} />
         </span>
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">

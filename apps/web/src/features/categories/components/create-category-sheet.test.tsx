@@ -69,7 +69,7 @@ describe("CreateCategorySheet", () => {
 
     await user.type(screen.getByLabelText("Name"), "Groceries: Meat");
     await user.selectOptions(screen.getByRole("combobox"), groceries.id);
-    await user.click(screen.getByRole("button", { name: "🍽" }));
+    await user.click(screen.getByRole("button", { name: "utensils" }));
     await user.click(screen.getByRole("button", { name: "#f97316" }));
     await user.click(screen.getByRole("button", { name: "Create category" }));
 
@@ -77,7 +77,7 @@ describe("CreateCategorySheet", () => {
       name: "Groceries: Meat",
       kind: "expense",
       parentId: groceries.id,
-      icon: "🍽",
+      icon: "utensils",
       color: "#f97316"
     });
     expect(onClose).toHaveBeenCalled();
@@ -118,8 +118,8 @@ describe("CreateCategorySheet", () => {
 
     await user.type(screen.getByLabelText("Name"), "Travel");
 
-    await user.click(screen.getByRole("button", { name: "✈" }));
-    expect(screen.getByRole("button", { name: "✈" })).toHaveAttribute("aria-pressed", "true");
+    await user.click(screen.getByRole("button", { name: "plane" }));
+    expect(screen.getByRole("button", { name: "plane" })).toHaveAttribute("aria-pressed", "true");
     await user.click(screen.getByRole("button", { name: "No icon" }));
     expect(screen.getByRole("button", { name: "No icon" })).toHaveAttribute("aria-pressed", "true");
 

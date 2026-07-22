@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
-import type { ColumnMapping } from "@vyaya/shared";
+import type { ColumnMapping } from "@treasury-ops/shared";
 
 import { AccountRepository } from "../../../src/accounts/account.repository.js";
 import { CategoryRepository } from "../../../src/categories/category.repository.js";

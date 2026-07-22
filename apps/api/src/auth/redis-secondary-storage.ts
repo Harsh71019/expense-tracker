@@ -2,7 +2,7 @@ import type { SecondaryStorage } from "better-auth/db";
 
 import { RedisService } from "../common/redis/redis.service.js";
 
-const keyPrefix = "vyaya:auth:";
+const keyPrefix = "treasury-ops:auth:";
 
 export function createRedisSecondaryStorage(redis: RedisService): SecondaryStorage {
   const namespacedKey = (key: string): string => `${keyPrefix}${key}`;

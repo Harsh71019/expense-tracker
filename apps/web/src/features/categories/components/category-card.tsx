@@ -1,6 +1,6 @@
 "use client";
 
-import type { Category } from "@vyaya/shared";
+import type { Category } from "@treasury-ops/shared";
 import type { CSSProperties, ReactNode } from "react";
 
 import { glyphFor, lighten, tint } from "../model/palette";

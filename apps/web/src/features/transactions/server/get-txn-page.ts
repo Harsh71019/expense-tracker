@@ -2,7 +2,7 @@ import {
   TransactionPageSchema,
   type ListTransactionsQuery,
   type TransactionPage
-} from "@vyaya/shared";
+} from "@treasury-ops/shared";
 import { cache } from "react";
 
 import { debug } from "@/lib/debug";

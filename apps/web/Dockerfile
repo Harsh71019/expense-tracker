@@ -13,7 +13,7 @@ COPY packages/config/package.json packages/config/package.json
 COPY packages/config/tsconfig packages/config/tsconfig
 COPY packages/shared/package.json packages/shared/package.json
 
-RUN --mount=type=cache,id=vyaya-pnpm-store,target=/pnpm/store \
+RUN --mount=type=cache,id=treasury-ops-pnpm-store,target=/pnpm/store \
   pnpm config set store-dir /pnpm/store \
   && pnpm install --frozen-lockfile
 
@@ -21,8 +21,8 @@ COPY apps/web apps/web
 COPY packages/config packages/config
 COPY packages/shared packages/shared
 
-RUN pnpm --filter @vyaya/shared build \
-  && pnpm --filter @vyaya/web build
+RUN pnpm --filter @treasury-ops/shared build \
+  && pnpm --filter @treasury-ops/web build
 
 FROM gcr.io/distroless/nodejs24-debian12:nonroot
 

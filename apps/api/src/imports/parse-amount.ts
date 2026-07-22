@@ -1,5 +1,5 @@
-import { parseMinor } from "@vyaya/shared";
-import type { ColumnMapping, TransactionType } from "@vyaya/shared";
+import { parseMinor } from "@treasury-ops/shared";
+import type { ColumnMapping, TransactionType } from "@treasury-ops/shared";
 
 export type AmountResolution = Readonly<{ amountMinor: number; type: TransactionType }>;
 

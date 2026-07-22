@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { formatMinor, type MinorAmount } from "@vyaya/shared";
+import { formatMinor, type MinorAmount } from "@treasury-ops/shared";
 
 type MoneyVariant = "income" | "expense" | "neutral";
 type MoneySize = "sm" | "md" | "lg" | "hero";

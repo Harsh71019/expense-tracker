@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { Asset } from "@vyaya/shared";
+import type { Asset } from "@treasury-ops/shared";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AddValuationDialog } from "./add-valuation-dialog";

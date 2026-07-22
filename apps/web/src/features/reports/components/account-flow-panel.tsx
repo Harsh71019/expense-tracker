@@ -1,4 +1,4 @@
-import type { Account, MonthlyRollup } from "@vyaya/shared";
+import type { Account, MonthlyRollup } from "@treasury-ops/shared";
 import type { ReactNode } from "react";
 
 import { SignedMoney } from "@/components/ui/money";

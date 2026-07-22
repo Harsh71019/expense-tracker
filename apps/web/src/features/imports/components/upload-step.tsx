@@ -1,6 +1,6 @@
 "use client";
 
-import { MAX_IMPORT_FILE_SIZE_BYTES, type Account } from "@vyaya/shared";
+import { MAX_IMPORT_FILE_SIZE_BYTES, type Account } from "@treasury-ops/shared";
 import { useState } from "react";
 import type { ChangeEvent, DragEvent, ReactNode } from "react";
 

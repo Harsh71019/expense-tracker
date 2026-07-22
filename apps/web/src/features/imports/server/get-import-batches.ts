@@ -1,4 +1,4 @@
-import { ImportBatchSchema, type ImportBatch } from "@vyaya/shared";
+import { ImportBatchSchema, type ImportBatch } from "@treasury-ops/shared";
 import { z } from "zod";
 import { cache } from "react";
 

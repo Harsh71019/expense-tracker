@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import type { Category, MonthlyRollup } from "@vyaya/shared";
+import type { Category, MonthlyRollup } from "@treasury-ops/shared";
 import { describe, expect, it } from "vitest";
 
 import { SpendByCategoryPanel } from "./spend-by-category-panel";

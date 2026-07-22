@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import type { CategoryRule, CategoryRuleId, CreateCategoryRule } from "@vyaya/shared";
+import type { CategoryRule, CategoryRuleId, CreateCategoryRule } from "@treasury-ops/shared";
 
 import { CategoryRepository } from "../categories/category.repository.js";
 import { EntityNotFoundError } from "../common/errors/entity-not-found.error.js";

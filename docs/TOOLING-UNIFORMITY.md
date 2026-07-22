@@ -1,4 +1,4 @@
-# Vyaya — Tooling & Uniformity: One Repo, One Style, Zero Debates
+# TreasuryOps — Tooling & Uniformity: One Repo, One Style, Zero Debates
 
 > The answer to "do lint rules apply to both backend and frontend, and where do configs live in a pnpm monorepo?" — plus the full uniformity toolchain. Companion to `AGENTS.md` (which lists *what* is banned) — this doc is *how* the bans are wired so they apply everywhere, identically, forever.
 >
@@ -11,7 +11,7 @@
 | Tool | Where it lives | Why |
 |---|---|---|
 | **Prettier** | **Root only.** One `prettier.config.mjs`, one `.prettierignore`. Never per-package. | Formatting is aesthetics; aesthetics must be identical or diffs become lies. There is *nothing* environment-specific about quote style. |
-| **ESLint** | **One root `eslint.config.mjs`** (flat config), containing *layers* scoped by glob (`apps/api/**`, `apps/web/**`). No per-package config files for a repo this size. | ESLint 9 flat config loads a single config per invocation; the officially blessed patterns are (a) one root config with glob-scoped blocks or (b) per-package configs importing a shared package. (a) is right for 2 apps + 2 packages; (b) — the Turborepo `@repo/eslint-config` pattern — earns its complexity at 10+ packages with genuinely different needs. Start (a); the migration to (b) is mechanical if Vyaya ever sprouts more apps. |
+| **ESLint** | **One root `eslint.config.mjs`** (flat config), containing *layers* scoped by glob (`apps/api/**`, `apps/web/**`). No per-package config files for a repo this size. | ESLint 9 flat config loads a single config per invocation; the officially blessed patterns are (a) one root config with glob-scoped blocks or (b) per-package configs importing a shared package. (a) is right for 2 apps + 2 packages; (b) — the Turborepo `@repo/eslint-config` pattern — earns its complexity at 10+ packages with genuinely different needs. Start (a); the migration to (b) is mechanical if TreasuryOps ever sprouts more apps. |
 | **TypeScript** | **Base configs in `packages/config`**, each package has its own thin `tsconfig.json` that `extends` the right base. | Unlike Prettier, TS *must* differ per package (Nest needs decorators+CJS-ish `module`, Next needs `jsx: preserve` + DOM lib, shared needs pure ESM + declaration output). The *strictness flags* stay identical in the base; only environment mechanics vary in the leaves. |
 | **.editorconfig** | Root only | Pre-Prettier floor: charset, LF, final newline, indent — catches non-JS files (yaml, md, sh) Prettier doesn't own |
 | **husky + lint-staged + commitlint** | Root only | Git hooks are repo-level by nature; lint-staged config maps globs → commands across all packages |
@@ -38,7 +38,7 @@ eslint.config.mjs
 ```
 
 **L1 — Base (the shared culture, ~everything from AGENTS.md §2):**
-`no-console`, `eqeqeq`, `no-restricted-syntax` banning `enum` and raw `new Date(` outside `common/time`, complexity ceiling (`complexity: 12`, `max-depth: 3`), `import/order` with enforced groups (node → external → workspace `@vyaya/*` → relative) so every file's imports read identically, `unicorn` selections (no-abusive-eslint-disable — a disable without a rule name is itself an error), TODO-format rule.
+`no-console`, `eqeqeq`, `no-restricted-syntax` banning `enum` and raw `new Date(` outside `common/time`, complexity ceiling (`complexity: 12`, `max-depth: 3`), `import/order` with enforced groups (node → external → workspace `@treasury-ops/*` → relative) so every file's imports read identically, `unicorn` selections (no-abusive-eslint-disable — a disable without a rule name is itself an error), TODO-format rule.
 
 **L2 — Type-aware (the layer that catches real bugs):**
 `strictTypeChecked` brings the heavy hitters: `no-floating-promises` (the #1 NestJS bug: an unawaited transaction), `no-misused-promises` (async handler in a sync callback), `no-unnecessary-condition`, `no-unsafe-*` family (the actual enforcement of "no `any` leaks"), `switch-exhaustiveness-check` (add a new `ErrorCode` and every non-exhaustive switch lights up — this is how the error catalog stays handled).
@@ -81,7 +81,7 @@ packages/config/
 ```
 Each package's `tsconfig.json` is ~5 lines: `extends` + `include` + paths. **The strictness flags exist in exactly one file** — a future "let me just relax this in web" has to happen in the shared base, in a visible PR, where it will be rejected.
 
-Workspace wiring: TS **project references** (`composite: true` on `packages/shared`, `references` from the apps) so `tsc --build` typechecks the graph incrementally and in dependency order — `pnpm typecheck` at root is one command, and editing a shared zod schema immediately re-errors both apps in the IDE. `packages/shared` is consumed via workspace protocol (`"@vyaya/shared": "workspace:*"`) with the apps importing **source** through the references (no build-step-per-save during dev).
+Workspace wiring: TS **project references** (`composite: true` on `packages/shared`, `references` from the apps) so `tsc --build` typechecks the graph incrementally and in dependency order — `pnpm typecheck` at root is one command, and editing a shared zod schema immediately re-errors both apps in the IDE. `packages/shared` is consumed via workspace protocol (`"@treasury-ops/shared": "workspace:*"`) with the apps importing **source** through the references (no build-step-per-save during dev).
 
 ---
 
@@ -115,7 +115,7 @@ Ordering note: format check runs *first* and fails fast — never make a human (
 
 ## 7. Honorable Mention: Biome (and why not, for now)
 
-**Biome** is the one-binary Rust replacement for ESLint+Prettier — 10–30× faster, one config, increasingly popular in 2025/26. The honest assessment for Vyaya: not yet. The deciding gaps are *type-aware* linting depth (no `no-floating-promises`-class analysis at typescript-eslint's level — and that rule specifically guards this codebase's transaction discipline) and the plugin ecosystem this setup leans on (`tanstack/query`, `jsx-a11y` completeness, `dependency-cruiser` interplay). At Vyaya's file count, ESLint speed is a non-issue. **Revisit-when** (this is ADR material): Biome's type inference covers floating promises + the Query plugin's checks, or lint time exceeds ~30s. Switching later is cheap precisely because rules were never scattered — one root config is one migration surface.
+**Biome** is the one-binary Rust replacement for ESLint+Prettier — 10–30× faster, one config, increasingly popular in 2025/26. The honest assessment for TreasuryOps: not yet. The deciding gaps are *type-aware* linting depth (no `no-floating-promises`-class analysis at typescript-eslint's level — and that rule specifically guards this codebase's transaction discipline) and the plugin ecosystem this setup leans on (`tanstack/query`, `jsx-a11y` completeness, `dependency-cruiser` interplay). At TreasuryOps's file count, ESLint speed is a non-issue. **Revisit-when** (this is ADR material): Biome's type inference covers floating promises + the Query plugin's checks, or lint time exceeds ~30s. Switching later is cheap precisely because rules were never scattered — one root config is one migration surface.
 
 ---
 

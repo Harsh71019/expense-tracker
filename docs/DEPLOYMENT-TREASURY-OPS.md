@@ -1,17 +1,17 @@
-# Vyaya — Deployment (matches the /opt/apps pattern)
+# TreasuryOps — Deployment (matches the /opt/apps pattern)
 
 Drop-in section for `DEPLOYMENT.md`. Same LXC, same conventions, port **3006**.
 
 ---
 
-## App 3: Vyaya (Expense Tracker)
+## App 3: TreasuryOps (Expense Tracker)
 
-**Path on server:** `/opt/apps/vyaya/`
+**Path on server:** `/opt/apps/treasury-ops/`
 **URL:** http://192.168.0.226:3006
 
 ### How it differs from Taskflow / JS Mastery
 
-|              | Taskflow / JS Mastery             | Vyaya                                                                                      |
+|              | Taskflow / JS Mastery             | TreasuryOps                                                                                      |
 | ------------ | --------------------------------- | ------------------------------------------------------------------------------------------ |
 | Containers   | 2 (nginx SPA + Express)           | 6 (nginx proxy + Next.js SSR + NestJS API + BullMQ worker + PostgreSQL + one-shot `migrate`) |
 | Frontend     | Vite static build served by nginx | Next.js **server** — nginx proxies to it, doesn't serve files                              |
@@ -30,7 +30,7 @@ worker  → shared Redis + Postgres   (crons, CSV parsing, notifications — no 
 migrate → runs `drizzle-kit migrate`, exits    (gates api/worker startup)
 ```
 
-### `.env` (at `/opt/apps/vyaya/.env`)
+### `.env` (at `/opt/apps/treasury-ops/.env`)
 
 See `env.example` in the repo. The two footguns:
 
@@ -45,16 +45,16 @@ TRUSTED_ORIGINS=http://192.168.0.226:3006   # Better Auth CSRF origin check;
 
 ```bash
 # Clone
-ssh root@192.168.0.226 "git clone https://github.com/Harsh71019/vyaya.git /opt/apps/vyaya"
+ssh root@192.168.0.226 "git clone https://github.com/Harsh71019/treasury-ops.git /opt/apps/treasury-ops"
 
 # Write .env (copy from env.example, fill secrets)
-ssh root@192.168.0.226 "vim /opt/apps/vyaya/.env && chmod 600 /opt/apps/vyaya/.env"
+ssh root@192.168.0.226 "vim /opt/apps/treasury-ops/.env && chmod 600 /opt/apps/treasury-ops/.env"
 
 # Deploy (builds, migrates, starts, health-checks, smoke-tests)
-ssh root@192.168.0.226 "chmod +x /opt/apps/vyaya/deploy.sh && cd /opt/apps/vyaya && bash deploy.sh"
+ssh root@192.168.0.226 "chmod +x /opt/apps/treasury-ops/deploy.sh && cd /opt/apps/treasury-ops && bash deploy.sh"
 
 # Create your account at http://192.168.0.226:3006, then lock the door:
-ssh root@192.168.0.226 "sed -i 's/DISABLE_SIGNUP=false/DISABLE_SIGNUP=true/' /opt/apps/vyaya/.env && cd /opt/apps/vyaya && docker compose --env-file .env up -d api"
+ssh root@192.168.0.226 "sed -i 's/DISABLE_SIGNUP=false/DISABLE_SIGNUP=true/' /opt/apps/treasury-ops/.env && cd /opt/apps/treasury-ops && docker compose --env-file .env up -d api"
 ```
 
 ### Local foundation check
@@ -65,11 +65,11 @@ Copy `env.example` to `.env`, set a `POSTGRES_PASSWORD`, and point `REDIS_URL` a
 docker compose --env-file .env up --build
 ```
 
-Postgres now runs as its own container in this same Compose stack (named volume, not an external service) — there's no separate staging database to point at. Never point `DATABASE_URL` at the production `vyaya` database for development or test data; use this stack's own local container instead.
+Postgres now runs as its own container in this same Compose stack (named volume, not an external service) — there's no separate staging database to point at. Never point `DATABASE_URL` at the production `treasury-ops` database for development or test data; use this stack's own local container instead.
 
 ### Shared Redis infrastructure
 
-Redis is intentionally deployed separately from Vyaya so other applications can reuse it. On the Redis host:
+Redis is intentionally deployed separately from TreasuryOps so other applications can reuse it. On the Redis host:
 
 ```bash
 cd infra/redis
@@ -78,12 +78,12 @@ cp .env.example .env
 docker compose up -d
 ```
 
-The Compose definition binds Redis to loopback only. For a separate application LXC, change the bind address deliberately and firewall port 6379 to only the application hosts. Give each application a distinct Redis database and key prefix; Vyaya uses database `2` and the `vyaya:` key namespace.
+The Compose definition binds Redis to loopback only. For a separate application LXC, change the bind address deliberately and firewall port 6379 to only the application hosts. Give each application a distinct Redis database and key prefix; TreasuryOps uses database `2` and the `treasury-ops:` key namespace.
 
 ### Update
 
 ```bash
-ssh root@192.168.0.226 "cd /opt/apps/vyaya && bash deploy.sh"
+ssh root@192.168.0.226 "cd /opt/apps/treasury-ops && bash deploy.sh"
 ```
 
 `deploy.sh` here does more than the others — order matters:
@@ -103,12 +103,12 @@ on failure: prints exact rollback command with the previous git SHA
 ### Useful commands
 
 ```bash
-# All Vyaya containers
-ssh root@192.168.0.226 "docker ps --filter name=vyaya"
+# All TreasuryOps containers
+ssh root@192.168.0.226 "docker ps --filter name=treasury-ops"
 
 # Live logs
-ssh root@192.168.0.226 "docker logs -f vyaya-api-1"
-ssh root@192.168.0.226 "docker logs -f vyaya-worker-1"     # cron/import issues live here
+ssh root@192.168.0.226 "docker logs -f treasury-ops-api-1"
+ssh root@192.168.0.226 "docker logs -f treasury-ops-worker-1"     # cron/import issues live here
 
 # Health
 curl http://192.168.0.226:3006/api/healthz                  # returns git SHA too
@@ -117,16 +117,16 @@ curl http://192.168.0.226:3006/api/healthz                  # returns git SHA to
 open http://192.168.0.226:3006/admin/queues
 
 # Restart without rebuild
-ssh root@192.168.0.226 "docker compose -f /opt/apps/vyaya/docker-compose.yml restart api worker web"
+ssh root@192.168.0.226 "docker compose -f /opt/apps/treasury-ops/docker-compose.yml restart api worker web"
 
 # Run migrations manually
-ssh root@192.168.0.226 "cd /opt/apps/vyaya && docker compose --env-file .env run --rm migrate"
+ssh root@192.168.0.226 "cd /opt/apps/treasury-ops && docker compose --env-file .env run --rm migrate"
 
 # Shell into API container
-ssh root@192.168.0.226 "docker exec -it vyaya-api-1 sh"
+ssh root@192.168.0.226 "docker exec -it treasury-ops-api-1 sh"
 
 # Rollback to a known-good SHA
-ssh root@192.168.0.226 "cd /opt/apps/vyaya && git checkout <sha> && docker compose --env-file .env up -d --build"
+ssh root@192.168.0.226 "cd /opt/apps/treasury-ops && git checkout <sha> && docker compose --env-file .env up -d --build"
 ```
 
 ### Host crontab additions (LXC, `crontab -e`)
@@ -135,14 +135,14 @@ The app's business crons (recurring txns, rollups, alerts) run **inside the work
 
 ```cron
 # Nightly Postgres dump → NAS (04:00 IST)
-0 4 * * * /opt/apps/vyaya/deploy/backup.sh >> /var/log/vyaya-backup.log 2>&1
+0 4 * * * /opt/apps/treasury-ops/deploy/backup.sh >> /var/log/treasury-ops-backup.log 2>&1
 ```
 
-`backup.sh`: `docker compose --env-file /opt/apps/vyaya/.env exec -T postgres pg_dump -U vyaya -d vyaya | gzip > /mnt/nas/backups/vyaya/$(date +\%F).sql.gz` + retention prune (30 daily / 12 monthly) + weekly `rclone` offsite. Runs against the `postgres` container directly (not the host's published port, which is loopback-only per `POSTGRES_BIND_ADDR` in `env.example`) — `docker compose exec` works from the host regardless of that binding.
+`backup.sh`: `docker compose --env-file /opt/apps/treasury-ops/.env exec -T postgres pg_dump -U treasury-ops -d treasury-ops | gzip > /mnt/nas/backups/treasury-ops/$(date +\%F).sql.gz` + retention prune (30 daily / 12 monthly) + weekly `rclone` offsite. Runs against the `postgres` container directly (not the host's published port, which is loopback-only per `POSTGRES_BIND_ADDR` in `env.example`) — `docker compose exec` works from the host regardless of that binding.
 
 ### Notes
 
-- **Port registry is now:** 3000 Taskflow · 3001 JS Mastery · 3003 Books · **3006 Vyaya**
+- **Port registry is now:** 3000 Taskflow · 3001 JS Mastery · 3003 Books · **3006 TreasuryOps**
 - Redis is deliberately `noeviction` — evicting queue data corrupts jobs; 256mb is generous for this workload
 - Migrations are **additive-only by policy**, which is what makes the printed rollback command safe
 - When NPMplus + TLS eventually fronts this: flip `AUTH_COOKIE_SECURE=true`, update `BETTER_AUTH_URL`/`TRUSTED_ORIGINS` to the https hostname, and passkeys will start working (WebAuthn requires a secure context — over plain HTTP, Face ID login is unavailable; everything else works)

@@ -1,4 +1,4 @@
-import type { ListTransactionsQuery } from "@vyaya/shared";
+import type { ListTransactionsQuery } from "@treasury-ops/shared";
 
 const transactionRoot = ["transactions"] as const;
 

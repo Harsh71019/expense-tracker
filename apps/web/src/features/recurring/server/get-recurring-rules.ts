@@ -1,4 +1,4 @@
-import { RecurringRuleSchema, type RecurringRule } from "@vyaya/shared";
+import { RecurringRuleSchema, type RecurringRule } from "@treasury-ops/shared";
 import { cache } from "react";
 import { z } from "zod";
 

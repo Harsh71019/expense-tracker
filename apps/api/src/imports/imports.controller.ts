@@ -22,7 +22,7 @@ import {
   type ImportBatch,
   type StagedRow,
   type StagedRowPage
-} from "@vyaya/shared";
+} from "@treasury-ops/shared";
 import type { Response } from "express";
 import { z } from "zod";
 

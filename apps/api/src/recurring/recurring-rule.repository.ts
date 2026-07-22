@@ -5,7 +5,7 @@ import {
   type RecurringRule,
   type RecurringRuleId,
   type UpdateRecurringRule
-} from "@vyaya/shared";
+} from "@treasury-ops/shared";
 import { and, asc, eq, lte } from "drizzle-orm";
 
 import { DATABASE_CONNECTION } from "../common/db/db.module.js";

@@ -1,4 +1,4 @@
-# Vyaya — Personal Expense Tracker: Backend Architecture
+# TreasuryOps — Personal Expense Tracker: Backend Architecture
 
 > **Stack:** Next.js (frontend) · NestJS + Node.js 24.18 LTS (API) · MongoDB Atlas (M0 → M10) · Mongoose · Better Auth · BullMQ + node-cron · Deployed on Proxmox LXC behind NPMplus
 >
@@ -12,7 +12,7 @@
 ┌─────────────────────────── Proxmox Host ───────────────────────────┐
 │                                                                     │
 │  ┌──────────────┐   ┌──────────────────────────────────────────┐   │
-│  │  LXC: proxy  │   │  LXC: vyaya                              │   │
+│  │  LXC: proxy  │   │  LXC: treasury-ops                              │   │
 │  │  NPMplus     │──▶│  ┌────────────┐   ┌────────────────────┐ │   │
 │  │  + CrowdSec  │   │  │ Next.js    │   │ NestJS API :4000   │ │   │
 │  └──────────────┘   │  │ (SSR) :3000│──▶│  ├ Auth (Better    │ │   │
@@ -421,8 +421,8 @@ export const auth = betterAuth({
   database: mongodbAdapter(db),
   emailAndPassword: { enabled: true },
   plugins: [passkey(), twoFactor()],
-  advanced: { cookiePrefix: "vyaya" },
-  trustedOrigins: ["https://vyaya.yourdomain.tld"]
+  advanced: { cookiePrefix: "treasury-ops" },
+  trustedOrigins: ["https://treasury-ops.yourdomain.tld"]
 });
 
 // auth/auth.guard.ts — NestJS guard used on every controller
@@ -537,7 +537,7 @@ Conventions: controllers do HTTP only; services own business rules and transacti
 ## 9. Deployment & Ops (Proxmox)
 
 - **LXC (Debian 12, 2 vCPU / 2GB)** running Docker Compose: `api`, `web`, `worker`. Redis runs as separately managed shared infrastructure; each application receives its own authenticated URL, database number, and key prefix. Images are built by a GitHub Action, pulled via `docker compose pull && up -d` (or Watchtower, which you already know from the arr-stack).
-- **NPMplus** vhost `vyaya.yourdomain.tld` → web:3000, `/api` → api:4000; CrowdSec in front if internet-exposed, otherwise Tailscale-only and skip the drama.
+- **NPMplus** vhost `treasury-ops.yourdomain.tld` → web:3000, `/api` → api:4000; CrowdSec in front if internet-exposed, otherwise Tailscale-only and skip the drama.
 - **Config:** `.env` in the LXC (Atlas URI, Better Auth secret, ntfy topic); never in the repo. Atlas network access: allow only your home IP / use a static egress via your router, plus a dedicated DB user scoped to this database.
 - **Observability you already run:** Beszel (container metrics + healthz), GlitchTip (API + worker error tracking), Bull Board mounted at `/admin/queues` behind auth.
 - **Backups:** the §6 mongodump cron to NAS + your existing NAS backup routine. The database _is_ the product here — this is the one ops task that isn't optional.
@@ -610,7 +610,7 @@ Conventions: controllers do HTTP only; services own business rules and transacti
 ## 18. Environments, CI/CD & Release
 
 ```
-dev (laptop, mongodb-memory-server) → staging (LXC, Atlas db: vyaya-stg) → prod (LXC, Atlas db: vyaya)
+dev (laptop, mongodb-memory-server) → staging (LXC, Atlas db: treasury-ops-stg) → prod (LXC, Atlas db: treasury-ops)
 ```
 
 - **CI (GitHub Actions):** lint + typecheck → unit → integration (ephemeral replset) → e2e (testcontainers: app+redis) → build images → trivy scan → push GHCR → auto-deploy staging.
@@ -620,5 +620,5 @@ dev (laptop, mongodb-memory-server) → staging (LXC, Atlas db: vyaya-stg) → p
 ## 19. Disaster Recovery (runbook, not vibes)
 
 - **RPO: 24h** (nightly mongodump; tighten to 1h later via Atlas M10 PITR if this ever holds money-critical data). **RTO: 1h** — documented restore: new Atlas cluster → `mongorestore` → update env → redeploy.
-- **Quarterly restore drill** (calendar reminder): restore latest dump to `vyaya-drill` db, run the balance-verify job against it, confirm zero drift, tear down. A backup that's never been restored is a rumor.
+- **Quarterly restore drill** (calendar reminder): restore latest dump to `treasury-ops-drill` db, run the balance-verify job against it, confirm zero drift, tear down. A backup that's never been restored is a rumor.
 - **Failure matrix documented in-repo:** LXC dies (rebuild from compose + env from Vaultwarden, ~20 min), Atlas region outage (wait — accepted risk for personal), NAS dies (dumps also rclone'd to B2/Drive weekly), repo dies (GitHub + local remote).

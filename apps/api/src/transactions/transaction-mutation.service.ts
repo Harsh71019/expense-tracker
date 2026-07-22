@@ -4,7 +4,7 @@ import {
   type Transaction,
   type TransactionId,
   type UpdateTransaction
-} from "@vyaya/shared";
+} from "@treasury-ops/shared";
 
 import { IdempotencyPostgresService } from "../common/idempotency/idempotency-postgres.service.js";
 import type { IdempotentResult } from "../common/idempotency/idempotency-postgres.service.js";

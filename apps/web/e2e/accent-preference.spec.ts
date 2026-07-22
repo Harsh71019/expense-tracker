@@ -47,7 +47,7 @@ test.describe("accent preference", () => {
     await expect(page.getByLabel("Hex, RGB, or HSL")).toHaveValue("#ff0000");
     await expect(page.getByRole("button", { name: "Applied" })).toBeDisabled();
 
-    await page.getByRole("button", { name: /Vyaya green/ }).click();
+    await page.getByRole("button", { name: /TreasuryOps green/ }).click();
     await expect(page.getByLabel("Hex, RGB, or HSL")).toHaveValue("");
     await expect(page.getByRole("button", { name: "Apply color" })).toBeEnabled();
 

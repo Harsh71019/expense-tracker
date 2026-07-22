@@ -1,4 +1,4 @@
-# Vyaya Authentication and Security Plan
+# TreasuryOps Authentication and Security Plan
 
 > Status: design proposal for review. No implementation is authorized by this document.
 >
@@ -16,7 +16,7 @@ Harden the existing Better Auth deployment in this order:
 4. add security-management UI, session revocation, audit events, and recovery runbooks;
 5. only then consider making passwords optional.
 
-Vyaya contains financial data, so the design favors fail-closed behavior, explicit recovery,
+TreasuryOps contains financial data, so the design favors fail-closed behavior, explicit recovery,
 short sensitive-operation windows, and phishing-resistant authentication. It does not build a
 parallel auth system around Better Auth.
 
@@ -84,7 +84,7 @@ and endpoint security remain separate controls.
 | Session store                 | Keep server-side sessions in Redis; no cookie cache initially            | Immediate revocation is more important than avoiding a Redis lookup. Redis loss safely logs users out.              |
 | Session lifetime              | 24-hour absolute session, no sliding refresh initially                   | Tight baseline for financial data; passkeys later make reauthentication low-friction.                               |
 | Sensitive-operation freshness | Five minutes                                                             | Passkey/2FA changes, password changes, backup-code display, and mass session revocation need recent authentication. |
-| Signup                        | Enabled only for initial bootstrap; disabled in production afterward     | Vyaya is personal and does not need an internet-facing registration surface.                                        |
+| Signup                        | Enabled only for initial bootstrap; disabled in production afterward     | TreasuryOps is personal and does not need an internet-facing registration surface.                                        |
 
 If a 24-hour absolute session is too disruptive during the TOTP-only phase, the acceptable
 fallback is a three-day absolute session. A seven-day sliding session is not the recommended
@@ -117,7 +117,7 @@ this model for credential sign-in endpoints.
 passkey selection
       |
       v
-WebAuthn challenge bound to Vyaya RP ID and exact origin
+WebAuthn challenge bound to TreasuryOps RP ID and exact origin
       |
       v
 authenticator verifies user with biometric/PIN/security key
@@ -292,7 +292,7 @@ retention policy to IP/user-agent data and never place these events in the monet
 Server:
 
 - enable the `twoFactor` plugin from `better-auth/plugins`;
-- set the application/issuer name to `Vyaya`;
+- set the application/issuer name to `TreasuryOps`;
 - keep `skipVerificationOnEnable` false;
 - keep password verification required for credential accounts;
 - do not configure email/SMS OTP in the first version;
@@ -359,7 +359,7 @@ Do not copy TOTP state into `user_profiles`.
 
 Production WebAuthn values must be explicit and environment-validated:
 
-- `rpName`: `Vyaya`;
+- `rpName`: `TreasuryOps`;
 - `rpID`: the public hostname only, with no scheme, port, or path;
 - `origin`: the exact public HTTPS origin, with no trailing slash;
 - local development origin: the exact browser-visible localhost origin;

@@ -28,7 +28,7 @@ export default async function AuthLayout({
                 ₹
               </span>
               <div>
-                <p className="text-lg font-bold tracking-tight text-foreground">Vyaya</p>
+                <p className="text-lg font-bold tracking-tight text-foreground">TreasuryOps</p>
                 <p className="mt-0.5 font-mono text-[9px] font-bold tracking-[0.2em] text-accent uppercase">
                   Expense tracker
                 </p>

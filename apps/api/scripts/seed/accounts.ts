@@ -1,4 +1,4 @@
-import type { Account } from "@vyaya/shared";
+import type { Account } from "@treasury-ops/shared";
 
 import { withTxn } from "../../src/common/db/db-txn.js";
 import type { SeedServices } from "./context.js";

@@ -1,6 +1,6 @@
 "use client";
 
-import type { Account, Transaction } from "@vyaya/shared";
+import type { Account, Transaction } from "@treasury-ops/shared";
 import { useState } from "react";
 import type { ReactNode } from "react";
 

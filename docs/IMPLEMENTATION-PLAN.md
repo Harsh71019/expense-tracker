@@ -1,4 +1,4 @@
-# Vyaya — Phased Implementation Plan
+# TreasuryOps — Phased Implementation Plan
 
 > Companion to `BACKEND.md`. Sized for ~8–10 focused hrs/week (weeknights + one weekend block) alongside the Godrej job. Each phase ends with a **gate** — a demo you can actually run. No phase starts until the previous gate passes. Commute time (Malad–Vikhroli) is budgeted for _reading/design/review tasks only_, never coding.
 
@@ -17,7 +17,7 @@ The unglamorous phase that makes every later phase fast. Do not skip; do not gol
 5. Health: `/healthz` (liveness + git SHA), `/readyz` (Mongo/Redis ping).
 6. Docker: multi-stage Dockerfiles (distroless runtime), `compose.yml` (api, web, worker, redis), local `compose.dev.yml`.
 7. CI v1 (GitHub Actions): lint → typecheck → unit → build. Trivy + Renovate wired.
-8. Atlas: create cluster, `vyaya` + `vyaya-stg` databases, scoped DB users, IP allowlist.
+8. Atlas: create cluster, `treasury-ops` + `treasury-ops-stg` databases, scoped DB users, IP allowlist.
 9. `migrate-mongo` wired with migration `001-init-indexes` (empty for now, proves the pipeline).
 
 **Gate 0 ✅** — `docker compose up` serves `/healthz` with the git SHA; CI is green on a PR; a dummy migration runs in CI against an ephemeral replica set.
@@ -100,7 +100,7 @@ The heart. Everything else decorates this.
 9. Subscription view over recurring expense rules: next charge, monthly cost, cancellation reminder.
 10. Goals: target value/date, optional linked account, progress, and required monthly saving projection.
 
-**Gate 4 ✅** — Rent posts itself on the 1st exactly once (verified by forcing a double cron fire); phone pings at 80% food budget; you have personally restored a dump to `vyaya-drill` and the verify job passed on it.
+**Gate 4 ✅** — Rent posts itself on the 1st exactly once (verified by forcing a double cron fire); phone pings at 80% food budget; you have personally restored a dump to `treasury-ops-drill` and the verify job passed on it.
 
 ---
 

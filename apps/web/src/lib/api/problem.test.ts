@@ -7,7 +7,7 @@ const problem = (
   code:
     "auth.unauthenticated" | "common.validation_failed" | "txn.already_reversed" | "common.internal"
 ) => ({
-  type: `https://vyaya.app/problems/${code}`,
+  type: `https://treasury-ops.app/problems/${code}`,
   title: "Problem",
   status: 422,
   detail: "Request failed",

@@ -31,7 +31,7 @@ describe("accent actions", () => {
     });
 
     expect(mocks.set).toHaveBeenCalledWith(
-      "vyaya-accent",
+      "treasury-ops-accent",
       "preset:ocean",
       expect.objectContaining({ maxAge: 31_536_000, path: "/", sameSite: "lax" })
     );
@@ -62,7 +62,7 @@ describe("accent actions", () => {
       appliedKey: "custom:1d4ed8"
     });
     expect(mocks.set).toHaveBeenCalledWith(
-      "vyaya-accent",
+      "treasury-ops-accent",
       "custom:1d4ed8",
       expect.objectContaining({ maxAge: 31_536_000, path: "/", sameSite: "lax" })
     );
@@ -87,10 +87,10 @@ describe("accent actions", () => {
 
     await expect(applyAccentPreference(INITIAL_ACCENT_ACTION_STATE, formData)).resolves.toEqual({
       status: "success",
-      message: "Applied Vyaya default.",
+      message: "Applied TreasuryOps default.",
       appliedKey: "default"
     });
-    expect(mocks.delete).toHaveBeenCalledWith("vyaya-accent");
+    expect(mocks.delete).toHaveBeenCalledWith("treasury-ops-accent");
     expect(mocks.set).not.toHaveBeenCalled();
   });
 
@@ -102,6 +102,6 @@ describe("accent actions", () => {
     await resetAccentPreference();
 
     expect(mocks.delete).toHaveBeenCalledTimes(2);
-    expect(mocks.delete).toHaveBeenCalledWith("vyaya-accent");
+    expect(mocks.delete).toHaveBeenCalledWith("treasury-ops-accent");
   });
 });

@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { AssetSchema, type Asset, type AssetId, type CreateAsset } from "@vyaya/shared";
+import { AssetSchema, type Asset, type AssetId, type CreateAsset } from "@treasury-ops/shared";
 import { and, eq } from "drizzle-orm";
 
 import { DATABASE_CONNECTION } from "../common/db/db.module.js";

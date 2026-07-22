@@ -1,4 +1,4 @@
-import { CategoryRuleSchema, type CategoryRule } from "@vyaya/shared";
+import { CategoryRuleSchema, type CategoryRule } from "@treasury-ops/shared";
 import { cache } from "react";
 import { z } from "zod";
 

@@ -6,7 +6,7 @@ import type {
   CreateApiKey,
   CreateApiKeyResponse,
   UpdateApiKey
-} from "@vyaya/shared";
+} from "@treasury-ops/shared";
 import type { Request } from "express";
 
 import { AuthService } from "../auth/auth.service.js";

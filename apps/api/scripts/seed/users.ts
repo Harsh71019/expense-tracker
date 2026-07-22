@@ -6,7 +6,7 @@ import type { SeedServices } from "./context.js";
 export type SeedUser = Readonly<{ id: string; email: string; password: string; name: string }>;
 
 export const PRIMARY_USER: Omit<SeedUser, "id"> = {
-  email: "demo@vyaya.local",
+  email: "demo@treasury-ops.local",
   password: "demo-password-12345",
   name: "Demo User"
 };
@@ -18,7 +18,7 @@ export const PRIMARY_USER: Omit<SeedUser, "id"> = {
  * fixtures, just now also checkable by hand in the running UI.
  */
 export const SECONDARY_USER: Omit<SeedUser, "id"> = {
-  email: "demo2@vyaya.local",
+  email: "demo2@treasury-ops.local",
   password: "demo2-password-12345",
   name: "Demo User Two"
 };

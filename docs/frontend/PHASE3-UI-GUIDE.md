@@ -111,7 +111,7 @@ a link/card on the **More** page instead (see §7).
    narrowing `unknown` after a runtime check), no `@ts-ignore`, `@ts-expect-error` only in tests
    with a comment, no `!`, no `enum`.
 3. **Types are derived, not duplicated** — `ImportBatch`, `StagedRow`, `ColumnMapping`, etc. all
-   already exist in `@vyaya/shared` (`packages/shared/src/import.ts`). Import them, never
+   already exist in `@treasury-ops/shared` (`packages/shared/src/import.ts`). Import them, never
    hand-write an equivalent shape.
 4. **Runtime boundaries are parsed with zod, not asserted.**
 5. **Server Components by default; `"use client"` only at the interactive leaf.**
@@ -148,7 +148,7 @@ endpoints aren't in the spec yet, so `lib/api/generated/schema.d.ts` doesn't kno
 
 ### A1 — Add the missing paths to `apps/api/src/openapi/registry.ts`
 
-Import these additional schemas from `@vyaya/shared` at the top of the file (alongside the
+Import these additional schemas from `@treasury-ops/shared` at the top of the file (alongside the
 existing imports): `StagedRowSchema`, `StagedRowPageSchema`, `UpdateStagedRowSchema`,
 `PreviewStagedRowsQuerySchema`, `ImportBatchIdSchema`, `StagedRowIdSchema`.
 

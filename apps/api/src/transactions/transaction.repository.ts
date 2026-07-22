@@ -9,7 +9,7 @@ import {
   type TransactionPage,
   type TransactionSource,
   type UpdateTransaction
-} from "@vyaya/shared";
+} from "@treasury-ops/shared";
 import { and, desc, eq, gte, inArray, lte, sql } from "drizzle-orm";
 import { z } from "zod";
 

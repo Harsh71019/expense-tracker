@@ -1,6 +1,6 @@
-# Vyaya — Frontend Architecture (Next.js, Production-Grade)
+# TreasuryOps — Frontend Architecture (Next.js, Production-Grade)
 
-> Companion to `BACKEND.md`, `AGENTS.md`. Stack: **Next.js 15 App Router · React 19 · TypeScript strict · Tailwind v4 · TanStack Query v5 · react-hook-form + zod · generated typed API client**. Deployed as the `web` container behind nginx on :3006 (see `DEPLOYMENT-VYAYA.md`).
+> Companion to `BACKEND.md`, `AGENTS.md`. Stack: **Next.js 15 App Router · React 19 · TypeScript strict · Tailwind v4 · TanStack Query v5 · react-hook-form + zod · generated typed API client**. Deployed as the `web` container behind nginx on :3006 (see `DEPLOYMENT-TREASURY-OPS.md`).
 >
 > **Design brief in one line:** a fast, mobile-first ledger you use one-handed on a moving Mumbai local — quick-add in under 5 seconds, dashboards that load from rollups instantly, and zero trust placed in the network being reliable.
 
@@ -201,7 +201,7 @@ export function useCreateTxn() {
 
 ## 6. Design System (small, owned, token-driven)
 
-- **Tokens in Tailwind v4 `@theme`** in `globals.css` — the only place colors/spacing/type are defined. Semantic, not raw: `--color-income`, `--color-expense`, `--color-reversed`, `--color-surface`, etc. Dark mode and accent preferences are cookie-backed and resolved in the root layout before first paint. Accent presets use CSS token sets; validated custom hex/RGB/HSL input is normalized to hex and deterministically derives contrast-safe light/dark token sets. Reset removes the accent cookie and restores the original Vyaya green. Semantic money, status, category, and chart colors never follow the accent preference.
+- **Tokens in Tailwind v4 `@theme`** in `globals.css` — the only place colors/spacing/type are defined. Semantic, not raw: `--color-income`, `--color-expense`, `--color-reversed`, `--color-surface`, etc. Dark mode and accent preferences are cookie-backed and resolved in the root layout before first paint. Accent presets use CSS token sets; validated custom hex/RGB/HSL input is normalized to hex and deterministically derives contrast-safe light/dark token sets. Reset removes the accent cookie and restores the original TreasuryOps green. Semantic money, status, category, and chart colors never follow the accent preference.
 - **Primitives are hand-rolled on Radix UI headless** (dialog, sheet, tabs, toast) — Radix for a11y/focus mechanics, our tokens for skin. No component-library dependency to fight later; this app has ~12 primitives, owning them is cheaper than theming someone else's.
 - **Signature element — the ledger row:** transactions render like passbook entries: tabular-numeric amounts right-aligned in a fixed column (`font-variant-numeric: tabular-nums`), income/expense encoded by color _and_ sign (a11y), reversed pairs visually linked by a connecting mark in the gutter. Reports and imports reuse the same row anatomy, so the whole app reads as one ledger.
 - **`<Money>`** (P5): the only component that renders currency. Props: `minor`, `signed?`, `compact?` (₹1.2L Indian abbreviations for dashboards). Snapshot-tested against the paisa edge cases.

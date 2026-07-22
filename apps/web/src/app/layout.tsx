@@ -23,7 +23,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Vyaya",
+  title: "TreasuryOps",
   description: "Personal expense tracker"
 };
 

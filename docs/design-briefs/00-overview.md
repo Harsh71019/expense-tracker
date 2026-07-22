@@ -1,6 +1,6 @@
-# Vyaya — Design Brief Overview
+# TreasuryOps — Design Brief Overview
 
-Vyaya is a personal expense tracker built as an append-only, double-entry-style ledger. Single currency (INR), single user per account — each person only ever sees their own data, there is no sharing/collaboration surface.
+TreasuryOps is a personal expense tracker built as an append-only, double-entry-style ledger. Single currency (INR), single user per account — each person only ever sees their own data, there is no sharing/collaboration surface.
 
 This directory has one design brief per feature, generated directly from the live Zod schemas (`packages/shared/src/*.ts`) — the single source of truth for every field, type, and constraint in the product. Each brief lists what the feature does, its exact data fields, and the business rules that constrain any UI built around it. Treat these as a spec to design from, not a description of an existing app — hand any single file to a design session as self-contained context.
 

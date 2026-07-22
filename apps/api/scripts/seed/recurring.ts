@@ -1,4 +1,4 @@
-import type { RecurringRule } from "@vyaya/shared";
+import type { RecurringRule } from "@treasury-ops/shared";
 
 import type { SeededAccounts } from "./accounts.js";
 import type { SeededCategories } from "./categories.js";

@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Headers, HttpCode, Param, Patch, Post, Res } from "@nestjs/common";
-import { CategoryIdSchema, CreateCategorySchema, type Category } from "@vyaya/shared";
+import { CategoryIdSchema, CreateCategorySchema, type Category } from "@treasury-ops/shared";
 import type { Response } from "express";
 import { z } from "zod";
 

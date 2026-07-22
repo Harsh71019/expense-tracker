@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, type UseMutationResult } from "@tanstack/react-query";
-import type { ExportCsvQuery } from "@vyaya/shared";
+import type { ExportCsvQuery } from "@treasury-ops/shared";
 import { z } from "zod";
 
 import { apiClient } from "@/lib/api/client";

@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import type { MonthlyRollup } from "@vyaya/shared";
+import type { MonthlyRollup } from "@treasury-ops/shared";
 import { describe, expect, it } from "vitest";
 
 import { ReportTotals } from "./report-totals";

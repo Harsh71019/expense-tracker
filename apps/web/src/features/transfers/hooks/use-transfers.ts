@@ -7,7 +7,7 @@ import {
   type CreateTransfer,
   type Transfer,
   type TransferReversal
-} from "@vyaya/shared";
+} from "@treasury-ops/shared";
 import { useState } from "react";
 
 import { apiClient } from "@/lib/api/client";

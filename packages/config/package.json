@@ -1,13 +1,13 @@
 {
-  "name": "@vyaya/config",
+  "name": "@treasury-ops/config",
   "private": true,
   "type": "module",
   "exports": {
     "./tsconfig/base.json": "./tsconfig/base.json"
   },
   "scripts": {
-    "lint": "echo 'No lintable sources in @vyaya/config'",
-    "typecheck": "echo 'No TypeScript sources in @vyaya/config'",
+    "lint": "echo 'No lintable sources in @treasury-ops/config'",
+    "typecheck": "echo 'No TypeScript sources in @treasury-ops/config'",
     "test": "vitest run --passWithNoTests"
   },
   "devDependencies": {}

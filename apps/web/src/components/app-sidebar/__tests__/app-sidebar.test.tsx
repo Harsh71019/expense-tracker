@@ -20,11 +20,11 @@ describe("AppSidebar", () => {
     await user.click(screen.getByRole("button", { name: "Collapse sidebar" }));
 
     expect(screen.getByRole("button", { name: "Expand sidebar" })).toBeVisible();
-    expect(window.localStorage.getItem("vyaya-sidebar-compact")).toBe("true");
+    expect(window.localStorage.getItem("treasury-ops-sidebar-compact")).toBe("true");
   });
 
   it("restores the compact preference", () => {
-    window.localStorage.setItem("vyaya-sidebar-compact", "true");
+    window.localStorage.setItem("treasury-ops-sidebar-compact", "true");
     render(<AppSidebar email="harsh@example.com" theme={null} />);
 
     expect(screen.getByRole("button", { name: "Expand sidebar" })).toBeVisible();

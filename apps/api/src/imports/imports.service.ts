@@ -6,7 +6,7 @@ import {
   ALLOWED_IMPORT_MIME_TYPES,
   MAX_IMPORT_FILE_SIZE_BYTES,
   MAX_IMPORT_ROWS
-} from "@vyaya/shared";
+} from "@treasury-ops/shared";
 import type {
   AccountId,
   ColumnMapping,
@@ -18,7 +18,7 @@ import type {
   StagedRowId,
   StagedRowPage,
   UpdateStagedRow
-} from "@vyaya/shared";
+} from "@treasury-ops/shared";
 import { parse } from "csv-parse/sync";
 import { z } from "zod";
 

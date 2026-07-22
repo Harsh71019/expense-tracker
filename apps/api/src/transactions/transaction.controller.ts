@@ -17,7 +17,7 @@ import {
   UpdateTransactionSchema,
   type Transaction,
   type TransactionPage
-} from "@vyaya/shared";
+} from "@treasury-ops/shared";
 import type { Response } from "express";
 import { z } from "zod";
 

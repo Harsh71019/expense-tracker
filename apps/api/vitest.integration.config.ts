@@ -22,6 +22,11 @@ export default defineConfig({
     })
   ],
   test: {
-    include: ["test/integration/**/*.integration.ts"]
+    include: ["test/integration/**/*.integration.ts"],
+    // Each file's beforeAll spins up its own testcontainers Postgres
+    // (postgres-test-db.ts::createTestDb). Running files concurrently races
+    // them for Docker resources and some containers miss the beforeAll hook
+    // timeout under load. One file at a time trades speed for reliability.
+    fileParallelism: false
   }
 });

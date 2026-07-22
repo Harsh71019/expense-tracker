@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
-import { ValuationPageSchema, type ValuationPage } from "@vyaya/shared";
+import { ValuationPageSchema, type ValuationPage } from "@treasury-ops/shared";
 
 import { apiClient } from "@/lib/api/client";
 import { toAppError } from "@/lib/api/problem";

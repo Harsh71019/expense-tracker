@@ -75,7 +75,7 @@ Checked directly against the repo before writing this guide. Do not recreate any
 
 ## 2. Non-negotiable rules (from `AGENTS.md` — violating these is a failed task)
 
-1. **Money is always integer paise** (`amountMinor`, positive integer). Never a float, never divided/multiplied inline. Render only through `<Money>`. Parse user input only through `parseMinor()` / `formatMinor()` from `@vyaya/shared` (`packages/shared/src/money.ts`).
+1. **Money is always integer paise** (`amountMinor`, positive integer). Never a float, never divided/multiplied inline. Render only through `<Money>`. Parse user input only through `parseMinor()` / `formatMinor()` from `@treasury-ops/shared` (`packages/shared/src/money.ts`).
 2. **The ledger is append-only.** There is no "edit amount" — the UI's only correction mechanism is the reversal action (`POST /v1/transactions/:id/reverse`), never a PATCH of `amountMinor`.
 3. **Every mutating form generates its idempotency key on mount** (`crypto.randomUUID()`), not on submit. A double-tap or a timeout-then-retry must reuse the same key. Key only rotates after a _confirmed success_ (new form instance / explicit reset).
 4. **TypeScript strict, zero escape hatches**: no `any`, no `as` casts (except `as const` and narrowing `unknown` after a runtime check), no `@ts-ignore`, `@ts-expect-error` only in tests with a comment, no `!` non-null assertion, no `enum`. All exported functions have explicit return types.
@@ -107,7 +107,7 @@ Checked directly against the repo before writing this guide. Do not recreate any
 ### A2 — Web: generate types + typed client from the spec
 
 1. Add to `apps/web/package.json`: `"openapi-fetch": "^0.17"` (dependency), `"openapi-typescript": "latest"` (devDependency). Both are small, focused, zero-config-by-default — `openapi-typescript` only emits `.d.ts` types from the spec, `openapi-fetch` is a ~6kb typed wrapper around native `fetch` (no axios, no code generation of request functions — it infers everything from the types). This is the "boring, small footprint" choice consistent with `FRONTEND.md` §12's dependency policy.
-2. Add a root-level script in the repo root `package.json`: `"gen:client": "pnpm --filter @vyaya/api gen:openapi && openapi-typescript apps/api/openapi.json -o apps/web/src/lib/api/generated/schema.d.ts"`.
+2. Add a root-level script in the repo root `package.json`: `"gen:client": "pnpm --filter @treasury-ops/api gen:openapi && openapi-typescript apps/api/openapi.json -o apps/web/src/lib/api/generated/schema.d.ts"`.
 3. Run it once (`pnpm gen:client`) to produce `apps/web/src/lib/api/generated/schema.d.ts`. **Never hand-edit this file** — it's regenerated, and should be committed (so CI/other contributors don't need to run the API to typecheck the web app). Add a CI step (or note for the human wiring CI later) that re-runs `gen:client` and fails the build on a git diff — that's what keeps the client from drifting, per `AGENTS.md` §5.
 
 ### A3 — Web: thin client wrappers
@@ -173,7 +173,7 @@ Every mutation/query call site should go through this mapper — never branch on
 2. `apps/web/src/lib/query/provider.tsx` (new, `"use client"`): a `QueryClientProvider` with one `QueryClient` instance created via `useState(() => new QueryClient({ defaultOptions: { queries: { staleTime: 60_000, retry: 2, refetchOnWindowFocus: true }, mutations: { retry: 0 } } }))`. Mount it in `apps/web/src/app/layout.tsx` wrapping `{children}` (root layout is already async/server — this provider is a client boundary nested inside it, same pattern as any client provider in an RSC tree).
 3. `apps/web/src/lib/query/keys.ts` (new) — the **only** place query keys are written, exactly as `FRONTEND.md` §4.2 specifies:
    ```ts
-   import type { ListTransactionsQuery } from "@vyaya/shared";
+   import type { ListTransactionsQuery } from "@treasury-ops/shared";
 
    export const qk = {
      txns: (filters: ListTransactionsQuery) => ["txns", filters] as const,
@@ -189,7 +189,7 @@ Every mutation/query call site should go through this mapper — never branch on
 
 All new primitives go in `apps/web/src/components/ui/` (zero business logic — pure, reusable, no data fetching, no feature imports) per `FRONTEND.md` §2 structure rules. Follow the exact style of the existing `button.tsx`/`input.tsx` (typed props extending the native HTML element's attributes where relevant, `className` merge via `.filter(Boolean).join(" ")`, token classes only).
 
-1. **`amount-input.tsx`** — `<AmountInput value={minor: number} onChange={(minor: number) => void} id label />`. Internally keeps a _string_ draft in local state (what the user is typing, e.g. `"1,250.5"`), calls `parseMinor()` from `@vyaya/shared` on blur/change to derive the committed `minor` value, catches the `RangeError` `parseMinor` throws on invalid input and shows an inline error instead of crashing. `inputMode="decimal"`, `type="text"` (not `type="number"` — need full control over formatting, matches `FRONTEND.md` §5's spec for this exact primitive). Money in form state is **always** the integer-paise number, never the display string, except for the input's own local draft.
+1. **`amount-input.tsx`** — `<AmountInput value={minor: number} onChange={(minor: number) => void} id label />`. Internally keeps a _string_ draft in local state (what the user is typing, e.g. `"1,250.5"`), calls `parseMinor()` from `@treasury-ops/shared` on blur/change to derive the committed `minor` value, catches the `RangeError` `parseMinor` throws on invalid input and shows an inline error instead of crashing. `inputMode="decimal"`, `type="text"` (not `type="number"` — need full control over formatting, matches `FRONTEND.md` §5's spec for this exact primitive). Money in form state is **always** the integer-paise number, never the display string, except for the input's own local draft.
 2. **`skeleton.tsx`** — a plain pulsing placeholder block (`animate-pulse bg-surface-muted rounded-md`), respect `prefers-reduced-motion` (no shimmer/pulse animation when it's set — Tailwind's `motion-reduce:` variant). Used by `transactions/loading.tsx` and the quick-add account/category selects while they load.
 3. **`empty-state.tsx`** — `<EmptyState title description action? />`, same visual language as the existing `coming-soon.tsx` (reuse its border/accent-bar styling — this is effectively `ComingSoon`'s general-purpose cousin). Used for "no transactions yet" and "no accounts yet" (§7).
 4. **`badge.tsx`** — small pill, variants at minimum `reversed` (uses `--color-reversed` token) and `pending` (greyed, for the optimistic row before server confirmation — `--color-foreground-muted`).
@@ -253,7 +253,7 @@ New feature folder, per `FRONTEND.md`'s split (quick-add is called out as a _sep
 
 ```ts
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import type { CreateTransaction } from "@vyaya/shared";
+import type { CreateTransaction } from "@treasury-ops/shared";
 import { apiClient } from "@/lib/api/client";
 import { toAppError } from "@/lib/api/problem";
 import { qk } from "@/lib/query/keys";
@@ -367,7 +367,7 @@ All routes are prefixed `/api` (global prefix) then the controller path below �
 
 ```ts
 type ProblemDetails = {
-  type: string; // "https://vyaya.app/problems/<code>"
+  type: string; // "https://treasury-ops.app/problems/<code>"
   title: string;
   status: number;
   detail: string;

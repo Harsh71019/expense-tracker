@@ -8,7 +8,7 @@ export const THEME_PREFERENCES = {
 
 export type ThemePreference = (typeof THEME_PREFERENCES)[keyof typeof THEME_PREFERENCES];
 
-export const THEME_COOKIE_NAME = "vyaya-theme";
+export const THEME_COOKIE_NAME = "treasury-ops-theme";
 
 export function isTheme(value: string | undefined): value is Theme {
   return value === "light" || value === "dark";

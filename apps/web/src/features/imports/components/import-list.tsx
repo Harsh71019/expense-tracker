@@ -1,6 +1,6 @@
 "use client";
 
-import type { Account, ImportBatch } from "@vyaya/shared";
+import type { Account, ImportBatch } from "@treasury-ops/shared";
 import type { ReactNode } from "react";
 
 import { EmptyState } from "@/components/ui/empty-state";

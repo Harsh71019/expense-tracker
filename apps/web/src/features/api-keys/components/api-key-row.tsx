@@ -1,6 +1,6 @@
 "use client";
 
-import { UpdateApiKeySchema, type ApiKey, type UpdateApiKey } from "@vyaya/shared";
+import { UpdateApiKeySchema, type ApiKey, type UpdateApiKey } from "@treasury-ops/shared";
 import { useState } from "react";
 import type { ReactNode } from "react";
 

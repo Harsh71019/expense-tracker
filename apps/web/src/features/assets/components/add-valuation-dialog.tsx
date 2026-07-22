@@ -1,6 +1,6 @@
 "use client";
 
-import { CreateValuationSchema, type Asset } from "@vyaya/shared";
+import { CreateValuationSchema, type Asset } from "@treasury-ops/shared";
 import { useState } from "react";
 import type { ReactNode } from "react";
 import { toast } from "sonner";

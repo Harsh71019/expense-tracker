@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { Account, ImportBatch } from "@vyaya/shared";
+import type { Account, ImportBatch } from "@treasury-ops/shared";
 import { describe, expect, it, vi } from "vitest";
 
 import { ImportList } from "./import-list";

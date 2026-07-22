@@ -1,6 +1,6 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { Cron } from "@nestjs/schedule";
-import { computeNextOccurrence, type RecurringRule } from "@vyaya/shared";
+import { computeNextOccurrence, type RecurringRule } from "@treasury-ops/shared";
 import { Logger } from "nestjs-pino";
 
 import { AccountRepository } from "../accounts/account.repository.js";

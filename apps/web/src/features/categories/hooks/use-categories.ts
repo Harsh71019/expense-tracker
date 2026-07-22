@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
-import { CategorySchema, type Category } from "@vyaya/shared";
+import { CategorySchema, type Category } from "@treasury-ops/shared";
 import { z } from "zod";
 
 import { apiClient } from "@/lib/api/client";

@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import type { NetWorth } from "@vyaya/shared";
+import type { NetWorth } from "@treasury-ops/shared";
 
 import { AccountRepository } from "../accounts/account.repository.js";
 import { AssetRepository } from "./asset.repository.js";

@@ -2,7 +2,7 @@ type Namespace = "api" | "query" | "offline" | "form";
 
 const isDebugEnabled =
   process.env.NODE_ENV !== "production" ||
-  (typeof window !== "undefined" && window.localStorage.getItem("vyaya:debug") === "1");
+  (typeof window !== "undefined" && window.localStorage.getItem("treasury-ops:debug") === "1");
 
 function createLogger(namespace: Namespace): (...args: unknown[]) => void {
   if (!isDebugEnabled) {

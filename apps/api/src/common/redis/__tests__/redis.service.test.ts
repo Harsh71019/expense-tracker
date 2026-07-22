@@ -66,7 +66,7 @@ describe("RedisService", () => {
     // Test setWorkerHeartbeat
     await service.setWorkerHeartbeat();
     expect(mockRedisInstance.set).toHaveBeenCalledWith(
-      "vyaya:worker:heartbeat",
+      "treasury-ops:worker:heartbeat",
       expect.any(String),
       "EX",
       60
@@ -75,7 +75,7 @@ describe("RedisService", () => {
     // Test hasWorkerHeartbeat
     const hasHeartbeat = await service.hasWorkerHeartbeat();
     expect(hasHeartbeat).toBe(true);
-    expect(mockRedisInstance.exists).toHaveBeenCalledWith("vyaya:worker:heartbeat");
+    expect(mockRedisInstance.exists).toHaveBeenCalledWith("treasury-ops:worker:heartbeat");
 
     // Test get
     const getVal = await service.get("custom-key");

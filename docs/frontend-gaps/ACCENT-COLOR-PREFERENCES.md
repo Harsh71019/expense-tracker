@@ -4,11 +4,11 @@
 >
 > Scope: frontend-only personalization
 >
-> Default: the existing Vyaya green accent remains unchanged
+> Default: the existing TreasuryOps green accent remains unchanged
 
 ## Goal
 
-Allow a user to choose an accent color for interactive and decorative UI while preserving the current Vyaya green as the default. A user can return to that default at any time.
+Allow a user to choose an accent color for interactive and decorative UI while preserving the current TreasuryOps green as the default. A user can return to that default at any time.
 
 This is a visual preference only. It must not change ledger data, category colors, chart series, or the semantic colors used for income, expense, warnings, errors, and reversals.
 
@@ -29,14 +29,14 @@ Add an **Appearance** section to the authenticated `/settings` page. It should c
 
 - A labeled **Accent color** group with a small set of named color swatches.
 - A visible selected state using a check mark and border, not color alone.
-- Accessible preset names such as “Vyaya green” and “Ocean blue”.
+- Accessible preset names such as “TreasuryOps green” and “Ocean blue”.
 - A **Custom color** option with a native color picker and a text field that accepts hex, RGB, or HSL input.
 - A preview that shows the normalized color and its light/dark variants before it is applied.
 - An inline validation or contrast message when the submitted value cannot be used safely.
-- A **Reset to Vyaya default** action. It should be disabled or omitted while the default is already selected.
+- A **Reset to TreasuryOps default** action. It should be disabled or omitted while the default is already selected.
 - A single action button for presets and custom colors. It reads **Apply color** after a selection changes, **Applying…** during the server action, and **Applied** once the active preference matches the staged selection.
 
-The default option must be named **Vyaya green** and shown first. Selecting it and pressing **Apply color**, or using the reset action, have the same result: remove the accent-preference cookie and let the application fall back to the built-in colors. Changing a preset, text value, or native picker after a successful submission returns the button from **Applied** to **Apply color**.
+The default option must be named **TreasuryOps green** and shown first. Selecting it and pressing **Apply color**, or using the reset action, have the same result: remove the accent-preference cookie and let the application fall back to the built-in colors. Changing a preset, text value, or native picker after a successful submission returns the button from **Applied** to **Apply color**.
 
 ## Preset palette
 
@@ -44,8 +44,8 @@ Curated presets provide fast, reviewed choices. Custom input supplements these p
 
 | ID        | Label         | Theme | Accent    | Strong    | Foreground | Glow                        |
 | --------- | ------------- | ----- | --------- | --------- | ---------- | --------------------------- |
-| `default` | Vyaya green   | Light | `#0f9d63` | `#10a367` | `#04140d`  | `rgba(15, 157, 99, 0.15)`   |
-| `default` | Vyaya green   | Dark  | `#34d399` | `#2cb382` | `#04140d`  | `rgba(52, 211, 153, 0.15)`  |
+| `default` | TreasuryOps green   | Light | `#0f9d63` | `#10a367` | `#04140d`  | `rgba(15, 157, 99, 0.15)`   |
+| `default` | TreasuryOps green   | Dark  | `#34d399` | `#2cb382` | `#04140d`  | `rgba(52, 211, 153, 0.15)`  |
 | `ocean`   | Ocean blue    | Light | `#1d4ed8` | `#1e40af` | `#ffffff`  | `rgba(29, 78, 216, 0.15)`   |
 | `ocean`   | Ocean blue    | Dark  | `#60a5fa` | `#3b82f6` | `#071426`  | `rgba(96, 165, 250, 0.15)`  |
 | `indigo`  | Ledger indigo | Light | `#4338ca` | `#3730a3` | `#ffffff`  | `rgba(67, 56, 202, 0.15)`   |
@@ -55,7 +55,7 @@ Curated presets provide fast, reviewed choices. Custom input supplements these p
 | `amber`   | Saffron amber | Light | `#b45309` | `#92400e` | `#ffffff`  | `rgba(180, 83, 9, 0.15)`    |
 | `amber`   | Saffron amber | Dark  | `#fbbf24` | `#f59e0b` | `#211300`  | `rgba(251, 191, 36, 0.15)`  |
 
-The original Vyaya green accent hues remain unchanged. The default light `accent-foreground` changes from white to `#04140d`: white on `#0f9d63` has only about `3.49:1` contrast, while the dark ink has about `5.42:1`. The light hover value moves within the same green hue from `#128051` to `#10a367` so it also remains readable with the dark foreground. These adjustments correct an existing accessibility issue without replacing the original default accent color.
+The original TreasuryOps green accent hues remain unchanged. The default light `accent-foreground` changes from white to `#04140d`: white on `#0f9d63` has only about `3.49:1` contrast, while the dark ink has about `5.42:1`. The light hover value moves within the same green hue from `#128051` to `#10a367` so it also remains readable with the dark foreground. These adjustments correct an existing accessibility issue without replacing the original default accent color.
 
 Red is intentionally not offered because it is already the expense/error color. Green continues to represent income even when another accent is selected.
 
@@ -79,13 +79,13 @@ The user chooses one base color. The application deterministically derives theme
 5. Derive `accent-glow` from the final theme accent at `0.15` alpha.
 6. Produce and preview separate light and dark token sets from the same saved base color.
 
-If a requested value needs adjustment, the UI should say that Vyaya tuned it for readable contrast and show the applied result. If the algorithm cannot produce a compliant result, reject the submission and keep the previous accent. The conversion and adjustment functions must be deterministic, side-effect-free, and covered with boundary tests.
+If a requested value needs adjustment, the UI should say that TreasuryOps tuned it for readable contrast and show the applied result. If the algorithm cannot produce a compliant result, reject the submission and keep the previous accent. The conversion and adjustment functions must be deterministic, side-effect-free, and covered with boundary tests.
 
 A custom red is allowed because the user explicitly requested a free-form color, but the UI should warn that it may resemble expense/error states. Ledger direction and errors must continue to use labels, signs, icons, and other non-color indicators.
 
 ## Preference and rendering model
 
-Use a dedicated cookie named `vyaya-accent` containing a validated preset or normalized custom value:
+Use a dedicated cookie named `treasury-ops-accent` containing a validated preset or normalized custom value:
 
 - Preset: `preset:ocean`.
 - Custom: `custom:1d4ed8` (canonical six-digit hex without `#`).
@@ -185,7 +185,7 @@ The route remains a server component. The form should use server actions, just l
 - Valid custom input that needs contrast adjustment: show the adjusted preview and persist the original normalized base so both theme variants can be re-derived from one source.
 - Server action failure: keep the previous selection and expose the failure through the form/action error pattern used by the frontend; do not optimistically claim success.
 - CSS missing for a new preset: the base green variables remain the safe fallback.
-- Custom token generation failure: omit the custom properties and fall back to the original Vyaya green.
+- Custom token generation failure: omit the custom properties and fall back to the original TreasuryOps green.
 - JavaScript disabled: selection still works through the server-action form submission.
 
 ## Tests
@@ -212,7 +212,7 @@ The route remains a server component. The form should use server actions, just l
 - Choose very light, dark, and mid-luminance custom colors and confirm the preview and applied variants meet contrast requirements.
 - Reload directly into a route and confirm the selected accent is present on first paint.
 - Switch between light and dark mode and confirm both variants of the selected preset or custom color apply.
-- Reset and confirm the original light and dark Vyaya green colors return.
+- Reset and confirm the original light and dark TreasuryOps green colors return.
 - Inject an invalid cookie and confirm the app renders safely with the default.
 - Run automated accessibility checks for the appearance controls in both themes.
 
@@ -229,7 +229,7 @@ The route remains a server component. The form should use server actions, just l
 
 ## Acceptance criteria
 
-- Vyaya green remains the appearance for users who have never chosen an accent.
+- TreasuryOps green remains the appearance for users who have never chosen an accent.
 - A user can select a preset or provide a custom accent through a native picker, hex, RGB, or HSL input on `/settings`, press one **Apply color** action, and see it applied throughout the frontend.
 - The action reports **Applied** after success and returns to **Apply color** as soon as the staged selection changes.
 - Equivalent color formats normalize to the same saved six-digit hex value.

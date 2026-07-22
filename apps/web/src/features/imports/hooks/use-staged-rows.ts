@@ -5,7 +5,7 @@ import {
   type InfiniteData,
   type UseInfiniteQueryResult
 } from "@tanstack/react-query";
-import { StagedRowPageSchema, type StagedRowPage } from "@vyaya/shared";
+import { StagedRowPageSchema, type StagedRowPage } from "@treasury-ops/shared";
 
 import { apiClient } from "@/lib/api/client";
 import { toAppError, toNetworkError } from "@/lib/api/problem";

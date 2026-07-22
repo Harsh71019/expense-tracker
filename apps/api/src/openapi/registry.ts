@@ -4,11 +4,11 @@
  *
  * This file serves as the single source of truth for the API specification.
  * It uses `@asteasolutions/zod-to-openapi` to declare endpoints and map request/response
- * structures to Zod schemas imported from `@vyaya/shared`.
+ * structures to Zod schemas imported from `@treasury-ops/shared`.
  *
  * DESIGN INVARIANTS:
  * 1. Schema Derivation: Never duplicate schema structures. All schemas used here
- *    MUST be imported directly from `@vyaya/shared`.
+ *    MUST be imported directly from `@treasury-ops/shared`.
  * 2. Shared Registry Singleton: This `registry` instance is shared between the
  *    runtime endpoint (`OpenApiController`) and the static file generator script
  *    (`generate-openapi.ts`). This ensures the live docs and the web client generated
@@ -67,7 +67,7 @@ import {
   RecurringRuleSchema,
   UpdateApiKeySchema,
   UpdateRecurringRuleSchema
-} from "@vyaya/shared";
+} from "@treasury-ops/shared";
 import { z } from "zod";
 
 const registry = new OpenAPIRegistry();
@@ -511,7 +511,7 @@ registry.registerPath({
     200: {
       description: "Posted transactions as a formula-injection-safe CSV attachment",
       headers: z.object({
-        "Content-Disposition": z.literal('attachment; filename="vyaya-export.csv"')
+        "Content-Disposition": z.literal('attachment; filename="treasury-ops-export.csv"')
       }),
       content: {
         "text/csv; charset=utf-8": { schema: z.string() }

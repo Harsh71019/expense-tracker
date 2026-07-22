@@ -1,4 +1,4 @@
-import type { CategoryId, CategoryRule } from "@vyaya/shared";
+import type { CategoryId, CategoryRule } from "@treasury-ops/shared";
 
 /**
  * Rule-based category suggester (IMPLEMENTATION-PLAN.md Phase 3: "SWIGGY -> Food,

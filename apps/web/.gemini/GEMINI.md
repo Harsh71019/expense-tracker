@@ -1,6 +1,6 @@
 # Gemini Frontend Development Rules
 
-This file provides rules and instructions for Gemini (Antigravity) when working within the `apps/web` package of the Vyaya monorepo. 
+This file provides rules and instructions for Gemini (Antigravity) when working within the `apps/web` package of the TreasuryOps monorepo. 
 
 > [!IMPORTANT]
 > **Read the root `/AGENTS.md` and `/CLAUDE.md` first.** All global repository rules (such as TypeScript strictness, money-handling invariants, and testing gates) apply here.
@@ -41,7 +41,7 @@ We enforce `"strict": true` across TS configs. The typecheck step must pass with
 *   **Browser API Client**: `src/lib/api/client.ts` (`baseUrl: "/api"` rewriting to `INTERNAL_API_URL`).
 *   **Server API Client**: `src/lib/api/server.ts` (directly hits `INTERNAL_API_URL`, forwards cookies and request IDs).
 *   **Generated Client**: Do not hand-write raw `fetch` calls to the backend. Always use the generated `openapi-fetch` clients generated from the API's OpenAPI schema (`apps/web/src/lib/api/generated/schema.d.ts`).
-*   **Zod Boundaries**: Response payloads must still be runtime-validated using the matching Zod schema from `@vyaya/shared`.
+*   **Zod Boundaries**: Response payloads must still be runtime-validated using the matching Zod schema from `@treasury-ops/shared`.
 
 ### Authentication
 *   **Session Management**: Middleware (`src/proxy.ts`) does optimistic redirects. True, authoritative session check is done server-side in `(app)/layout.tsx` via `getSession()` (`src/lib/api/session.ts`).
@@ -54,8 +54,8 @@ We enforce `"strict": true` across TS configs. The typecheck step must pass with
 ---
 
 ## 4. Money & Styling Rules
-*   **Integer Paise**: Never format `amountMinor` (minor unit, paise) by dividing by 100 inline. Always use `<Money>` or `<SignedMoney>` from `src/components/ui/money`, or the `formatMinor()` utility from `@vyaya/shared`.
-*   **Theme & Accents**: Backed by cookies (`vyaya-theme`, `vyaya-accent`). Read server-side to set `data-theme` and custom CSS variables before hydration. Do not use client-side flash-of-unstyled-theme hacks. Keep semantic color classes (income, expense, charts) independent from accent configurations.
+*   **Integer Paise**: Never format `amountMinor` (minor unit, paise) by dividing by 100 inline. Always use `<Money>` or `<SignedMoney>` from `src/components/ui/money`, or the `formatMinor()` utility from `@treasury-ops/shared`.
+*   **Theme & Accents**: Backed by cookies (`treasury-ops-theme`, `treasury-ops-accent`). Read server-side to set `data-theme` and custom CSS variables before hydration. Do not use client-side flash-of-unstyled-theme hacks. Keep semantic color classes (income, expense, charts) independent from accent configurations.
 
 ---
 
@@ -68,7 +68,7 @@ We enforce `"strict": true` across TS configs. The typecheck step must pass with
 
 ## 6. Definition of Done
 Your task is done only when:
-1.  `pnpm --filter @vyaya/web typecheck` passes with zero errors.
-2.  `pnpm --filter @vyaya/web lint` passes with zero warnings.
-3.  `pnpm --filter @vyaya/web test` passes.
-4.  If mutation/layout logic is updated, verify with corresponding Playwright test where possible (`pnpm --filter @vyaya/web test:e2e`).
+1.  `pnpm --filter @treasury-ops/web typecheck` passes with zero errors.
+2.  `pnpm --filter @treasury-ops/web lint` passes with zero warnings.
+3.  `pnpm --filter @treasury-ops/web test` passes.
+4.  If mutation/layout logic is updated, verify with corresponding Playwright test where possible (`pnpm --filter @treasury-ops/web test:e2e`).

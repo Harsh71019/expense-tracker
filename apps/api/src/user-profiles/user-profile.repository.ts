@@ -4,7 +4,7 @@ import {
   UserProfileSchema,
   UserProfileUpdateSchema,
   type UserProfile
-} from "@vyaya/shared";
+} from "@treasury-ops/shared";
 import { eq } from "drizzle-orm";
 
 import { DATABASE_CONNECTION } from "../common/db/db.module.js";

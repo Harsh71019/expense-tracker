@@ -6,7 +6,7 @@ import {
   type TransactionId,
   type TransactionPage,
   type UpdateTransaction
-} from "@vyaya/shared";
+} from "@treasury-ops/shared";
 import { Logger } from "nestjs-pino";
 
 import { AccountRepository } from "../accounts/account.repository.js";

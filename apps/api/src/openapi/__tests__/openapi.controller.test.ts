@@ -10,7 +10,7 @@ describe("OpenApiController", () => {
     it("returns a valid OpenAPI 3.1 document with core resource paths", () => {
       const spec = controller.getSpec();
       expect(spec.openapi).toBe("3.1.0");
-      expect(spec.info.title).toBe("Vyaya API");
+      expect(spec.info.title).toBe("TreasuryOps API");
       expect(spec.paths).toBeDefined();
       expect(spec.components?.schemas).toBeDefined();
       expect(spec.components?.securitySchemes?.["cookieAuth"]).toBeDefined();

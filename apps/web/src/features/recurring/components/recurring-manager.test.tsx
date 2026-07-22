@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { Account, Category, RecurringRule } from "@vyaya/shared";
+import type { Account, Category, RecurringRule } from "@treasury-ops/shared";
 import { describe, expect, it, vi } from "vitest";
 
 import { RecurringManager } from "./recurring-manager";

@@ -9,7 +9,7 @@
 
 ## 1. What exists today (`apps/api/scripts/seed.ts`)
 
-- One user (`demo@vyaya.local`), idempotent only at the "does this user exist" level — if it
+- One user (`demo@treasury-ops.local`), idempotent only at the "does this user exist" level — if it
   does, the whole script no-ops.
 - Two accounts (bank, cash), seven categories (flat, no icon/color/parent), three
   transactions, all in the current month.
@@ -44,11 +44,11 @@ Every domain module under `apps/api/src`, and the seed scenario that exercises i
 
 ## 3. Multi-user, multi-month data shape
 
-- **Two users**, not one: `demo@vyaya.local` (fully seeded, everything in §2) and
-  `demo2@vyaya.local` (a light dataset — one account, a few transactions). The second user
+- **Two users**, not one: `demo@treasury-ops.local` (fully seeded, everything in §2) and
+  `demo2@treasury-ops.local` (a light dataset — one account, a few transactions). The second user
   exists so a developer can manually confirm tenant isolation in the running UI (log in as
   each, confirm no cross-visibility) — the same property already covered by integration tests
-  (`docs/reviews/vyaya-backend-standards.md`'s ownership-test coverage), just now also
+  (`docs/reviews/treasury-ops-backend-standards.md`'s ownership-test coverage), just now also
   checkable by hand.
 - **Dates are computed relative to "now"**, never hardcoded absolutes — e.g. "3 months ago"
   through "next month" — so the seed produces a currently-relevant spread and recurring
@@ -135,7 +135,7 @@ app code to.
 
 ## 6. Idempotency, `--reset`, and safety
 
-- Keep the existing top-level idempotency guard (skip entirely if `demo@vyaya.local` already
+- Keep the existing top-level idempotency guard (skip entirely if `demo@treasury-ops.local` already
   exists) as the default — safe, matches current behavior, good enough for CI/first-run.
 - Add an explicit `--reset` flag for local dev iteration, deleting both demo users and
   everything they own before reseeding.
@@ -188,8 +188,8 @@ referencing each other within that same statement.
 
 ## 8. Decisions (previously open questions)
 
-1. **Two demo users, fixed** — no `SEED_SECONDARY_USERS` config knob. `demo@vyaya.local`
-   (fully seeded) + `demo2@vyaya.local` (light dataset, for manual tenant-isolation checks).
+1. **Two demo users, fixed** — no `SEED_SECONDARY_USERS` config knob. `demo@treasury-ops.local`
+   (fully seeded) + `demo2@treasury-ops.local` (light dataset, for manual tenant-isolation checks).
 2. **`--reset` deletes table-scoped by `userId`, in reverse-dependency order, inside one
    transaction — not cascade.** See §6 for the full rationale and delete order.
 3. **Fixture CSV reuses `COLUMN_MAPPING_PRESETS.hdfc` verbatim** — same column names/mapping

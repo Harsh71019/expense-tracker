@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { TransactionSchema, type Transaction } from "@vyaya/shared";
+import { TransactionSchema, type Transaction } from "@treasury-ops/shared";
 
 import { apiClient } from "@/lib/api/client";
 import { toAppError, toNetworkError } from "@/lib/api/problem";

@@ -1,6 +1,6 @@
 "use client";
 
-import { formatMinor, parseMinor } from "@vyaya/shared";
+import { formatMinor, parseMinor } from "@treasury-ops/shared";
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 

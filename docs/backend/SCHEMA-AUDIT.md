@@ -1,4 +1,4 @@
-# Vyaya Schema and Index Audit
+# TreasuryOps Schema and Index Audit
 
 > Status: design/audit proposal for review. No schemas, migrations, repositories, or runtime
 > behavior are changed by this document.

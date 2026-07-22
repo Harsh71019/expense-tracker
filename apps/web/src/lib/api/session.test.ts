@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
-  cookie: "vyaya.session=test-cookie",
+  cookie: "treasury-ops.session=test-cookie",
   api: vi.fn()
 }));
 

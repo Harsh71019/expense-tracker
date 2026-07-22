@@ -23,7 +23,7 @@ describe("AccentPicker", () => {
     render(<AccentPicker current={{ kind: "default" }} />);
 
     expect(screen.getByRole("heading", { name: "Accent color" })).toBeVisible();
-    expect(screen.getByRole("button", { name: /Vyaya green/ })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: /TreasuryOps green/ })).toHaveAttribute(
       "aria-pressed",
       "true"
     );
@@ -33,7 +33,7 @@ describe("AccentPicker", () => {
     );
     expect(screen.getByLabelText("Hex, RGB, or HSL")).toHaveValue("");
     expect(screen.getByRole("button", { name: "Applied" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Reset to Vyaya default" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Reset to TreasuryOps default" })).toBeDisabled();
   });
 
   it("previews normalized custom input and reports invalid values", async () => {
@@ -63,7 +63,7 @@ describe("AccentPicker", () => {
 
     expect(screen.getByLabelText("Hex, RGB, or HSL")).toHaveValue("#1d4ed8");
     expect(screen.getByRole("button", { name: "Applied" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Reset to Vyaya default" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Reset to TreasuryOps default" })).toBeEnabled();
   });
 
   it("applies preset selections and becomes dirty when another color is chosen", async () => {
@@ -89,7 +89,7 @@ describe("AccentPicker", () => {
     const user = userEvent.setup();
     render(<AccentPicker current={{ kind: "custom", color: "#ff0000" }} />);
 
-    await user.click(screen.getByRole("button", { name: /Vyaya green/ }));
+    await user.click(screen.getByRole("button", { name: /TreasuryOps green/ }));
     expect(screen.getByLabelText("Hex, RGB, or HSL")).toHaveValue("");
     expect(screen.getByRole("button", { name: "Apply color" })).toBeEnabled();
 

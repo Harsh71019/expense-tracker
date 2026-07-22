@@ -1,4 +1,4 @@
-import type { ColumnMapping, ParsedRow } from "@vyaya/shared";
+import type { ColumnMapping, ParsedRow } from "@treasury-ops/shared";
 
 import { parseExplicitDate } from "../common/time/parse-date.js";
 import { resolveAmount } from "./parse-amount.js";

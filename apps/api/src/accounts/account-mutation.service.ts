@@ -1,5 +1,10 @@
 import { Injectable } from "@nestjs/common";
-import { AccountSchema, type Account, type AccountId, type CreateAccount } from "@vyaya/shared";
+import {
+  AccountSchema,
+  type Account,
+  type AccountId,
+  type CreateAccount
+} from "@treasury-ops/shared";
 import { z } from "zod";
 
 import { EntityNotFoundError } from "../common/errors/entity-not-found.error.js";

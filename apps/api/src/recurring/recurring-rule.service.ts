@@ -6,7 +6,7 @@ import {
   type RecurringRule,
   type RecurringRuleId,
   type UpdateRecurringRule
-} from "@vyaya/shared";
+} from "@treasury-ops/shared";
 
 import { AccountRepository } from "../accounts/account.repository.js";
 import { CategoryRepository } from "../categories/category.repository.js";

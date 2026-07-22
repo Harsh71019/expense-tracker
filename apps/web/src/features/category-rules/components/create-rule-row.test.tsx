@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { Category } from "@vyaya/shared";
+import type { Category } from "@treasury-ops/shared";
 import { describe, expect, it, vi } from "vitest";
 
 import { CreateRuleRow } from "./create-rule-row";

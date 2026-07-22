@@ -1,4 +1,4 @@
-import { formatMinorInput } from "@vyaya/shared";
+import { formatMinorInput } from "@treasury-ops/shared";
 
 import type { components } from "@/lib/api/generated/schema";
 import { MOCK_USER_ID } from "@/mocks/enabled";
@@ -18,7 +18,7 @@ export type UserProfileDto = components["schemas"]["UserProfile"];
 export type TransferDto = components["schemas"]["Transfer"];
 export type TransferReversalDto = components["schemas"]["TransferReversal"];
 export type RecurringRuleDto = components["schemas"]["RecurringRule"];
-/** Generated-schema shape, distinct from `@vyaya/shared`'s `ColumnMapping` — see toColumnMappingDto in handlers/imports.ts. */
+/** Generated-schema shape, distinct from `@treasury-ops/shared`'s `ColumnMapping` — see toColumnMappingDto in handlers/imports.ts. */
 export type ColumnMappingDto = ImportBatchDto["mapping"];
 
 /**

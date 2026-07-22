@@ -4,8 +4,8 @@ services:
     restart: unless-stopped
     env_file: .env
     environment:
-      POSTGRES_DB: vyaya
-      POSTGRES_USER: vyaya
+      POSTGRES_DB: treasury_ops
+      POSTGRES_USER: treasury_ops
     ports:
       # Bind to loopback by default -- reachable as localhost:5433 for local dev (matches
       # .env.development.local.example) and from the deploy host itself, but not from the
@@ -14,11 +14,11 @@ services:
       # production, where the app containers are the only intended clients.
       - "${POSTGRES_BIND_ADDR:-127.0.0.1}:5433:5432"
     volumes:
-      - vyaya-postgres-data:/var/lib/postgresql
+      - treasury-ops-postgres-data:/var/lib/postgresql
     networks:
-      - vyaya-net
+      - treasury-ops-net
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U vyaya -d vyaya"]
+      test: ["CMD-SHELL", "pg_isready -U treasury_ops -d treasury_ops"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -30,7 +30,7 @@ services:
 
   # One-shot: runs drizzle-kit migrate, exits 0. Gates everything else.
   migrate:
-    image: vyaya-api:local
+    image: treasury-ops-api:local
     build:
       context: .
       dockerfile: apps/api/Dockerfile
@@ -43,12 +43,12 @@ services:
       postgres:
         condition: service_healthy
     networks:
-      - vyaya-net
+      - treasury-ops-net
     restart: "no"
     logging: *json_logging
 
   api:
-    image: vyaya-api:local
+    image: treasury-ops-api:local
     pull_policy: never
     restart: unless-stopped
     env_file: .env
@@ -60,7 +60,7 @@ services:
       migrate:
         condition: service_completed_successfully
     networks:
-      - vyaya-net
+      - treasury-ops-net
     logging: *json_logging
     healthcheck:
       test:
@@ -76,7 +76,7 @@ services:
       start_period: 20s
 
   worker:
-    image: vyaya-api:local
+    image: treasury-ops-api:local
     pull_policy: never
     command: ["dist/worker.js"]
     restart: unless-stopped
@@ -88,7 +88,7 @@ services:
       migrate:
         condition: service_completed_successfully
     networks:
-      - vyaya-net
+      - treasury-ops-net
     logging: *json_logging
     healthcheck:
       test: ["CMD", "/nodejs/bin/node", "dist/worker-health.js"] # pings its own heartbeat key in redis
@@ -113,7 +113,7 @@ services:
       api:
         condition: service_healthy
     networks:
-      - vyaya-net
+      - treasury-ops-net
     logging: *json_logging
     healthcheck:
       test:
@@ -142,12 +142,12 @@ services:
       api:
         condition: service_healthy
     networks:
-      - vyaya-net
+      - treasury-ops-net
     logging: *json_logging
 
 networks:
-  vyaya-net:
+  treasury-ops-net:
     driver: bridge
 
 volumes:
-  vyaya-postgres-data:
+  treasury-ops-postgres-data:

@@ -1,6 +1,6 @@
 "use client";
 
-import { UpdateTransactionSchema, type Transaction } from "@vyaya/shared";
+import { UpdateTransactionSchema, type Transaction } from "@treasury-ops/shared";
 import Link from "next/link";
 import { useState } from "react";
 import type { FormEvent, ReactNode } from "react";

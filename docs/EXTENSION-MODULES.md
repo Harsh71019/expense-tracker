@@ -1,4 +1,4 @@
-# Vyaya — Extension Modules: Debt, Goals, Investments, Cards, Email Ingestion
+# TreasuryOps — Extension Modules: Debt, Goals, Investments, Cards, Email Ingestion
 
 > Extends `BACKEND.md` + `SALARY-MODULE.md`. Same invariants (I1–I5), same rails (withTxn, idempotency, append-only, tenancy-scoped repos, problem+json). **Design stance for every module here: model it as ledger mechanics (accounts + transactions), never as a parallel money system.** Debt, SIPs, and goals are _views over the ledger_ plus small metadata collections — that's what keeps net worth automatically correct and every number reversible.
 
@@ -114,7 +114,7 @@ Progress recomputes in the nightly rollup job; `achieved` fires a push. No goal 
 
 ## 3. Investments: SIPs & Stock Portfolio (scoped deliberately)
 
-**The pushback, stated plainly:** Vyaya should track **contributions and valuations, not live prices**. Groww already does live NAV/P&L, and rebuilding it means quote feeds, splits, dividends, XIRR edge cases — a second product. What Groww _doesn't_ give you is your investments inside your cashflow, goals, and net worth. That's the gap Vyaya fills:
+**The pushback, stated plainly:** TreasuryOps should track **contributions and valuations, not live prices**. Groww already does live NAV/P&L, and rebuilding it means quote feeds, splits, dividends, XIRR edge cases — a second product. What Groww _doesn't_ give you is your investments inside your cashflow, goals, and net worth. That's the gap TreasuryOps fills:
 
 - **Investment accounts** (`type: 'investment'`): "Groww MF", "Groww Stocks", "PPF", "EPF" (the salary module already feeds EPF §4.3).
 - **SIPs = recurring transfers** bank → investment account. Reuses the recurring engine wholesale; idempotency `sip:{ruleId}:{YYYY-MM}`; a `sip: true` flag on the rule gives the dashboard a "Monthly SIP total" widget and lets goals count SIPs as committed outflow. The investment account's balance = **cost basis** (what you've put in) — automatically, from transfers.
@@ -165,7 +165,7 @@ billing: {
 
 ## 5. Email Ingestion Spec (the n8n contract)
 
-n8n owns email plumbing; Vyaya owns money. The boundary is one endpoint:
+n8n owns email plumbing; TreasuryOps owns money. The boundary is one endpoint:
 
 ```
 POST /v1/ingest/email        (API-key auth via Better Auth service key, not a session)
@@ -228,4 +228,4 @@ VPS (same objection), custom Node script (rebuilding n8n's
 IMAP/retry/UI for one flow — rejected).
 Consequences: homelab-grade uptime is fine — polling + message-ID idempotency
 self-heal after downtime.
-Revisit when: flow count grows beyond banking email, or Vyaya ever leaves the LAN.
+Revisit when: flow count grows beyond banking email, or TreasuryOps ever leaves the LAN.

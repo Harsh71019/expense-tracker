@@ -1,7 +1,11 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CategoryRuleSchema, type CategoryRule, type CreateCategoryRule } from "@vyaya/shared";
+import {
+  CategoryRuleSchema,
+  type CategoryRule,
+  type CreateCategoryRule
+} from "@treasury-ops/shared";
 import { useState } from "react";
 import { z } from "zod";
 

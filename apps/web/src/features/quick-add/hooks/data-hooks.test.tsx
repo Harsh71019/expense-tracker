@@ -20,7 +20,7 @@ const response = new Response(null, { status: 200 });
 const timestamp = new Date("2026-07-16T00:00:00.000Z");
 const problemResponse = new Response(null, { status: 422 });
 const problem = {
-  type: "https://vyaya.app/problems/validation",
+  type: "https://treasury-ops.app/problems/validation",
   title: "Validation failed",
   status: 422,
   detail: "Check your entry",

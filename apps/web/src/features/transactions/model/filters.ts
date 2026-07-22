@@ -1,4 +1,4 @@
-import { ListTransactionsQuerySchema, type ListTransactionsQuery } from "@vyaya/shared";
+import { ListTransactionsQuerySchema, type ListTransactionsQuery } from "@treasury-ops/shared";
 
 export type TransactionSearchParams = Readonly<
   Record<string, string | readonly string[] | undefined>

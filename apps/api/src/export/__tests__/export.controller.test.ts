@@ -31,7 +31,7 @@ describe("ExportController", () => {
     expect(response.setHeader).toHaveBeenCalledWith("Content-Type", "text/csv; charset=utf-8");
     expect(response.setHeader).toHaveBeenCalledWith(
       "Content-Disposition",
-      'attachment; filename="vyaya-export.csv"'
+      'attachment; filename="treasury-ops-export.csv"'
     );
     expect(response.send).toHaveBeenCalledWith("Date,Amount\r\n");
   });

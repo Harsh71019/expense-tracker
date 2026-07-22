@@ -10,16 +10,16 @@ COPY packages/config/package.json packages/config/package.json
 COPY packages/config/tsconfig packages/config/tsconfig
 COPY packages/shared/package.json packages/shared/package.json
 
-RUN --mount=type=cache,id=vyaya-pnpm-store,target=/pnpm/store \
+RUN --mount=type=cache,id=treasury-ops-pnpm-store,target=/pnpm/store \
   pnpm config set store-dir /pnpm/store \
   && pnpm install --frozen-lockfile
 
 COPY apps/api apps/api
 COPY packages/shared packages/shared
 
-RUN pnpm --filter @vyaya/shared build \
-  && pnpm --filter @vyaya/api build \
-  && pnpm --filter @vyaya/api deploy --legacy --prod /app \
+RUN pnpm --filter @treasury-ops/shared build \
+  && pnpm --filter @treasury-ops/api build \
+  && pnpm --filter @treasury-ops/api deploy --legacy --prod /app \
   && cp -R apps/api/dist /app/dist
 
 FROM gcr.io/distroless/nodejs24-debian12:nonroot

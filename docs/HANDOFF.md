@@ -13,8 +13,8 @@ assets, and API error-shape standard`), 6 commits ahead of `origin/main`, **not 
 All verification is green as of this commit:
 
 ```
-pnpm --filter @vyaya/api typecheck / lint / test / test:integration
-pnpm --filter @vyaya/shared typecheck / lint / test
+pnpm --filter @treasury-ops/api typecheck / lint / test / test:integration
+pnpm --filter @treasury-ops/shared typecheck / lint / test
 pnpm verify:migrations
 ```
 
@@ -79,7 +79,7 @@ onto `accounts`/`categories`/`user-profiles`/`health`/`auth` (see Known gaps bel
 - **List envelope**: `{items, pageInfo: {nextCursor, hasMore, limit}}` — this is now
   the one shape every list endpoint uses, including the non-paginated valuation
   history.
-- **Errors**: full RFC 7807 + Vyaya extensions (`code`, `reqId`, `timestamp`,
+- **Errors**: full RFC 7807 + TreasuryOps extensions (`code`, `reqId`, `timestamp`,
   `retryable`, `errors[]`). `ZodError` → `422` with per-field pointers (was `400`
   generic). `DomainError` now carries a typed `code: ErrorCode` (from the new
   `packages/shared/src/errors/codes.ts` catalog) and `retryable: boolean`.

@@ -1,4 +1,4 @@
-import type { UserProfile } from "@vyaya/shared";
+import type { UserProfile } from "@treasury-ops/shared";
 import type { ReactNode } from "react";
 
 function initials(name: string, email: string): string {

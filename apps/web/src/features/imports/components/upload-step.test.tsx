@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { Account } from "@vyaya/shared";
+import type { Account } from "@treasury-ops/shared";
 import { describe, expect, it, vi } from "vitest";
 
 import { UploadStep } from "./upload-step";

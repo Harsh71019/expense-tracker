@@ -1,4 +1,4 @@
-import type { CategoryRule } from "@vyaya/shared";
+import type { CategoryRule } from "@treasury-ops/shared";
 import { describe, expect, it } from "vitest";
 
 import { suggestCategory } from "../suggest-category.js";

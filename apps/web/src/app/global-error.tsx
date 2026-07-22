@@ -19,7 +19,7 @@ export default function GlobalError({
     <html lang="en-IN">
       <body className="flex min-h-screen flex-col items-center justify-center gap-4 p-6 text-center">
         <div>
-          <p>Vyaya hit an unexpected error.</p>
+          <p>TreasuryOps hit an unexpected error.</p>
           {reqId === null ? null : <p className="mt-1 font-mono text-xs opacity-70">ref {reqId}</p>}
         </div>
         <button

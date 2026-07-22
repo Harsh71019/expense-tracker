@@ -29,7 +29,7 @@ export type TestDb = Readonly<{
  */
 export async function createTestDb(): Promise<TestDb> {
   const container: StartedPostgreSqlContainer = await new PostgreSqlContainer("postgres:18-alpine")
-    .withDatabase("vyaya_test")
+    .withDatabase("treasury_ops_test")
     .start();
 
   const connectionUri = container.getConnectionUri();

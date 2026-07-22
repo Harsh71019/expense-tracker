@@ -1,5 +1,5 @@
 {
-  "extends": "@vyaya/config/tsconfig/base.json",
+  "extends": "@treasury-ops/config/tsconfig/base.json",
   "compilerOptions": {
     "composite": false,
     "declaration": false,

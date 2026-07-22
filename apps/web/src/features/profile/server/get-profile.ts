@@ -1,4 +1,4 @@
-import { UserProfileSchema, type UserProfile } from "@vyaya/shared";
+import { UserProfileSchema, type UserProfile } from "@treasury-ops/shared";
 import { cache } from "react";
 
 import { getServerApiClient } from "@/lib/api/server";

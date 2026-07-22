@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import type { Account } from "@vyaya/shared";
+import type { Account } from "@treasury-ops/shared";
 import { describe, expect, it, vi } from "vitest";
 
 import AddTransactionPage from "./(app)/add/page";
@@ -158,6 +158,6 @@ describe("route shells", () => {
     expect(screen.getByText("Mock login form")).toBeVisible();
 
     render(<NotFound />);
-    expect(screen.getByRole("link", { name: "Back to Vyaya" })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("link", { name: "Back to TreasuryOps" })).toHaveAttribute("href", "/");
   });
 });

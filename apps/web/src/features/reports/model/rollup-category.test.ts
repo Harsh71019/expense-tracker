@@ -1,4 +1,4 @@
-import type { Category } from "@vyaya/shared";
+import type { Category } from "@treasury-ops/shared";
 import { describe, expect, it } from "vitest";
 
 import { rollupCategoryMeta } from "./rollup-category";

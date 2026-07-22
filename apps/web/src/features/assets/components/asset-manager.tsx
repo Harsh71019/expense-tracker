@@ -1,6 +1,6 @@
 "use client";
 
-import type { Asset, AssetKind, NetWorth } from "@vyaya/shared";
+import type { Asset, AssetKind, NetWorth } from "@treasury-ops/shared";
 import { useState } from "react";
 import type { ReactNode } from "react";
 import { toast } from "sonner";

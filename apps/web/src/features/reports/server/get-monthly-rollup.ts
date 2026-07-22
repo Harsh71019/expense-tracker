@@ -1,4 +1,4 @@
-import { MonthlyRollupSchema, type MonthlyRollup } from "@vyaya/shared";
+import { MonthlyRollupSchema, type MonthlyRollup } from "@treasury-ops/shared";
 import { cache } from "react";
 
 import { getServerApiClient } from "@/lib/api/server";

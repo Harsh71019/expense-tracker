@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import type { Account, MonthlyRollup } from "@vyaya/shared";
+import type { Account, MonthlyRollup } from "@treasury-ops/shared";
 import { describe, expect, it } from "vitest";
 
 import { AccountFlowPanel } from "./account-flow-panel";

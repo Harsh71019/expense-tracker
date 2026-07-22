@@ -8,13 +8,13 @@
 
 Let a signed-in user download their posted ledger transactions as a CSV, optionally limited to a date range, without weakening the backend's spreadsheet formula-injection protection.
 
-The acceptance demo is: choose a range, download `vyaya-export.csv`, open it successfully, verify only posted transactions inside the range are present with IST dates and exact signed INR amounts, and verify descriptions/tags beginning with `=`, `+`, `-`, or `@` are neutralized.
+The acceptance demo is: choose a range, download `treasury-ops-export.csv`, open it successfully, verify only posted transactions inside the range are present with IST dates and exact signed INR amounts, and verify descriptions/tags beginning with `=`, `+`, `-`, or `@` are neutralized.
 
 ## 1. Verified current state
 
 - `GET /api/v1/export/csv?from=&to=` exists in `apps/api/src/export/export.controller.ts`.
 - `ExportService` pages through transactions, filters to posted entries, resolves account/category names, formats IST dates, and produces CSV in `apps/api/src/export/export.service.ts`.
-- The response uses `text/csv; charset=utf-8` and attachment filename `vyaya-export.csv`.
+- The response uses `text/csv; charset=utf-8` and attachment filename `treasury-ops-export.csv`.
 - `ExportCsvQuerySchema` is in `packages/shared/src/export.ts`.
 - Formula-injection neutralization and CSV formatting have tests.
 - The route is present in the OpenAPI registry and generated client with a string CSV payload.
@@ -70,7 +70,7 @@ Link `Export data` from `/more` and optionally from `/reports`. A dedicated smal
 - Use a mutation-style hook because the action produces a user-triggered file rather than cached server state.
 - Call the generated client, check its error/result branches, and validate that the payload is a string.
 - Create a `Blob` with the server media type, create a temporary object URL, trigger an anchor download, and revoke the URL in `finally`.
-- Prefer the server-provided filename when the generated response exposes `Content-Disposition`; otherwise use the documented `vyaya-export.csv` constant.
+- Prefer the server-provided filename when the generated response exposes `Content-Disposition`; otherwise use the documented `treasury-ops-export.csv` constant.
 - Do not retry automatically. A user retry is explicit and safe because GET has no side effect.
 
 ## 6. UX specification

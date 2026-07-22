@@ -1,4 +1,4 @@
-import { ApiKeySchema, type ApiKey } from "@vyaya/shared";
+import { ApiKeySchema, type ApiKey } from "@treasury-ops/shared";
 import { cache } from "react";
 import { z } from "zod";
 

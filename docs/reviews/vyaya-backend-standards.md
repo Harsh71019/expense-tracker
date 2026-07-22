@@ -1,4 +1,4 @@
-# Vyaya Backend Standards — NestJS · MongoDB Atlas · Redis (2026)
+# TreasuryOps Backend Standards — NestJS · MongoDB Atlas · Redis (2026)
 
 > Scope: the NestJS API, MongoDB data layer, Redis (cache + queues), background jobs, observability, security, and deployment on the Proxmox homelab. Frontend has its own doc.
 
@@ -46,7 +46,7 @@ apps/api/src/
 * **Controllers do zero logic** — parse (via pipe), delegate, map. If a controller has an `if`, it probably belongs in the service.
 * **Repository pattern over raw Model injection in services.** Services depend on `TransactionsRepository`, not `Model<Transaction>`. Mongoose stays swappable/mockable, and every query gains one audited home. This also makes the unit-test story trivial: mock the repository provider in `Test.createTestingModule`, never the DB.
 * **No cross-feature service imports.** `budgets` must not inject `TransactionsService`. Cross-domain reads go through a small exported query interface or events. `madge --circular` in CI enforces it — circular module deps in Nest manifest as `undefined` injection tokens *at runtime*, one of the nastiest bug classes in the framework.
-* **Fastify adapter** (`@nestjs/platform-fastify`) over Express: meaningfully higher throughput, and nothing in Vyaya needs Express-specific middleware. Decide day one — switching later touches every custom middleware.
+* **Fastify adapter** (`@nestjs/platform-fastify`) over Express: meaningfully higher throughput, and nothing in TreasuryOps needs Express-specific middleware. Decide day one — switching later touches every custom middleware.
 
 ### 1.2 Configuration — fail fast, fully typed
 
@@ -75,7 +75,7 @@ class-validator is the Nest default, but it means maintaining decorator DTOs *in
 ```ts
 // dto/create-transaction.dto.ts
 import { createZodDto } from "nestjs-zod";
-import { CreateTransactionSchema } from "@vyaya/shared"; // same schema the web app imports
+import { CreateTransactionSchema } from "@treasury-ops/shared"; // same schema the web app imports
 
 export class CreateTransactionDto extends createZodDto(CreateTransactionSchema) {}
 ```
@@ -151,7 +151,7 @@ Cache the **expensive, read-heavy, computed** things — not raw lists:
 
 ### 3.2 BullMQ (`@nestjs/bullmq`) — everything slower than ~200ms leaves the request cycle
 
-Queues for Vyaya:
+Queues for TreasuryOps:
 
 * **`recurring`** — a repeatable "tick" job (daily 00:05 IST) expands active `rrule`s and materializes due transactions. Job ID = `recurring:{ruleId}:{date}` → natural idempotency; re-running a day is a no-op.
 * **`import`** — CSV/statement parsing: upload returns `202 + jobId` immediately; the worker streams papaparse, validates rows with Zod, batches inserts, reports progress; the frontend polls or listens on a progress endpoint.

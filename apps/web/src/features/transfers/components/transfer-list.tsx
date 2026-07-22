@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
-import type { Transaction, TransactionPage } from "@vyaya/shared";
+import type { Transaction, TransactionPage } from "@treasury-ops/shared";
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 

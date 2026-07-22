@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
-import { NetWorthSchema, type NetWorth } from "@vyaya/shared";
+import { NetWorthSchema, type NetWorth } from "@treasury-ops/shared";
 
 import { apiClient } from "@/lib/api/client";
 import { toAppError } from "@/lib/api/problem";

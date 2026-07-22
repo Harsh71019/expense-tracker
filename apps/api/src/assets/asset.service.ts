@@ -6,7 +6,7 @@ import {
   type CreateValuation,
   type Valuation,
   type ValuationPage
-} from "@vyaya/shared";
+} from "@treasury-ops/shared";
 
 import { AuditRepository } from "../audit/audit.repository.js";
 import { DATABASE_CONNECTION } from "../common/db/db.module.js";

@@ -1,4 +1,4 @@
-# AGENTS.md — Vyaya Expense Tracker
+# AGENTS.md — TreasuryOps Expense Tracker
 
 Instructions for AI coding agents (and humans) working in this repo. These rules are **non-negotiable**. If a task conflicts with a rule here, stop and ask instead of working around it.
 
@@ -93,7 +93,7 @@ A change is done when **all** of these pass locally: `pnpm lint && pnpm typechec
 - Conventional commits (`feat(imports): resumable chunk commit`). One logical change per commit; keep diffs reviewable.
 - Do not add dependencies casually. Anything new must justify itself against what's already here (lodash-style utils → write the 5 lines instead). Never add a dependency to work around a type error.
 - Do not touch `deploy/`, `deploy.sh`, `docker-compose.yml`, or `apps/api/drizzle/` in the same PR as feature code unless the feature requires it — deployment changes are reviewed separately.
-- Update docs in the same PR when behavior changes: `BACKEND.md` for architecture, `DEPLOYMENT-VYAYA.md` for ops, this file for conventions.
+- Update docs in the same PR when behavior changes: `BACKEND.md` for architecture, `DEPLOYMENT-TREASURY-OPS.md` for ops, this file for conventions.
 - When uncertain between "clever" and "boring", choose boring. This codebase optimizes for being obvious at 11pm after a Vikhroli commute.
 
 ## 10. Quick Commands

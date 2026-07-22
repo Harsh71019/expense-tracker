@@ -12,7 +12,7 @@ For large codebases, traditional "type-based" folder structures (e.g., all hooks
 Code is organized by **domain** or **feature**. Each feature is a self-contained module exposing only what is necessary through a public `index.ts`.
 *   **Structure:** `src/features/<feature-name>/{components, hooks, model, server, index.ts}`
 *   **Encapsulation:** Features cannot import deeply from other features. They must use the public API (the `index.ts` file) of another feature.
-*   *Note on our codebase: Vyaya successfully implements this feature-sliced design pattern.*
+*   *Note on our codebase: TreasuryOps successfully implements this feature-sliced design pattern.*
 
 ---
 

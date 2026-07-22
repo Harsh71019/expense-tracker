@@ -1,4 +1,4 @@
-import { AccountSchema, type Account } from "@vyaya/shared";
+import { AccountSchema, type Account } from "@treasury-ops/shared";
 import { cache } from "react";
 import { z } from "zod";
 

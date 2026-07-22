@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { Account, Category, MonthlyRollup } from "@vyaya/shared";
+import type { Account, Category, MonthlyRollup } from "@treasury-ops/shared";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ReportPage } from "./report-page";

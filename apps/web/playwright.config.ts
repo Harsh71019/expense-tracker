@@ -28,7 +28,7 @@ export default defineConfig({
   ...(process.env.PLAYWRIGHT_BASE_URL === undefined
     ? {
         webServer: {
-          command: "pnpm --filter @vyaya/web dev",
+          command: "pnpm --filter @treasury-ops/web dev",
           url: baseURL,
           reuseExistingServer: !process.env.CI,
           timeout: 120_000

@@ -7,7 +7,7 @@ import {
   type Category,
   type RecurringRule,
   type TransactionType
-} from "@vyaya/shared";
+} from "@treasury-ops/shared";
 import { useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import { toast } from "sonner";

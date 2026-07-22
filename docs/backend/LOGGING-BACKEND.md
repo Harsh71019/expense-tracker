@@ -1,4 +1,4 @@
-# Vyaya — Backend Logging & Debugging Architecture
+# TreasuryOps — Backend Logging & Debugging Architecture
 
 > Consolidates the logging decisions scattered across `BACKEND.md` (§16) into one authoritative doc, and upgrades them from "we have logs" to "any bug is traceable in under 5 minutes." Stack: **pino → stdout → Docker → Loki (Grafana LGTM LXC), GlitchTip for errors, OTel for traces, `audit_log` in Mongo for money history.**
 >

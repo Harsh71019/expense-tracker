@@ -1,6 +1,6 @@
 "use client";
 
-import { CreateApiKeySchema, type CreateApiKey } from "@vyaya/shared";
+import { CreateApiKeySchema, type CreateApiKey } from "@treasury-ops/shared";
 import { useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 

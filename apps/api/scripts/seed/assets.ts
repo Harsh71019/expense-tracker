@@ -1,4 +1,4 @@
-import type { Asset } from "@vyaya/shared";
+import type { Asset } from "@treasury-ops/shared";
 
 import type { SeedServices } from "./context.js";
 

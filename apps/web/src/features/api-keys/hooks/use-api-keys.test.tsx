@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook, waitFor } from "@testing-library/react";
-import type { ApiKey } from "@vyaya/shared";
+import type { ApiKey } from "@treasury-ops/shared";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 

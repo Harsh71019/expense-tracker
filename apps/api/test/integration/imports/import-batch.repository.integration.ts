@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import type { ColumnMapping } from "@vyaya/shared";
+import type { ColumnMapping } from "@treasury-ops/shared";
 
 import { AccountRepository } from "../../../src/accounts/account.repository.js";
 import { withTxn } from "../../../src/common/db/db-txn.js";

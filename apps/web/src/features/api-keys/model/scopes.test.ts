@@ -1,4 +1,4 @@
-import type { ApiKeyPermissions } from "@vyaya/shared";
+import type { ApiKeyPermissions } from "@treasury-ops/shared";
 import { describe, expect, it } from "vitest";
 
 import { permissionsToScopeIds, scopeIdsToPermissions, scopeLabels } from "./scopes";

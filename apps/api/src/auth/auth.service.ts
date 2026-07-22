@@ -74,11 +74,11 @@ export function createAuth(
   });
 }
 
-export type VyayaAuth = ReturnType<typeof createAuth>;
+export type TreasuryOpsAuth = ReturnType<typeof createAuth>;
 
 @Injectable()
 export class AuthService {
-  readonly auth: VyayaAuth;
+  readonly auth: TreasuryOpsAuth;
 
   constructor(
     @Inject(DATABASE_CONNECTION) db: DrizzleDb,

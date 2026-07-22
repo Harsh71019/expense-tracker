@@ -1,4 +1,4 @@
-import { NetWorthSchema, type NetWorth } from "@vyaya/shared";
+import { NetWorthSchema, type NetWorth } from "@treasury-ops/shared";
 import { cache } from "react";
 
 import { getServerApiClient } from "@/lib/api/server";

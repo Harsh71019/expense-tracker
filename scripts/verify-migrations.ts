@@ -15,14 +15,14 @@ const execFileAsync = promisify(execFile);
  */
 async function verifyMigrations(): Promise<void> {
   const container = await new PostgreSqlContainer("postgres:18-alpine")
-    .withDatabase("vyaya_verify_migrations")
+    .withDatabase("treasury_ops_verify_migrations")
     .start();
   try {
     const environment = {
       ...process.env,
       DATABASE_URL: container.getConnectionUri()
     };
-    await execFileAsync("pnpm", ["--filter", "@vyaya/api", "migrate"], {
+    await execFileAsync("pnpm", ["--filter", "@treasury-ops/api", "migrate"], {
       cwd: process.cwd(),
       env: environment
     });

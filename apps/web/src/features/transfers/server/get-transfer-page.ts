@@ -1,4 +1,4 @@
-import { TransactionPageSchema, type TransactionPage } from "@vyaya/shared";
+import { TransactionPageSchema, type TransactionPage } from "@treasury-ops/shared";
 import { cache } from "react";
 
 import { debug } from "@/lib/debug";

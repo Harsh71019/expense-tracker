@@ -6,19 +6,19 @@
 
 **Architecture:** One new feature slice (`apps/web/src/features/api-keys/`) following this codebase's established `server/hooks/components/model/index.ts` split, composed into a new route at `/settings/api-keys`, linked from the existing settings hub. Consumes the typed OpenAPI client generated in the backend plan's Task 10 (`pnpm gen:client`) — this plan cannot start until that's merged.
 
-**Tech Stack:** Next.js App Router, TanStack Query, zod (`@vyaya/shared`), `openapi-fetch`, Vitest + Testing Library.
+**Tech Stack:** Next.js App Router, TanStack Query, zod (`@treasury-ops/shared`), `openapi-fetch`, Vitest + Testing Library.
 
 ## Global Constraints
 
 - New UI must match existing design language exactly — same `rounded-2xl`/`rounded-xl` `border-border bg-surface-elevated` card patterns, `font-mono` uppercase accent-colored labels, existing `Button`/`Input`/`EmptyState` components — check a sibling feature (`category-rules`) before writing any new class name (explicit user instruction, not just convention-following).
-- `pnpm --filter @vyaya/web test:coverage` thresholds are 90% stmts/branches/funcs/lines — every new component needs a real test, not just the mutation hooks.
+- `pnpm --filter @treasury-ops/web test:coverage` thresholds are 90% stmts/branches/funcs/lines — every new component needs a real test, not just the mutation hooks.
 - Mutation hooks that create resources normally require an `Idempotency-Key` header (AGENTS.md §6) — the one exception is `POST /v1/api-keys`, which the backend plan deliberately does not support with idempotency (the raw key can't safely be replayed from a persisted idempotency record). `PATCH`/`DELETE` on `/v1/api-keys/:id` don't need it either — the backend controller doesn't parse an `Idempotency-Key` header for this resource at all (revoking/renaming is naturally idempotent), so don't add one on the frontend side either.
 - Never hand-write a `fetch` to the backend — always the generated `apiClient` (`src/lib/api/client.ts`) for client components, `getServerApiClient()` (`src/lib/api/server.ts`) for server components.
-- `pnpm --filter @vyaya/web lint` must pass with `--max-warnings=0`.
+- `pnpm --filter @treasury-ops/web lint` must pass with `--max-warnings=0`.
 
 ## Prerequisite
 
-This plan assumes `docs/plans/2026-07-19-api-key-auth-backend.md` is complete and `pnpm gen:client` has been run against it, so `apiClient.POST("/v1/api-keys", ...)` etc. are valid, typed calls and `ApiKey`/`CreateApiKey`/`UpdateApiKey`/`CreateApiKeyResponse` are exported from `@vyaya/shared`.
+This plan assumes `docs/plans/2026-07-19-api-key-auth-backend.md` is complete and `pnpm gen:client` has been run against it, so `apiClient.POST("/v1/api-keys", ...)` etc. are valid, typed calls and `ApiKey`/`CreateApiKey`/`UpdateApiKey`/`CreateApiKeyResponse` are exported from `@treasury-ops/shared`.
 
 ---
 
@@ -49,7 +49,7 @@ Edit `apps/web/src/lib/query/keys.ts`. Add one entry to the `qk` object, alongsi
 Create `apps/web/src/features/api-keys/model/scopes.test.ts`:
 
 ```typescript
-import type { ApiKeyPermissions } from "@vyaya/shared";
+import type { ApiKeyPermissions } from "@treasury-ops/shared";
 import { describe, expect, it } from "vitest";
 
 import { permissionsToScopeIds, scopeIdsToPermissions, scopeLabels } from "./scopes";
@@ -90,7 +90,7 @@ describe("scopeLabels", () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `pnpm --filter @vyaya/web test -- src/features/api-keys/model/scopes.test.ts`
+Run: `pnpm --filter @treasury-ops/web test -- src/features/api-keys/model/scopes.test.ts`
 Expected: FAIL — module doesn't exist.
 
 - [ ] **Step 3: Create the scope model**
@@ -98,7 +98,7 @@ Expected: FAIL — module doesn't exist.
 Create `apps/web/src/features/api-keys/model/scopes.ts`:
 
 ```typescript
-import type { ApiKeyPermissions } from "@vyaya/shared";
+import type { ApiKeyPermissions } from "@treasury-ops/shared";
 
 export const SCOPE_OPTIONS = [
   {
@@ -143,7 +143,7 @@ export function scopeLabels(permissions: ApiKeyPermissions | null): string[] {
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `pnpm --filter @vyaya/web test -- src/features/api-keys/model/scopes.test.ts`
+Run: `pnpm --filter @treasury-ops/web test -- src/features/api-keys/model/scopes.test.ts`
 Expected: PASS.
 
 - [ ] **Step 5: Write the failing tests for the hooks**
@@ -153,7 +153,7 @@ Create `apps/web/src/features/api-keys/hooks/use-api-keys.test.ts`:
 ```typescript
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook, waitFor } from "@testing-library/react";
-import type { ApiKey } from "@vyaya/shared";
+import type { ApiKey } from "@treasury-ops/shared";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -243,7 +243,7 @@ describe("useRevokeApiKey", () => {
 
 - [ ] **Step 5: Run test to verify it fails**
 
-Run: `pnpm --filter @vyaya/web test -- src/features/api-keys/hooks/use-api-keys.test.ts`
+Run: `pnpm --filter @treasury-ops/web test -- src/features/api-keys/hooks/use-api-keys.test.ts`
 Expected: FAIL — module doesn't exist.
 
 - [ ] **Step 6: Create the hooks**
@@ -261,7 +261,7 @@ import {
   type CreateApiKey,
   type CreateApiKeyResponse,
   type UpdateApiKey
-} from "@vyaya/shared";
+} from "@treasury-ops/shared";
 import { z } from "zod";
 
 import { apiClient } from "@/lib/api/client";
@@ -356,12 +356,12 @@ export function useRevokeApiKey(): ReturnType<typeof useMutation<void, Error, st
 
 - [ ] **Step 7: Run tests to verify they pass**
 
-Run: `pnpm --filter @vyaya/web test -- src/features/api-keys/hooks/use-api-keys.test.ts`
+Run: `pnpm --filter @treasury-ops/web test -- src/features/api-keys/hooks/use-api-keys.test.ts`
 Expected: PASS.
 
 - [ ] **Step 8: Typecheck, lint, commit**
 
-Run: `pnpm --filter @vyaya/web typecheck && pnpm --filter @vyaya/web lint`
+Run: `pnpm --filter @treasury-ops/web typecheck && pnpm --filter @treasury-ops/web lint`
 Expected: clean.
 
 ```bash
@@ -386,7 +386,7 @@ This mirrors `apps/web/src/features/accounts/server/get-accounts.ts` exactly (se
 Create `apps/web/src/features/api-keys/server/get-api-keys.ts`:
 
 ```typescript
-import { ApiKeySchema, type ApiKey } from "@vyaya/shared";
+import { ApiKeySchema, type ApiKey } from "@treasury-ops/shared";
 import { cache } from "react";
 import { z } from "zod";
 
@@ -408,7 +408,7 @@ export const getApiKeys = cache(async (): Promise<ApiKey[]> => {
 
 - [ ] **Step 2: Typecheck, lint, commit**
 
-Run: `pnpm --filter @vyaya/web typecheck && pnpm --filter @vyaya/web lint`
+Run: `pnpm --filter @treasury-ops/web typecheck && pnpm --filter @treasury-ops/web lint`
 Expected: clean.
 
 ```bash
@@ -461,7 +461,7 @@ describe("ApiKeyReveal", () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `pnpm --filter @vyaya/web test -- src/features/api-keys/components/api-key-reveal.test.tsx`
+Run: `pnpm --filter @treasury-ops/web test -- src/features/api-keys/components/api-key-reveal.test.tsx`
 Expected: FAIL — module doesn't exist.
 
 - [ ] **Step 3: Create the component**
@@ -511,12 +511,12 @@ export function ApiKeyReveal({
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `pnpm --filter @vyaya/web test -- src/features/api-keys/components/api-key-reveal.test.tsx`
+Run: `pnpm --filter @treasury-ops/web test -- src/features/api-keys/components/api-key-reveal.test.tsx`
 Expected: PASS.
 
 - [ ] **Step 5: Typecheck, lint, commit**
 
-Run: `pnpm --filter @vyaya/web typecheck && pnpm --filter @vyaya/web lint`
+Run: `pnpm --filter @treasury-ops/web typecheck && pnpm --filter @treasury-ops/web lint`
 Expected: clean.
 
 ```bash
@@ -547,7 +547,7 @@ Create `apps/web/src/features/api-keys/components/api-key-row.test.tsx`:
 ```typescript
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { ApiKey } from "@vyaya/shared";
+import type { ApiKey } from "@treasury-ops/shared";
 import { describe, expect, it, vi } from "vitest";
 
 import { ApiKeyRow } from "./api-key-row";
@@ -600,7 +600,7 @@ describe("ApiKeyRow", () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `pnpm --filter @vyaya/web test -- src/features/api-keys/components/api-key-row.test.tsx`
+Run: `pnpm --filter @treasury-ops/web test -- src/features/api-keys/components/api-key-row.test.tsx`
 Expected: FAIL — module doesn't exist.
 
 - [ ] **Step 3: Create `ApiKeyRow`**
@@ -610,7 +610,7 @@ Create `apps/web/src/features/api-keys/components/api-key-row.tsx`:
 ```typescript
 "use client";
 
-import type { ApiKey, UpdateApiKey } from "@vyaya/shared";
+import type { ApiKey, UpdateApiKey } from "@treasury-ops/shared";
 import { useState } from "react";
 import type { ReactNode } from "react";
 
@@ -735,7 +735,7 @@ export function ApiKeyRow({ apiKey, onRevoke, onUpdate, isUpdating }: ApiKeyRowP
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `pnpm --filter @vyaya/web test -- src/features/api-keys/components/api-key-row.test.tsx`
+Run: `pnpm --filter @treasury-ops/web test -- src/features/api-keys/components/api-key-row.test.tsx`
 Expected: PASS.
 
 - [ ] **Step 5: Write the failing test for `CreateApiKeyForm`**
@@ -782,7 +782,7 @@ describe("CreateApiKeyForm", () => {
 
 - [ ] **Step 6: Run test to verify it fails**
 
-Run: `pnpm --filter @vyaya/web test -- src/features/api-keys/components/create-api-key-form.test.tsx`
+Run: `pnpm --filter @treasury-ops/web test -- src/features/api-keys/components/create-api-key-form.test.tsx`
 Expected: FAIL — module doesn't exist.
 
 - [ ] **Step 7: Create `CreateApiKeyForm`**
@@ -792,7 +792,7 @@ Create `apps/web/src/features/api-keys/components/create-api-key-form.tsx`:
 ```typescript
 "use client";
 
-import { CreateApiKeySchema, type CreateApiKey } from "@vyaya/shared";
+import { CreateApiKeySchema, type CreateApiKey } from "@treasury-ops/shared";
 import { useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 
@@ -884,7 +884,7 @@ export function CreateApiKeyForm({
 
 - [ ] **Step 8: Run test to verify it passes**
 
-Run: `pnpm --filter @vyaya/web test -- src/features/api-keys/components/create-api-key-form.test.tsx`
+Run: `pnpm --filter @treasury-ops/web test -- src/features/api-keys/components/create-api-key-form.test.tsx`
 Expected: PASS.
 
 - [ ] **Step 9: Write the failing test for `ApiKeyManager`**
@@ -894,7 +894,7 @@ Create `apps/web/src/features/api-keys/components/api-key-manager.test.tsx`:
 ```typescript
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { ApiKey } from "@vyaya/shared";
+import type { ApiKey } from "@treasury-ops/shared";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ApiKeyManager } from "./api-key-manager";
@@ -974,7 +974,7 @@ describe("ApiKeyManager", () => {
 
 - [ ] **Step 10: Run test to verify it fails**
 
-Run: `pnpm --filter @vyaya/web test -- src/features/api-keys/components/api-key-manager.test.tsx`
+Run: `pnpm --filter @treasury-ops/web test -- src/features/api-keys/components/api-key-manager.test.tsx`
 Expected: FAIL — module doesn't exist.
 
 - [ ] **Step 11: Create `ApiKeyManager`**
@@ -984,7 +984,7 @@ Create `apps/web/src/features/api-keys/components/api-key-manager.tsx`:
 ```typescript
 "use client";
 
-import type { ApiKey, CreateApiKey, UpdateApiKey } from "@vyaya/shared";
+import type { ApiKey, CreateApiKey, UpdateApiKey } from "@treasury-ops/shared";
 import { useState } from "react";
 import type { ReactNode } from "react";
 import { toast } from "sonner";
@@ -1078,12 +1078,12 @@ export function ApiKeyManager({
 
 - [ ] **Step 12: Run test to verify it passes**
 
-Run: `pnpm --filter @vyaya/web test -- src/features/api-keys/components/api-key-manager.test.tsx`
+Run: `pnpm --filter @treasury-ops/web test -- src/features/api-keys/components/api-key-manager.test.tsx`
 Expected: PASS.
 
 - [ ] **Step 13: Typecheck, lint, coverage, commit**
 
-Run: `pnpm --filter @vyaya/web typecheck && pnpm --filter @vyaya/web lint && pnpm --filter @vyaya/web test:coverage -- src/features/api-keys`
+Run: `pnpm --filter @treasury-ops/web typecheck && pnpm --filter @treasury-ops/web lint && pnpm --filter @treasury-ops/web test:coverage -- src/features/api-keys`
 Expected: clean, coverage at/above the 90% thresholds for the new files. If below, the gap is almost certainly the `ApiKeyRow` edit-mode branch or the `CreateApiKeyForm` validation-error branch — both already have a test above; if coverage still complains, check which specific line/branch is flagged and add the missing case rather than lowering the threshold.
 
 ```bash
@@ -1146,7 +1146,7 @@ Add a test to `apps/web/src/lib/sentry-scrub.test.ts` (following whatever patter
 
 - [ ] **Step 5: Run test to verify it fails**
 
-Run: `pnpm --filter @vyaya/web test -- src/lib/sentry-scrub.test.ts`
+Run: `pnpm --filter @treasury-ops/web test -- src/lib/sentry-scrub.test.ts`
 Expected: FAIL — `key` isn't redacted yet.
 
 - [ ] **Step 6: Add `key` to `SENSITIVE_KEYS`**
@@ -1165,12 +1165,12 @@ const SENSITIVE_KEYS = new Set(["amountMinor", "description", "password", "key"]
 
 - [ ] **Step 7: Run test to verify it passes**
 
-Run: `pnpm --filter @vyaya/web test -- src/lib/sentry-scrub.test.ts`
+Run: `pnpm --filter @treasury-ops/web test -- src/lib/sentry-scrub.test.ts`
 Expected: PASS.
 
 - [ ] **Step 8: Typecheck, lint, full test run, commit**
 
-Run: `pnpm --filter @vyaya/web typecheck && pnpm --filter @vyaya/web lint && pnpm --filter @vyaya/web test`
+Run: `pnpm --filter @treasury-ops/web typecheck && pnpm --filter @treasury-ops/web lint && pnpm --filter @treasury-ops/web test`
 Expected: clean.
 
 ```bash
@@ -1204,6 +1204,6 @@ Report back what was tested and any visual mismatch found, rather than declaring
 
 **Spec coverage:** the design's "Web UI" section maps entirely to Tasks 1-5 (feature slice structure, settings link, design-language match, once-only key reveal, no `Idempotency-Key` on create, `SENSITIVE_KEYS` addition). Task 6 covers the "start the dev server and use the feature in a browser" requirement from this project's own CLAUDE.md for UI changes.
 
-**Type consistency:** `ApiKey`/`CreateApiKey`/`UpdateApiKey`/`CreateApiKeyResponse` (from `@vyaya/shared`, produced by the backend plan's Task 6) are the only types used across every hook/component in this plan — no locally-redeclared shapes that could drift from the backend's.
+**Type consistency:** `ApiKey`/`CreateApiKey`/`UpdateApiKey`/`CreateApiKeyResponse` (from `@treasury-ops/shared`, produced by the backend plan's Task 6) are the only types used across every hook/component in this plan — no locally-redeclared shapes that could drift from the backend's.
 
 **No placeholders:** every step has literal, complete code. The one step that explicitly defers to reading an existing file first (Task 5 Step 4, the Sentry scrub test) is a "match this file's existing pattern exactly" instruction, not a TBD — the same category of instruction the spec itself demanded ("check sibling pages before styling anything new").

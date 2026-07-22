@@ -6,7 +6,7 @@ import {
   type Asset,
   type Valuation,
   type ValuationPage
-} from "@vyaya/shared";
+} from "@treasury-ops/shared";
 import type { Response } from "express";
 import { z } from "zod";
 

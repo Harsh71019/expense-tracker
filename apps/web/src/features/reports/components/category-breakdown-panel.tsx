@@ -1,4 +1,4 @@
-import { formatMinor, type Category, type MonthlyRollup } from "@vyaya/shared";
+import { formatMinor, type Category, type MonthlyRollup } from "@treasury-ops/shared";
 import type { CSSProperties, ReactNode } from "react";
 
 import { IconGlyph, tint } from "@/features/categories";

@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook, waitFor } from "@testing-library/react";
-import type { Transaction, TransactionPage } from "@vyaya/shared";
+import type { Transaction, TransactionPage } from "@treasury-ops/shared";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -29,7 +29,7 @@ const transaction: Transaction = {
 const response = new Response(null, { status: 200 });
 const problemResponse = new Response(null, { status: 409 });
 const problem = {
-  type: "https://vyaya.app/problems/conflict",
+  type: "https://treasury-ops.app/problems/conflict",
   title: "Conflict",
   status: 409,
   detail: "Already reversed",

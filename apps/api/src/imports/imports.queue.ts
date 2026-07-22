@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import type { OnModuleDestroy } from "@nestjs/common";
-import type { ColumnMapping, ImportBatchId } from "@vyaya/shared";
+import type { ColumnMapping, ImportBatchId } from "@treasury-ops/shared";
 import { Queue } from "bullmq";
 
 import { RuntimeConfigService } from "../common/config/runtime-config.service.js";

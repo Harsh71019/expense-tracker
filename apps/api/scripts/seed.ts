@@ -1,147 +1,148 @@
-import { Pool } from "pg";
-import { drizzle } from "drizzle-orm/node-postgres";
+import { createInterface } from "node:readline/promises";
+
 import { eq } from "drizzle-orm";
 
-import { createAuth } from "../src/auth/auth.service.js";
-import { AccountRepository } from "../src/accounts/account.repository.js";
-import { AuditRepository } from "../src/audit/audit.repository.js";
-import { CategoryRepository } from "../src/categories/category.repository.js";
-import { RuntimeConfigService } from "../src/common/config/runtime-config.service.js";
-import { withTxn } from "../src/common/db/db-txn.js";
-import { RedisService } from "../src/common/redis/redis.service.js";
-import { TransactionRepository } from "../src/transactions/transaction.repository.js";
-import { TransactionService } from "../src/transactions/transaction.service.js";
-import { UserProfileService } from "../src/user-profiles/user-profile.service.js";
-import { UserProfileRepository } from "../src/user-profiles/user-profile.repository.js";
-import * as authSchema from "../src/common/db/auth-schema.js";
 import { user } from "../src/common/db/auth-schema.js";
-import * as schema from "../src/common/db/schema/index.js";
+import { seedFullAccounts, seedLightAccounts } from "./seed/accounts.js";
+import { seedFullAssets } from "./seed/assets.js";
+import { seedCategoryRules } from "./seed/category-rules.js";
+import { seedFullCategories, seedLightCategories } from "./seed/categories.js";
+import { createSeedContext } from "./seed/context.js";
+import type { SeedContext, SeedServices } from "./seed/context.js";
+import { seedImports } from "./seed/imports.js";
+import { seedNotificationsAndDrift } from "./seed/notifications-and-drift.js";
+import { seedRecurring } from "./seed/recurring.js";
+import { resetUser } from "./seed/reset.js";
+import { triggerCrons } from "./seed/trigger-crons.js";
+import { seedFullTransactions, seedLightTransactions } from "./seed/transactions.js";
+import { PRIMARY_USER, SECONDARY_USER, seedUser } from "./seed/users.js";
+import type { SeedUser } from "./seed/users.js";
 
-const DEMO_EMAIL = "demo@vyaya.local";
-const DEMO_PASSWORD = "demo-password-12345";
+const RESET_FLAG = "--reset";
 
-const DEFAULT_CATEGORIES: readonly { name: string; kind: "expense" | "income" }[] = [
-  { name: "Groceries", kind: "expense" },
-  { name: "Rent", kind: "expense" },
-  { name: "Utilities", kind: "expense" },
-  { name: "Dining Out", kind: "expense" },
-  { name: "Transport", kind: "expense" },
-  { name: "Salary", kind: "income" },
-  { name: "Interest", kind: "income" }
-];
-
-const SEED_LOGGER = {
-  log: () => undefined,
-  warn: (payload: unknown, message?: string) => console.warn(message ?? "", payload),
-  error: () => undefined
-};
-
-async function main(): Promise<void> {
-  const config = new RuntimeConfigService();
-  const pool = new Pool({ connectionString: config.env.DATABASE_URL });
-  const db = drizzle(pool, { schema: { ...schema, ...authSchema } });
-  const redis = new RedisService(config);
-
-  const profiles = new UserProfileService(new UserProfileRepository(db));
-  const auth = createAuth(db, config, redis, profiles, SEED_LOGGER);
-
-  const [existing] = await db.select().from(user).where(eq(user.email, DEMO_EMAIL));
-  if (existing !== undefined) {
-    console.log(`Demo user ${DEMO_EMAIL} already exists (id=${existing.id}) — skipping seed.`);
-    await redis.onModuleDestroy();
-    await pool.end();
-    return;
-  }
-
-  const signUpResult = await auth.api.signUpEmail({
-    body: { email: DEMO_EMAIL, password: DEMO_PASSWORD, name: "Demo User" }
-  });
-  const userId = signUpResult.user.id;
-  console.log(`Created demo user ${DEMO_EMAIL} (id=${userId}, password=${DEMO_PASSWORD})`);
-
-  const categories = new CategoryRepository(db);
-  const categoryRows = await Promise.all(
-    DEFAULT_CATEGORIES.map((category) => categories.create(userId, category))
-  );
-
-  const accounts = new AccountRepository(db);
-  const [bank, cash] = await withTxn(db, async (tx) => [
-    await accounts.create(
-      userId,
-      { name: "HDFC Bank", type: "bank", openingBalanceMinor: 5_000_00 },
-      tx
-    ),
-    await accounts.create(userId, { name: "Cash", type: "cash", openingBalanceMinor: 1_000_00 }, tx)
-  ]);
-  if (bank === undefined || cash === undefined) {
-    throw new Error("Account seed insert did not return rows.");
-  }
-
-  const salary = categoryRows.find((row) => row.name === "Salary");
-  const groceries = categoryRows.find((row) => row.name === "Groceries");
-  const dining = categoryRows.find((row) => row.name === "Dining Out");
-
-  // Routed through the real TransactionService (not a raw insert) so
-  // balanceMinor stays correct automatically -- a raw insert would leave the
-  // cached balance drifting from the ledger, which is exactly the bug class
-  // balances.verify (Task 23) exists to catch, not something a seed script
-  // should knowingly introduce.
-  const now = new Date();
-  const transactions = new TransactionService(
-    db,
-    accounts,
-    categories,
-    new TransactionRepository(db),
-    new AuditRepository(db),
-    SEED_LOGGER
-  );
-
-  await transactions.create(
-    userId,
-    {
-      accountId: bank.id,
-      categoryId: salary?.id,
-      type: "income",
-      amountMinor: 80_000_00,
-      occurredAt: new Date(now.getFullYear(), now.getMonth(), 1),
-      description: "Monthly salary",
-      tags: []
-    },
-    undefined
-  );
-  await transactions.create(
-    userId,
-    {
-      accountId: bank.id,
-      categoryId: groceries?.id,
-      type: "expense",
-      amountMinor: 2_500_00,
-      occurredAt: new Date(now.getFullYear(), now.getMonth(), 5),
-      description: "BigBasket order",
-      tags: ["groceries"]
-    },
-    undefined
-  );
-  await transactions.create(
-    userId,
-    {
-      accountId: cash.id,
-      categoryId: dining?.id,
-      type: "expense",
-      amountMinor: 600_00,
-      occurredAt: new Date(now.getFullYear(), now.getMonth(), 10),
-      description: "Dinner with friends",
-      tags: []
-    },
-    undefined
-  );
-
-  console.log(`Seeded ${categoryRows.length} categories, 2 accounts, 3 transactions.`);
-  await redis.onModuleDestroy();
-  await pool.end();
+async function findExistingUserId(services: SeedServices, email: string): Promise<string | null> {
+  const [existing] = await services.db.select().from(user).where(eq(user.email, email));
+  return existing?.id ?? null;
 }
 
-main().catch((error: unknown) => {
-  console.error(error);
-  process.exitCode = 1;
-});
+async function seedPrimaryUser(services: SeedServices): Promise<void> {
+  const primary = await seedUser(services, PRIMARY_USER);
+
+  const accounts = await seedFullAccounts(services, primary.id);
+  const categories = await seedFullCategories(services, primary.id);
+  await seedCategoryRules(services, primary.id, categories);
+  await seedFullTransactions(services, primary.id, accounts, categories);
+  await seedRecurring(services, primary.id, accounts, categories);
+  await seedFullAssets(services, primary.id);
+  await seedImports(services, primary.id, accounts);
+  await seedNotificationsAndDrift(services, primary.id, accounts, categories);
+
+  printUserSummary(primary);
+}
+
+async function seedSecondaryUser(services: SeedServices): Promise<string> {
+  const secondary = await seedUser(services, SECONDARY_USER);
+
+  const accounts = await seedLightAccounts(services, secondary.id);
+  const categories = await seedLightCategories(services, secondary.id);
+  await seedLightTransactions(services, secondary.id, accounts, categories);
+
+  printUserSummary(secondary);
+  return secondary.id;
+}
+
+function printUserSummary(seedUserResult: SeedUser): void {
+  console.log(`  ${seedUserResult.email} / ${seedUserResult.password} (id=${seedUserResult.id})`);
+}
+
+/**
+ * This codebase deliberately runs `NODE_ENV=production` even for local dev
+ * (see `.env.development.local`'s comment: "same image, different env" —
+ * environments are distinguished by which DATABASE_URL/REDIS_URL you point
+ * at, never by NODE_ENV branches in business code). That means NODE_ENV
+ * can't be used as a "refuse to run in prod" guard here — it would always
+ * be "production" and always refuse, defeating the flag's purpose. Staging
+ * and production also share the same DB *name* and *host* shape per
+ * env.example, differing only in credentials — so there's no reliable
+ * structural signal to auto-detect "this is prod" from the connection
+ * string either. An interactive confirmation, printing exactly which
+ * host/database is about to be wiped, is the honest alternative.
+ */
+async function confirmReset(databaseUrl: string): Promise<void> {
+  const url = new URL(databaseUrl);
+  const target = `${url.hostname}${url.port ? `:${url.port}` : ""}${url.pathname}`;
+  const rl = createInterface({ input: process.stdin, output: process.stdout });
+  try {
+    const answer = await rl.question(
+      `${RESET_FLAG} will permanently delete both demo users and everything they own from ${target}.\n` +
+        'Type "yes" to continue: '
+    );
+    if (answer.trim().toLowerCase() !== "yes") {
+      throw new Error(`${RESET_FLAG} cancelled.`);
+    }
+  } finally {
+    rl.close();
+  }
+}
+
+async function run(context: SeedContext, reset: boolean): Promise<void> {
+  const { services } = context;
+
+  if (reset) {
+    await confirmReset(services.config.env.DATABASE_URL);
+    for (const email of [PRIMARY_USER.email, SECONDARY_USER.email]) {
+      const existingId = await findExistingUserId(services, email);
+      if (existingId !== null) {
+        console.log(`Resetting existing user ${email} (id=${existingId})…`);
+        await resetUser(services.db, existingId);
+      }
+    }
+  } else {
+    const existingId = await findExistingUserId(services, PRIMARY_USER.email);
+    if (existingId !== null) {
+      console.log(
+        `Demo user ${PRIMARY_USER.email} already exists (id=${existingId}) — skipping seed. ` +
+          `Pass ${RESET_FLAG} to wipe and reseed.`
+      );
+      return;
+    }
+  }
+
+  console.log("Seeding primary user (full dataset)…");
+  await seedPrimaryUser(services);
+
+  console.log("Seeding secondary user (light dataset, for manual tenant-isolation checks)…");
+  const secondaryUserId = await seedSecondaryUser(services);
+
+  console.log("Triggering cron jobs against the seeded data…");
+  const primaryUserId = await findExistingUserId(services, PRIMARY_USER.email);
+  if (primaryUserId === null) throw new Error("seed: primary user vanished mid-run.");
+  await triggerCrons(services, [primaryUserId, secondaryUserId]);
+
+  console.log("\nDone. Log in with:");
+  printUserSummary({ ...PRIMARY_USER, id: primaryUserId });
+  printUserSummary({ ...SECONDARY_USER, id: secondaryUserId });
+  console.log(
+    "\nNote: import parsing and notification delivery run on the real worker container's " +
+      "BullMQ queues — if any of those steps warned about a missing worker heartbeat, run " +
+      "`docker compose up -d worker` and re-run this script (safe to re-run without --reset " +
+      "once the primary user already exists, though it will just skip straight to that message)."
+  );
+}
+
+async function main(): Promise<void> {
+  const reset = process.argv.includes(RESET_FLAG);
+  const context = await createSeedContext();
+  try {
+    await run(context, reset);
+  } finally {
+    await context.close();
+  }
+}
+
+main()
+  .then(() => process.exit(0))
+  .catch((error: unknown) => {
+    console.error(error);
+    process.exit(1);
+  });

@@ -68,6 +68,14 @@ export default tseslint.config(
       "@typescript-eslint/no-namespace": "off"
     }
   },
+  // The seed CLI is a one-shot terminal script, not a server process — printing
+  // human-readable progress to stdout is the correct UX here, not a pino log line.
+  {
+    files: ["**/scripts/seed.ts", "**/scripts/seed/**/*.ts"],
+    rules: {
+      "no-console": "off"
+    }
+  },
   // Config/migration files are CJS and not type-checked
   {
     files: ["**/*.cjs"],

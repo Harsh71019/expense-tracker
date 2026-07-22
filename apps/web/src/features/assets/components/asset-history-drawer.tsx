@@ -1,6 +1,6 @@
 "use client";
 
-import type { Asset } from "@vyaya/shared";
+import type { Asset } from "@treasury-ops/shared";
 import type { ReactNode } from "react";
 
 import { SignedMoney } from "@/components/ui/money";

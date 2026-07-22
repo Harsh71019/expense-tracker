@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
-import { ImportBatchSchema, type ImportBatch } from "@vyaya/shared";
+import { ImportBatchSchema, type ImportBatch } from "@treasury-ops/shared";
 import { z } from "zod";
 
 import { apiClient } from "@/lib/api/client";

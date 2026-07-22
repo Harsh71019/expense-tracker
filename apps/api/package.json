@@ -1,5 +1,5 @@
 {
-  "name": "@vyaya/api",
+  "name": "@treasury-ops/api",
   "private": true,
   "type": "module",
   "scripts": {
@@ -27,7 +27,7 @@
     "@nestjs/platform-express": "latest",
     "@nestjs/schedule": "latest",
     "@nestjs/throttler": "^6.5.0",
-    "@vyaya/shared": "workspace:*",
+    "@treasury-ops/shared": "workspace:*",
     "better-auth": "latest",
     "@better-auth/api-key": "latest",
     "bullmq": "latest",
@@ -52,7 +52,7 @@
     "@types/express": "latest",
     "@types/pg": "^8.20.0",
     "@vitest/coverage-v8": "^4.1.10",
-    "@vyaya/config": "workspace:*",
+    "@treasury-ops/config": "workspace:*",
     "concurrently": "latest",
     "testcontainers": "^12.0.4",
     "unplugin-swc": "1.5.9"

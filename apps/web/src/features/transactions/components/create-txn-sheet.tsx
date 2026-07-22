@@ -1,6 +1,6 @@
 "use client";
 
-import { CreateTransactionSchema, parseMinor, type CreateTransaction } from "@vyaya/shared";
+import { CreateTransactionSchema, parseMinor, type CreateTransaction } from "@treasury-ops/shared";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import type { ReactNode } from "react";

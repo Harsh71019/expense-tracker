@@ -3,7 +3,7 @@ import type { ThrottlerStorage } from "@nestjs/throttler";
 
 import { RedisService } from "../redis/redis.service.js";
 
-const keyPrefix = "vyaya:throttle:";
+const keyPrefix = "treasury-ops:throttle:";
 
 type ThrottlerStorageRecord = Readonly<{
   totalHits: number;

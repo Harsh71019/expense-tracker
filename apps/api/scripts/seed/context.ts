@@ -8,7 +8,7 @@ import { AssetService } from "../../src/assets/asset.service.js";
 import { ValuationRepository } from "../../src/assets/valuation.repository.js";
 import { AuditRepository } from "../../src/audit/audit.repository.js";
 import { createAuth } from "../../src/auth/auth.service.js";
-import type { VyayaAuth } from "../../src/auth/auth.service.js";
+import type { TreasuryOpsAuth } from "../../src/auth/auth.service.js";
 import { BalanceVerifyRepository } from "../../src/balances/balance-verify.repository.js";
 import { BalanceVerifyService } from "../../src/balances/balance-verify.service.js";
 import { CategoryRepository } from "../../src/categories/category.repository.js";
@@ -42,7 +42,7 @@ export type SeedServices = Readonly<{
   db: DrizzleDb;
   config: RuntimeConfigService;
   redis: RedisService;
-  auth: VyayaAuth;
+  auth: TreasuryOpsAuth;
   accounts: AccountRepository;
   categories: CategoryRepository;
   categoryRules: CategoryRuleService;

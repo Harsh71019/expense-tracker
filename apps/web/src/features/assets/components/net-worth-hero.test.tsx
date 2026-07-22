@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import type { NetWorth } from "@vyaya/shared";
+import type { NetWorth } from "@treasury-ops/shared";
 import { describe, expect, it } from "vitest";
 
 import { NetWorthHero } from "./net-worth-hero";

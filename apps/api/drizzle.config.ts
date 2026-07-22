@@ -5,6 +5,8 @@ export default defineConfig({
   out: "./drizzle",
   dialect: "postgresql",
   dbCredentials: {
-    url: process.env.DATABASE_URL ?? "postgres://vyaya:local-dev-password@localhost:5433/vyaya"
+    url:
+      process.env.DATABASE_URL ??
+      "postgres://treasury_ops:local-dev-password@localhost:5433/treasury_ops"
   }
 });

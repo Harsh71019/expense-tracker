@@ -1,6 +1,6 @@
 "use client";
 
-import type { Account, Category, RecurringRule } from "@vyaya/shared";
+import type { Account, Category, RecurringRule } from "@treasury-ops/shared";
 import { useState } from "react";
 import type { ReactNode } from "react";
 import { toast } from "sonner";

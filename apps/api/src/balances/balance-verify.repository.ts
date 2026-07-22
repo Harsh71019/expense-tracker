@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { AccountSchema, type Account } from "@vyaya/shared";
+import { AccountSchema, type Account } from "@treasury-ops/shared";
 import { sql } from "drizzle-orm";
 
 import { DATABASE_CONNECTION } from "../common/db/db.module.js";

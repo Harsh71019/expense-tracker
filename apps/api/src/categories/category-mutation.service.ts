@@ -1,5 +1,10 @@
 import { Injectable } from "@nestjs/common";
-import { CategorySchema, type Category, type CategoryId, type CreateCategory } from "@vyaya/shared";
+import {
+  CategorySchema,
+  type Category,
+  type CategoryId,
+  type CreateCategory
+} from "@treasury-ops/shared";
 import { z } from "zod";
 
 import { CategoryParentKindMismatchError } from "../common/errors/category-parent-kind-mismatch.error.js";

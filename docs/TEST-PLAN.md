@@ -1,4 +1,4 @@
-# Vyaya — Test Plan (Enterprise-Grade)
+# TreasuryOps — Test Plan (Enterprise-Grade)
 
 > Companion to `BACKEND.md` and `IMPLEMENTATION-PLAN.md`. Philosophy: **the ledger's correctness is the product** — so the test suite is organized around _invariants that must never break_, then the standard pyramid around them. Tooling: Vitest (unit/property), mongodb-memory-server in replica-set mode (integration — transactions need a replset), Testcontainers + Supertest (e2e), fast-check (property-based), k6 (load), a small chaos harness (process-kill scripts).
 
@@ -123,7 +123,7 @@ Every k6 run ends with the **balance-verify job** against the test dataset — l
 2. **SIGKILL worker mid-import-commit** → resume completes batch exactly (the I4 flagship drill).
 3. **Redis down** → API serves reads/writes (cache-miss path), imports queue when it returns; no request failures except import submission (clean 503 + retry-after).
 4. **Atlas primary stepdown** (`rs.stepDown()` on local replset / Atlas test failover) → `withTransaction` retries absorb it; error rate blip < 5 s.
-5. **Restore drill:** latest mongodump → `vyaya-drill` → run balance-verify → zero drift → document restore time vs the 1h RTO.
+5. **Restore drill:** latest mongodump → `treasury-ops-drill` → run balance-verify → zero drift → document restore time vs the 1h RTO.
 6. **Rollback drill:** deploy previous image tag on staging → smoke suite green (proves migrations stayed backward-compatible).
 
 ---

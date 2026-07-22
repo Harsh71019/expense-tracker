@@ -1,5 +1,5 @@
 import { Controller, Get, Param } from "@nestjs/common";
-import { MonthSchema, type MonthlyRollup } from "@vyaya/shared";
+import { MonthSchema, type MonthlyRollup } from "@treasury-ops/shared";
 
 import type { AuthenticatedUser } from "../auth/auth.guard.js";
 import { CurrentUser } from "../auth/current-user.decorator.js";

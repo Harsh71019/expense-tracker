@@ -73,11 +73,11 @@ export class RedisService implements OnModuleDestroy {
   }
 
   async setWorkerHeartbeat(): Promise<void> {
-    await this.client.set("vyaya:worker:heartbeat", new Date().toISOString(), "EX", 60);
+    await this.client.set("treasury-ops:worker:heartbeat", new Date().toISOString(), "EX", 60);
   }
 
   async hasWorkerHeartbeat(): Promise<boolean> {
-    return (await this.client.exists("vyaya:worker:heartbeat")) === 1;
+    return (await this.client.exists("treasury-ops:worker:heartbeat")) === 1;
   }
 
   async get(key: string): Promise<string | null> {

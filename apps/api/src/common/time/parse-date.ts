@@ -1,4 +1,4 @@
-import type { DateFormat } from "@vyaya/shared";
+import type { DateFormat } from "@treasury-ops/shared";
 
 type DateParts = Readonly<{ year: number; month: number; day: number }>;
 

@@ -1,4 +1,4 @@
-import { ProblemDetailsSchema } from "@vyaya/shared";
+import { ProblemDetailsSchema } from "@treasury-ops/shared";
 
 import { AppError, AuthError, ConflictError, NetworkError, ValidationError } from "../errors";
 

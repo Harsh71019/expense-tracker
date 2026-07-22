@@ -5,7 +5,7 @@ import {
   type RecurringRule,
   type RecurringRuleId,
   type UpdateRecurringRule
-} from "@vyaya/shared";
+} from "@treasury-ops/shared";
 
 import {
   IdempotencyPostgresService,

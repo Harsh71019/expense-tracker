@@ -1,6 +1,6 @@
 "use client";
 
-import { ExportCsvQuerySchema } from "@vyaya/shared";
+import { ExportCsvQuerySchema } from "@treasury-ops/shared";
 import { useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 

@@ -50,4 +50,4 @@ export class ConflictError extends AppError {
     this.name = "ConflictError";
   }
 }
-import type { ProblemFieldError } from "@vyaya/shared";
+import type { ProblemFieldError } from "@treasury-ops/shared";

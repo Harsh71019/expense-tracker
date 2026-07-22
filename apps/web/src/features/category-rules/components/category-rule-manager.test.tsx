@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { Category, CategoryRule } from "@vyaya/shared";
+import type { Category, CategoryRule } from "@treasury-ops/shared";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { CategoryRuleManager } from "./category-rule-manager";

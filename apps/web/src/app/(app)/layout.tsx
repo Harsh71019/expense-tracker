@@ -30,7 +30,7 @@ export default async function AppLayout({
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex items-center justify-between border-b border-border bg-surface-elevated px-5 py-4 md:hidden">
           <span className="font-mono text-sm font-semibold tracking-[0.2em] text-foreground uppercase">
-            Vyaya
+            TreasuryOps
           </span>
           <ThemeToggle current={theme} />
         </header>

@@ -1,6 +1,6 @@
 "use client";
 
-import type { ImportBatch } from "@vyaya/shared";
+import type { ImportBatch } from "@treasury-ops/shared";
 import type { ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";

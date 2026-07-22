@@ -1,4 +1,4 @@
-import { COLUMN_MAPPING_PRESETS, type ImportBatch } from "@vyaya/shared";
+import { COLUMN_MAPPING_PRESETS, type ImportBatch } from "@treasury-ops/shared";
 
 import type { SeededAccounts } from "./accounts.js";
 import type { SeedServices } from "./context.js";

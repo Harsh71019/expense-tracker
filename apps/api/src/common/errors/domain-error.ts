@@ -1,4 +1,4 @@
-import type { ErrorCode } from "@vyaya/shared";
+import type { ErrorCode } from "@treasury-ops/shared";
 
 export abstract class DomainError extends Error {
   abstract readonly code: ErrorCode;

@@ -10,7 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this project is
 
-**Vyaya** — a personal expense tracker built as an append-only, double-entry-style ledger, where correctness of money math is the product. pnpm workspace monorepo:
+**TreasuryOps** — a personal expense tracker built as an append-only, double-entry-style ledger, where correctness of money math is the product. pnpm workspace monorepo:
 
 ```
 apps/api          NestJS REST API — Better Auth, PostgreSQL (Drizzle ORM), BullMQ workers, crons
@@ -34,21 +34,21 @@ pnpm lint                    # eslint across all workspaces, zero warnings allow
 pnpm typecheck                # tsc --noEmit across all workspaces, zero errors
 pnpm test                    # vitest unit tests across all workspaces
 pnpm test:integration        # apps/api only — vitest against vitest.integration.config.ts
-pnpm build                   # builds @vyaya/api then @vyaya/web
+pnpm build                   # builds @treasury-ops/api then @treasury-ops/web
 pnpm format / format:check   # prettier
 pnpm migrate                 # drizzle-kit migrate, via apps/api
 pnpm verify:migrations       # scripts/verify-migrations.ts
 pnpm gen:client               # regenerates apps/api/openapi.json + apps/web's typed API client
-pnpm --filter @vyaya/api seed # seeds demo accounts/transactions against DATABASE_URL
+pnpm --filter @treasury-ops/api seed # seeds demo accounts/transactions against DATABASE_URL
 ```
 
 Single-package/single-test commands:
 
 ```bash
-pnpm --filter @vyaya/api test -- path/to/file.test.ts     # single unit test file (vitest)
-pnpm --filter @vyaya/api test:integration -- path/to/file.integration.ts
-pnpm --filter @vyaya/api lint / typecheck / dev / build
-pnpm --filter @vyaya/web lint / typecheck / dev / build
+pnpm --filter @treasury-ops/api test -- path/to/file.test.ts     # single unit test file (vitest)
+pnpm --filter @treasury-ops/api test:integration -- path/to/file.integration.ts
+pnpm --filter @treasury-ops/api lint / typecheck / dev / build
+pnpm --filter @treasury-ops/web lint / typecheck / dev / build
 ```
 
 Notes:

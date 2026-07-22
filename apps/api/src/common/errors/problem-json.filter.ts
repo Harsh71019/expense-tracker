@@ -1,6 +1,6 @@
 import { Catch, HttpException, HttpStatus } from "@nestjs/common";
 import type { ArgumentsHost, ExceptionFilter } from "@nestjs/common";
-import type { ErrorCode } from "@vyaya/shared";
+import type { ErrorCode } from "@treasury-ops/shared";
 import type { Request, Response } from "express";
 import { Logger } from "nestjs-pino";
 import { ZodError } from "zod";
@@ -53,7 +53,7 @@ function toProblemDetails(exception: unknown, instance: string, reqId: string): 
 
   if (exception instanceof ZodError) {
     return {
-      type: "https://vyaya.app/problems/common.validation_failed",
+      type: "https://treasury-ops.app/problems/common.validation_failed",
       title: "Validation failed",
       status: HttpStatus.UNPROCESSABLE_ENTITY,
       detail: `${exception.issues.length} field(s) failed validation.`,
@@ -72,7 +72,7 @@ function toProblemDetails(exception: unknown, instance: string, reqId: string): 
 
   if (exception instanceof DomainError) {
     return {
-      type: `https://vyaya.app/problems/${exception.code}`,
+      type: `https://treasury-ops.app/problems/${exception.code}`,
       title: exception.name,
       status: exception.status,
       detail: exception.message,

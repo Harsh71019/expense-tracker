@@ -1,4 +1,4 @@
-import type { AssetKind } from "@vyaya/shared";
+import type { AssetKind } from "@treasury-ops/shared";
 
 export const assetKinds: readonly Readonly<{ value: AssetKind; label: string }>[] = [
   { value: "investment", label: "Investment" },

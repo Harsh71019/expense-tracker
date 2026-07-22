@@ -5,7 +5,7 @@ import {
   ColumnMappingSchema,
   DateFormatSchema,
   type ColumnMapping
-} from "@vyaya/shared";
+} from "@treasury-ops/shared";
 import { useEffect, useEffectEvent, useState } from "react";
 import type { ReactNode } from "react";
 

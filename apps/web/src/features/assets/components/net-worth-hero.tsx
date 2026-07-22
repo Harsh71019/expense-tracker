@@ -1,6 +1,6 @@
 "use client";
 
-import { formatSignedCompactMinor, type NetWorth } from "@vyaya/shared";
+import { formatSignedCompactMinor, type NetWorth } from "@treasury-ops/shared";
 import type { ReactNode } from "react";
 
 import { SignedMoney } from "@/components/ui/money";

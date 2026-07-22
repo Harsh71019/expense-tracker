@@ -1,4 +1,4 @@
-# Vyaya Frontend Standards — Next.js Web Client (2026)
+# TreasuryOps Frontend Standards — Next.js Web Client (2026)
 
 > Scope: everything that ships to the browser or renders on the Next.js server. Backend (NestJS API) has its own doc. This covers architecture patterns, the frontend library stack, dev tooling, testing, performance, and accessibility — researched against the 2026 ecosystem state.
 
@@ -62,7 +62,7 @@ export const budgetKeys = { /* same shape */ };
 * Default to Server Components; add `"use client"` only at interactivity boundaries (forms, charts with tooltips, anything with `useState`/handlers).
 * Push `"use client"` **down the tree** — a client leaf inside a server page, never a client page wrapping server children it doesn't need to.
 * Never import server-only modules (DB clients, secrets) into client files. Add the `server-only` package to poison-pill those imports at build time.
-* Server Actions: fine for simple mutations, but since Vyaya has a real NestJS API, keep mutations going through the API client for one source of truth. Don't split write paths between Server Actions and REST.
+* Server Actions: fine for simple mutations, but since TreasuryOps has a real NestJS API, keep mutations going through the API client for one source of truth. Don't split write paths between Server Actions and REST.
 
 ### 1.3 Client state: keep it tiny
 
@@ -108,7 +108,7 @@ const CreateTxnForm = z.object({
 
 ### 3.1 Styling & components
 
-* **Tailwind CSS v4** — CSS-first config (`@theme` in CSS, no `tailwind.config.js` for tokens), native cascade layers, faster builds. Define Vyaya's design tokens (spacing scale, category colors, semantic colors like `--color-expense` / `--color-income`) as CSS variables in `@theme` so charts and components share one palette.
+* **Tailwind CSS v4** — CSS-first config (`@theme` in CSS, no `tailwind.config.js` for tokens), native cascade layers, faster builds. Define TreasuryOps's design tokens (spacing scale, category colors, semantic colors like `--color-expense` / `--color-income`) as CSS variables in `@theme` so charts and components share one palette.
 * **shadcn/ui** primitives (Radix under the hood), copied into `components/ui/`. You own the code — customize freely, but keep a rule: **never edit `components/ui/*` for feature-specific needs**; wrap them in `components/` feature components instead, so upstream shadcn updates stay mergeable.
 * `cn()` (`clsx` + `tailwind-merge`) for conditional classes; `class-variance-authority` (cva) for component variants — shadcn already establishes this pattern, extend it rather than invent a parallel one.
 * Dark mode via `next-themes` + Tailwind `dark:` — table stakes for a finance app used at night.

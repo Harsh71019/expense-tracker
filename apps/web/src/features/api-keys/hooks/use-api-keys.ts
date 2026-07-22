@@ -8,7 +8,7 @@ import {
   type CreateApiKey,
   type CreateApiKeyResponse,
   type UpdateApiKey
-} from "@vyaya/shared";
+} from "@treasury-ops/shared";
 import { z } from "zod";
 
 import { apiClient } from "@/lib/api/client";

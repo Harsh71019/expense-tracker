@@ -1,4 +1,4 @@
-import { formatSignedCompactMinor, type Category, type MonthlyRollup } from "@vyaya/shared";
+import { formatSignedCompactMinor, type Category, type MonthlyRollup } from "@treasury-ops/shared";
 import type { ReactNode } from "react";
 
 import { rollupCategoryMeta } from "../model/rollup-category";

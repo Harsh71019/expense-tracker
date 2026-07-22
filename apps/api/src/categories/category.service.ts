@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import type { Category, CategoryId, CreateCategory } from "@vyaya/shared";
+import type { Category, CategoryId, CreateCategory } from "@treasury-ops/shared";
 
 import { EntityNotFoundError } from "../common/errors/entity-not-found.error.js";
 import { CategoryParentKindMismatchError } from "../common/errors/category-parent-kind-mismatch.error.js";

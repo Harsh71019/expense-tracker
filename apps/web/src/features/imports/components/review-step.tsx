@@ -1,7 +1,7 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import type { Category, StagedRow, StagedRowPage } from "@vyaya/shared";
+import type { Category, StagedRow, StagedRowPage } from "@treasury-ops/shared";
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 

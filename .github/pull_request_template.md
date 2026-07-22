@@ -17,7 +17,7 @@ Complete this section for changes under `apps/web`.
 - [ ] Interactive code uses the smallest practical `"use client"` boundary.
 - [ ] Query keys come from the central factory; mutations invalidate the correct key families.
 - [ ] Shareable view state (month, filters, sort) lives in the URL.
-- [ ] Money is rendered with `<Money />` or `formatMinor()` from `@vyaya/shared`; no inline money arithmetic was added.
+- [ ] Money is rendered with `<Money />` or `formatMinor()` from `@treasury-ops/shared`; no inline money arithmetic was added.
 - [ ] Loading, empty, and error states are covered.
 - [ ] Controls are keyboard reachable, labelled, and have visible focus styles.
 - [ ] Heavy client-only features are dynamically imported where appropriate.

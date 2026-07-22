@@ -1,4 +1,4 @@
-# Vyaya — Salary & Income Module Architecture
+# TreasuryOps — Salary & Income Module Architecture
 
 > Extends `BACKEND.md` (same invariants, same ledger, same transaction discipline). This module turns "salary" from a dumb recurring rule into a first-class, effective-dated income model that feeds cashflow, monthly income, goals, and net-worth projections — while posting into the **same append-only ledger** as everything else.
 >

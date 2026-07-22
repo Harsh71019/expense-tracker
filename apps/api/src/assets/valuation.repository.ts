@@ -1,5 +1,10 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { ValuationSchema, type AssetId, type CreateValuation, type Valuation } from "@vyaya/shared";
+import {
+  ValuationSchema,
+  type AssetId,
+  type CreateValuation,
+  type Valuation
+} from "@treasury-ops/shared";
 import { and, desc, eq, inArray } from "drizzle-orm";
 
 import { DATABASE_CONNECTION } from "../common/db/db.module.js";

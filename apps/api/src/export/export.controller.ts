@@ -1,5 +1,5 @@
 import { Controller, Get, Query, Res } from "@nestjs/common";
-import { ExportCsvQuerySchema } from "@vyaya/shared";
+import { ExportCsvQuerySchema } from "@treasury-ops/shared";
 import type { Response } from "express";
 
 import type { AuthenticatedUser } from "../auth/auth.guard.js";
@@ -20,7 +20,7 @@ export class ExportController {
     response
       .status(200)
       .setHeader("Content-Type", "text/csv; charset=utf-8")
-      .setHeader("Content-Disposition", 'attachment; filename="vyaya-export.csv"')
+      .setHeader("Content-Disposition", 'attachment; filename="treasury-ops-export.csv"')
       .send(csv);
   }
 }

@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { Asset, ValuationPage } from "@vyaya/shared";
+import type { Asset, ValuationPage } from "@treasury-ops/shared";
 import { describe, expect, it, vi } from "vitest";
 
 import { AssetHistoryDrawer } from "./asset-history-drawer";

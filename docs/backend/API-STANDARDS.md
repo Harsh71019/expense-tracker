@@ -1,4 +1,4 @@
-# Vyaya — API Response & Error Code Standard
+# TreasuryOps — API Response & Error Code Standard
 
 > The contract every endpoint follows — success shapes, error shapes, status mapping, and the error-code catalog. Referenced by `BACKEND.md` §7, enforced by the global exception filter, `packages/shared` types, contract tests, and the generated client. **No endpoint may invent its own shape.**
 
@@ -7,7 +7,7 @@
 ## 1. Design Rules (the whole standard in six lines)
 
 1. **Success returns the resource, not an envelope.** No `{ success: true, data: ... }` wrapper — status codes already say it succeeded; envelopes just add `.data.data` noise.
-2. **Every error is RFC 7807 `application/problem+json`** with Vyaya extensions. One shape for a 401, a validation failure, and a crashed worker.
+2. **Every error is RFC 7807 `application/problem+json`** with TreasuryOps extensions. One shape for a 401, a validation failure, and a crashed worker.
 3. **Every error carries a stable machine `code`.** Clients branch on `code` (never on `detail` text, never on status alone). Codes are append-only forever.
 4. **Every response carries `x-request-id`.** Success or failure — it's the correlation handle (see LOGGING docs).
 5. **Errors say whether retrying can help** (`retryable: boolean`). The frontend's retry/backoff logic reads this, not a hardcoded status list.
@@ -87,7 +87,7 @@ Long work (import parse) returns `202` with a pollable resource:
 
 ---
 
-## 3. Error Response — RFC 7807 + Vyaya Extensions
+## 3. Error Response — RFC 7807 + TreasuryOps Extensions
 
 Content-Type: `application/problem+json`. Always this shape:
 
@@ -95,13 +95,13 @@ Content-Type: `application/problem+json`. Always this shape:
 // POST /api/v1/transactions/665f.../reverse → 409
 {
   // ---- RFC 7807 standard members ----
-  "type": "https://vyaya.app/problems/txn.already_reversed", // stable URI; resolvable to docs later, opaque id today
+  "type": "https://treasury-ops.app/problems/txn.already_reversed", // stable URI; resolvable to docs later, opaque id today
   "title": "Transaction already reversed", // human, generic per code, never dynamic
   "status": 409,
   "detail": "Transaction 665f1c… was reversed by 665f1d… on 2026-07-10.", // human, specific, safe to show
   "instance": "/api/v1/transactions/665f1c0a9b3e2f0012ab34cd/reverse",
 
-  // ---- Vyaya extensions ----
+  // ---- TreasuryOps extensions ----
   "code": "txn.already_reversed", // THE field clients branch on
   "reqId": "a1b2c3d4",
   "timestamp": "2026-07-13T08:42:01.412Z",
@@ -114,7 +114,7 @@ Content-Type: `application/problem+json`. Always this shape:
 
 ```jsonc
 {
-  "type": "https://vyaya.app/problems/common.validation_failed",
+  "type": "https://treasury-ops.app/problems/common.validation_failed",
   "title": "Validation failed",
   "status": 422,
   "detail": "2 fields failed validation.",

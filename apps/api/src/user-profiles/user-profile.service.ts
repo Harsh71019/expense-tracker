@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { type UserProfile } from "@vyaya/shared";
+import { type UserProfile } from "@treasury-ops/shared";
 
 import { EntityNotFoundError } from "../common/errors/entity-not-found.error.js";
 import { UserProfileRepository } from "./user-profile.repository.js";

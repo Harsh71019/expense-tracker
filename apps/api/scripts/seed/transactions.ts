@@ -1,4 +1,4 @@
-import type { CreateTransaction, Transaction } from "@vyaya/shared";
+import type { CreateTransaction, Transaction } from "@treasury-ops/shared";
 
 import { withTxn } from "../../src/common/db/db-txn.js";
 import type { SeededAccounts } from "./accounts.js";

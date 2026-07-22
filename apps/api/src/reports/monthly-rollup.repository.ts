@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { MonthlyRollupSchema, type Month, type MonthlyRollup } from "@vyaya/shared";
+import { MonthlyRollupSchema, type Month, type MonthlyRollup } from "@treasury-ops/shared";
 import { and, eq, gte, lt, sql } from "drizzle-orm";
 
 import { DATABASE_CONNECTION } from "../common/db/db.module.js";

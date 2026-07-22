@@ -4,7 +4,7 @@ import {
   RecurringRuleIdSchema,
   UpdateRecurringRuleSchema,
   type RecurringRule
-} from "@vyaya/shared";
+} from "@treasury-ops/shared";
 import type { Response } from "express";
 import { z } from "zod";
 

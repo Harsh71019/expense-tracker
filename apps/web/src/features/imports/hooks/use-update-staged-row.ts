@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQueryClient, type UseMutationResult } from "@tanstack/react-query";
-import { StagedRowSchema, type StagedRow, type UpdateStagedRow } from "@vyaya/shared";
+import { StagedRowSchema, type StagedRow, type UpdateStagedRow } from "@treasury-ops/shared";
 
 import { apiClient } from "@/lib/api/client";
 import { toAppError, toNetworkError } from "@/lib/api/problem";

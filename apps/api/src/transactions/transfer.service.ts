@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { type CreateTransfer, type Transaction, type TransferGroupId } from "@vyaya/shared";
+import { type CreateTransfer, type Transaction, type TransferGroupId } from "@treasury-ops/shared";
 import { Logger } from "nestjs-pino";
 
 import { AccountRepository } from "../accounts/account.repository.js";

@@ -9,7 +9,7 @@ import { MonthlyRollupRepository } from "../../../src/reports/monthly-rollup.rep
 import { TransactionRepository } from "../../../src/transactions/transaction.repository.js";
 import { createTestDb, insertTestUser } from "../support/postgres-test-db.js";
 import type { TestDb } from "../support/postgres-test-db.js";
-import type { Transaction } from "@vyaya/shared";
+import type { Transaction } from "@treasury-ops/shared";
 
 describe("MonthlyRollupRepository", () => {
   let testDb: TestDb;

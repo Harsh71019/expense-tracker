@@ -1,4 +1,4 @@
-# Vyaya — Frontend: Extension Feature Slices
+# TreasuryOps — Frontend: Extension Feature Slices
 
 > Companion to `FRONTEND.md` (all rules there apply unchanged: feature isolation behind `index.ts`, generated client only, TanStack Query conventions, `<Money>`/`AmountInput` for anything monetary, URL-driven filter state, mobile-first). This doc adds the slices for `EXTENSION-MODULES.md`: **debt, goals, investments, cards, ingest inbox**, plus the dashboard and navigation changes they imply.
 >
@@ -73,14 +73,14 @@ Query keys extend `lib/query/keys.ts`: `loans()`, `loan(id)`, `receivables()`, `
 ## 5. `features/cards/`
 
 - **`<CardTile>`**: outstanding `<Money>`, utilization bar vs limit (amber > 30%, red > 70%), **due-in-N-days** countdown chip (red ≤ 3 days with amount), statement-cycle dates. Tap → the card account's txn list with a cycle filter pre-applied ("this statement" / "last statement" chips — cycle boundaries from `billing`, computed client-side from the same shared date utils the backend uses).
-- **`<PayBillButton>`** → pre-filled transfer sheet (from default bank account, amount = outstanding, editable for partial). It's the transfer form with a costume on — no new mutation, and the UI copy says "record payment" not "pay" (Vyaya records; your bank pays).
+- **`<PayBillButton>`** → pre-filled transfer sheet (from default bank account, amount = outstanding, editable for partial). It's the transfer form with a costume on — no new mutation, and the UI copy says "record payment" not "pay" (TreasuryOps records; your bank pays).
 - Statement history: past `card.statement` events as rows (cycle range, total, paid-by-due ✓/✗).
 
 ## 6. `features/ingest/` (the review inbox)
 
 - **`<InboxItem>`**: "New card •• 4291 (HDFC) — ₹450 at SWIGGY, yesterday" + account picker (existing accounts of matching kind, or "create new card account" inline) + category chip row (rule-engine suggestion preselected) + Confirm / Ignore.
 - Confirm = one mutation: create alias + post txn (backend does both atomically); the item animates out and a toast notes "future 4291 emails will post automatically" — teaching the system's behavior at the exact moment it's learned.
-- **Badge propagation:** inbox count rides on the session/bootstrap query → badge on More tab. New-item push (ntfy) deep-links `vyaya://inbox` (PWA URL handler).
+- **Badge propagation:** inbox count rides on the session/bootstrap query → badge on More tab. New-item push (ntfy) deep-links `treasury-ops://inbox` (PWA URL handler).
 - Ignore keeps the item queryable under a filter (never silently deletes someone's money signal); a third action "Not a transaction" trains nothing but clears honestly.
 - This screen is also where email-parse _failures_ surface (n8n error branch → inbox with `raw.snippet` shown) — one place to review everything the automation wasn't sure about. That's the trust contract of §5 of the backend doc, made visible.
 

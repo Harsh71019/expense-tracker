@@ -38,7 +38,7 @@ describe("toggleTheme", () => {
     await toggleTheme();
 
     expect(mocks.set).toHaveBeenCalledWith(
-      "vyaya-theme",
+      "treasury-ops-theme",
       expected,
       expect.objectContaining({ maxAge: 31_536_000, path: "/", sameSite: "lax" })
     );
@@ -51,7 +51,7 @@ describe("toggleTheme", () => {
     await applyThemePreference(formData);
 
     expect(mocks.set).toHaveBeenCalledWith(
-      "vyaya-theme",
+      "treasury-ops-theme",
       "dark",
       expect.objectContaining({ maxAge: 31_536_000, path: "/", sameSite: "lax" })
     );
@@ -63,7 +63,7 @@ describe("toggleTheme", () => {
 
     await applyThemePreference(formData);
 
-    expect(mocks.delete).toHaveBeenCalledWith("vyaya-theme");
+    expect(mocks.delete).toHaveBeenCalledWith("treasury-ops-theme");
     expect(mocks.set).not.toHaveBeenCalled();
   });
 

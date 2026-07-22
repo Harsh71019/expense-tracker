@@ -1,4 +1,4 @@
-import { formatMinor } from "@vyaya/shared";
+import { formatMinor } from "@treasury-ops/shared";
 import type { HttpHandler } from "msw";
 
 import type { MockHttp, MockStore } from "./types";
@@ -57,7 +57,7 @@ export function exportHandlers(http: MockHttp, store: MockStore): HttpHandler[] 
       const csv = [CSV_HEADER, ...rows].map((row) => row.map(csvCell).join(",")).join("\r\n");
 
       return response(200).text(csv, {
-        headers: { "Content-Disposition": 'attachment; filename="vyaya-export.csv"' }
+        headers: { "Content-Disposition": 'attachment; filename="treasury-ops-export.csv"' }
       });
     })
   ];

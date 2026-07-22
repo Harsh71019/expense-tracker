@@ -50,7 +50,8 @@ export async function applyAccentPreference(
     await persistAccent(preference);
     return {
       status: "success",
-      message: selection === ACCENT_PRESETS.default ? "Applied Vyaya default." : "Applied preset.",
+      message:
+        selection === ACCENT_PRESETS.default ? "Applied TreasuryOps default." : "Applied preset.",
       appliedKey: accentPreferenceKey(preference)
     };
   }
@@ -69,7 +70,7 @@ export async function applyAccentPreference(
     await persistAccent(preference);
     return {
       status: "success",
-      message: "Applied Vyaya default.",
+      message: "Applied TreasuryOps default.",
       appliedKey: accentPreferenceKey(preference)
     };
   }

@@ -4,7 +4,7 @@ import {
   type CategoryRule,
   type CategoryRuleId,
   type CreateCategoryRule
-} from "@vyaya/shared";
+} from "@treasury-ops/shared";
 import { z } from "zod";
 
 import { CategoryRepository } from "../categories/category.repository.js";

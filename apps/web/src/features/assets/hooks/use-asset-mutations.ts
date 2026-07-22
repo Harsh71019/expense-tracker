@@ -8,7 +8,7 @@ import {
   type CreateAsset,
   type CreateValuation,
   type Valuation
-} from "@vyaya/shared";
+} from "@treasury-ops/shared";
 import { useState } from "react";
 
 import { apiClient } from "@/lib/api/client";

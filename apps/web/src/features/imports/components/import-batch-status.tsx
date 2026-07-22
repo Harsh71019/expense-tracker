@@ -1,4 +1,4 @@
-import type { ImportBatchStatus } from "@vyaya/shared";
+import type { ImportBatchStatus } from "@treasury-ops/shared";
 import type { ReactNode } from "react";
 
 import { Badge } from "@/components/ui/badge";

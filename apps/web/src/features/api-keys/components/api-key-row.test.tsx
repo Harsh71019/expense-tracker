@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { ApiKey } from "@vyaya/shared";
+import type { ApiKey } from "@treasury-ops/shared";
 import { describe, expect, it, vi } from "vitest";
 
 import { ApiKeyRow } from "./api-key-row";

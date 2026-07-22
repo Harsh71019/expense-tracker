@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
-import { MonthlyRollupSchema, type MonthlyRollup } from "@vyaya/shared";
+import { MonthlyRollupSchema, type MonthlyRollup } from "@treasury-ops/shared";
 
 import { apiClient } from "@/lib/api/client";
 import { toAppError, toNetworkError } from "@/lib/api/problem";

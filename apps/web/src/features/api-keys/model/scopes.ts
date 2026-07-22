@@ -1,4 +1,4 @@
-import type { ApiKeyPermissions } from "@vyaya/shared";
+import type { ApiKeyPermissions } from "@treasury-ops/shared";
 
 export const SCOPE_OPTIONS = [
   {

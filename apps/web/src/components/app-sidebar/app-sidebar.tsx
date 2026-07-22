@@ -9,7 +9,7 @@ import { type Theme } from "@/lib/theme";
 import { AppNav } from "../app-nav";
 import { ThemeToggle } from "../ui/theme-toggle";
 
-const SIDEBAR_COMPACT_KEY = "vyaya-sidebar-compact";
+const SIDEBAR_COMPACT_KEY = "treasury-ops-sidebar-compact";
 
 const navItems = [
   { href: "/transactions", label: "Transactions", icon: "≡" },
@@ -72,7 +72,7 @@ export function AppSidebar({
           {compact ? null : (
             <div className="min-w-0">
               <p className="truncate text-base leading-none font-bold tracking-tight text-foreground">
-                Vyaya
+                TreasuryOps
               </p>
               <p className="mt-1.5 font-mono text-[8px] font-bold tracking-[0.2em] text-accent uppercase">
                 Expense tracker

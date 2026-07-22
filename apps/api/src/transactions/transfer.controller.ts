@@ -4,7 +4,7 @@ import {
   TransferGroupIdSchema,
   type Transfer,
   type TransferReversal
-} from "@vyaya/shared";
+} from "@treasury-ops/shared";
 import type { Response } from "express";
 import { z } from "zod";
 

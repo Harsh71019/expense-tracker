@@ -5,7 +5,7 @@ import {
   type StagedRow,
   type StagedRowId,
   type UpdateStagedRow
-} from "@vyaya/shared";
+} from "@treasury-ops/shared";
 import { and, asc, eq, gt, isNotNull } from "drizzle-orm";
 import { z } from "zod";
 

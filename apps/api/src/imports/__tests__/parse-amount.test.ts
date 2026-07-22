@@ -1,4 +1,4 @@
-import type { ColumnMapping } from "@vyaya/shared";
+import type { ColumnMapping } from "@treasury-ops/shared";
 import { describe, expect, it } from "vitest";
 
 import { resolveAmount } from "../parse-amount.js";

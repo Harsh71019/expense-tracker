@@ -84,12 +84,12 @@ Required changes:
 - Preserve the documented daily/monthly retention and offsite-copy strategy.
 - Document and test restoration into a clean PostgreSQL instance.
 - Run ledger invariant and balance verification after restore.
-- Update `docs/DEPLOYMENT-VYAYA.md`, README, backend documentation, and operational commands.
+- Update `docs/DEPLOYMENT-TREASURY-OPS.md`, README, backend documentation, and operational commands.
 
 Relevant code and documentation:
 
 - `docker-compose.yml`
-- `docs/DEPLOYMENT-VYAYA.md`
+- `docs/DEPLOYMENT-TREASURY-OPS.md`
 - `README.md`
 - `docs/backend/BACKEND.md`
 

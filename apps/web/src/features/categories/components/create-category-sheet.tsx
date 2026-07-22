@@ -5,7 +5,7 @@ import {
   type Category,
   type CategoryKind,
   type CreateCategory
-} from "@vyaya/shared";
+} from "@treasury-ops/shared";
 import { useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import { toast } from "sonner";

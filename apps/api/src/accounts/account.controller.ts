@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Headers, HttpCode, Param, Patch, Post, Res } from "@nestjs/common";
-import { AccountIdSchema, CreateAccountSchema, type Account } from "@vyaya/shared";
+import { AccountIdSchema, CreateAccountSchema, type Account } from "@treasury-ops/shared";
 
 import type { AuthenticatedUser } from "../auth/auth.guard.js";
 import { CurrentUser } from "../auth/current-user.decorator.js";

@@ -1,5 +1,5 @@
 import { Controller, Get } from "@nestjs/common";
-import type { NetWorth } from "@vyaya/shared";
+import type { NetWorth } from "@treasury-ops/shared";
 
 import type { AuthenticatedUser } from "../auth/auth.guard.js";
 import { CurrentUser } from "../auth/current-user.decorator.js";

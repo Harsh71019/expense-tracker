@@ -4,7 +4,7 @@ import {
   type CategoryRule,
   type CategoryRuleId,
   type CreateCategoryRule
-} from "@vyaya/shared";
+} from "@treasury-ops/shared";
 import { and, eq } from "drizzle-orm";
 
 import { DATABASE_CONNECTION } from "../common/db/db.module.js";

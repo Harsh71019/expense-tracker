@@ -103,7 +103,7 @@ Account names are not present in the transaction response, so resolve them from 
 
 ## 9. Out of scope
 
-- Bank-initiated movement or payment execution; Vyaya records a transfer only.
+- Bank-initiated movement or payment execution; TreasuryOps records a transfer only.
 - Cross-currency transfers.
 - Editing transfer amount/account/date. Correction is group reversal plus a new transfer.
 - Splitting one transfer across multiple destination accounts.

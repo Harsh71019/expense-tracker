@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQueryClient, type UseMutationResult } from "@tanstack/react-query";
-import { AccountSchema, type Account, type CreateAccount } from "@vyaya/shared";
+import { AccountSchema, type Account, type CreateAccount } from "@treasury-ops/shared";
 import { useState } from "react";
 
 import { apiClient } from "@/lib/api/client";

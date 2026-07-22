@@ -1,6 +1,6 @@
 "use client";
 
-import { CreateCategoryRuleSchema, type CategoryRule } from "@vyaya/shared";
+import { CreateCategoryRuleSchema, type CategoryRule } from "@treasury-ops/shared";
 import { useState } from "react";
 import type { ReactNode } from "react";
 import { toast } from "sonner";

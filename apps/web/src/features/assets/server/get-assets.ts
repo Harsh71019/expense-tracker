@@ -1,4 +1,4 @@
-import { AssetSchema, type Asset } from "@vyaya/shared";
+import { AssetSchema, type Asset } from "@treasury-ops/shared";
 import { cache } from "react";
 import { z } from "zod";
 

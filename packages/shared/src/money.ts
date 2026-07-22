@@ -17,7 +17,7 @@ export function formatMinor(amountMinor: MinorAmount, currency = "INR"): string 
   }
 
   if (currency !== "INR") {
-    throw new RangeError("Vyaya currently supports INR only.");
+    throw new RangeError("TreasuryOps currently supports INR only.");
   }
 
   const rupees = Math.floor(amountMinor / PAISA_PER_RUPEE);

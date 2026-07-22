@@ -9,7 +9,7 @@ import {
   TransactionPageSchema,
   type ListTransactionsQuery,
   type TransactionPage
-} from "@vyaya/shared";
+} from "@treasury-ops/shared";
 
 import { apiClient } from "@/lib/api/client";
 import { toAppError, toNetworkError } from "@/lib/api/problem";

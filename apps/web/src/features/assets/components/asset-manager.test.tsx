@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { Asset, NetWorth } from "@vyaya/shared";
+import type { Asset, NetWorth } from "@treasury-ops/shared";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AssetManager } from "./asset-manager";

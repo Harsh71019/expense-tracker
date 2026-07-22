@@ -1,6 +1,6 @@
 "use client";
 
-import type { Category, CategoryRule } from "@vyaya/shared";
+import type { Category, CategoryRule } from "@treasury-ops/shared";
 import { useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 

@@ -7,7 +7,7 @@ import {
   type CreateAsset,
   type CreateValuation,
   type Valuation
-} from "@vyaya/shared";
+} from "@treasury-ops/shared";
 import { z } from "zod";
 
 import { IdempotencyPostgresService } from "../common/idempotency/idempotency-postgres.service.js";

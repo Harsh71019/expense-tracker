@@ -6,4 +6,4 @@
 export const isMockApiEnabled = process.env.NEXT_PUBLIC_MOCK_API === "1";
 
 export const MOCK_USER_ID = "mock000000000000000user";
-export const MOCK_USER_EMAIL = "you@vyaya.mock";
+export const MOCK_USER_EMAIL = "you@treasury-ops.mock";

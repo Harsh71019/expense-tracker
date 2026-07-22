@@ -1,6 +1,6 @@
 "use client";
 
-import { AccountTypeSchema, CreateAccountSchema, type AccountType } from "@vyaya/shared";
+import { AccountTypeSchema, CreateAccountSchema, type AccountType } from "@treasury-ops/shared";
 import { useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 

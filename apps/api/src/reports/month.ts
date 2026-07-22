@@ -1,4 +1,4 @@
-import type { Month } from "@vyaya/shared";
+import type { Month } from "@treasury-ops/shared";
 
 /** "2026-01" -> "2025-12"; plain calendar-month arithmetic on the YYYY-MM key itself. */
 export function previousMonth(month: Month): Month {

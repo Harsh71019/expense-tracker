@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { formatMinor, type ExportCsvQuery, type Transaction } from "@vyaya/shared";
+import { formatMinor, type ExportCsvQuery, type Transaction } from "@treasury-ops/shared";
 
 import { AccountRepository } from "../accounts/account.repository.js";
 import { CategoryRepository } from "../categories/category.repository.js";

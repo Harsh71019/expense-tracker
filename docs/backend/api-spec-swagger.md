@@ -25,9 +25,9 @@ No new npm dependencies are added. Stoplight Elements is loaded entirely from th
 
 The OpenAPI spec is already fully defined:
 
-- **Registry**: [apps/api/src/openapi/registry.ts](file:///Users/harsh/Developer/Expense-Tracker/apps/api/src/openapi/registry.ts) — uses `@asteasolutions/zod-to-openapi` `OpenAPIRegistry` to register all paths (accounts, categories, transactions, transfers) with zod schemas from `@vyaya/shared`.
+- **Registry**: [apps/api/src/openapi/registry.ts](file:///Users/harsh/Developer/Expense-Tracker/apps/api/src/openapi/registry.ts) — uses `@asteasolutions/zod-to-openapi` `OpenAPIRegistry` to register all paths (accounts, categories, transactions, transfers) with zod schemas from `@treasury-ops/shared`.
 - **Generator script**: [apps/api/scripts/generate-openapi.ts](file:///Users/harsh/Developer/Expense-Tracker/apps/api/scripts/generate-openapi.ts) — uses `OpenApiGeneratorV31` to produce a full document and writes it to `apps/api/openapi.json` (1,375 lines, ~35KB).
-- **Root script**: `pnpm gen:client` calls `pnpm --filter @vyaya/api gen:openapi` first, then generates the typed client for `apps/web`.
+- **Root script**: `pnpm gen:client` calls `pnpm --filter @treasury-ops/api gen:openapi` first, then generates the typed client for `apps/web`.
 
 The new controller will reuse the exact same `registry` and `OpenApiGeneratorV31` to generate the spec at runtime — no file reads, no static JSON serving.
 
@@ -77,7 +77,7 @@ export class OpenApiController {
     return generator.generateDocument({
       openapi: "3.1.0",
       info: {
-        title: "Vyaya API",
+        title: "TreasuryOps API",
         version: "1.0.0",
         description:
           "Personal expense tracker with an append-only, double-entry-style ledger. " +
@@ -149,7 +149,7 @@ const DOCS_HTML = /* html */ `<!doctype html>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-    <title>Vyaya API Documentation</title>
+    <title>TreasuryOps API Documentation</title>
 
     <link rel="stylesheet" href="https://unpkg.com/@stoplight/elements/styles.min.css" />
     <script src="https://unpkg.com/@stoplight/elements/web-components.min.js" defer></script>
@@ -236,7 +236,7 @@ describe("OpenApiController", () => {
     it("returns a valid OpenAPI 3.1 document", () => {
       const spec = controller.getSpec();
       expect(spec).toHaveProperty("openapi", "3.1.0");
-      expect(spec).toHaveProperty("info.title", "Vyaya API");
+      expect(spec).toHaveProperty("info.title", "TreasuryOps API");
       expect(spec).toHaveProperty("paths");
       expect(spec).toHaveProperty("components.schemas");
       expect(spec).toHaveProperty("components.securitySchemes.cookieAuth");

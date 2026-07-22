@@ -30,7 +30,7 @@ export class OpenApiController {
     return generator.generateDocument({
       openapi: "3.1.0",
       info: {
-        title: "Vyaya API",
+        title: "TreasuryOps API",
         version: "1.0.0",
         description:
           "Personal expense tracker with an append-only, double-entry-style ledger. " +
@@ -93,7 +93,7 @@ const DOCS_HTML = /* html */ `<!doctype html>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-    <title>Vyaya API Documentation</title>
+    <title>TreasuryOps API Documentation</title>
 
     <link rel="stylesheet" href="https://unpkg.com/@stoplight/elements/styles.min.css" />
     <script src="https://unpkg.com/@stoplight/elements/web-components.min.js" defer></script>

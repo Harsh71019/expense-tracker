@@ -6,7 +6,7 @@ import {
   type CreateRecurringRule,
   type RecurringRule,
   type UpdateRecurringRule
-} from "@vyaya/shared";
+} from "@treasury-ops/shared";
 import { useState } from "react";
 import { z } from "zod";
 

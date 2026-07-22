@@ -8,7 +8,7 @@ const output = fileURLToPath(new URL("../openapi.json", import.meta.url));
 const generator = new OpenApiGeneratorV31(registry.definitions);
 const document = generator.generateDocument({
   openapi: "3.1.0",
-  info: { title: "Vyaya API", version: "1.0.0" },
+  info: { title: "TreasuryOps API", version: "1.0.0" },
   servers: [{ url: "/api" }],
   components: {
     securitySchemes: {

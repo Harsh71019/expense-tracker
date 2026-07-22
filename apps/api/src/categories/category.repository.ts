@@ -1,5 +1,10 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { CategorySchema, type Category, type CategoryId, type CreateCategory } from "@vyaya/shared";
+import {
+  CategorySchema,
+  type Category,
+  type CategoryId,
+  type CreateCategory
+} from "@treasury-ops/shared";
 import { and, eq } from "drizzle-orm";
 
 import { DATABASE_CONNECTION } from "../common/db/db.module.js";

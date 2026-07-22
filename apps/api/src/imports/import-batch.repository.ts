@@ -8,7 +8,7 @@ import {
   type ImportBatchId,
   type ImportBatchStats,
   type ImportBatchStatus
-} from "@vyaya/shared";
+} from "@treasury-ops/shared";
 import { and, desc, eq, sql } from "drizzle-orm";
 
 import { DATABASE_CONNECTION } from "../common/db/db.module.js";

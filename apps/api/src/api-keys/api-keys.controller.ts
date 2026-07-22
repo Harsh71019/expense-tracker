@@ -5,7 +5,7 @@ import {
   UpdateApiKeySchema,
   type ApiKey,
   type CreateApiKeyResponse
-} from "@vyaya/shared";
+} from "@treasury-ops/shared";
 import type { Request } from "express";
 
 import type { AuthenticatedUser } from "../auth/auth.guard.js";

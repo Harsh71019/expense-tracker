@@ -1,4 +1,4 @@
-import { TransactionSchema, type Transaction } from "@vyaya/shared";
+import { TransactionSchema, type Transaction } from "@treasury-ops/shared";
 import { cache } from "react";
 
 import { getServerApiClient } from "@/lib/api/server";

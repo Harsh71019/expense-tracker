@@ -1,4 +1,4 @@
-import type { AssetKind } from "@vyaya/shared";
+import type { AssetKind } from "@treasury-ops/shared";
 
 export const ASSET_KIND_ORDER: readonly AssetKind[] = [
   "loan_receivable",

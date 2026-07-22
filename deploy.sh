@@ -56,7 +56,7 @@ echo "==> Waiting for health checks..."
 for i in $(seq 1 12); do
   if curl -sf "${APP_URL}/api/healthz" > /dev/null && curl -sf "${APP_URL}" > /dev/null; then
     DEPLOYED_SHA="$(curl -sf "${APP_URL}/api/healthz" | grep -o '"sha":"[^"]*"' || true)"
-    echo "    Vyaya is healthy at ${APP_URL} (${DEPLOYED_SHA:-sha unknown})"
+    echo "    TreasuryOps is healthy at ${APP_URL} (${DEPLOYED_SHA:-sha unknown})"
 
     echo "==> Smoke test: write + reverse against canary account..."
     if docker compose exec -T api node dist/scripts/smoke.js; then

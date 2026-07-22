@@ -1,6 +1,6 @@
 "use client";
 
-import type { MonthlyRollup } from "@vyaya/shared";
+import type { MonthlyRollup } from "@treasury-ops/shared";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { ReactNode } from "react";

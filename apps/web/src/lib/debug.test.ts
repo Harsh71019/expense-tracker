@@ -31,7 +31,7 @@ describe("debug logger", () => {
     debug.offline("queue checked");
     expect(spy).not.toHaveBeenCalled();
 
-    window.localStorage.setItem("vyaya:debug", "1");
+    window.localStorage.setItem("treasury-ops:debug", "1");
     const enabledDebug = await loadDebug();
     enabledDebug.offline("queue checked");
     expect(spy).toHaveBeenCalledWith("[offline]", "queue checked");

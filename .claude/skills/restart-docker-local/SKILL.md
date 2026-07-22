@@ -1,13 +1,13 @@
 ---
 name: restart-docker-local
-description: Use when the user asks to rebuild/restart Vyaya locally in Docker (e.g. "rebuild docker", "restart the stack", "rebuild and restart") after code changes — rebuilds images, applies migrations, restarts containers, and verifies health.
+description: Use when the user asks to rebuild/restart TreasuryOps locally in Docker (e.g. "rebuild docker", "restart the stack", "rebuild and restart") after code changes — rebuilds images, applies migrations, restarts containers, and verifies health.
 ---
 
-# Restart Vyaya Locally in Docker
+# Restart TreasuryOps Locally in Docker
 
 ## Overview
 
-Vyaya's local Docker stack (`docker-compose.yml`) runs `postgres` → `migrate`
+TreasuryOps's local Docker stack (`docker-compose.yml`) runs `postgres` → `migrate`
 (one-shot) → `api` + `worker` → `web`, behind an `nginx` `proxy` (the only
 published container, `localhost:3006`). After code changes, images must be
 rebuilt and containers restarted for the change to actually be running —

@@ -46,43 +46,43 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - name: Build shared package
-        run: pnpm --filter @vyaya/shared build
+        run: pnpm --filter @treasury-ops/shared build
 
       - name: "Lint — shared"
-        run: pnpm --filter @vyaya/shared lint
+        run: pnpm --filter @treasury-ops/shared lint
       - name: "Lint — backend (api)"
-        run: pnpm --filter @vyaya/api lint
+        run: pnpm --filter @treasury-ops/api lint
       - name: "Architecture — backend circular dependencies"
-        run: pnpm --filter @vyaya/api check:circular
+        run: pnpm --filter @treasury-ops/api check:circular
       - name: "Lint — frontend (web)"
-        run: pnpm --filter @vyaya/web lint
+        run: pnpm --filter @treasury-ops/web lint
       - name: "Architecture — frontend circular dependencies"
-        run: pnpm --filter @vyaya/web check:circular
+        run: pnpm --filter @treasury-ops/web check:circular
 
       - name: "Typecheck — shared"
-        run: pnpm --filter @vyaya/shared typecheck
+        run: pnpm --filter @treasury-ops/shared typecheck
       - name: "Typecheck — backend (api)"
-        run: pnpm --filter @vyaya/api typecheck
+        run: pnpm --filter @treasury-ops/api typecheck
       - name: "Typecheck — frontend (web)"
-        run: pnpm --filter @vyaya/web typecheck
+        run: pnpm --filter @treasury-ops/web typecheck
 
       - name: "Unit tests — shared"
-        run: pnpm --filter @vyaya/shared test
+        run: pnpm --filter @treasury-ops/shared test
       - name: "Unit tests — backend (api)"
-        run: pnpm --filter @vyaya/api test
+        run: pnpm --filter @treasury-ops/api test
       - name: "Unit tests — frontend (web)"
-        run: pnpm --filter @vyaya/web test
+        run: pnpm --filter @treasury-ops/web test
 
       - name: "Integration tests — backend (api)"
-        run: pnpm --filter @vyaya/api test:integration
+        run: pnpm --filter @treasury-ops/api test:integration
 
       - name: "Migration verification — backend"
         run: pnpm verify:migrations
 
       - name: "Build — backend (api)"
-        run: pnpm --filter @vyaya/api build
+        run: pnpm --filter @treasury-ops/api build
       - name: "Build — frontend (web)"
-        run: pnpm --filter @vyaya/web build
+        run: pnpm --filter @treasury-ops/web build
 
       - name: "Security scan (Trivy)"
         uses: aquasecurity/trivy-action@master

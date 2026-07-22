@@ -42,7 +42,7 @@ The accent preference is not part of `UserProfile`. It is a frontend-only, brows
 
 1. **Profile summary** — avatar/initials, display name, and email. Locale and timezone may be shown as quiet supporting information but are not controls.
 2. **Appearance** — existing light/dark/system theme control and accent-color preference. These should read as one coherent personalization section.
-3. **Manage Vyaya** — grouped links into accounts, categories, automatic category rules, recurring rules, assets, transfers, imports, and export.
+3. **Manage TreasuryOps** — grouped links into accounts, categories, automatic category rules, recurring rules, assets, transfers, imports, and export.
 4. **Account actions** — sign-out, visually separated from routine navigation. Sign-out must be clear but should not compete with the primary page content.
 
 On wide screens the identity summary and Appearance section may use separate cards or columns. On mobile, keep a simple single-column order and ensure every interactive target is at least 44px high. Avoid a dense desktop settings table.
@@ -57,13 +57,13 @@ Show the built-in choices as named swatches. The selected state must use a check
 
 | ID        | User-facing label | Preview color |
 | --------- | ----------------- | ------------- |
-| `default` | Vyaya green       | `#0f9d63`     |
+| `default` | TreasuryOps green       | `#0f9d63`     |
 | `ocean`   | Ocean blue        | `#1d4ed8`     |
 | `indigo`  | Ledger indigo     | `#4338ca`     |
 | `violet`  | Mumbai violet     | `#7e22ce`     |
 | `amber`   | Saffron amber     | `#b45309`     |
 
-**Vyaya green** is the first option and remains the default for new users or browsers without a saved preference. Each preset has deliberately tuned light- and dark-theme variants; the preview should communicate that the chosen accent works in both themes.
+**TreasuryOps green** is the first option and remains the default for new users or browsers without a saved preference. Each preset has deliberately tuned light- and dark-theme variants; the preview should communicate that the chosen accent works in both themes.
 
 Also provide one **Custom color** area with:
 
@@ -73,7 +73,7 @@ Also provide one **Custom color** area with:
 - Side-by-side light and dark previews using the actual contrast-adjusted result.
 - Inline validation and contrast guidance. Invalid input must not replace the currently applied accent.
 
-Alpha colors, CSS color names, gradients, CSS variables, and arbitrary CSS expressions are not supported. Valid custom input is normalized to lowercase six-digit hex before it is saved. If Vyaya adjusts lightness to maintain readable contrast, explain that beside the preview rather than silently changing the result.
+Alpha colors, CSS color names, gradients, CSS variables, and arbitrary CSS expressions are not supported. Valid custom input is normalized to lowercase six-digit hex before it is saved. If TreasuryOps adjusts lightness to maintain readable contrast, explain that beside the preview rather than silently changing the result.
 
 ### Interaction contract
 
@@ -85,8 +85,8 @@ Preset swatches, the text input, and the native picker all stage a choice. They 
 - While the preference is being saved, it reads **Applying…** and is disabled.
 - After a successful apply, it reads **Applied** and remains disabled while the staged and active choices match.
 - Choosing another swatch, typing a different value, or moving the native picker changes the button back to **Apply color**.
-- Applying **Vyaya green** removes the saved override and restores the original built-in accent.
-- A secondary **Reset to Vyaya default** action performs the same restoration and is disabled or omitted while the default is active.
+- Applying **TreasuryOps green** removes the saved override and restores the original built-in accent.
+- A secondary **Reset to TreasuryOps default** action performs the same restoration and is disabled or omitted while the default is active.
 - Applying an invalid custom value shows a field-specific error and retains the previous active preference.
 
 Do not optimistically label the choice **Applied** before persistence succeeds. The current implementation is server-authoritative and persists the preference before reporting success.
@@ -107,14 +107,14 @@ All solid accent/foreground combinations must meet WCAG AA contrast. Swatches ne
 
 ### Persistence and rendering constraints
 
-- Preference cookie: `vyaya-accent`.
+- Preference cookie: `treasury-ops-accent`.
 - Preset value example: `preset:ocean`.
 - Custom value example: `custom:1d4ed8`.
 - Default: no accent cookie.
 - Cookie scope: `path=/`, one-year lifetime, `sameSite=lax`.
 - The root layout validates and resolves the preference before first paint, so navigation and reloads must not flash back to green.
 - The preference is browser-local and does not sync across devices or accounts.
-- Malformed or unsupported cookie values fall back safely to Vyaya green.
+- Malformed or unsupported cookie values fall back safely to TreasuryOps green.
 
 This feature needs no REST request, generated API-client call, database field, or migration. Account-synced appearance would be a separate future backend feature.
 

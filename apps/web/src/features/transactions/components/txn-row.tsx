@@ -1,6 +1,6 @@
 "use client";
 
-import type { Category, Transaction, TransactionSource } from "@vyaya/shared";
+import type { Category, Transaction, TransactionSource } from "@treasury-ops/shared";
 import type { ReactNode } from "react";
 
 import { Money } from "@/components/ui/money";

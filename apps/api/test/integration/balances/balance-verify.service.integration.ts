@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
-import type { CreateTransaction, Transaction } from "@vyaya/shared";
+import type { CreateTransaction, Transaction } from "@treasury-ops/shared";
 
 import { AccountRepository } from "../../../src/accounts/account.repository.js";
 import { BalanceVerifyRepository } from "../../../src/balances/balance-verify.repository.js";

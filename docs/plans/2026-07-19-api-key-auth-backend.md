@@ -6,7 +6,7 @@
 
 **Architecture:** `AuthGuard` gains a second branch — `Authorization: Bearer <key>` is verified via `@better-auth/api-key`'s `verifyApiKey`, scoped per-route by a new `@RequireScopes()` decorator that is a strict allowlist (routes without it reject key-auth outright, regardless of key validity). A new `/v1/api-keys` module wraps the plugin's server API for key CRUD, session-only. Everything is additive to the existing session-cookie path, which is untouched.
 
-**Tech Stack:** NestJS, `@better-auth/api-key@1.6.23` (new dependency, lockstepped to the installed `better-auth@1.6.23`), Drizzle ORM/`drizzle-kit`, zod (`@vyaya/shared`), Vitest + `@testcontainers/postgresql`.
+**Tech Stack:** NestJS, `@better-auth/api-key@1.6.23` (new dependency, lockstepped to the installed `better-auth@1.6.23`), Drizzle ORM/`drizzle-kit`, zod (`@treasury-ops/shared`), Vitest + `@testcontainers/postgresql`.
 
 ## Global Constraints
 
@@ -99,7 +99,7 @@ Add a new test at the end of the `describe("AuthService", ...)` block, right aft
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `pnpm --filter @vyaya/api test -- src/auth/__tests__/auth.service.test.ts`
+Run: `pnpm --filter @treasury-ops/api test -- src/auth/__tests__/auth.service.test.ts`
 Expected: FAIL — `apiKeyPlugin` is `undefined` (plugin not yet registered), or the mock module doesn't match yet.
 
 - [ ] **Step 3: Wire the plugin**
@@ -126,12 +126,12 @@ Inside `createAuth(...)`, add a `plugins` array to the `betterAuth({...})` confi
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `pnpm --filter @vyaya/api test -- src/auth/__tests__/auth.service.test.ts`
+Run: `pnpm --filter @treasury-ops/api test -- src/auth/__tests__/auth.service.test.ts`
 Expected: PASS (both the pre-existing test and the new one).
 
 - [ ] **Step 5: Typecheck and commit**
 
-Run: `pnpm --filter @vyaya/api typecheck`
+Run: `pnpm --filter @treasury-ops/api typecheck`
 Expected: no errors. If `apiKey(...)`'s options type rejects any of the fields above, fix the call to match the real type (the type surface was confirmed via the package's shipped `.d.mts`, but a small drift is possible — trust the compiler here over this plan).
 
 ```bash
@@ -208,7 +208,7 @@ export const apikey = pgTable(
 
 - [ ] **Step 2: Generate the migration**
 
-Run: `pnpm --filter @vyaya/api migrate:generate`
+Run: `pnpm --filter @treasury-ops/api migrate:generate`
 Expected: creates `apps/api/drizzle/0005_<name>.sql` and `apps/api/drizzle/meta/0005_snapshot.json`, updates `apps/api/drizzle/meta/_journal.json`.
 
 - [ ] **Step 3: Inspect the generated migration**
@@ -295,7 +295,7 @@ describe("RateLimitedError", () => {
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `pnpm --filter @vyaya/api test -- src/common/errors/__tests__/insufficient-scope.error.test.ts src/common/errors/__tests__/rate-limited.error.test.ts`
+Run: `pnpm --filter @treasury-ops/api test -- src/common/errors/__tests__/insufficient-scope.error.test.ts src/common/errors/__tests__/rate-limited.error.test.ts`
 Expected: FAIL — modules don't exist yet.
 
 - [ ] **Step 3: Add the optional `headers` field to `DomainError`**
@@ -348,7 +348,7 @@ export class RateLimitedError extends DomainError {
 
 - [ ] **Step 5: Run tests to verify they pass**
 
-Run: `pnpm --filter @vyaya/api test -- src/common/errors/__tests__/insufficient-scope.error.test.ts src/common/errors/__tests__/rate-limited.error.test.ts`
+Run: `pnpm --filter @treasury-ops/api test -- src/common/errors/__tests__/insufficient-scope.error.test.ts src/common/errors/__tests__/rate-limited.error.test.ts`
 Expected: PASS.
 
 - [ ] **Step 6: Write the failing test for header propagation in the filter**
@@ -393,7 +393,7 @@ import { RateLimitedError } from "../rate-limited.error.js";
 
 - [ ] **Step 6: Run test to verify it fails**
 
-Run: `pnpm --filter @vyaya/api test -- src/common/errors/__tests__/problem-json.filter.test.ts`
+Run: `pnpm --filter @treasury-ops/api test -- src/common/errors/__tests__/problem-json.filter.test.ts`
 Expected: FAIL — `response.set` never called (filter doesn't apply headers yet).
 
 - [ ] **Step 7: Apply headers in the filter**
@@ -408,12 +408,12 @@ Edit `apps/api/src/common/errors/problem-json.filter.ts`. In the `catch(...)` me
 
 - [ ] **Step 8: Run test to verify it passes**
 
-Run: `pnpm --filter @vyaya/api test -- src/common/errors/__tests__/problem-json.filter.test.ts`
+Run: `pnpm --filter @treasury-ops/api test -- src/common/errors/__tests__/problem-json.filter.test.ts`
 Expected: PASS, all tests in the file green.
 
 - [ ] **Step 9: Typecheck, lint, commit**
 
-Run: `pnpm --filter @vyaya/api typecheck && pnpm --filter @vyaya/api lint`
+Run: `pnpm --filter @treasury-ops/api typecheck && pnpm --filter @treasury-ops/api lint`
 Expected: clean.
 
 ```bash
@@ -464,7 +464,7 @@ describe("RequireScopes", () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `pnpm --filter @vyaya/api test -- src/auth/__tests__/require-scopes.decorator.test.ts`
+Run: `pnpm --filter @treasury-ops/api test -- src/auth/__tests__/require-scopes.decorator.test.ts`
 Expected: FAIL — module doesn't exist.
 
 - [ ] **Step 3: Create the decorator**
@@ -484,7 +484,7 @@ export const RequireScopes = (scopes: ApiKeyScopes): MethodDecorator & ClassDeco
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `pnpm --filter @vyaya/api test -- src/auth/__tests__/require-scopes.decorator.test.ts`
+Run: `pnpm --filter @treasury-ops/api test -- src/auth/__tests__/require-scopes.decorator.test.ts`
 Expected: PASS.
 
 - [ ] **Step 5: Extend the request type**
@@ -548,7 +548,7 @@ export type LogContext = Readonly<{
 
 - [ ] **Step 7: Typecheck, lint, commit**
 
-Run: `pnpm --filter @vyaya/api typecheck && pnpm --filter @vyaya/api lint`
+Run: `pnpm --filter @treasury-ops/api typecheck && pnpm --filter @treasury-ops/api lint`
 Expected: clean (these are additive/optional fields, nothing else should break).
 
 ```bash
@@ -779,7 +779,7 @@ Add these tests inside the existing `describe("AuthGuard", ...)` block, after th
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `pnpm --filter @vyaya/api test -- src/auth/__tests__/auth.guard.test.ts`
+Run: `pnpm --filter @treasury-ops/api test -- src/auth/__tests__/auth.guard.test.ts`
 Expected: FAIL — current guard has no Bearer-header branch at all, so every new test fails (falls through to the session/`getSession` path and throws or behaves differently).
 
 - [ ] **Step 3: Rewrite the guard**
@@ -926,12 +926,12 @@ Note: the pre-existing test `"authenticates and ensures profile for valid sessio
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `pnpm --filter @vyaya/api test -- src/auth/__tests__/auth.guard.test.ts`
+Run: `pnpm --filter @treasury-ops/api test -- src/auth/__tests__/auth.guard.test.ts`
 Expected: PASS — all 8 tests (3 pre-existing + 5 new) green.
 
 - [ ] **Step 5: Typecheck, lint, commit**
 
-Run: `pnpm --filter @vyaya/api typecheck && pnpm --filter @vyaya/api lint`
+Run: `pnpm --filter @treasury-ops/api typecheck && pnpm --filter @treasury-ops/api lint`
 Expected: clean. If `verifyApiKey`'s real return type doesn't structurally match `VerifyApiKeyResult` (e.g. the `as VerifyApiKeyResult` cast is flagged, or the `key.permissions` shape differs), adjust `VerifyApiKeyResult`/the call to match what the compiler reports — this file is the one place in the plan where the real installed type takes precedence over what's written here. Note that this repo's ESLint config bans `as` assertions entirely (`@typescript-eslint/consistent-type-assertions` with `assertionStyle: "never"`) — if the cast gets flagged, replace it with a runtime-validating parse (e.g. a small structural check function) or `instanceof`/typeof narrowing rather than reintroducing `as`.
 
 ```bash
@@ -949,7 +949,7 @@ git commit -m "feat(auth): add API-key Bearer authentication branch to AuthGuard
 - Create: `packages/shared/src/api-key.test.ts`
 
 **Interfaces:**
-- Produces: `ApiKeyPermissionsSchema`, `CreateApiKeySchema`, `UpdateApiKeySchema`, `ApiKeySchema`, `CreateApiKeyResponseSchema`, `ApiKeyIdSchema`, and types `ApiKeyPermissions`, `CreateApiKey`, `UpdateApiKey`, `ApiKey`, `CreateApiKeyResponse`, `ApiKeyId` — Task 7/8 (backend controller/service) and the frontend plan both import these from `@vyaya/shared`.
+- Produces: `ApiKeyPermissionsSchema`, `CreateApiKeySchema`, `UpdateApiKeySchema`, `ApiKeySchema`, `CreateApiKeyResponseSchema`, `ApiKeyIdSchema`, and types `ApiKeyPermissions`, `CreateApiKey`, `UpdateApiKey`, `ApiKey`, `CreateApiKeyResponse`, `ApiKeyId` — Task 7/8 (backend controller/service) and the frontend plan both import these from `@treasury-ops/shared`.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -998,7 +998,7 @@ describe("CreateApiKeySchema", () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `pnpm --filter @vyaya/shared test -- src/api-key.test.ts`
+Run: `pnpm --filter @treasury-ops/shared test -- src/api-key.test.ts`
 Expected: FAIL — module doesn't exist.
 
 - [ ] **Step 3: Create the schema file**
@@ -1054,7 +1054,7 @@ export type CreateApiKeyResponse = z.infer<typeof CreateApiKeyResponseSchema>;
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `pnpm --filter @vyaya/shared test -- src/api-key.test.ts`
+Run: `pnpm --filter @treasury-ops/shared test -- src/api-key.test.ts`
 Expected: PASS.
 
 - [ ] **Step 5: Export from the package index**
@@ -1082,7 +1082,7 @@ export type {
 
 - [ ] **Step 6: Typecheck, lint, build, commit**
 
-Run: `pnpm --filter @vyaya/shared typecheck && pnpm --filter @vyaya/shared lint && pnpm --filter @vyaya/shared build`
+Run: `pnpm --filter @treasury-ops/shared typecheck && pnpm --filter @treasury-ops/shared lint && pnpm --filter @treasury-ops/shared build`
 Expected: clean (the `build` step matters here — `apps/api` and `apps/web` both consume the built output, not the source, for cross-package imports in this monorepo's TS project references setup).
 
 ```bash
@@ -1218,7 +1218,7 @@ describe("ApiKeysService", () => {
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `pnpm --filter @vyaya/api test -- src/api-keys/__tests__/api-keys.service.test.ts`
+Run: `pnpm --filter @treasury-ops/api test -- src/api-keys/__tests__/api-keys.service.test.ts`
 Expected: FAIL — module doesn't exist.
 
 - [ ] **Step 3: Create the service**
@@ -1228,7 +1228,7 @@ Create `apps/api/src/api-keys/api-keys.service.ts`:
 ```typescript
 import { Injectable } from "@nestjs/common";
 import { fromNodeHeaders } from "better-auth/node";
-import type { ApiKey, CreateApiKey, CreateApiKeyResponse, UpdateApiKey } from "@vyaya/shared";
+import type { ApiKey, CreateApiKey, CreateApiKeyResponse, UpdateApiKey } from "@treasury-ops/shared";
 import type { Request } from "express";
 
 import { AuthService } from "../auth/auth.service.js";
@@ -1303,12 +1303,12 @@ function toApiKey(key: PluginApiKey): ApiKey {
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `pnpm --filter @vyaya/api test -- src/api-keys/__tests__/api-keys.service.test.ts`
+Run: `pnpm --filter @treasury-ops/api test -- src/api-keys/__tests__/api-keys.service.test.ts`
 Expected: PASS.
 
 - [ ] **Step 5: Typecheck, lint, commit**
 
-Run: `pnpm --filter @vyaya/api typecheck && pnpm --filter @vyaya/api lint`
+Run: `pnpm --filter @treasury-ops/api typecheck && pnpm --filter @treasury-ops/api lint`
 Expected: clean. If `createApiKey`/`updateApiKey`/`listApiKeys`'s real parameter types don't structurally accept the calls above (e.g. `headers` isn't a valid option on `listApiKeys`), adjust the call to match what the compiler reports — same rule as Task 5's guard, the installed type wins over this plan.
 
 ```bash
@@ -1417,7 +1417,7 @@ describe("ApiKeysController", () => {
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `pnpm --filter @vyaya/api test -- src/api-keys/__tests__/api-keys.controller.test.ts`
+Run: `pnpm --filter @treasury-ops/api test -- src/api-keys/__tests__/api-keys.controller.test.ts`
 Expected: FAIL — module doesn't exist.
 
 - [ ] **Step 3: Create the controller**
@@ -1432,7 +1432,7 @@ import {
   UpdateApiKeySchema,
   type ApiKey,
   type CreateApiKeyResponse
-} from "@vyaya/shared";
+} from "@treasury-ops/shared";
 import type { Request } from "express";
 
 import type { AuthenticatedUser } from "../auth/auth.guard.js";
@@ -1482,7 +1482,7 @@ export class ApiKeysController {
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `pnpm --filter @vyaya/api test -- src/api-keys/__tests__/api-keys.controller.test.ts`
+Run: `pnpm --filter @treasury-ops/api test -- src/api-keys/__tests__/api-keys.controller.test.ts`
 Expected: PASS.
 
 - [ ] **Step 5: Create the module and wire it into `AppModule`**
@@ -1517,7 +1517,7 @@ Add `ApiKeysModule` to the `imports` array, alongside `AccountsModule`:
 
 - [ ] **Step 6: Typecheck, lint, commit**
 
-Run: `pnpm --filter @vyaya/api typecheck && pnpm --filter @vyaya/api lint`
+Run: `pnpm --filter @treasury-ops/api typecheck && pnpm --filter @treasury-ops/api lint`
 Expected: clean.
 
 ```bash
@@ -1592,12 +1592,12 @@ Add the decorator above `@Get()` on `list`:
 
 A `@SetMetadata`-based decorator on a method doesn't change its runtime behavior when the method is called directly (as these controllers' existing unit tests do — they instantiate the controller and call `.create(...)`/`.list(...)` directly, bypassing Nest's DI/guard pipeline entirely). No test changes should be required.
 
-Run: `pnpm --filter @vyaya/api test -- src/transactions src/categories src/accounts`
+Run: `pnpm --filter @treasury-ops/api test -- src/transactions src/categories src/accounts`
 Expected: PASS, unchanged.
 
 - [ ] **Step 5: Typecheck, lint, commit**
 
-Run: `pnpm --filter @vyaya/api typecheck && pnpm --filter @vyaya/api lint`
+Run: `pnpm --filter @treasury-ops/api typecheck && pnpm --filter @treasury-ops/api lint`
 Expected: clean.
 
 ```bash
@@ -1639,7 +1639,7 @@ Find the `registerPath` call for `POST /v1/transactions` and change its `securit
 
 - [ ] **Step 3: Import the api-keys schemas**
 
-Add to the existing `import {...} from "@vyaya/shared";` block at the top of the file (insert alphabetically among the existing named imports):
+Add to the existing `import {...} from "@treasury-ops/shared";` block at the top of the file (insert alphabetically among the existing named imports):
 
 ```typescript
   ApiKeySchema,
@@ -1690,7 +1690,7 @@ registry.registerPath({
 Run: `pnpm gen:client`
 Expected: regenerates `apps/api/openapi.json` and `apps/web/src/lib/api/generated/schema.d.ts` without error.
 
-Run: `pnpm --filter @vyaya/api typecheck && pnpm --filter @vyaya/api lint && pnpm --filter @vyaya/web typecheck`
+Run: `pnpm --filter @treasury-ops/api typecheck && pnpm --filter @treasury-ops/api lint && pnpm --filter @treasury-ops/web typecheck`
 Expected: clean.
 
 - [ ] **Step 6: Commit**
@@ -1852,7 +1852,7 @@ describe("api-key plugin integration", () => {
 
 - [ ] **Step 2: Run the integration test**
 
-Run: `pnpm --filter @vyaya/api test:integration -- test/integration/api-keys/api-keys.integration.ts`
+Run: `pnpm --filter @treasury-ops/api test:integration -- test/integration/api-keys/api-keys.integration.ts`
 Expected: PASS, all five tests green. This requires Docker (testcontainers spins up a real Postgres) — if it fails on container startup rather than an assertion, that's an environment issue, not a code issue.
 
 If the `KEY_NOT_FOUND` collapse test fails with a different `error.code`, the plugin's behavior has changed from what Task 5 was built against (possible on a future `@better-auth/api-key` version bump) — this is a real signal to re-examine `AuthGuard.authenticateApiKey` (Task 5), not something to paper over by changing the assertion to match.

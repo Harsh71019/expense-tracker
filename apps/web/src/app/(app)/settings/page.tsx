@@ -46,7 +46,7 @@ export default async function SettingsPage(): Promise<ReactNode> {
     <div className="mx-auto flex w-full max-w-[880px] flex-col gap-5">
       <header className="mb-1">
         <p className="font-mono text-[10px] font-bold tracking-[0.2em] text-accent uppercase">
-          Vyaya · Settings
+          TreasuryOps · Settings
         </p>
         <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
           Settings
@@ -59,7 +59,7 @@ export default async function SettingsPage(): Promise<ReactNode> {
         <header>
           <h2 className="text-lg font-bold tracking-tight text-foreground">Appearance</h2>
           <p className="mt-1 text-sm leading-relaxed text-foreground-muted">
-            Personalize how Vyaya looks. These preferences are saved to this browser only.
+            Personalize how TreasuryOps looks. These preferences are saved to this browser only.
           </p>
         </header>
 
@@ -73,7 +73,7 @@ export default async function SettingsPage(): Promise<ReactNode> {
       </section>
 
       <section className="rounded-2xl border border-border bg-surface-elevated p-5 sm:p-6">
-        <h2 className="text-lg font-bold tracking-tight text-foreground">Manage Vyaya</h2>
+        <h2 className="text-lg font-bold tracking-tight text-foreground">Manage TreasuryOps</h2>
         <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
           {settingsLinks.map((item) => (
             <Link

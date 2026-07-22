@@ -1,4 +1,4 @@
-# Vyaya — Frontend Logging & Debugging Architecture
+# TreasuryOps — Frontend Logging & Debugging Architecture
 
 > Companion to `LOGGING-BACKEND.md`. The browser is not a log platform — the frontend's job is to (1) report real errors with enough context to reproduce, (2) carry the correlation id that links a user-visible failure to the exact backend logs, and (3) stay silent otherwise. Stack: **GlitchTip browser SDK (Sentry-compatible) + a tiny internal `debug` logger + web-vitals beacon.**
 
@@ -48,7 +48,7 @@ Sentry.init({
 ```
 
 - **Source maps uploaded in CI** (`sentry-cli` works against GlitchTip) during the web image build, keyed by the git SHA — a minified stack trace without source maps is a haiku, not a report.
-- **Server-side too:** `instrumentation.ts` registers the Node SDK for RSC/route-handler errors in the `web` container — Next.js server errors are frontend-owned and must not vanish between the two GlitchTip projects (`vyaya-web`, `vyaya-api`).
+- **Server-side too:** `instrumentation.ts` registers the Node SDK for RSC/route-handler errors in the `web` container — Next.js server errors are frontend-owned and must not vanish between the two GlitchTip projects (`treasury-ops-web`, `treasury-ops-api`).
 - **Noise policy mirrors the backend:** expected domain outcomes (validation 422 rendered on a form field, idempotent replay, offline-queue "will sync later") are **never** GlitchTip events. If it has UI, it's not an error report. A 401 redirect is a breadcrumb, not an event.
 
 ## 4. Breadcrumbs & Scrubbing (debuggable ≠ leaky)
@@ -66,7 +66,7 @@ Sentry.init({
 ```ts
 const enabled =
   process.env.NODE_ENV !== "production" ||
-  (typeof window !== "undefined" && localStorage.getItem("vyaya:debug") === "1");
+  (typeof window !== "undefined" && localStorage.getItem("treasury-ops:debug") === "1");
 
 export const debug = {
   api: mk("api"), // request/response summaries
@@ -78,7 +78,7 @@ export const debug = {
 ```
 
 - Raw `console.log` is an ESLint error in `apps/web` (same rule as the API); `debug.*` is the sanctioned path and is tree-shaken to no-ops in prod builds.
-- The `vyaya:debug` localStorage flag turns it back on **in prod on your own phone** — the offline-sync issue that only reproduces on Jio between Andheri and Vikhroli is exactly the bug you'll need field diagnostics for. The flag also makes TanStack Query Devtools mount lazily.
+- The `treasury-ops:debug` localStorage flag turns it back on **in prod on your own phone** — the offline-sync issue that only reproduces on Jio between Andheri and Vikhroli is exactly the bug you'll need field diagnostics for. The flag also makes TanStack Query Devtools mount lazily.
 - Dev-only additions: TanStack Query Devtools, a `<DebugBar>` (current reqIds in flight, offline queue depth, session age) rendered when the flag is set.
 
 ## 6. Feature-Specific Diagnostics

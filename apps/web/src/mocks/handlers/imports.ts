@@ -1,4 +1,4 @@
-import { ColumnMappingSchema, type ColumnMapping, type DateFormat } from "@vyaya/shared";
+import { ColumnMappingSchema, type ColumnMapping, type DateFormat } from "@treasury-ops/shared";
 import type { HttpHandler } from "msw";
 
 import { applyBalanceDelta, findAccount, findImportBatch } from "../data/store";

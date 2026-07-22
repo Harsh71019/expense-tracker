@@ -1,5 +1,5 @@
 {
-  "name": "@vyaya/web",
+  "name": "@treasury-ops/web",
   "private": true,
   "type": "module",
   "scripts": {
@@ -17,7 +17,7 @@
     "@hookform/resolvers": "^5.4.0",
     "@sentry/nextjs": "latest",
     "@tanstack/react-query": "^5.101.2",
-    "@vyaya/shared": "workspace:*",
+    "@treasury-ops/shared": "workspace:*",
     "better-auth": "latest",
     "lucide-react": "^1.25.0",
     "next": "latest",
@@ -37,7 +37,7 @@
     "@testing-library/react": "latest",
     "@testing-library/user-event": "latest",
     "@vitejs/plugin-react": "5.2.0",
-    "@vyaya/config": "workspace:*",
+    "@treasury-ops/config": "workspace:*",
     "jsdom": "latest",
     "msw": "^2.15.0",
     "openapi-msw": "^2.0.0",

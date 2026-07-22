@@ -36,7 +36,7 @@ interface AccentPreviewTokens {
 
 const DEFAULT_PRESET: PresetOption = {
   id: ACCENT_PRESETS.default,
-  label: "Vyaya green",
+  label: "TreasuryOps green",
   light: DEFAULT_ACCENT_COLOR,
   dark: "#34d399",
   lightForeground: "#04140d",
@@ -205,7 +205,7 @@ export function AccentPreferenceForm({
           parsed.success &&
           preview !== null &&
           (preview.light.accent !== parsed.color || preview.dark.accent !== parsed.color)
-        ? "Vyaya tuned the light and dark variants for readable contrast."
+        ? "TreasuryOps tuned the light and dark variants for readable contrast."
         : "";
   const actionMessage =
     state.status === "error" || (state.status === "success" && state.appliedKey === selectionKey)
@@ -343,7 +343,7 @@ export function AccentPreferenceForm({
             variant="secondary"
             disabled={resetDisabled || pending}
           >
-            Reset to Vyaya default
+            Reset to TreasuryOps default
           </Button>
           <Button type="submit" disabled={customIsInvalid || pending || isApplied}>
             {pending ? "Applying…" : isApplied ? "Applied" : "Apply color"}

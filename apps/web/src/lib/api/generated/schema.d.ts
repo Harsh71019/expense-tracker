@@ -2205,7 +2205,7 @@ export interface paths {
         /** @description Posted transactions as a formula-injection-safe CSV attachment */
         200: {
           headers: {
-            "Content-Disposition": 'attachment; filename="vyaya-export.csv"';
+            "Content-Disposition": 'attachment; filename="treasury-ops-export.csv"';
             [name: string]: unknown;
           };
           content: {

@@ -1,6 +1,6 @@
-# Vyaya Frontend — Quality of Life (QoL) & Best Practices Gap Analysis
+# TreasuryOps Frontend — Quality of Life (QoL) & Best Practices Gap Analysis
 
-This document provides a detailed analysis of the user experience (UX), developer experience (DX), and standard design/architectural methods that are currently missing, incomplete, or deviate from standard practices in the **Vyaya** Next.js App Router frontend (`apps/web`).
+This document provides a detailed analysis of the user experience (UX), developer experience (DX), and standard design/architectural methods that are currently missing, incomplete, or deviate from standard practices in the **TreasuryOps** Next.js App Router frontend (`apps/web`).
 
 ---
 

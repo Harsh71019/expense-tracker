@@ -6,7 +6,7 @@ export default function NotFound(): ReactNode {
     <div className="flex min-h-[50vh] flex-col items-center justify-center gap-2 p-6 text-center">
       <h1 className="text-lg font-semibold">Page not found</h1>
       <Link href="/" className="text-sm text-foreground-muted underline">
-        Back to Vyaya
+        Back to TreasuryOps
       </Link>
     </div>
   );

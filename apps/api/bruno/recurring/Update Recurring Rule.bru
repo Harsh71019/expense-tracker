@@ -1,0 +1,26 @@
+meta {
+  name: Update Recurring Rule
+  type: http
+  seq: 3
+}
+
+patch {
+  url: {{baseUrl}}/v1/recurring/{{recurringRuleId}}
+  body: json
+}
+
+headers {
+  content-type: application/json
+  Idempotency-Key: {{$randomUUID}}
+}
+
+body:json {
+  {
+    "isPaused": true
+  }
+}
+
+docs {
+  template, rrule, and isPaused are each independently optional — send only
+  what's changing. This example pauses {{recurringRuleId}}.
+}

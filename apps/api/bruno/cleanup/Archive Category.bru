@@ -1,0 +1,21 @@
+meta {
+  name: Archive Category
+  type: http
+  seq: 2
+}
+
+patch {
+  url: {{baseUrl}}/v1/categories/{{categoryId}}/archive
+  body: none
+}
+
+headers {
+  Idempotency-Key: {{$randomUUID}}
+}
+
+docs {
+  Archives {{categoryId}} (from Create Category). Lives in this folder rather
+  than categories/, deliberately: categoryId is also used by category-rules,
+  transactions, and recurring below, so archiving it needs to run last — run
+  this folder only after you're done exercising the rest of the collection.
+}

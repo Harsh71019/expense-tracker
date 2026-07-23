@@ -1,0 +1,39 @@
+auth {
+  mode: none
+}
+
+docs {
+  # TreasuryOps API
+
+  Requests for every `/v1/*` endpoint plus Better Auth's session routes
+  (`/auth/*`) and the two health checks, generated from `apps/api/openapi.json`
+  and the zod schemas in `packages/shared/src`.
+
+  ## Getting started
+
+  1. Pick an environment (top-right in Bruno): **Local** for a host-native
+     `pnpm dev`, or **Docker** for the full `docker compose` stack behind nginx.
+  2. Run `auth/Sign In` — it authenticates as the seeded `demo@treasury-ops.local`
+     user and Bruno's cookie jar carries the session cookie automatically on
+     every request after that. No manual header wiring needed.
+  3. Everything else can be run top-to-bottom, folder by folder. "Create *"
+     requests capture the id(s) they return into environment variables
+     (`accountId`, `categoryId`, `transactionId`, ...) via a post-response
+     script, so the requests that need those ids (archive, reverse, update,
+     ...) are already wired up — just run them in order.
+
+  ## Auth
+
+  Session auth is cookie-based (Better Auth's `better-auth.session_token`
+  cookie) and handled entirely by Bruno's cookie jar — none of these requests
+  set an explicit `auth` mode. The `api-keys` folder additionally shows the
+  Bearer-token path external consumers (e.g. n8n) use instead of a cookie.
+
+  ## Mutating requests need a fresh Idempotency-Key
+
+  Every state-changing endpoint requires an `Idempotency-Key` header
+  (see `AGENTS.md` §6) — a replayed key returns the original response instead
+  of creating a duplicate. Requests here generate one automatically via
+  Bruno's `{{$randomUUID}}` dynamic variable, so re-running a request creates
+  a new record rather than silently no-op'ing.
+}

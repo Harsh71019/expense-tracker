@@ -1,0 +1,28 @@
+meta {
+  name: Update Transaction
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/v1/transactions/{{transactionId}}
+  body: json
+}
+
+headers {
+  content-type: application/json
+  Idempotency-Key: {{$randomUUID}}
+}
+
+body:json {
+  {
+    "description": "Dinner at Swiggy (updated)",
+    "tags": ["food", "dinner"]
+  }
+}
+
+docs {
+  Only description, tags, and categoryId are editable — the ledger is
+  append-only, so amountMinor/accountId/type can never be patched. Correcting
+  the amount means reversing this transaction and posting a new one.
+}

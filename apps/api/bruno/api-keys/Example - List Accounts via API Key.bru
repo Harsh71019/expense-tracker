@@ -1,0 +1,22 @@
+meta {
+  name: Example - List Accounts via API Key
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/v1/accounts
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{apiKeyToken}}
+}
+
+docs {
+  Same endpoint as accounts/List Accounts, but authenticated with the Bearer
+  API key from Create API Key instead of the cookie session — this is the
+  path external consumers like n8n use. Requires the key's permissions to
+  include accounts: ["read"].
+}

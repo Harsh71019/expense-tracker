@@ -1,0 +1,43 @@
+meta {
+  name: Create Import Batch
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/v1/imports
+  body: multipart-form
+}
+
+body:multipart-form {
+  file: @file(./sample-hdfc-statement.csv) @contentType(text/csv)
+  accountId: {{accountId}}
+  mapping: {"date":"Date","description":"Narration","dateFormat":"DD/MM/YYYY","amountConvention":"debit_credit_cols","debit":"Withdrawal Amt.","credit":"Deposit Amt."}
+}
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setEnvVar("importBatchId", res.body.id);
+  }
+}
+
+docs {
+  Uploads sample-hdfc-statement.csv (checked into this folder) against
+  accountId, using the built-in COLUMN_MAPPING_PRESETS.hdfc shape from
+  packages/shared. Parsing runs on the worker's BullMQ queue — make sure the
+  worker process is running (`pnpm --filter @treasury-ops/api worker` or
+  `docker compose up -d worker`), or this stays "pending" forever.
+  Captures the new batch's id into {{importBatchId}}.
+
+  Known issue: `bru run` (the CLI, tested on @usebruno/cli 3.4.2 and 3.5.2)
+  does not serialize multipart-form bodies at all — it sends
+  content-type: application/x-www-form-urlencoded with an empty body,
+  regardless of whether the fields include a file. Verified with an
+  isolated echo server; this reproduces even for a file-less multipart
+  request, so it's a CLI bug, not something wrong with this request's
+  syntax. This request (and the folder's downstream requests that depend
+  on {{importBatchId}}: Preview Batch, Update Staged Row, Commit Batch,
+  Revert Batch) will fail under `bru run` until upstream fixes this. Send
+  it from the Bruno desktop app instead, or curl the same multipart
+  contract directly.
+}

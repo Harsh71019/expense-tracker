@@ -1,0 +1,18 @@
+meta {
+  name: Delete Category Rule
+  type: http
+  seq: 3
+}
+
+delete {
+  url: {{baseUrl}}/v1/category-rules/{{categoryRuleId}}
+  body: none
+}
+
+headers {
+  Idempotency-Key: {{$randomUUID}}
+}
+
+docs {
+  Deletes {{categoryRuleId}} (from Create Category Rule).
+}

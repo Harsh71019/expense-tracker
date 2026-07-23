@@ -1,0 +1,39 @@
+meta {
+  name: Create API Key
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/v1/api-keys
+  body: json
+}
+
+headers {
+  content-type: application/json
+}
+
+body:json {
+  {
+    "name": "n8n integration",
+    "permissions": {
+      "transactions": ["write"],
+      "categories": ["read"],
+      "accounts": ["read"]
+    }
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setEnvVar("apiKeyId", res.body.id);
+    bru.setEnvVar("apiKeyToken", res.body.key);
+  }
+}
+
+docs {
+  The only endpoint that ever returns the plaintext key (res.body.key) — it's
+  not retrievable again after this response. Captures id into {{apiKeyId}}
+  and the plaintext key into {{apiKeyToken}} for the "via API Key" example
+  requests below.
+}

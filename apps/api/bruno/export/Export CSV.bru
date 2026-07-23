@@ -1,0 +1,20 @@
+meta {
+  name: Export CSV
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/v1/export/csv
+  body: none
+}
+
+params:query {
+  ~from:
+  ~to:
+}
+
+docs {
+  Streams every transaction (all statuses — posted, reversed, reversal) as
+  CSV. from/to are optional date filters; omit both for the full history.
+}

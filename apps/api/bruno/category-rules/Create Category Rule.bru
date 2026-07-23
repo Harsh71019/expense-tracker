@@ -1,0 +1,34 @@
+meta {
+  name: Create Category Rule
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/v1/category-rules
+  body: json
+}
+
+headers {
+  content-type: application/json
+  Idempotency-Key: {{$randomUUID}}
+}
+
+body:json {
+  {
+    "pattern": "SWIGGY",
+    "categoryId": "{{categoryId}}"
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setEnvVar("categoryRuleId", res.body.id);
+  }
+}
+
+docs {
+  pattern is matched case-insensitively as a substring against a transaction
+  description — feeds CSV import auto-suggest. Captures id into
+  {{categoryRuleId}}.
+}

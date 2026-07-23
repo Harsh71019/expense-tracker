@@ -1,0 +1,39 @@
+meta {
+  name: Create Category
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/v1/categories
+  body: json
+}
+
+headers {
+  content-type: application/json
+  Idempotency-Key: {{$randomUUID}}
+}
+
+body:json {
+  {
+    "name": "Bruno Demo Dining {{$timestamp}}",
+    "kind": "expense",
+    "icon": "utensils-crossed",
+    "color": "#fdba74"
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setEnvVar("categoryId", res.body.id);
+  }
+}
+
+docs {
+  icon is a lucide-react icon name (see apps/web's icon-registry.ts), not an
+  emoji — the frontend renders it through the IconGlyph component. The name
+  has a {{$timestamp}} suffix because root categories are unique per
+  (userId, name) — even archived ones still hold their name — so a static
+  name would 500 on the second run against the same seeded user.
+  Captures the new category's id into {{categoryId}}.
+}

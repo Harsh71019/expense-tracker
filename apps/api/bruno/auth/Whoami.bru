@@ -1,0 +1,15 @@
+meta {
+  name: Whoami
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/v1/auth/me
+  body: none
+}
+
+docs {
+  NestJS-side equivalent of Get Session — returns the `AuthenticatedUser`
+  the `AuthGuard` resolved from the request (cookie session or API key).
+}

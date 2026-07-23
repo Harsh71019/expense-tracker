@@ -1,0 +1,19 @@
+meta {
+  name: Commit Batch
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/v1/imports/{{importBatchId}}/commit
+  body: none
+}
+
+headers {
+  Idempotency-Key: {{$randomUUID}}
+}
+
+docs {
+  Posts a real transaction for every included, non-duplicate staged row in
+  {{importBatchId}}, each with source: "csv_import".
+}

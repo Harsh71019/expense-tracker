@@ -1,0 +1,19 @@
+meta {
+  name: Close Asset
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/v1/assets/{{assetId}}/close
+  body: none
+}
+
+headers {
+  Idempotency-Key: {{$randomUUID}}
+}
+
+docs {
+  Marks {{assetId}} as closed (isClosed: true) — e.g. a matured FD or a fully
+  repaid loan. Not chained automatically; run deliberately.
+}

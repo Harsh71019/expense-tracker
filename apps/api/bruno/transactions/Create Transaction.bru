@@ -1,0 +1,38 @@
+meta {
+  name: Create Transaction
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/v1/transactions
+  body: json
+}
+
+headers {
+  content-type: application/json
+  Idempotency-Key: {{$randomUUID}}
+}
+
+body:json {
+  {
+    "accountId": "{{accountId}}",
+    "categoryId": "{{categoryId}}",
+    "type": "expense",
+    "amountMinor": 45000,
+    "occurredAt": "{{$isoTimestamp}}",
+    "description": "Dinner at Swiggy",
+    "tags": ["food"]
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setEnvVar("transactionId", res.body.id);
+  }
+}
+
+docs {
+  amountMinor is in paise — 45000 = ₹450.00. Captures the new transaction's
+  id into {{transactionId}}.
+}

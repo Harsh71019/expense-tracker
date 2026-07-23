@@ -1,0 +1,39 @@
+meta {
+  name: Create Asset
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/v1/assets
+  body: json
+}
+
+headers {
+  content-type: application/json
+  Idempotency-Key: {{$randomUUID}}
+}
+
+body:json {
+  {
+    "kind": "fixed_deposit",
+    "name": "SBI FD 2026",
+    "openedAt": "{{$isoTimestamp}}",
+    "maturityAt": "{{$isoTimestamp}}",
+    "annualRateBps": 700,
+    "openingValueMinor": 10000000
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setEnvVar("assetId", res.body.id);
+  }
+}
+
+docs {
+  maturityAt and annualRateBps only apply to fixed_deposit (700 bps = 7.00%
+  p.a.); quantityMilliUnits only applies to gold/silver; openingValueMinor is
+  in paise and may only be negative for a loan_liability. Captures the new
+  asset's id into {{assetId}}.
+}

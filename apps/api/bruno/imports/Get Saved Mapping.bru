@@ -1,0 +1,15 @@
+meta {
+  name: Get Saved Mapping
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/v1/imports/accounts/{{accountId}}/mapping
+  body: none
+}
+
+docs {
+  Returns the column mapping last used for a successful import against this
+  account, if any — prefills the mapping step in the UI on the next import.
+}

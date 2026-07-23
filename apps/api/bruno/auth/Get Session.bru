@@ -1,0 +1,15 @@
+meta {
+  name: Get Session
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/auth/get-session
+  body: none
+}
+
+docs {
+  Better Auth's own session introspection endpoint — returns `{ session, user }`
+  for the current cookie, or `null` if not signed in.
+}

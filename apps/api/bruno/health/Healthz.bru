@@ -1,0 +1,15 @@
+meta {
+  name: Healthz
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/healthz
+  body: none
+}
+
+docs {
+  Liveness probe — always 200 if the process is up, regardless of DB/Redis
+  state. Public, no auth required.
+}

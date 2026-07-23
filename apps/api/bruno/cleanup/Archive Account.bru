@@ -1,0 +1,22 @@
+meta {
+  name: Archive Account
+  type: http
+  seq: 1
+}
+
+patch {
+  url: {{baseUrl}}/v1/accounts/{{accountId}}/archive
+  body: none
+}
+
+headers {
+  Idempotency-Key: {{$randomUUID}}
+}
+
+docs {
+  Archives {{accountId}} (from Create Account (Bank)). Lives in this folder
+  rather than accounts/, deliberately: accountId is also used by transactions,
+  transfers, recurring, and imports below, so archiving it needs to run last
+  — run this folder only after you're done exercising the rest of the
+  collection.
+}

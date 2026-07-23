@@ -1,0 +1,24 @@
+meta {
+  name: List Transactions
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/v1/transactions?limit=50
+  body: none
+}
+
+params:query {
+  limit: 50
+  ~accountId: {{accountId}}
+  ~categoryId: {{categoryId}}
+  ~q: swiggy
+  ~cursor:
+}
+
+docs {
+  All query params are optional and cursor-paginated (see pageInfo.nextCursor
+  in the response). The disabled ones (~) show what's available — enable and
+  fill in as needed.
+}

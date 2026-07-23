@@ -1,0 +1,28 @@
+meta {
+  name: Add Valuation
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/v1/assets/{{assetId}}/valuations
+  body: json
+}
+
+headers {
+  content-type: application/json
+  Idempotency-Key: {{$randomUUID}}
+}
+
+body:json {
+  {
+    "valueMinor": 10350000,
+    "valuedAt": "{{$isoTimestamp}}",
+    "source": "manual"
+  }
+}
+
+docs {
+  Records a fresh mark-to-market value for {{assetId}} (from Create Asset).
+  source is "manual" or "maturity_projection".
+}

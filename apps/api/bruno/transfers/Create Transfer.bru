@@ -1,0 +1,39 @@
+meta {
+  name: Create Transfer
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/v1/transfers
+  body: json
+}
+
+headers {
+  content-type: application/json
+  Idempotency-Key: {{$randomUUID}}
+}
+
+body:json {
+  {
+    "fromAccountId": "{{accountId}}",
+    "toAccountId": "{{secondAccountId}}",
+    "amountMinor": 100000,
+    "occurredAt": "{{$isoTimestamp}}",
+    "description": "Move cash to wallet",
+    "tags": []
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setEnvVar("transferGroupId", res.body.transferGroupId);
+  }
+}
+
+docs {
+  Requires accountId (from Create Account (Bank)) and secondAccountId (from
+  Create Account (Cash)) to differ. Posts two linked transactions
+  (fromTransaction/toTransaction) sharing one transferGroupId, captured here
+  into {{transferGroupId}}.
+}

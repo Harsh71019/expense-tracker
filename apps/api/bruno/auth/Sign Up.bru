@@ -1,0 +1,31 @@
+meta {
+  name: Sign Up
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/auth/sign-up/email
+  body: json
+}
+
+headers {
+  content-type: application/json
+  Origin: {{originHeader}}
+}
+
+body:json {
+  {
+    "name": "Bruno Demo",
+    "email": "bruno-demo-{{$randomUUID}}@treasury-ops.local",
+    "password": "bruno-demo-password-12345"
+  }
+}
+
+docs {
+  Creates a brand-new user every time it's run (the email is randomized), so
+  it's always safe to re-run — unlike signing up as `demo@treasury-ops.local`,
+  which already exists once the seed script has run and will 409.
+
+  Fails with 403 if `DISABLE_SIGNUP=true` in the API's env.
+}

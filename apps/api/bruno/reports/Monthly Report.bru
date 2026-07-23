@@ -1,0 +1,23 @@
+meta {
+  name: Monthly Report
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/v1/reports/monthly/{{currentMonth}}
+  body: none
+}
+
+script:pre-request {
+  bru.setVar("currentMonth", new Date().toISOString().slice(0, 7));
+}
+
+docs {
+  month is "YYYY-MM" (e.g. "2026-07") — the pre-request script fills in the
+  current month so this always resolves to a real rollup. The
+  RollupsRefreshService cron only ever recomputes current + previous month
+  automatically; older months need a manual recompute (see
+  apps/api/scripts/seed/trigger-crons.ts for how the seed script does this
+  for every seeded month).
+}

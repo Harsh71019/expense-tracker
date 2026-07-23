@@ -1,0 +1,18 @@
+meta {
+  name: Reverse Transfer
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/v1/transfers/{{transferGroupId}}/reverse
+  body: none
+}
+
+headers {
+  Idempotency-Key: {{$randomUUID}}
+}
+
+docs {
+  Reverses both legs of {{transferGroupId}} (from Create Transfer).
+}

@@ -1,0 +1,15 @@
+meta {
+  name: Revoke API Key
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/v1/api-keys/{{apiKeyId}}
+  body: none
+}
+
+docs {
+  Run this last — the "via API Key" example requests below stop working
+  once {{apiKeyId}} is revoked.
+}

@@ -1,0 +1,24 @@
+meta {
+  name: Update API Key
+  type: http
+  seq: 3
+}
+
+patch {
+  url: {{baseUrl}}/v1/api-keys/{{apiKeyId}}
+  body: json
+}
+
+headers {
+  content-type: application/json
+}
+
+body:json {
+  {
+    "name": "n8n integration (renamed)"
+  }
+}
+
+docs {
+  name and permissions are each independently optional.
+}

@@ -1,0 +1,38 @@
+meta {
+  name: Create Account (Bank)
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/v1/accounts
+  body: json
+}
+
+headers {
+  content-type: application/json
+  Idempotency-Key: {{$randomUUID}}
+}
+
+body:json {
+  {
+    "name": "Bruno Demo Bank {{$timestamp}}",
+    "type": "bank",
+    "openingBalanceMinor": 5000000
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setEnvVar("accountId", res.body.id);
+  }
+}
+
+docs {
+  openingBalanceMinor is in paise — 5000000 = ₹50,000.00. The name has a
+  {{$timestamp}} suffix because accounts are unique per (userId, name) —
+  even archived ones still hold their name — so a static name would 500 on
+  the second run against the same seeded user.
+  Captures the new account's id into {{accountId}}, used by every other
+  request in this collection that needs a source account.
+}

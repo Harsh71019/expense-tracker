@@ -1,0 +1,26 @@
+meta {
+  name: Update Staged Row
+  type: http
+  seq: 5
+}
+
+patch {
+  url: {{baseUrl}}/v1/imports/{{importBatchId}}/rows/{{stagedRowId}}
+  body: json
+}
+
+headers {
+  content-type: application/json
+}
+
+body:json {
+  {
+    "include": true,
+    "suggestedCategoryId": "{{categoryId}}"
+  }
+}
+
+docs {
+  Toggles whether {{stagedRowId}} is included on commit, and/or overrides its
+  suggested category. Pass suggestedCategoryId: null to clear it.
+}

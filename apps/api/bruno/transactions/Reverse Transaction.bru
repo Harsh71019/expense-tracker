@@ -1,0 +1,20 @@
+meta {
+  name: Reverse Transaction
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/v1/transactions/{{transactionId}}/reverse
+  body: none
+}
+
+headers {
+  Idempotency-Key: {{$randomUUID}}
+}
+
+docs {
+  Posts a compensating reversal entry for {{transactionId}} and marks the
+  original as `reversed` — never mutates or deletes it (AGENTS.md's
+  append-only ledger invariant).
+}

@@ -1,0 +1,15 @@
+meta {
+  name: Readyz
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/readyz
+  body: none
+}
+
+docs {
+  Readiness probe — checks DB and Redis connectivity. Public, no auth
+  required.
+}

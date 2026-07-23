@@ -1,0 +1,27 @@
+meta {
+  name: Preview Batch
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/v1/imports/{{importBatchId}}/preview?limit=50
+  body: none
+}
+
+params:query {
+  limit: 50
+  ~cursor:
+}
+
+script:post-response {
+  if (res.status === 200 && res.body.items.length > 0) {
+    bru.setEnvVar("stagedRowId", res.body.items[0].id);
+  }
+}
+
+docs {
+  Lists staged rows for {{importBatchId}} (from Create Import Batch) — empty
+  until the worker finishes parsing (batch status moves off "pending"; see
+  List Import Batches). Captures the first row's id into {{stagedRowId}}.
+}

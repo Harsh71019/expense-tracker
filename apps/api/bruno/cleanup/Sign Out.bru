@@ -1,0 +1,22 @@
+meta {
+  name: Sign Out
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/auth/sign-out
+  body: none
+}
+
+headers {
+  Origin: {{originHeader}}
+}
+
+docs {
+  Invalidates the current session and clears the session cookie. Lives in
+  this folder rather than auth/, deliberately: everything else in this
+  collection needs the session from auth/Sign In to still be valid, so
+  signing out has to run last. Run auth/Sign In again before continuing to
+  use the rest of the collection.
+}

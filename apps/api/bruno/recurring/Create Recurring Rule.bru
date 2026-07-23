@@ -1,0 +1,44 @@
+meta {
+  name: Create Recurring Rule
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/v1/recurring
+  body: json
+}
+
+headers {
+  content-type: application/json
+  Idempotency-Key: {{$randomUUID}}
+}
+
+body:json {
+  {
+    "template": {
+      "accountId": "{{accountId}}",
+      "categoryId": "{{categoryId}}",
+      "type": "expense",
+      "amountMinor": 150000,
+      "description": "Rent",
+      "tags": ["housing"]
+    },
+    "rrule": "FREQ=MONTHLY;BYMONTHDAY=1",
+    "startAt": "{{$isoTimestamp}}"
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setEnvVar("recurringRuleId", res.body.id);
+  }
+}
+
+docs {
+  rrule is an RFC 5545 RRULE string (no embedded DTSTART — the anchor date is
+  startAt). The RecurringMaterializeService cron turns due occurrences into
+  real transactions (source: "recurring"); see apps/api/scripts/seed/
+  trigger-crons.ts for how the seed script forces that to run immediately
+  instead of waiting on the schedule. Captures id into {{recurringRuleId}}.
+}

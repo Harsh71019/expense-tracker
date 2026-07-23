@@ -7,6 +7,7 @@ meta {
 post {
   url: {{baseUrl}}/auth/sign-in/email
   body: json
+  auth: none
 }
 
 headers {
@@ -19,6 +20,10 @@ body:json {
     "email": "{{demoEmail}}",
     "password": "{{demoPassword}}"
   }
+}
+
+vars:pre-request {
+  baseUrl: http://localhost:4000/api
 }
 
 docs {

@@ -47,12 +47,28 @@ test.describe("accent preference", () => {
     await expect(page.getByLabel("Hex, RGB, or HSL")).toHaveValue("#ff0000");
     await expect(page.getByRole("button", { name: "Applied" })).toBeDisabled();
 
-    await page.getByRole("button", { name: /TreasuryOps green/ }).click();
-    await expect(page.getByLabel("Hex, RGB, or HSL")).toHaveValue("");
-    await expect(page.getByRole("button", { name: "Apply color" })).toBeEnabled();
+    await page.getByRole("button", { name: "Dark", exact: true }).click();
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+    await expect(page.locator("html")).toHaveAttribute("data-accent", "custom");
 
-    await page.getByRole("button", { name: "Apply color" }).click();
-    await expect(page.getByRole("button", { name: "Applied" })).toBeDisabled();
+    await page.getByRole("button", { name: "System", exact: true }).click();
+    await expect.poll(() => page.locator("html").getAttribute("data-theme")).toBeNull();
+    await expect(page.locator("html")).toHaveAttribute("data-accent", "custom");
+
+    await page.getByRole("button", { name: "Reset to TreasuryOps default" }).click();
     await expect.poll(() => page.locator("html").getAttribute("data-accent")).toBeNull();
+    await expect
+      .poll(() =>
+        page
+          .locator("html")
+          .evaluate((element) => element.style.getPropertyValue("--accent-choice-light"))
+      )
+      .toBe("");
+    await expect(page.getByRole("button", { name: /TreasuryOps green/ })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
+    await expect(page.getByRole("button", { name: "Applied" })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Reset to TreasuryOps default" })).toBeDisabled();
   });
 });

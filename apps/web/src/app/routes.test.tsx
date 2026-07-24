@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import type { Account } from "@treasury-ops/shared";
+import type { Account, RecentActivityItem } from "@treasury-ops/shared";
 import { describe, expect, it, vi } from "vitest";
 
 import AddTransactionPage from "./(app)/add/page";
@@ -13,9 +13,14 @@ import LoginPage from "./(auth)/login/page";
 import NotFound from "./not-found";
 
 const mocks = vi.hoisted(
-  (): { session: { user: { id: string; email: string } }; accounts: Account[] } => ({
+  (): {
+    session: { user: { id: string; email: string } };
+    accounts: Account[];
+    recentActivity: RecentActivityItem[];
+  } => ({
     session: { user: { id: "user-1", email: "harsh@example.com" } },
-    accounts: []
+    accounts: [],
+    recentActivity: []
   })
 );
 
@@ -28,13 +33,21 @@ vi.mock("@/features/auth", () => ({
 }));
 vi.mock("@/features/quick-add", () => ({
   QuickAddForm: () => <h1>Quick add</h1>,
-  getAccounts: async () => mocks.accounts
+  getAccounts: async () => mocks.accounts,
+  useCreateTxn: () => ({ mutateAsync: async () => ({}), isPending: false })
 }));
 vi.mock("@/features/accounts", () => ({
-  useAccounts: () => ({ data: mocks.accounts })
+  useAccounts: () => ({ data: mocks.accounts }),
+  useCreateAccount: () => ({ mutateAsync: async () => ({}), isPending: false })
 }));
 vi.mock("@/features/accounts/server/get-accounts", () => ({
   getAccounts: async () => mocks.accounts
+}));
+vi.mock("@/features/dashboard/hooks/use-recent-activity", () => ({
+  useRecentActivity: () => ({ data: mocks.recentActivity })
+}));
+vi.mock("@/features/dashboard/server/get-recent-activity", () => ({
+  getRecentActivity: async () => mocks.recentActivity
 }));
 vi.mock("@/features/categories/server/get-categories", () => ({ getCategories: async () => [] }));
 vi.mock("@/features/recurring", () => ({
@@ -69,7 +82,7 @@ vi.mock("@/features/transactions/server/get-txn-page", () => ({
 describe("route shells", () => {
   it("renders the dashboard and account page with the session email", async () => {
     render(await DashboardPage());
-    expect(screen.getByRole("heading", { name: "Overview" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Welcome to Ledger" })).toBeVisible();
     expect(screen.getByText("harsh@example.com")).toBeVisible();
 
     render(await SettingsPage({ searchParams: Promise.resolve({}) }));
@@ -126,7 +139,7 @@ describe("route shells", () => {
     const balanceElements = screen.getAllByText("+₹123.45");
     expect(balanceElements.length).toBeGreaterThanOrEqual(1);
     expect(balanceElements[0]).toBeVisible();
-    expect(screen.getByText("Across 1 active account.")).toBeVisible();
+    expect(screen.getByText(/Total balance/)).toHaveTextContent("Total balance · 1 active account");
     mocks.accounts = [];
   });
 
@@ -160,7 +173,9 @@ describe("route shells", () => {
     render(await DashboardPage());
 
     expect(screen.getByText("−₹1.00")).toBeVisible();
-    expect(screen.getByText("Across 2 active accounts.")).toBeVisible();
+    expect(screen.getByText(/Total balance/)).toHaveTextContent(
+      "Total balance · 2 active accounts"
+    );
     mocks.accounts = [];
   });
 

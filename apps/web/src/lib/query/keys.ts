@@ -1,6 +1,7 @@
 import type { ListTransactionsQuery } from "@treasury-ops/shared";
 
 const transactionRoot = ["transactions"] as const;
+const dashboardRoot = ["dashboard"] as const;
 
 export const qk = {
   transactions: () => transactionRoot,
@@ -19,5 +20,7 @@ export const qk = {
   importPreview: (batchId: string) => ["import-preview", batchId] as const,
   importMapping: (accountId: string) => ["import-mapping", accountId] as const,
   monthlyRollup: (month: string) => ["monthly-rollup", month] as const,
-  apiKeys: () => ["api-keys"] as const
+  apiKeys: () => ["api-keys"] as const,
+  dashboard: () => dashboardRoot,
+  recentActivity: (limit: number) => [...dashboardRoot, "recent-activity", limit] as const
 } as const;

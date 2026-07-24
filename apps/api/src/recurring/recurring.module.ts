@@ -17,6 +17,7 @@ import { RecurringRuleMutationService } from "./recurring-rule-mutation.service.
     RecurringRuleService,
     RecurringRuleMutationService,
     RecurringMaterializeService
-  ]
+  ],
+  exports: [RecurringRuleRepository]
 })
 export class RecurringModule {}

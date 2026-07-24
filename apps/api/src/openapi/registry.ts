@@ -23,6 +23,8 @@ import {
   AccountIdSchema,
   AccountSchema,
   ApiKeySchema,
+  CashflowQuerySchema,
+  CashflowResponseSchema,
   CategoryIdSchema,
   CategorySchema,
   CategoryRuleIdSchema,
@@ -33,12 +35,25 @@ import {
   CreateCategorySchema,
   CreateCategoryRuleSchema,
   CreateTransactionSchema,
+  DashboardInvestmentsSchema,
+  DashboardStatsQuerySchema,
+  DashboardStatsSchema,
+  DashboardSummarySchema,
   ExportCsvQuerySchema,
   ListTransactionsQuerySchema,
   ProblemDetailsSchema,
+  RecentActivityItemSchema,
+  RecentActivityQuerySchema,
+  RecurringForecastQuerySchema,
+  RecurringForecastSchema,
+  SpendMixQuerySchema,
+  SpendMixSchema,
+  TopSpendingItemSchema,
+  TopSpendingQuerySchema,
   TransactionIdSchema,
   TransactionPageSchema,
   TransactionSchema,
+  UpdateCategoryGroupSchema,
   UpdateTransactionSchema,
   CreateTransferSchema,
   TransferSchema,
@@ -91,6 +106,14 @@ const StagedRowPage = StagedRowPageSchema.meta({ id: "StagedRowPage" });
 const UserProfile = UserProfileSchema.meta({ id: "UserProfile" });
 const MonthlyRollup = MonthlyRollupSchema.meta({ id: "MonthlyRollup" });
 const RecurringRule = RecurringRuleSchema.meta({ id: "RecurringRule" });
+const DashboardSummary = DashboardSummarySchema.meta({ id: "DashboardSummary" });
+const RecentActivityItem = RecentActivityItemSchema.meta({ id: "RecentActivityItem" });
+const DashboardStats = DashboardStatsSchema.meta({ id: "DashboardStats" });
+const CashflowResponse = CashflowResponseSchema.meta({ id: "CashflowResponse" });
+const TopSpendingItem = TopSpendingItemSchema.meta({ id: "TopSpendingItem" });
+const SpendMix = SpendMixSchema.meta({ id: "SpendMix" });
+const DashboardInvestments = DashboardInvestmentsSchema.meta({ id: "DashboardInvestments" });
+const RecurringForecast = RecurringForecastSchema.meta({ id: "RecurringForecast" });
 
 const accountId = z.object({ accountId: AccountIdSchema });
 const categoryId = z.object({ categoryId: CategoryIdSchema });
@@ -254,6 +277,25 @@ registry.registerPath({
     204: {
       description: "Archived, or replayed a prior successful archive",
       headers: optionalReplayHeaders
+    },
+    404: { description: "Not found", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "patch",
+  path: "/v1/categories/{categoryId}/group",
+  security: secured,
+  request: {
+    params: categoryId,
+    body: json(UpdateCategoryGroupSchema),
+    headers: idempotencyKeyHeaders
+  },
+  responses: {
+    200: {
+      description: "Updated category group, or idempotent replay",
+      headers: optionalReplayHeaders,
+      ...json(Category)
     },
     404: { description: "Not found", ...json(ProblemDetails) },
     ...problemResponses
@@ -635,6 +677,100 @@ registry.registerPath({
   security: secured,
   request: { params: z.object({ keyId: z.string() }) },
   responses: { 204: { description: "API key revoked" }, ...problemResponses }
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/v1/dashboard/summary",
+  security: secured,
+  responses: {
+    200: { description: "Home dashboard summary", ...json(DashboardSummary) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "get",
+  path: "/v1/dashboard/recent-activity",
+  security: secured,
+  request: { query: RecentActivityQuerySchema },
+  responses: {
+    200: { description: "Most recent posted transactions", ...json(z.array(RecentActivityItem)) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "get",
+  path: "/v1/dashboard/stats",
+  security: secured,
+  request: { query: DashboardStatsQuerySchema },
+  responses: {
+    200: {
+      description: "Spent/income/savingsRate/netWorth stat cards with trend",
+      ...json(DashboardStats)
+    },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "get",
+  path: "/v1/dashboard/cashflow",
+  security: secured,
+  request: { query: CashflowQuerySchema },
+  responses: {
+    200: {
+      description: "Income/expense buckets over the requested range",
+      ...json(CashflowResponse)
+    },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "get",
+  path: "/v1/dashboard/top-spending",
+  security: secured,
+  request: { query: TopSpendingQuerySchema },
+  responses: {
+    200: {
+      description: "Top spending categories over the requested range",
+      ...json(z.array(TopSpendingItem))
+    },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "get",
+  path: "/v1/dashboard/spend-mix",
+  security: secured,
+  request: { query: SpendMixQuerySchema },
+  responses: {
+    200: { description: "Essential vs. lifestyle spend split", ...json(SpendMix) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "get",
+  path: "/v1/dashboard/investments",
+  security: secured,
+  responses: {
+    200: {
+      description: "Investment/fixed-deposit valuation rollup",
+      ...json(DashboardInvestments)
+    },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "get",
+  path: "/v1/dashboard/recurring-forecast",
+  security: secured,
+  request: { query: RecurringForecastQuerySchema },
+  responses: {
+    200: {
+      description: "Upcoming recurring in/out forecast over the requested range",
+      ...json(RecurringForecast)
+    },
+    ...problemResponses
+  }
 });
 
 registry.registerComponent("securitySchemes", "cookieAuth", {

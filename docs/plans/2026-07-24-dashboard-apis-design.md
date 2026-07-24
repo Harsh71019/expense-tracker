@@ -79,6 +79,41 @@ This keeps "dashboard reads/derives from rollups" as the one aggregation path en
 
 Net worth history is the one place with genuinely new aggregation logic (historical balance/valuation reconstruction, §C) since there's no existing per-month net-worth rollup to compose over.
 
+## Extension: concrete `/v1/dashboard/*` endpoints for the Home & Insights screens
+
+The frontend team specified the actual screen-shaped endpoints Home and Insights need. These supersede the generic `/v1/reports/yearly|trend|compare|net-worth/history` set in §E as the implementation target — building both a generic analytics layer *and* a screen-shaped one would be two overlapping surfaces for the same underlying data. §A (`MonthlyRollupService.getOrCompute`) is still implemented and reused internally; §C's net-worth-history reconstruction queries are still needed, but as **live, on-demand computation, not a persisted `net_worth_snapshots` table + cron** — a handful of aggregate queries per request is cheap enough at personal-finance scale that a whole new cached-snapshot subsystem isn't justified yet. Revisit if read volume ever makes that untrue.
+
+All endpoints below are read-only, namespaced `/v1/dashboard`, existing controller conventions (inline `Schema.parse`, no `ZodValidationPipe`).
+
+### Home
+
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/v1/dashboard/summary` | `{ totalBalanceMinor, activeAccountCount, assetsMinor, liabilitiesMinor }` — sum of non-archived accounts, split by balance sign (mirrors `account-manager.tsx`'s existing client-side assets/liabilities split, now computed server-side) |
+| GET | `/v1/dashboard/recent-activity?limit=` | latest posted transactions (default 10, max 50) with account name resolved — reuses `TransactionRepository.findMany` + `AccountRepository.list`, joined in the service layer rather than a new SQL join |
+
+### Insights
+
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/v1/dashboard/stats?period=YYYY-MM` | 4 stat cards (spent, income, savingsRate, netWorth), each `{ valueMinor \| valuePct, deltaPct, trend[] }` — MoM delta + trailing-6-month trend. `period` defaults to the current IST month. Built from `getOrCompute` (spent/income/savingsRate) + live net-worth reconstruction (netWorth) |
+| GET | `/v1/dashboard/cashflow?range=1W\|1M\|6M\|12M` | `{ range, buckets: [{ label, incomeMinor, expenseMinor }] }` — `1W` = 7 daily buckets (new live day-grained query, §below); `1M` = 4 trailing 7-day buckets (same daily query, grouped in JS); `6M`/`12M` = monthly buckets via `getOrCompute` |
+| GET | `/v1/dashboard/top-spending?range=&limit=` | `[{ categoryId?, name, icon?, color?, amountMinor, txnCount }]` descending, same range semantics as cashflow, category metadata joined from `CategoryRepository.list` |
+| GET | `/v1/dashboard/spend-mix?range=` | essentials-vs-lifestyle split — see "Schema gap: category grouping" below |
+| GET | `/v1/dashboard/investments` | `[{ assetId, name, kind, currentValueMinor, returnPct, series[] }]` for asset kinds `investment`/`fixed_deposit` (there's no separate "MF" kind — a mutual fund is just an `investment`-kind asset by name), `returnPct` = latest valuation vs. the asset's opening valuation, `series` = that asset's valuation history (already stored, per `asset_valuations`) |
+| GET | `/v1/dashboard/recurring-forecast?range=` | `{ inMinor, outMinor, netMinor, upcoming: [{ ruleId, name, icon?, type, amountMinor, nextRunAt }] }` — walks each active recurring rule's occurrences within the range window via the existing pure `computeNextOccurrence` function, summing by type; `name` = the rule's `template.description` (rules have no separate name field today); `icon` = the template's category icon, if any |
+
+### Schema gap: category grouping (essential vs. lifestyle)
+
+Categories have no notion of "essential" vs. "lifestyle" today. Decision: **add it**, rather than drop the panel — it's a single nullable enum column, not a structural change:
+- New `category_group` enum (`'essential' | 'lifestyle'`), nullable column on `categories` (additive migration).
+- `spend-mix` groups the same category-totals data source as `top-spending` by `category.group` instead of `categoryId`; a `categoryId` with no group (or no `categoryId` at all — uncategorized) falls into a third `uncategorized` bucket, never silently dropped.
+- **Existing categories have no way to acquire a group** (there's no general category-update endpoint today, only `create` and `archive` — `apps/api/src/categories/category.controller.ts`). Adding one narrow endpoint, `PATCH /v1/categories/:categoryId/group`, is the minimum needed to make this panel actually usable rather than permanently empty for anyone who created categories before this shipped. Kept single-purpose (just `group`) rather than a general category-update endpoint, to avoid scope creep into the categories module.
+
+### Schema gap: investment valuation series
+
+No gap — `asset_valuations` already stores a full history per asset (`ValuationRepository.listByAsset`), so the `investments` endpoint's `series[]` is a direct, un-downsampled read of existing data (a personal investment asset gets at most a handful of valuations a year — no downsampling logic needed at this scale).
+
 ## Frontend (lean pass — API shapes first, fuller chart build as a follow-up)
 
 - New hooks (e.g. `apps/web/src/features/reports/hooks/`) calling the new endpoints through the generated typed client — all plain GET/JSON, no multipart, so none of the raw-`fetch` exceptions used by imports/bills apply here.

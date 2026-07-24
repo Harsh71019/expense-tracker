@@ -48,18 +48,67 @@ export type {
   ValuationSource
 } from "./asset.js";
 export {
+  CategoryGroupSchema,
   CategoryIdSchema,
   CategoryKindSchema,
   CategorySchema,
-  CreateCategorySchema
+  CreateCategorySchema,
+  UpdateCategoryGroupSchema
 } from "./category.js";
-export type { Category, CategoryId, CategoryKind, CreateCategory } from "./category.js";
+export type {
+  Category,
+  CategoryGroup,
+  CategoryId,
+  CategoryKind,
+  CreateCategory,
+  UpdateCategoryGroup
+} from "./category.js";
 export {
   CategoryRuleIdSchema,
   CategoryRuleSchema,
   CreateCategoryRuleSchema
 } from "./category-rule.js";
 export type { CategoryRule, CategoryRuleId, CreateCategoryRule } from "./category-rule.js";
+export {
+  CashflowBucketSchema,
+  CashflowQuerySchema,
+  CashflowResponseSchema,
+  DashboardInvestmentItemSchema,
+  DashboardInvestmentsSchema,
+  DashboardRangeSchema,
+  DashboardStatsQuerySchema,
+  DashboardStatsSchema,
+  DashboardSummarySchema,
+  RecentActivityItemSchema,
+  RecentActivityQuerySchema,
+  RecurringForecastQuerySchema,
+  RecurringForecastSchema,
+  RecurringForecastUpcomingItemSchema,
+  SpendMixQuerySchema,
+  SpendMixSchema,
+  TopSpendingItemSchema,
+  TopSpendingQuerySchema
+} from "./dashboard.js";
+export type {
+  CashflowBucket,
+  CashflowQuery,
+  CashflowResponse,
+  DashboardInvestmentItem,
+  DashboardInvestments,
+  DashboardRange,
+  DashboardStats,
+  DashboardStatsQuery,
+  DashboardSummary,
+  RecentActivityItem,
+  RecentActivityQuery,
+  RecurringForecast,
+  RecurringForecastQuery,
+  RecurringForecastUpcomingItem,
+  SpendMix,
+  SpendMixQuery,
+  TopSpendingItem,
+  TopSpendingQuery
+} from "./dashboard.js";
 export { ErrorCodes } from "./errors/codes.js";
 export type { ErrorCode } from "./errors/codes.js";
 export { ExportCsvQuerySchema } from "./export.js";

@@ -3,7 +3,8 @@ import {
   CategorySchema,
   type Category,
   type CategoryId,
-  type CreateCategory
+  type CreateCategory,
+  type UpdateCategoryGroup
 } from "@treasury-ops/shared";
 import { z } from "zod";
 
@@ -40,5 +41,24 @@ export class CategoryMutationService {
       }
       return null;
     });
+  }
+
+  updateGroup(
+    userId: string,
+    categoryId: CategoryId,
+    patch: UpdateCategoryGroup,
+    key: string
+  ): Promise<IdempotentResult<Category>> {
+    return this.idempotency.execute(
+      userId,
+      "category.update_group",
+      key,
+      CategorySchema,
+      async (tx) => {
+        const updated = await this.categories.updateGroup(userId, categoryId, patch, tx);
+        if (updated === null) throw new EntityNotFoundError("Category");
+        return updated;
+      }
+    );
   }
 }

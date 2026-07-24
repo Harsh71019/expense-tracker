@@ -1,8 +1,8 @@
-import { formatSignedCompactMinor, type Category, type MonthlyRollup } from "@treasury-ops/shared";
+import type { Category, MonthlyRollup } from "@treasury-ops/shared";
 import type { ReactNode } from "react";
 
 import { rollupCategoryMeta } from "../model/rollup-category";
-import { DonutChart } from "./donut-chart";
+import { PieChart } from "./pie-chart";
 
 type SpendByCategoryPanelProps = Readonly<{
   rollup: MonthlyRollup;
@@ -25,11 +25,9 @@ export function SpendByCategoryPanel({ rollup, categories }: SpendByCategoryPane
   return (
     <div className="rounded-[18px] border border-border bg-surface-elevated p-5.5">
       <p className="text-base font-bold tracking-tight text-foreground">Spend by category</p>
-      <DonutChart
+      <PieChart
         slices={rows.map((row) => ({ value: row.spentMinor, color: row.meta.color }))}
         size={190}
-        centerValue={formatSignedCompactMinor(rollup.totalExpenseMinor)}
-        centerLabel="total spend"
       />
       <div className="mt-4.5 flex flex-col gap-2.5">
         {rows.map((row) => (

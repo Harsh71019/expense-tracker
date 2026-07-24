@@ -5,6 +5,7 @@ import { Redis } from "ioredis";
 
 import { AccountRepository } from "../../../src/accounts/account.repository.js";
 import { AuditRepository } from "../../../src/audit/audit.repository.js";
+import { CategoryRepository } from "../../../src/categories/category.repository.js";
 import { CategoryRuleRepository } from "../../../src/category-rules/category-rule.repository.js";
 import { ImportAlreadyCommittedError } from "../../../src/common/errors/import-already-committed.error.js";
 import { RuntimeConfigService } from "../../../src/common/config/runtime-config.service.js";
@@ -84,6 +85,7 @@ describe("ImportsService.createBatch", () => {
       stagedRows,
       transactions,
       accounts,
+      new CategoryRepository(testDb.db),
       audit,
       categoryRules,
       queue

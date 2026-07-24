@@ -88,6 +88,7 @@ describe("Imports parse pipeline (real BullMQ worker against real Redis)", () =>
       stagedRows,
       transactions,
       accounts,
+      new CategoryRepository(testDb.db),
       audit,
       categoryRules,
       backgroundQueue
@@ -189,6 +190,7 @@ describe("Imports parse pipeline (real BullMQ worker against real Redis)", () =>
       stagedRows,
       transactions,
       accounts,
+      new CategoryRepository(testDb.db),
       audit,
       categoryRules,
       backgroundQueue
@@ -223,6 +225,7 @@ describe("Imports parse pipeline (real BullMQ worker against real Redis)", () =>
       stagedRows,
       transactions,
       accounts,
+      new CategoryRepository(testDb.db),
       audit,
       categoryRules,
       backgroundQueue
@@ -233,6 +236,7 @@ describe("Imports parse pipeline (real BullMQ worker against real Redis)", () =>
       await categories.create("user-suggest", { name: "Food", kind: "expense" })
     ).id;
     await categoryRules.create("user-suggest", { pattern: "Chai", categoryId: foodCategoryId });
+    await categoryRules.create("user-suggest", { pattern: "Salary", categoryId: foodCategoryId });
 
     const batch = await batches.create(
       "user-suggest",
@@ -245,6 +249,7 @@ describe("Imports parse pipeline (real BullMQ worker against real Redis)", () =>
 
     const page = await stagedRows.findByBatchId(batch.id, undefined, 10);
     expect(page.items[0]).toMatchObject({ suggestedCategoryId: foodCategoryId });
+    expect(page.items[1]?.suggestedCategoryId).toBeUndefined();
   });
 });
 

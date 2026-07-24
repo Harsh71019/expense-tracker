@@ -795,6 +795,8 @@ export interface paths {
             parentId?: string;
             icon?: string;
             color?: string;
+            /** @enum {string} */
+            group?: "essential" | "lifestyle";
           };
         };
       };
@@ -886,6 +888,89 @@ export interface paths {
             [name: string]: unknown;
           };
           content?: never;
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    trace?: never;
+  };
+  "/v1/categories/{categoryId}/group": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path: {
+          categoryId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
+            /** @enum {string|null} */
+            group: "essential" | "lifestyle" | null;
+          };
+        };
+      };
+      responses: {
+        /** @description Updated category group, or idempotent replay */
+        200: {
+          headers: {
+            "Idempotency-Replayed"?: "true";
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Category"];
+          };
         };
         /** @description Unauthenticated */
         401: {
@@ -2854,6 +2939,515 @@ export interface paths {
     };
     trace?: never;
   };
+  "/v1/dashboard/summary": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Home dashboard summary */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["DashboardSummary"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/dashboard/recent-activity": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: {
+          limit?: number;
+        };
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Most recent posted transactions */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["RecentActivityItem"][];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/dashboard/stats": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: {
+          period?: string;
+        };
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Spent/income/savingsRate/netWorth stat cards with trend */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["DashboardStats"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/dashboard/cashflow": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query: {
+          range: "1W" | "1M" | "6M" | "12M";
+        };
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Income/expense buckets over the requested range */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["CashflowResponse"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/dashboard/top-spending": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query: {
+          range: "1W" | "1M" | "6M" | "12M";
+          limit?: number;
+        };
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Top spending categories over the requested range */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["TopSpendingItem"][];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/dashboard/spend-mix": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query: {
+          range: "1W" | "1M" | "6M" | "12M";
+        };
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Essential vs. lifestyle spend split */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["SpendMix"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/dashboard/investments": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Investment/fixed-deposit valuation rollup */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["DashboardInvestments"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/dashboard/recurring-forecast": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query: {
+          range: "1W" | "1M" | "6M" | "12M";
+        };
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Upcoming recurring in/out forecast over the requested range */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["RecurringForecast"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -3025,6 +3619,8 @@ export interface components {
       parentId?: string;
       icon?: string;
       color?: string;
+      /** @enum {string} */
+      group?: "essential" | "lifestyle";
       /** Format: uuid */
       id: string;
       userId: string;
@@ -3416,6 +4012,121 @@ export interface components {
       createdAt: string | null;
       /** Format: date-time */
       updatedAt: string | null;
+    };
+    DashboardSummary: {
+      totalBalanceMinor: number;
+      activeAccountCount: number;
+      assetsMinor: number;
+      liabilitiesMinor: number;
+    };
+    RecentActivityItem: {
+      /** Format: uuid */
+      id: string;
+      /** Format: uuid */
+      accountId: string;
+      accountName: string;
+      /** Format: uuid */
+      categoryId?: string;
+      /** @enum {string} */
+      type: "expense" | "income";
+      amountMinor: number;
+      description: string;
+      /** Format: date-time */
+      occurredAt: string | null;
+      tags: string[];
+    };
+    DashboardStats: {
+      period: string;
+      spent: {
+        valueMinor: number;
+        deltaPct: number | null;
+        trend: number[];
+      };
+      income: {
+        valueMinor: number;
+        deltaPct: number | null;
+        trend: number[];
+      };
+      savingsRate: {
+        valuePct: number;
+        deltaPct: number | null;
+        trend: number[];
+      };
+      netWorth: {
+        valueMinor: number;
+        deltaPct: number | null;
+        trend: number[];
+      };
+    };
+    CashflowResponse: {
+      /** @enum {string} */
+      range: "1W" | "1M" | "6M" | "12M";
+      buckets: {
+        label: string;
+        incomeMinor: number;
+        expenseMinor: number;
+      }[];
+    };
+    TopSpendingItem: {
+      /** Format: uuid */
+      categoryId?: string;
+      name: string;
+      icon?: string;
+      color?: string;
+      amountMinor: number;
+      txnCount: number;
+    };
+    SpendMix: {
+      /** @enum {string} */
+      range: "1W" | "1M" | "6M" | "12M";
+      totalMinor: number;
+      essential: {
+        amountMinor: number;
+        pct: number;
+      };
+      lifestyle: {
+        amountMinor: number;
+        pct: number;
+      };
+      uncategorized: {
+        amountMinor: number;
+        pct: number;
+      };
+    };
+    DashboardInvestments: {
+      items: {
+        /** Format: uuid */
+        assetId: string;
+        name: string;
+        /** @enum {string} */
+        kind:
+          "loan_receivable" | "loan_liability" | "fixed_deposit" | "gold" | "silver" | "investment";
+        currentValueMinor: number;
+        returnPct: number | null;
+        series: {
+          /** Format: date-time */
+          valuedAt: string | null;
+          valueMinor: number;
+        }[];
+      }[];
+    };
+    RecurringForecast: {
+      /** @enum {string} */
+      range: "1W" | "1M" | "6M" | "12M";
+      inMinor: number;
+      outMinor: number;
+      netMinor: number;
+      upcoming: {
+        /** Format: uuid */
+        ruleId: string;
+        name: string;
+        icon?: string;
+        /** @enum {string} */
+        type: "expense" | "income";
+        amountMinor: number;
+        /** Format: date-time */
+        nextRunAt: string | null;
+      }[];
     };
   };
   responses: never;

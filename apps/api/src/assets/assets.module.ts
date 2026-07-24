@@ -18,6 +18,7 @@ import { ValuationRepository } from "./valuation.repository.js";
     AssetService,
     AssetMutationService,
     NetWorthService
-  ]
+  ],
+  exports: [AssetRepository, ValuationRepository]
 })
 export class AssetsModule {}

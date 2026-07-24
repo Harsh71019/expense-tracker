@@ -43,6 +43,13 @@
       "when": 1784481987413,
       "tag": "0005_wide_gertrude_yorkes",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1784890112542,
+      "tag": "0006_eager_blindfold",
+      "breakpoints": true
     }
   ]
 }

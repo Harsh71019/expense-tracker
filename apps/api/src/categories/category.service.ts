@@ -1,5 +1,10 @@
 import { Injectable } from "@nestjs/common";
-import type { Category, CategoryId, CreateCategory } from "@treasury-ops/shared";
+import type {
+  Category,
+  CategoryId,
+  CreateCategory,
+  UpdateCategoryGroup
+} from "@treasury-ops/shared";
 
 import { EntityNotFoundError } from "../common/errors/entity-not-found.error.js";
 import { CategoryParentKindMismatchError } from "../common/errors/category-parent-kind-mismatch.error.js";
@@ -22,5 +27,14 @@ export class CategoryService {
   async archive(userId: string, categoryId: CategoryId): Promise<void> {
     if (!(await this.categories.archive(userId, categoryId)))
       throw new EntityNotFoundError("Category");
+  }
+  async updateGroup(
+    userId: string,
+    categoryId: CategoryId,
+    patch: UpdateCategoryGroup
+  ): Promise<Category> {
+    const updated = await this.categories.updateGroup(userId, categoryId, patch);
+    if (updated === null) throw new EntityNotFoundError("Category");
+    return updated;
   }
 }

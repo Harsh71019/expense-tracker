@@ -53,7 +53,7 @@ apps/web/
 │  │  │  │  ├─ page.tsx
 │  │  │  │  └─ [month]/page.tsx
 │  │  │  ├─ recurring/page.tsx
-│  │  │  └─ settings/page.tsx         # profile, categories, passkeys, export
+│  │  │  └─ settings/page.tsx         # URL-backed profile, appearance, and management tabs
 │  │  ├─ api/                         # ONLY Next-owned endpoints (none proxy business data)
 │  │  │  └─ offline-sync/route.ts     # drains the offline quick-add queue (calls API with stored keys)
 │  │  ├─ error.tsx                    # root error boundary
@@ -130,6 +130,7 @@ apps/web/
 **Global rules:**
 
 - `searchParams` are the state for anything filterable (date range, account, category) — URLs are sharable and back-button works. Client state (`useState`) only for ephemeral UI (dialog open, form drafts).
+- `/settings` uses the same rule for its `profile`, `appearance`, and `management` tabs. Profile is the safe fallback for missing, duplicate, or unknown `tab` values; the tablist adds arrow/Home/End focus movement while ordinary links preserve refresh, history, bookmark, and no-JavaScript behavior.
 - No `force-dynamic` blanket flags. Each route declares its caching intent explicitly.
 - Server Actions are **not used for business mutations** — the NestJS API owns writes (P2), and mutations need idempotency keys + optimistic updates that TanStack Query handles better. Server Actions allowed only for Next-local concerns (theme cookie).
 

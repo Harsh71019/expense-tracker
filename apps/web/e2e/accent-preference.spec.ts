@@ -20,7 +20,7 @@ test.describe("accent preference", () => {
     await page.getByRole("button", { name: "Sign in" }).click();
     await expect(page).toHaveURL("/");
 
-    await page.goto("/settings");
+    await page.goto("/settings?tab=appearance");
     await page.getByRole("button", { name: /Ocean blue/ }).click();
     await expect(page.getByRole("button", { name: "Apply color" })).toBeEnabled();
     await page.getByRole("button", { name: "Apply color" }).click();

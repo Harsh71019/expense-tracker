@@ -72,10 +72,38 @@ describe("route shells", () => {
     expect(screen.getByRole("heading", { name: "Overview" })).toBeVisible();
     expect(screen.getByText("harsh@example.com")).toBeVisible();
 
-    render(await SettingsPage());
+    render(await SettingsPage({ searchParams: Promise.resolve({}) }));
     expect(screen.getByRole("heading", { name: "Settings" })).toBeVisible();
     expect(screen.getByText("Signed in as")).toBeVisible();
     expect(screen.getAllByText("harsh@example.com")).toHaveLength(2);
+  });
+
+  it("renders the selected settings section from the URL", async () => {
+    render(
+      await SettingsPage({
+        searchParams: Promise.resolve({ tab: "appearance" })
+      })
+    );
+
+    expect(screen.getByRole("tab", { name: /Appearance/ })).toHaveAttribute(
+      "aria-selected",
+      "true"
+    );
+    expect(screen.getByRole("tabpanel")).toHaveAccessibleName("Appearance");
+    expect(screen.getByRole("heading", { name: "Accent color" })).toBeVisible();
+    expect(screen.queryByText("Signed in as")).not.toBeInTheDocument();
+  });
+
+  it("falls back to the profile tab for an unknown settings section", async () => {
+    render(
+      await SettingsPage({
+        searchParams: Promise.resolve({ tab: "not-a-section" })
+      })
+    );
+
+    expect(screen.getByRole("tab", { name: /Profile/ })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tabpanel")).toHaveAccessibleName("Profile");
+    expect(screen.getByText("Signed in as")).toBeVisible();
   });
 
   it("renders the current balance for active accounts", async () => {

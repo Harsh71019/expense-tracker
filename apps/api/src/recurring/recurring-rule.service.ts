@@ -14,6 +14,7 @@ import { DATABASE_CONNECTION } from "../common/db/db.module.js";
 import type { DrizzleDb } from "../common/db/db.module.js";
 import { withTxn } from "../common/db/db-txn.js";
 import type { DbTx } from "../common/db/db-txn.js";
+import { CategoryKindMismatchError } from "../common/errors/category-kind-mismatch.error.js";
 import { EntityNotFoundError } from "../common/errors/entity-not-found.error.js";
 import { InvalidRecurringRuleError } from "../common/errors/invalid-recurring-rule.error.js";
 import { RecurringRuleRepository } from "./recurring-rule.repository.js";
@@ -41,11 +42,10 @@ export class RecurringRuleService {
     if (!(await this.accounts.exists(userId, input.template.accountId, tx))) {
       throw new EntityNotFoundError("Account");
     }
-    if (
-      input.template.categoryId !== undefined &&
-      !(await this.categories.exists(userId, input.template.categoryId, tx))
-    ) {
-      throw new EntityNotFoundError("Category");
+    if (input.template.categoryId !== undefined) {
+      const category = await this.categories.findActiveById(userId, input.template.categoryId, tx);
+      if (category === null) throw new EntityNotFoundError("Category");
+      if (category.kind !== input.template.type) throw new CategoryKindMismatchError();
     }
 
     const nextRunAt = computeFirstOccurrence(input.rrule, input.startAt);
@@ -81,11 +81,12 @@ export class RecurringRuleService {
     ) {
       throw new EntityNotFoundError("Account");
     }
-    if (
-      patch.template?.categoryId !== undefined &&
-      !(await this.categories.exists(userId, patch.template.categoryId, tx))
-    ) {
-      throw new EntityNotFoundError("Category");
+    const nextCategoryId = patch.template?.categoryId ?? current.template.categoryId;
+    const nextType = patch.template?.type ?? current.template.type;
+    if (nextCategoryId !== undefined) {
+      const category = await this.categories.findActiveById(userId, nextCategoryId, tx);
+      if (category === null) throw new EntityNotFoundError("Category");
+      if (category.kind !== nextType) throw new CategoryKindMismatchError();
     }
 
     let nextRunAt: Date | undefined;

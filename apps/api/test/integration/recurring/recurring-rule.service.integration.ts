@@ -3,6 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { AccountRepository } from "../../../src/accounts/account.repository.js";
 import { CategoryRepository } from "../../../src/categories/category.repository.js";
 import { withTxn } from "../../../src/common/db/db-txn.js";
+import { CategoryKindMismatchError } from "../../../src/common/errors/category-kind-mismatch.error.js";
 import { EntityNotFoundError } from "../../../src/common/errors/entity-not-found.error.js";
 import { InvalidRecurringRuleError } from "../../../src/common/errors/invalid-recurring-rule.error.js";
 import { RecurringRuleRepository } from "../../../src/recurring/recurring-rule.repository.js";
@@ -79,6 +80,23 @@ describe("RecurringRuleService", () => {
     ).rejects.toThrow(EntityNotFoundError);
   });
 
+  it("rejects a template whose category kind does not match its transaction type", async () => {
+    await expect(
+      service.create("user-a", {
+        template: {
+          accountId,
+          categoryId,
+          type: "income",
+          amountMinor: 1_000,
+          description: "Misclassified income",
+          tags: []
+        },
+        rrule: "FREQ=MONTHLY;BYMONTHDAY=1",
+        startAt: new Date("2026-08-01T00:00:00.000Z")
+      })
+    ).rejects.toThrow(CategoryKindMismatchError);
+  });
+
   it("rejects a well-formed rrule that produces no occurrences", async () => {
     await expect(
       service.create("user-a", {
@@ -145,6 +163,25 @@ describe("RecurringRuleService", () => {
 
     expect(updated.rrule).toBe("FREQ=WEEKLY;BYDAY=MO");
     expect(updated.nextRunAt.getTime()).toBeGreaterThan(Date.now());
+  });
+
+  it("rejects changing a template type while retaining a category of the old kind", async () => {
+    const created = await service.create("user-a", {
+      template: {
+        accountId,
+        categoryId,
+        type: "expense",
+        amountMinor: 2_000,
+        description: "Rent adjustment",
+        tags: []
+      },
+      rrule: "FREQ=MONTHLY;BYMONTHDAY=1",
+      startAt: new Date("2026-08-01T00:00:00.000Z")
+    });
+
+    await expect(
+      service.update("user-a", created.id, { template: { type: "income" } })
+    ).rejects.toThrow(CategoryKindMismatchError);
   });
 
   it("throws EntityNotFoundError when updating a rule that does not exist", async () => {

@@ -209,6 +209,51 @@ describe("TransferService", () => {
     ).toBe(2);
   });
 
+  it("can reverse both legs after the transfer accounts are archived", async () => {
+    const accountRepository = new AccountRepository(testDb.db);
+    const source = await withTxn(testDb.db, (tx) =>
+      accountRepository.create(
+        "user-a",
+        { name: "Archived source", type: "bank", openingBalanceMinor: 10_000 },
+        tx
+      )
+    );
+    const destination = await withTxn(testDb.db, (tx) =>
+      accountRepository.create(
+        "user-a",
+        { name: "Archived destination", type: "cash", openingBalanceMinor: 2_000 },
+        tx
+      )
+    );
+    const original = await transfers.create(
+      "user-a",
+      {
+        fromAccountId: source.id,
+        toAccountId: destination.id,
+        amountMinor: 1_500,
+        occurredAt: new Date("2026-07-15T10:00:00.000Z"),
+        description: "Close-out transfer",
+        tags: []
+      },
+      "dddddddd-4444-4444-a444-ddddddddddde"
+    );
+    await accountRepository.archive("user-a", source.id);
+    await accountRepository.archive("user-a", destination.id);
+
+    await transfers.reverse("user-a", original.transferGroupId);
+
+    const restored = await testDb.db
+      .select()
+      .from(accounts)
+      .where(and(eq(accounts.userId, "user-a"), eq(accounts.isArchived, true)));
+    expect(restored).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: source.id, balanceMinor: 10_000 }),
+        expect.objectContaining({ id: destination.id, balanceMinor: 2_000 })
+      ])
+    );
+  });
+
   it("cannot reverse a transfer that belongs to another user", async () => {
     const original = await transfers.create(
       "user-a",

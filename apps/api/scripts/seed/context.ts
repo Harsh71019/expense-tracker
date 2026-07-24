@@ -146,6 +146,7 @@ export async function createSeedContext(): Promise<SeedContext> {
     stagedRows,
     transactionsRepo,
     accounts,
+    categories,
     audit,
     categoryRulesRepo,
     importsQueue

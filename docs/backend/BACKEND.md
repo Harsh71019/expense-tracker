@@ -348,7 +348,17 @@ Both writes + the balance `$inc` + audit entry happen in one transaction. Why th
 3. **It's the pattern banks/NBFCs actually use** (you'll recognize this at Godrej: no one deletes ledger rows). Great interview material.
 4. **Idempotent and safe under concurrency** — reversing an already-reversed txn is rejected by a status guard inside the transaction.
 
+Archiving an account blocks new postings but never blocks a compensating entry.
+Reversal balance updates intentionally use a separate repository path that
+still scopes by `userId` while including archived accounts; transaction,
+transfer, and import reversals all use that path.
+
 **Edits** follow the same rule: an edit = reverse original + post corrected entry, linked in `audit_log` with before/after. (Allow direct in-place edit only for non-monetary fields: description, tags, category.)
+
+Every category attached to a transaction must be active, owned by the same
+user, and have the same kind as the transaction (`expense` or `income`). The
+same invariant is enforced when creating/updating recurring templates and
+again before committing staged import rows.
 
 ### 3.3 Transfers are two legs, one atom
 
@@ -397,7 +407,7 @@ POST /imports/:id/revert                ← one bulk reversal, chunked transacti
 
 **Details that matter for Indian bank CSVs:**
 
-- **Column mapping is saved per account** (`import_batches.mapping`), so HDFC's `Txn Date / Narration / Withdrawal Amt / Deposit Amt` is a one-time setup. Support both single-signed-amount and separate debit/credit column conventions.
+- **Column mapping is saved per account** (`import_batches.mapping`), so HDFC's `Txn Date / Narration / Withdrawal Amt / Deposit Amt` is a one-time setup. Support both single-signed-amount and separate debit/credit column conventions. Batch creation uses the database statement timestamp (not a JavaScript millisecond timestamp), so two rapid uploads still have a deterministic latest mapping.
 - **Date parsing:** enforce explicit `dateFormat` from the mapping (`DD/MM/YYYY` default) — never auto-guess, that's how 04/07 becomes April 7th.
 - **`dedupeHash` = sha256(userId|accountId|date(day)|amountMinor|normalizedDescription)**. Normalized = lowercased, whitespace-collapsed, UPI ref numbers stripped. Same-day identical transactions (two ₹20 chai UPIs) are flagged as _possible_ dupes in preview rather than silently dropped — user decides.
 - **n8n hook:** your existing HDFC/ICICI email-parser flow can `POST /transactions` directly (source: `'api'`, with idempotency key = bank ref number). CSV and email ingestion converge on the same dedupe logic, so overlap between the two is handled automatically.

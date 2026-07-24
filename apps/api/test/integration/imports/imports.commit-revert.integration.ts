@@ -4,11 +4,13 @@ import type { ColumnMapping } from "@treasury-ops/shared";
 
 import { AccountRepository } from "../../../src/accounts/account.repository.js";
 import { AuditRepository } from "../../../src/audit/audit.repository.js";
+import { CategoryRepository } from "../../../src/categories/category.repository.js";
 import { CategoryRuleRepository } from "../../../src/category-rules/category-rule.repository.js";
 import { RuntimeConfigService } from "../../../src/common/config/runtime-config.service.js";
 import { accounts as accountsTable, auditLog } from "../../../src/common/db/schema/index.js";
 import { transactions as transactionsTable } from "../../../src/common/db/schema/index.js";
 import { withTxn } from "../../../src/common/db/db-txn.js";
+import { CategoryKindMismatchError } from "../../../src/common/errors/category-kind-mismatch.error.js";
 import { EntityNotFoundError } from "../../../src/common/errors/entity-not-found.error.js";
 import { ImportBatchNotReadyError } from "../../../src/common/errors/import-batch-not-ready.error.js";
 import { ImportBatchRepository } from "../../../src/imports/import-batch.repository.js";
@@ -75,6 +77,7 @@ describe("ImportsService commit/revert", () => {
   let stagedRows: StagedRowRepository;
   let transactions: TransactionRepository;
   let accounts: AccountRepository;
+  let categories: CategoryRepository;
 
   beforeAll(async () => {
     testDb = await createTestDb();
@@ -83,10 +86,13 @@ describe("ImportsService commit/revert", () => {
       "user-commit-resume",
       "user-commit-guard",
       "user-commit-owner",
+      "user-category-guard",
       "user-revert-1",
       "user-revert-resume",
+      "user-revert-archived",
       "user-revert-guard",
-      "user-revert-owner"
+      "user-revert-owner",
+      "category-victim"
     ]) {
       await insertTestUser(testDb.db, userId);
     }
@@ -95,6 +101,7 @@ describe("ImportsService commit/revert", () => {
     stagedRows = new StagedRowRepository(testDb.db);
     transactions = new TransactionRepository(testDb.db);
     accounts = new AccountRepository(testDb.db);
+    categories = new CategoryRepository(testDb.db);
     const audit = new AuditRepository(testDb.db);
     const categoryRules = new CategoryRuleRepository(testDb.db);
     const queue = new ImportsQueue(new TestRuntimeConfig());
@@ -104,6 +111,7 @@ describe("ImportsService commit/revert", () => {
       stagedRows,
       transactions,
       accounts,
+      categories,
       audit,
       categoryRules,
       queue
@@ -247,6 +255,33 @@ describe("ImportsService commit/revert", () => {
     await expect(service.commitBatch("someone-else", batchId)).rejects.toThrow(EntityNotFoundError);
   });
 
+  it("rejects assigning a cross-tenant or wrong-kind category to a staged row", async () => {
+    const userId = "user-category-guard";
+    const accountId = await seedAccount(userId);
+    const batchId = await seedStagedBatch(userId, accountId, [includableRow()]);
+    const [row] = await stagedRows.findIncludableForBatch(batchId);
+    const foreignCategory = await categories.create("category-victim", {
+      name: "Private category",
+      kind: "expense"
+    });
+
+    await expect(
+      service.updateRow(userId, batchId, nonNull(row).id, {
+        suggestedCategoryId: foreignCategory.id
+      })
+    ).rejects.toThrow(EntityNotFoundError);
+
+    const wrongKindCategory = await categories.create(userId, {
+      name: "Income only",
+      kind: "income"
+    });
+    await expect(
+      service.updateRow(userId, batchId, nonNull(row).id, {
+        suggestedCategoryId: wrongKindCategory.id
+      })
+    ).rejects.toThrow(CategoryKindMismatchError);
+  });
+
   it("reverts a committed batch: reverses every posted transaction and restores the balance", async () => {
     const userId = "user-revert-1";
     const accountId = await seedAccount(userId, 100_000);
@@ -329,6 +364,23 @@ describe("ImportsService commit/revert", () => {
         )
       );
     expect(reversals).toHaveLength(2);
+  });
+
+  it("can revert an import after its account is archived", async () => {
+    const userId = "user-revert-archived";
+    const accountId = await seedAccount(userId, 100_000);
+    const batchId = await seedStagedBatch(userId, accountId, [includableRow()]);
+    await service.commitBatch(userId, batchId);
+    await accounts.archive(userId, accountId);
+
+    const reverted = await service.revertBatch(userId, batchId);
+
+    expect(reverted.status).toBe("reverted");
+    const [account] = await testDb.db
+      .select()
+      .from(accountsTable)
+      .where(eq(accountsTable.id, accountId));
+    expect(account).toMatchObject({ isArchived: true, balanceMinor: 100_000 });
   });
 
   it("rejects reverting a batch that is not committed", async () => {

@@ -11,6 +11,7 @@ import { categoryHandlers } from "./categories";
 import { categoryRuleHandlers } from "./category-rules";
 import { exportHandlers } from "./export";
 import { importHandlers } from "./imports";
+import { goalHandlers } from "./goals";
 import { netWorthHandlers } from "./net-worth";
 import { profileHandlers } from "./profile";
 import { reportHandlers } from "./reports";
@@ -34,6 +35,7 @@ export function createHandlers(baseUrl: string, store: MockStore): HttpHandler[]
     ...categoryRuleHandlers(http, store),
     ...transactionHandlers(http, store),
     ...transferHandlers(http, store),
+    ...goalHandlers(http, store),
     ...assetHandlers(http, store),
     ...netWorthHandlers(http, store),
     ...importHandlers(http, store),

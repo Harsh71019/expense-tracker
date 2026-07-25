@@ -18,6 +18,7 @@ export type UserProfileDto = components["schemas"]["UserProfile"];
 export type TransferDto = components["schemas"]["Transfer"];
 export type TransferReversalDto = components["schemas"]["TransferReversal"];
 export type RecurringRuleDto = components["schemas"]["RecurringRule"];
+export type GoalDto = components["schemas"]["Goal"];
 /** Generated-schema shape, distinct from `@treasury-ops/shared`'s `ColumnMapping` — see toColumnMappingDto in handlers/imports.ts. */
 export type ColumnMappingDto = ImportBatchDto["mapping"];
 
@@ -39,6 +40,9 @@ export interface MockIdempotency {
   assetClose: Set<string>;
   valuations: Map<string, ValuationDto>;
   recurringRules: Map<string, RecurringRuleDto>;
+  goals: Map<string, GoalDto>;
+  goalAbandon: Set<string>;
+  goalReorder: Set<string>;
 }
 
 export interface MockStore {
@@ -52,6 +56,7 @@ export interface MockStore {
   stagedRows: StagedRowDto[];
   monthlyRollups: MonthlyRollupDto[];
   recurringRules: RecurringRuleDto[];
+  goals: GoalDto[];
   profile: UserProfileDto;
   /** accountId -> the mapping last used for a successful import to that account. */
   savedMappings: Map<string, ColumnMappingDto>;
@@ -68,6 +73,7 @@ export interface MockStore {
   nextImportBatchId: () => string;
   nextStagedRowId: () => string;
   nextRecurringRuleId: () => string;
+  nextGoalId: () => string;
 }
 
 function daysAgo(days: number): string {
@@ -1753,6 +1759,7 @@ export function createMockStore(): MockStore {
   const nextImportBatchId = createIdGenerator("1b");
   const nextStagedRowId = createIdGenerator("5b");
   const nextRecurringRuleId = createIdGenerator("e0");
+  const nextGoalId = createIdGenerator("60");
 
   const store: MockStore = {
     accounts: [],
@@ -1765,6 +1772,7 @@ export function createMockStore(): MockStore {
     stagedRows: [],
     monthlyRollups: [],
     recurringRules: [],
+    goals: [],
     profile: {
       userId: MOCK_USER_ID,
       displayName: "Mock User",
@@ -1787,7 +1795,10 @@ export function createMockStore(): MockStore {
       assets: new Map(),
       assetClose: new Set(),
       valuations: new Map(),
-      recurringRules: new Map()
+      recurringRules: new Map(),
+      goals: new Map(),
+      goalAbandon: new Set(),
+      goalReorder: new Set()
     },
     nextAccountId,
     nextCategoryId,
@@ -1798,7 +1809,8 @@ export function createMockStore(): MockStore {
     nextValuationId,
     nextImportBatchId,
     nextStagedRowId,
-    nextRecurringRuleId
+    nextRecurringRuleId,
+    nextGoalId
   };
 
   seedAccounts(store);
@@ -1806,12 +1818,36 @@ export function createMockStore(): MockStore {
   seedRecurringRules(store);
   seedCategoryRules(store);
   seedTransactions(store);
+  seedGoals(store);
   seedAssetsAndValuations(store);
   seedImportBatch(store);
   seedImportBatch2(store);
   seedMonthlyRollups(store);
 
   return store;
+}
+
+function seedGoals(store: MockStore): void {
+  const account = store.accounts.find((candidate) => candidate.name === "SBI Savings");
+  if (account === undefined) return;
+  const now = new Date();
+  const targetDate = new Date(now);
+  targetDate.setMonth(targetDate.getMonth() + 8);
+  store.goals.push({
+    id: store.nextGoalId(),
+    userId: store.profile.userId,
+    name: "Emergency fund",
+    targetMinor: 5_00_000_00,
+    targetDate: targetDate.toISOString(),
+    fundingMode: "linked_account",
+    linkedAccountId: account.id,
+    priority: 0,
+    status: "active",
+    startedMinor: account.balanceMinor,
+    progressMinor: 0,
+    createdAt: now.toISOString(),
+    updatedAt: now.toISOString()
+  });
 }
 
 function seedAccounts(store: MockStore): void {

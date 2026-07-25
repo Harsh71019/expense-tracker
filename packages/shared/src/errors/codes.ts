@@ -12,6 +12,8 @@ export const ErrorCodes = [
   "category.parent_kind_mismatch",
   "category.kind_mismatch",
   "asset.invalid_valuation_sign",
+  "goal.funding_source_in_use",
+  "goal.invalid_order",
   "import.invalid_file",
   "import.already_committed",
   "import.invalid_state",

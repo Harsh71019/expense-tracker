@@ -19,6 +19,7 @@ function toQuery(filters: ListTransactionsQuery): Record<string, string | number
     from: filters.from?.toISOString(),
     to: filters.to?.toISOString(),
     q: filters.q,
+    tag: filters.tag,
     cursor: filters.cursor,
     limit: filters.limit
   };

@@ -40,6 +40,9 @@ export const importBatchStatusEnum = pgEnum("import_batch_status", [
 export const notificationTypeEnum = pgEnum("notification_type", [
   "budget_alert",
   "monthly_report",
-  "balance_drift"
+  "balance_drift",
+  "goal_achieved"
 ]);
 export const notificationStatusEnum = pgEnum("notification_status", ["pending", "sent"]);
+export const goalFundingModeEnum = pgEnum("goal_funding_mode", ["linked_account", "tagged"]);
+export const goalStatusEnum = pgEnum("goal_status", ["active", "achieved", "abandoned"]);

@@ -45,6 +45,15 @@ export class AccountRepository {
     return rows.map((row) => AccountSchema.parse(row));
   }
 
+  async findById(userId: string, accountId: AccountId, tx?: DbTx): Promise<Account | null> {
+    const executor = tx ?? this.db;
+    const [row] = await executor
+      .select()
+      .from(accounts)
+      .where(and(eq(accounts.id, accountId), eq(accounts.userId, userId)));
+    return row === undefined ? null : AccountSchema.parse(row);
+  }
+
   async archive(userId: string, accountId: AccountId, tx?: DbTx): Promise<boolean> {
     const executor = tx ?? this.db;
     const rows = await executor

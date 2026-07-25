@@ -1,0 +1,18 @@
+meta {
+  name: Abandon Goal
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{baseUrl}}/v1/goals/{{goalId}}/abandon
+  body: none
+}
+
+headers {
+  Idempotency-Key: {{$randomUUID}}
+}
+
+docs {
+  Marks the goal abandoned without changing any ledger transactions.
+}

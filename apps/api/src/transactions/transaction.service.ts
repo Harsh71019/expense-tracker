@@ -16,6 +16,7 @@ import { DATABASE_CONNECTION } from "../common/db/db.module.js";
 import type { DrizzleDb } from "../common/db/db.module.js";
 import { withTxn } from "../common/db/db-txn.js";
 import type { DbTx } from "../common/db/db-txn.js";
+import { isUniqueViolation } from "../common/db/postgres-error.js";
 import { CategoryKindMismatchError } from "../common/errors/category-kind-mismatch.error.js";
 import { EntityNotFoundError } from "../common/errors/entity-not-found.error.js";
 import { TransactionNotReversibleError } from "../common/errors/transaction-not-reversible.error.js";
@@ -193,14 +194,4 @@ export class TransactionService {
       return { transaction: reversal, replayed: true };
     }
   }
-}
-
-export function isUniqueViolation(error: unknown): boolean {
-  // drizzle-orm wraps the driver's pg error in a DrizzleQueryError, with the
-  // real PostgresError (carrying `.code`) on `.cause` -- unwrap one level
-  // before giving up, mirroring how Node's own `cause` chaining works.
-  if (typeof error !== "object" || error === null) return false;
-  if ("code" in error && error.code === "23505") return true;
-  if ("cause" in error) return isUniqueViolation(error.cause);
-  return false;
 }

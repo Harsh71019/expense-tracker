@@ -230,19 +230,32 @@ Loans given are receivables; loans taken are liabilities. Fixed deposits, gold, 
 
 ```ts
 {
-  _id: ObjectId,
+  id: UUID,
   userId: string,
   name: string,
   targetMinor: number,
-  targetDate: Date,
-  linkedAccountId?: ObjectId,
-  allocatedMinor: number,
-  isCompleted: boolean,
+  targetDate?: Date,
+  fundingMode: 'linked_account' | 'tagged',
+  linkedAccountId?: UUID,
+  tag?: string,
+  priority: number,
+  status: 'active' | 'achieved' | 'abandoned',
+  startedMinor: number,
   createdAt: Date, updatedAt: Date
 }
 ```
 
-Required monthly saving is projected from the remaining target, current allocation, and complete calendar months until `targetDate` in `Asia/Kolkata`.
+Goals are views over the existing ledger, not a second money store. A
+`linked_account` goal reports `account.balanceMinor - startedMinor`, so money
+that was already in the account at creation does not inflate progress. A
+`tagged` goal reports the signed sum of posted transactions carrying its tag.
+Funding mode and its account/tag binding are immutable; abandon and recreate a
+goal to change how progress is defined.
+
+`GET /v1/goals/:goalId/plan` returns required monthly saving when a target date
+exists. Without one, it projects a completion date from the since-creation
+average contribution rate. A 02:05 IST worker sweep atomically marks completed
+goals achieved and writes one `goal_achieved` outbox notification.
 
 #### `budgets`
 

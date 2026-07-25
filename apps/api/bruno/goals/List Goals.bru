@@ -1,0 +1,14 @@
+meta {
+  name: List Goals
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/v1/goals?status=active
+  body: none
+}
+
+docs {
+  status may be active, achieved, or abandoned. Omitting it defaults to active.
+}

@@ -25,6 +25,7 @@ function toQuery(
     from: filters.from?.toISOString(),
     to: filters.to?.toISOString(),
     q: filters.q,
+    tag: filters.tag,
     cursor: cursor ?? undefined,
     limit: filters.limit
   };

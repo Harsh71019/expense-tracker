@@ -64,9 +64,7 @@ Sentry.init({
 ## 5. The Dev Logger (`lib/debug.ts`)
 
 ```ts
-const enabled =
-  process.env.NODE_ENV !== "production" ||
-  (typeof window !== "undefined" && localStorage.getItem("treasury-ops:debug") === "1");
+const enabled = typeof window !== "undefined" && localStorage.getItem("treasury-ops:debug") === "1";
 
 export const debug = {
   api: mk("api"), // request/response summaries
@@ -77,8 +75,8 @@ export const debug = {
 // mk(ns) → enabled ? console.debug.bind(console, `[${ns}]`) : () => {}
 ```
 
-- Raw `console.log` is an ESLint error in `apps/web` (same rule as the API); `debug.*` is the sanctioned path and is tree-shaken to no-ops in prod builds.
-- The `treasury-ops:debug` localStorage flag turns it back on **in prod on your own phone** — the offline-sync issue that only reproduces on Jio between Andheri and Vikhroli is exactly the bug you'll need field diagnostics for. The flag also makes TanStack Query Devtools mount lazily.
+- Raw `console.log` is an ESLint error in `apps/web` (same rule as the API); `debug.*` is the sanctioned path.
+- Silent by default in every environment (dev, staging, prod) — the `treasury-ops:debug` localStorage flag is the only way to turn it on, including **in prod on your own phone**: the offline-sync issue that only reproduces on Jio between Andheri and Vikhroli is exactly the bug you'll need field diagnostics for. The flag also makes TanStack Query Devtools mount lazily.
 - Dev-only additions: TanStack Query Devtools, a `<DebugBar>` (current reqIds in flight, offline queue depth, session age) rendered when the flag is set.
 
 ## 6. Feature-Specific Diagnostics
@@ -97,7 +95,7 @@ export const debug = {
 
 |                  | dev                    | staging        | prod                               |
 | ---------------- | ---------------------- | -------------- | ---------------------------------- |
-| `debug.*` logger | on                     | on             | off (localStorage flag re-enables) |
+| `debug.*` logger | off (localStorage flag enables) | off (localStorage flag enables) | off (localStorage flag enables) |
 | GlitchTip        | off (console fallback) | on, env-tagged | on                                 |
 | Query Devtools   | on                     | flag           | flag                               |
 | Vitals beacon    | off                    | on             | on                                 |

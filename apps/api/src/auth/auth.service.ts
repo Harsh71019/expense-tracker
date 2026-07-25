@@ -10,13 +10,14 @@ import type { DrizzleDb } from "../common/db/db.module.js";
 import { RedisService } from "../common/redis/redis.service.js";
 import { UserProfileService } from "../user-profiles/user-profile.service.js";
 import { createRedisSecondaryStorage } from "./redis-secondary-storage.js";
+import type { AuthSecondaryStorage } from "./redis-secondary-storage.js";
 
 type AuthLogger = Pick<Logger, "warn">;
 
 export function createAuth(
   db: DrizzleDb,
   config: RuntimeConfigService,
-  redis: RedisService,
+  redis: AuthSecondaryStorage,
   profiles: UserProfileService,
   logger: AuthLogger
 ) {
@@ -28,7 +29,10 @@ export function createAuth(
     trustedOrigins: config.trustedOrigins(),
     emailAndPassword: {
       enabled: true,
-      disableSignUp: config.env.DISABLE_SIGNUP
+      disableSignUp: config.env.DISABLE_SIGNUP,
+      minPasswordLength: 8,
+      maxPasswordLength: 128,
+      autoSignIn: false
     },
     databaseHooks: {
       user: {

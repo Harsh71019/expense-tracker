@@ -1,9 +1,18 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Capture the configuration passed to betterAuth
 let betterAuthMockConfig: {
   baseURL?: string;
-  emailAndPassword?: { disableSignUp: boolean };
+  emailAndPassword?: {
+    enabled: boolean;
+    disableSignUp: boolean;
+    minPasswordLength: number;
+    maxPasswordLength: number;
+    autoSignIn: boolean;
+  };
+  rateLimit?: {
+    customRules?: Readonly<Record<string, Readonly<{ window: number; max: number }>>>;
+  };
   plugins?: ReadonlyArray<{ id: string; options?: Record<string, unknown> }>;
   databaseHooks?: {
     user?: {
@@ -37,25 +46,30 @@ vi.mock("@better-auth/api-key", () => {
 
 import { AuthService } from "../auth.service.js";
 import { RuntimeConfigService } from "../../common/config/runtime-config.service.js";
+import type { RuntimeEnv } from "../../common/config/env.js";
 
 class MockRuntimeConfigService implements RuntimeConfigService {
-  env = {
-    NODE_ENV: "test" as const,
-    API_PORT: 4000,
-    LOG_LEVEL: "info" as const,
-    LOG_PRETTY: false,
-    SERVICE_ROLE: "api" as const,
-    DATABASE_URL: "postgres://test:test@localhost:5432/test",
-    REDIS_URL: "redis://localhost:6379",
-    APP_TIMEZONE: "Asia/Kolkata" as const,
-    TRUSTED_ORIGINS: "http://localhost:3000",
-    GIT_SHA: "abcd-1234",
-    BETTER_AUTH_SECRET: "test-secret-long-enough-32-chars-long",
-    BETTER_AUTH_URL: "http://localhost:4000",
-    AUTH_COOKIE_SECURE: false,
-    DISABLE_SIGNUP: false,
-    DISABLE_RATE_LIMITING: false
-  };
+  readonly env: RuntimeEnv;
+
+  constructor(disableSignup = false) {
+    this.env = {
+      NODE_ENV: "test",
+      API_PORT: 4000,
+      LOG_LEVEL: "info",
+      LOG_PRETTY: false,
+      SERVICE_ROLE: "api",
+      DATABASE_URL: "postgres://test:test@localhost:5432/test",
+      REDIS_URL: "redis://localhost:6379",
+      APP_TIMEZONE: "Asia/Kolkata",
+      TRUSTED_ORIGINS: "http://localhost:3000",
+      GIT_SHA: "abcd-1234",
+      BETTER_AUTH_SECRET: "test-secret-long-enough-32-chars-long",
+      BETTER_AUTH_URL: "http://localhost:4000",
+      AUTH_COOKIE_SECURE: false,
+      DISABLE_SIGNUP: disableSignup,
+      DISABLE_RATE_LIMITING: false
+    };
+  }
 
   trustedOrigins(): string[] {
     return ["http://localhost:3000"];
@@ -63,6 +77,10 @@ class MockRuntimeConfigService implements RuntimeConfigService {
 }
 
 describe("AuthService", () => {
+  beforeEach(() => {
+    betterAuthMockConfig = null;
+  });
+
   it("instantiates betterAuth with configuration and hooks", async () => {
     const mockDb = {};
 
@@ -88,7 +106,17 @@ describe("AuthService", () => {
     }
 
     expect(betterAuthMockConfig.baseURL).toBe("http://localhost:4000");
-    expect(betterAuthMockConfig.emailAndPassword.disableSignUp).toBe(false);
+    expect(betterAuthMockConfig.emailAndPassword).toEqual({
+      enabled: true,
+      disableSignUp: false,
+      minPasswordLength: 8,
+      maxPasswordLength: 128,
+      autoSignIn: false
+    });
+    expect(betterAuthMockConfig.rateLimit?.customRules?.["/sign-up/email"]).toEqual({
+      window: 60,
+      max: 10
+    });
 
     // Test database hook - success path
     const afterHook = betterAuthMockConfig.databaseHooks.user.create.after;
@@ -102,6 +130,15 @@ describe("AuthService", () => {
       { error: expect.any(Error), userId: "user-1" },
       expect.stringContaining("failed")
     );
+  });
+
+  it("passes the deployment signup switch to Better Auth", () => {
+    const mockConfig = new MockRuntimeConfigService(true);
+
+    // @ts-expect-error - mock dependencies for unit testing
+    new AuthService({}, mockConfig, {}, { ensure: vi.fn() }, { warn: vi.fn() });
+
+    expect(betterAuthMockConfig?.emailAndPassword?.disableSignUp).toBe(true);
   });
 
   it("registers the apiKey plugin with a user-scoped, database-backed, rate-limited config", async () => {

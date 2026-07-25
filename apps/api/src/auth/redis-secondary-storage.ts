@@ -4,7 +4,12 @@ import { RedisService } from "../common/redis/redis.service.js";
 
 const keyPrefix = "treasury-ops:auth:";
 
-export function createRedisSecondaryStorage(redis: RedisService): SecondaryStorage {
+export type AuthSecondaryStorage = Pick<
+  RedisService,
+  "get" | "getAndDelete" | "set" | "delete" | "increment"
+>;
+
+export function createRedisSecondaryStorage(redis: AuthSecondaryStorage): SecondaryStorage {
   const namespacedKey = (key: string): string => `${keyPrefix}${key}`;
 
   return {

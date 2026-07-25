@@ -425,6 +425,15 @@ POST /imports/:id/revert                ← one bulk reversal, chunked transacti
 
 **Topology:** Better Auth mounts _inside the NestJS app_ (it exposes a fetch-style handler you adapt to Express at `/api/auth/*`). One process owns users + sessions + business data — no token relay between Next.js and the API.
 
+**Current registration policy:** Better Auth uses the PostgreSQL Drizzle adapter and owns
+`POST /api/auth/sign-up/email`. Registration is enabled only while
+`DISABLE_SIGNUP=false`, accepts passwords from 8 through 128 characters, and is limited to
+10 attempts per 60 seconds through Redis secondary storage. `autoSignIn` is disabled:
+successful registration returns no session, and existing-email attempts use the same outward
+success posture before the user signs in normally. The existing user-create hook idempotently
+ensures `user_profiles`; `AuthGuard` repeats that ensure after sign-in as the recovery path for a
+transient hook failure.
+
 ```ts
 // auth/better-auth.instance.ts
 export const auth = betterAuth({

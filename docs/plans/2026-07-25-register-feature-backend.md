@@ -1,6 +1,6 @@
 # Registration Feature — Backend Plan
 
-Status: planning only
+Status: implemented on 2026-07-25
 
 Target branch: `codex/register-feature-planning`
 

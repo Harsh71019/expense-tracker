@@ -20,4 +20,13 @@ export class UserProfileService {
 
     return profile;
   }
+
+  async update(userId: string, input: unknown): Promise<UserProfile> {
+    const profile = await this.profiles.update(userId, input);
+    if (profile === null) {
+      throw new EntityNotFoundError("User profile");
+    }
+
+    return profile;
+  }
 }

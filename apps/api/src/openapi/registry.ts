@@ -75,6 +75,7 @@ import {
   StagedRowSchema,
   UpdateStagedRowSchema,
   UserProfileSchema,
+  UserProfileUpdateSchema,
   MonthSchema,
   MonthlyRollupSchema,
   CreateRecurringRuleSchema,
@@ -569,6 +570,18 @@ registry.registerPath({
   security: secured,
   responses: {
     200: { description: "Current user profile", ...json(UserProfile) },
+    404: { description: "Profile not found", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "patch",
+  path: "/v1/profile",
+  security: secured,
+  request: { body: json(UserProfileUpdateSchema) },
+  responses: {
+    200: { description: "Updated user profile", ...json(UserProfile) },
     404: { description: "Profile not found", ...json(ProblemDetails) },
     ...problemResponses
   }

@@ -18,6 +18,7 @@ const navItems = [
   { href: "/category-rules", label: "Category rules", icon: "⌁" },
   { href: "/imports", label: "Imports", icon: "↥" },
   { href: "/assets", label: "Assets", icon: "◈" },
+  { href: "/goals", label: "Goals", icon: "◎" },
   { href: "/reports", label: "Reports", icon: "◔" },
   { href: "/settings", label: "Settings", icon: "⚙" }
 ] as const;

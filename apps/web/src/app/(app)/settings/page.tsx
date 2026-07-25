@@ -21,6 +21,7 @@ const settingsLinks = [
   },
   { href: "/recurring", label: "Recurring", description: "Scheduled transactions", icon: "↻" },
   { href: "/assets", label: "Assets", description: "Net worth and valuations", icon: "◈" },
+  { href: "/goals", label: "Goals", description: "Savings targets and progress", icon: "◎" },
   { href: "/transfers", label: "Transfers", description: "Move between accounts", icon: "⤢" },
   { href: "/imports", label: "Imports", description: "CSV statement imports", icon: "↧" },
   {

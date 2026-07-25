@@ -1153,6 +1153,7 @@ export interface paths {
           from?: string | null;
           to?: string | null;
           q?: string;
+          tag?: string;
           cursor?: string;
           limit?: number;
         };

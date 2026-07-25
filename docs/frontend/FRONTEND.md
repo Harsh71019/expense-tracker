@@ -53,6 +53,9 @@ apps/web/
 │  │  │  │  ├─ page.tsx
 │  │  │  │  └─ [month]/page.tsx
 │  │  │  ├─ recurring/page.tsx
+│  │  │  ├─ goals/
+│  │  │  │  ├─ page.tsx               # active/achieved goal grid
+│  │  │  │  └─ [goalId]/page.tsx       # progress, plan, and contribution ledger
 │  │  │  └─ settings/page.tsx         # profile, categories, passkeys, export
 │  │  ├─ api/                         # ONLY Next-owned endpoints (none proxy business data)
 │  │  │  └─ offline-sync/route.ts     # drains the offline quick-add queue (calls API with stored keys)
@@ -73,6 +76,7 @@ apps/web/
 │  │  ├─ budgets/
 │  │  ├─ reports/                     # chart components live here, not in ui/
 │  │  ├─ recurring/
+│  │  ├─ goals/                       # linked-account/tagged progress, plans, reorder
 │  │  ├─ auth/                        # login form, passkey button, useSession, signOut
 │  │  └─ ask/                         # Phase 6: natural-language reports UI (streaming)
 │  │
@@ -125,6 +129,7 @@ apps/web/
 | `/add`          | Client component, statically rendered shell                                                          | Must be interactive instantly; works offline (§7)                                    |
 | `/imports/*`    | Client-heavy (file handling, editable preview table) inside RSC shell                                | Inherently interactive                                                               |
 | `/reports/*`    | RSC data + client chart components (`recharts` dynamic-imported)                                     | Charts are the only heavy JS — keep them out of the main bundle                      |
+| `/goals/*`      | Hybrid: goals and first contribution page from RSC, interactive mutations via Query                  | Fast initial progress plus fresh plans, reorder, and cursor pagination               |
 | `/login`        | Static shell + client form                                                                           | —                                                                                    |
 
 **Global rules:**
@@ -161,6 +166,9 @@ export const qk = {
 - **Defaults:** `staleTime: 60s` (matches the API's Redis cache TTL), `retry: 2` queries / `retry: 0` mutations, `refetchOnWindowFocus: true` (phone unlock = fresh balances).
 - **RSC → client handoff:** server loaders pass `initialData` into hooks — no double fetch, no loading flash on hydration.
 - **Invalidation is centralized** in each mutation hook: `useCreateTxn` invalidates `txns`, `accounts`, current `rollup`. A mutation that forgets invalidation is a bug class — code review checklist item.
+- Goal progress is computed by the API. Transaction, transfer, and import mutations invalidate
+  the `goals` query family because they can change either a linked account balance or a tagged
+  contribution total.
 
 ### 4.3 Mutations: optimistic + idempotent (P4)
 

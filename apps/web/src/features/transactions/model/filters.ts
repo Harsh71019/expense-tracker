@@ -37,6 +37,7 @@ export function parseTransactionFilters(
     from: getSingleValue(searchParams, "from"),
     to: getSingleValue(searchParams, "to"),
     q: getSingleValue(searchParams, "q"),
+    tag: getSingleValue(searchParams, "tag"),
     cursor: getSingleValue(searchParams, "cursor"),
     limit: getSingleValue(searchParams, "limit")
   });
@@ -55,6 +56,7 @@ export function serializeTransactionFilters(filters: ListTransactionsQuery): str
   appendIfDefined(params, "from", filters.from?.toISOString());
   appendIfDefined(params, "to", filters.to?.toISOString());
   appendIfDefined(params, "q", filters.q);
+  appendIfDefined(params, "tag", filters.tag);
   appendIfDefined(params, "cursor", filters.cursor);
   if (filters.limit !== 50) {
     params.set("limit", String(filters.limit));

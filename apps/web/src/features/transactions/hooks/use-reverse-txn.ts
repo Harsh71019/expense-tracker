@@ -41,6 +41,7 @@ export function useReverseTxn(): ReturnType<typeof useMutation<Transaction, Erro
       void queryClient.invalidateQueries({ queryKey: qk.transactions() });
       void queryClient.invalidateQueries({ queryKey: qk.accounts() });
       void queryClient.invalidateQueries({ queryKey: qk.netWorth() });
+      void queryClient.invalidateQueries({ queryKey: qk.goals() });
     }
   });
 }

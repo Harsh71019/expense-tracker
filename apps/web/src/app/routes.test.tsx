@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import AddTransactionPage from "./(app)/add/page";
 import DashboardPage from "./(app)/page";
+import GoalsPage from "./(app)/goals/page";
 import ReportsPage from "./(app)/reports/page";
 import RecurringPage from "./(app)/recurring/page";
 import SettingsPage from "./(app)/settings/page";
@@ -40,6 +41,13 @@ vi.mock("@/features/categories/server/get-categories", () => ({ getCategories: a
 vi.mock("@/features/recurring", () => ({
   getRecurringRules: async () => [],
   RecurringManager: () => <h1>Recurring</h1>
+}));
+vi.mock("@/features/goals", () => ({
+  GoalManager: () => <h1>Goals</h1>
+}));
+vi.mock("@/features/goals/server/get-goals", () => ({
+  getGoals: async () => [],
+  getGoalPlan: async () => null
 }));
 vi.mock("@/features/profile", () => ({
   ProfileSummary: ({ email }: { email: string }) => (
@@ -148,6 +156,9 @@ describe("route shells", () => {
 
     render(await RecurringPage());
     expect(screen.getByRole("heading", { name: "Recurring" })).toBeVisible();
+
+    render(await GoalsPage());
+    expect(screen.getByRole("heading", { name: "Goals" })).toBeVisible();
   });
 
   it("renders the auth, login, and not-found shells", async () => {

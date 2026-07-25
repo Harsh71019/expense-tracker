@@ -1,6 +1,7 @@
-import type { ListTransactionsQuery } from "@treasury-ops/shared";
+import type { GoalStatus, ListTransactionsQuery } from "@treasury-ops/shared";
 
 const transactionRoot = ["transactions"] as const;
+const goalRoot = ["goals"] as const;
 
 export const qk = {
   transactions: () => transactionRoot,
@@ -8,6 +9,10 @@ export const qk = {
   txns: (filters: ListTransactionsQuery) => [...transactionRoot, "list", filters] as const,
   transactionDetails: () => [...transactionRoot, "detail"] as const,
   txn: (transactionId: string) => [...transactionRoot, "detail", transactionId] as const,
+  goals: () => goalRoot,
+  goalList: (status: GoalStatus) => [...goalRoot, "list", status] as const,
+  goal: (goalId: string) => [...goalRoot, "detail", goalId] as const,
+  goalPlan: (goalId: string) => [...goalRoot, "plan", goalId] as const,
   accounts: () => ["accounts"] as const,
   categories: () => ["categories"] as const,
   categoryRules: () => ["category-rules"] as const,

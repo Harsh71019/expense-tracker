@@ -55,6 +55,7 @@ export const ListTransactionsQuerySchema = z.object({
   from: z.coerce.date().optional(),
   to: z.coerce.date().optional(),
   q: z.string().trim().min(1).max(200).optional(),
+  tag: z.string().trim().min(1).max(40).optional(),
   cursor: z.string().min(1).optional(),
   limit: z.coerce.number().int().min(1).max(100).default(50)
 });

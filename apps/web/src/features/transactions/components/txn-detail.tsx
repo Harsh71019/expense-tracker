@@ -1,11 +1,11 @@
 "use client";
 
 import { UpdateTransactionSchema, type Transaction } from "@treasury-ops/shared";
-import Link from "next/link";
 import { useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 
 import { Badge } from "@/components/ui/badge";
+import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Money } from "@/components/ui/money";
@@ -80,12 +80,16 @@ export function TxnDetail({ initialTransaction }: { initialTransaction: Transact
 
   return (
     <section className="space-y-6">
+      <Breadcrumbs
+        items={[
+          { label: "Transactions", href: "/transactions" },
+          { label: transaction.description }
+        ]}
+      />
+
       <header className="flex items-start justify-between gap-4">
         <div>
-          <Link href="/transactions" className="text-sm text-accent">
-            ← Back to transactions
-          </Link>
-          <h1 className="mt-3 text-2xl font-semibold tracking-tight">{transaction.description}</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{transaction.description}</h1>
           <div className="mt-2 flex flex-wrap gap-2">
             <Badge variant={transaction.status === "posted" ? "success" : "reversed"}>
               {transaction.status}

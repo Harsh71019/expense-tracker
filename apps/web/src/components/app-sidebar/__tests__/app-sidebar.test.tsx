@@ -4,7 +4,17 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AppSidebar } from "../app-sidebar";
 
-vi.mock("../app-nav", () => ({ AppNav: () => <nav>Navigation</nav> }));
+vi.mock("../app-nav", () => ({
+  AppNav: ({ items }: { items: readonly Readonly<{ href: string; label: string }>[] }) => (
+    <nav>
+      {items.map((item) => (
+        <a key={item.href} href={item.href}>
+          {item.label}
+        </a>
+      ))}
+    </nav>
+  )
+}));
 vi.mock("../ui/theme-toggle", () => ({ ThemeToggle: () => <button>Theme</button> }));
 
 describe("AppSidebar", () => {
@@ -29,5 +39,12 @@ describe("AppSidebar", () => {
 
     expect(screen.getByRole("button", { name: "Expand sidebar" })).toBeVisible();
     expect(screen.queryByText("harsh@example.com")).toBeNull();
+  });
+
+  it("links to budgets beside the other planning destinations", () => {
+    render(<AppSidebar email="harsh@example.com" theme="light" />);
+
+    expect(screen.getByRole("link", { name: "Budgets" })).toHaveAttribute("href", "/budgets");
+    expect(screen.getByRole("link", { name: "Reports" })).toHaveAttribute("href", "/reports");
   });
 });

@@ -2,6 +2,7 @@
 
 import type {
   CashflowResponse,
+  BudgetPage,
   DashboardInvestments,
   DashboardStats,
   RecurringForecast,
@@ -9,6 +10,8 @@ import type {
   TopSpendingItem
 } from "@treasury-ops/shared";
 import type { ReactNode } from "react";
+
+import { BudgetDashboardPanel } from "@/features/budgets";
 
 import { useInvestments } from "../hooks/use-investments";
 import { useStats } from "../hooks/use-stats";
@@ -27,6 +30,7 @@ type DashboardOverviewProps = Readonly<{
   initialTopSpending: TopSpendingItem[];
   initialRecurringForecast: RecurringForecast;
   initialInvestments: DashboardInvestments;
+  initialBudgets: BudgetPage | null;
 }>;
 
 export function DashboardOverview({
@@ -35,7 +39,8 @@ export function DashboardOverview({
   initialSpendMix,
   initialTopSpending,
   initialRecurringForecast,
-  initialInvestments
+  initialInvestments,
+  initialBudgets
 }: DashboardOverviewProps): ReactNode {
   const statsQuery = useStats(initialStats);
   const investmentsQuery = useInvestments(initialInvestments);
@@ -70,6 +75,8 @@ export function DashboardOverview({
           initialRange={DEFAULT_PANEL_RANGE}
         />
       </div>
+
+      <BudgetDashboardPanel page={initialBudgets} />
 
       <InvestmentsPanel investments={investments} />
     </section>

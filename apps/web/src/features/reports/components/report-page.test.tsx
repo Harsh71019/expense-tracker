@@ -54,6 +54,10 @@ describe("ReportPage", () => {
     expect(screen.getByText("Spend by category")).toBeVisible();
     expect(screen.getByText("Category breakdown")).toBeVisible();
     expect(screen.getByText("Net flow by account")).toBeVisible();
+    expect(screen.getByRole("link", { name: "Monthly budgets" })).toHaveAttribute(
+      "href",
+      "/budgets"
+    );
   });
 
   it("shows the empty state when there is no rollup for the month", () => {

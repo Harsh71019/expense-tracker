@@ -175,3 +175,36 @@ export {
   UserProfileUpdateSchema
 } from "./user-profile.js";
 export type { UserProfile, UserProfileUpdate } from "./user-profile.js";
+export {
+  CategorySpendSpikeEvidenceSchema,
+  DismissSpendingWarningResponseSchema,
+  ListSpendingWarningsQuerySchema,
+  OverallSpendSpikeEvidenceSchema,
+  SpendingWarningAnalysisSchema,
+  SpendingWarningAnalysisStatusSchema,
+  SpendingWarningEligibleKindsSchema,
+  SpendingWarningEvidenceSchema,
+  SpendingWarningIdSchema,
+  SpendingWarningKindSchema,
+  SpendingWarningPageSchema,
+  SpendingWarningSchema,
+  SpendingWarningSeveritySchema,
+  SpendingWarningStatusSchema,
+  UnusuallyLargeExpenseEvidenceSchema
+} from "./spending-warning.js";
+export type {
+  CategorySpendSpikeEvidence,
+  DismissSpendingWarningResponse,
+  ListSpendingWarningsQuery,
+  OverallSpendSpikeEvidence,
+  SpendingWarning,
+  SpendingWarningAnalysis,
+  SpendingWarningAnalysisStatus,
+  SpendingWarningEvidence,
+  SpendingWarningId,
+  SpendingWarningKind,
+  SpendingWarningPage,
+  SpendingWarningSeverity,
+  SpendingWarningStatus,
+  UnusuallyLargeExpenseEvidence
+} from "./spending-warning.js";

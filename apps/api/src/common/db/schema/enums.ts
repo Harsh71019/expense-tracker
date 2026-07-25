@@ -42,3 +42,23 @@ export const notificationTypeEnum = pgEnum("notification_type", [
   "balance_drift"
 ]);
 export const notificationStatusEnum = pgEnum("notification_status", ["pending", "sent"]);
+export const spendingWarningKindEnum = pgEnum("spending_warning_kind", [
+  "overall_spend_spike",
+  "category_spend_spike",
+  "unusually_large_expense"
+]);
+export const spendingWarningSeverityEnum = pgEnum("spending_warning_severity", [
+  "attention",
+  "high"
+]);
+export const spendingWarningStatusEnum = pgEnum("spending_warning_status", [
+  "active",
+  "dismissed",
+  "resolved"
+]);
+// Only the two states the worker can persist (plan §5); "stale"/"unavailable"
+// are derived at API read time from `computedAt` and never stored.
+export const spendingWarningAnalysisStateStatusEnum = pgEnum("spending_warning_analysis_status", [
+  "learning",
+  "ready"
+]);

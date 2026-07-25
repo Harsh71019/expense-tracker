@@ -26,12 +26,17 @@ describe("ApiKeyReveal", () => {
 
     render(<ApiKeyReveal apiKey="ak_verysecret123" onDismiss={onDismiss} />);
 
-    expect(screen.getByText("ak_verysecret123")).toBeVisible();
+    expect(screen.queryByText("ak_verysecret123")).not.toBeInTheDocument();
     expect(screen.getByText(/won't be shown again/i)).toBeVisible();
 
     await user.click(screen.getByRole("button", { name: "Copy" }));
     expect(writeText).toHaveBeenCalledWith("ak_verysecret123");
     expect(mocks.toastSuccess).toHaveBeenCalledWith("Copied to clipboard");
+
+    await user.click(screen.getByRole("button", { name: "View new API key" }));
+    expect(screen.getByText("ak_verysecret123")).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Hide new API key" }));
+    expect(screen.queryByText("ak_verysecret123")).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Done" }));
     expect(onDismiss).toHaveBeenCalled();

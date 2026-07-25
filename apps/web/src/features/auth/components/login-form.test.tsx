@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { LoginForm } from "./login-form";
 
 const mocks = vi.hoisted(() => ({
+  searchParams: "next=%2Ftransactions",
   signInWithEmail: vi.fn(),
   push: vi.fn(),
   refresh: vi.fn(),
@@ -13,7 +14,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("next/navigation", () => ({
-  useSearchParams: () => new URLSearchParams("next=%2Ftransactions"),
+  useSearchParams: () => new URLSearchParams(mocks.searchParams),
   useRouter: () => ({ push: mocks.push, refresh: mocks.refresh })
 }));
 
@@ -26,6 +27,7 @@ vi.mock("../../../lib/toast", () => ({
 
 describe("LoginForm", () => {
   beforeEach(() => {
+    mocks.searchParams = "next=%2Ftransactions";
     mocks.signInWithEmail.mockReset();
     mocks.push.mockReset();
     mocks.refresh.mockReset();
@@ -85,5 +87,27 @@ describe("LoginForm", () => {
     expect(mocks.toastError).toHaveBeenCalledWith(
       "Unable to sign in right now. Check your connection and try again."
     );
+  });
+
+  it("shows the neutral registration notice and preserves a safe return path", () => {
+    mocks.searchParams = "registered=1&next=%2Ftransactions%3Faccount%3Dcash";
+
+    render(<LoginForm />);
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "If registration is available for this email"
+    );
+    expect(screen.getByRole("link", { name: "Register" })).toHaveAttribute(
+      "href",
+      "/register?next=%2Ftransactions%3Faccount%3Dcash"
+    );
+  });
+
+  it("does not carry an external return URL into the register link", () => {
+    mocks.searchParams = "next=https%3A%2F%2Fattacker.invalid";
+
+    render(<LoginForm />);
+
+    expect(screen.getByRole("link", { name: "Register" })).toHaveAttribute("href", "/register");
   });
 });

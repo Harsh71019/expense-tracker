@@ -4,8 +4,10 @@ import type { NextRequest } from "next/server";
 
 import { isMockApiEnabled } from "./mocks/enabled";
 
+const PUBLIC_AUTH_PATHS = new Set(["/login", "/register"]);
+
 export function proxy(request: NextRequest): NextResponse {
-  if (isMockApiEnabled) {
+  if (isMockApiEnabled || PUBLIC_AUTH_PATHS.has(request.nextUrl.pathname)) {
     return NextResponse.next();
   }
 
@@ -25,5 +27,5 @@ export function proxy(request: NextRequest): NextResponse {
 }
 
 export const config = {
-  matcher: ["/((?!login|api|images|_next/static|_next/image|favicon.ico).*)"]
+  matcher: ["/((?!login|register|api|images|_next/static|_next/image|favicon.ico).*)"]
 };

@@ -20,6 +20,11 @@ export type TransferReversalDto = components["schemas"]["TransferReversal"];
 export type RecurringRuleDto = components["schemas"]["RecurringRule"];
 /** Generated-schema shape, distinct from `@treasury-ops/shared`'s `ColumnMapping` — see toColumnMappingDto in handlers/imports.ts. */
 export type ColumnMappingDto = ImportBatchDto["mapping"];
+/** `SpendingWarning` has no standalone named schema component — it only exists inline inside `SpendingWarningPage.items`. */
+export type SpendingWarningDto = components["schemas"]["SpendingWarningPage"]["items"][number];
+export type SpendingWarningAnalysisDto = components["schemas"]["SpendingWarningPage"]["analysis"];
+export type DismissSpendingWarningResponseDto =
+  components["schemas"]["DismissSpendingWarningResponse"];
 
 /**
  * Idempotency-Key -> prior response, one map per endpoint shape. Kept as
@@ -39,6 +44,7 @@ export interface MockIdempotency {
   assetClose: Set<string>;
   valuations: Map<string, ValuationDto>;
   recurringRules: Map<string, RecurringRuleDto>;
+  spendingWarningDismiss: Map<string, DismissSpendingWarningResponseDto>;
 }
 
 export interface MockStore {
@@ -52,6 +58,8 @@ export interface MockStore {
   stagedRows: StagedRowDto[];
   monthlyRollups: MonthlyRollupDto[];
   recurringRules: RecurringRuleDto[];
+  spendingWarnings: SpendingWarningDto[];
+  spendingWarningAnalysis: SpendingWarningAnalysisDto;
   profile: UserProfileDto;
   /** accountId -> the mapping last used for a successful import to that account. */
   savedMappings: Map<string, ColumnMappingDto>;
@@ -68,6 +76,7 @@ export interface MockStore {
   nextImportBatchId: () => string;
   nextStagedRowId: () => string;
   nextRecurringRuleId: () => string;
+  nextSpendingWarningId: () => string;
 }
 
 function daysAgo(days: number): string {
@@ -101,6 +110,13 @@ export function findImportBatch(store: MockStore, batchId: string): ImportBatchD
 
 export function findMonthlyRollup(store: MockStore, month: string): MonthlyRollupDto | undefined {
   return store.monthlyRollups.find((rollup) => rollup.month === month);
+}
+
+export function findSpendingWarning(
+  store: MockStore,
+  warningId: string
+): SpendingWarningDto | undefined {
+  return store.spendingWarnings.find((warning) => warning.id === warningId);
 }
 
 /** Mirrors apps/api transaction-mutation.service.ts: income adds, expense subtracts. */
@@ -1753,6 +1769,7 @@ export function createMockStore(): MockStore {
   const nextImportBatchId = createIdGenerator("1b");
   const nextStagedRowId = createIdGenerator("5b");
   const nextRecurringRuleId = createIdGenerator("e0");
+  const nextSpendingWarningId = createIdGenerator("5e");
 
   const store: MockStore = {
     accounts: [],
@@ -1765,6 +1782,12 @@ export function createMockStore(): MockStore {
     stagedRows: [],
     monthlyRollups: [],
     recurringRules: [],
+    spendingWarnings: [],
+    spendingWarningAnalysis: {
+      status: "learning",
+      eligibleKinds: [],
+      baselineExpenseCount: 0
+    },
     profile: {
       userId: MOCK_USER_ID,
       displayName: "Mock User",
@@ -1787,7 +1810,8 @@ export function createMockStore(): MockStore {
       assets: new Map(),
       assetClose: new Set(),
       valuations: new Map(),
-      recurringRules: new Map()
+      recurringRules: new Map(),
+      spendingWarningDismiss: new Map()
     },
     nextAccountId,
     nextCategoryId,
@@ -1798,7 +1822,8 @@ export function createMockStore(): MockStore {
     nextValuationId,
     nextImportBatchId,
     nextStagedRowId,
-    nextRecurringRuleId
+    nextRecurringRuleId,
+    nextSpendingWarningId
   };
 
   seedAccounts(store);
@@ -1810,6 +1835,7 @@ export function createMockStore(): MockStore {
   seedImportBatch(store);
   seedImportBatch2(store);
   seedMonthlyRollups(store);
+  seedSpendingWarnings(store);
 
   return store;
 }
@@ -2533,4 +2559,123 @@ function seedMonthlyRollups(store: MockStore): void {
       computedAt: monthComputedAt(rollup.monthsAgo)
     });
   }
+}
+
+/**
+ * Seeds three realistic warnings (one per detector kind, plan §8) plus a
+ * "ready" analysis snapshot, so every warning-card layout and the
+ * category/large-expense investigation links have real category and
+ * transaction ids to point at. Evidence numbers are illustrative, not
+ * derived from seedTransactions — mirrors seedMonthlyRollups' standalone
+ * snapshot approach above.
+ */
+function seedSpendingWarnings(store: MockStore): void {
+  const categoryId = (name: string): string | undefined =>
+    store.categories.find((category) => category.name === name)?.id;
+  const transaction = (description: string): TransactionDto | undefined =>
+    store.transactions.find((candidate) => candidate.description === description);
+
+  const now = new Date();
+  const computedAt = now.toISOString();
+  const overallWindowEnd = now.toISOString();
+  const overallWindowStart = daysAgo(7);
+  const categoryWindowEnd = now.toISOString();
+  const categoryWindowStart = daysAgo(30);
+  const foodCategoryId = categoryId("Food & Dining");
+  const travelCategoryId = categoryId("Travel");
+  const irctcTicket = transaction("IRCTC train ticket");
+
+  store.spendingWarnings.push({
+    id: store.nextSpendingWarningId(),
+    userId: store.profile.userId,
+    fingerprint: "mock:overall_spend_spike",
+    kind: "overall_spend_spike",
+    severity: "attention",
+    status: "active",
+    windowStart: overallWindowStart,
+    windowEnd: overallWindowEnd,
+    evidence: {
+      kind: "overall_spend_spike",
+      currentMinor: 1_240_000,
+      baselineMedianMinor: 738_000,
+      deltaMinor: 502_000,
+      ratioBasisPoints: 16_802,
+      windowStart: overallWindowStart,
+      windowEnd: overallWindowEnd,
+      baselineWindowCount: 8,
+      baselineExpenseCount: 46
+    },
+    detectorVersion: 1,
+    firstDetectedAt: computedAt,
+    lastDetectedAt: computedAt
+  });
+
+  store.spendingWarnings.push({
+    id: store.nextSpendingWarningId(),
+    userId: store.profile.userId,
+    fingerprint: "mock:category_spend_spike:food",
+    kind: "category_spend_spike",
+    severity: "high",
+    status: "active",
+    ...(foodCategoryId === undefined ? {} : { categoryId: foodCategoryId }),
+    windowStart: categoryWindowStart,
+    windowEnd: categoryWindowEnd,
+    evidence: {
+      kind: "category_spend_spike",
+      ...(foodCategoryId === undefined ? {} : { categoryId: foodCategoryId }),
+      categoryName: "Food & Dining",
+      currentMinor: 1_600_000,
+      baselineMedianMinor: 400_000,
+      deltaMinor: 1_200_000,
+      ratioBasisPoints: 40_000,
+      windowStart: categoryWindowStart,
+      windowEnd: categoryWindowEnd,
+      baselineWindowCount: 6,
+      baselineExpenseCount: 34,
+      currentExpenseCount: 11
+    },
+    detectorVersion: 1,
+    firstDetectedAt: computedAt,
+    lastDetectedAt: computedAt
+  });
+
+  if (irctcTicket !== undefined) {
+    store.spendingWarnings.push({
+      id: store.nextSpendingWarningId(),
+      userId: store.profile.userId,
+      fingerprint: `mock:unusually_large_expense:${irctcTicket.id}`,
+      kind: "unusually_large_expense",
+      severity: "attention",
+      status: "active",
+      transactionId: irctcTicket.id,
+      ...(travelCategoryId === undefined ? {} : { categoryId: travelCategoryId }),
+      windowStart: daysAgo(180),
+      windowEnd: irctcTicket.occurredAt,
+      evidence: {
+        kind: "unusually_large_expense",
+        transactionId: irctcTicket.id,
+        ...(travelCategoryId === undefined ? {} : { categoryId: travelCategoryId }),
+        categoryName: "Travel",
+        amountMinor: irctcTicket.amountMinor,
+        thresholdMinor: 200_000,
+        baselineMedianMinor: 65_000,
+        baselineQ1Minor: 40_000,
+        baselineQ3Minor: 95_000,
+        baselineExpenseCount: 18,
+        occurredAt: irctcTicket.occurredAt
+      },
+      detectorVersion: 1,
+      firstDetectedAt: computedAt,
+      lastDetectedAt: computedAt
+    });
+  }
+
+  store.spendingWarningAnalysis = {
+    status: "ready",
+    computedAt,
+    sourceThrough: now.toISOString(),
+    historyStart: daysAgo(180),
+    eligibleKinds: ["overall_spend_spike", "category_spend_spike", "unusually_large_expense"],
+    baselineExpenseCount: 92
+  };
 }

@@ -7,11 +7,11 @@ import { AuditRepository } from "../audit/audit.repository.js";
 import { DATABASE_CONNECTION } from "../common/db/db.module.js";
 import type { DrizzleDb } from "../common/db/db.module.js";
 import { withTxn } from "../common/db/db-txn.js";
+import { isUniqueViolation } from "../common/db/postgres-error.js";
 import { EntityNotFoundError } from "../common/errors/entity-not-found.error.js";
 import { TransactionNotReversibleError } from "../common/errors/transaction-not-reversible.error.js";
 import { LogEvent } from "../common/logging/events.js";
 import { TransactionRepository } from "./transaction.repository.js";
-import { isUniqueViolation } from "./transaction.service.js";
 
 export type TransferResult = Readonly<{
   transferGroupId: string;

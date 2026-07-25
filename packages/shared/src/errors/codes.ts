@@ -11,6 +11,8 @@ export const ErrorCodes = [
   "txn.transfer_metadata_requires_group",
   "category.parent_kind_mismatch",
   "asset.invalid_valuation_sign",
+  "goal.funding_source_in_use",
+  "goal.invalid_order",
   "import.invalid_file",
   "import.already_committed",
   "import.invalid_state",

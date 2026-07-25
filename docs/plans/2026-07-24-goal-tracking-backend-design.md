@@ -2,20 +2,22 @@
 
 ## Context
 
-TreasuryOps has zero goal-tracking code today — `docs/EXTENSION-MODULES.md` §2 sketches a "Goals" design, but it's aspirational and scopes goal *feasibility* against salary projection + committed outflows (EMIs, budgets, SIPs) — none of which exist in the codebase (`apps/api/src` has no `salary/`, `budgets/`, or `loans/` module; debt today lives only as `loan_liability`/`loan_receivable` asset kinds with manual valuations). Building the full feasibility calculator would mean building those prerequisite modules first.
+TreasuryOps has zero goal-tracking code today — `docs/EXTENSION-MODULES.md` §2 sketches a "Goals" design, but it's aspirational and scopes goal _feasibility_ against salary projection + committed outflows (EMIs, budgets, SIPs) — none of which exist in the codebase (`apps/api/src` has no `salary/`, `budgets/`, or `loans/` module; debt today lives only as `loan_liability`/`loan_receivable` asset kinds with manual valuations). Building the full feasibility calculator would mean building those prerequisite modules first.
 
 Agreed scope (from prior discussion):
+
 - **Standalone tracker now**: target amount + optional target date + live progress + a simple "at current contribution rate" projection, using only data that already exists (accounts, transactions). No dependency on salary/budgets/loans. Full feasibility-vs-cashflow math is an explicit later layer, not this pass.
 - **Both funding modes**: `linked_account` (progress = a dedicated account's balance) and `tagged` (progress = sum of transactions carrying a goal tag) — both per the original design doc.
-- **Goal-achieved notifications** are in scope (new `notification_type`, nightly cron), reusing the outbox pattern that's already `@Global()`-wired specifically anticipating this (`apps/api/src/notifications/notifications.module.ts:11-13`: *"budgets/recurring/goals (Phase 4) will call NotificationOutboxRepository.enqueue(...)"*).
+- **Goal-achieved notifications** are in scope (new `notification_type`, nightly cron), reusing the outbox pattern that's already `@Global()`-wired specifically anticipating this (`apps/api/src/notifications/notifications.module.ts:11-13`: _"budgets/recurring/goals (Phase 4) will call NotificationOutboxRepository.enqueue(...)"_).
 
-This document is a design only; implementation has not started. It is the backend half of a two-PR pair — a sibling PR covers the frontend and targets the API shapes defined here.
+This document is the implementation specification for the backend half of a two-PR pair — a sibling PR covers the frontend and targets the API shapes defined here.
 
 ## Key design decision: reuse existing primitives, add exactly one new table
 
-Per `EXTENSION-MODULES.md`'s own stated stance — *"model it as ledger mechanics, never a parallel money system... goals are views over the ledger plus small metadata"* — and confirmed by exploration:
+Per `EXTENSION-MODULES.md`'s own stated stance — _"model it as ledger mechanics, never a parallel money system... goals are views over the ledger plus small metadata"_ — and confirmed by exploration:
+
 - **`linked_account` mode needs zero transaction-schema changes.** Progress is just `account.balanceMinor - goal.startedMinor` (the account's own cached balance, already correct and already maintained by every existing money-writing code path).
-- **`tagged` mode needs zero transaction-schema changes either.** `transactions.tags` (text array) already exists (`apps/api/src/common/db/schema/transaction.ts:35`) and is already settable on both regular transactions and transfers (`CreateTransactionSchema.tags`, `CreateTransferSchema.tags` — `packages/shared/src/transaction.ts:21,74`). No new `goalId` FK column is needed (unlike, say, `importBatchId`/`transferGroupId`, which exist because *many* transactions share one batch/group by construction — a goal tag is a much looser, user-chosen label, and reusing `tags` avoids a migration entirely).
+- **`tagged` mode needs zero transaction-schema changes either.** `transactions.tags` (text array) already exists (`apps/api/src/common/db/schema/transaction.ts:35`) and is already settable on both regular transactions and transfers (`CreateTransactionSchema.tags`, `CreateTransferSchema.tags` — `packages/shared/src/transaction.ts:21,74`). No new `goalId` FK column is needed (unlike, say, `importBatchId`/`transferGroupId`, which exist because _many_ transactions share one batch/group by construction — a goal tag is a much looser, user-chosen label, and reusing `tags` avoids a migration entirely).
 
 So the **entire backend addition is one new table (`goals`) + module** — no changes to `accounts` or `transactions` schemas at all.
 
@@ -39,8 +41,9 @@ createdAt, updatedAt timestamptz
 ```
 
 Indexes/constraints:
+
 - `uniqueIndex("goals_user_id_tag_unique").on(userId, tag).where(tag IS NOT NULL)` — one goal per tag per user (avoids two goals silently sharing a contribution pool).
-- `uniqueIndex("goals_linked_account_id_unique").on(linkedAccountId).where(status = 'active' AND linkedAccountId IS NOT NULL)` — an account can only back one *active* goal at a time (an abandoned/achieved goal frees its account up for reuse).
+- `uniqueIndex("goals_linked_account_id_unique").on(linkedAccountId).where(status = 'active' AND linkedAccountId IS NOT NULL)` — an account can only back one _active_ goal at a time (an abandoned/achieved goal frees its account up for reuse).
 
 New enums in `enums.ts`: `goalFundingModeEnum`, `goalStatusEnum`. Extend the existing `notificationTypeEnum` with a new value `'goal_achieved'` (additive `ALTER TYPE ... ADD VALUE`, generated by `pnpm migrate:generate` like every other schema change — AGENTS.md §4/§7).
 
@@ -51,7 +54,7 @@ New enums in `enums.ts`: `goalFundingModeEnum`, `goalStatusEnum`. Extend the exi
 - `GoalIdSchema`, `GoalFundingModeSchema = z.enum(["linked_account", "tagged"])`, `GoalStatusSchema = z.enum(["active", "achieved", "abandoned"])`.
 - `CreateGoalSchema` — `{ name, targetMinor (positive), targetDate?, fundingMode, linkedAccountId?, tag? }`, with `.refine()` cross-field rules mirroring `ColumnMappingSchema`'s pattern (`packages/shared/src/import.ts:27-49`): `fundingMode === 'linked_account'` requires `linkedAccountId` and forbids `tag`; `fundingMode === 'tagged'` requires `tag` and forbids `linkedAccountId`. `priority` is never client-supplied (server appends to end).
 - `GoalSchema` — the stored row **plus** computed `progressMinor` (not persisted — assembled by the service on every read, same "assemble from multiple sources" style as `NetWorthService.get`).
-- `UpdateGoalSchema` — `name`/`targetMinor`/`targetDate`/`tag` patch (hand-written, not `.partial()`, for the same reason `UpdateTransactionSchema` is hand-written — see `packages/shared/src/recurring.ts:85-91`'s comment on `.partial()` silently reapplying defaults).
+- `UpdateGoalSchema` — `name`/`targetMinor`/`targetDate` patch (hand-written, not `.partial()`, for the same reason `UpdateTransactionSchema` is hand-written — see `packages/shared/src/recurring.ts:85-91`'s comment on `.partial()` silently reapplying defaults). The funding tag is immutable along with the other funding binding fields.
 - `ReorderGoalsSchema` — `{ goalIds: GoalId[] }` (full desired order; service reassigns `priority = index`).
 - `GoalPlanSchema` — `{ goalId, mode: 'target_date' | 'at_current_rate', requiredMonthlyMinor: number | null, projectedCompletionDate: Date | null }` (see below).
 
@@ -81,20 +84,20 @@ export class GoalsModule {}
     - If `targetDate` is set: `requiredMonthlyMinor = (targetMinor - progressMinor) / monthsRemaining(targetDate)`, `mode: 'target_date'`.
     - If no `targetDate`: compute an average monthly contribution rate since the goal's `createdAt` (`progressMinor / monthsSinceCreated`, floored at 1 month) and project `projectedCompletionDate = now + ceil((targetMinor - progressMinor) / averageMonthlyRate)` months; `null` if the rate is ≤ 0 ("at this rate, never" — the UI's job to phrase, not the API's). `mode: 'at_current_rate'`.
     - This is deliberately simple (since-inception average, not a smarter trailing-window rate) — flagged as a natural follow-up once there's appetite for it, not a blocker for shipping.
-- **`goal-mutation.service.ts`** — idempotency wrapper for `create`, `abandon`, `reorder` (mirrors `AssetMutationService` exactly, using `IdempotencyPostgresService.execute`).
+- **`goal-mutation.service.ts`** — idempotency wrapper for `create`, `update`, `abandon`, and `reorder` (mirrors `AssetMutationService` exactly, using `IdempotencyPostgresService.execute`).
 - **`goals-progress.cron.ts`** — nightly `@Cron("0 2 * * *", { timeZone: "Asia/Kolkata" })` (or a couple of minutes offset from the existing 02:00 jobs), same `if (this.config.env.SERVICE_ROLE !== "worker") return;` guard as `RollupsRefreshService`/`RecurringMaterializeService`. For every `active` goal: compute progress; if `progressMinor >= targetMinor`, flip `status` to `'achieved'` and `NotificationOutboxRepository.enqueue(userId, 'goal_achieved', { goalId, name, targetMinor }, tx)` inside the same `withTxn` as the status flip (AGENTS.md §4: outbox writes always share the triggering transaction).
 
 ## Endpoints (`goal.controller.ts`, `/v1/goals`, existing conventions — inline `Schema.parse`, no `ZodValidationPipe`)
 
-| Method | Path | Purpose |
-|---|---|---|
-| POST | `/v1/goals` | create (idempotent) |
-| GET | `/v1/goals?status=active` | list, with computed `progressMinor` per goal |
-| GET | `/v1/goals/:goalId` | detail |
-| PATCH | `/v1/goals/:goalId` | update name/targetMinor/targetDate/tag |
-| PATCH | `/v1/goals/reorder` | bulk priority reassignment |
-| POST | `/v1/goals/:goalId/abandon` | idempotent, mirrors `asset.close` |
-| GET | `/v1/goals/:goalId/plan` | `GoalPlanSchema` — required-monthly or projected-completion-date |
+| Method | Path                        | Purpose                                                          |
+| ------ | --------------------------- | ---------------------------------------------------------------- |
+| POST   | `/v1/goals`                 | create (idempotent)                                              |
+| GET    | `/v1/goals?status=active`   | list, with computed `progressMinor` per goal                     |
+| GET    | `/v1/goals/:goalId`         | detail                                                           |
+| PATCH  | `/v1/goals/:goalId`         | update name/targetMinor/targetDate                               |
+| PATCH  | `/v1/goals/reorder`         | bulk priority reassignment                                       |
+| POST   | `/v1/goals/:goalId/abandon` | idempotent, mirrors `asset.close`                                |
+| GET    | `/v1/goals/:goalId/plan`    | `GoalPlanSchema` — required-monthly or projected-completion-date |
 
 ## Testing
 

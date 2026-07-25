@@ -18,7 +18,8 @@ export const RuntimeEnvSchema = z.object({
   BETTER_AUTH_SECRET: z.string().min(32),
   BETTER_AUTH_URL: z.string().url(),
   AUTH_COOKIE_SECURE: booleanStringSchema.default(false),
-  DISABLE_SIGNUP: booleanStringSchema.default(false)
+  DISABLE_SIGNUP: booleanStringSchema.default(false),
+  DISABLE_RATE_LIMITING: booleanStringSchema.default(false)
 });
 
 export type RuntimeEnv = z.infer<typeof RuntimeEnvSchema>;

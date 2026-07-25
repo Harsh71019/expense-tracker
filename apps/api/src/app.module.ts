@@ -37,7 +37,7 @@ import { TransactionsModule } from "./transactions/transactions.module.js";
 
 const UNTHROTTLED_PATHS = new Set(["/api/healthz", "/api/readyz"]);
 
-function isUnthrottledRequest(context: ExecutionContext): boolean {
+function isUnthrottledPath(context: ExecutionContext): boolean {
   const request = context.switchToHttp().getRequest<Request>();
   return UNTHROTTLED_PATHS.has(request.path);
 }
@@ -52,9 +52,10 @@ function isUnthrottledRequest(context: ExecutionContext): boolean {
     LoggingModule,
     ScheduleModule.forRoot(),
     ThrottlerModule.forRootAsync({
-      inject: [RedisService],
-      useFactory: (redis: RedisService) => ({
-        skipIf: isUnthrottledRequest,
+      inject: [RedisService, RuntimeConfigService],
+      useFactory: (redis: RedisService, config: RuntimeConfigService) => ({
+        skipIf: (context: ExecutionContext) =>
+          config.env.DISABLE_RATE_LIMITING || isUnthrottledPath(context),
         storage: new RedisThrottlerStorage(redis),
         throttlers: [{ ttl: 60_000, limit: 300, blockDuration: 60_000 }]
       })

@@ -45,7 +45,8 @@ class MockRuntimeConfigService implements RuntimeConfigService {
     BETTER_AUTH_SECRET: "test-secret-long-enough-32-chars-long",
     BETTER_AUTH_URL: "http://localhost:4000",
     AUTH_COOKIE_SECURE: false,
-    DISABLE_SIGNUP: false
+    DISABLE_SIGNUP: false,
+    DISABLE_RATE_LIMITING: false
   };
 
   trustedOrigins(): string[] {

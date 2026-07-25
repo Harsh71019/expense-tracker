@@ -53,7 +53,7 @@ export function createAuth(
       }
     },
     rateLimit: {
-      enabled: true,
+      enabled: !config.env.DISABLE_RATE_LIMITING,
       window: 60,
       max: 100,
       storage: "secondary-storage",
@@ -68,7 +68,11 @@ export function createAuth(
         requireName: true,
         defaultPrefix: "ak_",
         keyExpiration: { defaultExpiresIn: null },
-        rateLimit: { enabled: true, timeWindow: 60_000, maxRequests: 100 }
+        rateLimit: {
+          enabled: !config.env.DISABLE_RATE_LIMITING,
+          timeWindow: 60_000,
+          maxRequests: 100
+        }
       })
     ]
   });

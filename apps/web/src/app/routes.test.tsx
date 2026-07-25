@@ -12,6 +12,7 @@ import type {
 import { describe, expect, it, vi } from "vitest";
 
 import AddTransactionPage from "./(app)/add/page";
+import BudgetsRoute from "./(app)/budgets/page";
 import DashboardPage from "./(app)/page";
 import GoalsPage from "./(app)/goals/page";
 import InsightsPage from "./(app)/insights/page";
@@ -115,6 +116,13 @@ vi.mock("@/features/dashboard/hooks/use-investments", () => ({
   useInvestments: () => ({ data: mocks.investments })
 }));
 vi.mock("@/features/categories/server/get-categories", () => ({ getCategories: async () => [] }));
+vi.mock("@/features/budgets", () => ({
+  BudgetsPage: () => <h1>Monthly budgets</h1>,
+  BudgetDashboardPanel: () => <h2>Monthly budgets</h2>
+}));
+vi.mock("@/features/budgets/server/get-budgets", () => ({
+  getBudgetPage: async () => null
+}));
 vi.mock("@/features/recurring", () => ({
   getRecurringRules: async () => [],
   RecurringManager: () => <h1>Recurring</h1>
@@ -358,6 +366,9 @@ describe("route shells", () => {
 
     render(await GoalsPage());
     expect(screen.getByRole("heading", { name: "Goals" })).toBeVisible();
+
+    render(await BudgetsRoute());
+    expect(screen.getByRole("heading", { name: "Monthly budgets" })).toBeVisible();
   });
 
   it("renders the auth, login, and not-found shells", async () => {

@@ -170,6 +170,10 @@ export const qk = {
 - Goal progress is computed by the API. Transaction, transfer, and import mutations invalidate
   the `goals` query family because they can change either a linked account balance or a tagged
   contribution total.
+- Budget progress is computed live by the API from posted, non-transfer expenses in the exact
+  category for the current IST month. `/budgets` server-renders the first cursor page, then uses
+  the `budgets` query family for pagination, archived configurations, upserts, and recoverable
+  archival. Budget forms reuse one mounted idempotency key until a mutation succeeds.
 
 ### 4.3 Mutations: optimistic + idempotent (P4)
 

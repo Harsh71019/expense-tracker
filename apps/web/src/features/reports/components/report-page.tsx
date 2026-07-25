@@ -1,6 +1,7 @@
 "use client";
 
 import type { MonthlyRollup } from "@treasury-ops/shared";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { ReactNode } from "react";
@@ -63,6 +64,21 @@ export function ReportPage({ initialMonth, initialRollup }: ReportPageProps): Re
           </p>
         </div>
       </header>
+
+      <Link
+        href="/spending-warnings"
+        className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-border bg-surface-elevated px-4 py-3.5 transition-colors duration-150 hover:border-accent/40 md:hidden"
+      >
+        <span>
+          <span className="block text-sm font-semibold text-foreground">Spending patterns</span>
+          <span className="block text-xs text-foreground-muted">
+            See unusual spending patterns worth a look
+          </span>
+        </span>
+        <span aria-hidden="true" className="text-accent">
+          →
+        </span>
+      </Link>
 
       <div className="mt-6">
         <MonthSelector

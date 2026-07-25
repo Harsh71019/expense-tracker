@@ -7,6 +7,7 @@ import DashboardPage from "./(app)/page";
 import ReportsPage from "./(app)/reports/page";
 import RecurringPage from "./(app)/recurring/page";
 import SettingsPage from "./(app)/settings/page";
+import SpendingWarningsRoute from "./(app)/spending-warnings/page";
 import TransactionsPage from "./(app)/transactions/page";
 import AuthLayout from "./(auth)/layout";
 import LoginPage from "./(auth)/login/page";
@@ -64,6 +65,11 @@ vi.mock("@/features/transactions/server/get-txn-page", () => ({
     items: [],
     pageInfo: { nextCursor: null, hasMore: false, limit: 50 }
   })
+}));
+vi.mock("@/features/spending-warnings", () => ({
+  SpendingWarningsPage: () => <h1>Spending patterns</h1>,
+  getSpendingWarnings: async () => null,
+  parseSpendingWarningFilters: () => ({ filter: "all" })
 }));
 
 describe("route shells", () => {
@@ -176,6 +182,9 @@ describe("route shells", () => {
 
     render(await RecurringPage());
     expect(screen.getByRole("heading", { name: "Recurring" })).toBeVisible();
+
+    render(await SpendingWarningsRoute({ searchParams: Promise.resolve({}) }));
+    expect(screen.getByRole("heading", { name: "Spending patterns" })).toBeVisible();
   });
 
   it("renders the auth, login, and not-found shells", async () => {

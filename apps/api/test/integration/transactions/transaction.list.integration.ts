@@ -56,12 +56,14 @@ describe("TransactionService.list", () => {
       categoryId?: string;
       description: string;
       occurredAt: string;
+      tags?: string[];
     }> = [
       {
         accountId: hdfc.id,
         categoryId: food.id,
         description: "Chai",
-        occurredAt: "2026-07-01T09:00:00.000Z"
+        occurredAt: "2026-07-01T09:00:00.000Z",
+        tags: ["goal:laptop"]
       },
       { accountId: hdfc.id, description: "Metro card", occurredAt: "2026-07-02T09:00:00.000Z" },
       {
@@ -71,7 +73,12 @@ describe("TransactionService.list", () => {
         occurredAt: "2026-07-03T09:00:00.000Z"
       },
       { accountId: hdfc.id, description: "Groceries", occurredAt: "2026-07-04T09:00:00.000Z" },
-      { accountId: hdfc.id, description: "Chai again", occurredAt: "2026-07-05T09:00:00.000Z" }
+      {
+        accountId: hdfc.id,
+        description: "Chai again",
+        occurredAt: "2026-07-05T09:00:00.000Z",
+        tags: ["goal:laptop"]
+      }
     ];
 
     for (const [index, row] of rows.entries()) {
@@ -85,7 +92,7 @@ describe("TransactionService.list", () => {
           amountMinor: 100,
           occurredAt: new Date(row.occurredAt),
           description: row.description,
-          tags: []
+          tags: row.tags ?? []
         },
         `11111111-1111-4111-a111-11111111111${index}`
       );
@@ -128,6 +135,11 @@ describe("TransactionService.list", () => {
 
   it("filters by case-insensitive description search", async () => {
     const page = await transactions.list("user-a", { q: "chai", limit: 50 });
+    expect(page.items.map((t) => t.description)).toEqual(["Chai again", "Chai"]);
+  });
+
+  it("filters by an exact transaction tag", async () => {
+    const page = await transactions.list("user-a", { tag: "goal:laptop", limit: 50 });
     expect(page.items.map((t) => t.description)).toEqual(["Chai again", "Chai"]);
   });
 

@@ -78,10 +78,17 @@ import {
   MonthSchema,
   MonthlyRollupSchema,
   CreateRecurringRuleSchema,
+  CreateGoalSchema,
+  GoalIdSchema,
+  GoalPlanSchema,
+  GoalSchema,
+  ListGoalsQuerySchema,
+  ReorderGoalsSchema,
   RecurringRuleIdSchema,
   RecurringRuleSchema,
   UpdateApiKeySchema,
-  UpdateRecurringRuleSchema
+  UpdateRecurringRuleSchema,
+  UpdateGoalSchema
 } from "@treasury-ops/shared";
 import { z } from "zod";
 
@@ -106,6 +113,8 @@ const StagedRowPage = StagedRowPageSchema.meta({ id: "StagedRowPage" });
 const UserProfile = UserProfileSchema.meta({ id: "UserProfile" });
 const MonthlyRollup = MonthlyRollupSchema.meta({ id: "MonthlyRollup" });
 const RecurringRule = RecurringRuleSchema.meta({ id: "RecurringRule" });
+const Goal = GoalSchema.meta({ id: "Goal" });
+const GoalPlan = GoalPlanSchema.meta({ id: "GoalPlan" });
 const DashboardSummary = DashboardSummarySchema.meta({ id: "DashboardSummary" });
 const RecentActivityItem = RecentActivityItemSchema.meta({ id: "RecentActivityItem" });
 const DashboardStats = DashboardStatsSchema.meta({ id: "DashboardStats" });
@@ -128,6 +137,7 @@ const importBatchAndRowId = z.object({
 });
 const month = z.object({ month: MonthSchema });
 const recurringRuleId = z.object({ ruleId: RecurringRuleIdSchema });
+const goalId = z.object({ goalId: GoalIdSchema });
 const json = (schema: z.ZodType): { content: { "application/json": { schema: z.ZodType } } } => ({
   content: { "application/json": { schema } }
 });
@@ -638,6 +648,106 @@ registry.registerPath({
   },
   responses: {
     201: { description: "Import batch created", ...json(ImportBatch) },
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/v1/goals",
+  security: secured,
+  request: { query: ListGoalsQuerySchema },
+  responses: {
+    200: { description: "Goals with live progress", ...json(z.array(Goal)) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "post",
+  path: "/v1/goals",
+  security: secured,
+  request: { body: json(CreateGoalSchema), headers: idempotencyKeyHeaders },
+  responses: {
+    200: {
+      description: "Idempotent replay of the created goal",
+      headers: replayedHeaders,
+      ...json(Goal)
+    },
+    201: { description: "Created goal", ...json(Goal) },
+    404: { description: "Linked account not found", ...json(ProblemDetails) },
+    409: { description: "Funding source already assigned", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "patch",
+  path: "/v1/goals/reorder",
+  security: secured,
+  request: {
+    body: json(ReorderGoalsSchema),
+    headers: idempotencyKeyHeaders
+  },
+  responses: {
+    204: {
+      description: "Goals reordered, or idempotent replay",
+      headers: optionalReplayHeaders
+    },
+    409: { description: "Order does not contain every active goal", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "get",
+  path: "/v1/goals/{goalId}",
+  security: secured,
+  request: { params: goalId },
+  responses: {
+    200: { description: "Goal with live progress", ...json(Goal) },
+    404: { description: "Goal not found", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "patch",
+  path: "/v1/goals/{goalId}",
+  security: secured,
+  request: {
+    params: goalId,
+    body: json(UpdateGoalSchema),
+    headers: idempotencyKeyHeaders
+  },
+  responses: {
+    200: {
+      description: "Updated goal, or idempotent replay",
+      headers: optionalReplayHeaders,
+      ...json(Goal)
+    },
+    404: { description: "Goal not found", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "post",
+  path: "/v1/goals/{goalId}/abandon",
+  security: secured,
+  request: { params: goalId, headers: idempotencyKeyHeaders },
+  responses: {
+    204: {
+      description: "Goal abandoned, or idempotent replay",
+      headers: optionalReplayHeaders
+    },
+    404: { description: "Active goal not found", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "get",
+  path: "/v1/goals/{goalId}/plan",
+  security: secured,
+  request: { params: goalId },
+  responses: {
+    200: { description: "Goal contribution plan", ...json(GoalPlan) },
+    404: { description: "Goal not found", ...json(ProblemDetails) },
     ...problemResponses
   }
 });

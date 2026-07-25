@@ -1,0 +1,25 @@
+meta {
+  name: Reorder Goals
+  type: http
+  seq: 7
+}
+
+patch {
+  url: {{baseUrl}}/v1/goals/reorder
+  body: json
+}
+
+headers {
+  content-type: application/json
+  Idempotency-Key: {{$randomUUID}}
+}
+
+body:json {
+  {
+    "goalIds": ["{{linkedGoalId}}", "{{goalId}}"]
+  }
+}
+
+docs {
+  goalIds must contain every active goal exactly once in the desired order.
+}

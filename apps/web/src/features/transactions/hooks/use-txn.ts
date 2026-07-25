@@ -58,7 +58,10 @@ export function useUpdateTxn(): ReturnType<typeof useMutation<Transaction, Error
       client.setQueryData(qk.txn(transaction.id), transaction);
     },
     onSettled: async () => {
-      await client.invalidateQueries({ queryKey: qk.transactionLists() });
+      await Promise.all([
+        client.invalidateQueries({ queryKey: qk.transactionLists() }),
+        client.invalidateQueries({ queryKey: qk.goals() })
+      ]);
     }
   });
 }

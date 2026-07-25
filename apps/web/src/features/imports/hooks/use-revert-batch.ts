@@ -28,6 +28,7 @@ export function useRevertBatch(): UseMutationResult<ImportBatch, Error, string> 
       void queryClient.invalidateQueries({ queryKey: qk.importBatches() });
       void queryClient.invalidateQueries({ queryKey: qk.accounts() });
       void queryClient.invalidateQueries({ queryKey: qk.transactionLists() });
+      void queryClient.invalidateQueries({ queryKey: qk.goals() });
     }
   });
 }

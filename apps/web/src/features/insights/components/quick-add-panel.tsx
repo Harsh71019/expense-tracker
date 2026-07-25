@@ -3,12 +3,12 @@
 import { CreateTransactionSchema, type Account, type TransactionType } from "@treasury-ops/shared";
 import { useState } from "react";
 import type { FormEvent, ReactNode } from "react";
-import { toast } from "sonner";
 
 import { AmountInput } from "@/components/ui/amount-input";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useCreateTxn } from "@/features/quick-add";
+import { toast } from "@/lib/toast";
 
 type QuickAddPanelProps = Readonly<{ accounts: Account[] }>;
 

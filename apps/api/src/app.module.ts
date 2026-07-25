@@ -27,6 +27,7 @@ import { CategoryRulesModule } from "./category-rules/category-rules.module.js";
 import { DashboardModule } from "./dashboard/dashboard.module.js";
 import { ExportModule } from "./export/export.module.js";
 import { HealthModule } from "./health/health.module.js";
+import { GoalsModule } from "./goals/goals.module.js";
 import { ImportsModule } from "./imports/imports.module.js";
 import { NotificationsModule } from "./notifications/notifications.module.js";
 import { OpenApiModule } from "./openapi/openapi.module.js";
@@ -74,6 +75,7 @@ function isUnthrottledPath(context: ExecutionContext): boolean {
     ExportModule,
     RecurringModule,
     ReportsModule,
+    GoalsModule,
     DashboardModule,
     OpenApiModule,
     LoggerModule.forRootAsync({

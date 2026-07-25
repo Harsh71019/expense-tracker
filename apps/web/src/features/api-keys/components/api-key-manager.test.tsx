@@ -26,7 +26,7 @@ vi.mock("../hooks/use-api-keys", () => ({
   useRevokeApiKey: () => ({ mutateAsync: mocks.revokeMutateAsync })
 }));
 
-vi.mock("sonner", () => ({ toast: { error: mocks.toastError, success: vi.fn() } }));
+vi.mock("@/lib/toast", () => ({ toast: { error: mocks.toastError, success: vi.fn() } }));
 
 const key: ApiKey = {
   id: "key-1",

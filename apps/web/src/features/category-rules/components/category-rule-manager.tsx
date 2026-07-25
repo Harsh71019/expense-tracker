@@ -3,7 +3,7 @@
 import { CreateCategoryRuleSchema, type CategoryRule } from "@treasury-ops/shared";
 import { useState } from "react";
 import type { ReactNode } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 import { EmptyState } from "@/components/ui/empty-state";
 import { useCategories } from "@/features/categories";

@@ -196,6 +196,9 @@ export function useCreateTxn() {
 - **`<AmountInput>`** is a dedicated primitive: renders ₹ display formatting (Indian digit grouping via `Intl.NumberFormat('en-IN')`), stores **integer paise** in form state, numeric keypad on mobile (`inputMode="decimal"`), blocks `e`, blocks >2 decimals at the keystroke level. Money never exists as a float in form state (P5).
 - Quick-add UX budget: **≤5s, one hand** — amount keypad auto-focused, last-used account preselected, 8 most-frequent categories as tap chips (frequency from a lightweight endpoint), description optional, date defaults to now-IST with a "yesterday" chip.
 - Server-side errors (problem+json `422` with field pointers) are mapped back onto form fields via `setError` — no generic "something failed" toasts for validation.
+- Feature code sends operation-level feedback through `lib/toast.ts`, never by importing the
+  toast vendor directly. Success, info, warning, and error lifetimes are centralized; field
+  validation remains inline beside its field.
 - Import mapping editor persists per-account mapping through the API and previews the first 5 parsed rows live as the mapping changes.
 
 ---

@@ -36,7 +36,7 @@ vi.mock("@/features/categories", async (importOriginal) => {
   return { ...actual, useCategories: () => ({ data: mocks.categories }) };
 });
 
-vi.mock("sonner", () => ({ toast: { error: mocks.toastError, success: vi.fn() } }));
+vi.mock("@/lib/toast", () => ({ toast: { error: mocks.toastError, success: vi.fn() } }));
 
 const groceries: Category = {
   id: "3fa85f64-5717-4562-b3fc-2c963f66beef",

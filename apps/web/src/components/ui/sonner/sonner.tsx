@@ -1,16 +1,29 @@
 "use client";
 
-import type { ComponentProps } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import { Toaster as Sonner } from "sonner";
 
 type ToasterProps = ComponentProps<typeof Sonner>;
 
-export function Toaster({ ...props }: Readonly<ToasterProps>) {
+export function Toaster({ ...props }: Readonly<ToasterProps>): ReactNode {
   // We let Tailwind CSS classes resolve dynamically, which handles theme shifts automatically.
   return (
     <Sonner
       className="toaster group"
+      position="bottom-right"
+      closeButton
+      expand={false}
+      visibleToasts={4}
+      gap={10}
+      offset={{ right: 16, bottom: 16 }}
+      mobileOffset={{
+        right: 12,
+        bottom: "calc(env(safe-area-inset-bottom, 0px) + 88px)",
+        left: 12
+      }}
+      containerAriaLabel="Application notifications"
       toastOptions={{
+        closeButtonAriaLabel: "Dismiss notification",
         classNames: {
           toast:
             "group toast group-[.toaster]:bg-surface-elevated group-[.toaster]:text-foreground group-[.toaster]:border group-[.toaster]:border-border group-[.toaster]:shadow-sm group-[.toaster]:rounded-xl group-[.toaster]:px-4 group-[.toaster]:py-3.5 group-[.toaster]:font-sans",

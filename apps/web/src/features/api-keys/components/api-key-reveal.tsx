@@ -1,9 +1,9 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { toast } from "@/lib/toast";
 
 export function ApiKeyReveal({
   apiKey,

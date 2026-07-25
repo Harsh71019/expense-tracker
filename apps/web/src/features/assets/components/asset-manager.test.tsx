@@ -31,7 +31,7 @@ vi.mock("../hooks/use-valuations", () => ({
     data: { items: [], pageInfo: { nextCursor: null, hasMore: false, limit: 50 } }
   })
 }));
-vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: mocks.toastError } }));
+vi.mock("@/lib/toast", () => ({ toast: { success: vi.fn(), error: mocks.toastError } }));
 
 function makeAsset(overrides: Partial<Asset> = {}): Asset {
   return {

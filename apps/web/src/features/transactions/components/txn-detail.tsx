@@ -12,6 +12,7 @@ import { Money } from "@/components/ui/money";
 import { useAccounts } from "@/features/accounts";
 import { useCategories } from "@/features/categories";
 import { useReverseTransfer } from "@/features/transfers/hooks/use-transfers";
+import { toast } from "@/lib/toast";
 
 import { useReverseTxn } from "../hooks/use-reverse-txn";
 import { useTxn, useUpdateTxn } from "../hooks/use-txn";
@@ -69,8 +70,11 @@ export function TxnDetail({ initialTransaction }: { initialTransaction: Transact
       await update.mutateAsync({ transactionId: transaction.id, patch: parsed.data });
       setEditing(false);
       setError(undefined);
+      toast.success("Transaction details updated");
     } catch (caught: unknown) {
-      setError(caught instanceof Error ? caught.message : "Could not update metadata.");
+      const message = caught instanceof Error ? caught.message : "Could not update metadata.";
+      setError(message);
+      toast.error(message);
     }
   }
 

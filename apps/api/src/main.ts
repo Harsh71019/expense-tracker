@@ -20,6 +20,14 @@ import { ImportsQueue } from "./imports/imports.queue.js";
 const BULL_BOARD_BASE_PATH = "/api/admin/queues";
 
 async function bootstrap(): Promise<void> {
+  // node --watch restarts this process on every dist change during `pnpm dev`;
+  // clear the terminal on each restart so it doesn't accumulate scrollback all day.
+  // Gated on LOG_PRETTY (not NODE_ENV — AGENTS.md bans NODE_ENV branches in business
+  // code, and .env.development.local deliberately pins NODE_ENV=production anyway).
+  if (process.env.LOG_PRETTY === "true" || process.env.LOG_PRETTY === "1") {
+    // eslint-disable-next-line no-console -- clearing the terminal, not logging
+    console.clear();
+  }
   const app = await NestFactory.create(AppModule, { bufferLogs: true, bodyParser: false });
   app.useLogger(app.get(Logger));
   const config = app.get(RuntimeConfigService);

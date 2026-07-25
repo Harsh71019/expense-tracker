@@ -3,10 +3,10 @@
 import type { Account, Goal, GoalPlan } from "@treasury-ops/shared";
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
-import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
+import { toast } from "@/lib/toast";
 
 import { useGoalPlan } from "../hooks/use-goal-plan";
 import { useAbandonGoal, useGoals, useReorderGoals } from "../hooks/use-goals";

@@ -1,7 +1,8 @@
-import type { GoalStatus, ListTransactionsQuery } from "@treasury-ops/shared";
+import type { DashboardRange, GoalStatus, ListTransactionsQuery } from "@treasury-ops/shared";
 
 const transactionRoot = ["transactions"] as const;
 const goalRoot = ["goals"] as const;
+const dashboardRoot = ["dashboard"] as const;
 
 export const qk = {
   transactions: () => transactionRoot,
@@ -24,5 +25,15 @@ export const qk = {
   importPreview: (batchId: string) => ["import-preview", batchId] as const,
   importMapping: (accountId: string) => ["import-mapping", accountId] as const,
   monthlyRollup: (month: string) => ["monthly-rollup", month] as const,
-  apiKeys: () => ["api-keys"] as const
+  apiKeys: () => ["api-keys"] as const,
+  dashboard: () => dashboardRoot,
+  recentActivity: (limit: number) => [...dashboardRoot, "recent-activity", limit] as const,
+  dashboardStats: (period?: string) => [...dashboardRoot, "stats", period ?? "current"] as const,
+  cashflow: (range: DashboardRange) => [...dashboardRoot, "cashflow", range] as const,
+  spendMix: (range: DashboardRange) => [...dashboardRoot, "spend-mix", range] as const,
+  topSpending: (range: DashboardRange, limit: number) =>
+    [...dashboardRoot, "top-spending", range, limit] as const,
+  recurringForecast: (range: DashboardRange) =>
+    [...dashboardRoot, "recurring-forecast", range] as const,
+  investments: () => [...dashboardRoot, "investments"] as const
 } as const;

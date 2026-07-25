@@ -9,11 +9,11 @@ import {
 } from "@treasury-ops/shared";
 import { useState } from "react";
 import type { FormEvent, ReactNode } from "react";
-import { toast } from "sonner";
 
 import { AmountInput } from "@/components/ui/amount-input";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toast } from "@/lib/toast";
 
 import { useCreateGoal, useUpdateGoal } from "../hooks/use-goals";
 import { dateInputToUtc, dateToInput, todayInIndia } from "../model/goal-form";

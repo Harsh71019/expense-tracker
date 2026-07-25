@@ -1,5 +1,10 @@
 import { Body, Controller, Get, Headers, HttpCode, Param, Patch, Post, Res } from "@nestjs/common";
-import { CategoryIdSchema, CreateCategorySchema, type Category } from "@treasury-ops/shared";
+import {
+  CategoryIdSchema,
+  CreateCategorySchema,
+  UpdateCategoryGroupSchema,
+  type Category
+} from "@treasury-ops/shared";
 import type { Response } from "express";
 import { z } from "zod";
 
@@ -51,5 +56,28 @@ export class CategoryController {
     if (result.replayed && response !== undefined) {
       response.setHeader("Idempotency-Replayed", "true");
     }
+  }
+
+  @Patch(":categoryId/group")
+  async updateGroup(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("categoryId") categoryId: string,
+    @Body() body: unknown,
+    @Headers("idempotency-key") key?: string,
+    @Res({ passthrough: true }) response?: Response
+  ): Promise<Category> {
+    const parsedId = CategoryIdSchema.parse(categoryId);
+    const input = UpdateCategoryGroupSchema.parse(body);
+    if (this.mutations === undefined) return this.categories.updateGroup(user.id, parsedId, input);
+    const result = await this.mutations.updateGroup(
+      user.id,
+      parsedId,
+      input,
+      IdempotencyKeySchema.parse(key)
+    );
+    if (result.replayed && response !== undefined) {
+      response.status(200).setHeader("Idempotency-Replayed", "true");
+    }
+    return result.result;
   }
 }

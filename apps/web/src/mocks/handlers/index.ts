@@ -6,6 +6,7 @@ import type { paths } from "@/lib/api/generated/schema";
 import type { MockStore } from "../data/store";
 import { accountHandlers } from "./accounts";
 import { assetHandlers } from "./assets";
+import { authHandlers } from "./auth";
 import { categoryHandlers } from "./categories";
 import { categoryRuleHandlers } from "./category-rules";
 import { exportHandlers } from "./export";
@@ -28,6 +29,7 @@ export function createHandlers(baseUrl: string, store: MockStore): HttpHandler[]
   const http = createOpenApiHttp<paths>({ baseUrl });
 
   return [
+    ...authHandlers(baseUrl),
     ...accountHandlers(http, store),
     ...categoryHandlers(http, store),
     ...categoryRuleHandlers(http, store),

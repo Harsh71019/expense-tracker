@@ -8,6 +8,7 @@ import type { ReactNode } from "react";
 import { Money } from "@/components/ui/money";
 import { useAccounts } from "@/features/accounts";
 import { IconGlyph, useCategories } from "@/features/categories";
+import { toast } from "@/lib/toast";
 
 import { useReverseTxn } from "../hooks/use-reverse-txn";
 import { useTxn, useUpdateTxn } from "../hooks/use-txn";
@@ -67,9 +68,12 @@ export function TxnDetailDrawer({
     }
     try {
       await update.mutateAsync({ transactionId: transaction.id, patch: parsed.data });
+      toast.success("Transaction details updated");
       onClose();
     } catch (caught: unknown) {
-      setError(caught instanceof Error ? caught.message : "Could not save these changes.");
+      const message = caught instanceof Error ? caught.message : "Could not save these changes.";
+      setError(message);
+      toast.error(message);
     }
   }
 

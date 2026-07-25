@@ -12,6 +12,8 @@ import { ThemeToggle } from "../ui/theme-toggle";
 const SIDEBAR_COMPACT_KEY = "treasury-ops-sidebar-compact";
 
 const navItems = [
+  { href: "/", label: "Dashboard", icon: "⌂" },
+  { href: "/insights", label: "Insights", icon: "✦" },
   { href: "/transactions", label: "Transactions", icon: "≡" },
   { href: "/transfers", label: "Transfers", icon: "⤢" },
   { href: "/categories", label: "Categories", icon: "▤" },

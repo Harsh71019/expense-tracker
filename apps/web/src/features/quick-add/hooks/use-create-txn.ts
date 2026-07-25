@@ -57,6 +57,7 @@ export function useCreateTxn(): UseMutationResult<Transaction, Error, CreateTran
       void queryClient.invalidateQueries({ queryKey: qk.accounts() });
       void queryClient.invalidateQueries({ queryKey: qk.netWorth() });
       void queryClient.invalidateQueries({ queryKey: qk.goals() });
+      void queryClient.invalidateQueries({ queryKey: qk.dashboard() });
     }
   });
 }

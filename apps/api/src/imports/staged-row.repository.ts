@@ -85,6 +85,14 @@ export class StagedRowRepository {
     return { items, pageInfo: { nextCursor, hasMore, limit } };
   }
 
+  async findById(batchId: ImportBatchId, rowId: StagedRowId): Promise<StagedRow | null> {
+    const [row] = await this.db
+      .select()
+      .from(stagedRows)
+      .where(and(eq(stagedRows.id, rowId), eq(stagedRows.batchId, batchId)));
+    return row === undefined ? null : toStagedRow(row);
+  }
+
   /**
    * All includable rows for a commit run, unpaginated — bounded by
    * MAX_IMPORT_ROWS (50k), a manageable in-memory array. Only rows with

@@ -19,7 +19,10 @@ export const LogEvent = {
   StagedRowsCleaned: "imports.staged_rows_cleaned",
   GoalAchieved: "goal.achieved",
   GoalProgressCheckFailed: "goal.progress_check_failed",
-  GoalsProgressChecked: "goals.progress_checked"
+  GoalsProgressChecked: "goals.progress_checked",
+  WorkerHeartbeatFailed: "worker.heartbeat_failed",
+  WorkerStopping: "worker.stopping",
+  WorkerStopped: "worker.stopped"
 } as const;
 
 export type LogEvent = (typeof LogEvent)[keyof typeof LogEvent];

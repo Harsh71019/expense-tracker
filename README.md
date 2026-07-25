@@ -40,7 +40,7 @@ Every money write is atomic (single PostgreSQL transaction: insert + balance upd
 
 **Frontend (`apps/web`) — wired up to the backend:**
 
-Real routes under `app/(app)/` (dashboard, `transactions`, `transactions/[transactionId]`, `add`, `accounts`, `categories`, `category-rules`, `assets`, `assets/[assetId]`, `transfers`, `imports`, `export`, `reports`, `more`), each fetching real data through generated-client server loaders under the matching `features/*/server/`. No frontend UI yet for recurring rules — the backend module exists (`apps/api/src/recurring/`) but no `features/recurring` counterpart has been built.
+Real routes under `app/(app)/` (dashboard, `transactions`, `transactions/[transactionId]`, `add`, `accounts`, `categories`, `category-rules`, `assets`, `assets/[assetId]`, `transfers`, `imports`, `export`, `reports`, `recurring`, `settings`, `more`), each fetching real data through generated-client server loaders or typed client hooks under the matching `features/*/`.
 
 ## Installing and running
 
@@ -110,17 +110,13 @@ Brings up `postgres` + `migrate` (one-shot) → `api` + `worker` → `web`, all 
 
 ## Current issues
 
-Verified against the actual codebase (not just the design docs, which lag behind — `HANDOFF.md` in particular describes an earlier state than what's implemented):
-
-- **No recurring-rules UI** — the backend module (`apps/api/src/recurring/`) is fully built, but `apps/web` has no matching `features/recurring` — the nightly materializer cron runs, but rules can only be created/managed via the API directly today.
-- **No dependency pinning on tooling** — `typescript`, and several other devDependencies across the workspaces are pinned to `"latest"`/`"beta"`. A plain `pnpm i` can pull a broken prerelease (observed firsthand: it resolved Vite `8.1.4`, whose oxc transform has a tsconfig-resolution bug against this pnpm-symlinked monorepo layout, breaking all `apps/api` integration tests and one `apps/web` unit suite — a tooling failure, not a code bug. Pinning known-good versions would remove this risk for every future contributor).
-- **Root `typecheck`/`lint`/`test` scripts assume `@treasury-ops/shared` is already built** — on a fresh clone, run `pnpm --filter @treasury-ops/shared build` once before those scripts will pass; only `pnpm dev`/`pnpm build` build it automatically.
-- **No rate limiting on auth routes** — `IMPLEMENTATION-PLAN.md`'s Phase 1 gate calls for Redis-backed throttling (429 on repeated login attempts); no throttler is wired up in the code yet.
+The prioritized, evidence-backed ticket set is maintained in
+[`docs/plans/2026-07-24-stability-and-essentials.md`](docs/plans/2026-07-24-stability-and-essentials.md).
+The highest-priority remaining items are complete idempotency coverage, a real
+authenticated API e2e suite, and exact dependency pinning.
 
 ## TODO
 
-- **Recurring-rules UI** — build `apps/web/src/features/recurring` against the already-built API
-- **Rate limiting on auth routes** (Redis-backed throttler)
 - **Salary/income module** (`SALARY-MODULE.md`) — profiles, effective-dated versions, materializer, payday/proration logic, reconciliation; entirely unbuilt
 - **Observability** — OpenTelemetry, `/metrics`, `explain()` query-budget CI check
 - **Auth hardening** — passkeys, 2FA

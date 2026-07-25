@@ -3,7 +3,8 @@ import {
   CategorySchema,
   type Category,
   type CategoryId,
-  type CreateCategory
+  type CreateCategory,
+  type UpdateCategoryGroup
 } from "@treasury-ops/shared";
 import { and, eq } from "drizzle-orm";
 
@@ -84,6 +85,27 @@ export class CategoryRepository {
           eq(categories.isArchived, false)
         )
       );
+    return row === undefined ? null : CategorySchema.parse(stripNulls(row));
+  }
+
+  async updateGroup(
+    userId: string,
+    categoryId: CategoryId,
+    patch: UpdateCategoryGroup,
+    tx?: DbTx
+  ): Promise<Category | null> {
+    const executor = tx ?? this.db;
+    const [row] = await executor
+      .update(categories)
+      .set({ group: patch.group, updatedAt: new Date() })
+      .where(
+        and(
+          eq(categories.id, categoryId),
+          eq(categories.userId, userId),
+          eq(categories.isArchived, false)
+        )
+      )
+      .returning();
     return row === undefined ? null : CategorySchema.parse(stripNulls(row));
   }
 }

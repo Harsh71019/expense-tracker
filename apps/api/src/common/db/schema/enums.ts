@@ -8,6 +8,7 @@ export const accountTypeEnum = pgEnum("account_type", [
   "investment"
 ]);
 export const categoryKindEnum = pgEnum("category_kind", ["expense", "income"]);
+export const categoryGroupEnum = pgEnum("category_group", ["essential", "lifestyle"]);
 export const transactionTypeEnum = pgEnum("transaction_type", ["expense", "income"]);
 export const transactionStatusEnum = pgEnum("transaction_status", [
   "posted",

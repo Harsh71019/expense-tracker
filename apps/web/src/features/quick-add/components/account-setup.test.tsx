@@ -4,15 +4,25 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AccountSetup } from "./account-setup";
 
-const mocks = vi.hoisted(() => ({ mutateAsync: vi.fn(), pending: false }));
+const mocks = vi.hoisted(() => ({
+  mutateAsync: vi.fn(),
+  pending: false,
+  toastSuccess: vi.fn(),
+  toastError: vi.fn()
+}));
 vi.mock("../hooks/use-create-account", () => ({
   useCreateAccount: () => ({ mutateAsync: mocks.mutateAsync, isPending: mocks.pending })
+}));
+vi.mock("@/lib/toast", () => ({
+  toast: { success: mocks.toastSuccess, error: mocks.toastError }
 }));
 
 describe("AccountSetup", () => {
   beforeEach(() => {
     mocks.mutateAsync.mockReset();
     mocks.pending = false;
+    mocks.toastSuccess.mockReset();
+    mocks.toastError.mockReset();
   });
 
   it("validates the account name before creating an account", async () => {
@@ -39,6 +49,7 @@ describe("AccountSetup", () => {
       type: "bank",
       openingBalanceMinor: 0
     });
+    expect(mocks.toastSuccess).toHaveBeenCalledWith("Account created");
   });
 
   it("keeps a useful error when account creation fails", async () => {
@@ -50,6 +61,7 @@ describe("AccountSetup", () => {
     await user.click(screen.getByRole("button", { name: "Create account" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Account name is already in use");
+    expect(mocks.toastError).toHaveBeenCalledWith("Account name is already in use");
   });
 
   it("uses a safe fallback for non-Error failures", async () => {
@@ -61,6 +73,7 @@ describe("AccountSetup", () => {
     await user.click(screen.getByRole("button", { name: "Create account" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Could not create the account.");
+    expect(mocks.toastError).toHaveBeenCalledWith("Could not create the account.");
   });
 
   it("disables submission while the account is being created", () => {

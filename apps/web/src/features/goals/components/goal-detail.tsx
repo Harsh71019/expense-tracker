@@ -11,10 +11,10 @@ import {
 import Link from "next/link";
 import { useState } from "react";
 import type { ReactNode } from "react";
-import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Money, SignedMoney } from "@/components/ui/money";
+import { toast } from "@/lib/toast";
 
 import { useGoalPlan } from "../hooks/use-goal-plan";
 import { useAbandonGoal, useGoal } from "../hooks/use-goals";

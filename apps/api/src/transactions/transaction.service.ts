@@ -17,6 +17,7 @@ import type { DrizzleDb } from "../common/db/db.module.js";
 import { withTxn } from "../common/db/db-txn.js";
 import type { DbTx } from "../common/db/db-txn.js";
 import { isUniqueViolation } from "../common/db/postgres-error.js";
+import { CategoryKindMismatchError } from "../common/errors/category-kind-mismatch.error.js";
 import { EntityNotFoundError } from "../common/errors/entity-not-found.error.js";
 import { TransactionNotReversibleError } from "../common/errors/transaction-not-reversible.error.js";
 import { TransferMetadataRequiresGroupError } from "../common/errors/transfer-metadata-requires-group.error.js";
@@ -44,11 +45,10 @@ export class TransactionService {
   ): Promise<CreateTransactionResult> {
     try {
       const transaction = await withTxn(this.db, async (tx) => {
-        if (
-          input.categoryId !== undefined &&
-          !(await this.categories.exists(userId, input.categoryId, tx))
-        ) {
-          throw new EntityNotFoundError("Category");
+        if (input.categoryId !== undefined) {
+          const category = await this.categories.findActiveById(userId, input.categoryId, tx);
+          if (category === null) throw new EntityNotFoundError("Category");
+          if (category.kind !== input.type) throw new CategoryKindMismatchError();
         }
 
         const deltaMinor = input.type === "income" ? input.amountMinor : -input.amountMinor;
@@ -123,12 +123,10 @@ export class TransactionService {
     if (before === null) throw new EntityNotFoundError("Transaction");
     if (before.transferGroupId !== undefined) throw new TransferMetadataRequiresGroupError();
 
-    if (
-      patch.categoryId !== undefined &&
-      patch.categoryId !== null &&
-      !(await this.categories.exists(userId, patch.categoryId, tx))
-    ) {
-      throw new EntityNotFoundError("Category");
+    if (patch.categoryId !== undefined && patch.categoryId !== null) {
+      const category = await this.categories.findActiveById(userId, patch.categoryId, tx);
+      if (category === null) throw new EntityNotFoundError("Category");
+      if (category.kind !== before.type) throw new CategoryKindMismatchError();
     }
 
     const after = await this.transactions.updateNonMonetaryFields(userId, transactionId, patch, tx);
@@ -163,7 +161,14 @@ export class TransactionService {
 
         const deltaMinor =
           original.type === "expense" ? original.amountMinor : -original.amountMinor;
-        if (!(await this.accounts.applyBalanceDelta(userId, original.accountId, deltaMinor, tx))) {
+        if (
+          !(await this.accounts.applyReversalBalanceDelta(
+            userId,
+            original.accountId,
+            deltaMinor,
+            tx
+          ))
+        ) {
           throw new EntityNotFoundError("Account");
         }
 

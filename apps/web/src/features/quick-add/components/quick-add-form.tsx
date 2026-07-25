@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toDatetimeLocalValue } from "@/lib/datetime-local";
 import { ValidationError } from "@/lib/errors";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 import { useAccounts } from "../hooks/use-accounts";
 import { useCategories } from "../hooks/use-categories";

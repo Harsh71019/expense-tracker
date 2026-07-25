@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 
 import { AccountsModule } from "../accounts/accounts.module.js";
+import { CategoriesModule } from "../categories/categories.module.js";
 import { CategoryRulesModule } from "../category-rules/category-rules.module.js";
 import { TransactionsModule } from "../transactions/transactions.module.js";
 import { ImportBatchRepository } from "./import-batch.repository.js";
@@ -11,7 +12,7 @@ import { StagedRowRepository } from "./staged-row.repository.js";
 import { StagedRowsCleanupCron } from "./staged-rows-cleanup.cron.js";
 
 @Module({
-  imports: [TransactionsModule, AccountsModule, CategoryRulesModule],
+  imports: [TransactionsModule, AccountsModule, CategoriesModule, CategoryRulesModule],
   controllers: [ImportsController],
   providers: [
     ImportBatchRepository,

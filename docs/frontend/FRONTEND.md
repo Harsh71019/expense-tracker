@@ -56,7 +56,7 @@ apps/web/
 │  │  │  ├─ goals/
 │  │  │  │  ├─ page.tsx               # active/achieved goal grid
 │  │  │  │  └─ [goalId]/page.tsx       # progress, plan, and contribution ledger
-│  │  │  └─ settings/page.tsx         # profile, categories, passkeys, export
+│  │  │  └─ settings/page.tsx         # URL-backed profile, appearance, and management tabs
 │  │  ├─ api/                         # ONLY Next-owned endpoints (none proxy business data)
 │  │  │  └─ offline-sync/route.ts     # drains the offline quick-add queue (calls API with stored keys)
 │  │  ├─ error.tsx                    # root error boundary
@@ -135,6 +135,7 @@ apps/web/
 **Global rules:**
 
 - `searchParams` are the state for anything filterable (date range, account, category) — URLs are sharable and back-button works. Client state (`useState`) only for ephemeral UI (dialog open, form drafts).
+- `/settings` uses the same rule for its `profile`, `appearance`, and `management` tabs. Profile is the safe fallback for missing, duplicate, or unknown `tab` values; the tablist adds arrow/Home/End focus movement while ordinary links preserve refresh, history, bookmark, and no-JavaScript behavior.
 - No `force-dynamic` blanket flags. Each route declares its caching intent explicitly.
 - Server Actions are **not used for business mutations** — the NestJS API owns writes (P2), and mutations need idempotency keys + optimistic updates that TanStack Query handles better. Server Actions allowed only for Next-local concerns (theme cookie).
 
@@ -203,6 +204,13 @@ export function useCreateTxn() {
 - **`<AmountInput>`** is a dedicated primitive: renders ₹ display formatting (Indian digit grouping via `Intl.NumberFormat('en-IN')`), stores **integer paise** in form state, numeric keypad on mobile (`inputMode="decimal"`), blocks `e`, blocks >2 decimals at the keystroke level. Money never exists as a float in form state (P5).
 - Quick-add UX budget: **≤5s, one hand** — amount keypad auto-focused, last-used account preselected, 8 most-frequent categories as tap chips (frequency from a lightweight endpoint), description optional, date defaults to now-IST with a "yesterday" chip.
 - Server-side errors (problem+json `422` with field pointers) are mapped back onto form fields via `setError` — no generic "something failed" toasts for validation.
+- Feature code sends operation-level feedback through `lib/toast.ts`, never by importing the
+  toast vendor directly. Success, info, warning, and error lifetimes are centralized; field
+  validation remains inline beside its field.
+- Every user-triggered API operation reports completion or failure through that facade, including
+  authentication, accounts, transactions, transfers, categories, assets, imports, exports,
+  recurring rules, and API keys. Immediate visual controls such as filters and theme selection do
+  not emit redundant toasts.
 - Import mapping editor persists per-account mapping through the API and previews the first 5 parsed rows live as the mapping changes.
 
 ---

@@ -164,7 +164,9 @@ export class TransferService {
             throw new TransactionNotReversibleError();
           }
           const deltaMinor = leg.type === "expense" ? leg.amountMinor : -leg.amountMinor;
-          if (!(await this.accounts.applyBalanceDelta(userId, leg.accountId, deltaMinor, tx))) {
+          if (
+            !(await this.accounts.applyReversalBalanceDelta(userId, leg.accountId, deltaMinor, tx))
+          ) {
             throw new EntityNotFoundError("Account");
           }
           await this.audit.record(userId, "transfer.reverse", reversalLeg.id, tx);

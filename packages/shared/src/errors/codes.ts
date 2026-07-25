@@ -10,6 +10,7 @@ export const ErrorCodes = [
   "txn.already_reversed",
   "txn.transfer_metadata_requires_group",
   "category.parent_kind_mismatch",
+  "category.kind_mismatch",
   "asset.invalid_valuation_sign",
   "goal.funding_source_in_use",
   "goal.invalid_order",

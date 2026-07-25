@@ -15,7 +15,9 @@ const mocks = vi.hoisted(() => {
     isFetching: false,
     fetchNextPage: vi.fn(),
     updateMutate: vi.fn(),
-    updatePending: false
+    updatePending: false,
+    toastSuccess: vi.fn(),
+    toastError: vi.fn()
   };
 });
 
@@ -33,6 +35,9 @@ vi.mock("../hooks/use-staged-rows", () => ({
 
 vi.mock("../hooks/use-update-staged-row", () => ({
   useUpdateStagedRow: () => ({ mutate: mocks.updateMutate, isPending: mocks.updatePending })
+}));
+vi.mock("@/lib/toast", () => ({
+  toast: { success: mocks.toastSuccess, error: mocks.toastError }
 }));
 
 const groceries: Category = {
@@ -81,7 +86,15 @@ describe("ReviewStep", () => {
     mocks.isFetching = false;
     mocks.fetchNextPage.mockReset();
     mocks.updateMutate.mockReset();
+    mocks.updateMutate.mockImplementation(
+      (
+        _input: unknown,
+        callbacks: Readonly<{ onSuccess: () => void; onError: (error: Error) => void }>
+      ) => callbacks.onSuccess()
+    );
     mocks.updatePending = false;
+    mocks.toastSuccess.mockReset();
+    mocks.toastError.mockReset();
   });
 
   it("summarises totals, toggles include, and reports the included count", async () => {
@@ -110,10 +123,19 @@ describe("ReviewStep", () => {
     expect(onCountsChange).toHaveBeenLastCalledWith(2);
 
     await user.click(screen.getByLabelText("Include row 1"));
-    expect(mocks.updateMutate).toHaveBeenCalledWith({
-      batchId: "b1",
-      stagedRowId: mocks.rows[0]?.id,
-      include: false
+    expect(mocks.updateMutate).toHaveBeenCalledWith(
+      {
+        batchId: "b1",
+        stagedRowId: mocks.rows[0]?.id,
+        include: false
+      },
+      expect.objectContaining({
+        onSuccess: expect.any(Function),
+        onError: expect.any(Function)
+      })
+    );
+    expect(mocks.toastSuccess).toHaveBeenCalledWith("Row excluded from import", {
+      id: `import-row-${mocks.rows[0]?.id}`
     });
   });
 
@@ -142,12 +164,41 @@ describe("ReviewStep", () => {
 
     expect(screen.getByText("✦ suggested by rule")).toBeVisible();
     await user.selectOptions(screen.getByLabelText("Category for row 1"), "");
-    expect(mocks.updateMutate).toHaveBeenCalledWith({
-      batchId: "b1",
-      stagedRowId: mocks.rows[0]?.id,
-      suggestedCategoryId: null
+    expect(mocks.updateMutate).toHaveBeenCalledWith(
+      {
+        batchId: "b1",
+        stagedRowId: mocks.rows[0]?.id,
+        suggestedCategoryId: null
+      },
+      expect.objectContaining({
+        onSuccess: expect.any(Function),
+        onError: expect.any(Function)
+      })
+    );
+    expect(mocks.toastSuccess).toHaveBeenCalledWith("Row category updated", {
+      id: `import-row-${mocks.rows[0]?.id}`
     });
     expect(screen.queryByText("✦ suggested by rule")).not.toBeInTheDocument();
+  });
+
+  it("reports a staged-row update failure", async () => {
+    const user = userEvent.setup();
+    mocks.rows = [row()];
+    mocks.updateMutate.mockImplementation(
+      (
+        _input: unknown,
+        callbacks: Readonly<{ onSuccess: () => void; onError: (error: Error) => void }>
+      ) => callbacks.onError(new Error("Update rejected"))
+    );
+    render(<ReviewStep batchId="b1" categories={[groceries]} onCountsChange={vi.fn()} />, {
+      wrapper
+    });
+
+    await user.click(screen.getByLabelText("Include row 1"));
+
+    expect(mocks.toastError).toHaveBeenCalledWith("Update rejected", {
+      id: `import-row-${mocks.rows[0]?.id}`
+    });
   });
 
   it("shows a Load more control when another page is available", async () => {

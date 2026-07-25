@@ -70,6 +70,9 @@ export class TransactionRepository {
     if (query.q !== undefined) {
       conditions.push(sql`${transactions.description} ILIKE ${"%" + escapeLike(query.q) + "%"}`);
     }
+    if (query.tag !== undefined) {
+      conditions.push(sql`${query.tag} = ANY(${transactions.tags})`);
+    }
     if (cursor !== null) {
       conditions.push(
         sql`(${transactions.occurredAt}, ${transactions.id}) < (${cursor.occurredAt}, ${cursor.id})`

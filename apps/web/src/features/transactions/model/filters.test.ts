@@ -14,6 +14,7 @@ describe("transaction URL filters", () => {
         from: "2026-07-01T00:00:00.000Z",
         to: "2026-07-16T00:00:00.000Z",
         q: "groceries",
+        tag: "goal:laptop",
         cursor: "2026-07-10T00:00:00.000Z_3fa85f64-5717-4562-b3fc-2c963f66be10",
         limit: "25"
       })
@@ -23,6 +24,7 @@ describe("transaction URL filters", () => {
       from: new Date("2026-07-01T00:00:00.000Z"),
       to: new Date("2026-07-16T00:00:00.000Z"),
       q: "groceries",
+      tag: "goal:laptop",
       cursor: "2026-07-10T00:00:00.000Z_3fa85f64-5717-4562-b3fc-2c963f66be10",
       limit: 25
     });
@@ -48,11 +50,12 @@ describe("transaction URL filters", () => {
         from: new Date("2026-07-01T00:00:00.000Z"),
         to: new Date("2026-07-16T00:00:00.000Z"),
         q: "groceries & household",
+        tag: "goal:laptop",
         cursor: "cursor-1",
         limit: 50
       })
     ).toBe(
-      "accountId=3fa85f64-5717-4562-b3fc-2c963f66beef&categoryId=3fa85f64-5717-4562-b3fc-2c963f66beff&from=2026-07-01T00%3A00%3A00.000Z&to=2026-07-16T00%3A00%3A00.000Z&q=groceries+%26+household&cursor=cursor-1"
+      "accountId=3fa85f64-5717-4562-b3fc-2c963f66beef&categoryId=3fa85f64-5717-4562-b3fc-2c963f66beff&from=2026-07-01T00%3A00%3A00.000Z&to=2026-07-16T00%3A00%3A00.000Z&q=groceries+%26+household&tag=goal%3Alaptop&cursor=cursor-1"
     );
   });
 

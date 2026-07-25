@@ -37,4 +37,19 @@ describe("UserProfileService", () => {
   it("throws EntityNotFoundError if the profile does not exist", async () => {
     await expect(userProfileService.get("non-existent-user")).rejects.toThrow(EntityNotFoundError);
   });
+
+  it("updates and returns the updated profile", async () => {
+    await userProfileService.ensure("user-1", "Harsh");
+
+    const updated = await userProfileService.update("user-1", { displayName: "Harsh Patel" });
+
+    expect(updated).toMatchObject({ userId: "user-1", displayName: "Harsh Patel" });
+    expect(await userProfileService.get("user-1")).toMatchObject({ displayName: "Harsh Patel" });
+  });
+
+  it("throws EntityNotFoundError when updating a non-existent profile", async () => {
+    await expect(
+      userProfileService.update("non-existent-user", { displayName: "Ghost" })
+    ).rejects.toThrow(EntityNotFoundError);
+  });
 });

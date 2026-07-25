@@ -116,6 +116,30 @@ export type { ExportCsvQuery } from "./export.js";
 export { ProblemDetailsSchema, ProblemFieldErrorSchema } from "./errors/problem-details.js";
 export type { ProblemDetails, ProblemFieldError } from "./errors/problem-details.js";
 export {
+  CreateGoalSchema,
+  GoalFundingModeSchema,
+  GoalIdSchema,
+  GoalPlanSchema,
+  GoalSchema,
+  GoalStatusSchema,
+  ListGoalsQuerySchema,
+  ReorderGoalsSchema,
+  StoredGoalSchema,
+  UpdateGoalSchema
+} from "./goal.js";
+export type {
+  CreateGoal,
+  Goal,
+  GoalFundingMode,
+  GoalId,
+  GoalPlan,
+  GoalStatus,
+  ListGoalsQuery,
+  ReorderGoals,
+  StoredGoal,
+  UpdateGoal
+} from "./goal.js";
+export {
   ALLOWED_IMPORT_FILE_EXTENSIONS,
   ALLOWED_IMPORT_MIME_TYPES,
   AccountImportMappingSchema,

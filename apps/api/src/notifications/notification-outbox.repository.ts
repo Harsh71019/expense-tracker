@@ -13,7 +13,12 @@ import type { DbTx } from "../common/db/db-txn.js";
  * mechanism, not a public API resource (no user-facing CRUD exists or is
  * planned for it).
  */
-export const NotificationTypeSchema = z.enum(["budget_alert", "monthly_report", "balance_drift"]);
+export const NotificationTypeSchema = z.enum([
+  "budget_alert",
+  "monthly_report",
+  "balance_drift",
+  "goal_achieved"
+]);
 export type NotificationType = z.infer<typeof NotificationTypeSchema>;
 
 const NotificationOutboxSchema = z.object({

@@ -1,0 +1,35 @@
+meta {
+  name: Create Tagged Goal
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/v1/goals
+  body: json
+}
+
+headers {
+  content-type: application/json
+  Idempotency-Key: {{$randomUUID}}
+}
+
+body:json {
+  {
+    "name": "New Laptop",
+    "targetMinor": 15000000,
+    "fundingMode": "tagged",
+    "tag": "goal:laptop"
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setEnvVar("goalId", res.body.id);
+  }
+}
+
+docs {
+  Tagged progress is the signed sum of posted transactions carrying
+  "goal:laptop". Captures the goal id into {{goalId}}.
+}

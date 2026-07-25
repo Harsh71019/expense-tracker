@@ -1,6 +1,6 @@
 # Registration Feature — Frontend Plan
 
-Status: planning only
+Status: implemented on 2026-07-25
 
 Target branch: `codex/register-feature-planning`
 
@@ -86,7 +86,7 @@ Behavior:
 - use the same pre-hydration submit guard as `LoginForm` so passwords can never fall back to a native GET submission;
 - disable the submit button while pending;
 - reject mismatched passwords locally without calling the provider;
-- pass only `name`, `email`, `password`, the safe `callbackURL`, and `rememberMe: false` to `authClient.signUp.email`;
+- pass only `name`, `email`, `password`, and the safe `callbackURL` to `authClient.signUp.email` (the installed React client does not expose the server route's optional `rememberMe` field);
 - never store a password in a URL, cookie, local storage, session storage, toast, debug event, or error report;
 - clear password fields after a provider error where appropriate;
 - map the disabled-signup provider code to a friendly deployment message;
@@ -138,7 +138,7 @@ No generated API schema or client file should change.
 
 `register-form.test.tsx` should verify:
 
-- valid input calls `authClient.signUp.email` with the trimmed name, email, password, safe callback, and `rememberMe: false`;
+- valid input calls `authClient.signUp.email` with the trimmed name, email, password, and safe callback;
 - success navigates to login with `registered=1` and the encoded safe return path;
 - mismatched passwords show an accessible error and make no provider call;
 - too-short and too-long passwords are blocked before submission;

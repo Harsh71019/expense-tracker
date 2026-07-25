@@ -18,6 +18,16 @@ describe("query keys", () => {
     expect(qk.goal("goal-1")).toEqual(["goals", "detail", "goal-1"]);
     expect(qk.goalPlan("goal-1")).toEqual(["goals", "plan", "goal-1"]);
     expect(qk.accounts()).toEqual(["accounts"]);
+    expect(qk.bills()).toEqual(["bills"]);
+    expect(qk.billLists()).toEqual(["bills", "list"]);
+    expect(qk.billDetail("bill-1")).toEqual(["bills", "detail", "bill-1"]);
+    expect(qk.billStatementRows("bill-1", { limit: 50 })).toEqual([
+      "bills",
+      "detail",
+      "bill-1",
+      "statement-rows",
+      { limit: 50 }
+    ]);
     expect(qk.categories()).toEqual(["categories"]);
   });
 });

@@ -15,13 +15,15 @@ export function AppNav({
   orientation: "sidebar" | "bottom";
   compact?: boolean;
 }>): ReactNode {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
+  const isActive = (href: string): boolean =>
+    pathname === href || (href !== "/" && pathname.startsWith(`${href}/`));
 
   if (orientation === "sidebar") {
     return (
       <nav className="flex flex-col gap-1" aria-label="Main navigation">
         {items.map((item) => {
-          const active = pathname === item.href;
+          const active = isActive(item.href);
           return (
             <Link
               key={item.href}
@@ -53,7 +55,7 @@ export function AppNav({
   return (
     <nav className="flex px-2 py-0.5" aria-label="Main navigation">
       {items.map((item) => {
-        const active = pathname === item.href;
+        const active = isActive(item.href);
         return (
           <Link
             key={item.href}

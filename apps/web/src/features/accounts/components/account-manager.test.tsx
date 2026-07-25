@@ -1,12 +1,13 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { Account } from "@treasury-ops/shared";
+import { AccountSchema, type Account } from "@treasury-ops/shared";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AccountManager } from "./account-manager";
 
 const mocks = vi.hoisted(() => ({
   create: vi.fn(),
+  updateConfig: vi.fn(),
   archive: vi.fn(),
   toastSuccess: vi.fn(),
   toastError: vi.fn()
@@ -20,6 +21,9 @@ vi.mock("../hooks/use-create-account", () => ({
 }));
 vi.mock("../hooks/use-archive-account", () => ({
   useArchiveAccount: () => ({ mutateAsync: mocks.archive, isPending: false })
+}));
+vi.mock("../hooks/use-update-credit-card-config", () => ({
+  useUpdateCreditCardConfig: () => ({ mutateAsync: mocks.updateConfig, isPending: false })
 }));
 vi.mock("@/lib/toast", () => ({
   toast: { success: mocks.toastSuccess, error: mocks.toastError }
@@ -42,6 +46,7 @@ describe("AccountManager", () => {
   beforeEach(() => {
     mocks.create.mockReset();
     mocks.archive.mockReset();
+    mocks.updateConfig.mockReset();
     mocks.toastSuccess.mockReset();
     mocks.toastError.mockReset();
   });
@@ -75,5 +80,53 @@ describe("AccountManager", () => {
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Account already exists");
     expect(mocks.toastError).toHaveBeenCalledWith("Account already exists");
+  });
+
+  it("submits billing-cycle configuration only for a credit card", async () => {
+    const user = userEvent.setup();
+    mocks.create.mockResolvedValue(account);
+    render(<AccountManager initialAccounts={[]} />);
+
+    await user.click(screen.getByRole("button", { name: /Create account/ }));
+    const dialog = screen.getByRole("dialog", { name: "New account" });
+    await user.type(within(dialog).getByLabelText("Account name"), "HDFC Card");
+    await user.click(within(dialog).getByRole("button", { name: /Cards/ }));
+    await user.type(within(dialog).getByLabelText("Statement day"), "25");
+    await user.type(within(dialog).getByLabelText("Due day"), "15");
+    await user.click(within(dialog).getByRole("button", { name: "Create account" }));
+
+    await waitFor(() =>
+      expect(mocks.create).toHaveBeenCalledWith({
+        name: "HDFC Card",
+        type: "credit_card",
+        openingBalanceMinor: 0,
+        creditCardConfig: { statementDay: 25, dueDay: 15 }
+      })
+    );
+  });
+
+  it("configures a legacy credit card without recalculating old bills", async () => {
+    const user = userEvent.setup();
+    const card = AccountSchema.parse({
+      ...account,
+      id: "3fa85f64-5717-4562-b3fc-2c963f66beff",
+      name: "Legacy card",
+      type: "credit_card"
+    });
+    mocks.updateConfig.mockResolvedValue(card);
+    render(<AccountManager initialAccounts={[card]} />);
+
+    await user.click(screen.getByRole("button", { name: "Set billing cycle" }));
+    await user.type(screen.getByLabelText("Statement day"), "31");
+    await user.type(screen.getByLabelText("Due day"), "10");
+    await user.click(screen.getByRole("button", { name: "Save cycle" }));
+
+    await waitFor(() =>
+      expect(mocks.updateConfig).toHaveBeenCalledWith({
+        accountId: card.id,
+        config: { statementDay: 31, dueDay: 10 }
+      })
+    );
+    expect(mocks.toastSuccess).toHaveBeenCalledWith("Billing cycle updated");
   });
 });

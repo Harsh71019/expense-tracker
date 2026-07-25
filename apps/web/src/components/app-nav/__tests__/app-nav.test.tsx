@@ -50,6 +50,13 @@ describe("AppNav", () => {
     expect(screen.getByRole("link", { name: "Home" })).toHaveClass("text-foreground-muted");
   });
 
+  it("keeps a parent navigation item active on detail routes", () => {
+    pathname.value = "/transactions/txn-1";
+    render(<AppNav items={items} orientation="sidebar" />);
+
+    expect(screen.getByRole("link", { name: "Transactions" })).toHaveClass("bg-accent-glow");
+  });
+
   it("renders icon-first navigation when the sidebar is compact", () => {
     render(<AppNav items={iconItems} orientation="sidebar" compact />);
 

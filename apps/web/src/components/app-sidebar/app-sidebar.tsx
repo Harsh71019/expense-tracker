@@ -16,6 +16,7 @@ const navItems = [
   { href: "/insights", label: "Insights", icon: "✦" },
   { href: "/transactions", label: "Transactions", icon: "≡" },
   { href: "/transfers", label: "Transfers", icon: "⤢" },
+  { href: "/bills", label: "Bills", icon: "▱" },
   { href: "/categories", label: "Categories", icon: "▤" },
   { href: "/category-rules", label: "Category rules", icon: "⌁" },
   { href: "/imports", label: "Imports", icon: "↥" },

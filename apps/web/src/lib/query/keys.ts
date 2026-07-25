@@ -3,6 +3,7 @@ import type { DashboardRange, GoalStatus, ListTransactionsQuery } from "@treasur
 const transactionRoot = ["transactions"] as const;
 const goalRoot = ["goals"] as const;
 const dashboardRoot = ["dashboard"] as const;
+const billRoot = ["bills"] as const;
 
 export const qk = {
   transactions: () => transactionRoot,
@@ -15,6 +16,13 @@ export const qk = {
   goal: (goalId: string) => [...goalRoot, "detail", goalId] as const,
   goalPlan: (goalId: string) => [...goalRoot, "plan", goalId] as const,
   accounts: () => ["accounts"] as const,
+  bills: () => billRoot,
+  billLists: () => [...billRoot, "list"] as const,
+  billList: (filters: object) => [...billRoot, "list", filters] as const,
+  billDetails: () => [...billRoot, "detail"] as const,
+  billDetail: (billId: string) => [...billRoot, "detail", billId] as const,
+  billStatementRows: (billId: string, filters: object) =>
+    [...billRoot, "detail", billId, "statement-rows", filters] as const,
   categories: () => ["categories"] as const,
   categoryRules: () => ["category-rules"] as const,
   recurringRules: () => ["recurring-rules"] as const,

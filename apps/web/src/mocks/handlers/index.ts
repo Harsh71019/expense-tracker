@@ -7,6 +7,7 @@ import type { MockStore } from "../data/store";
 import { accountHandlers } from "./accounts";
 import { assetHandlers } from "./assets";
 import { authHandlers } from "./auth";
+import { billHandlers } from "./bills";
 import { categoryHandlers } from "./categories";
 import { categoryRuleHandlers } from "./category-rules";
 import { exportHandlers } from "./export";
@@ -31,6 +32,7 @@ export function createHandlers(baseUrl: string, store: MockStore): HttpHandler[]
   return [
     ...authHandlers(baseUrl),
     ...accountHandlers(http, store),
+    ...billHandlers(http, store),
     ...categoryHandlers(http, store),
     ...categoryRuleHandlers(http, store),
     ...transactionHandlers(http, store),

@@ -5,6 +5,7 @@ import { useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 
 import { AmountInput } from "@/components/ui/amount-input";
+import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
@@ -117,6 +118,10 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
 
   return (
     <section className="space-y-8">
+      <Breadcrumbs
+        items={[{ label: "Settings", href: "/settings?tab=management" }, { label: "Accounts" }]}
+      />
+
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="font-mono text-[10px] font-bold tracking-[0.2em] text-accent uppercase">

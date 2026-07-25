@@ -1,6 +1,7 @@
 export * from "./accent-picker";
 export * from "./amount-input";
 export * from "./badge";
+export * from "./breadcrumbs";
 export * from "./button";
 export * from "./coming-soon";
 export * from "./empty-state";

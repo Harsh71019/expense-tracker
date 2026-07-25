@@ -9,6 +9,7 @@ export const RuntimeEnvSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   API_PORT: portSchema.default(4000),
   LOG_LEVEL: z.enum(["debug", "info", "warn", "error", "fatal"]).default("info"),
+  LOG_PRETTY: booleanStringSchema.default(false),
   SERVICE_ROLE: z.enum(["api", "worker"]).default("api"),
   DATABASE_URL: z.string().url(),
   REDIS_URL: z.string().url(),

@@ -84,6 +84,14 @@ function isUnthrottledPath(context: ExecutionContext): boolean {
           base: { service: config.env.SERVICE_ROLE, sha: config.env.GIT_SHA },
           timestamp: pino.stdTimeFunctions.isoTime,
           formatters: { level: (label) => ({ level: label }) },
+          ...(config.env.LOG_PRETTY
+            ? {
+                transport: {
+                  target: "pino-pretty",
+                  options: { colorize: true, singleLine: true, ignore: "pid,hostname" }
+                }
+              }
+            : {}),
           redact: {
             paths: [
               "req.headers.authorization",

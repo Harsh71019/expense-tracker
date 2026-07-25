@@ -21,6 +21,7 @@ import SettingsPage from "./(app)/settings/page";
 import TransactionsPage from "./(app)/transactions/page";
 import AuthLayout from "./(auth)/layout";
 import LoginPage from "./(auth)/login/page";
+import RegisterPage from "./(auth)/register/page";
 import NotFound from "./not-found";
 
 const mocks = vi.hoisted(
@@ -58,6 +59,7 @@ vi.mock("@/lib/theme-server", () => ({ getStoredTheme: async () => null }));
 vi.mock("@/lib/accent-server", () => ({ getStoredAccent: async () => ({ kind: "default" }) }));
 vi.mock("@/features/auth", () => ({
   LoginForm: () => <p>Mock login form</p>,
+  RegisterForm: () => <p>Mock register form</p>,
   SignOutButton: () => <button>Sign out</button>
 }));
 vi.mock("@/features/quick-add", () => ({
@@ -363,7 +365,12 @@ describe("route shells", () => {
     expect(screen.getByText("Auth content")).toBeVisible();
 
     render(<LoginPage />);
+    expect(screen.getByRole("heading", { name: "Welcome back" })).toBeVisible();
     expect(screen.getByText("Mock login form")).toBeVisible();
+
+    render(<RegisterPage />);
+    expect(screen.getByRole("heading", { name: "Create your account" })).toBeVisible();
+    expect(screen.getByText("Mock register form")).toBeVisible();
 
     render(<NotFound />);
     expect(screen.getByRole("link", { name: "Back to TreasuryOps" })).toHaveAttribute("href", "/");

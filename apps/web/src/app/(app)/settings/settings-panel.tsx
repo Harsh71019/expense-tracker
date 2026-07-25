@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { AccentPicker } from "@/components/ui/accent-picker";
 import { ThemePreferenceForm } from "@/components/ui/theme-toggle";
 import { SignOutButton } from "@/features/auth";
-import { ProfileSummary } from "@/features/profile";
+import { EditDisplayNameForm, ProfileSummary } from "@/features/profile";
 import { getProfile } from "@/features/profile/server/get-profile";
 import { getStoredAccent } from "@/lib/accent-server";
 import { getSession } from "@/lib/api/session";
@@ -42,6 +42,8 @@ async function ProfileSettingsPanel(): Promise<ReactNode> {
   return (
     <div className="space-y-5">
       <ProfileSummary profile={profile} email={email} />
+
+      <EditDisplayNameForm initialProfile={profile} />
 
       <section className="flex flex-col gap-4 rounded-2xl border border-expense/25 bg-surface-elevated p-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <div className="min-w-0">

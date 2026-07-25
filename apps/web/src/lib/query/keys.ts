@@ -26,6 +26,7 @@ export const qk = {
   importMapping: (accountId: string) => ["import-mapping", accountId] as const,
   monthlyRollup: (month: string) => ["monthly-rollup", month] as const,
   apiKeys: () => ["api-keys"] as const,
+  profile: () => ["profile"] as const,
   dashboard: () => dashboardRoot,
   recentActivity: (limit: number) => [...dashboardRoot, "recent-activity", limit] as const,
   dashboardStats: (period?: string) => [...dashboardRoot, "stats", period ?? "current"] as const,

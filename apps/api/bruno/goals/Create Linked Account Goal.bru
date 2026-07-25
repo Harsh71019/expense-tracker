@@ -1,0 +1,35 @@
+meta {
+  name: Create Linked Account Goal
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/v1/goals
+  body: json
+}
+
+headers {
+  content-type: application/json
+  Idempotency-Key: {{$randomUUID}}
+}
+
+body:json {
+  {
+    "name": "Emergency Fund",
+    "targetMinor": 50000000,
+    "fundingMode": "linked_account",
+    "linkedAccountId": "{{accountId}}"
+  }
+}
+
+script:post-response {
+  if (res.status === 201) {
+    bru.setEnvVar("linkedGoalId", res.body.id);
+  }
+}
+
+docs {
+  Progress starts at zero even when {{accountId}} already has a balance; the
+  account balance at creation is captured as the baseline.
+}

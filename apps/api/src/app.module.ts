@@ -26,6 +26,7 @@ import { CategoriesModule } from "./categories/categories.module.js";
 import { CategoryRulesModule } from "./category-rules/category-rules.module.js";
 import { ExportModule } from "./export/export.module.js";
 import { HealthModule } from "./health/health.module.js";
+import { GoalsModule } from "./goals/goals.module.js";
 import { ImportsModule } from "./imports/imports.module.js";
 import { NotificationsModule } from "./notifications/notifications.module.js";
 import { OpenApiModule } from "./openapi/openapi.module.js";
@@ -72,6 +73,7 @@ function isUnthrottledRequest(context: ExecutionContext): boolean {
     ExportModule,
     RecurringModule,
     ReportsModule,
+    GoalsModule,
     OpenApiModule,
     LoggerModule.forRootAsync({
       inject: [RuntimeConfigService, LoggingContextService],

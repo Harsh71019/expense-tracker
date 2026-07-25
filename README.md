@@ -57,7 +57,7 @@ pnpm i
 pnpm --filter @treasury-ops/shared build   # root lint/typecheck/test scripts assume this is already built
 
 cp env.example .env
-# set POSTGRES_PASSWORD in .env (e.g. `local-dev-password`, matching .env.development.local.example below)
+# uncomment and set POSTGRES_PASSWORD in .env (e.g. `local-dev-password`, matching .env.development.local.example below)
 cp .env.development.local.example .env.development.local   # host-native `pnpm dev` overrides: localhost
                                                              # ports instead of Docker service names, since
                                                              # .env itself stays Docker-Compose-shaped
@@ -106,7 +106,7 @@ docker compose --env-file .env run --rm migrate   # applies migrations, exits; g
 docker compose --env-file .env up -d
 ```
 
-Brings up `postgres` + `migrate` (one-shot) → `api` + `worker` → `web`, all behind an `nginx` reverse proxy (the only exposed container, `localhost:3006`). Postgres's port is bound to loopback by default (`localhost:5433`, not reachable from the LAN/internet) — see `POSTGRES_BIND_ADDR` in `env.example` if you need it reachable from another machine for local dev. See `docker-compose.yml` and `docs/DEPLOYMENT-TREASURY-OPS.md`.
+Brings up `migrate` (one-shot) → `api` + `worker` → `web`, all behind an `nginx` reverse proxy (the only exposed container, `localhost:3006`). Postgres and Redis are shared infra (a separate host/container, e.g. a home-lab LXC) reached via `DATABASE_URL`/`REDIS_URL` — this stack doesn't run its own Postgres by default. For a fully local/offline run, use the throwaway `postgres` service defined in `docker-compose.yml` instead: either name it explicitly (`docker compose --env-file .env up -d postgres`, same as the local setup above) or set `COMPOSE_PROFILES=local` in `.env` so it's included automatically; `POSTGRES_BIND_ADDR`/`POSTGRES_PASSWORD` in `env.example` configure it. See `docker-compose.yml` and `docs/DEPLOYMENT-TREASURY-OPS.md`.
 
 ## Current issues
 

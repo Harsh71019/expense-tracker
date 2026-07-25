@@ -7,12 +7,14 @@ description: Use when the user asks to rebuild/restart TreasuryOps locally in Do
 
 ## Overview
 
-TreasuryOps's local Docker stack (`docker-compose.yml`) runs `postgres` → `migrate`
+TreasuryOps's local Docker stack (`docker-compose.yml`) runs `migrate`
 (one-shot) → `api` + `worker` → `web`, behind an `nginx` `proxy` (the only
-published container, `localhost:3006`). After code changes, images must be
-rebuilt and containers restarted for the change to actually be running —
-`pnpm build`/`pnpm typecheck` passing does **not** mean the running stack
-reflects the new code.
+published container, `localhost:3006`). Postgres and Redis are shared infra
+(a separate host/container) reached via `DATABASE_URL`/`REDIS_URL` in `.env` —
+this stack doesn't run its own Postgres unless you opt in (see Gotchas). After
+code changes, images must be rebuilt and containers restarted for the change
+to actually be running — `pnpm build`/`pnpm typecheck` passing does **not**
+mean the running stack reflects the new code.
 
 Always run these from the repo root, with `.env` already present (`cp
 env.example .env` if not — see README.md).
@@ -79,8 +81,10 @@ curl -sf http://localhost:3006/api/readyz
 
 Expect every container `healthy` (or `Up` for `proxy`, which has no
 healthcheck) and `readyz` to return
-`{"status":"ok","postgres":"ok","redis":"ok"}`. If `readyz` fails or hangs,
-check logs before assuming it's still starting:
+`{"status":"ok","postgres":"ok","redis":"ok"}` — this checks connectivity to
+the shared Postgres/Redis via `DATABASE_URL`/`REDIS_URL`, not a local
+container. If `readyz` fails or hangs, check logs before assuming it's still
+starting:
 
 ```bash
 docker compose logs --tail=50 api worker web
@@ -88,10 +92,14 @@ docker compose logs --tail=50 api worker web
 
 ## Gotchas
 
-- **Postgres's host port is loopback-only by default** (`127.0.0.1:5433`,
-  via `POSTGRES_BIND_ADDR` in `docker-compose.yml`/`env.example`) — this is
-  deliberate (prevents LAN/internet exposure in production) and doesn't
-  affect anything in this skill; `localhost:5433` still works fine for
+- **No local `postgres` container by default** — `docker-compose.yml` defines
+  one for offline/local-only use, gated behind the `local` Compose profile
+  (`profiles: ["local"]`), so plain `up -d` skips it. Bring it up explicitly
+  with `docker compose --env-file .env up -d postgres` (naming a service
+  bypasses profile gating), or set `COMPOSE_PROFILES=local` in `.env` to
+  include it in every command automatically. Its host port is loopback-only
+  by default (`127.0.0.1:5433`, via `POSTGRES_BIND_ADDR`) — deliberate, to
+  avoid LAN/internet exposure — but `localhost:5433` still works fine for
   local `psql`/GUI clients on the same machine.
 - **`docker compose down` vs `stop`**: `down` removes containers and the
   network but keeps the named Postgres volume (data survives) unless you

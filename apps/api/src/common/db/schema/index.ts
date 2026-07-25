@@ -2,6 +2,7 @@ export * from "./enums.js";
 export * from "./user-profile.js";
 export * from "./account.js";
 export * from "./category.js";
+export * from "./budget.js";
 export * from "./transaction.js";
 export * from "./audit.js";
 export * from "./asset.js";

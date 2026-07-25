@@ -48,6 +48,30 @@ export type {
   ValuationSource
 } from "./asset.js";
 export {
+  BudgetAlertPolicySchema,
+  BudgetCategorySchema,
+  BudgetIdSchema,
+  BudgetOverviewSchema,
+  BudgetPageSchema,
+  BudgetProgressSchema,
+  BudgetProgressStateSchema,
+  BudgetSchema,
+  ListBudgetsQuerySchema,
+  UpsertBudgetSchema
+} from "./budget.js";
+export type {
+  Budget,
+  BudgetAlertPolicy,
+  BudgetCategory,
+  BudgetId,
+  BudgetOverview,
+  BudgetPage,
+  BudgetProgress,
+  BudgetProgressState,
+  ListBudgetsQuery,
+  UpsertBudget
+} from "./budget.js";
+export {
   CategoryGroupSchema,
   CategoryIdSchema,
   CategoryKindSchema,

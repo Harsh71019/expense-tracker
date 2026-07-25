@@ -62,6 +62,9 @@ import {
   CreateAssetSchema,
   AssetSchema,
   AssetIdSchema,
+  BudgetIdSchema,
+  BudgetPageSchema,
+  BudgetSchema,
   CreateValuationSchema,
   ValuationSchema,
   ValuationPageSchema,
@@ -89,7 +92,9 @@ import {
   RecurringRuleSchema,
   UpdateApiKeySchema,
   UpdateRecurringRuleSchema,
-  UpdateGoalSchema
+  UpdateGoalSchema,
+  ListBudgetsQuerySchema,
+  UpsertBudgetSchema
 } from "@treasury-ops/shared";
 import { z } from "zod";
 
@@ -114,6 +119,8 @@ const StagedRowPage = StagedRowPageSchema.meta({ id: "StagedRowPage" });
 const UserProfile = UserProfileSchema.meta({ id: "UserProfile" });
 const MonthlyRollup = MonthlyRollupSchema.meta({ id: "MonthlyRollup" });
 const RecurringRule = RecurringRuleSchema.meta({ id: "RecurringRule" });
+const Budget = BudgetSchema.meta({ id: "Budget" });
+const BudgetPage = BudgetPageSchema.meta({ id: "BudgetPage" });
 const Goal = GoalSchema.meta({ id: "Goal" });
 const GoalPlan = GoalPlanSchema.meta({ id: "GoalPlan" });
 const DashboardSummary = DashboardSummarySchema.meta({ id: "DashboardSummary" });
@@ -139,6 +146,7 @@ const importBatchAndRowId = z.object({
 const month = z.object({ month: MonthSchema });
 const recurringRuleId = z.object({ ruleId: RecurringRuleIdSchema });
 const goalId = z.object({ goalId: GoalIdSchema });
+const budgetId = z.object({ budgetId: BudgetIdSchema });
 const json = (schema: z.ZodType): { content: { "application/json": { schema: z.ZodType } } } => ({
   content: { "application/json": { schema } }
 });
@@ -761,6 +769,51 @@ registry.registerPath({
   responses: {
     200: { description: "Goal contribution plan", ...json(GoalPlan) },
     404: { description: "Goal not found", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/v1/budgets",
+  security: secured,
+  request: { query: ListBudgetsQuerySchema },
+  responses: {
+    200: { description: "Budget page with live progress and overview totals", ...json(BudgetPage) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "put",
+  path: "/v1/budgets/{categoryId}",
+  security: secured,
+  request: {
+    params: categoryId,
+    body: json(UpsertBudgetSchema),
+    headers: idempotencyKeyHeaders
+  },
+  responses: {
+    200: {
+      description: "Created, updated, restored budget configuration, or idempotent replay",
+      headers: optionalReplayHeaders,
+      ...json(Budget)
+    },
+    404: { description: "Category not found", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "patch",
+  path: "/v1/budgets/{budgetId}/archive",
+  security: secured,
+  request: { params: budgetId, headers: idempotencyKeyHeaders },
+  responses: {
+    200: {
+      description: "Archived budget configuration, or idempotent replay",
+      headers: optionalReplayHeaders,
+      ...json(Budget)
+    },
+    404: { description: "Budget not found", ...json(ProblemDetails) },
     ...problemResponses
   }
 });

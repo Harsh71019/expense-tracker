@@ -8,11 +8,15 @@ export async function assertLedgerInvariants(db: DrizzleDb): Promise<void> {
   const transferGroups = new Map<string, typeof transactionRows>();
 
   for (const transaction of transactionRows) {
-    if (transaction.status === "posted" || transaction.status === "reversal") {
-      const signed =
-        transaction.type === "income" ? transaction.amountMinor : -transaction.amountMinor;
-      deltas.set(transaction.accountId, (deltas.get(transaction.accountId) ?? 0) + signed);
-    }
+    // Every row here -- "posted", "reversed", or "reversal" -- already had its
+    // balance effect applied exactly once at creation/reversal time (see
+    // TransactionService.reverse: the original's decrement is never undone,
+    // a separate compensating reversal row applies the opposite delta).
+    // Excluding "reversed" rows would double-count that sign flip and leave
+    // every reversed-then-credited pair off by its own amount.
+    const signed =
+      transaction.type === "income" ? transaction.amountMinor : -transaction.amountMinor;
+    deltas.set(transaction.accountId, (deltas.get(transaction.accountId) ?? 0) + signed);
     if (transaction.transferGroupId !== null) {
       const group = transferGroups.get(transaction.transferGroupId) ?? [];
       group.push(transaction);

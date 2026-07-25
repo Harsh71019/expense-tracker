@@ -8,6 +8,8 @@ import { ImportsService } from "./imports/imports.service.js";
 import { startImportsWorker } from "./imports/imports.processor.js";
 import { NotificationDeliveryService } from "./notifications/notification-delivery.service.js";
 import { startNotificationsWorker } from "./notifications/notifications.processor.js";
+import { SpendingWarningsService } from "./spending-warnings/spending-warnings.service.js";
+import { startSpendingWarningsWorker } from "./spending-warnings/spending-warnings.processor.js";
 
 async function bootstrapWorker(): Promise<void> {
   const app = await NestFactory.createApplicationContext(AppModule);
@@ -31,11 +33,17 @@ async function bootstrapWorker(): Promise<void> {
     app.get(NotificationDeliveryService),
     app.get(Logger)
   );
+  const spendingWarningsWorker = startSpendingWarningsWorker(
+    app.get(RuntimeConfigService),
+    app.get(SpendingWarningsService),
+    app.get(Logger)
+  );
   app.get(Logger).log({ event: "worker.started" }, "worker process started");
 
   const shutdown = (): void => {
     void importsWorker.close();
     void notificationsWorker.close();
+    void spendingWarningsWorker.close();
   };
   process.on("SIGTERM", shutdown);
   process.on("SIGINT", shutdown);

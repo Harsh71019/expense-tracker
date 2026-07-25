@@ -2,9 +2,73 @@ export {
   AccountIdSchema,
   AccountSchema,
   AccountTypeSchema,
-  CreateAccountSchema
+  CreateAccountSchema,
+  CreditCardConfigInputSchema,
+  CreditCardConfigSchema
 } from "./account.js";
-export type { Account, AccountId, AccountType, CreateAccount } from "./account.js";
+export type {
+  Account,
+  AccountId,
+  AccountType,
+  CreateAccount,
+  CreditCardConfig,
+  CreditCardConfigInput
+} from "./account.js";
+export {
+  AcknowledgeExtraTransactionSchema,
+  BillDetailSchema,
+  BillPageSchema,
+  BillPaymentResultSchema,
+  BillPaymentStatusSchema,
+  BillReconciliationStatusSchema,
+  BillReconciliationSummarySchema,
+  BillStatementRowIdSchema,
+  BillStatementRowMatchStatusSchema,
+  BillStatementRowPageSchema,
+  BillStatementRowSchema,
+  BillStatementStatsSchema,
+  BillStatementUploadIdSchema,
+  BillStatementUploadSchema,
+  BillStatementUploadStatusSchema,
+  CreditCardBillIdSchema,
+  CreditCardBillSchema,
+  ListBillsQuerySchema,
+  ListBillStatementRowsQuerySchema,
+  PayCreditCardBillSchema,
+  UpdateBillStatementRowSchema,
+  UploadBillStatementMetadataSchema
+} from "./bill.js";
+export type {
+  AcknowledgeExtraTransaction,
+  BillDetail,
+  BillPage,
+  BillPaymentResult,
+  BillPaymentStatus,
+  BillReconciliationStatus,
+  BillReconciliationSummary,
+  BillStatementRow,
+  BillStatementRowId,
+  BillStatementRowMatchStatus,
+  BillStatementRowPage,
+  BillStatementStats,
+  BillStatementUpload,
+  BillStatementUploadId,
+  BillStatementUploadStatus,
+  CreditCardBill,
+  CreditCardBillId,
+  ListBillsQuery,
+  ListBillStatementRowsQuery,
+  PayCreditCardBill,
+  UpdateBillStatementRow,
+  UploadBillStatementMetadata
+} from "./bill.js";
+export {
+  addUtcCalendarDays,
+  calendarDayDistance,
+  computeCreditCardCycle,
+  computeNextCreditCardStatementAt
+} from "./credit-card-cycle.js";
+export type { CreditCardCycle } from "./credit-card-cycle.js";
 export {
   ApiKeyIdSchema,
   ApiKeyPermissionsSchema,

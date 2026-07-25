@@ -44,5 +44,19 @@ export const notificationTypeEnum = pgEnum("notification_type", [
   "goal_achieved"
 ]);
 export const notificationStatusEnum = pgEnum("notification_status", ["pending", "sent"]);
+export const billReconciliationStatusEnum = pgEnum("bill_reconciliation_status", [
+  "awaiting_statement",
+  "reconciled"
+]);
+export const billStatementUploadStatusEnum = pgEnum("bill_statement_upload_status", [
+  "pending",
+  "staged",
+  "failed"
+]);
+export const billStatementRowMatchStatusEnum = pgEnum("bill_statement_row_match_status", [
+  "matched",
+  "missing_from_ledger",
+  "ambiguous"
+]);
 export const goalFundingModeEnum = pgEnum("goal_funding_mode", ["linked_account", "tagged"]);
 export const goalStatusEnum = pgEnum("goal_status", ["active", "achieved", "abandoned"]);

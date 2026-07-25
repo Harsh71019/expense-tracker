@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import {
   AccountSchema,
+  computeNextCreditCardStatementAt,
   type Account,
   type AccountId,
   type CreateAccount
@@ -22,8 +23,12 @@ export class AccountMutationService {
   ) {}
 
   create(userId: string, input: CreateAccount, key: string): Promise<IdempotentResult<Account>> {
+    const nextStatementAt =
+      input.creditCardConfig === undefined
+        ? undefined
+        : computeNextCreditCardStatementAt(input.creditCardConfig.statementDay, new Date());
     return this.idempotency.execute(userId, "account.create", key, AccountSchema, (tx) =>
-      this.accounts.create(userId, input, tx)
+      this.accounts.create(userId, input, tx, nextStatementAt)
     );
   }
 

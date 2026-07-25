@@ -8,6 +8,7 @@ import pino from "pino";
 import type { Request } from "express";
 
 import { BalancesModule } from "./balances/balances.module.js";
+import { BillsModule } from "./bills/bills.module.js";
 import { RuntimeConfigModule } from "./common/config/runtime-config.module.js";
 import { RuntimeConfigService } from "./common/config/runtime-config.service.js";
 import { DbModule } from "./common/db/db.module.js";
@@ -70,6 +71,7 @@ function isUnthrottledPath(context: ExecutionContext): boolean {
     CategoryRulesModule,
     AuditModule,
     TransactionsModule,
+    BillsModule,
     AssetsModule,
     ImportsModule,
     ExportModule,

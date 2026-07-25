@@ -22,6 +22,7 @@ export const CreateTransactionSchema = z.object({
 });
 
 export const TransferGroupIdSchema = z.string().uuid("Transfer group id must be a UUID.");
+export const CreditCardBillReferenceIdSchema = z.string().uuid("Bill id must be a UUID.");
 
 export const TransactionSchema = CreateTransactionSchema.extend({
   id: TransactionIdSchema,
@@ -33,6 +34,7 @@ export const TransactionSchema = CreateTransactionSchema.extend({
   reversalOf: TransactionIdSchema.optional(),
   reversedBy: TransactionIdSchema.optional(),
   transferGroupId: TransferGroupIdSchema.optional(),
+  billId: CreditCardBillReferenceIdSchema.optional(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date()
 });

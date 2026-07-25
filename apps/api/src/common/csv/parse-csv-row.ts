@@ -1,15 +1,10 @@
 import type { ColumnMapping, ParsedRow } from "@treasury-ops/shared";
 
-import { parseExplicitDate } from "../common/time/parse-date.js";
+import { parseExplicitDate } from "../time/parse-date.js";
 import { resolveAmount } from "./parse-amount.js";
 
 export type RowParseResult = Readonly<{ parsed?: ParsedRow; problems: readonly string[] }>;
 
-/**
- * Parses one raw CSV row into a ParsedRow, or a list of per-row problems.
- * Never throws — a malformed row is staged with its problems for the user
- * to see in preview, not a reason to fail the whole batch.
- */
 export function parseCsvRow(raw: Record<string, string>, mapping: ColumnMapping): RowParseResult {
   const problems: string[] = [];
 

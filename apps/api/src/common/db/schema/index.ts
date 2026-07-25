@@ -11,4 +11,6 @@ export * from "./notification.js";
 export * from "./idempotency.js";
 export * from "./recurring.js";
 export * from "./report.js";
+export * from "./credit-card-bill.js";
+export * from "./bill-statement.js";
 export * from "./goal.js";

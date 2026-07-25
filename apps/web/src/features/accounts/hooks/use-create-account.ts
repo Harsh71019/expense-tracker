@@ -16,7 +16,14 @@ export function useCreateAccount(): UseMutationResult<Account, Error, CreateAcco
     mutationFn: async (input): Promise<Account> => {
       try {
         const result = await apiClient.POST("/v1/accounts", {
-          body: input,
+          body: {
+            name: input.name,
+            type: input.type,
+            openingBalanceMinor: input.openingBalanceMinor,
+            ...(input.creditCardConfig === undefined
+              ? {}
+              : { creditCardConfig: input.creditCardConfig })
+          },
           params: { header: { "Idempotency-Key": idempotencyKey } }
         });
         if (result.error !== undefined) throw toAppError(result.error, result.response.status);

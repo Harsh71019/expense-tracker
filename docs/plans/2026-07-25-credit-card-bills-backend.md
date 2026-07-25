@@ -16,9 +16,8 @@ in the existing worker process through a dedicated BullMQ queue. A bill payment 
 two-leg transfer, with only the destination/card leg tagged by `billId`. Bill totals and payment
 state are derived from ledger rows; no second mutable money total is introduced.
 
-**Current migration baseline:** `apps/api/drizzle/0005_wide_gertrude_yorkes.sql`. The generated
-migration for this work should therefore be the next ordered migration (currently expected to be
-`0006_<generated-name>.sql`; use the number produced by drizzle-kit).
+**Migration:** Generated as `apps/api/drizzle/0008_wise_liz_osborn.sql`, following the current
+`0007` baseline.
 
 ---
 
@@ -182,8 +181,10 @@ Add account configuration:
 
 - `CreditCardConfigInputSchema`: `{ statementDay, dueDay }`, integers 1–31.
 - `CreditCardConfigSchema`: input plus `nextStatementAt`.
-- Extend `CreateAccountSchema` with optional `creditCardConfig`, then use
-  `superRefine`: required for `credit_card`, forbidden for every other type.
+- Extend `CreateAccountSchema` with optional `creditCardConfig` and use `superRefine` to forbid it
+  for every non-credit-card type. Credit-card creation accepts the config but keeps it optional so
+  existing clients and seeded/legacy cards remain compatible; an unconfigured card does not enter
+  the generation sweep until configured through the dedicated endpoint.
 - Extend `AccountSchema` with optional `creditCardConfig`.
 
 Add bill models:
@@ -236,7 +237,7 @@ date/type coercion.
 - Create `apps/api/src/common/db/schema/bill-statement.ts`
 - Modify `apps/api/src/common/db/schema/transaction.ts`
 - Modify `apps/api/src/common/db/schema/index.ts`
-- Generate `apps/api/drizzle/0006_<generated-name>.sql`
+- Generate `apps/api/drizzle/0008_wise_liz_osborn.sql`
 - Generate/update `apps/api/drizzle/meta/*`
 
 ### Account columns

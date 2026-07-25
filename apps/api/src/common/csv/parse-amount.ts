@@ -3,14 +3,6 @@ import type { ColumnMapping, TransactionType } from "@treasury-ops/shared";
 
 export type AmountResolution = Readonly<{ amountMinor: number; type: TransactionType }>;
 
-/**
- * Resolves a row's amount + transaction type per the mapping's
- * amountConvention (BACKEND.md §4: "support both single-signed-amount and
- * separate debit/credit column conventions"). Throws RangeError for
- * anything the caller should surface as a per-row "problem" rather than a
- * crash — a bad amount in row 4,000 of a 5,000-row statement shouldn't
- * abort staging the other 4,999.
- */
 export function resolveAmount(
   raw: Record<string, string>,
   mapping: ColumnMapping

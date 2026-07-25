@@ -22,7 +22,11 @@ export const LogEvent = {
   GoalsProgressChecked: "goals.progress_checked",
   WorkerHeartbeatFailed: "worker.heartbeat_failed",
   WorkerStopping: "worker.stopping",
-  WorkerStopped: "worker.stopped"
+  WorkerStopped: "worker.stopped",
+  CreditCardBillGenerated: "bill.generated",
+  CreditCardBillGenerationFailed: "bill.generation_failed",
+  BillStatementParsed: "bill.statement_parsed",
+  BillStatementParseFailed: "bill.statement_parse_failed"
 } as const;
 
 export type LogEvent = (typeof LogEvent)[keyof typeof LogEvent];

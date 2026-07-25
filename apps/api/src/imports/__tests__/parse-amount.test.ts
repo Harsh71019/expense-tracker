@@ -1,7 +1,7 @@
 import type { ColumnMapping } from "@treasury-ops/shared";
 import { describe, expect, it } from "vitest";
 
-import { resolveAmount } from "../parse-amount.js";
+import { resolveAmount } from "../../common/csv/parse-amount.js";
 
 const SINGLE_SIGNED: ColumnMapping = {
   date: "Date",

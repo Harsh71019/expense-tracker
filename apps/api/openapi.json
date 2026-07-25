@@ -56,6 +56,26 @@
             "minimum": -9007199254740991,
             "maximum": 9007199254740991
           },
+          "creditCardConfig": {
+            "type": "object",
+            "properties": {
+              "statementDay": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 31
+              },
+              "dueDay": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 31
+              },
+              "nextStatementAt": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              }
+            },
+            "required": ["statementDay", "dueDay", "nextStatementAt"]
+          },
           "isArchived": {
             "type": "boolean"
           },
@@ -122,6 +142,13 @@
               "import.invalid_file",
               "import.already_committed",
               "import.invalid_state",
+              "bill.invalid_account_type",
+              "bill.not_reconciled",
+              "bill.overpayment",
+              "bill.invalid_statement_file",
+              "bill.statement_not_ready",
+              "bill.unresolved_statement",
+              "bill.already_reconciled",
               "recurring.no_occurrences"
             ]
           },
@@ -643,6 +670,10 @@
                   "type": "string",
                   "format": "uuid"
                 },
+                "billId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
                 "createdAt": {
                   "type": ["string", "null"],
                   "format": "date-time"
@@ -762,6 +793,10 @@
             "type": "string",
             "format": "uuid"
           },
+          "billId": {
+            "type": "string",
+            "format": "uuid"
+          },
           "createdAt": {
             "type": ["string", "null"],
             "format": "date-time"
@@ -868,6 +903,10 @@
                 "type": "string",
                 "format": "uuid"
               },
+              "billId": {
+                "type": "string",
+                "format": "uuid"
+              },
               "createdAt": {
                 "type": ["string", "null"],
                 "format": "date-time"
@@ -964,6 +1003,10 @@
                 "format": "uuid"
               },
               "transferGroupId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "billId": {
                 "type": "string",
                 "format": "uuid"
               },
@@ -1079,6 +1122,10 @@
                     "type": "string",
                     "format": "uuid"
                   },
+                  "billId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
                   "createdAt": {
                     "type": ["string", "null"],
                     "format": "date-time"
@@ -1175,6 +1222,10 @@
                     "format": "uuid"
                   },
                   "transferGroupId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "billId": {
                     "type": "string",
                     "format": "uuid"
                   },
@@ -2116,6 +2167,1220 @@
           }
         },
         "required": ["range", "inMinor", "outMinor", "netMinor", "upcoming"]
+      },
+      "BillPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "userId": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "accountId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "cycleStart": {
+                  "type": ["string", "null"],
+                  "format": "date-time"
+                },
+                "cycleEnd": {
+                  "type": ["string", "null"],
+                  "format": "date-time"
+                },
+                "dueDate": {
+                  "type": ["string", "null"],
+                  "format": "date-time"
+                },
+                "amountDueMinor": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "reconciliationStatus": {
+                  "type": "string",
+                  "enum": ["awaiting_statement", "reconciled"]
+                },
+                "paidMinor": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "remainingMinor": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "paymentStatus": {
+                  "type": "string",
+                  "enum": ["unpaid", "partial", "paid"]
+                },
+                "createdAt": {
+                  "type": ["string", "null"],
+                  "format": "date-time"
+                },
+                "updatedAt": {
+                  "type": ["string", "null"],
+                  "format": "date-time"
+                }
+              },
+              "required": [
+                "id",
+                "userId",
+                "accountId",
+                "cycleStart",
+                "cycleEnd",
+                "dueDate",
+                "amountDueMinor",
+                "reconciliationStatus",
+                "paidMinor",
+                "remainingMinor",
+                "paymentStatus",
+                "createdAt",
+                "updatedAt"
+              ]
+            }
+          },
+          "pageInfo": {
+            "type": "object",
+            "properties": {
+              "nextCursor": {
+                "type": ["string", "null"]
+              },
+              "hasMore": {
+                "type": "boolean"
+              },
+              "limit": {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              }
+            },
+            "required": ["nextCursor", "hasMore", "limit"]
+          }
+        },
+        "required": ["items", "pageInfo"]
+      },
+      "BillDetail": {
+        "type": "object",
+        "properties": {
+          "bill": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "userId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "accountId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "cycleStart": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              },
+              "cycleEnd": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              },
+              "dueDate": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              },
+              "amountDueMinor": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "reconciliationStatus": {
+                "type": "string",
+                "enum": ["awaiting_statement", "reconciled"]
+              },
+              "paidMinor": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "remainingMinor": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "paymentStatus": {
+                "type": "string",
+                "enum": ["unpaid", "partial", "paid"]
+              },
+              "createdAt": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              },
+              "updatedAt": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "id",
+              "userId",
+              "accountId",
+              "cycleStart",
+              "cycleEnd",
+              "dueDate",
+              "amountDueMinor",
+              "reconciliationStatus",
+              "paidMinor",
+              "remainingMinor",
+              "paymentStatus",
+              "createdAt",
+              "updatedAt"
+            ]
+          },
+          "account": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80
+              },
+              "type": {
+                "type": "string",
+                "enum": ["bank", "credit_card", "cash", "wallet", "investment"]
+              },
+              "openingBalanceMinor": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "userId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "currency": {
+                "type": "string",
+                "enum": ["INR"]
+              },
+              "balanceMinor": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "creditCardConfig": {
+                "type": "object",
+                "properties": {
+                  "statementDay": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 31
+                  },
+                  "dueDay": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 31
+                  },
+                  "nextStatementAt": {
+                    "type": ["string", "null"],
+                    "format": "date-time"
+                  }
+                },
+                "required": ["statementDay", "dueDay", "nextStatementAt"]
+              },
+              "isArchived": {
+                "type": "boolean"
+              },
+              "createdAt": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              },
+              "updatedAt": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "name",
+              "type",
+              "openingBalanceMinor",
+              "id",
+              "userId",
+              "currency",
+              "balanceMinor",
+              "isArchived",
+              "createdAt",
+              "updatedAt"
+            ]
+          },
+          "activeStatement": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "userId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "billId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "filename": {
+                "type": "string",
+                "minLength": 1
+              },
+              "fileHash": {
+                "type": "string",
+                "minLength": 1
+              },
+              "mapping": {
+                "type": "object",
+                "properties": {
+                  "date": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "description": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "dateFormat": {
+                    "type": "string",
+                    "enum": ["DD/MM/YYYY", "MM/DD/YYYY", "YYYY-MM-DD"]
+                  },
+                  "amountConvention": {
+                    "type": "string",
+                    "enum": ["single_signed", "debit_credit_cols"]
+                  },
+                  "amount": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "debit": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "credit": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": ["date", "description", "dateFormat", "amountConvention"]
+              },
+              "status": {
+                "type": "string",
+                "enum": ["pending", "staged", "failed"]
+              },
+              "active": {
+                "type": "boolean"
+              },
+              "stats": {
+                "type": "object",
+                "properties": {
+                  "total": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "matched": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "missing": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "ambiguous": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "acknowledged": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                },
+                "required": ["total", "matched", "missing", "ambiguous", "acknowledged"]
+              },
+              "acknowledgedExtraTransactionIds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              },
+              "createdAt": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              },
+              "updatedAt": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "id",
+              "userId",
+              "billId",
+              "filename",
+              "fileHash",
+              "mapping",
+              "status",
+              "active",
+              "stats",
+              "acknowledgedExtraTransactionIds",
+              "createdAt",
+              "updatedAt"
+            ]
+          },
+          "reconciliation": {
+            "type": "object",
+            "properties": {
+              "stats": {
+                "type": "object",
+                "properties": {
+                  "total": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "matched": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "missing": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "ambiguous": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "acknowledged": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                },
+                "required": ["total", "matched", "missing", "ambiguous", "acknowledged"]
+              },
+              "unresolved": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "canReconcile": {
+                "type": "boolean"
+              },
+              "extraTransactions": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "accountId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "categoryId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "type": {
+                      "type": "string",
+                      "enum": ["expense", "income"]
+                    },
+                    "amountMinor": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 9007199254740991
+                    },
+                    "occurredAt": {
+                      "type": ["string", "null"],
+                      "format": "date-time"
+                    },
+                    "description": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 500
+                    },
+                    "tags": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 40
+                      },
+                      "maxItems": 20,
+                      "default": []
+                    },
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "userId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "currency": {
+                      "type": "string",
+                      "enum": ["INR"]
+                    },
+                    "source": {
+                      "type": "string",
+                      "enum": ["manual", "csv_import", "recurring", "api"]
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": ["posted", "reversed", "reversal"]
+                    },
+                    "idempotencyKey": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "reversalOf": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "reversedBy": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "transferGroupId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "billId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "createdAt": {
+                      "type": ["string", "null"],
+                      "format": "date-time"
+                    },
+                    "updatedAt": {
+                      "type": ["string", "null"],
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "accountId",
+                    "type",
+                    "amountMinor",
+                    "occurredAt",
+                    "description",
+                    "id",
+                    "userId",
+                    "currency",
+                    "source",
+                    "status",
+                    "createdAt",
+                    "updatedAt"
+                  ]
+                }
+              }
+            },
+            "required": ["stats", "unresolved", "canReconcile", "extraTransactions"]
+          }
+        },
+        "required": ["bill", "account", "reconciliation"]
+      },
+      "BillStatementUpload": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "userId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "billId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "filename": {
+            "type": "string",
+            "minLength": 1
+          },
+          "fileHash": {
+            "type": "string",
+            "minLength": 1
+          },
+          "mapping": {
+            "type": "object",
+            "properties": {
+              "date": {
+                "type": "string",
+                "minLength": 1
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1
+              },
+              "dateFormat": {
+                "type": "string",
+                "enum": ["DD/MM/YYYY", "MM/DD/YYYY", "YYYY-MM-DD"]
+              },
+              "amountConvention": {
+                "type": "string",
+                "enum": ["single_signed", "debit_credit_cols"]
+              },
+              "amount": {
+                "type": "string",
+                "minLength": 1
+              },
+              "debit": {
+                "type": "string",
+                "minLength": 1
+              },
+              "credit": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": ["date", "description", "dateFormat", "amountConvention"]
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "staged", "failed"]
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "stats": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "matched": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "missing": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "ambiguous": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "acknowledged": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": ["total", "matched", "missing", "ambiguous", "acknowledged"]
+          },
+          "acknowledgedExtraTransactionIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "createdAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "billId",
+          "filename",
+          "fileHash",
+          "mapping",
+          "status",
+          "active",
+          "stats",
+          "acknowledgedExtraTransactionIds",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "BillStatementRowPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "userId": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "uploadId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "rowNumber": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0
+                },
+                "raw": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                "parsed": {
+                  "type": "object",
+                  "properties": {
+                    "occurredAt": {
+                      "type": ["string", "null"],
+                      "format": "date-time"
+                    },
+                    "amountMinor": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0
+                    },
+                    "type": {
+                      "type": "string",
+                      "enum": ["expense", "income"]
+                    },
+                    "description": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["occurredAt", "amountMinor", "type", "description"]
+                },
+                "matchedTransactionId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "matchStatus": {
+                  "type": "string",
+                  "enum": ["matched", "missing_from_ledger", "ambiguous"]
+                },
+                "acknowledged": {
+                  "type": "boolean"
+                },
+                "problems": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "createdAt": {
+                  "type": ["string", "null"],
+                  "format": "date-time"
+                },
+                "updatedAt": {
+                  "type": ["string", "null"],
+                  "format": "date-time"
+                }
+              },
+              "required": [
+                "id",
+                "userId",
+                "uploadId",
+                "rowNumber",
+                "raw",
+                "matchStatus",
+                "acknowledged",
+                "problems",
+                "createdAt",
+                "updatedAt"
+              ]
+            }
+          },
+          "pageInfo": {
+            "type": "object",
+            "properties": {
+              "nextCursor": {
+                "type": ["string", "null"]
+              },
+              "hasMore": {
+                "type": "boolean"
+              },
+              "limit": {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              }
+            },
+            "required": ["nextCursor", "hasMore", "limit"]
+          }
+        },
+        "required": ["items", "pageInfo"]
+      },
+      "BillStatementRow": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "userId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uploadId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "rowNumber": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          },
+          "raw": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "parsed": {
+            "type": "object",
+            "properties": {
+              "occurredAt": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              },
+              "amountMinor": {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              },
+              "type": {
+                "type": "string",
+                "enum": ["expense", "income"]
+              },
+              "description": {
+                "type": "string"
+              }
+            },
+            "required": ["occurredAt", "amountMinor", "type", "description"]
+          },
+          "matchedTransactionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "matchStatus": {
+            "type": "string",
+            "enum": ["matched", "missing_from_ledger", "ambiguous"]
+          },
+          "acknowledged": {
+            "type": "boolean"
+          },
+          "problems": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "createdAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "uploadId",
+          "rowNumber",
+          "raw",
+          "matchStatus",
+          "acknowledged",
+          "problems",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "CreditCardBill": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "userId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "accountId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "cycleStart": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "cycleEnd": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "dueDate": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "amountDueMinor": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "reconciliationStatus": {
+            "type": "string",
+            "enum": ["awaiting_statement", "reconciled"]
+          },
+          "paidMinor": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "remainingMinor": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "paymentStatus": {
+            "type": "string",
+            "enum": ["unpaid", "partial", "paid"]
+          },
+          "createdAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "accountId",
+          "cycleStart",
+          "cycleEnd",
+          "dueDate",
+          "amountDueMinor",
+          "reconciliationStatus",
+          "paidMinor",
+          "remainingMinor",
+          "paymentStatus",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "BillPaymentResult": {
+        "type": "object",
+        "properties": {
+          "bill": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "userId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "accountId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "cycleStart": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              },
+              "cycleEnd": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              },
+              "dueDate": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              },
+              "amountDueMinor": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "reconciliationStatus": {
+                "type": "string",
+                "enum": ["awaiting_statement", "reconciled"]
+              },
+              "paidMinor": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "remainingMinor": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "paymentStatus": {
+                "type": "string",
+                "enum": ["unpaid", "partial", "paid"]
+              },
+              "createdAt": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              },
+              "updatedAt": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "id",
+              "userId",
+              "accountId",
+              "cycleStart",
+              "cycleEnd",
+              "dueDate",
+              "amountDueMinor",
+              "reconciliationStatus",
+              "paidMinor",
+              "remainingMinor",
+              "paymentStatus",
+              "createdAt",
+              "updatedAt"
+            ]
+          },
+          "transfer": {
+            "type": "object",
+            "properties": {
+              "transferGroupId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "fromTransaction": {
+                "type": "object",
+                "properties": {
+                  "accountId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "categoryId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": ["expense", "income"]
+                  },
+                  "amountMinor": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  },
+                  "occurredAt": {
+                    "type": ["string", "null"],
+                    "format": "date-time"
+                  },
+                  "description": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 500
+                  },
+                  "tags": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 40
+                    },
+                    "maxItems": 20,
+                    "default": []
+                  },
+                  "id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "userId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "currency": {
+                    "type": "string",
+                    "enum": ["INR"]
+                  },
+                  "source": {
+                    "type": "string",
+                    "enum": ["manual", "csv_import", "recurring", "api"]
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": ["posted", "reversed", "reversal"]
+                  },
+                  "idempotencyKey": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "reversalOf": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "reversedBy": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "transferGroupId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "billId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "createdAt": {
+                    "type": ["string", "null"],
+                    "format": "date-time"
+                  },
+                  "updatedAt": {
+                    "type": ["string", "null"],
+                    "format": "date-time"
+                  }
+                },
+                "required": [
+                  "accountId",
+                  "type",
+                  "amountMinor",
+                  "occurredAt",
+                  "description",
+                  "id",
+                  "userId",
+                  "currency",
+                  "source",
+                  "status",
+                  "createdAt",
+                  "updatedAt"
+                ]
+              },
+              "toTransaction": {
+                "type": "object",
+                "properties": {
+                  "accountId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "categoryId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": ["expense", "income"]
+                  },
+                  "amountMinor": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  },
+                  "occurredAt": {
+                    "type": ["string", "null"],
+                    "format": "date-time"
+                  },
+                  "description": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 500
+                  },
+                  "tags": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 40
+                    },
+                    "maxItems": 20,
+                    "default": []
+                  },
+                  "id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "userId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "currency": {
+                    "type": "string",
+                    "enum": ["INR"]
+                  },
+                  "source": {
+                    "type": "string",
+                    "enum": ["manual", "csv_import", "recurring", "api"]
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": ["posted", "reversed", "reversal"]
+                  },
+                  "idempotencyKey": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "reversalOf": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "reversedBy": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "transferGroupId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "billId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "createdAt": {
+                    "type": ["string", "null"],
+                    "format": "date-time"
+                  },
+                  "updatedAt": {
+                    "type": ["string", "null"],
+                    "format": "date-time"
+                  }
+                },
+                "required": [
+                  "accountId",
+                  "type",
+                  "amountMinor",
+                  "occurredAt",
+                  "description",
+                  "id",
+                  "userId",
+                  "currency",
+                  "source",
+                  "status",
+                  "createdAt",
+                  "updatedAt"
+                ]
+              }
+            },
+            "required": ["transferGroupId", "fromTransaction", "toTransaction"]
+          }
+        },
+        "required": ["bill", "transfer"]
       }
     },
     "parameters": {}
@@ -2213,6 +3478,22 @@
                     "type": "integer",
                     "minimum": -9007199254740991,
                     "maximum": 9007199254740991
+                  },
+                  "creditCardConfig": {
+                    "type": "object",
+                    "properties": {
+                      "statementDay": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 31
+                      },
+                      "dueDay": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 31
+                      }
+                    },
+                    "required": ["statementDay", "dueDay"]
                   }
                 },
                 "required": ["name", "type", "openingBalanceMinor"]
@@ -7049,6 +8330,1010 @@
           },
           "401": {
             "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/accounts/{accountId}/credit-card-config": {
+      "patch": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "accountId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "Idempotency-Key",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "statementDay": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 31
+                  },
+                  "dueDay": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 31
+                  }
+                },
+                "required": ["statementDay", "dueDay"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Configured credit-card cycle, or idempotent replay",
+            "headers": {
+              "Idempotency-Replayed": {
+                "schema": {
+                  "type": "string",
+                  "enum": ["true"]
+                },
+                "required": false
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Account"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Account not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Account is not a credit card",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/bills": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": false,
+            "name": "accountId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["awaiting_statement", "reconciled"]
+            },
+            "required": false,
+            "name": "reconciliationStatus",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["unpaid", "partial", "paid"]
+            },
+            "required": false,
+            "name": "paymentStatus",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": false,
+            "name": "cursor",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Credit-card bill page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillPage"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/bills/{billId}": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "billId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Credit-card bill detail",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Bill not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/bills/{billId}/statement": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "billId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "Idempotency-Key",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "description": "Issuer CSV statement file to upload (binary)"
+                  },
+                  "mapping": {
+                    "type": "string",
+                    "description": "JSON string containing ColumnMapping"
+                  }
+                },
+                "required": ["file", "mapping"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Idempotent statement-upload replay",
+            "headers": {
+              "Idempotency-Replayed": {
+                "schema": {
+                  "type": "string",
+                  "enum": ["true"]
+                },
+                "required": true
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillStatementUpload"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Statement accepted for parsing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillStatementUpload"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Bill not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Bill is already reconciled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/bills/{billId}/statement/rows": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "billId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["matched", "missing_from_ledger", "ambiguous"]
+            },
+            "required": false,
+            "name": "matchStatus",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": ["boolean", "null"]
+            },
+            "required": false,
+            "name": "acknowledged",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": false,
+            "name": "cursor",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Statement reconciliation rows",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillStatementRowPage"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Bill or statement not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/bills/{billId}/statement/rows/{rowId}": {
+      "patch": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "billId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "rowId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "Idempotency-Key",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "matchedTransactionId": {
+                    "type": ["string", "null"],
+                    "format": "uuid"
+                  },
+                  "acknowledged": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated reconciliation row, or idempotent replay",
+            "headers": {
+              "Idempotency-Replayed": {
+                "schema": {
+                  "type": "string",
+                  "enum": ["true"]
+                },
+                "required": false
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillStatementRow"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Bill, statement, row, or transaction not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Statement cannot be changed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/bills/{billId}/statement/acknowledge-extra": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "billId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "Idempotency-Key",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "transactionId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "acknowledged": {
+                    "type": "boolean"
+                  }
+                },
+                "required": ["transactionId", "acknowledged"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated extra-ledger acknowledgement, or replay",
+            "headers": {
+              "Idempotency-Replayed": {
+                "schema": {
+                  "type": "string",
+                  "enum": ["true"]
+                },
+                "required": false
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillStatementUpload"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Bill, statement, or transaction not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Statement cannot be changed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/bills/{billId}/statement/reconcile": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "billId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "Idempotency-Key",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reconciled bill, or idempotent replay",
+            "headers": {
+              "Idempotency-Replayed": {
+                "schema": {
+                  "type": "string",
+                  "enum": ["true"]
+                },
+                "required": false
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditCardBill"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Bill or statement not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Statement is not ready or has unresolved rows",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/bills/{billId}/pay": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "billId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "Idempotency-Key",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "fromAccountId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "amountMinor": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "occurredAt": {
+                    "type": ["string", "null"],
+                    "format": "date-time"
+                  }
+                },
+                "required": ["fromAccountId", "amountMinor", "occurredAt"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Bill payment, or idempotent replay",
+            "headers": {
+              "Idempotency-Replayed": {
+                "schema": {
+                  "type": "string",
+                  "enum": ["true"]
+                },
+                "required": false
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillPaymentResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Bill or payment account not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Bill is unreconciled, paid, or would be overpaid",
             "content": {
               "application/json": {
                 "schema": {

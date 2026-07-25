@@ -1,5 +1,10 @@
 import { Inject, Injectable } from "@nestjs/common";
-import type { Account, AccountId, CreateAccount } from "@treasury-ops/shared";
+import {
+  computeNextCreditCardStatementAt,
+  type Account,
+  type AccountId,
+  type CreateAccount
+} from "@treasury-ops/shared";
 
 import { DATABASE_CONNECTION } from "../common/db/db.module.js";
 import type { DrizzleDb } from "../common/db/db.module.js";
@@ -15,7 +20,11 @@ export class AccountService {
   ) {}
 
   async create(userId: string, input: CreateAccount): Promise<Account> {
-    return withTxn(this.db, async (tx) => this.accounts.create(userId, input, tx));
+    const nextStatementAt =
+      input.creditCardConfig === undefined
+        ? undefined
+        : computeNextCreditCardStatementAt(input.creditCardConfig.statementDay, new Date());
+    return withTxn(this.db, async (tx) => this.accounts.create(userId, input, tx, nextStatementAt));
   }
 
   list(userId: string): Promise<Account[]> {

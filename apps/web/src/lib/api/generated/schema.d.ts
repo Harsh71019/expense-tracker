@@ -75,6 +75,10 @@ export interface paths {
             /** @enum {string} */
             type: "bank" | "credit_card" | "cash" | "wallet" | "investment";
             openingBalanceMinor: number;
+            creditCardConfig?: {
+              statementDay: number;
+              dueDay: number;
+            };
           };
         };
       };
@@ -4040,6 +4044,787 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/v1/accounts/{accountId}/credit-card-config": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path: {
+          accountId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
+            statementDay: number;
+            dueDay: number;
+          };
+        };
+      };
+      responses: {
+        /** @description Configured credit-card cycle, or idempotent replay */
+        200: {
+          headers: {
+            "Idempotency-Replayed"?: "true";
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Account"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Account not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Account is not a credit card */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    trace?: never;
+  };
+  "/v1/bills": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: {
+          accountId?: string;
+          reconciliationStatus?: "awaiting_statement" | "reconciled";
+          paymentStatus?: "unpaid" | "partial" | "paid";
+          cursor?: string;
+          limit?: number;
+        };
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Credit-card bill page */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["BillPage"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/bills/{billId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          billId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Credit-card bill detail */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["BillDetail"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Bill not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/bills/{billId}/statement": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path: {
+          billId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "multipart/form-data": {
+            /** @description Issuer CSV statement file to upload (binary) */
+            file: string;
+            /** @description JSON string containing ColumnMapping */
+            mapping: string;
+          };
+        };
+      };
+      responses: {
+        /** @description Idempotent statement-upload replay */
+        200: {
+          headers: {
+            "Idempotency-Replayed": "true";
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["BillStatementUpload"];
+          };
+        };
+        /** @description Statement accepted for parsing */
+        201: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["BillStatementUpload"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Bill not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Bill is already reconciled */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/bills/{billId}/statement/rows": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: {
+          matchStatus?: "matched" | "missing_from_ledger" | "ambiguous";
+          acknowledged?: boolean | null;
+          cursor?: string;
+          limit?: number;
+        };
+        header?: never;
+        path: {
+          billId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Statement reconciliation rows */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["BillStatementRowPage"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Bill or statement not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/bills/{billId}/statement/rows/{rowId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path: {
+          billId: string;
+          rowId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
+            /** Format: uuid */
+            matchedTransactionId?: string | null;
+            acknowledged?: boolean;
+          };
+        };
+      };
+      responses: {
+        /** @description Updated reconciliation row, or idempotent replay */
+        200: {
+          headers: {
+            "Idempotency-Replayed"?: "true";
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["BillStatementRow"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Bill, statement, row, or transaction not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Statement cannot be changed */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    trace?: never;
+  };
+  "/v1/bills/{billId}/statement/acknowledge-extra": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path: {
+          billId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
+            /** Format: uuid */
+            transactionId: string;
+            acknowledged: boolean;
+          };
+        };
+      };
+      responses: {
+        /** @description Updated extra-ledger acknowledgement, or replay */
+        200: {
+          headers: {
+            "Idempotency-Replayed"?: "true";
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["BillStatementUpload"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Bill, statement, or transaction not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Statement cannot be changed */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/bills/{billId}/statement/reconcile": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path: {
+          billId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Reconciled bill, or idempotent replay */
+        200: {
+          headers: {
+            "Idempotency-Replayed"?: "true";
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["CreditCardBill"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Bill or statement not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Statement is not ready or has unresolved rows */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/bills/{billId}/pay": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path: {
+          billId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
+            /** Format: uuid */
+            fromAccountId: string;
+            amountMinor: number;
+            /** Format: date-time */
+            occurredAt: string | null;
+          };
+        };
+      };
+      responses: {
+        /** @description Bill payment, or idempotent replay */
+        200: {
+          headers: {
+            "Idempotency-Replayed"?: "true";
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["BillPaymentResult"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Bill or payment account not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Bill is unreconciled, paid, or would be overpaid */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -4055,6 +4840,12 @@ export interface components {
       /** @enum {string} */
       currency: "INR";
       balanceMinor: number;
+      creditCardConfig?: {
+        statementDay: number;
+        dueDay: number;
+        /** Format: date-time */
+        nextStatementAt: string | null;
+      };
       isArchived: boolean;
       /** Format: date-time */
       createdAt: string | null;
@@ -4088,6 +4879,13 @@ export interface components {
         | "import.invalid_file"
         | "import.already_committed"
         | "import.invalid_state"
+        | "bill.invalid_account_type"
+        | "bill.not_reconciled"
+        | "bill.overpayment"
+        | "bill.invalid_statement_file"
+        | "bill.statement_not_ready"
+        | "bill.unresolved_statement"
+        | "bill.already_reconciled"
         | "recurring.no_occurrences";
       reqId: string;
       /** Format: date-time */
@@ -4267,6 +5065,8 @@ export interface components {
         reversedBy?: string;
         /** Format: uuid */
         transferGroupId?: string;
+        /** Format: uuid */
+        billId?: string;
         /** Format: date-time */
         createdAt: string | null;
         /** Format: date-time */
@@ -4308,6 +5108,8 @@ export interface components {
       reversedBy?: string;
       /** Format: uuid */
       transferGroupId?: string;
+      /** Format: uuid */
+      billId?: string;
       /** Format: date-time */
       createdAt: string | null;
       /** Format: date-time */
@@ -4346,6 +5148,8 @@ export interface components {
         reversedBy?: string;
         /** Format: uuid */
         transferGroupId?: string;
+        /** Format: uuid */
+        billId?: string;
         /** Format: date-time */
         createdAt: string | null;
         /** Format: date-time */
@@ -4381,6 +5185,8 @@ export interface components {
         reversedBy?: string;
         /** Format: uuid */
         transferGroupId?: string;
+        /** Format: uuid */
+        billId?: string;
         /** Format: date-time */
         createdAt: string | null;
         /** Format: date-time */
@@ -4421,6 +5227,8 @@ export interface components {
           reversedBy?: string;
           /** Format: uuid */
           transferGroupId?: string;
+          /** Format: uuid */
+          billId?: string;
           /** Format: date-time */
           createdAt: string | null;
           /** Format: date-time */
@@ -4456,6 +5264,8 @@ export interface components {
           reversedBy?: string;
           /** Format: uuid */
           transferGroupId?: string;
+          /** Format: uuid */
+          billId?: string;
           /** Format: date-time */
           createdAt: string | null;
           /** Format: date-time */
@@ -4753,6 +5563,397 @@ export interface components {
         /** Format: date-time */
         nextRunAt: string | null;
       }[];
+    };
+    BillPage: {
+      items: {
+        /** Format: uuid */
+        id: string;
+        userId: string;
+        /** Format: uuid */
+        accountId: string;
+        /** Format: date-time */
+        cycleStart: string | null;
+        /** Format: date-time */
+        cycleEnd: string | null;
+        /** Format: date-time */
+        dueDate: string | null;
+        amountDueMinor: number;
+        /** @enum {string} */
+        reconciliationStatus: "awaiting_statement" | "reconciled";
+        paidMinor: number;
+        remainingMinor: number;
+        /** @enum {string} */
+        paymentStatus: "unpaid" | "partial" | "paid";
+        /** Format: date-time */
+        createdAt: string | null;
+        /** Format: date-time */
+        updatedAt: string | null;
+      }[];
+      pageInfo: {
+        nextCursor: string | null;
+        hasMore: boolean;
+        limit: number;
+      };
+    };
+    BillDetail: {
+      bill: {
+        /** Format: uuid */
+        id: string;
+        userId: string;
+        /** Format: uuid */
+        accountId: string;
+        /** Format: date-time */
+        cycleStart: string | null;
+        /** Format: date-time */
+        cycleEnd: string | null;
+        /** Format: date-time */
+        dueDate: string | null;
+        amountDueMinor: number;
+        /** @enum {string} */
+        reconciliationStatus: "awaiting_statement" | "reconciled";
+        paidMinor: number;
+        remainingMinor: number;
+        /** @enum {string} */
+        paymentStatus: "unpaid" | "partial" | "paid";
+        /** Format: date-time */
+        createdAt: string | null;
+        /** Format: date-time */
+        updatedAt: string | null;
+      };
+      account: {
+        name: string;
+        /** @enum {string} */
+        type: "bank" | "credit_card" | "cash" | "wallet" | "investment";
+        openingBalanceMinor: number;
+        /** Format: uuid */
+        id: string;
+        userId: string;
+        /** @enum {string} */
+        currency: "INR";
+        balanceMinor: number;
+        creditCardConfig?: {
+          statementDay: number;
+          dueDay: number;
+          /** Format: date-time */
+          nextStatementAt: string | null;
+        };
+        isArchived: boolean;
+        /** Format: date-time */
+        createdAt: string | null;
+        /** Format: date-time */
+        updatedAt: string | null;
+      };
+      activeStatement?: {
+        /** Format: uuid */
+        id: string;
+        userId: string;
+        /** Format: uuid */
+        billId: string;
+        filename: string;
+        fileHash: string;
+        mapping: {
+          date: string;
+          description: string;
+          /** @enum {string} */
+          dateFormat: "DD/MM/YYYY" | "MM/DD/YYYY" | "YYYY-MM-DD";
+          /** @enum {string} */
+          amountConvention: "single_signed" | "debit_credit_cols";
+          amount?: string;
+          debit?: string;
+          credit?: string;
+        };
+        /** @enum {string} */
+        status: "pending" | "staged" | "failed";
+        active: boolean;
+        stats: {
+          total: number;
+          matched: number;
+          missing: number;
+          ambiguous: number;
+          acknowledged: number;
+        };
+        acknowledgedExtraTransactionIds: string[];
+        /** Format: date-time */
+        createdAt: string | null;
+        /** Format: date-time */
+        updatedAt: string | null;
+      };
+      reconciliation: {
+        stats: {
+          total: number;
+          matched: number;
+          missing: number;
+          ambiguous: number;
+          acknowledged: number;
+        };
+        unresolved: number;
+        canReconcile: boolean;
+        extraTransactions: {
+          /** Format: uuid */
+          accountId: string;
+          /** Format: uuid */
+          categoryId?: string;
+          /** @enum {string} */
+          type: "expense" | "income";
+          amountMinor: number;
+          /** Format: date-time */
+          occurredAt: string | null;
+          description: string;
+          /** @default [] */
+          tags: string[];
+          /** Format: uuid */
+          id: string;
+          userId: string;
+          /** @enum {string} */
+          currency: "INR";
+          /** @enum {string} */
+          source: "manual" | "csv_import" | "recurring" | "api";
+          /** @enum {string} */
+          status: "posted" | "reversed" | "reversal";
+          /** Format: uuid */
+          idempotencyKey?: string;
+          /** Format: uuid */
+          reversalOf?: string;
+          /** Format: uuid */
+          reversedBy?: string;
+          /** Format: uuid */
+          transferGroupId?: string;
+          /** Format: uuid */
+          billId?: string;
+          /** Format: date-time */
+          createdAt: string | null;
+          /** Format: date-time */
+          updatedAt: string | null;
+        }[];
+      };
+    };
+    BillStatementUpload: {
+      /** Format: uuid */
+      id: string;
+      userId: string;
+      /** Format: uuid */
+      billId: string;
+      filename: string;
+      fileHash: string;
+      mapping: {
+        date: string;
+        description: string;
+        /** @enum {string} */
+        dateFormat: "DD/MM/YYYY" | "MM/DD/YYYY" | "YYYY-MM-DD";
+        /** @enum {string} */
+        amountConvention: "single_signed" | "debit_credit_cols";
+        amount?: string;
+        debit?: string;
+        credit?: string;
+      };
+      /** @enum {string} */
+      status: "pending" | "staged" | "failed";
+      active: boolean;
+      stats: {
+        total: number;
+        matched: number;
+        missing: number;
+        ambiguous: number;
+        acknowledged: number;
+      };
+      acknowledgedExtraTransactionIds: string[];
+      /** Format: date-time */
+      createdAt: string | null;
+      /** Format: date-time */
+      updatedAt: string | null;
+    };
+    BillStatementRowPage: {
+      items: {
+        /** Format: uuid */
+        id: string;
+        userId: string;
+        /** Format: uuid */
+        uploadId: string;
+        rowNumber: number;
+        raw: {
+          [key: string]: string;
+        };
+        parsed?: {
+          /** Format: date-time */
+          occurredAt: string | null;
+          amountMinor: number;
+          /** @enum {string} */
+          type: "expense" | "income";
+          description: string;
+        };
+        /** Format: uuid */
+        matchedTransactionId?: string;
+        /** @enum {string} */
+        matchStatus: "matched" | "missing_from_ledger" | "ambiguous";
+        acknowledged: boolean;
+        problems: string[];
+        /** Format: date-time */
+        createdAt: string | null;
+        /** Format: date-time */
+        updatedAt: string | null;
+      }[];
+      pageInfo: {
+        nextCursor: string | null;
+        hasMore: boolean;
+        limit: number;
+      };
+    };
+    BillStatementRow: {
+      /** Format: uuid */
+      id: string;
+      userId: string;
+      /** Format: uuid */
+      uploadId: string;
+      rowNumber: number;
+      raw: {
+        [key: string]: string;
+      };
+      parsed?: {
+        /** Format: date-time */
+        occurredAt: string | null;
+        amountMinor: number;
+        /** @enum {string} */
+        type: "expense" | "income";
+        description: string;
+      };
+      /** Format: uuid */
+      matchedTransactionId?: string;
+      /** @enum {string} */
+      matchStatus: "matched" | "missing_from_ledger" | "ambiguous";
+      acknowledged: boolean;
+      problems: string[];
+      /** Format: date-time */
+      createdAt: string | null;
+      /** Format: date-time */
+      updatedAt: string | null;
+    };
+    CreditCardBill: {
+      /** Format: uuid */
+      id: string;
+      userId: string;
+      /** Format: uuid */
+      accountId: string;
+      /** Format: date-time */
+      cycleStart: string | null;
+      /** Format: date-time */
+      cycleEnd: string | null;
+      /** Format: date-time */
+      dueDate: string | null;
+      amountDueMinor: number;
+      /** @enum {string} */
+      reconciliationStatus: "awaiting_statement" | "reconciled";
+      paidMinor: number;
+      remainingMinor: number;
+      /** @enum {string} */
+      paymentStatus: "unpaid" | "partial" | "paid";
+      /** Format: date-time */
+      createdAt: string | null;
+      /** Format: date-time */
+      updatedAt: string | null;
+    };
+    BillPaymentResult: {
+      bill: {
+        /** Format: uuid */
+        id: string;
+        userId: string;
+        /** Format: uuid */
+        accountId: string;
+        /** Format: date-time */
+        cycleStart: string | null;
+        /** Format: date-time */
+        cycleEnd: string | null;
+        /** Format: date-time */
+        dueDate: string | null;
+        amountDueMinor: number;
+        /** @enum {string} */
+        reconciliationStatus: "awaiting_statement" | "reconciled";
+        paidMinor: number;
+        remainingMinor: number;
+        /** @enum {string} */
+        paymentStatus: "unpaid" | "partial" | "paid";
+        /** Format: date-time */
+        createdAt: string | null;
+        /** Format: date-time */
+        updatedAt: string | null;
+      };
+      transfer: {
+        /** Format: uuid */
+        transferGroupId: string;
+        fromTransaction: {
+          /** Format: uuid */
+          accountId: string;
+          /** Format: uuid */
+          categoryId?: string;
+          /** @enum {string} */
+          type: "expense" | "income";
+          amountMinor: number;
+          /** Format: date-time */
+          occurredAt: string | null;
+          description: string;
+          /** @default [] */
+          tags: string[];
+          /** Format: uuid */
+          id: string;
+          userId: string;
+          /** @enum {string} */
+          currency: "INR";
+          /** @enum {string} */
+          source: "manual" | "csv_import" | "recurring" | "api";
+          /** @enum {string} */
+          status: "posted" | "reversed" | "reversal";
+          /** Format: uuid */
+          idempotencyKey?: string;
+          /** Format: uuid */
+          reversalOf?: string;
+          /** Format: uuid */
+          reversedBy?: string;
+          /** Format: uuid */
+          transferGroupId?: string;
+          /** Format: uuid */
+          billId?: string;
+          /** Format: date-time */
+          createdAt: string | null;
+          /** Format: date-time */
+          updatedAt: string | null;
+        };
+        toTransaction: {
+          /** Format: uuid */
+          accountId: string;
+          /** Format: uuid */
+          categoryId?: string;
+          /** @enum {string} */
+          type: "expense" | "income";
+          amountMinor: number;
+          /** Format: date-time */
+          occurredAt: string | null;
+          description: string;
+          /** @default [] */
+          tags: string[];
+          /** Format: uuid */
+          id: string;
+          userId: string;
+          /** @enum {string} */
+          currency: "INR";
+          /** @enum {string} */
+          source: "manual" | "csv_import" | "recurring" | "api";
+          /** @enum {string} */
+          status: "posted" | "reversed" | "reversal";
+          /** Format: uuid */
+          idempotencyKey?: string;
+          /** Format: uuid */
+          reversalOf?: string;
+          /** Format: uuid */
+          reversedBy?: string;
+          /** Format: uuid */
+          transferGroupId?: string;
+          /** Format: uuid */
+          billId?: string;
+          /** Format: date-time */
+          createdAt: string | null;
+          /** Format: date-time */
+          updatedAt: string | null;
+        };
+      };
     };
   };
   responses: never;

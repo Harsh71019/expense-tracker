@@ -2,6 +2,8 @@ import { NestFactory } from "@nestjs/core";
 import { Logger } from "nestjs-pino";
 
 import { AppModule } from "./app.module.js";
+import { BillReconciliationService } from "./bills/bill-reconciliation.service.js";
+import { startBillStatementsWorker } from "./bills/bill-statements.processor.js";
 import { RuntimeConfigService } from "./common/config/runtime-config.service.js";
 import { LogEvent } from "./common/logging/events.js";
 import { RedisService } from "./common/redis/redis.service.js";
@@ -40,6 +42,11 @@ async function bootstrapWorker(): Promise<void> {
     app.get(NotificationDeliveryService),
     logger
   );
+  const billStatementsWorker = startBillStatementsWorker(
+    app.get(RuntimeConfigService),
+    app.get(BillReconciliationService),
+    logger
+  );
   logger.log({ event: "worker.started" }, "worker process started");
 
   let isShuttingDown = false;
@@ -49,7 +56,11 @@ async function bootstrapWorker(): Promise<void> {
     clearInterval(heartbeatTimer);
     logger.log({ event: LogEvent.WorkerStopping, signal }, "worker process stopping");
 
-    const results = await Promise.allSettled([importsWorker.close(), notificationsWorker.close()]);
+    const results = await Promise.allSettled([
+      importsWorker.close(),
+      notificationsWorker.close(),
+      billStatementsWorker.close()
+    ]);
     for (const result of results) {
       if (result.status === "rejected") {
         logger.error(

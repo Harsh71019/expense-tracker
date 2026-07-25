@@ -1,7 +1,7 @@
 import type { ColumnMapping } from "@treasury-ops/shared";
 import { describe, expect, it } from "vitest";
 
-import { parseCsvRow } from "../parse-csv-row.js";
+import { parseCsvRow } from "../../common/csv/parse-csv-row.js";
 
 const HDFC_MAPPING: ColumnMapping = {
   date: "Txn Date",

@@ -32,6 +32,11 @@ describe("OpenApiController", () => {
       expect(paths).toContain("/v1/goals/{goalId}/abandon");
       expect(paths).toContain("/v1/goals/{goalId}/plan");
       expect(paths).toContain("/v1/imports/accounts/{accountId}/mapping");
+      expect(paths).toContain("/v1/bills");
+      expect(paths).toContain("/v1/bills/{billId}");
+      expect(paths).toContain("/v1/bills/{billId}/statement");
+      expect(paths).toContain("/v1/bills/{billId}/statement/rows");
+      expect(paths).toContain("/v1/bills/{billId}/pay");
     });
 
     it("publishes required idempotency headers for UI mutation contracts", () => {
@@ -53,7 +58,13 @@ describe("OpenApiController", () => {
         spec.paths?.["/v1/goals"]?.post,
         spec.paths?.["/v1/goals/reorder"]?.patch,
         spec.paths?.["/v1/goals/{goalId}"]?.patch,
-        spec.paths?.["/v1/goals/{goalId}/abandon"]?.post
+        spec.paths?.["/v1/goals/{goalId}/abandon"]?.post,
+        spec.paths?.["/v1/accounts/{accountId}/credit-card-config"]?.patch,
+        spec.paths?.["/v1/bills/{billId}/statement"]?.post,
+        spec.paths?.["/v1/bills/{billId}/statement/rows/{rowId}"]?.patch,
+        spec.paths?.["/v1/bills/{billId}/statement/acknowledge-extra"]?.post,
+        spec.paths?.["/v1/bills/{billId}/statement/reconcile"]?.post,
+        spec.paths?.["/v1/bills/{billId}/pay"]?.post
       ];
 
       for (const operation of mutationOperations) {

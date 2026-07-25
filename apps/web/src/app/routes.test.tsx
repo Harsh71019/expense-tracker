@@ -132,7 +132,8 @@ vi.mock("@/features/profile", () => ({
       <p>Signed in as</p>
       <p>{email}</p>
     </section>
-  )
+  ),
+  EditDisplayNameForm: () => null
 }));
 vi.mock("@/features/profile/server/get-profile", () => ({ getProfile: async () => null }));
 vi.mock("@/features/reports", () => ({

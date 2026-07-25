@@ -1,17 +1,20 @@
 services:
+  # Local-dev-only throwaway Postgres. Not started by default -- production and any
+  # normal `docker compose up` don't touch it, since Postgres is shared infra
+  # (container 102) reached over the network via DATABASE_URL. To use this instead
+  # (e.g. offline, or to avoid touching shared infra while developing), set
+  # `COMPOSE_PROFILES=local` in your own .env; every compose command then picks it
+  # up automatically. Never point this stack's DATABASE_URL at container 102 for
+  # local dev/test data -- use this local container instead.
   postgres:
     image: postgres:18-alpine
+    profiles: ["local"]
     restart: unless-stopped
     env_file: .env
     environment:
       POSTGRES_DB: treasury_ops
       POSTGRES_USER: treasury_ops
     ports:
-      # Bind to loopback by default -- reachable as localhost:5433 for local dev (matches
-      # .env.development.local.example) and from the deploy host itself, but not from the
-      # LAN/internet. Set POSTGRES_BIND_ADDR=0.0.0.0 in .env only if you deliberately need to
-      # reach this Postgres from another machine (e.g. a GUI client on your LAN) -- never in
-      # production, where the app containers are the only intended clients.
       - "${POSTGRES_BIND_ADDR:-127.0.0.1}:5433:5432"
     volumes:
       - treasury-ops-postgres-data:/var/lib/postgresql
@@ -29,6 +32,10 @@ services:
         max-file: "3"
 
   # One-shot: runs drizzle-kit migrate, exits 0. Gates everything else.
+  # No depends_on the local `postgres` service above -- in production, Postgres is
+  # shared infra (container 102), reached over the network via DATABASE_URL. A
+  # migrate failure (including "can't reach the DB") aborts the deploy before
+  # anything else restarts, same as before.
   migrate:
     image: treasury-ops-api:local
     build:
@@ -39,9 +46,6 @@ services:
     # execute a shell script. Invoke drizzle-kit's real JS entrypoint instead.
     command: ["node_modules/drizzle-kit/bin.cjs", "migrate"]
     env_file: .env
-    depends_on:
-      postgres:
-        condition: service_healthy
     networks:
       - treasury-ops-net
     restart: "no"

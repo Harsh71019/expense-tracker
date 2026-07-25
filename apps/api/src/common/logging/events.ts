@@ -20,6 +20,9 @@ export const LogEvent = {
   GoalAchieved: "goal.achieved",
   GoalProgressCheckFailed: "goal.progress_check_failed",
   GoalsProgressChecked: "goals.progress_checked",
+  BudgetAlertEnqueued: "budget.alert_enqueued",
+  BudgetAlertCheckFailed: "budget.alert_check_failed",
+  BudgetAlertsChecked: "budgets.alerts_checked",
   WorkerHeartbeatFailed: "worker.heartbeat_failed",
   WorkerStopping: "worker.stopping",
   WorkerStopped: "worker.stopped"

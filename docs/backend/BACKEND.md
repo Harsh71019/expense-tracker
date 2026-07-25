@@ -257,18 +257,61 @@ exists. Without one, it projects a completion date from the since-creation
 average contribution rate. A 02:05 IST worker sweep atomically marks completed
 goals achieved and writes one `goal_achieved` outbox notification.
 
-#### `budgets`
+#### `budgets` + `budget_alert_events`
 
 ```ts
+// budgets -- one lifetime configuration per (userId, categoryId)
 {
-  _id: ObjectId,
+  id: UUID,
   userId: string,
-  categoryId: ObjectId,
-  period: 'monthly',
-  limitMinor: number,
-  alertThresholds: [0.8, 1.0]    // notify at 80% and 100%
+  categoryId: UUID,              // must belong to the user and be kind = 'expense'
+  limitMinor: number,             // positive integer paise
+  isArchived: boolean,
+  createdAt: Date, updatedAt: Date
+}
+
+// budget_alert_events -- immutable dedup/evidence rows, never updated or deleted
+{
+  id: UUID,
+  userId: string,
+  budgetId: UUID,
+  month: 'YYYY-MM',
+  policyVersion: number,          // 1 today: thresholds [8000, 10000] bps
+  thresholdBps: number,
+  spentMinor: number, limitMinor: number,  // snapshot at the moment the threshold fired
+  createdAt: Date
 }
 ```
+
+Budgets are current-month-only and exact-category (no descendant rollup, no
+overall/household budget yet). `spentMinor`/`remainingMinor`/`utilizationBps`
+are never cached on the row — `GET /v1/budgets` derives them live from one
+bounded aggregate over posted, non-transfer, exact-category expense
+transactions in the current IST month, deliberately not the nightly
+`monthly_rollups` cache (that cache doesn't exclude transfer legs; budget
+progress must not inherit that semantic). Archiving a category makes any
+budget attached to it "ineffective" (zeroed progress, no alerts) without
+touching the budget row itself, so restoring the category or re-pointing a
+new budget at it recovers cleanly.
+
+`PUT /v1/budgets/:categoryId` creates, updates, or restores the one lifetime
+row for that category in a single statement (Postgres `ON CONFLICT DO
+UPDATE` on the `(userId, categoryId)` unique index) — there is no separate
+create vs. update endpoint. `PATCH /v1/budgets/:budgetId/archive` is
+recoverable (no hard delete); restoring happens by `PUT`-ing a new limit for
+the same category.
+
+A daily 08:00 IST worker-only cron (`BudgetAlertCron`, plain `@nestjs/schedule`
+`@Cron`, not a dedicated BullMQ queue — the existing generic
+`notification_outbox` → sweep → queue → adapter pipeline already delivers
+whatever lands in the outbox, `budget_alert` included) walks every
+non-archived budget, recomputes live progress, and for any threshold newly
+crossed this month: locks the budget row (`SELECT ... FOR UPDATE`, so a
+concurrent pass blocks and then re-reads the already-recorded thresholds
+instead of racing them), inserts the missing `budget_alert_events` row(s),
+and enqueues exactly one `budget_alert` outbox entry for the highest
+newly-reached threshold — mirroring `GoalsProgressCron`'s direct
+per-entity `withTxn` + outbox-enqueue shape.
 
 #### `monthly_rollups` — materialized reports (cron-maintained)
 
@@ -521,7 +564,7 @@ GET    /assets/:id/valuations | POST /assets/:id/valuations
 GET    /net-worth
 GET    /profile                         read-only app profile
 GET    /recurring | POST /recurring | PATCH /recurring/:id
-GET    /budgets | PUT /budgets/:categoryId
+GET    /budgets | PUT /budgets/:categoryId | PATCH /budgets/:budgetId/archive
 
 GET    /reports/monthly/:month          reads monthly_rollups
 GET    /reports/cashflow?from&to

@@ -57,6 +57,13 @@
       "when": 1784969546667,
       "tag": "0007_mute_revanche",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1784989081850,
+      "tag": "0008_add_budget_module",
+      "breakpoints": true
     }
   ]
 }

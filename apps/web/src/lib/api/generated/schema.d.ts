@@ -3240,6 +3240,230 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/v1/budgets": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: {
+          cursor?: string;
+          limit?: number;
+          includeArchived?: "true" | "false";
+        };
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Budget page with live progress and overview totals */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["BudgetPage"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/budgets/{categoryId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path: {
+          categoryId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
+            limitMinor: number;
+          };
+        };
+      };
+      responses: {
+        /** @description Created, updated, restored budget configuration, or idempotent replay */
+        200: {
+          headers: {
+            "Idempotency-Replayed"?: "true";
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Budget"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Category not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/budgets/{budgetId}/archive": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path: {
+          budgetId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Archived budget configuration, or idempotent replay */
+        200: {
+          headers: {
+            "Idempotency-Replayed"?: "true";
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Budget"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Budget not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    trace?: never;
+  };
   "/v1/api-keys": {
     parameters: {
       query?: never;
@@ -4638,6 +4862,68 @@ export interface components {
       requiredMonthlyMinor: number | null;
       /** Format: date-time */
       projectedCompletionDate: string | null;
+    };
+    BudgetPage: {
+      month: string;
+      /** Format: date-time */
+      computedAt: string | null;
+      alertPolicy: {
+        thresholdsBps: number[];
+      };
+      overview: {
+        plannedMinor: number;
+        spentInBudgetedCategoriesMinor: number;
+        remainingMinor: number;
+        unbudgetedSpentMinor: number;
+        activeBudgetCount: number;
+      };
+      items: {
+        budget: {
+          /** Format: uuid */
+          id: string;
+          userId: string;
+          /** Format: uuid */
+          categoryId: string;
+          limitMinor: number;
+          isArchived: boolean;
+          /** Format: date-time */
+          createdAt: string | null;
+          /** Format: date-time */
+          updatedAt: string | null;
+        };
+        category: {
+          /** Format: uuid */
+          id: string;
+          name: string;
+          icon: string | null;
+          color: string | null;
+          isArchived: boolean;
+        };
+        spentMinor: number;
+        remainingMinor: number;
+        utilizationBps: number;
+        /** @enum {string} */
+        state: "under" | "approaching" | "reached";
+        isEffective: boolean;
+      }[];
+      pageInfo: {
+        nextCursor: string | null;
+        hasMore: boolean;
+        limit: number;
+      };
+    };
+    Budget: {
+      /** Format: uuid */
+      id: string;
+      userId: string;
+      /** Format: uuid */
+      categoryId: string;
+      limitMinor: number;
+      isArchived: boolean;
+      /** Format: date-time */
+      createdAt: string | null;
+      /** Format: date-time */
+      updatedAt: string | null;
     };
     DashboardSummary: {
       totalBalanceMinor: number;

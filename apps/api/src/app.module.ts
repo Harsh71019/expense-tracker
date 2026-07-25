@@ -22,6 +22,7 @@ import { AccountsModule } from "./accounts/accounts.module.js";
 import { ApiKeysModule } from "./api-keys/api-keys.module.js";
 import { AssetsModule } from "./assets/assets.module.js";
 import { AuditModule } from "./audit/audit.module.js";
+import { BudgetsModule } from "./budgets/budgets.module.js";
 import { CategoriesModule } from "./categories/categories.module.js";
 import { CategoryRulesModule } from "./category-rules/category-rules.module.js";
 import { DashboardModule } from "./dashboard/dashboard.module.js";
@@ -76,6 +77,7 @@ function isUnthrottledPath(context: ExecutionContext): boolean {
     RecurringModule,
     ReportsModule,
     GoalsModule,
+    BudgetsModule,
     DashboardModule,
     OpenApiModule,
     LoggerModule.forRootAsync({

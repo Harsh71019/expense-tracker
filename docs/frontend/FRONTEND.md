@@ -199,6 +199,10 @@ export function useCreateTxn() {
 - Feature code sends operation-level feedback through `lib/toast.ts`, never by importing the
   toast vendor directly. Success, info, warning, and error lifetimes are centralized; field
   validation remains inline beside its field.
+- Every user-triggered API operation reports completion or failure through that facade, including
+  authentication, accounts, transactions, transfers, categories, assets, imports, exports,
+  recurring rules, and API keys. Immediate visual controls such as filters and theme selection do
+  not emit redundant toasts.
 - Import mapping editor persists per-account mapping through the API and previews the first 5 parsed rows live as the mapping changes.
 
 ---

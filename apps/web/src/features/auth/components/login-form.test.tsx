@@ -7,7 +7,9 @@ import { LoginForm } from "./login-form";
 const mocks = vi.hoisted(() => ({
   signInWithEmail: vi.fn(),
   push: vi.fn(),
-  refresh: vi.fn()
+  refresh: vi.fn(),
+  toastSuccess: vi.fn(),
+  toastError: vi.fn()
 }));
 
 vi.mock("next/navigation", () => ({
@@ -18,12 +20,17 @@ vi.mock("next/navigation", () => ({
 vi.mock("../../../lib/auth/client", () => ({
   authClient: { signIn: { email: mocks.signInWithEmail } }
 }));
+vi.mock("../../../lib/toast", () => ({
+  toast: { success: mocks.toastSuccess, error: mocks.toastError }
+}));
 
 describe("LoginForm", () => {
   beforeEach(() => {
     mocks.signInWithEmail.mockReset();
     mocks.push.mockReset();
     mocks.refresh.mockReset();
+    mocks.toastSuccess.mockReset();
+    mocks.toastError.mockReset();
   });
 
   it("submits entered credentials to the requested internal return path and navigates there", async () => {
@@ -44,6 +51,7 @@ describe("LoginForm", () => {
     });
     await waitFor(() => expect(mocks.push).toHaveBeenCalledWith("/transactions"));
     expect(mocks.refresh).toHaveBeenCalled();
+    expect(mocks.toastSuccess).toHaveBeenCalledWith("Signed in successfully");
   });
 
   it("renders the auth provider error and restores the submit button", async () => {
@@ -59,6 +67,7 @@ describe("LoginForm", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("Invalid credentials");
     expect(screen.getByRole("button", { name: "Sign in" })).toBeEnabled();
     expect(mocks.push).not.toHaveBeenCalled();
+    expect(mocks.toastError).toHaveBeenCalledWith("Invalid credentials");
   });
 
   it("shows a retryable error when the sign-in request rejects", async () => {
@@ -73,5 +82,8 @@ describe("LoginForm", () => {
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Unable to sign in right now");
     expect(screen.getByRole("button", { name: "Sign in" })).toBeEnabled();
+    expect(mocks.toastError).toHaveBeenCalledWith(
+      "Unable to sign in right now. Check your connection and try again."
+    );
   });
 });

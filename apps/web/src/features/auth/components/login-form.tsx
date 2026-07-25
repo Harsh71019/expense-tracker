@@ -8,6 +8,7 @@ import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { authClient } from "../../../lib/auth/client";
 import { getSafeCallbackPath } from "../../../lib/auth/redirect";
+import { toast } from "../../../lib/toast";
 
 export function LoginForm(): ReactNode {
   const router = useRouter();
@@ -35,13 +36,18 @@ export function LoginForm(): ReactNode {
     try {
       const result = await authClient.signIn.email({ email, password, rememberMe, callbackURL });
       if (result.error !== null) {
-        setError(result.error.message ?? "Sign-in failed.");
+        const message = result.error.message ?? "Sign-in failed.";
+        setError(message);
+        toast.error(message);
       } else {
+        toast.success("Signed in successfully");
         router.push(callbackURL);
         router.refresh();
       }
     } catch {
-      setError("Unable to sign in right now. Check your connection and try again.");
+      const message = "Unable to sign in right now. Check your connection and try again.";
+      setError(message);
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }

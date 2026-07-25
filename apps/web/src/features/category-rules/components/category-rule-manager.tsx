@@ -40,6 +40,7 @@ export function CategoryRuleManager({
       await createRule.mutateAsync(parsed.data);
       setPattern("");
       setCategoryId("");
+      toast.success("Category rule created");
     } catch {
       toast.error("Could not create this rule");
     }
@@ -48,6 +49,7 @@ export function CategoryRuleManager({
   async function remove(rule: CategoryRule): Promise<void> {
     try {
       await deleteRule.mutateAsync(rule.id);
+      toast.success("Category rule deleted");
     } catch {
       toast.error("Could not delete this rule");
     }

@@ -7,7 +7,9 @@ import { SignOutButton } from "./sign-out-button";
 const mocks = vi.hoisted(() => ({
   push: vi.fn(),
   refresh: vi.fn(),
-  signOut: vi.fn()
+  signOut: vi.fn(),
+  toastSuccess: vi.fn(),
+  toastError: vi.fn()
 }));
 
 vi.mock("next/navigation", () => ({
@@ -17,12 +19,17 @@ vi.mock("next/navigation", () => ({
 vi.mock("../../../lib/auth/client", () => ({
   authClient: { signOut: mocks.signOut }
 }));
+vi.mock("../../../lib/toast", () => ({
+  toast: { success: mocks.toastSuccess, error: mocks.toastError }
+}));
 
 describe("SignOutButton", () => {
   beforeEach(() => {
     mocks.push.mockReset();
     mocks.refresh.mockReset();
     mocks.signOut.mockReset();
+    mocks.toastSuccess.mockReset();
+    mocks.toastError.mockReset();
   });
 
   it("ends the session then navigates to a refreshed login page", async () => {
@@ -35,6 +42,7 @@ describe("SignOutButton", () => {
     expect(mocks.signOut).toHaveBeenCalledOnce();
     expect(mocks.push).toHaveBeenCalledWith("/login");
     expect(mocks.refresh).toHaveBeenCalledOnce();
+    expect(mocks.toastSuccess).toHaveBeenCalledWith("Signed out successfully");
   });
 
   it("restores the control and explains a rejected sign-out request", async () => {
@@ -47,6 +55,9 @@ describe("SignOutButton", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("Unable to sign out right now");
     expect(screen.getByRole("button", { name: "Sign out" })).toBeEnabled();
     expect(mocks.push).not.toHaveBeenCalled();
+    expect(mocks.toastError).toHaveBeenCalledWith(
+      "Unable to sign out right now. Check your connection and try again."
+    );
   });
 
   it("uses an icon-sized sign-out control in compact mode", () => {

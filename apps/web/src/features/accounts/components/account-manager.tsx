@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { Money, SignedMoney } from "@/components/ui/money";
+import { toast } from "@/lib/toast";
 
 import { useAccounts } from "../hooks/use-accounts";
 import { useArchiveAccount } from "../hooks/use-archive-account";
@@ -77,8 +78,12 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
     try {
       await createAccount.mutateAsync(parsed.data);
       setCreateOpen(false);
+      setError(undefined);
+      toast.success("Account created");
     } catch (caught: unknown) {
-      setError(caught instanceof Error ? caught.message : "Could not create this account.");
+      const message = caught instanceof Error ? caught.message : "Could not create this account.";
+      setError(message);
+      toast.error(message);
     }
   }
 
@@ -88,8 +93,11 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
       await archiveAccount.mutateAsync(confirming.id);
       setConfirming(undefined);
       setError(undefined);
+      toast.success("Account archived");
     } catch (caught: unknown) {
-      setError(caught instanceof Error ? caught.message : "Could not archive this account.");
+      const message = caught instanceof Error ? caught.message : "Could not archive this account.";
+      setError(message);
+      toast.error(message);
     }
   }
 

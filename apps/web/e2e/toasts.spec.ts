@@ -21,4 +21,16 @@ test.describe("frontend toast notifications", () => {
     await notifications.getByRole("button", { name: "Dismiss notification" }).click();
     await expect(notifications.getByText("Transaction recorded in ledger")).toBeHidden();
   });
+
+  test("announces successful sign-in across the authenticated redirect", async ({ page }) => {
+    await page.goto("/login?next=%2Fadd");
+    await page.getByLabel("Email").fill("you@treasury-ops.mock");
+    await page.getByLabel("Password").fill("correct-password");
+    await page.getByRole("button", { name: "Sign in" }).click();
+
+    await expect(page).toHaveURL(/\/add$/);
+    await expect(
+      page.getByLabel("Application notifications").getByText("Signed in successfully")
+    ).toBeVisible();
+  });
 });

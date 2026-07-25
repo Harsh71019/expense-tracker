@@ -10,8 +10,12 @@ export function ApiKeyReveal({
   onDismiss
 }: Readonly<{ apiKey: string; onDismiss: () => void }>): ReactNode {
   async function copy(): Promise<void> {
-    await navigator.clipboard.writeText(apiKey);
-    toast.success("Copied to clipboard");
+    try {
+      await navigator.clipboard.writeText(apiKey);
+      toast.success("Copied to clipboard");
+    } catch {
+      toast.error("Could not copy this key");
+    }
   }
 
   return (

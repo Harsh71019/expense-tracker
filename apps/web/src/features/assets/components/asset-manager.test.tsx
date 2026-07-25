@@ -13,7 +13,8 @@ const mocks = vi.hoisted(() => {
     closePending: false,
     createAssetMutateAsync: vi.fn(),
     createValuationMutateAsync: vi.fn(),
-    toastError: vi.fn()
+    toastError: vi.fn(),
+    toastSuccess: vi.fn()
   };
 });
 
@@ -31,7 +32,9 @@ vi.mock("../hooks/use-valuations", () => ({
     data: { items: [], pageInfo: { nextCursor: null, hasMore: false, limit: 50 } }
   })
 }));
-vi.mock("@/lib/toast", () => ({ toast: { success: vi.fn(), error: mocks.toastError } }));
+vi.mock("@/lib/toast", () => ({
+  toast: { success: mocks.toastSuccess, error: mocks.toastError }
+}));
 
 function makeAsset(overrides: Partial<Asset> = {}): Asset {
   return {
@@ -62,6 +65,7 @@ describe("AssetManager", () => {
     mocks.createAssetMutateAsync.mockReset();
     mocks.createValuationMutateAsync.mockReset();
     mocks.toastError.mockReset();
+    mocks.toastSuccess.mockReset();
   });
 
   it("shows an empty state with no assets", () => {
@@ -113,5 +117,6 @@ describe("AssetManager", () => {
     await user.click(screen.getByRole("button", { name: "Close asset" }));
 
     expect(mocks.closeMutateAsync).toHaveBeenCalledWith(mocks.assets[0]?.id);
+    expect(mocks.toastSuccess).toHaveBeenCalledWith("Asset closed");
   });
 });

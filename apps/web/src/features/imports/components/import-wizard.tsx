@@ -90,6 +90,7 @@ export function ImportWizard({
       const batch = await upload.mutateAsync({ file, accountId, mapping });
       setCurrentBatch(batch);
       setStep(2);
+      toast.success("Statement staged for review");
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : "Could not upload this statement");
     }
@@ -101,6 +102,7 @@ export function ImportWizard({
       await commit.mutateAsync(currentBatch.id);
       setCommitOpen(false);
       setView("list");
+      toast.success("Import committed to the ledger");
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : "Could not commit this import");
     }
@@ -111,6 +113,7 @@ export function ImportWizard({
     try {
       await revert.mutateAsync(revertTarget.id);
       setRevertTarget(undefined);
+      toast.success("Import reversed");
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : "Could not revert this import");
     }

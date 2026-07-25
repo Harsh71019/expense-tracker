@@ -40,6 +40,7 @@ export function CategoryManager({
     try {
       await archiveCategory.mutateAsync(archiveTarget.id);
       setArchiveTarget(undefined);
+      toast.success("Category archived");
     } catch {
       toast.error("Could not archive this category");
     }

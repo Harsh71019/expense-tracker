@@ -48,6 +48,7 @@ export function AssetManager({ initialAssets, initialNetWorth }: AssetManagerPro
     try {
       await closeAsset.mutateAsync(closeTarget.id);
       setCloseTarget(undefined);
+      toast.success("Asset closed");
     } catch {
       toast.error("Could not close this asset");
     }

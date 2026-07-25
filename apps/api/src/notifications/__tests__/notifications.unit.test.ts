@@ -44,9 +44,9 @@ describe("Notification Services Unit Tests", () => {
       const mockQueue = { enqueueDelivery: vi.fn(async () => undefined) };
       const mockLogger = { log: vi.fn() };
 
-      // @ts-expect-error mock service args
       const service = new NotificationSweepService(
         mockConfig,
+        // @ts-expect-error mock service args
         mockOutboxRepo,
         mockQueue,
         mockLogger

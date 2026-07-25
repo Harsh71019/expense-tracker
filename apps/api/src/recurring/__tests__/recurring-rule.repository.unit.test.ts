@@ -26,7 +26,6 @@ describe("RecurringRuleRepository Unit Tests", () => {
     const mockDb = createMockDrizzleDb([sampleRule]);
     const repo = new RecurringRuleRepository(mockDb);
 
-    // @ts-expect-error mock tx
     const res = await repo.create(
       "u1",
       {
@@ -41,6 +40,7 @@ describe("RecurringRuleRepository Unit Tests", () => {
         startAt: new Date("2026-01-01")
       },
       new Date("2026-01-01"),
+      // @ts-expect-error mock tx
       mockDb
     );
     expect(res.id).toBe(sampleRule.id);
@@ -74,12 +74,12 @@ describe("RecurringRuleRepository Unit Tests", () => {
     const mockDb = createMockDrizzleDb([sampleRule]);
     const repo = new RecurringRuleRepository(mockDb);
 
-    // @ts-expect-error mock tx
     const res = await repo.update(
       "u1",
       sampleRule.id,
       { template: { description: "Updated Rent" }, isPaused: true },
       new Date("2026-02-01"),
+      // @ts-expect-error mock tx
       mockDb
     );
     expect(res?.id).toBe(sampleRule.id);
@@ -89,13 +89,13 @@ describe("RecurringRuleRepository Unit Tests", () => {
     const mockDb = createMockDrizzleDb([{ id: sampleRule.id }]);
     const repo = new RecurringRuleRepository(mockDb);
 
-    // @ts-expect-error mock tx
     const res = await repo.claimRun(
       "u1",
       sampleRule.id,
       new Date("2026-01-01"),
       new Date("2026-02-01"),
       false,
+      // @ts-expect-error mock tx
       mockDb
     );
     expect(res).toBe(true);

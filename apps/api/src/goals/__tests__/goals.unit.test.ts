@@ -35,10 +35,10 @@ describe("GoalService Unit Tests", () => {
       // @ts-expect-error mock service args
       const service = new GoalService(mockDb, mockRepo, mockAccounts, mockAudit);
 
-      // @ts-expect-error mock tx
       const res = await service.createInTx(
         "u1",
         { name: "New Car", targetMinor: 500000, fundingMode: "tagged", tag: "car" },
+        // @ts-expect-error mock tx
         "tx1"
       );
 

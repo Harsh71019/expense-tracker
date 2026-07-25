@@ -25,7 +25,6 @@ describe("TransactionRepository Unit Tests", () => {
     const mockDb = createMockDrizzleDb([sampleTxRow]);
     const repo = new TransactionRepository(mockDb);
 
-    // @ts-expect-error mock tx
     const res = await repo.create(
       "u1",
       {
@@ -37,6 +36,7 @@ describe("TransactionRepository Unit Tests", () => {
         tags: ["food"]
       },
       undefined,
+      // @ts-expect-error mock tx
       mockDb
     );
     expect(res.id).toBe(sampleTxRow.id);
@@ -100,11 +100,11 @@ describe("TransactionRepository Unit Tests", () => {
     const mockDb = createMockDrizzleDb([updatedRow]);
     const repo = new TransactionRepository(mockDb);
 
-    // @ts-expect-error mock tx
     const res = await repo.updateNonMonetaryFields(
       "u1",
       sampleTxRow.id,
       { description: "Updated Coffee" },
+      // @ts-expect-error mock tx
       mockDb
     );
     expect(res?.description).toBe("Updated Coffee");
@@ -138,7 +138,6 @@ describe("TransactionRepository Unit Tests", () => {
     const mockDb = createMockDrizzleDb([]);
     const repo = new TransactionRepository(mockDb);
 
-    // @ts-expect-error mock tx
     await repo.insertImportedRows(
       "u1",
       "acc_123",
@@ -152,6 +151,7 @@ describe("TransactionRepository Unit Tests", () => {
           dedupeHash: "hash123"
         }
       ],
+      // @ts-expect-error mock tx
       mockDb
     );
 

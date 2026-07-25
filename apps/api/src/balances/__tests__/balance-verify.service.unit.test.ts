@@ -30,8 +30,8 @@ describe("BalanceVerifyService Unit Tests", () => {
 
     const mockLogger = { log: vi.fn(), error: vi.fn() };
 
-    // @ts-expect-error mock service args
     const service = new BalanceVerifyService(
+      // @ts-expect-error mock service args
       mockDb,
       mockConfig,
       mockBalancesRepo,

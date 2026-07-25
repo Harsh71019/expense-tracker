@@ -3,7 +3,7 @@
 import type { Category, CategoryKind } from "@treasury-ops/shared";
 import { useState } from "react";
 import type { ReactNode } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -40,6 +40,7 @@ export function CategoryManager({
     try {
       await archiveCategory.mutateAsync(archiveTarget.id);
       setArchiveTarget(undefined);
+      toast.success("Category archived");
     } catch {
       toast.error("Could not archive this category");
     }

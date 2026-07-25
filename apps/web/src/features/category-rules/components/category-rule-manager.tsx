@@ -3,7 +3,7 @@
 import { CreateCategoryRuleSchema, type CategoryRule } from "@treasury-ops/shared";
 import { useState } from "react";
 import type { ReactNode } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 import { EmptyState } from "@/components/ui/empty-state";
 import { useCategories } from "@/features/categories";
@@ -40,6 +40,7 @@ export function CategoryRuleManager({
       await createRule.mutateAsync(parsed.data);
       setPattern("");
       setCategoryId("");
+      toast.success("Category rule created");
     } catch {
       toast.error("Could not create this rule");
     }
@@ -48,6 +49,7 @@ export function CategoryRuleManager({
   async function remove(rule: CategoryRule): Promise<void> {
     try {
       await deleteRule.mutateAsync(rule.id);
+      toast.success("Category rule deleted");
     } catch {
       toast.error("Could not delete this rule");
     }

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 
 import { Button } from "../../../components/ui/button";
 import { authClient } from "../../../lib/auth/client";
+import { toast } from "../../../lib/toast";
 
 export function SignOutButton({ compact = false }: Readonly<{ compact?: boolean }>): ReactNode {
   const router = useRouter();
@@ -17,10 +18,13 @@ export function SignOutButton({ compact = false }: Readonly<{ compact?: boolean 
     setIsSigningOut(true);
     try {
       await authClient.signOut();
+      toast.success("Signed out successfully");
       router.push("/login");
       router.refresh();
     } catch {
-      setError("Unable to sign out right now. Check your connection and try again.");
+      const message = "Unable to sign out right now. Check your connection and try again.";
+      setError(message);
+      toast.error(message);
     } finally {
       setIsSigningOut(false);
     }

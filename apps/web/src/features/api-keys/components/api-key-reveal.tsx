@@ -1,17 +1,21 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { toast } from "@/lib/toast";
 
 export function ApiKeyReveal({
   apiKey,
   onDismiss
 }: Readonly<{ apiKey: string; onDismiss: () => void }>): ReactNode {
   async function copy(): Promise<void> {
-    await navigator.clipboard.writeText(apiKey);
-    toast.success("Copied to clipboard");
+    try {
+      await navigator.clipboard.writeText(apiKey);
+      toast.success("Copied to clipboard");
+    } catch {
+      toast.error("Could not copy this key");
+    }
   }
 
   return (

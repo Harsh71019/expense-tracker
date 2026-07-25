@@ -3,7 +3,7 @@
 import type { ApiKey, CreateApiKey, UpdateApiKey } from "@treasury-ops/shared";
 import { useState } from "react";
 import type { ReactNode } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 import { EmptyState } from "@/components/ui/empty-state";
 
@@ -32,6 +32,7 @@ export function ApiKeyManager({
     try {
       const result = await createKey.mutateAsync(input);
       setRevealedKey(result.key);
+      toast.success("API key created");
     } catch {
       toast.error("Could not create this key");
     }
@@ -40,6 +41,7 @@ export function ApiKeyManager({
   async function update(keyId: string, input: UpdateApiKey): Promise<void> {
     try {
       await updateKey.mutateAsync({ keyId, input });
+      toast.success("API key updated");
     } catch {
       toast.error("Could not update this key");
     }
@@ -48,6 +50,7 @@ export function ApiKeyManager({
   async function revoke(apiKey: ApiKey): Promise<void> {
     try {
       await revokeKey.mutateAsync(apiKey.id);
+      toast.success("API key revoked");
     } catch {
       toast.error("Could not revoke this key");
     }

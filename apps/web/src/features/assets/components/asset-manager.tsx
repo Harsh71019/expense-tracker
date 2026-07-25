@@ -3,7 +3,7 @@
 import type { Asset, AssetKind, NetWorth } from "@treasury-ops/shared";
 import { useState } from "react";
 import type { ReactNode } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -48,6 +48,7 @@ export function AssetManager({ initialAssets, initialNetWorth }: AssetManagerPro
     try {
       await closeAsset.mutateAsync(closeTarget.id);
       setCloseTarget(undefined);
+      toast.success("Asset closed");
     } catch {
       toast.error("Could not close this asset");
     }

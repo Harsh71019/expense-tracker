@@ -64,6 +64,22 @@ describe("AccountManager", () => {
     await waitFor(() => expect(mocks.toastSuccess).toHaveBeenCalledWith("Account archived"));
   });
 
+  it("opens the account detail dialog on click without triggering it from Archive", async () => {
+    const user = userEvent.setup();
+    render(<AccountManager initialAccounts={[account]} />);
+
+    await user.click(screen.getByRole("button", { name: "Archive" }));
+    expect(screen.getByRole("heading", { name: "Archive HDFC?" })).toBeVisible();
+    expect(screen.queryByText(account.id)).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+
+    await user.click(screen.getByRole("button", { name: "View details for HDFC" }));
+    expect(screen.getByText(account.id)).toBeVisible();
+
+    await user.click(screen.getByRole("button", { name: "Close" }));
+    expect(screen.queryByText(account.id)).not.toBeInTheDocument();
+  });
+
   it("keeps the operation error visible and also raises a toast", async () => {
     const user = userEvent.setup();
     mocks.create.mockRejectedValue(new Error("Account already exists"));

@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ GET: vi.fn(), getServerApiClient: vi.fn() }));
+const mocks = vi.hoisted(() => ({ GET: vi.fn(), getServerApiClient: vi.fn(), api: vi.fn() }));
 vi.mock("@/lib/api/server", () => ({ getServerApiClient: mocks.getServerApiClient }));
+vi.mock("@/lib/debug", () => ({ debug: { api: mocks.api } }));
 
 const stats = {
   period: "2026-07",
@@ -16,6 +17,7 @@ describe("getStats", () => {
     vi.resetModules();
     mocks.GET.mockReset();
     mocks.getServerApiClient.mockReset();
+    mocks.api.mockReset();
     mocks.getServerApiClient.mockResolvedValue({ GET: mocks.GET });
   });
 
@@ -27,15 +29,17 @@ describe("getStats", () => {
     expect(mocks.GET).toHaveBeenCalledWith("/v1/dashboard/stats");
   });
 
-  it("fails closed for invalid and unavailable responses", async () => {
+  it("fails closed and logs distinctly for invalid responses", async () => {
     mocks.GET.mockResolvedValue({ data: { period: "invalid" } });
     const { getStats } = await import("./get-stats");
     await expect(getStats()).resolves.toBeNull();
+    expect(mocks.api).toHaveBeenCalled();
   });
 
-  it("fails closed when the request throws", async () => {
+  it("fails closed and logs distinctly when the request throws", async () => {
     mocks.getServerApiClient.mockRejectedValue(new Error("offline"));
     const { getStats } = await import("./get-stats");
     await expect(getStats()).resolves.toBeNull();
+    expect(mocks.api).toHaveBeenCalled();
   });
 });

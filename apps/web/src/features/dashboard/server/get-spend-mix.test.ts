@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ GET: vi.fn(), getServerApiClient: vi.fn() }));
+const mocks = vi.hoisted(() => ({ GET: vi.fn(), getServerApiClient: vi.fn(), api: vi.fn() }));
 vi.mock("@/lib/api/server", () => ({ getServerApiClient: mocks.getServerApiClient }));
+vi.mock("@/lib/debug", () => ({ debug: { api: mocks.api } }));
 
 const spendMix = {
   range: "1M",
@@ -16,6 +17,7 @@ describe("getSpendMix", () => {
     vi.resetModules();
     mocks.GET.mockReset();
     mocks.getServerApiClient.mockReset();
+    mocks.api.mockReset();
     mocks.getServerApiClient.mockResolvedValue({ GET: mocks.GET });
   });
 
@@ -30,7 +32,7 @@ describe("getSpendMix", () => {
     );
   });
 
-  it("fails closed to an all-zero mix for invalid responses", async () => {
+  it("fails closed and logs distinctly for invalid responses", async () => {
     mocks.GET.mockResolvedValue({ data: { range: "1M" } });
     const { getSpendMix } = await import("./get-spend-mix");
     await expect(getSpendMix("1M")).resolves.toEqual({
@@ -40,11 +42,13 @@ describe("getSpendMix", () => {
       lifestyle: { amountMinor: 0, pct: 0 },
       uncategorized: { amountMinor: 0, pct: 0 }
     });
+    expect(mocks.api).toHaveBeenCalled();
   });
 
-  it("fails closed when the request throws", async () => {
+  it("fails closed and logs distinctly when the request throws", async () => {
     mocks.getServerApiClient.mockRejectedValue(new Error("offline"));
     const { getSpendMix } = await import("./get-spend-mix");
     await expect(getSpendMix("12M")).resolves.toMatchObject({ range: "12M", totalMinor: 0 });
+    expect(mocks.api).toHaveBeenCalled();
   });
 });

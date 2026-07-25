@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ GET: vi.fn(), getServerApiClient: vi.fn() }));
+const mocks = vi.hoisted(() => ({ GET: vi.fn(), getServerApiClient: vi.fn(), api: vi.fn() }));
 vi.mock("@/lib/api/server", () => ({ getServerApiClient: mocks.getServerApiClient }));
+vi.mock("@/lib/debug", () => ({ debug: { api: mocks.api } }));
 
 const item = { name: "Groceries", amountMinor: 500, txnCount: 4 };
 
@@ -10,6 +11,7 @@ describe("getTopSpending", () => {
     vi.resetModules();
     mocks.GET.mockReset();
     mocks.getServerApiClient.mockReset();
+    mocks.api.mockReset();
     mocks.getServerApiClient.mockResolvedValue({ GET: mocks.GET });
   });
 
@@ -24,15 +26,17 @@ describe("getTopSpending", () => {
     );
   });
 
-  it("fails closed for invalid and unavailable responses", async () => {
+  it("fails closed and logs distinctly for invalid responses", async () => {
     mocks.GET.mockResolvedValue({ data: [{ name: "Bad" }] });
     const { getTopSpending } = await import("./get-top-spending");
     await expect(getTopSpending("1M", 6)).resolves.toEqual([]);
+    expect(mocks.api).toHaveBeenCalled();
   });
 
-  it("fails closed when the request throws", async () => {
+  it("fails closed and logs distinctly when the request throws", async () => {
     mocks.getServerApiClient.mockRejectedValue(new Error("offline"));
     const { getTopSpending } = await import("./get-top-spending");
     await expect(getTopSpending("1M", 6)).resolves.toEqual([]);
+    expect(mocks.api).toHaveBeenCalled();
   });
 });

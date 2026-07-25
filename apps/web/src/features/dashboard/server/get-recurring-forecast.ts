@@ -5,6 +5,7 @@ import {
 } from "@treasury-ops/shared";
 import { cache } from "react";
 
+import { debug } from "@/lib/debug";
 import { getServerApiClient } from "@/lib/api/server";
 
 function empty(range: DashboardRange): RecurringForecast {
@@ -19,8 +20,16 @@ export const getRecurringForecast = cache(
         params: { query: { range } }
       });
       const parsed = RecurringForecastSchema.safeParse(result.data);
-      return parsed.success ? parsed.data : empty(range);
-    } catch {
+      if (!parsed.success) {
+        debug.api(
+          "dashboard recurring-forecast response failed validation",
+          parsed.error.flatten()
+        );
+        return empty(range);
+      }
+      return parsed.data;
+    } catch (error: unknown) {
+      debug.api("dashboard recurring-forecast request failed", error);
       return empty(range);
     }
   }

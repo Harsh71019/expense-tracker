@@ -1,4 +1,7 @@
+"use client";
+
 import type { CashflowBucket } from "@treasury-ops/shared";
+import { useId } from "react";
 import type { ReactNode } from "react";
 
 import {
@@ -11,6 +14,8 @@ import {
 type CashFlowChartProps = Readonly<{ buckets: readonly CashflowBucket[] }>;
 
 export function CashFlowChart({ buckets }: CashFlowChartProps): ReactNode {
+  const expenseGradientId = useId();
+  const incomeGradientId = useId();
   const { width, height } = CASH_FLOW_DIMENSIONS;
 
   if (buckets.length === 0) {
@@ -42,16 +47,16 @@ export function CashFlowChart({ buckets }: CashFlowChartProps): ReactNode {
       aria-label="Income versus spending over time"
     >
       <defs>
-        <linearGradient id="cf-expense" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id={expenseGradientId} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="var(--color-expense)" stopOpacity={0.26} />
           <stop offset="100%" stopColor="var(--color-expense)" stopOpacity={0} />
         </linearGradient>
-        <linearGradient id="cf-income" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id={incomeGradientId} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="var(--color-income)" stopOpacity={0.26} />
           <stop offset="100%" stopColor="var(--color-income)" stopOpacity={0} />
         </linearGradient>
       </defs>
-      <path d={expense.area} fill="url(#cf-expense)" />
+      <path d={expense.area} fill={`url(#${expenseGradientId})`} />
       <path
         d={expense.line}
         fill="none"
@@ -60,7 +65,7 @@ export function CashFlowChart({ buckets }: CashFlowChartProps): ReactNode {
         strokeLinejoin="round"
         strokeLinecap="round"
       />
-      <path d={income.area} fill="url(#cf-income)" />
+      <path d={income.area} fill={`url(#${incomeGradientId})`} />
       <path
         d={income.line}
         fill="none"

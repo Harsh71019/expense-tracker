@@ -44,7 +44,7 @@ export default async function RootLayout({
       <body suppressHydrationWarning className="bg-surface font-sans text-foreground antialiased">
         <QueryProvider>
           {children}
-          <Toaster />
+          <Toaster theme={theme ?? "system"} />
           <MockApiBoot />
         </QueryProvider>
       </body>

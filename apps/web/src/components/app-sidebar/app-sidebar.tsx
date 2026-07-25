@@ -13,6 +13,7 @@ const SIDEBAR_COMPACT_KEY = "treasury-ops-sidebar-compact";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: "⌂" },
+  { href: "/accounts", label: "Accounts", icon: "▣" },
   { href: "/insights", label: "Insights", icon: "✦" },
   { href: "/transactions", label: "Transactions", icon: "≡" },
   { href: "/transfers", label: "Transfers", icon: "⤢" },

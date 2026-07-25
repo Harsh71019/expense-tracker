@@ -76,6 +76,7 @@ describe("DashboardOverview", () => {
         initialTopSpending={topSpending}
         initialRecurringForecast={recurringForecast}
         initialInvestments={investments}
+        initialBudgets={null}
       />
     );
 
@@ -85,6 +86,7 @@ describe("DashboardOverview", () => {
     expect(screen.getByRole("heading", { name: "Top spending" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Recurring commitments" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Investments & deposits" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Monthly budgets" })).toBeVisible();
     expect(screen.getByText(`SPENT · ${stats.period}`)).toBeVisible();
   });
 
@@ -98,6 +100,7 @@ describe("DashboardOverview", () => {
         initialTopSpending={topSpending}
         initialRecurringForecast={recurringForecast}
         initialInvestments={investments}
+        initialBudgets={null}
       />
     );
 

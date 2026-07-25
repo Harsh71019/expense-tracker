@@ -2,7 +2,7 @@
 
 import { formatMinor, parseMinor } from "@treasury-ops/shared";
 import { useEffect, useState } from "react";
-import type { ReactNode } from "react";
+import type { ReactNode, Ref } from "react";
 
 type AmountInputProps = Readonly<{
   id: string;
@@ -10,9 +10,17 @@ type AmountInputProps = Readonly<{
   value: number;
   onChange: (minor: number) => void;
   error?: string;
+  inputRef?: Ref<HTMLInputElement>;
 }>;
 
-export function AmountInput({ id, label, value, onChange, error }: AmountInputProps): ReactNode {
+export function AmountInput({
+  id,
+  label,
+  value,
+  onChange,
+  error,
+  inputRef
+}: AmountInputProps): ReactNode {
   const [draft, setDraft] = useState(() => formatMinor(value));
   const [parseError, setParseError] = useState<string | null>(null);
 
@@ -40,6 +48,7 @@ export function AmountInput({ id, label, value, onChange, error }: AmountInputPr
       </label>
       <div className="relative">
         <input
+          ref={inputRef}
           id={id}
           value={draft}
           type="text"

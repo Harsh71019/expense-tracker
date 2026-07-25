@@ -19,6 +19,7 @@ export type TransferDto = components["schemas"]["Transfer"];
 export type TransferReversalDto = components["schemas"]["TransferReversal"];
 export type RecurringRuleDto = components["schemas"]["RecurringRule"];
 export type GoalDto = components["schemas"]["Goal"];
+export type BudgetDto = components["schemas"]["Budget"];
 /** Generated-schema shape, distinct from `@treasury-ops/shared`'s `ColumnMapping` — see toColumnMappingDto in handlers/imports.ts. */
 export type ColumnMappingDto = ImportBatchDto["mapping"];
 
@@ -43,6 +44,8 @@ export interface MockIdempotency {
   goals: Map<string, GoalDto>;
   goalAbandon: Set<string>;
   goalReorder: Set<string>;
+  budgets: Map<string, BudgetDto>;
+  budgetArchive: Map<string, BudgetDto>;
 }
 
 export interface MockStore {
@@ -57,6 +60,7 @@ export interface MockStore {
   monthlyRollups: MonthlyRollupDto[];
   recurringRules: RecurringRuleDto[];
   goals: GoalDto[];
+  budgets: BudgetDto[];
   profile: UserProfileDto;
   /** accountId -> the mapping last used for a successful import to that account. */
   savedMappings: Map<string, ColumnMappingDto>;
@@ -74,6 +78,7 @@ export interface MockStore {
   nextStagedRowId: () => string;
   nextRecurringRuleId: () => string;
   nextGoalId: () => string;
+  nextBudgetId: () => string;
 }
 
 function daysAgo(days: number): string {
@@ -1760,6 +1765,7 @@ export function createMockStore(): MockStore {
   const nextStagedRowId = createIdGenerator("5b");
   const nextRecurringRuleId = createIdGenerator("e0");
   const nextGoalId = createIdGenerator("60");
+  const nextBudgetId = createIdGenerator("b0");
 
   const store: MockStore = {
     accounts: [],
@@ -1773,6 +1779,7 @@ export function createMockStore(): MockStore {
     monthlyRollups: [],
     recurringRules: [],
     goals: [],
+    budgets: [],
     profile: {
       userId: MOCK_USER_ID,
       displayName: "Mock User",
@@ -1798,7 +1805,9 @@ export function createMockStore(): MockStore {
       recurringRules: new Map(),
       goals: new Map(),
       goalAbandon: new Set(),
-      goalReorder: new Set()
+      goalReorder: new Set(),
+      budgets: new Map(),
+      budgetArchive: new Map()
     },
     nextAccountId,
     nextCategoryId,
@@ -1810,7 +1819,8 @@ export function createMockStore(): MockStore {
     nextImportBatchId,
     nextStagedRowId,
     nextRecurringRuleId,
-    nextGoalId
+    nextGoalId,
+    nextBudgetId
   };
 
   seedAccounts(store);

@@ -10,8 +10,8 @@ export function AccentPicker({ current }: Readonly<{ current: AccentPreference }
       <header>
         <h3 className="text-sm font-semibold text-foreground">Accent color</h3>
         <p className="mt-1 text-xs leading-relaxed text-foreground-muted sm:text-sm">
-          Recolors buttons, links, active navigation, focus rings, and decorative highlights. Income
-          green, expense/error red, and category colors never change.
+          Recolors buttons, links, active navigation, focus rings, notifications, and decorative
+          highlights. Income green, expense/error red, and category colors never change.
         </p>
       </header>
 

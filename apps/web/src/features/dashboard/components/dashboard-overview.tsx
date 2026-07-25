@@ -3,7 +3,6 @@
 import type {
   CashflowResponse,
   DashboardInvestments,
-  DashboardRange,
   DashboardStats,
   RecurringForecast,
   SpendMix,
@@ -13,15 +12,13 @@ import type { ReactNode } from "react";
 
 import { useInvestments } from "../hooks/use-investments";
 import { useStats } from "../hooks/use-stats";
+import { DEFAULT_CASHFLOW_RANGE, DEFAULT_PANEL_RANGE } from "../model/defaults";
 import { CashFlowPanel } from "./cash-flow-panel";
 import { InvestmentsPanel } from "./investments-panel";
 import { RecurringPanel } from "./recurring-panel";
 import { SpendMixPanel } from "./spend-mix-panel";
 import { StatCards } from "./stat-cards";
 import { TopSpendingPanel } from "./top-spending-panel";
-
-export const DEFAULT_CASHFLOW_RANGE: DashboardRange = "6M";
-export const DEFAULT_PANEL_RANGE: DashboardRange = "1M";
 
 type DashboardOverviewProps = Readonly<{
   initialStats: DashboardStats | null;

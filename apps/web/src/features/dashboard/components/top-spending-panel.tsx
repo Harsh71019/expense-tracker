@@ -8,9 +8,9 @@ import { Money } from "@/components/ui/money";
 import { IconGlyph } from "@/features/categories";
 
 import { useTopSpending } from "../hooks/use-top-spending";
+import { TOP_SPENDING_LIMIT } from "../model/defaults";
 import { RangeTabs } from "./range-tabs";
 
-export const TOP_SPENDING_LIMIT = 6;
 const FALLBACK_COLOR = "#71817a";
 
 type TopSpendingPanelProps = Readonly<{

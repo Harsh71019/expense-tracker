@@ -15,5 +15,12 @@ describe("query keys", () => {
     expect(qk.txn("txn-1")).toEqual(["transactions", "detail", "txn-1"]);
     expect(qk.accounts()).toEqual(["accounts"]);
     expect(qk.categories()).toEqual(["categories"]);
+    expect(qk.spendingWarnings()).toEqual(["spending-warnings"]);
+    expect(qk.spendingWarningLists()).toEqual(["spending-warnings", "list"]);
+    expect(qk.spendingWarningList({ filter: "spikes" })).toEqual([
+      "spending-warnings",
+      "list",
+      { filter: "spikes" }
+    ]);
   });
 });

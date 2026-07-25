@@ -8,7 +8,7 @@ import { getSession } from "@/lib/api/session";
 import { getStoredTheme } from "@/lib/theme-server";
 
 const navItems = [
-  { href: "/", label: "Home", icon: "⌂" },
+  { href: "/", label: "Dashboard", icon: "⌂" },
   { href: "/transactions", label: "Transactions", icon: "≡" },
   { href: "/add", label: "Add", icon: "+" },
   { href: "/reports", label: "Reports", icon: "◔" },

@@ -46,7 +46,7 @@ export function DashboardHome({
     <section className="flex flex-col gap-8">
       <div className="flex items-baseline justify-between gap-4">
         <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          {isEmpty ? "Welcome to Ledger" : "Home"}
+          {isEmpty ? "Welcome to Ledger" : "Insights"}
         </h1>
         <p className="truncate font-mono text-[11px] text-foreground-muted">{email}</p>
       </div>

@@ -1,24 +1,37 @@
 import type { ReactNode } from "react";
 
-import { getAccounts } from "@/features/accounts/server/get-accounts";
-import { DashboardHome, getRecentActivity } from "@/features/dashboard";
-import { getSession } from "@/lib/api/session";
-
-const RECENT_ACTIVITY_LIMIT = 5;
+import {
+  DashboardOverview,
+  DEFAULT_CASHFLOW_RANGE,
+  DEFAULT_PANEL_RANGE,
+  TOP_SPENDING_LIMIT,
+  getCashflow,
+  getInvestments,
+  getRecurringForecast,
+  getSpendMix,
+  getStats,
+  getTopSpending
+} from "@/features/dashboard";
 
 export default async function DashboardPage(): Promise<ReactNode> {
-  const [session, accounts, recentActivity] = await Promise.all([
-    getSession(),
-    getAccounts(),
-    getRecentActivity(RECENT_ACTIVITY_LIMIT)
-  ]);
-  const email = session?.user.email ?? "";
+  const [stats, cashflow, spendMix, topSpending, recurringForecast, investments] =
+    await Promise.all([
+      getStats(),
+      getCashflow(DEFAULT_CASHFLOW_RANGE),
+      getSpendMix(DEFAULT_PANEL_RANGE),
+      getTopSpending(DEFAULT_PANEL_RANGE, TOP_SPENDING_LIMIT),
+      getRecurringForecast(DEFAULT_PANEL_RANGE),
+      getInvestments()
+    ]);
 
   return (
-    <DashboardHome
-      email={email}
-      initialAccounts={accounts}
-      initialRecentActivity={recentActivity}
+    <DashboardOverview
+      initialStats={stats}
+      initialCashflow={cashflow}
+      initialSpendMix={spendMix}
+      initialTopSpending={topSpending}
+      initialRecurringForecast={recurringForecast}
+      initialInvestments={investments}
     />
   );
 }

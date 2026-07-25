@@ -58,7 +58,7 @@ describe("DashboardHome", () => {
       />
     );
 
-    expect(screen.getByRole("heading", { name: "Home" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Insights" })).toBeVisible();
     expect(screen.getByText(/Total balance/)).toBeVisible();
     expect(screen.getByRole("heading", { name: "Accounts" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Recent activity" })).toBeVisible();

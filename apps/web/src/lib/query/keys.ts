@@ -1,4 +1,4 @@
-import type { ListTransactionsQuery } from "@treasury-ops/shared";
+import type { DashboardRange, ListTransactionsQuery } from "@treasury-ops/shared";
 
 const transactionRoot = ["transactions"] as const;
 const dashboardRoot = ["dashboard"] as const;
@@ -22,5 +22,13 @@ export const qk = {
   monthlyRollup: (month: string) => ["monthly-rollup", month] as const,
   apiKeys: () => ["api-keys"] as const,
   dashboard: () => dashboardRoot,
-  recentActivity: (limit: number) => [...dashboardRoot, "recent-activity", limit] as const
+  recentActivity: (limit: number) => [...dashboardRoot, "recent-activity", limit] as const,
+  dashboardStats: (period?: string) => [...dashboardRoot, "stats", period ?? "current"] as const,
+  cashflow: (range: DashboardRange) => [...dashboardRoot, "cashflow", range] as const,
+  spendMix: (range: DashboardRange) => [...dashboardRoot, "spend-mix", range] as const,
+  topSpending: (range: DashboardRange, limit: number) =>
+    [...dashboardRoot, "top-spending", range, limit] as const,
+  recurringForecast: (range: DashboardRange) =>
+    [...dashboardRoot, "recurring-forecast", range] as const,
+  investments: () => [...dashboardRoot, "investments"] as const
 } as const;

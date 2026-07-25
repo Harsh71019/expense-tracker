@@ -66,7 +66,11 @@ import {
   RecurringRuleIdSchema,
   RecurringRuleSchema,
   UpdateApiKeySchema,
-  UpdateRecurringRuleSchema
+  UpdateRecurringRuleSchema,
+  DismissSpendingWarningResponseSchema,
+  ListSpendingWarningsQuerySchema,
+  SpendingWarningIdSchema,
+  SpendingWarningPageSchema
 } from "@treasury-ops/shared";
 import { z } from "zod";
 
@@ -91,6 +95,10 @@ const StagedRowPage = StagedRowPageSchema.meta({ id: "StagedRowPage" });
 const UserProfile = UserProfileSchema.meta({ id: "UserProfile" });
 const MonthlyRollup = MonthlyRollupSchema.meta({ id: "MonthlyRollup" });
 const RecurringRule = RecurringRuleSchema.meta({ id: "RecurringRule" });
+const SpendingWarningPage = SpendingWarningPageSchema.meta({ id: "SpendingWarningPage" });
+const DismissSpendingWarningResponse = DismissSpendingWarningResponseSchema.meta({
+  id: "DismissSpendingWarningResponse"
+});
 
 const accountId = z.object({ accountId: AccountIdSchema });
 const categoryId = z.object({ categoryId: CategoryIdSchema });
@@ -105,6 +113,7 @@ const importBatchAndRowId = z.object({
 });
 const month = z.object({ month: MonthSchema });
 const recurringRuleId = z.object({ ruleId: RecurringRuleIdSchema });
+const spendingWarningId = z.object({ warningId: SpendingWarningIdSchema });
 const json = (schema: z.ZodType): { content: { "application/json": { schema: z.ZodType } } } => ({
   content: { "application/json": { schema } }
 });
@@ -573,6 +582,35 @@ registry.registerPath({
       ...json(RecurringRule)
     },
     404: { description: "Recurring rule, account, or category not found", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/v1/spending-warnings",
+  security: secured,
+  request: { query: ListSpendingWarningsQuerySchema },
+  responses: {
+    200: {
+      description: "Active spending warnings and analysis coverage",
+      ...json(SpendingWarningPage)
+    },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "post",
+  path: "/v1/spending-warnings/{warningId}/dismiss",
+  security: secured,
+  request: { params: spendingWarningId, headers: idempotencyKeyHeaders },
+  responses: {
+    200: {
+      description: "Dismissed warning, or idempotent replay",
+      headers: optionalReplayHeaders,
+      ...json(DismissSpendingWarningResponse)
+    },
+    404: { description: "Not found", ...json(ProblemDetails) },
     ...problemResponses
   }
 });

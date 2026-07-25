@@ -27,6 +27,8 @@ describe("OpenApiController", () => {
       expect(paths).toContain("/v1/recurring");
       expect(paths).toContain("/v1/recurring/{ruleId}");
       expect(paths).toContain("/v1/imports/accounts/{accountId}/mapping");
+      expect(paths).toContain("/v1/spending-warnings");
+      expect(paths).toContain("/v1/spending-warnings/{warningId}/dismiss");
     });
 
     it("publishes required idempotency headers for UI mutation contracts", () => {
@@ -44,7 +46,8 @@ describe("OpenApiController", () => {
         spec.paths?.["/v1/assets/{assetId}/valuations"]?.post,
         spec.paths?.["/v1/transactions/{transactionId}"]?.patch,
         spec.paths?.["/v1/recurring"]?.post,
-        spec.paths?.["/v1/recurring/{ruleId}"]?.patch
+        spec.paths?.["/v1/recurring/{ruleId}"]?.patch,
+        spec.paths?.["/v1/spending-warnings/{warningId}/dismiss"]?.post
       ];
 
       for (const operation of mutationOperations) {

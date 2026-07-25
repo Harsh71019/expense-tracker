@@ -13,6 +13,7 @@ import {
   scopeLabels,
   SCOPE_OPTIONS
 } from "../model/scopes";
+import { MaskedValue } from "./masked-value";
 
 const dateFormatter = new Intl.DateTimeFormat("en-IN", {
   day: "2-digit",
@@ -119,6 +120,9 @@ export function ApiKeyRow({ apiKey, onRevoke, onUpdate, isUpdating }: ApiKeyRowP
     <div className="flex flex-wrap items-center gap-4 rounded-[13px] border border-border bg-surface-elevated px-4.5 py-3.5 animate-fade-in">
       <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3">
         <span className="font-mono text-[15px] text-foreground">{apiKey.name}</span>
+        {apiKey.start === null ? null : (
+          <MaskedValue value={apiKey.start} ariaLabel={`key prefix for ${apiKey.name}`} />
+        )}
         {scopeLabels(apiKey.permissions).map((label) => (
           <span
             key={label}

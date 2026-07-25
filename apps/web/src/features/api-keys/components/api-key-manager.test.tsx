@@ -55,9 +55,14 @@ describe("ApiKeyManager", () => {
     mocks.toastSuccess.mockReset();
   });
 
-  it("shows the zero state when there are no keys", () => {
+  it("shows the zero state when there are no keys", async () => {
+    const user = userEvent.setup();
     render(<ApiKeyManager initialApiKeys={[]} />);
+    expect(screen.getByRole("tab", { name: "All keys" })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByText("No API keys yet")).toBeVisible();
+
+    await user.click(screen.getByRole("tab", { name: "Add key" }));
+    expect(screen.getByLabelText("Name")).toBeVisible();
   });
 
   it("reveals the raw key once after a successful create, then hides it on dismiss", async () => {
@@ -69,12 +74,15 @@ describe("ApiKeyManager", () => {
     });
     render(<ApiKeyManager initialApiKeys={[]} />);
 
+    await user.click(screen.getByRole("tab", { name: "Add key" }));
     await user.type(screen.getByLabelText("Name"), "n8n");
     await user.click(screen.getByLabelText("Create transactions"));
     await user.click(screen.getByRole("button", { name: "Create key" }));
 
-    expect(await screen.findByText("ak_secret123")).toBeVisible();
     expect(mocks.toastSuccess).toHaveBeenCalledWith("API key created");
+    expect(screen.queryByText("ak_secret123")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "View new API key" }));
+    expect(await screen.findByText("ak_secret123")).toBeVisible();
     await user.click(screen.getByRole("button", { name: "Done" }));
     expect(screen.queryByText("ak_secret123")).not.toBeInTheDocument();
   });
@@ -117,11 +125,13 @@ describe("ApiKeyManager", () => {
     mocks.revokeMutateAsync.mockRejectedValue(new Error("boom"));
     render(<ApiKeyManager initialApiKeys={mocks.apiKeys} />);
 
+    await user.click(screen.getByRole("tab", { name: "Add key" }));
     await user.type(screen.getByLabelText("Name"), "n8n");
     await user.click(screen.getByLabelText("Create transactions"));
     await user.click(screen.getByRole("button", { name: "Create key" }));
     await waitFor(() => expect(mocks.toastError).toHaveBeenCalledWith("Could not create this key"));
 
+    await user.click(screen.getByRole("tab", { name: "All keys" }));
     await user.click(screen.getByRole("button", { name: "Edit" }));
     await user.click(screen.getByRole("button", { name: "Save" }));
     await waitFor(() => expect(mocks.toastError).toHaveBeenCalledWith("Could not update this key"));

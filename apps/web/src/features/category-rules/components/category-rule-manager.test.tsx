@@ -15,7 +15,8 @@ const mocks = vi.hoisted(() => {
     createPending: false,
     deleteMutateAsync: vi.fn(),
     deletePending: false,
-    toastError: vi.fn()
+    toastError: vi.fn(),
+    toastSuccess: vi.fn()
   };
 });
 
@@ -36,7 +37,9 @@ vi.mock("@/features/categories", async (importOriginal) => {
   return { ...actual, useCategories: () => ({ data: mocks.categories }) };
 });
 
-vi.mock("sonner", () => ({ toast: { error: mocks.toastError, success: vi.fn() } }));
+vi.mock("@/lib/toast", () => ({
+  toast: { error: mocks.toastError, success: mocks.toastSuccess }
+}));
 
 const groceries: Category = {
   id: "3fa85f64-5717-4562-b3fc-2c963f66beef",
@@ -66,6 +69,7 @@ describe("CategoryRuleManager", () => {
     mocks.createMutateAsync.mockReset();
     mocks.deleteMutateAsync.mockReset();
     mocks.toastError.mockReset();
+    mocks.toastSuccess.mockReset();
   });
 
   it("shows the zero state when there are no rules", () => {
@@ -85,6 +89,7 @@ describe("CategoryRuleManager", () => {
 
     await user.click(screen.getByRole("button", { name: "Delete" }));
     expect(mocks.deleteMutateAsync).toHaveBeenCalledWith(bigbasketRule.id);
+    expect(mocks.toastSuccess).toHaveBeenCalledWith("Category rule deleted");
   });
 
   it("creates a rule from the inline row and clears the fields", async () => {
@@ -100,6 +105,7 @@ describe("CategoryRuleManager", () => {
       pattern: "netflix",
       categoryId: groceries.id
     });
+    expect(mocks.toastSuccess).toHaveBeenCalledWith("Category rule created");
   });
 
   it("shows a toast when the pattern is empty", async () => {

@@ -28,7 +28,6 @@ export class ImportBatchRepository {
     fileHash: string,
     mapping: ColumnMapping
   ): Promise<ImportBatch> {
-    const now = new Date();
     const [row] = await this.db
       .insert(importBatches)
       .values({
@@ -42,8 +41,11 @@ export class ImportBatchRepository {
         statsStaged: 0,
         statsDuplicates: 0,
         statsCommitted: 0,
-        createdAt: now,
-        updatedAt: now
+        // PostgreSQL keeps sub-millisecond precision here. JavaScript Date
+        // only has millisecond precision, which made two rapid uploads tie
+        // on createdAt and let "latest mapping" return the older batch.
+        createdAt: sql`statement_timestamp()`,
+        updatedAt: sql`statement_timestamp()`
       })
       .returning();
     if (row === undefined) throw new Error("Import batch insert did not return a row.");

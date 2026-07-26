@@ -90,6 +90,43 @@ describe("ApiKeysService", () => {
     expect(result.name).toBe("renamed");
   });
 
+  it("updates permissions and maps a nullable plugin name to an empty string", async () => {
+    const updateApiKey = vi.fn().mockResolvedValue(pluginKey({ name: null }));
+    const mockAuthService = { auth: { api: { updateApiKey } } };
+    // @ts-expect-error - mock AuthService for unit testing
+    const service = new ApiKeysService(mockAuthService);
+
+    const result = await service.update("user-1", "key-1", {
+      permissions: { transactions: ["write"], categories: ["read"] }
+    });
+
+    expect(updateApiKey).toHaveBeenCalledWith({
+      body: {
+        keyId: "key-1",
+        userId: "user-1",
+        permissions: { transactions: ["write"], categories: ["read"] }
+      }
+    });
+    expect(result.name).toBe("");
+  });
+
+  it("clamps already-expired API key durations to one second", async () => {
+    const createApiKey = vi.fn().mockResolvedValue({ ...pluginKey(), key: "ak_secret" });
+    const mockAuthService = { auth: { api: { createApiKey } } };
+    // @ts-expect-error - mock AuthService for unit testing
+    const service = new ApiKeysService(mockAuthService);
+
+    await service.create("user-1", {
+      name: "expired",
+      permissions: {},
+      expiresAt: new Date(Date.now() - 1_000)
+    });
+
+    expect(createApiKey).toHaveBeenCalledWith({
+      body: expect.objectContaining({ expiresIn: 1 })
+    });
+  });
+
   it("revokes a key by disabling it via updateApiKey, scoped by userId", async () => {
     const mockAuthService = {
       auth: { api: { updateApiKey: vi.fn().mockResolvedValue(pluginKey({ enabled: false })) } }

@@ -2,24 +2,28 @@
 
 import { useEffect, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { authClient } from "../../../lib/auth/client";
-import { getSafeCallbackPath } from "../../../lib/auth/redirect";
+import { buildAuthHref, getSafeCallbackPath } from "../../../lib/auth/redirect";
+import { toast } from "../../../lib/toast";
+import { PasswordField } from "./password-field";
 
 export function LoginForm(): ReactNode {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackURL = getSafeCallbackPath(searchParams.get("next"));
+  const registrationCompleted = searchParams.get("registered") === "1";
+  const registerHref = buildAuthHref("/register", callbackURL);
 
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
-  const [revealPassword, setRevealPassword] = useState(false);
 
   // Guards against a native (unhandled) form submission — which would GET
   // the page with the password in the URL query string — if the button is
@@ -35,13 +39,18 @@ export function LoginForm(): ReactNode {
     try {
       const result = await authClient.signIn.email({ email, password, rememberMe, callbackURL });
       if (result.error !== null) {
-        setError(result.error.message ?? "Sign-in failed.");
+        const message = result.error.message ?? "Sign-in failed.";
+        setError(message);
+        toast.error(message);
       } else {
+        toast.success("Signed in successfully");
         router.push(callbackURL);
         router.refresh();
       }
     } catch {
-      setError("Unable to sign in right now. Check your connection and try again.");
+      const message = "Unable to sign in right now. Check your connection and try again.";
+      setError(message);
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -49,6 +58,14 @@ export function LoginForm(): ReactNode {
 
   return (
     <form onSubmit={signIn} className="flex flex-col gap-5">
+      {registrationCompleted ? (
+        <p
+          role="status"
+          className="rounded-lg border border-income/25 bg-income/10 px-3 py-2 text-center text-sm font-medium text-income"
+        >
+          If registration is available for this email, your account is ready. Sign in to continue.
+        </p>
+      ) : null}
       <Input
         id="email"
         name="email"
@@ -59,33 +76,13 @@ export function LoginForm(): ReactNode {
         onChange={(event) => setEmail(event.target.value)}
         required
       />
-      <div className="flex flex-col gap-1.5">
-        <label
-          htmlFor="password"
-          className="font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase"
-        >
-          Password
-        </label>
-        <div className="flex items-center rounded-lg border border-border bg-surface pr-1.5 transition-colors duration-150 focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/30">
-          <input
-            id="password"
-            name="password"
-            type={revealPassword ? "text" : "password"}
-            autoComplete="current-password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            required
-            className="w-full min-w-0 flex-1 bg-transparent px-3.5 py-2.5 text-sm text-foreground outline-none placeholder:text-foreground-muted/50"
-          />
-          <button
-            type="button"
-            onClick={() => setRevealPassword((value) => !value)}
-            className="shrink-0 rounded-md px-2 py-1 text-xs font-medium text-foreground-muted hover:text-foreground"
-          >
-            {revealPassword ? "Hide" : "Show"}
-          </button>
-        </div>
-      </div>
+      <PasswordField
+        id="password"
+        label="Password"
+        value={password}
+        autoComplete="current-password"
+        onChange={setPassword}
+      />
       <label className="flex items-center gap-2 text-sm text-foreground-muted select-none">
         <input
           type="checkbox"
@@ -106,6 +103,15 @@ export function LoginForm(): ReactNode {
           {error}
         </p>
       )}
+      <p className="text-center text-sm text-foreground-muted">
+        Need an account?{" "}
+        <Link
+          href={registerHref}
+          className="font-semibold text-accent hover:text-accent-strong hover:underline"
+        >
+          Register
+        </Link>
+      </p>
     </form>
   );
 }

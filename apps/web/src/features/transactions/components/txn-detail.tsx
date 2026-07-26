@@ -1,17 +1,18 @@
 "use client";
 
 import { UpdateTransactionSchema, type Transaction } from "@treasury-ops/shared";
-import Link from "next/link";
 import { useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 
 import { Badge } from "@/components/ui/badge";
+import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Money } from "@/components/ui/money";
 import { useAccounts } from "@/features/accounts";
 import { useCategories } from "@/features/categories";
 import { useReverseTransfer } from "@/features/transfers/hooks/use-transfers";
+import { toast } from "@/lib/toast";
 
 import { useReverseTxn } from "../hooks/use-reverse-txn";
 import { useTxn, useUpdateTxn } from "../hooks/use-txn";
@@ -69,19 +70,26 @@ export function TxnDetail({ initialTransaction }: { initialTransaction: Transact
       await update.mutateAsync({ transactionId: transaction.id, patch: parsed.data });
       setEditing(false);
       setError(undefined);
+      toast.success("Transaction details updated");
     } catch (caught: unknown) {
-      setError(caught instanceof Error ? caught.message : "Could not update metadata.");
+      const message = caught instanceof Error ? caught.message : "Could not update metadata.";
+      setError(message);
+      toast.error(message);
     }
   }
 
   return (
     <section className="space-y-6">
+      <Breadcrumbs
+        items={[
+          { label: "Transactions", href: "/transactions" },
+          { label: transaction.description }
+        ]}
+      />
+
       <header className="flex items-start justify-between gap-4">
         <div>
-          <Link href="/transactions" className="text-sm text-accent">
-            ← Back to transactions
-          </Link>
-          <h1 className="mt-3 text-2xl font-semibold tracking-tight">{transaction.description}</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{transaction.description}</h1>
           <div className="mt-2 flex flex-wrap gap-2">
             <Badge variant={transaction.status === "posted" ? "success" : "reversed"}>
               {transaction.status}

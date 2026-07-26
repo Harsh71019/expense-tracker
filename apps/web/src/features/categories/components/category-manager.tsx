@@ -3,8 +3,9 @@
 import type { Category, CategoryKind } from "@treasury-ops/shared";
 import { useState } from "react";
 import type { ReactNode } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
+import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 
@@ -40,6 +41,7 @@ export function CategoryManager({
     try {
       await archiveCategory.mutateAsync(archiveTarget.id);
       setArchiveTarget(undefined);
+      toast.success("Category archived");
     } catch {
       toast.error("Could not archive this category");
     }
@@ -47,6 +49,10 @@ export function CategoryManager({
 
   return (
     <section className="space-y-7">
+      <Breadcrumbs
+        items={[{ label: "Settings", href: "/settings?tab=management" }, { label: "Categories" }]}
+      />
+
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="font-mono text-[11px] font-bold tracking-[2px] text-accent">LEDGER</p>

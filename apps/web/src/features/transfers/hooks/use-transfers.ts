@@ -14,6 +14,7 @@ import { apiClient } from "@/lib/api/client";
 import { toAppError, toNetworkError } from "@/lib/api/problem";
 import { qk } from "@/lib/query/keys";
 import { generateRequestId } from "@/lib/request-id";
+import { toast } from "@/lib/toast";
 
 export function useCreateTransfer(): ReturnType<
   typeof useMutation<Transfer, Error, CreateTransfer>
@@ -50,7 +51,8 @@ export function useCreateTransfer(): ReturnType<
       await Promise.all([
         client.invalidateQueries({ queryKey: qk.accounts() }),
         client.invalidateQueries({ queryKey: qk.transactionLists() }),
-        client.invalidateQueries({ queryKey: qk.netWorth() })
+        client.invalidateQueries({ queryKey: qk.netWorth() }),
+        client.invalidateQueries({ queryKey: qk.goals() })
       ]);
     }
   });
@@ -75,11 +77,18 @@ export function useReverseTransfer(): ReturnType<
         throw toNetworkError(error);
       }
     },
+    onSuccess: () => {
+      toast.success("Transfer reversed");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Could not reverse this transfer");
+    },
     onSettled: async () => {
       await Promise.all([
         client.invalidateQueries({ queryKey: qk.accounts() }),
         client.invalidateQueries({ queryKey: qk.transactionLists() }),
-        client.invalidateQueries({ queryKey: qk.netWorth() })
+        client.invalidateQueries({ queryKey: qk.netWorth() }),
+        client.invalidateQueries({ queryKey: qk.goals() })
       ]);
     }
   });

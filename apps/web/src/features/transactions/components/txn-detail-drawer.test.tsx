@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   mutateAsync: vi.fn(),
   reverseMutate: vi.fn(),
   reversePending: false,
+  toastSuccess: vi.fn(),
   accounts: [{ id: "3fa85f64-5717-4562-b3fc-2c963f66beff", name: "HDFC Bank" }],
   categories: [
     { id: "3fa85f64-5717-4562-b3fc-2c963f66be21", name: "Groceries", isArchived: false },
@@ -27,6 +28,9 @@ vi.mock("../hooks/use-reverse-txn", () => ({
 vi.mock("../hooks/use-txn", () => ({
   useTxn: (_id: string, initialData: unknown) => ({ data: initialData }),
   useUpdateTxn: () => ({ mutateAsync: mocks.mutateAsync, isPending: false })
+}));
+vi.mock("@/lib/toast", () => ({
+  toast: { success: mocks.toastSuccess, error: vi.fn() }
 }));
 
 const base = {
@@ -50,6 +54,7 @@ describe("TxnDetailDrawer", () => {
     mocks.mutateAsync.mockReset();
     mocks.reverseMutate.mockReset();
     mocks.reversePending = false;
+    mocks.toastSuccess.mockReset();
   });
 
   it("renders account/date/source/status and lets you edit description, category, and tags", async () => {
@@ -70,6 +75,7 @@ describe("TxnDetailDrawer", () => {
       transactionId: base.id,
       patch: { categoryId: "3fa85f64-5717-4562-b3fc-2c963f66be22" }
     });
+    expect(mocks.toastSuccess).toHaveBeenCalledWith("Transaction details updated");
     expect(onClose).toHaveBeenCalled();
   });
 

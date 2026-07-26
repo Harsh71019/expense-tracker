@@ -45,6 +45,15 @@ export class AccountRepository {
     return rows.map((row) => AccountSchema.parse(row));
   }
 
+  async findById(userId: string, accountId: AccountId, tx?: DbTx): Promise<Account | null> {
+    const executor = tx ?? this.db;
+    const [row] = await executor
+      .select()
+      .from(accounts)
+      .where(and(eq(accounts.id, accountId), eq(accounts.userId, userId)));
+    return row === undefined ? null : AccountSchema.parse(row);
+  }
+
   async archive(userId: string, accountId: AccountId, tx?: DbTx): Promise<boolean> {
     const executor = tx ?? this.db;
     const rows = await executor
@@ -80,6 +89,26 @@ export class AccountRepository {
       .where(
         and(eq(accounts.id, accountId), eq(accounts.userId, userId), eq(accounts.isArchived, false))
       )
+      .returning({ id: accounts.id });
+    return rows.length === 1;
+  }
+
+  /**
+   * Reversals must remain possible after an account is archived. This is
+   * deliberately separate from applyBalanceDelta so ordinary creates,
+   * transfers, imports, and recurring posts cannot write new activity to an
+   * archived account.
+   */
+  async applyReversalBalanceDelta(
+    userId: string,
+    accountId: AccountId,
+    deltaMinor: number,
+    tx: DbTx
+  ): Promise<boolean> {
+    const rows = await tx
+      .update(accounts)
+      .set({ balanceMinor: sql`${accounts.balanceMinor} + ${deltaMinor}`, updatedAt: new Date() })
+      .where(and(eq(accounts.id, accountId), eq(accounts.userId, userId)))
       .returning({ id: accounts.id });
     return rows.length === 1;
   }

@@ -15,7 +15,9 @@ const mocks = vi.hoisted(() => ({
 vi.mock("../hooks/use-asset-mutations", () => ({
   useCreateValuation: () => ({ mutateAsync: mocks.mutateAsync, isPending: mocks.pending })
 }));
-vi.mock("sonner", () => ({ toast: { success: mocks.toastSuccess, error: mocks.toastError } }));
+vi.mock("@/lib/toast", () => ({
+  toast: { success: mocks.toastSuccess, error: mocks.toastError }
+}));
 
 const fd: Asset = {
   id: "507f1f77bcf86cd799439021",

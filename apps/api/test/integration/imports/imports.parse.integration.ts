@@ -26,6 +26,7 @@ class TestRuntimeConfig implements RuntimeConfigService {
     NODE_ENV: "test" as const,
     API_PORT: 4000,
     LOG_LEVEL: "info" as const,
+    LOG_PRETTY: false,
     SERVICE_ROLE: "worker" as const,
     DATABASE_URL: "postgres://test:test@localhost:5432/test",
     REDIS_URL: TEST_REDIS_URL,
@@ -35,7 +36,8 @@ class TestRuntimeConfig implements RuntimeConfigService {
     BETTER_AUTH_SECRET: "test-secret-long-enough-32-chars-long",
     BETTER_AUTH_URL: "http://localhost:4000",
     AUTH_COOKIE_SECURE: false,
-    DISABLE_SIGNUP: false
+    DISABLE_SIGNUP: false,
+    DISABLE_RATE_LIMITING: false
   };
 
   trustedOrigins(): string[] {
@@ -88,6 +90,7 @@ describe("Imports parse pipeline (real BullMQ worker against real Redis)", () =>
       stagedRows,
       transactions,
       accounts,
+      new CategoryRepository(testDb.db),
       audit,
       categoryRules,
       backgroundQueue
@@ -189,6 +192,7 @@ describe("Imports parse pipeline (real BullMQ worker against real Redis)", () =>
       stagedRows,
       transactions,
       accounts,
+      new CategoryRepository(testDb.db),
       audit,
       categoryRules,
       backgroundQueue
@@ -223,6 +227,7 @@ describe("Imports parse pipeline (real BullMQ worker against real Redis)", () =>
       stagedRows,
       transactions,
       accounts,
+      new CategoryRepository(testDb.db),
       audit,
       categoryRules,
       backgroundQueue
@@ -233,6 +238,7 @@ describe("Imports parse pipeline (real BullMQ worker against real Redis)", () =>
       await categories.create("user-suggest", { name: "Food", kind: "expense" })
     ).id;
     await categoryRules.create("user-suggest", { pattern: "Chai", categoryId: foodCategoryId });
+    await categoryRules.create("user-suggest", { pattern: "Salary", categoryId: foodCategoryId });
 
     const batch = await batches.create(
       "user-suggest",
@@ -245,6 +251,7 @@ describe("Imports parse pipeline (real BullMQ worker against real Redis)", () =>
 
     const page = await stagedRows.findByBatchId(batch.id, undefined, 10);
     expect(page.items[0]).toMatchObject({ suggestedCategoryId: foodCategoryId });
+    expect(page.items[1]?.suggestedCategoryId).toBeUndefined();
   });
 });
 

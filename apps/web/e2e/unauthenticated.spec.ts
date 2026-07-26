@@ -22,12 +22,30 @@ test.describe("unauthenticated access", () => {
   test("renders the sign-in form", async ({ page }) => {
     await page.goto("/login");
     await expect(page.getByLabel("Email")).toBeVisible();
-    await expect(page.getByLabel("Password")).toBeVisible();
+    await expect(page.getByLabel("Password", { exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Sign in" })).toBeVisible();
   });
 
   test("has no automatically detectable accessibility violations on sign-in", async ({ page }) => {
     await page.goto("/login");
+    const scan = await new AxeBuilder({ page }).analyze();
+    expect(scan.violations).toEqual([]);
+  });
+
+  test("renders the public registration form", async ({ page }) => {
+    await page.goto("/register");
+    await expect(page).toHaveURL(/\/register$/);
+    await expect(page.getByLabel("Display name")).toBeVisible();
+    await expect(page.getByLabel("Email")).toBeVisible();
+    await expect(page.getByLabel("Password", { exact: true })).toBeVisible();
+    await expect(page.getByLabel("Confirm password", { exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Create account" })).toBeVisible();
+  });
+
+  test("has no automatically detectable accessibility violations on registration", async ({
+    page
+  }) => {
+    await page.goto("/register");
     const scan = await new AxeBuilder({ page }).analyze();
     expect(scan.violations).toEqual([]);
   });

@@ -48,24 +48,121 @@ export type {
   ValuationSource
 } from "./asset.js";
 export {
+  BudgetAlertPolicySchema,
+  BudgetCategorySchema,
+  BudgetIdSchema,
+  BudgetOverviewSchema,
+  BudgetPageSchema,
+  BudgetProgressSchema,
+  BudgetProgressStateSchema,
+  BudgetSchema,
+  ListBudgetsQuerySchema,
+  UpsertBudgetSchema
+} from "./budget.js";
+export type {
+  Budget,
+  BudgetAlertPolicy,
+  BudgetCategory,
+  BudgetId,
+  BudgetOverview,
+  BudgetPage,
+  BudgetProgress,
+  BudgetProgressState,
+  ListBudgetsQuery,
+  UpsertBudget
+} from "./budget.js";
+export {
+  CategoryGroupSchema,
   CategoryIdSchema,
   CategoryKindSchema,
   CategorySchema,
-  CreateCategorySchema
+  CreateCategorySchema,
+  UpdateCategoryGroupSchema
 } from "./category.js";
-export type { Category, CategoryId, CategoryKind, CreateCategory } from "./category.js";
+export type {
+  Category,
+  CategoryGroup,
+  CategoryId,
+  CategoryKind,
+  CreateCategory,
+  UpdateCategoryGroup
+} from "./category.js";
 export {
   CategoryRuleIdSchema,
   CategoryRuleSchema,
   CreateCategoryRuleSchema
 } from "./category-rule.js";
 export type { CategoryRule, CategoryRuleId, CreateCategoryRule } from "./category-rule.js";
+export {
+  CashflowBucketSchema,
+  CashflowQuerySchema,
+  CashflowResponseSchema,
+  DashboardInvestmentItemSchema,
+  DashboardInvestmentsSchema,
+  DashboardRangeSchema,
+  DashboardStatsQuerySchema,
+  DashboardStatsSchema,
+  DashboardSummarySchema,
+  RecentActivityItemSchema,
+  RecentActivityQuerySchema,
+  RecurringForecastQuerySchema,
+  RecurringForecastSchema,
+  RecurringForecastUpcomingItemSchema,
+  SpendMixQuerySchema,
+  SpendMixSchema,
+  TopSpendingItemSchema,
+  TopSpendingQuerySchema
+} from "./dashboard.js";
+export type {
+  CashflowBucket,
+  CashflowQuery,
+  CashflowResponse,
+  DashboardInvestmentItem,
+  DashboardInvestments,
+  DashboardRange,
+  DashboardStats,
+  DashboardStatsQuery,
+  DashboardSummary,
+  RecentActivityItem,
+  RecentActivityQuery,
+  RecurringForecast,
+  RecurringForecastQuery,
+  RecurringForecastUpcomingItem,
+  SpendMix,
+  SpendMixQuery,
+  TopSpendingItem,
+  TopSpendingQuery
+} from "./dashboard.js";
 export { ErrorCodes } from "./errors/codes.js";
 export type { ErrorCode } from "./errors/codes.js";
 export { ExportCsvQuerySchema } from "./export.js";
 export type { ExportCsvQuery } from "./export.js";
 export { ProblemDetailsSchema, ProblemFieldErrorSchema } from "./errors/problem-details.js";
 export type { ProblemDetails, ProblemFieldError } from "./errors/problem-details.js";
+export {
+  CreateGoalSchema,
+  GoalFundingModeSchema,
+  GoalIdSchema,
+  GoalPlanSchema,
+  GoalSchema,
+  GoalStatusSchema,
+  ListGoalsQuerySchema,
+  ReorderGoalsSchema,
+  StoredGoalSchema,
+  UpdateGoalSchema
+} from "./goal.js";
+export type {
+  CreateGoal,
+  Goal,
+  GoalFundingMode,
+  GoalId,
+  GoalPlan,
+  GoalStatus,
+  ListGoalsQuery,
+  ReorderGoals,
+  StoredGoal,
+  UpdateGoal
+} from "./goal.js";
 export {
   ALLOWED_IMPORT_FILE_EXTENSIONS,
   ALLOWED_IMPORT_MIME_TYPES,

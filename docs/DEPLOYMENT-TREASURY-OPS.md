@@ -11,13 +11,13 @@ Drop-in section for `DEPLOYMENT.md`. Same LXC, same conventions, port **3006**.
 
 ### How it differs from Taskflow / JS Mastery
 
-|              | Taskflow / JS Mastery             | TreasuryOps                                                                                      |
-| ------------ | --------------------------------- | ------------------------------------------------------------------------------------------ |
-| Containers   | 2 (nginx SPA + Express)           | 6 (nginx proxy + Next.js SSR + NestJS API + BullMQ worker + PostgreSQL + one-shot `migrate`) |
-| Frontend     | Vite static build served by nginx | Next.js **server** — nginx proxies to it, doesn't serve files                              |
-| Exposed port | nginx :80 → host                  | same, nginx :80 → host **3006** (only exposed container)                                   |
-| Deploy       | `git pull && up -d --build`       | same, **plus** one-shot `migrate` container runs before restart, **plus** smoke test after |
-| State        | none local                        | shared Redis volume (queues) + local PostgreSQL volume (named volume, host-backed)          |
+|              | Taskflow / JS Mastery             | TreasuryOps                                                                                 |
+| ------------ | --------------------------------- | -------------------------------------------------------------------------------------------- |
+| Containers   | 2 (nginx SPA + Express)           | 5 (nginx proxy + Next.js SSR + NestJS API + BullMQ worker + one-shot `migrate`)               |
+| Frontend     | Vite static build served by nginx | Next.js **server** — nginx proxies to it, doesn't serve files                                |
+| Exposed port | nginx :80 → host                  | same, nginx :80 → host **3006** (only exposed container)                                     |
+| Deploy       | `git pull && up -d --build`       | same, **plus** one-shot `migrate` container runs before restart, **plus** smoke test after   |
+| State        | none local                        | none local — Postgres + Redis are shared infra on container 102, no volumes on this LXC      |
 
 ### Container map
 
@@ -26,8 +26,8 @@ Browser → nginx:3006
              ├── /api/*         → api:4000   (NestJS — includes /api/auth/* Better Auth)
              ├── /admin/queues  → api:4000   (Bull Board, auth-guarded)
              └── /*             → web:3000   (Next.js SSR)
-worker  → shared Redis + Postgres   (crons, CSV parsing, notifications — no exposed port)
-migrate → runs `drizzle-kit migrate`, exits    (gates api/worker startup)
+worker  → shared Postgres + Redis on container 102   (crons, CSV parsing, notifications — no exposed port)
+migrate → runs `drizzle-kit migrate` against container 102, exits    (gates api/worker startup)
 ```
 
 ### `.env` (at `/opt/apps/treasury-ops/.env`)
@@ -59,26 +59,25 @@ ssh root@192.168.0.226 "sed -i 's/DISABLE_SIGNUP=false/DISABLE_SIGNUP=true/' /op
 
 ### Local foundation check
 
-Copy `env.example` to `.env`, set a `POSTGRES_PASSWORD`, and point `REDIS_URL` at `redis://host.docker.internal:6379/2` to use the Homebrew Redis service running on your Mac (if your local Redis requires authentication, add its URL-encoded password to that URL).
+Copy `env.example` to `.env` and point `DATABASE_URL`/`REDIS_URL` at reachable Postgres/Redis instances — container 102 if you want to develop against the real shared infra, or `host.docker.internal` if you have local Homebrew/Docker instances of either running on your Mac.
 
 ```bash
 docker compose --env-file .env up --build
 ```
 
-Postgres now runs as its own container in this same Compose stack (named volume, not an external service) — there's no separate staging database to point at. Never point `DATABASE_URL` at the production `treasury-ops` database for development or test data; use this stack's own local container instead.
+Never point `DATABASE_URL` at container 102's production `treasury_ops` database for development or test data. Either give yourself a separate dev database on container 102, or use `docker-compose.yml`'s throwaway local `postgres` service instead (`docker compose --env-file .env up -d postgres`, or set `COMPOSE_PROFILES=local` in `.env` — see README.md).
 
-### Shared Redis infrastructure
+### Shared Postgres + Redis infrastructure (container 102)
 
-Redis is intentionally deployed separately from TreasuryOps so other applications can reuse it. On the Redis host:
+Both are deployed on a shared LXC (container 102) rather than per-app, so every home-lab app reuses one Postgres and one Redis instead of running N separate instances — much lighter on RAM/maintenance, and one backup job covers every app. The tradeoff: it's a single point of failure across all apps (a crash, OOM, or botched major-version upgrade takes every app's DB down at once), an acceptable trade for personal projects without uptime SLAs.
 
-```bash
-cd infra/redis
-cp .env.example .env
-# Set a long, URL-safe REDIS_PASSWORD in .env.
-docker compose up -d
-```
+Container 102 itself is already provisioned and out of scope here (managed independently of this repo). What TreasuryOps needs from it:
 
-The Compose definition binds Redis to loopback only. For a separate application LXC, change the bind address deliberately and firewall port 6379 to only the application hosts. Give each application a distinct Redis database and key prefix; TreasuryOps uses database `2` and the `treasury-ops:` key namespace.
+- Its own Postgres database (`treasury_ops`) and a separately scoped database user — never share a user/db with another app on that instance.
+- A distinct Redis database index and key prefix — TreasuryOps uses database `2` and the `treasury-ops:` key namespace (see `infra/redis` for the historical single-app Redis compose definition this superseded).
+- Network reachability from TreasuryOps' own LXC (192.168.0.226) to container 102 on 5432/6379, firewalled to only the application hosts that need it.
+
+`DATABASE_URL`/`REDIS_URL` in `.env` point at container 102's address — see `env.example`.
 
 ### Update
 
@@ -131,14 +130,7 @@ ssh root@192.168.0.226 "cd /opt/apps/treasury-ops && git checkout <sha> && docke
 
 ### Host crontab additions (LXC, `crontab -e`)
 
-The app's business crons (recurring txns, rollups, alerts) run **inside the worker** via BullMQ — nothing needed on the host. Only the backup lives at host level so it works even if the app is down:
-
-```cron
-# Nightly Postgres dump → NAS (04:00 IST)
-0 4 * * * /opt/apps/treasury-ops/deploy/backup.sh >> /var/log/treasury-ops-backup.log 2>&1
-```
-
-`backup.sh`: `docker compose --env-file /opt/apps/treasury-ops/.env exec -T postgres pg_dump -U treasury-ops -d treasury-ops | gzip > /mnt/nas/backups/treasury-ops/$(date +\%F).sql.gz` + retention prune (30 daily / 12 monthly) + weekly `rclone` offsite. Runs against the `postgres` container directly (not the host's published port, which is loopback-only per `POSTGRES_BIND_ADDR` in `env.example`) — `docker compose exec` works from the host regardless of that binding.
+The app's business crons (recurring txns, rollups, alerts) run **inside the worker** via BullMQ — nothing needed on TreasuryOps' host for those. Postgres backups are no longer per-app: since Postgres moved to shared infra on container 102, its single centralized backup job covers TreasuryOps' `treasury_ops` database along with every other app's — nothing to add to this LXC's crontab for that either.
 
 ### Notes
 

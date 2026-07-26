@@ -8,6 +8,7 @@ export const accountTypeEnum = pgEnum("account_type", [
   "investment"
 ]);
 export const categoryKindEnum = pgEnum("category_kind", ["expense", "income"]);
+export const categoryGroupEnum = pgEnum("category_group", ["essential", "lifestyle"]);
 export const transactionTypeEnum = pgEnum("transaction_type", ["expense", "income"]);
 export const transactionStatusEnum = pgEnum("transaction_status", [
   "posted",
@@ -39,7 +40,8 @@ export const importBatchStatusEnum = pgEnum("import_batch_status", [
 export const notificationTypeEnum = pgEnum("notification_type", [
   "budget_alert",
   "monthly_report",
-  "balance_drift"
+  "balance_drift",
+  "goal_achieved"
 ]);
 export const notificationStatusEnum = pgEnum("notification_status", ["pending", "sent"]);
 export const spendingWarningKindEnum = pgEnum("spending_warning_kind", [
@@ -62,3 +64,5 @@ export const spendingWarningAnalysisStateStatusEnum = pgEnum("spending_warning_a
   "learning",
   "ready"
 ]);
+export const goalFundingModeEnum = pgEnum("goal_funding_mode", ["linked_account", "tagged"]);
+export const goalStatusEnum = pgEnum("goal_status", ["active", "achieved", "abandoned"]);

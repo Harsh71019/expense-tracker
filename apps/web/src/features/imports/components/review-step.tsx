@@ -7,6 +7,7 @@ import type { ReactNode } from "react";
 
 import { Money } from "@/components/ui/money";
 import { qk } from "@/lib/query/keys";
+import { toast } from "@/lib/toast";
 
 import { useStagedRows } from "../hooks/use-staged-rows";
 import { useUpdateStagedRow } from "../hooks/use-update-staged-row";
@@ -51,16 +52,42 @@ export function ReviewStep({ batchId, categories, onCountsChange }: ReviewStepPr
   }, [included, onCountsChange]);
 
   function toggleInclude(row: StagedRow): void {
-    update.mutate({ batchId, stagedRowId: row.id, include: !row.include });
+    update.mutate(
+      { batchId, stagedRowId: row.id, include: !row.include },
+      {
+        onSuccess: () => {
+          toast.success(row.include ? "Row excluded from import" : "Row included in import", {
+            id: `import-row-${row.id}`
+          });
+        },
+        onError: (error) => {
+          toast.error(error.message || "Could not update this row", {
+            id: `import-row-${row.id}`
+          });
+        }
+      }
+    );
   }
 
   function setCategory(row: StagedRow, categoryId: string): void {
     setEditedRowIds((current) => new Set(current).add(row.id));
-    update.mutate({
-      batchId,
-      stagedRowId: row.id,
-      suggestedCategoryId: categoryId === "" ? null : categoryId
-    });
+    update.mutate(
+      {
+        batchId,
+        stagedRowId: row.id,
+        suggestedCategoryId: categoryId === "" ? null : categoryId
+      },
+      {
+        onSuccess: () => {
+          toast.success("Row category updated", { id: `import-row-${row.id}` });
+        },
+        onError: (error) => {
+          toast.error(error.message || "Could not update this row", {
+            id: `import-row-${row.id}`
+          });
+        }
+      }
+    );
   }
 
   return (

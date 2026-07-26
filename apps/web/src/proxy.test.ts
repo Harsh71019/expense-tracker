@@ -31,4 +31,11 @@ describe("proxy", () => {
 
     expect(response.headers.get("x-middleware-next")).toBe("1");
   });
+
+  it.each(["/login", "/register"])("allows the public auth path %s without a session", (path) => {
+    const response = proxy(new NextRequest(`http://localhost:3000${path}`));
+
+    expect(response.headers.get("x-middleware-next")).toBe("1");
+    expect(mockedGetSessionCookie).not.toHaveBeenCalled();
+  });
 });

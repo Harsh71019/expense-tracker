@@ -65,4 +65,11 @@ describe("AppSidebar", () => {
     expect(screen.getByRole("link", { name: "Patterns" })).toHaveClass("bg-accent-glow");
     expect(screen.getByRole("link", { name: "Reports" })).not.toHaveClass("bg-accent-glow");
   });
+
+  it("links to budgets beside the other planning destinations", () => {
+    render(<AppSidebar email="harsh@example.com" theme="light" />);
+
+    expect(screen.getByRole("link", { name: "Budgets" })).toHaveAttribute("href", "/budgets");
+    expect(screen.getByRole("link", { name: "Reports" })).toHaveAttribute("href", "/reports");
+  });
 });

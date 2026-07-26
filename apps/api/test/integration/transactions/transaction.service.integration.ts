@@ -16,6 +16,7 @@ import { TransactionMutationService } from "../../../src/transactions/transactio
 import { IdempotencyPostgresRepository } from "../../../src/common/idempotency/idempotency-postgres.repository.js";
 import { IdempotencyPostgresService } from "../../../src/common/idempotency/idempotency-postgres.service.js";
 import { EntityNotFoundError } from "../../../src/common/errors/entity-not-found.error.js";
+import { CategoryKindMismatchError } from "../../../src/common/errors/category-kind-mismatch.error.js";
 import { TransactionNotReversibleError } from "../../../src/common/errors/transaction-not-reversible.error.js";
 import { createTestDb, insertTestUser } from "../support/postgres-test-db.js";
 import type { TestDb } from "../support/postgres-test-db.js";
@@ -171,6 +172,24 @@ describe("TransactionService", () => {
     ).rejects.toThrow("Category not found.");
   });
 
+  it("rejects a category whose kind does not match the transaction type", async () => {
+    await expect(
+      transactions.create(
+        "user-a",
+        {
+          accountId,
+          categoryId: foodCategoryId,
+          type: "income",
+          amountMinor: 500,
+          occurredAt: new Date("2026-07-12T09:30:00.000Z"),
+          description: "Misclassified refund",
+          tags: []
+        },
+        "d3a8d11c-2dfa-4933-911b-87b7f9681283"
+      )
+    ).rejects.toThrow(CategoryKindMismatchError);
+  });
+
   it("throws EntityNotFoundError when reversing a non-existent transaction", async () => {
     await expect(transactions.reverse("user-a", FAKE_ID)).rejects.toThrow(EntityNotFoundError);
   });
@@ -193,6 +212,35 @@ describe("TransactionService", () => {
     await expect(transactions.reverse("user-a", reversed.transaction.id)).rejects.toThrow(
       TransactionNotReversibleError
     );
+  });
+
+  it("can reverse a transaction after its account is archived", async () => {
+    const accountRepository = new AccountRepository(testDb.db);
+    const account = await withTxn(testDb.db, (tx) =>
+      accountRepository.create(
+        "user-a",
+        { name: "Archived ledger", type: "bank", openingBalanceMinor: 5_000 },
+        tx
+      )
+    );
+    const original = await transactions.create(
+      "user-a",
+      {
+        accountId: account.id,
+        type: "expense",
+        amountMinor: 750,
+        occurredAt: new Date("2026-07-14T10:00:00.000Z"),
+        description: "Final account expense",
+        tags: []
+      },
+      "e1a2b3c4-5566-4778-899a-abbccddeeff1"
+    );
+    await accountRepository.archive("user-a", account.id);
+
+    await transactions.reverse("user-a", original.transaction.id);
+
+    const [archived] = await testDb.db.select().from(accounts).where(eq(accounts.id, account.id));
+    expect(archived).toMatchObject({ isArchived: true, balanceMinor: 5_000 });
   });
 
   it("updates description, tags, and category, recording a before/after audit snapshot", async () => {
@@ -295,6 +343,25 @@ describe("TransactionService", () => {
     await expect(
       transactions.update("user-a", created.transaction.id, { categoryId: FAKE_ID })
     ).rejects.toThrow("Category not found.");
+  });
+
+  it("rejects changing a transaction to a category of the wrong kind", async () => {
+    const created = await transactions.create(
+      "user-a",
+      {
+        accountId,
+        type: "income",
+        amountMinor: 200,
+        occurredAt: new Date("2026-07-13T11:30:00.000Z"),
+        description: "Refund",
+        tags: []
+      },
+      "f3a3a3a3-3333-4333-a333-333333333334"
+    );
+
+    await expect(
+      transactions.update("user-a", created.transaction.id, { categoryId: foodCategoryId })
+    ).rejects.toThrow(CategoryKindMismatchError);
   });
 
   it("does not allow updating another user's transaction", async () => {

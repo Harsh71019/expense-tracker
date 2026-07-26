@@ -18,6 +18,8 @@ export type UserProfileDto = components["schemas"]["UserProfile"];
 export type TransferDto = components["schemas"]["Transfer"];
 export type TransferReversalDto = components["schemas"]["TransferReversal"];
 export type RecurringRuleDto = components["schemas"]["RecurringRule"];
+export type GoalDto = components["schemas"]["Goal"];
+export type BudgetDto = components["schemas"]["Budget"];
 /** Generated-schema shape, distinct from `@treasury-ops/shared`'s `ColumnMapping` — see toColumnMappingDto in handlers/imports.ts. */
 export type ColumnMappingDto = ImportBatchDto["mapping"];
 /** `SpendingWarning` has no standalone named schema component — it only exists inline inside `SpendingWarningPage.items`. */
@@ -45,6 +47,11 @@ export interface MockIdempotency {
   valuations: Map<string, ValuationDto>;
   recurringRules: Map<string, RecurringRuleDto>;
   spendingWarningDismiss: Map<string, DismissSpendingWarningResponseDto>;
+  goals: Map<string, GoalDto>;
+  goalAbandon: Set<string>;
+  goalReorder: Set<string>;
+  budgets: Map<string, BudgetDto>;
+  budgetArchive: Map<string, BudgetDto>;
 }
 
 export interface MockStore {
@@ -60,6 +67,8 @@ export interface MockStore {
   recurringRules: RecurringRuleDto[];
   spendingWarnings: SpendingWarningDto[];
   spendingWarningAnalysis: SpendingWarningAnalysisDto;
+  goals: GoalDto[];
+  budgets: BudgetDto[];
   profile: UserProfileDto;
   /** accountId -> the mapping last used for a successful import to that account. */
   savedMappings: Map<string, ColumnMappingDto>;
@@ -77,6 +86,8 @@ export interface MockStore {
   nextStagedRowId: () => string;
   nextRecurringRuleId: () => string;
   nextSpendingWarningId: () => string;
+  nextGoalId: () => string;
+  nextBudgetId: () => string;
 }
 
 function daysAgo(days: number): string {
@@ -1770,6 +1781,8 @@ export function createMockStore(): MockStore {
   const nextStagedRowId = createIdGenerator("5b");
   const nextRecurringRuleId = createIdGenerator("e0");
   const nextSpendingWarningId = createIdGenerator("5e");
+  const nextGoalId = createIdGenerator("60");
+  const nextBudgetId = createIdGenerator("b0");
 
   const store: MockStore = {
     accounts: [],
@@ -1788,6 +1801,8 @@ export function createMockStore(): MockStore {
       eligibleKinds: [],
       baselineExpenseCount: 0
     },
+    goals: [],
+    budgets: [],
     profile: {
       userId: MOCK_USER_ID,
       displayName: "Mock User",
@@ -1811,7 +1826,12 @@ export function createMockStore(): MockStore {
       assetClose: new Set(),
       valuations: new Map(),
       recurringRules: new Map(),
-      spendingWarningDismiss: new Map()
+      spendingWarningDismiss: new Map(),
+      goals: new Map(),
+      goalAbandon: new Set(),
+      goalReorder: new Set(),
+      budgets: new Map(),
+      budgetArchive: new Map()
     },
     nextAccountId,
     nextCategoryId,
@@ -1823,7 +1843,9 @@ export function createMockStore(): MockStore {
     nextImportBatchId,
     nextStagedRowId,
     nextRecurringRuleId,
-    nextSpendingWarningId
+    nextSpendingWarningId,
+    nextGoalId,
+    nextBudgetId
   };
 
   seedAccounts(store);
@@ -1831,6 +1853,7 @@ export function createMockStore(): MockStore {
   seedRecurringRules(store);
   seedCategoryRules(store);
   seedTransactions(store);
+  seedGoals(store);
   seedAssetsAndValuations(store);
   seedImportBatch(store);
   seedImportBatch2(store);
@@ -1838,6 +1861,29 @@ export function createMockStore(): MockStore {
   seedSpendingWarnings(store);
 
   return store;
+}
+
+function seedGoals(store: MockStore): void {
+  const account = store.accounts.find((candidate) => candidate.name === "SBI Savings");
+  if (account === undefined) return;
+  const now = new Date();
+  const targetDate = new Date(now);
+  targetDate.setMonth(targetDate.getMonth() + 8);
+  store.goals.push({
+    id: store.nextGoalId(),
+    userId: store.profile.userId,
+    name: "Emergency fund",
+    targetMinor: 5_00_000_00,
+    targetDate: targetDate.toISOString(),
+    fundingMode: "linked_account",
+    linkedAccountId: account.id,
+    priority: 0,
+    status: "active",
+    startedMinor: account.balanceMinor,
+    progressMinor: 0,
+    createdAt: now.toISOString(),
+    updatedAt: now.toISOString()
+  });
 }
 
 function seedAccounts(store: MockStore): void {

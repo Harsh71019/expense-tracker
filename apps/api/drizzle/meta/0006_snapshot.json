@@ -1,5 +1,5 @@
 {
-  "id": "83b948f2-4f4e-441b-9043-699d1c203be0",
+  "id": "1e46ff47-102d-42ea-a63e-b54839e9db7e",
   "prevId": "73896b0d-e914-4929-b45e-61dc4979954d",
   "version": "7",
   "dialect": "postgresql",
@@ -219,6 +219,13 @@
         "color": {
           "name": "color",
           "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "group": {
+          "name": "group",
+          "type": "category_group",
+          "typeSchema": "public",
           "primaryKey": false,
           "notNull": false
         },
@@ -1758,274 +1765,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.spending_warning_analysis_state": {
-      "name": "spending_warning_analysis_state",
-      "schema": "",
-      "columns": {
-        "user_id": {
-          "name": "user_id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "detector_version": {
-          "name": "detector_version",
-          "type": "bigint",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "status": {
-          "name": "status",
-          "type": "spending_warning_analysis_status",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "computed_at": {
-          "name": "computed_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "source_through": {
-          "name": "source_through",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "history_start": {
-          "name": "history_start",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "baseline_expense_count": {
-          "name": "baseline_expense_count",
-          "type": "bigint",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "eligible_kinds": {
-          "name": "eligible_kinds",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "spending_warning_analysis_state_user_id_user_id_fk": {
-          "name": "spending_warning_analysis_state_user_id_user_id_fk",
-          "tableFrom": "spending_warning_analysis_state",
-          "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.spending_warnings": {
-      "name": "spending_warnings",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "fingerprint": {
-          "name": "fingerprint",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "kind": {
-          "name": "kind",
-          "type": "spending_warning_kind",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "severity": {
-          "name": "severity",
-          "type": "spending_warning_severity",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "status": {
-          "name": "status",
-          "type": "spending_warning_status",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "category_id": {
-          "name": "category_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "transaction_id": {
-          "name": "transaction_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "window_start": {
-          "name": "window_start",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "window_end": {
-          "name": "window_end",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "evidence": {
-          "name": "evidence",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "detector_version": {
-          "name": "detector_version",
-          "type": "bigint",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "first_detected_at": {
-          "name": "first_detected_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "last_detected_at": {
-          "name": "last_detected_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "dismissed_at": {
-          "name": "dismissed_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "resolved_at": {
-          "name": "resolved_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {
-        "spending_warnings_user_id_fingerprint_unique": {
-          "name": "spending_warnings_user_id_fingerprint_unique",
-          "columns": [
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "fingerprint",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "spending_warnings_user_id_status_last_detected_at_id": {
-          "name": "spending_warnings_user_id_status_last_detected_at_id",
-          "columns": [
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "status",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "last_detected_at",
-              "isExpression": false,
-              "asc": false,
-              "nulls": "last"
-            },
-            {
-              "expression": "id",
-              "isExpression": false,
-              "asc": false,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "spending_warnings_user_id_user_id_fk": {
-          "name": "spending_warnings_user_id_user_id_fk",
-          "tableFrom": "spending_warnings",
-          "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "spending_warnings_category_id_categories_id_fk": {
-          "name": "spending_warnings_category_id_categories_id_fk",
-          "tableFrom": "spending_warnings",
-          "tableTo": "categories",
-          "columnsFrom": ["category_id"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "spending_warnings_transaction_id_transactions_id_fk": {
-          "name": "spending_warnings_transaction_id_transactions_id_fk",
-          "tableFrom": "spending_warnings",
-          "tableTo": "transactions",
-          "columnsFrom": ["transaction_id"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.account": {
       "name": "account",
       "schema": "",
@@ -2564,6 +2303,11 @@
         "investment"
       ]
     },
+    "public.category_group": {
+      "name": "category_group",
+      "schema": "public",
+      "values": ["essential", "lifestyle"]
+    },
     "public.category_kind": {
       "name": "category_kind",
       "schema": "public",
@@ -2583,26 +2327,6 @@
       "name": "notification_type",
       "schema": "public",
       "values": ["budget_alert", "monthly_report", "balance_drift"]
-    },
-    "public.spending_warning_analysis_status": {
-      "name": "spending_warning_analysis_status",
-      "schema": "public",
-      "values": ["learning", "ready"]
-    },
-    "public.spending_warning_kind": {
-      "name": "spending_warning_kind",
-      "schema": "public",
-      "values": ["overall_spend_spike", "category_spend_spike", "unusually_large_expense"]
-    },
-    "public.spending_warning_severity": {
-      "name": "spending_warning_severity",
-      "schema": "public",
-      "values": ["attention", "high"]
-    },
-    "public.spending_warning_status": {
-      "name": "spending_warning_status",
-      "schema": "public",
-      "values": ["active", "dismissed", "resolved"]
     },
     "public.transaction_source": {
       "name": "transaction_source",

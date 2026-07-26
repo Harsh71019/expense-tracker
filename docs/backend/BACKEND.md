@@ -230,32 +230,88 @@ Loans given are receivables; loans taken are liabilities. Fixed deposits, gold, 
 
 ```ts
 {
-  _id: ObjectId,
+  id: UUID,
   userId: string,
   name: string,
   targetMinor: number,
-  targetDate: Date,
-  linkedAccountId?: ObjectId,
-  allocatedMinor: number,
-  isCompleted: boolean,
+  targetDate?: Date,
+  fundingMode: 'linked_account' | 'tagged',
+  linkedAccountId?: UUID,
+  tag?: string,
+  priority: number,
+  status: 'active' | 'achieved' | 'abandoned',
+  startedMinor: number,
   createdAt: Date, updatedAt: Date
 }
 ```
 
-Required monthly saving is projected from the remaining target, current allocation, and complete calendar months until `targetDate` in `Asia/Kolkata`.
+Goals are views over the existing ledger, not a second money store. A
+`linked_account` goal reports `account.balanceMinor - startedMinor`, so money
+that was already in the account at creation does not inflate progress. A
+`tagged` goal reports the signed sum of posted transactions carrying its tag.
+Funding mode and its account/tag binding are immutable; abandon and recreate a
+goal to change how progress is defined.
 
-#### `budgets`
+`GET /v1/goals/:goalId/plan` returns required monthly saving when a target date
+exists. Without one, it projects a completion date from the since-creation
+average contribution rate. A 02:05 IST worker sweep atomically marks completed
+goals achieved and writes one `goal_achieved` outbox notification.
+
+#### `budgets` + `budget_alert_events`
 
 ```ts
+// budgets -- one lifetime configuration per (userId, categoryId)
 {
-  _id: ObjectId,
+  id: UUID,
   userId: string,
-  categoryId: ObjectId,
-  period: 'monthly',
-  limitMinor: number,
-  alertThresholds: [0.8, 1.0]    // notify at 80% and 100%
+  categoryId: UUID,              // must belong to the user and be kind = 'expense'
+  limitMinor: number,             // positive integer paise
+  isArchived: boolean,
+  createdAt: Date, updatedAt: Date
+}
+
+// budget_alert_events -- immutable dedup/evidence rows, never updated or deleted
+{
+  id: UUID,
+  userId: string,
+  budgetId: UUID,
+  month: 'YYYY-MM',
+  policyVersion: number,          // 1 today: thresholds [8000, 10000] bps
+  thresholdBps: number,
+  spentMinor: number, limitMinor: number,  // snapshot at the moment the threshold fired
+  createdAt: Date
 }
 ```
+
+Budgets are current-month-only and exact-category (no descendant rollup, no
+overall/household budget yet). `spentMinor`/`remainingMinor`/`utilizationBps`
+are never cached on the row — `GET /v1/budgets` derives them live from one
+bounded aggregate over posted, non-transfer, exact-category expense
+transactions in the current IST month, deliberately not the nightly
+`monthly_rollups` cache (that cache doesn't exclude transfer legs; budget
+progress must not inherit that semantic). Archiving a category makes any
+budget attached to it "ineffective" (zeroed progress, no alerts) without
+touching the budget row itself, so restoring the category or re-pointing a
+new budget at it recovers cleanly.
+
+`PUT /v1/budgets/:categoryId` creates, updates, or restores the one lifetime
+row for that category in a single statement (Postgres `ON CONFLICT DO
+UPDATE` on the `(userId, categoryId)` unique index) — there is no separate
+create vs. update endpoint. `PATCH /v1/budgets/:budgetId/archive` is
+recoverable (no hard delete); restoring happens by `PUT`-ing a new limit for
+the same category.
+
+A daily 08:00 IST worker-only cron (`BudgetAlertCron`, plain `@nestjs/schedule`
+`@Cron`, not a dedicated BullMQ queue — the existing generic
+`notification_outbox` → sweep → queue → adapter pipeline already delivers
+whatever lands in the outbox, `budget_alert` included) walks every
+non-archived budget, recomputes live progress, and for any threshold newly
+crossed this month: locks the budget row (`SELECT ... FOR UPDATE`, so a
+concurrent pass blocks and then re-reads the already-recorded thresholds
+instead of racing them), inserts the missing `budget_alert_events` row(s),
+and enqueues exactly one `budget_alert` outbox entry for the highest
+newly-reached threshold — mirroring `GoalsProgressCron`'s direct
+per-entity `withTxn` + outbox-enqueue shape.
 
 #### `monthly_rollups` — materialized reports (cron-maintained)
 
@@ -399,7 +455,17 @@ Both writes + the balance `$inc` + audit entry happen in one transaction. Why th
 3. **It's the pattern banks/NBFCs actually use** (you'll recognize this at Godrej: no one deletes ledger rows). Great interview material.
 4. **Idempotent and safe under concurrency** — reversing an already-reversed txn is rejected by a status guard inside the transaction.
 
+Archiving an account blocks new postings but never blocks a compensating entry.
+Reversal balance updates intentionally use a separate repository path that
+still scopes by `userId` while including archived accounts; transaction,
+transfer, and import reversals all use that path.
+
 **Edits** follow the same rule: an edit = reverse original + post corrected entry, linked in `audit_log` with before/after. (Allow direct in-place edit only for non-monetary fields: description, tags, category.)
+
+Every category attached to a transaction must be active, owned by the same
+user, and have the same kind as the transaction (`expense` or `income`). The
+same invariant is enforced when creating/updating recurring templates and
+again before committing staged import rows.
 
 ### 3.3 Transfers are two legs, one atom
 
@@ -448,7 +514,7 @@ POST /imports/:id/revert                ← one bulk reversal, chunked transacti
 
 **Details that matter for Indian bank CSVs:**
 
-- **Column mapping is saved per account** (`import_batches.mapping`), so HDFC's `Txn Date / Narration / Withdrawal Amt / Deposit Amt` is a one-time setup. Support both single-signed-amount and separate debit/credit column conventions.
+- **Column mapping is saved per account** (`import_batches.mapping`), so HDFC's `Txn Date / Narration / Withdrawal Amt / Deposit Amt` is a one-time setup. Support both single-signed-amount and separate debit/credit column conventions. Batch creation uses the database statement timestamp (not a JavaScript millisecond timestamp), so two rapid uploads still have a deterministic latest mapping.
 - **Date parsing:** enforce explicit `dateFormat` from the mapping (`DD/MM/YYYY` default) — never auto-guess, that's how 04/07 becomes April 7th.
 - **`dedupeHash` = sha256(userId|accountId|date(day)|amountMinor|normalizedDescription)**. Normalized = lowercased, whitespace-collapsed, UPI ref numbers stripped. Same-day identical transactions (two ₹20 chai UPIs) are flagged as _possible_ dupes in preview rather than silently dropped — user decides.
 - **n8n hook:** your existing HDFC/ICICI email-parser flow can `POST /transactions` directly (source: `'api'`, with idempotency key = bank ref number). CSV and email ingestion converge on the same dedupe logic, so overlap between the two is handled automatically.
@@ -465,6 +531,15 @@ POST /imports/:id/revert                ← one bulk reversal, chunked transacti
 - 2FA (TOTP) plugin if you expose this to the internet rather than Tailscale-only
 
 **Topology:** Better Auth mounts _inside the NestJS app_ (it exposes a fetch-style handler you adapt to Express at `/api/auth/*`). One process owns users + sessions + business data — no token relay between Next.js and the API.
+
+**Current registration policy:** Better Auth uses the PostgreSQL Drizzle adapter and owns
+`POST /api/auth/sign-up/email`. Registration is enabled only while
+`DISABLE_SIGNUP=false`, accepts passwords from 8 through 128 characters, and is limited to
+10 attempts per 60 seconds through Redis secondary storage. `autoSignIn` is disabled:
+successful registration returns no session, and existing-email attempts use the same outward
+success posture before the user signs in normally. The existing user-create hook idempotently
+ensures `user_profiles`; `AuthGuard` repeats that ensure after sign-in as the recovery path for a
+transient hook failure.
 
 ```ts
 // auth/better-auth.instance.ts
@@ -541,7 +616,7 @@ GET    /assets/:id/valuations | POST /assets/:id/valuations
 GET    /net-worth
 GET    /profile                         read-only app profile
 GET    /recurring | POST /recurring | PATCH /recurring/:id
-GET    /budgets | PUT /budgets/:categoryId
+GET    /budgets | PUT /budgets/:categoryId | PATCH /budgets/:budgetId/archive
 
 GET    /reports/monthly/:month          reads monthly_rollups
 GET    /reports/cashflow?from&to

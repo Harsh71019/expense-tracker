@@ -6,10 +6,13 @@ import type { paths } from "@/lib/api/generated/schema";
 import type { MockStore } from "../data/store";
 import { accountHandlers } from "./accounts";
 import { assetHandlers } from "./assets";
+import { authHandlers } from "./auth";
+import { budgetHandlers } from "./budgets";
 import { categoryHandlers } from "./categories";
 import { categoryRuleHandlers } from "./category-rules";
 import { exportHandlers } from "./export";
 import { importHandlers } from "./imports";
+import { goalHandlers } from "./goals";
 import { netWorthHandlers } from "./net-worth";
 import { profileHandlers } from "./profile";
 import { reportHandlers } from "./reports";
@@ -28,11 +31,14 @@ export function createHandlers(baseUrl: string, store: MockStore): HttpHandler[]
   const http = createOpenApiHttp<paths>({ baseUrl });
 
   return [
+    ...authHandlers(baseUrl),
     ...accountHandlers(http, store),
     ...categoryHandlers(http, store),
     ...categoryRuleHandlers(http, store),
+    ...budgetHandlers(http, store),
     ...transactionHandlers(http, store),
     ...transferHandlers(http, store),
+    ...goalHandlers(http, store),
     ...assetHandlers(http, store),
     ...netWorthHandlers(http, store),
     ...importHandlers(http, store),

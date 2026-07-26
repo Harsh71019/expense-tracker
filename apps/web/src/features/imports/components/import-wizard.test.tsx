@@ -65,7 +65,9 @@ const mocks = vi.hoisted(() => {
     revertMutateAsync: vi.fn(),
     revertPending: false,
     updateMutate: vi.fn(),
-    stagedRows
+    stagedRows,
+    toastSuccess: vi.fn(),
+    toastError: vi.fn()
   };
 });
 
@@ -102,6 +104,9 @@ vi.mock("../hooks/use-staged-rows", () => ({
 vi.mock("../hooks/use-update-staged-row", () => ({
   useUpdateStagedRow: () => ({ mutate: mocks.updateMutate, isPending: false })
 }));
+vi.mock("@/lib/toast", () => ({
+  toast: { success: mocks.toastSuccess, error: mocks.toastError }
+}));
 
 function wrapper({ children }: Readonly<{ children: ReactNode }>): ReactNode {
   return (
@@ -128,16 +133,23 @@ describe("ImportWizard", () => {
     mocks.revertPending = false;
     mocks.updateMutate.mockReset();
     mocks.stagedRows = [];
+    mocks.toastSuccess.mockReset();
+    mocks.toastError.mockReset();
   });
 
   it("shows the empty list and starts a new import", async () => {
     const user = userEvent.setup();
     renderWizard();
 
+    expect(screen.getByRole("link", { name: "Settings" })).toHaveAttribute(
+      "href",
+      "/settings?tab=management"
+    );
     expect(screen.getByText("No statements imported")).toBeVisible();
     await user.click(screen.getByRole("button", { name: /New import/ }));
 
     expect(screen.getByRole("heading", { name: "New import" })).toBeVisible();
+    expect(screen.getByText("New import", { selector: "[aria-current='page']" })).toBeVisible();
     expect(screen.getByText("Which account is this statement for?")).toBeVisible();
   });
 
@@ -180,6 +192,7 @@ describe("ImportWizard", () => {
     expect(mocks.uploadMutateAsync).toHaveBeenCalledWith(
       expect.objectContaining({ accountId: account.id, file: csv })
     );
+    expect(mocks.toastSuccess).toHaveBeenCalledWith("Statement staged for review");
     expect(await screen.findByText("SWIGGY*ORDER 4821")).toBeVisible();
 
     await user.click(screen.getByRole("button", { name: "Commit 1 transactions" }));
@@ -187,6 +200,7 @@ describe("ImportWizard", () => {
     await user.click(screen.getByRole("button", { name: "Post 1 transactions" }));
 
     expect(mocks.commitMutateAsync).toHaveBeenCalledWith(uploaded.id);
+    expect(mocks.toastSuccess).toHaveBeenCalledWith("Import committed to the ledger");
     expect(await screen.findByText("No statements imported")).toBeVisible();
   });
 
@@ -216,6 +230,7 @@ describe("ImportWizard", () => {
     expect(screen.getByText("Revert this batch?")).toBeVisible();
     await user.click(screen.getByRole("button", { name: "Reverse 2 transactions" }));
     expect(mocks.revertMutateAsync).toHaveBeenCalledWith(mocks.batches[0]?.id);
+    expect(mocks.toastSuccess).toHaveBeenCalledWith("Import reversed");
   });
 
   it("cancels out of the wizard back to the list without uploading", async () => {

@@ -41,50 +41,58 @@ export async function seedFullCategories(
         kind: "expense",
         parentId: foodAndDining.id,
         icon: "shopping-cart",
-        color: "#fb923c"
+        color: "#fb923c",
+        group: "essential"
       }),
       services.categories.create(userId, {
         name: "Dining Out",
         kind: "expense",
         parentId: foodAndDining.id,
         icon: "utensils-crossed",
-        color: "#fdba74"
+        color: "#fdba74",
+        group: "lifestyle"
       }),
       services.categories.create(userId, {
         name: "Transport",
         kind: "expense",
         icon: "car",
-        color: "#3b82f6"
+        color: "#3b82f6",
+        group: "essential"
       }),
       services.categories.create(userId, {
         name: "Shopping",
         kind: "expense",
         icon: "shopping-bag",
-        color: "#ec4899"
+        color: "#ec4899",
+        group: "lifestyle"
       }),
       services.categories.create(userId, {
         name: "Utilities",
         kind: "expense",
         icon: "zap",
-        color: "#eab308"
+        color: "#eab308",
+        group: "essential"
       }),
       services.categories.create(userId, {
         name: "Rent",
         kind: "expense",
         icon: "home",
-        color: "#8b5cf6"
+        color: "#8b5cf6",
+        group: "essential"
       }),
       services.categories.create(userId, {
         name: "Travel",
         kind: "expense",
         icon: "plane",
-        color: "#06b6d4"
+        color: "#06b6d4",
+        group: "lifestyle"
       }),
       services.categories.create(userId, {
         name: "Entertainment",
         kind: "expense",
         icon: "film",
-        color: "#f43f5e"
+        color: "#f43f5e",
+        group: "lifestyle"
       })
     ]);
 

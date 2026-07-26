@@ -19,7 +19,16 @@ export const LogEvent = {
   StagedRowsCleaned: "imports.staged_rows_cleaned",
   SpendingWarningsScheduled: "spending_warnings.scheduled",
   SpendingWarningsAnalyzed: "spending_warnings.analyzed",
-  SpendingWarningsAnalyzeFailed: "spending_warnings.analyze_failed"
+  SpendingWarningsAnalyzeFailed: "spending_warnings.analyze_failed",
+  GoalAchieved: "goal.achieved",
+  GoalProgressCheckFailed: "goal.progress_check_failed",
+  GoalsProgressChecked: "goals.progress_checked",
+  BudgetAlertEnqueued: "budget.alert_enqueued",
+  BudgetAlertCheckFailed: "budget.alert_check_failed",
+  BudgetAlertsChecked: "budgets.alerts_checked",
+  WorkerHeartbeatFailed: "worker.heartbeat_failed",
+  WorkerStopping: "worker.stopping",
+  WorkerStopped: "worker.stopped"
 } as const;
 
 export type LogEvent = (typeof LogEvent)[keyof typeof LogEvent];

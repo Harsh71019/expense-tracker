@@ -6,7 +6,7 @@ import { TransactionSchema, type Transaction } from "@treasury-ops/shared";
 import { apiClient } from "@/lib/api/client";
 import { toAppError, toNetworkError } from "@/lib/api/problem";
 import { qk } from "@/lib/query/keys";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 export function useReverseTxn(): ReturnType<typeof useMutation<Transaction, Error, string>> {
   const queryClient = useQueryClient();
@@ -41,6 +41,7 @@ export function useReverseTxn(): ReturnType<typeof useMutation<Transaction, Erro
       void queryClient.invalidateQueries({ queryKey: qk.transactions() });
       void queryClient.invalidateQueries({ queryKey: qk.accounts() });
       void queryClient.invalidateQueries({ queryKey: qk.netWorth() });
+      void queryClient.invalidateQueries({ queryKey: qk.goals() });
     }
   });
 }

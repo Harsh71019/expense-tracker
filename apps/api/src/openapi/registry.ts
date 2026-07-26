@@ -23,6 +23,8 @@ import {
   AccountIdSchema,
   AccountSchema,
   ApiKeySchema,
+  CashflowQuerySchema,
+  CashflowResponseSchema,
   CategoryIdSchema,
   CategorySchema,
   CategoryRuleIdSchema,
@@ -33,12 +35,25 @@ import {
   CreateCategorySchema,
   CreateCategoryRuleSchema,
   CreateTransactionSchema,
+  DashboardInvestmentsSchema,
+  DashboardStatsQuerySchema,
+  DashboardStatsSchema,
+  DashboardSummarySchema,
   ExportCsvQuerySchema,
   ListTransactionsQuerySchema,
   ProblemDetailsSchema,
+  RecentActivityItemSchema,
+  RecentActivityQuerySchema,
+  RecurringForecastQuerySchema,
+  RecurringForecastSchema,
+  SpendMixQuerySchema,
+  SpendMixSchema,
+  TopSpendingItemSchema,
+  TopSpendingQuerySchema,
   TransactionIdSchema,
   TransactionPageSchema,
   TransactionSchema,
+  UpdateCategoryGroupSchema,
   UpdateTransactionSchema,
   CreateTransferSchema,
   TransferSchema,
@@ -47,6 +62,9 @@ import {
   CreateAssetSchema,
   AssetSchema,
   AssetIdSchema,
+  BudgetIdSchema,
+  BudgetPageSchema,
+  BudgetSchema,
   CreateValuationSchema,
   ValuationSchema,
   ValuationPageSchema,
@@ -60,9 +78,16 @@ import {
   StagedRowSchema,
   UpdateStagedRowSchema,
   UserProfileSchema,
+  UserProfileUpdateSchema,
   MonthSchema,
   MonthlyRollupSchema,
   CreateRecurringRuleSchema,
+  CreateGoalSchema,
+  GoalIdSchema,
+  GoalPlanSchema,
+  GoalSchema,
+  ListGoalsQuerySchema,
+  ReorderGoalsSchema,
   RecurringRuleIdSchema,
   RecurringRuleSchema,
   UpdateApiKeySchema,
@@ -70,7 +95,10 @@ import {
   DismissSpendingWarningResponseSchema,
   ListSpendingWarningsQuerySchema,
   SpendingWarningIdSchema,
-  SpendingWarningPageSchema
+  SpendingWarningPageSchema,
+  UpdateGoalSchema,
+  ListBudgetsQuerySchema,
+  UpsertBudgetSchema
 } from "@treasury-ops/shared";
 import { z } from "zod";
 
@@ -99,6 +127,18 @@ const SpendingWarningPage = SpendingWarningPageSchema.meta({ id: "SpendingWarnin
 const DismissSpendingWarningResponse = DismissSpendingWarningResponseSchema.meta({
   id: "DismissSpendingWarningResponse"
 });
+const Budget = BudgetSchema.meta({ id: "Budget" });
+const BudgetPage = BudgetPageSchema.meta({ id: "BudgetPage" });
+const Goal = GoalSchema.meta({ id: "Goal" });
+const GoalPlan = GoalPlanSchema.meta({ id: "GoalPlan" });
+const DashboardSummary = DashboardSummarySchema.meta({ id: "DashboardSummary" });
+const RecentActivityItem = RecentActivityItemSchema.meta({ id: "RecentActivityItem" });
+const DashboardStats = DashboardStatsSchema.meta({ id: "DashboardStats" });
+const CashflowResponse = CashflowResponseSchema.meta({ id: "CashflowResponse" });
+const TopSpendingItem = TopSpendingItemSchema.meta({ id: "TopSpendingItem" });
+const SpendMix = SpendMixSchema.meta({ id: "SpendMix" });
+const DashboardInvestments = DashboardInvestmentsSchema.meta({ id: "DashboardInvestments" });
+const RecurringForecast = RecurringForecastSchema.meta({ id: "RecurringForecast" });
 
 const accountId = z.object({ accountId: AccountIdSchema });
 const categoryId = z.object({ categoryId: CategoryIdSchema });
@@ -114,6 +154,8 @@ const importBatchAndRowId = z.object({
 const month = z.object({ month: MonthSchema });
 const recurringRuleId = z.object({ ruleId: RecurringRuleIdSchema });
 const spendingWarningId = z.object({ warningId: SpendingWarningIdSchema });
+const goalId = z.object({ goalId: GoalIdSchema });
+const budgetId = z.object({ budgetId: BudgetIdSchema });
 const json = (schema: z.ZodType): { content: { "application/json": { schema: z.ZodType } } } => ({
   content: { "application/json": { schema } }
 });
@@ -263,6 +305,25 @@ registry.registerPath({
     204: {
       description: "Archived, or replayed a prior successful archive",
       headers: optionalReplayHeaders
+    },
+    404: { description: "Not found", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "patch",
+  path: "/v1/categories/{categoryId}/group",
+  security: secured,
+  request: {
+    params: categoryId,
+    body: json(UpdateCategoryGroupSchema),
+    headers: idempotencyKeyHeaders
+  },
+  responses: {
+    200: {
+      description: "Updated category group, or idempotent replay",
+      headers: optionalReplayHeaders,
+      ...json(Category)
     },
     404: { description: "Not found", ...json(ProblemDetails) },
     ...problemResponses
@@ -542,6 +603,18 @@ registry.registerPath({
 });
 
 registry.registerPath({
+  method: "patch",
+  path: "/v1/profile",
+  security: secured,
+  request: { body: json(UserProfileUpdateSchema) },
+  responses: {
+    200: { description: "Updated user profile", ...json(UserProfile) },
+    404: { description: "Profile not found", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
   method: "get",
   path: "/v1/recurring",
   security: secured,
@@ -639,6 +712,151 @@ registry.registerPath({
 });
 
 registry.registerPath({
+  method: "get",
+  path: "/v1/goals",
+  security: secured,
+  request: { query: ListGoalsQuerySchema },
+  responses: {
+    200: { description: "Goals with live progress", ...json(z.array(Goal)) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "post",
+  path: "/v1/goals",
+  security: secured,
+  request: { body: json(CreateGoalSchema), headers: idempotencyKeyHeaders },
+  responses: {
+    200: {
+      description: "Idempotent replay of the created goal",
+      headers: replayedHeaders,
+      ...json(Goal)
+    },
+    201: { description: "Created goal", ...json(Goal) },
+    404: { description: "Linked account not found", ...json(ProblemDetails) },
+    409: { description: "Funding source already assigned", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "patch",
+  path: "/v1/goals/reorder",
+  security: secured,
+  request: {
+    body: json(ReorderGoalsSchema),
+    headers: idempotencyKeyHeaders
+  },
+  responses: {
+    204: {
+      description: "Goals reordered, or idempotent replay",
+      headers: optionalReplayHeaders
+    },
+    409: { description: "Order does not contain every active goal", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "get",
+  path: "/v1/goals/{goalId}",
+  security: secured,
+  request: { params: goalId },
+  responses: {
+    200: { description: "Goal with live progress", ...json(Goal) },
+    404: { description: "Goal not found", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "patch",
+  path: "/v1/goals/{goalId}",
+  security: secured,
+  request: {
+    params: goalId,
+    body: json(UpdateGoalSchema),
+    headers: idempotencyKeyHeaders
+  },
+  responses: {
+    200: {
+      description: "Updated goal, or idempotent replay",
+      headers: optionalReplayHeaders,
+      ...json(Goal)
+    },
+    404: { description: "Goal not found", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "post",
+  path: "/v1/goals/{goalId}/abandon",
+  security: secured,
+  request: { params: goalId, headers: idempotencyKeyHeaders },
+  responses: {
+    204: {
+      description: "Goal abandoned, or idempotent replay",
+      headers: optionalReplayHeaders
+    },
+    404: { description: "Active goal not found", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "get",
+  path: "/v1/goals/{goalId}/plan",
+  security: secured,
+  request: { params: goalId },
+  responses: {
+    200: { description: "Goal contribution plan", ...json(GoalPlan) },
+    404: { description: "Goal not found", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/v1/budgets",
+  security: secured,
+  request: { query: ListBudgetsQuerySchema },
+  responses: {
+    200: { description: "Budget page with live progress and overview totals", ...json(BudgetPage) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "put",
+  path: "/v1/budgets/{categoryId}",
+  security: secured,
+  request: {
+    params: categoryId,
+    body: json(UpsertBudgetSchema),
+    headers: idempotencyKeyHeaders
+  },
+  responses: {
+    200: {
+      description: "Created, updated, restored budget configuration, or idempotent replay",
+      headers: optionalReplayHeaders,
+      ...json(Budget)
+    },
+    404: { description: "Category not found", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "patch",
+  path: "/v1/budgets/{budgetId}/archive",
+  security: secured,
+  request: { params: budgetId, headers: idempotencyKeyHeaders },
+  responses: {
+    200: {
+      description: "Archived budget configuration, or idempotent replay",
+      headers: optionalReplayHeaders,
+      ...json(Budget)
+    },
+    404: { description: "Budget not found", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
   method: "post",
   path: "/v1/api-keys",
   security: secured,
@@ -673,6 +891,100 @@ registry.registerPath({
   security: secured,
   request: { params: z.object({ keyId: z.string() }) },
   responses: { 204: { description: "API key revoked" }, ...problemResponses }
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/v1/dashboard/summary",
+  security: secured,
+  responses: {
+    200: { description: "Home dashboard summary", ...json(DashboardSummary) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "get",
+  path: "/v1/dashboard/recent-activity",
+  security: secured,
+  request: { query: RecentActivityQuerySchema },
+  responses: {
+    200: { description: "Most recent posted transactions", ...json(z.array(RecentActivityItem)) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "get",
+  path: "/v1/dashboard/stats",
+  security: secured,
+  request: { query: DashboardStatsQuerySchema },
+  responses: {
+    200: {
+      description: "Spent/income/savingsRate/netWorth stat cards with trend",
+      ...json(DashboardStats)
+    },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "get",
+  path: "/v1/dashboard/cashflow",
+  security: secured,
+  request: { query: CashflowQuerySchema },
+  responses: {
+    200: {
+      description: "Income/expense buckets over the requested range",
+      ...json(CashflowResponse)
+    },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "get",
+  path: "/v1/dashboard/top-spending",
+  security: secured,
+  request: { query: TopSpendingQuerySchema },
+  responses: {
+    200: {
+      description: "Top spending categories over the requested range",
+      ...json(z.array(TopSpendingItem))
+    },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "get",
+  path: "/v1/dashboard/spend-mix",
+  security: secured,
+  request: { query: SpendMixQuerySchema },
+  responses: {
+    200: { description: "Essential vs. lifestyle spend split", ...json(SpendMix) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "get",
+  path: "/v1/dashboard/investments",
+  security: secured,
+  responses: {
+    200: {
+      description: "Investment/fixed-deposit valuation rollup",
+      ...json(DashboardInvestments)
+    },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "get",
+  path: "/v1/dashboard/recurring-forecast",
+  security: secured,
+  request: { query: RecurringForecastQuerySchema },
+  responses: {
+    200: {
+      description: "Upcoming recurring in/out forecast over the requested range",
+      ...json(RecurringForecast)
+    },
+    ...problemResponses
+  }
 });
 
 registry.registerComponent("securitySchemes", "cookieAuth", {

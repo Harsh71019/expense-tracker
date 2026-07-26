@@ -17,5 +17,22 @@ export default [
       "react-hooks/set-state-in-effect": "off",
       "react-hooks/incompatible-library": "off"
     }
+  },
+  {
+    files: ["src/**/*.{ts,tsx}"],
+    ignores: ["src/lib/toast.ts", "src/components/ui/sonner/sonner.tsx"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "sonner",
+              message: "Import the application toast facade from @/lib/toast instead."
+            }
+          ]
+        }
+      ]
+    }
   }
 ];

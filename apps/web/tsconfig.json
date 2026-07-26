@@ -1,5 +1,5 @@
 {
-  "extends": "@treasury-ops/config/tsconfig/base.json",
+  "extends": "../../packages/config/tsconfig/base.json",
   "compilerOptions": {
     "composite": true,
     "jsx": "react-jsx",

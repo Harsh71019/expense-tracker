@@ -2,7 +2,7 @@ import { sql } from "drizzle-orm";
 import { boolean, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
 import { user } from "../auth-schema.js";
-import { categoryKindEnum } from "./enums.js";
+import { categoryGroupEnum, categoryKindEnum } from "./enums.js";
 
 export const categories = pgTable(
   "categories",
@@ -16,6 +16,7 @@ export const categories = pgTable(
     parentId: uuid("parent_id"),
     icon: text("icon"),
     color: text("color"),
+    group: categoryGroupEnum("group"),
     isArchived: boolean("is_archived").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull()

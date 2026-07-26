@@ -3,8 +3,9 @@
 import type { Asset, AssetKind, NetWorth } from "@treasury-ops/shared";
 import { useState } from "react";
 import type { ReactNode } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
+import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useNetWorth } from "@/features/net-worth/hooks/use-net-worth";
@@ -48,6 +49,7 @@ export function AssetManager({ initialAssets, initialNetWorth }: AssetManagerPro
     try {
       await closeAsset.mutateAsync(closeTarget.id);
       setCloseTarget(undefined);
+      toast.success("Asset closed");
     } catch {
       toast.error("Could not close this asset");
     }
@@ -55,6 +57,10 @@ export function AssetManager({ initialAssets, initialNetWorth }: AssetManagerPro
 
   return (
     <section className="space-y-7">
+      <Breadcrumbs
+        items={[{ label: "Settings", href: "/settings?tab=management" }, { label: "Assets" }]}
+      />
+
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="font-mono text-[11px] font-bold tracking-[2px] text-accent">

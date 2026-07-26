@@ -15,6 +15,7 @@
 
   --color-income: #087a4b;
   --color-expense: #dc2626;
+  --color-warning: #b45309;
   --color-reversed: #5f6f67;
 
   --font-sans: var(--font-inter-tight), ui-sans-serif, system-ui, sans-serif;
@@ -87,6 +88,7 @@
 
     --color-income: #34d399;
     --color-expense: #f87171;
+    --color-warning: #fbbf24;
     --color-reversed: #71817a;
   }
 }
@@ -107,6 +109,7 @@
 
   --color-income: #087a4b;
   --color-expense: #dc2626;
+  --color-warning: #b45309;
   --color-reversed: #5f6f67;
 }
 
@@ -125,6 +128,7 @@
 
   --color-income: #34d399;
   --color-expense: #f87171;
+  --color-warning: #fbbf24;
   --color-reversed: #71817a;
 }
 

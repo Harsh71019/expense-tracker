@@ -54,6 +54,10 @@ describe("ReportPage", () => {
     expect(screen.getByText("Spend by category")).toBeVisible();
     expect(screen.getByText("Category breakdown")).toBeVisible();
     expect(screen.getByText("Net flow by account")).toBeVisible();
+    expect(screen.getByRole("link", { name: "Monthly budgets" })).toHaveAttribute(
+      "href",
+      "/budgets"
+    );
   });
 
   it("links to spending patterns for mobile discoverability", () => {

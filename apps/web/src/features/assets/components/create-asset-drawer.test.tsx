@@ -14,7 +14,9 @@ const mocks = vi.hoisted(() => ({
 vi.mock("../hooks/use-asset-mutations", () => ({
   useCreateAsset: () => ({ mutateAsync: mocks.mutateAsync, isPending: mocks.pending })
 }));
-vi.mock("sonner", () => ({ toast: { success: mocks.toastSuccess, error: mocks.toastError } }));
+vi.mock("@/lib/toast", () => ({
+  toast: { success: mocks.toastSuccess, error: mocks.toastError }
+}));
 
 async function enterOpeningValue(
   user: ReturnType<typeof userEvent.setup>,

@@ -63,6 +63,12 @@ export function ReportPage({ initialMonth, initialRollup }: ReportPageProps): Re
             query.
           </p>
         </div>
+        <Link
+          href="/budgets"
+          className="rounded-lg border border-border bg-surface-elevated px-4 py-2.5 text-sm font-semibold text-foreground hover:border-accent/50 hover:text-accent"
+        >
+          Monthly budgets
+        </Link>
       </header>
 
       <Link

@@ -12,7 +12,8 @@ const mocks = vi.hoisted(() => {
     createMutateAsync: vi.fn(),
     createPending: false,
     archiveMutateAsync: vi.fn(),
-    archivePending: false
+    archivePending: false,
+    toastSuccess: vi.fn()
   };
 });
 
@@ -29,6 +30,9 @@ vi.mock("../hooks/use-category-mutations", () => ({
     mutateAsync: mocks.archiveMutateAsync,
     isPending: mocks.archivePending
   })
+}));
+vi.mock("@/lib/toast", () => ({
+  toast: { success: mocks.toastSuccess, error: vi.fn() }
 }));
 
 function category(overrides: Partial<Category> = {}): Category {
@@ -51,6 +55,7 @@ describe("CategoryManager", () => {
     mocks.archivePending = false;
     mocks.createMutateAsync.mockReset();
     mocks.archiveMutateAsync.mockReset();
+    mocks.toastSuccess.mockReset();
   });
 
   it("shows an empty state for the active kind when there are no categories", () => {
@@ -96,5 +101,6 @@ describe("CategoryManager", () => {
 
     await user.click(screen.getByRole("button", { name: "Archive category" }));
     expect(mocks.archiveMutateAsync).toHaveBeenCalledWith(parent.id);
+    expect(mocks.toastSuccess).toHaveBeenCalledWith("Category archived");
   });
 });

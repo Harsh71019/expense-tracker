@@ -9,6 +9,7 @@ import {
 } from "@treasury-ops/shared";
 import type {
   AccountId,
+  CategoryKind,
   ColumnMapping,
   ImportBatch,
   ImportBatchId,
@@ -24,11 +25,13 @@ import { z } from "zod";
 
 import { AccountRepository } from "../accounts/account.repository.js";
 import { AuditRepository } from "../audit/audit.repository.js";
+import { CategoryRepository } from "../categories/category.repository.js";
 import { CategoryRuleRepository } from "../category-rules/category-rule.repository.js";
 import { suggestCategory } from "../category-rules/suggest-category.js";
 import { DATABASE_CONNECTION } from "../common/db/db.module.js";
 import type { DrizzleDb } from "../common/db/db.module.js";
 import { withTxn } from "../common/db/db-txn.js";
+import { CategoryKindMismatchError } from "../common/errors/category-kind-mismatch.error.js";
 import { EntityNotFoundError } from "../common/errors/entity-not-found.error.js";
 import { ImportAlreadyCommittedError } from "../common/errors/import-already-committed.error.js";
 import { ImportBatchNotReadyError } from "../common/errors/import-batch-not-ready.error.js";
@@ -55,6 +58,7 @@ export class ImportsService {
     private readonly stagedRows: StagedRowRepository,
     private readonly transactions: TransactionRepository,
     private readonly accounts: AccountRepository,
+    private readonly categories: CategoryRepository,
     private readonly audit: AuditRepository,
     private readonly categoryRules: CategoryRuleRepository,
     private readonly queue: ImportsQueue
@@ -155,7 +159,13 @@ export class ImportsService {
       userId,
       candidateHashes
     );
-    const rules = await this.categoryRules.list(userId);
+    const [rules, activeCategories] = await Promise.all([
+      this.categoryRules.list(userId),
+      this.categories.list(userId)
+    ]);
+    const categoryKinds = new Map(
+      activeCategories.map((category) => [category.id, category.kind] as const)
+    );
 
     const seenInFile = new Set<string>();
     let duplicates = 0;
@@ -173,7 +183,10 @@ export class ImportsService {
       const isDuplicate = seenInFile.has(row.dedupeHash) || existingHashes.has(row.dedupeHash);
       seenInFile.add(row.dedupeHash);
       if (isDuplicate) duplicates += 1;
-      const suggestedCategoryId = suggestCategory(row.parsed.description, rules);
+      const suggestedCategoryId = suggestCategory(
+        row.parsed.description,
+        rules.filter((rule) => categoryKinds.get(rule.categoryId) === row.parsed.type)
+      );
 
       return {
         rowNumber: row.rowNumber,
@@ -235,6 +248,18 @@ export class ImportsService {
     const batch = await this.batches.findById(userId, batchId);
     if (batch === null) throw new EntityNotFoundError("Import batch");
 
+    if (patch.suggestedCategoryId !== undefined && patch.suggestedCategoryId !== null) {
+      const [row, category] = await Promise.all([
+        this.stagedRows.findById(batchId, rowId),
+        this.categories.findActiveById(userId, patch.suggestedCategoryId)
+      ]);
+      if (row === null) throw new EntityNotFoundError("Staged row");
+      if (category === null) throw new EntityNotFoundError("Category");
+      if (row.parsed !== undefined && category.kind !== row.parsed.type) {
+        throw new CategoryKindMismatchError();
+      }
+    }
+
     const updated = await this.stagedRows.updateRow(batchId, rowId, patch);
     if (updated === null) throw new EntityNotFoundError("Staged row");
     return updated;
@@ -268,10 +293,19 @@ export class ImportsService {
     const remaining = includable.filter(
       (row) => row.dedupeHash !== undefined && !alreadyLanded.has(row.dedupeHash)
     );
+    const activeCategories = await this.categories.list(userId);
+    const categoryKinds = new Map(
+      activeCategories.map((category) => [category.id, category.kind] as const)
+    );
 
     for (let start = 0; start < remaining.length; start += COMMIT_CHUNK_SIZE) {
       const chunk = remaining.slice(start, start + COMMIT_CHUNK_SIZE);
       const rows = chunk.map((row) => toCommitRow(row));
+      for (const row of rows) {
+        if (row.categoryId !== undefined) {
+          assertCategoryKind(categoryKinds, row.categoryId, row.type);
+        }
+      }
       const netMinor = rows.reduce(
         (sum, row) => sum + (row.type === "income" ? row.amountMinor : -row.amountMinor),
         0
@@ -332,7 +366,7 @@ export class ImportsService {
       await withTxn(this.db, async (tx) => {
         await this.transactions.insertBulkReversals(userId, chunk, tx);
         if (netMinor !== 0) {
-          const applied = await this.accounts.applyBalanceDelta(
+          const applied = await this.accounts.applyReversalBalanceDelta(
             userId,
             batch.accountId,
             netMinor,
@@ -367,6 +401,16 @@ function toCommitRow(row: StagedRow): ParsedRow & { dedupeHash: string; category
     dedupeHash: row.dedupeHash,
     ...(row.suggestedCategoryId === undefined ? {} : { categoryId: row.suggestedCategoryId })
   };
+}
+
+function assertCategoryKind(
+  categoryKinds: ReadonlyMap<string, CategoryKind>,
+  categoryId: string,
+  transactionType: CategoryKind
+): void {
+  const categoryKind = categoryKinds.get(categoryId);
+  if (categoryKind === undefined) throw new EntityNotFoundError("Category");
+  if (categoryKind !== transactionType) throw new CategoryKindMismatchError();
 }
 
 export function assertValidImportFile(filename: string, mimetype: string, buffer: Buffer): void {

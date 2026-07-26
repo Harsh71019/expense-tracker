@@ -4,8 +4,10 @@ import { ExportCsvQuerySchema } from "@treasury-ops/shared";
 import { useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 
+import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toast } from "@/lib/toast";
 
 import { useExportCsv } from "../hooks/use-export-csv";
 import { exportFilename, indiaCalendarDate } from "../model/export";
@@ -50,17 +52,24 @@ export function ExportCsvForm(): ReactNode {
         anchor.click();
         setStatus("Export prepared. Your browser will handle the download.");
         setError(undefined);
+        toast.success("CSV export downloaded");
       } finally {
         URL.revokeObjectURL(url);
       }
     } catch (caught: unknown) {
-      setError(caught instanceof Error ? caught.message : "Could not prepare the export.");
+      const message = caught instanceof Error ? caught.message : "Could not prepare the export.";
+      setError(message);
       setStatus(undefined);
+      toast.error(message);
     }
   }
 
   return (
     <section className="space-y-6">
+      <Breadcrumbs
+        items={[{ label: "Settings", href: "/settings?tab=management" }, { label: "Export" }]}
+      />
+
       <header>
         <h1 className="text-xl font-semibold tracking-tight">Export transactions</h1>
         <p className="mt-1.5 text-sm text-foreground-muted">

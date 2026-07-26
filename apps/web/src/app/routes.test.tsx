@@ -1,9 +1,21 @@
 import { render, screen } from "@testing-library/react";
-import type { Account } from "@treasury-ops/shared";
+import type {
+  Account,
+  CashflowResponse,
+  DashboardInvestments,
+  DashboardStats,
+  RecentActivityItem,
+  RecurringForecast,
+  SpendMix,
+  TopSpendingItem
+} from "@treasury-ops/shared";
 import { describe, expect, it, vi } from "vitest";
 
 import AddTransactionPage from "./(app)/add/page";
+import BudgetsRoute from "./(app)/budgets/page";
 import DashboardPage from "./(app)/page";
+import GoalsPage from "./(app)/goals/page";
+import InsightsPage from "./(app)/insights/page";
 import ReportsPage from "./(app)/reports/page";
 import RecurringPage from "./(app)/recurring/page";
 import SettingsPage from "./(app)/settings/page";
@@ -11,12 +23,36 @@ import SpendingWarningsRoute from "./(app)/spending-warnings/page";
 import TransactionsPage from "./(app)/transactions/page";
 import AuthLayout from "./(auth)/layout";
 import LoginPage from "./(auth)/login/page";
+import RegisterPage from "./(auth)/register/page";
 import NotFound from "./not-found";
 
 const mocks = vi.hoisted(
-  (): { session: { user: { id: string; email: string } }; accounts: Account[] } => ({
+  (): {
+    session: { user: { id: string; email: string } };
+    accounts: Account[];
+    recentActivity: RecentActivityItem[];
+    stats: DashboardStats | null;
+    cashflow: CashflowResponse;
+    spendMix: SpendMix;
+    topSpending: TopSpendingItem[];
+    recurringForecast: RecurringForecast;
+    investments: DashboardInvestments;
+  } => ({
     session: { user: { id: "user-1", email: "harsh@example.com" } },
-    accounts: []
+    accounts: [],
+    recentActivity: [],
+    stats: null,
+    cashflow: { range: "6M", buckets: [] },
+    spendMix: {
+      range: "1M",
+      totalMinor: 0,
+      essential: { amountMinor: 0, pct: 0 },
+      lifestyle: { amountMinor: 0, pct: 0 },
+      uncategorized: { amountMinor: 0, pct: 0 }
+    },
+    topSpending: [],
+    recurringForecast: { range: "1M", inMinor: 0, outMinor: 0, netMinor: 0, upcoming: [] },
+    investments: { items: [] }
   })
 );
 
@@ -25,22 +61,79 @@ vi.mock("@/lib/theme-server", () => ({ getStoredTheme: async () => null }));
 vi.mock("@/lib/accent-server", () => ({ getStoredAccent: async () => ({ kind: "default" }) }));
 vi.mock("@/features/auth", () => ({
   LoginForm: () => <p>Mock login form</p>,
+  RegisterForm: () => <p>Mock register form</p>,
   SignOutButton: () => <button>Sign out</button>
 }));
 vi.mock("@/features/quick-add", () => ({
   QuickAddForm: () => <h1>Quick add</h1>,
-  getAccounts: async () => mocks.accounts
+  getAccounts: async () => mocks.accounts,
+  useCreateTxn: () => ({ mutateAsync: async () => ({}), isPending: false })
 }));
 vi.mock("@/features/accounts", () => ({
-  useAccounts: () => ({ data: mocks.accounts })
+  useAccounts: () => ({ data: mocks.accounts }),
+  useCreateAccount: () => ({ mutateAsync: async () => ({}), isPending: false })
 }));
 vi.mock("@/features/accounts/server/get-accounts", () => ({
   getAccounts: async () => mocks.accounts
 }));
+vi.mock("@/features/insights/hooks/use-recent-activity", () => ({
+  useRecentActivity: () => ({ data: mocks.recentActivity })
+}));
+vi.mock("@/features/insights/server/get-recent-activity", () => ({
+  getRecentActivity: async () => mocks.recentActivity
+}));
+vi.mock("@/features/dashboard/server/get-stats", () => ({ getStats: async () => mocks.stats }));
+vi.mock("@/features/dashboard/server/get-cashflow", () => ({
+  getCashflow: async () => mocks.cashflow
+}));
+vi.mock("@/features/dashboard/server/get-spend-mix", () => ({
+  getSpendMix: async () => mocks.spendMix
+}));
+vi.mock("@/features/dashboard/server/get-top-spending", () => ({
+  getTopSpending: async () => mocks.topSpending
+}));
+vi.mock("@/features/dashboard/server/get-recurring-forecast", () => ({
+  getRecurringForecast: async () => mocks.recurringForecast
+}));
+vi.mock("@/features/dashboard/server/get-investments", () => ({
+  getInvestments: async () => mocks.investments
+}));
+vi.mock("@/features/dashboard/hooks/use-stats", () => ({
+  useStats: () => ({ data: mocks.stats })
+}));
+vi.mock("@/features/dashboard/hooks/use-cashflow", () => ({
+  useCashflow: () => ({ data: mocks.cashflow })
+}));
+vi.mock("@/features/dashboard/hooks/use-spend-mix", () => ({
+  useSpendMix: () => ({ data: mocks.spendMix })
+}));
+vi.mock("@/features/dashboard/hooks/use-top-spending", () => ({
+  useTopSpending: () => ({ data: mocks.topSpending })
+}));
+vi.mock("@/features/dashboard/hooks/use-recurring-forecast", () => ({
+  useRecurringForecast: () => ({ data: mocks.recurringForecast })
+}));
+vi.mock("@/features/dashboard/hooks/use-investments", () => ({
+  useInvestments: () => ({ data: mocks.investments })
+}));
 vi.mock("@/features/categories/server/get-categories", () => ({ getCategories: async () => [] }));
+vi.mock("@/features/budgets", () => ({
+  BudgetsPage: () => <h1>Monthly budgets</h1>,
+  BudgetDashboardPanel: () => <h2>Monthly budgets</h2>
+}));
+vi.mock("@/features/budgets/server/get-budgets", () => ({
+  getBudgetPage: async () => null
+}));
 vi.mock("@/features/recurring", () => ({
   getRecurringRules: async () => [],
   RecurringManager: () => <h1>Recurring</h1>
+}));
+vi.mock("@/features/goals", () => ({
+  GoalManager: () => <h1>Goals</h1>
+}));
+vi.mock("@/features/goals/server/get-goals", () => ({
+  getGoals: async () => [],
+  getGoalPlan: async () => null
 }));
 vi.mock("@/features/profile", () => ({
   ProfileSummary: ({ email }: { email: string }) => (
@@ -48,13 +141,17 @@ vi.mock("@/features/profile", () => ({
       <p>Signed in as</p>
       <p>{email}</p>
     </section>
-  )
+  ),
+  EditDisplayNameForm: () => null
 }));
 vi.mock("@/features/profile/server/get-profile", () => ({ getProfile: async () => null }));
 vi.mock("@/features/reports", () => ({
   ReportPage: () => <h1>Monthly report</h1>,
   getMonthlyRollup: async () => null,
   reportMonthFromParam: () => "2026-06"
+}));
+vi.mock("@/features/reports/components/pie-chart", () => ({
+  PieChart: () => <svg role="img" aria-label="Spend mix pie chart" />
 }));
 vi.mock("@/features/transactions", () => ({
   parseTransactionFilters: () => ({ limit: 50 }),
@@ -73,15 +170,103 @@ vi.mock("@/features/spending-warnings", () => ({
 }));
 
 describe("route shells", () => {
-  it("renders the dashboard and account page with the session email", async () => {
-    render(await DashboardPage());
-    expect(screen.getByRole("heading", { name: "Overview" })).toBeVisible();
+  it("renders the insights and account page with the session email", async () => {
+    render(await InsightsPage());
+    expect(screen.getByRole("heading", { name: "Welcome to Ledger" })).toBeVisible();
     expect(screen.getByText("harsh@example.com")).toBeVisible();
 
     render(await SettingsPage({ searchParams: Promise.resolve({}) }));
     expect(screen.getByRole("heading", { name: "Settings" })).toBeVisible();
     expect(screen.getByText("Signed in as")).toBeVisible();
     expect(screen.getAllByText("harsh@example.com")).toHaveLength(2);
+  });
+
+  it("renders the dashboard's financial overview panels", async () => {
+    mocks.stats = {
+      period: "2026-07",
+      spent: { valueMinor: 618_425_00, deltaPct: -8, trend: [700000, 650000, 618425] },
+      income: { valueMinor: 920_000_00, deltaPct: 8, trend: [850000, 850000, 920000] },
+      savingsRate: { valuePct: 33, deltaPct: 5, trend: [28, 30, 33] },
+      netWorth: { valueMinor: 197_000_000_00, deltaPct: 4, trend: [168, 178, 197] }
+    };
+    mocks.cashflow = {
+      range: "6M",
+      buckets: [
+        { label: "Jun", incomeMinor: 850_000_00, expenseMinor: 684_250_00 },
+        { label: "Jul", incomeMinor: 920_000_00, expenseMinor: 618_425_00 }
+      ]
+    };
+    mocks.spendMix = {
+      range: "1M",
+      totalMinor: 100_000_00,
+      essential: { amountMinor: 60_000_00, pct: 60 },
+      lifestyle: { amountMinor: 40_000_00, pct: 40 },
+      uncategorized: { amountMinor: 0, pct: 0 }
+    };
+    mocks.topSpending = [
+      {
+        name: "Groceries",
+        icon: "shopping-cart",
+        color: "#f97316",
+        amountMinor: 18_420_00,
+        txnCount: 14
+      }
+    ];
+    mocks.recurringForecast = {
+      range: "1M",
+      inMinor: 850_000_00,
+      outMinor: 500_000_00,
+      netMinor: 350_000_00,
+      upcoming: [
+        {
+          ruleId: "3fa85f64-5717-4562-b3fc-2c963f66be00",
+          name: "Netflix",
+          type: "expense",
+          amountMinor: 649_00,
+          nextRunAt: new Date("2026-08-09T00:00:00.000Z")
+        }
+      ]
+    };
+    mocks.investments = {
+      items: [
+        {
+          assetId: "3fa85f64-5717-4562-b3fc-2c963f66be01",
+          name: "Nifty 50 Index",
+          kind: "investment",
+          currentValueMinor: 4_230_000_00,
+          returnPct: 18.4,
+          series: [
+            { valuedAt: new Date("2026-06-01T00:00:00.000Z"), valueMinor: 4_000_000_00 },
+            { valuedAt: new Date("2026-07-01T00:00:00.000Z"), valueMinor: 4_230_000_00 }
+          ]
+        }
+      ]
+    };
+
+    render(await DashboardPage());
+
+    expect(screen.getByRole("heading", { name: "Financial overview" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Cash flow" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Spend mix" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Top spending" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Recurring commitments" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Investments & deposits" })).toBeVisible();
+    expect(screen.getByText("Groceries")).toBeVisible();
+    expect(screen.getByText("Netflix")).toBeVisible();
+    expect(screen.getByText("Nifty 50 Index")).toBeVisible();
+
+    mocks.stats = null;
+    mocks.cashflow = { range: "6M", buckets: [] };
+    mocks.spendMix = {
+      range: "1M",
+      totalMinor: 0,
+      essential: { amountMinor: 0, pct: 0 },
+      lifestyle: { amountMinor: 0, pct: 0 },
+      uncategorized: { amountMinor: 0, pct: 0 }
+    };
+    mocks.topSpending = [];
+    mocks.recurringForecast = { range: "1M", inMinor: 0, outMinor: 0, netMinor: 0, upcoming: [] };
+    mocks.investments = { items: [] };
   });
 
   it("renders the selected settings section from the URL", async () => {
@@ -127,12 +312,12 @@ describe("route shells", () => {
         updatedAt: new Date()
       }
     ];
-    render(await DashboardPage());
+    render(await InsightsPage());
 
     const balanceElements = screen.getAllByText("+₹123.45");
     expect(balanceElements.length).toBeGreaterThanOrEqual(1);
     expect(balanceElements[0]).toBeVisible();
-    expect(screen.getByText("Across 1 active account.")).toBeVisible();
+    expect(screen.getByText(/Total balance/)).toHaveTextContent("Total balance · 1 active account");
     mocks.accounts = [];
   });
 
@@ -163,10 +348,12 @@ describe("route shells", () => {
         updatedAt: new Date()
       }
     ];
-    render(await DashboardPage());
+    render(await InsightsPage());
 
     expect(screen.getByText("−₹1.00")).toBeVisible();
-    expect(screen.getByText("Across 2 active accounts.")).toBeVisible();
+    expect(screen.getByText(/Total balance/)).toHaveTextContent(
+      "Total balance · 2 active accounts"
+    );
     mocks.accounts = [];
   });
 
@@ -185,6 +372,12 @@ describe("route shells", () => {
 
     render(await SpendingWarningsRoute({ searchParams: Promise.resolve({}) }));
     expect(screen.getByRole("heading", { name: "Spending patterns" })).toBeVisible();
+
+    render(await GoalsPage());
+    expect(screen.getByRole("heading", { name: "Goals" })).toBeVisible();
+
+    render(await BudgetsRoute());
+    expect(screen.getByRole("heading", { name: "Monthly budgets" })).toBeVisible();
   });
 
   it("renders the auth, login, and not-found shells", async () => {
@@ -192,7 +385,12 @@ describe("route shells", () => {
     expect(screen.getByText("Auth content")).toBeVisible();
 
     render(<LoginPage />);
+    expect(screen.getByRole("heading", { name: "Welcome back" })).toBeVisible();
     expect(screen.getByText("Mock login form")).toBeVisible();
+
+    render(<RegisterPage />);
+    expect(screen.getByRole("heading", { name: "Create your account" })).toBeVisible();
+    expect(screen.getByText("Mock register form")).toBeVisible();
 
     render(<NotFound />);
     expect(screen.getByRole("link", { name: "Back to TreasuryOps" })).toHaveAttribute("href", "/");

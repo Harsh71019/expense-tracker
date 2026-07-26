@@ -1,0 +1,27 @@
+meta {
+  name: Update Goal
+  type: http
+  seq: 5
+}
+
+patch {
+  url: {{baseUrl}}/v1/goals/{{goalId}}
+  body: json
+}
+
+headers {
+  content-type: application/json
+  Idempotency-Key: {{$randomUUID}}
+}
+
+body:json {
+  {
+    "name": "Laptop Upgrade",
+    "targetDate": null
+  }
+}
+
+docs {
+  name, targetMinor, and targetDate are editable. fundingMode and its
+  linkedAccountId/tag binding are immutable.
+}

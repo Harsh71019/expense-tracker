@@ -22,10 +22,13 @@ import { AccountsModule } from "./accounts/accounts.module.js";
 import { ApiKeysModule } from "./api-keys/api-keys.module.js";
 import { AssetsModule } from "./assets/assets.module.js";
 import { AuditModule } from "./audit/audit.module.js";
+import { BudgetsModule } from "./budgets/budgets.module.js";
 import { CategoriesModule } from "./categories/categories.module.js";
 import { CategoryRulesModule } from "./category-rules/category-rules.module.js";
+import { DashboardModule } from "./dashboard/dashboard.module.js";
 import { ExportModule } from "./export/export.module.js";
 import { HealthModule } from "./health/health.module.js";
+import { GoalsModule } from "./goals/goals.module.js";
 import { ImportsModule } from "./imports/imports.module.js";
 import { NotificationsModule } from "./notifications/notifications.module.js";
 import { OpenApiModule } from "./openapi/openapi.module.js";
@@ -37,7 +40,7 @@ import { TransactionsModule } from "./transactions/transactions.module.js";
 
 const UNTHROTTLED_PATHS = new Set(["/api/healthz", "/api/readyz"]);
 
-function isUnthrottledRequest(context: ExecutionContext): boolean {
+function isUnthrottledPath(context: ExecutionContext): boolean {
   const request = context.switchToHttp().getRequest<Request>();
   return UNTHROTTLED_PATHS.has(request.path);
 }
@@ -52,9 +55,10 @@ function isUnthrottledRequest(context: ExecutionContext): boolean {
     LoggingModule,
     ScheduleModule.forRoot(),
     ThrottlerModule.forRootAsync({
-      inject: [RedisService],
-      useFactory: (redis: RedisService) => ({
-        skipIf: isUnthrottledRequest,
+      inject: [RedisService, RuntimeConfigService],
+      useFactory: (redis: RedisService, config: RuntimeConfigService) => ({
+        skipIf: (context: ExecutionContext) =>
+          config.env.DISABLE_RATE_LIMITING || isUnthrottledPath(context),
         storage: new RedisThrottlerStorage(redis),
         throttlers: [{ ttl: 60_000, limit: 300, blockDuration: 60_000 }]
       })
@@ -74,6 +78,9 @@ function isUnthrottledRequest(context: ExecutionContext): boolean {
     RecurringModule,
     ReportsModule,
     SpendingWarningsModule,
+    GoalsModule,
+    BudgetsModule,
+    DashboardModule,
     OpenApiModule,
     LoggerModule.forRootAsync({
       inject: [RuntimeConfigService, LoggingContextService],
@@ -83,6 +90,14 @@ function isUnthrottledRequest(context: ExecutionContext): boolean {
           base: { service: config.env.SERVICE_ROLE, sha: config.env.GIT_SHA },
           timestamp: pino.stdTimeFunctions.isoTime,
           formatters: { level: (label) => ({ level: label }) },
+          ...(config.env.LOG_PRETTY
+            ? {
+                transport: {
+                  target: "pino-pretty",
+                  options: { colorize: true, singleLine: true, ignore: "pid,hostname" }
+                }
+              }
+            : {}),
           redact: {
             paths: [
               "req.headers.authorization",

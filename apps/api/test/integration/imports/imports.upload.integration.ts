@@ -5,6 +5,7 @@ import { Redis } from "ioredis";
 
 import { AccountRepository } from "../../../src/accounts/account.repository.js";
 import { AuditRepository } from "../../../src/audit/audit.repository.js";
+import { CategoryRepository } from "../../../src/categories/category.repository.js";
 import { CategoryRuleRepository } from "../../../src/category-rules/category-rule.repository.js";
 import { ImportAlreadyCommittedError } from "../../../src/common/errors/import-already-committed.error.js";
 import { RuntimeConfigService } from "../../../src/common/config/runtime-config.service.js";
@@ -26,6 +27,7 @@ class TestRuntimeConfig implements RuntimeConfigService {
     NODE_ENV: "test" as const,
     API_PORT: 4000,
     LOG_LEVEL: "info" as const,
+    LOG_PRETTY: false,
     SERVICE_ROLE: "api" as const,
     DATABASE_URL: "postgres://test:test@localhost:5432/test",
     REDIS_URL: TEST_REDIS_URL,
@@ -35,7 +37,8 @@ class TestRuntimeConfig implements RuntimeConfigService {
     BETTER_AUTH_SECRET: "test-secret-long-enough-32-chars-long",
     BETTER_AUTH_URL: "http://localhost:4000",
     AUTH_COOKIE_SECURE: false,
-    DISABLE_SIGNUP: false
+    DISABLE_SIGNUP: false,
+    DISABLE_RATE_LIMITING: false
   };
 
   trustedOrigins(): string[] {
@@ -84,6 +87,7 @@ describe("ImportsService.createBatch", () => {
       stagedRows,
       transactions,
       accounts,
+      new CategoryRepository(testDb.db),
       audit,
       categoryRules,
       queue

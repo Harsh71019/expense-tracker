@@ -18,7 +18,7 @@ vi.mock("../hooks/use-category-mutations", () => ({
   useCreateCategory: () => ({ mutateAsync: mocks.mutateAsync, isPending: mocks.pending })
 }));
 
-vi.mock("sonner", () => ({
+vi.mock("@/lib/toast", () => ({
   toast: { error: mocks.toastError, success: mocks.toastSuccess }
 }));
 

@@ -13,6 +13,7 @@ function matchesFilters(
     from: string | null;
     to: string | null;
     q: string | null;
+    tag: string | null;
   }
 ): boolean {
   if (filters.accountId !== null && transaction.accountId !== filters.accountId) return false;
@@ -32,6 +33,7 @@ function matchesFilters(
     !transaction.description.toLowerCase().includes(filters.q.toLowerCase())
   )
     return false;
+  if (filters.tag !== null && !transaction.tags.includes(filters.tag)) return false;
   return true;
 }
 
@@ -48,7 +50,8 @@ export function transactionHandlers(http: MockHttp, store: MockStore): HttpHandl
             categoryId: query.get("categoryId"),
             from: query.get("from"),
             to: query.get("to"),
-            q: query.get("q")
+            q: query.get("q"),
+            tag: query.get("tag")
           })
         )
         .sort((a, b) => (b.occurredAt ?? "").localeCompare(a.occurredAt ?? ""));

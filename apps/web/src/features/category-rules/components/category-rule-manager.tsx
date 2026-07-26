@@ -3,8 +3,9 @@
 import { CreateCategoryRuleSchema, type CategoryRule } from "@treasury-ops/shared";
 import { useState } from "react";
 import type { ReactNode } from "react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
+import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useCategories } from "@/features/categories";
 
@@ -40,6 +41,7 @@ export function CategoryRuleManager({
       await createRule.mutateAsync(parsed.data);
       setPattern("");
       setCategoryId("");
+      toast.success("Category rule created");
     } catch {
       toast.error("Could not create this rule");
     }
@@ -48,6 +50,7 @@ export function CategoryRuleManager({
   async function remove(rule: CategoryRule): Promise<void> {
     try {
       await deleteRule.mutateAsync(rule.id);
+      toast.success("Category rule deleted");
     } catch {
       toast.error("Could not delete this rule");
     }
@@ -55,6 +58,13 @@ export function CategoryRuleManager({
 
   return (
     <section className="mx-auto max-w-[940px] space-y-6">
+      <Breadcrumbs
+        items={[
+          { label: "Settings", href: "/settings?tab=management" },
+          { label: "Category rules" }
+        ]}
+      />
+
       <header>
         <p className="font-mono text-[11px] font-bold tracking-[2px] text-accent">
           LEDGER · AUTOMATION

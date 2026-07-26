@@ -64,6 +64,13 @@
       "when": 1784989081850,
       "tag": "0008_add_budget_module",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1785012710906,
+      "tag": "0009_spending_warnings",
+      "breakpoints": true
     }
   ]
 }

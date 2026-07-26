@@ -24,6 +24,7 @@ const navItems = [
   { href: "/goals", label: "Goals", icon: "◎" },
   { href: "/budgets", label: "Budgets", icon: "◫" },
   { href: "/reports", label: "Reports", icon: "◔" },
+  { href: "/spending-warnings", label: "Patterns", icon: "△" },
   { href: "/settings", label: "Settings", icon: "⚙" }
 ] as const;
 

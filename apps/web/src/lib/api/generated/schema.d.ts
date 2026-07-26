@@ -2710,6 +2710,149 @@ export interface paths {
     };
     trace?: never;
   };
+  "/v1/spending-warnings": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: {
+          kind?: "overall_spend_spike" | "category_spend_spike" | "unusually_large_expense";
+          severity?: "attention" | "high";
+          cursor?: string;
+          limit?: number;
+        };
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Active spending warnings and analysis coverage */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["SpendingWarningPage"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/spending-warnings/{warningId}/dismiss": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path: {
+          warningId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Dismissed warning, or idempotent replay */
+        200: {
+          headers: {
+            "Idempotency-Replayed"?: "true";
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["DismissSpendingWarningResponse"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/v1/goals": {
     parameters: {
       query?: never;
@@ -4830,6 +4973,114 @@ export interface components {
       createdAt: string | null;
       /** Format: date-time */
       updatedAt: string | null;
+    };
+    SpendingWarningPage: {
+      items: {
+        /** Format: uuid */
+        id: string;
+        userId: string;
+        fingerprint: string;
+        /** @enum {string} */
+        kind: "overall_spend_spike" | "category_spend_spike" | "unusually_large_expense";
+        /** @enum {string} */
+        severity: "attention" | "high";
+        /** @enum {string} */
+        status: "active" | "dismissed" | "resolved";
+        /** Format: uuid */
+        categoryId?: string;
+        /** Format: uuid */
+        transactionId?: string;
+        /** Format: date-time */
+        windowStart: string | null;
+        /** Format: date-time */
+        windowEnd: string | null;
+        evidence:
+          | {
+              /** @enum {string} */
+              kind: "overall_spend_spike";
+              currentMinor: number;
+              baselineMedianMinor: number;
+              deltaMinor: number;
+              ratioBasisPoints: number;
+              /** Format: date-time */
+              windowStart: string | null;
+              /** Format: date-time */
+              windowEnd: string | null;
+              baselineWindowCount: number;
+              baselineExpenseCount: number;
+            }
+          | {
+              /** @enum {string} */
+              kind: "category_spend_spike";
+              /** Format: uuid */
+              categoryId?: string;
+              categoryName?: string;
+              currentMinor: number;
+              baselineMedianMinor: number;
+              deltaMinor: number;
+              ratioBasisPoints: number;
+              /** Format: date-time */
+              windowStart: string | null;
+              /** Format: date-time */
+              windowEnd: string | null;
+              baselineWindowCount: number;
+              baselineExpenseCount: number;
+              currentExpenseCount: number;
+            }
+          | {
+              /** @enum {string} */
+              kind: "unusually_large_expense";
+              /** Format: uuid */
+              transactionId: string;
+              /** Format: uuid */
+              categoryId?: string;
+              categoryName?: string;
+              amountMinor: number;
+              thresholdMinor: number;
+              baselineMedianMinor: number;
+              baselineQ1Minor: number;
+              baselineQ3Minor: number;
+              baselineExpenseCount: number;
+              /** Format: date-time */
+              occurredAt: string | null;
+            };
+        detectorVersion: number;
+        /** Format: date-time */
+        firstDetectedAt: string | null;
+        /** Format: date-time */
+        lastDetectedAt: string | null;
+        /** Format: date-time */
+        dismissedAt?: string | null;
+        /** Format: date-time */
+        resolvedAt?: string | null;
+      }[];
+      pageInfo: {
+        nextCursor: string | null;
+        hasMore: boolean;
+        limit: number;
+      };
+      analysis: {
+        /** @enum {string} */
+        status: "learning" | "ready" | "stale" | "unavailable";
+        /** Format: date-time */
+        computedAt?: string | null;
+        /** Format: date-time */
+        sourceThrough?: string | null;
+        /** Format: date-time */
+        historyStart?: string | null;
+        eligibleKinds: (
+          "overall_spend_spike" | "category_spend_spike" | "unusually_large_expense"
+        )[];
+        baselineExpenseCount: number;
+      };
+    };
+    DismissSpendingWarningResponse: {
+      /** Format: uuid */
+      id: string;
+      /** @enum {string} */
+      status: "dismissed";
+      /** Format: date-time */
+      dismissedAt: string | null;
     };
     Goal: {
       /** Format: uuid */

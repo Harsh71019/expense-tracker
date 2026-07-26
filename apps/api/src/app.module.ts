@@ -34,6 +34,7 @@ import { NotificationsModule } from "./notifications/notifications.module.js";
 import { OpenApiModule } from "./openapi/openapi.module.js";
 import { RecurringModule } from "./recurring/recurring.module.js";
 import { ReportsModule } from "./reports/reports.module.js";
+import { SpendingWarningsModule } from "./spending-warnings/spending-warnings.module.js";
 import { UserProfilesModule } from "./user-profiles/user-profiles.module.js";
 import { TransactionsModule } from "./transactions/transactions.module.js";
 
@@ -76,6 +77,7 @@ function isUnthrottledPath(context: ExecutionContext): boolean {
     ExportModule,
     RecurringModule,
     ReportsModule,
+    SpendingWarningsModule,
     GoalsModule,
     BudgetsModule,
     DashboardModule,

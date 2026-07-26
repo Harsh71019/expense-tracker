@@ -12,4 +12,5 @@ export * from "./notification.js";
 export * from "./idempotency.js";
 export * from "./recurring.js";
 export * from "./report.js";
+export * from "./spending-warning.js";
 export * from "./goal.js";

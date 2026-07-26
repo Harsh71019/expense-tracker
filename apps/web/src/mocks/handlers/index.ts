@@ -17,6 +17,7 @@ import { netWorthHandlers } from "./net-worth";
 import { profileHandlers } from "./profile";
 import { reportHandlers } from "./reports";
 import { recurringHandlers } from "./recurring";
+import { spendingWarningHandlers } from "./spending-warnings";
 import { transactionHandlers } from "./transactions";
 import { transferHandlers } from "./transfers";
 
@@ -44,6 +45,7 @@ export function createHandlers(baseUrl: string, store: MockStore): HttpHandler[]
     ...exportHandlers(http, store),
     ...profileHandlers(http, store),
     ...reportHandlers(http, store),
-    ...recurringHandlers(http, store)
+    ...recurringHandlers(http, store),
+    ...spendingWarningHandlers(http, store)
   ];
 }

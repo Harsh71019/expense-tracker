@@ -92,6 +92,10 @@ import {
   RecurringRuleSchema,
   UpdateApiKeySchema,
   UpdateRecurringRuleSchema,
+  DismissSpendingWarningResponseSchema,
+  ListSpendingWarningsQuerySchema,
+  SpendingWarningIdSchema,
+  SpendingWarningPageSchema,
   UpdateGoalSchema,
   ListBudgetsQuerySchema,
   UpsertBudgetSchema
@@ -119,6 +123,10 @@ const StagedRowPage = StagedRowPageSchema.meta({ id: "StagedRowPage" });
 const UserProfile = UserProfileSchema.meta({ id: "UserProfile" });
 const MonthlyRollup = MonthlyRollupSchema.meta({ id: "MonthlyRollup" });
 const RecurringRule = RecurringRuleSchema.meta({ id: "RecurringRule" });
+const SpendingWarningPage = SpendingWarningPageSchema.meta({ id: "SpendingWarningPage" });
+const DismissSpendingWarningResponse = DismissSpendingWarningResponseSchema.meta({
+  id: "DismissSpendingWarningResponse"
+});
 const Budget = BudgetSchema.meta({ id: "Budget" });
 const BudgetPage = BudgetPageSchema.meta({ id: "BudgetPage" });
 const Goal = GoalSchema.meta({ id: "Goal" });
@@ -145,6 +153,7 @@ const importBatchAndRowId = z.object({
 });
 const month = z.object({ month: MonthSchema });
 const recurringRuleId = z.object({ ruleId: RecurringRuleIdSchema });
+const spendingWarningId = z.object({ warningId: SpendingWarningIdSchema });
 const goalId = z.object({ goalId: GoalIdSchema });
 const budgetId = z.object({ budgetId: BudgetIdSchema });
 const json = (schema: z.ZodType): { content: { "application/json": { schema: z.ZodType } } } => ({
@@ -646,6 +655,35 @@ registry.registerPath({
       ...json(RecurringRule)
     },
     404: { description: "Recurring rule, account, or category not found", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/v1/spending-warnings",
+  security: secured,
+  request: { query: ListSpendingWarningsQuerySchema },
+  responses: {
+    200: {
+      description: "Active spending warnings and analysis coverage",
+      ...json(SpendingWarningPage)
+    },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "post",
+  path: "/v1/spending-warnings/{warningId}/dismiss",
+  security: secured,
+  request: { params: spendingWarningId, headers: idempotencyKeyHeaders },
+  responses: {
+    200: {
+      description: "Dismissed warning, or idempotent replay",
+      headers: optionalReplayHeaders,
+      ...json(DismissSpendingWarningResponse)
+    },
+    404: { description: "Not found", ...json(ProblemDetails) },
     ...problemResponses
   }
 });

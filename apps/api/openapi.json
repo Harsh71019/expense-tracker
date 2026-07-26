@@ -1689,6 +1689,351 @@
           "updatedAt"
         ]
       },
+      "SpendingWarningPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "userId": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "fingerprint": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": ["overall_spend_spike", "category_spend_spike", "unusually_large_expense"]
+                },
+                "severity": {
+                  "type": "string",
+                  "enum": ["attention", "high"]
+                },
+                "status": {
+                  "type": "string",
+                  "enum": ["active", "dismissed", "resolved"]
+                },
+                "categoryId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "transactionId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "windowStart": {
+                  "type": ["string", "null"],
+                  "format": "date-time"
+                },
+                "windowEnd": {
+                  "type": ["string", "null"],
+                  "format": "date-time"
+                },
+                "evidence": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "enum": ["overall_spend_spike"]
+                        },
+                        "currentMinor": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "baselineMedianMinor": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "deltaMinor": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "ratioBasisPoints": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "windowStart": {
+                          "type": ["string", "null"],
+                          "format": "date-time"
+                        },
+                        "windowEnd": {
+                          "type": ["string", "null"],
+                          "format": "date-time"
+                        },
+                        "baselineWindowCount": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "baselineExpenseCount": {
+                          "type": "integer",
+                          "minimum": 0
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "currentMinor",
+                        "baselineMedianMinor",
+                        "deltaMinor",
+                        "ratioBasisPoints",
+                        "windowStart",
+                        "windowEnd",
+                        "baselineWindowCount",
+                        "baselineExpenseCount"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "enum": ["category_spend_spike"]
+                        },
+                        "categoryId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "categoryName": {
+                          "type": "string"
+                        },
+                        "currentMinor": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "baselineMedianMinor": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "deltaMinor": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "ratioBasisPoints": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "windowStart": {
+                          "type": ["string", "null"],
+                          "format": "date-time"
+                        },
+                        "windowEnd": {
+                          "type": ["string", "null"],
+                          "format": "date-time"
+                        },
+                        "baselineWindowCount": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "baselineExpenseCount": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "currentExpenseCount": {
+                          "type": "integer",
+                          "minimum": 0
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "currentMinor",
+                        "baselineMedianMinor",
+                        "deltaMinor",
+                        "ratioBasisPoints",
+                        "windowStart",
+                        "windowEnd",
+                        "baselineWindowCount",
+                        "baselineExpenseCount",
+                        "currentExpenseCount"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "enum": ["unusually_large_expense"]
+                        },
+                        "transactionId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "categoryId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "categoryName": {
+                          "type": "string"
+                        },
+                        "amountMinor": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "thresholdMinor": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "baselineMedianMinor": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "baselineQ1Minor": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "baselineQ3Minor": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "baselineExpenseCount": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "occurredAt": {
+                          "type": ["string", "null"],
+                          "format": "date-time"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "transactionId",
+                        "amountMinor",
+                        "thresholdMinor",
+                        "baselineMedianMinor",
+                        "baselineQ1Minor",
+                        "baselineQ3Minor",
+                        "baselineExpenseCount",
+                        "occurredAt"
+                      ]
+                    }
+                  ]
+                },
+                "detectorVersion": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0
+                },
+                "firstDetectedAt": {
+                  "type": ["string", "null"],
+                  "format": "date-time"
+                },
+                "lastDetectedAt": {
+                  "type": ["string", "null"],
+                  "format": "date-time"
+                },
+                "dismissedAt": {
+                  "type": ["string", "null"],
+                  "format": "date-time"
+                },
+                "resolvedAt": {
+                  "type": ["string", "null"],
+                  "format": "date-time"
+                }
+              },
+              "required": [
+                "id",
+                "userId",
+                "fingerprint",
+                "kind",
+                "severity",
+                "status",
+                "windowStart",
+                "windowEnd",
+                "evidence",
+                "detectorVersion",
+                "firstDetectedAt",
+                "lastDetectedAt"
+              ]
+            }
+          },
+          "pageInfo": {
+            "type": "object",
+            "properties": {
+              "nextCursor": {
+                "type": ["string", "null"]
+              },
+              "hasMore": {
+                "type": "boolean"
+              },
+              "limit": {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              }
+            },
+            "required": ["nextCursor", "hasMore", "limit"]
+          },
+          "analysis": {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string",
+                "enum": ["learning", "ready", "stale", "unavailable"]
+              },
+              "computedAt": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              },
+              "sourceThrough": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              },
+              "historyStart": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              },
+              "eligibleKinds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": ["overall_spend_spike", "category_spend_spike", "unusually_large_expense"]
+                }
+              },
+              "baselineExpenseCount": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": ["status", "eligibleKinds", "baselineExpenseCount"]
+          }
+        },
+        "required": ["items", "pageInfo", "analysis"]
+      },
+      "DismissSpendingWarningResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["dismissed"]
+          },
+          "dismissedAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          }
+        },
+        "required": ["id", "status", "dismissedAt"]
+      },
       "Goal": {
         "type": "object",
         "properties": {
@@ -1790,6 +2135,230 @@
           }
         },
         "required": ["goalId", "mode", "requiredMonthlyMinor", "projectedCompletionDate"]
+      },
+      "BudgetPage": {
+        "type": "object",
+        "properties": {
+          "month": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}$"
+          },
+          "computedAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "alertPolicy": {
+            "type": "object",
+            "properties": {
+              "thresholdsBps": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 10000
+                }
+              }
+            },
+            "required": ["thresholdsBps"]
+          },
+          "overview": {
+            "type": "object",
+            "properties": {
+              "plannedMinor": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "spentInBudgetedCategoriesMinor": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "remainingMinor": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "unbudgetedSpentMinor": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "activeBudgetCount": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "plannedMinor",
+              "spentInBudgetedCategoriesMinor",
+              "remainingMinor",
+              "unbudgetedSpentMinor",
+              "activeBudgetCount"
+            ]
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "budget": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "userId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "categoryId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "limitMinor": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 9007199254740991
+                    },
+                    "isArchived": {
+                      "type": "boolean"
+                    },
+                    "createdAt": {
+                      "type": ["string", "null"],
+                      "format": "date-time"
+                    },
+                    "updatedAt": {
+                      "type": ["string", "null"],
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "userId",
+                    "categoryId",
+                    "limitMinor",
+                    "isArchived",
+                    "createdAt",
+                    "updatedAt"
+                  ]
+                },
+                "category": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "icon": {
+                      "type": ["string", "null"]
+                    },
+                    "color": {
+                      "type": ["string", "null"]
+                    },
+                    "isArchived": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["id", "name", "icon", "color", "isArchived"]
+                },
+                "spentMinor": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "remainingMinor": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "utilizationBps": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "state": {
+                  "type": "string",
+                  "enum": ["under", "approaching", "reached"]
+                },
+                "isEffective": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "budget",
+                "category",
+                "spentMinor",
+                "remainingMinor",
+                "utilizationBps",
+                "state",
+                "isEffective"
+              ]
+            }
+          },
+          "pageInfo": {
+            "type": "object",
+            "properties": {
+              "nextCursor": {
+                "type": ["string", "null"]
+              },
+              "hasMore": {
+                "type": "boolean"
+              },
+              "limit": {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              }
+            },
+            "required": ["nextCursor", "hasMore", "limit"]
+          }
+        },
+        "required": ["month", "computedAt", "alertPolicy", "overview", "items", "pageInfo"]
+      },
+      "Budget": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "userId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "categoryId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "limitMinor": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "isArchived": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "categoryId",
+          "limitMinor",
+          "isArchived",
+          "createdAt",
+          "updatedAt"
+        ]
       },
       "DashboardSummary": {
         "type": "object",
@@ -6701,6 +7270,187 @@
         }
       }
     },
+    "/v1/spending-warnings": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["overall_spend_spike", "category_spend_spike", "unusually_large_expense"]
+            },
+            "required": false,
+            "name": "kind",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["attention", "high"]
+            },
+            "required": false,
+            "name": "severity",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": false,
+            "name": "cursor",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Active spending warnings and analysis coverage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SpendingWarningPage"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/spending-warnings/{warningId}/dismiss": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "warningId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "Idempotency-Key",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dismissed warning, or idempotent replay",
+            "headers": {
+              "Idempotency-Replayed": {
+                "schema": {
+                  "type": "string",
+                  "enum": ["true"]
+                },
+                "required": false
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DismissSpendingWarningResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/goals": {
       "get": {
         "security": [
@@ -7339,6 +8089,293 @@
           },
           "404": {
             "description": "Goal not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/budgets": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": false,
+            "name": "cursor",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": ["true"]
+                },
+                {
+                  "type": "string",
+                  "enum": ["false"]
+                }
+              ]
+            },
+            "required": false,
+            "name": "includeArchived",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Budget page with live progress and overview totals",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BudgetPage"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/budgets/{categoryId}": {
+      "put": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "categoryId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "Idempotency-Key",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "limitMinor": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": ["limitMinor"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Created, updated, restored budget configuration, or idempotent replay",
+            "headers": {
+              "Idempotency-Replayed": {
+                "schema": {
+                  "type": "string",
+                  "enum": ["true"]
+                },
+                "required": false
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Budget"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Category not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/budgets/{budgetId}/archive": {
+      "patch": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "budgetId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "Idempotency-Key",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Archived budget configuration, or idempotent replay",
+            "headers": {
+              "Idempotency-Replayed": {
+                "schema": {
+                  "type": "string",
+                  "enum": ["true"]
+                },
+                "required": false
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Budget"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Budget not found",
             "content": {
               "application/json": {
                 "schema": {
@@ -8813,7 +9850,7 @@
           },
           {
             "schema": {
-              "type": ["boolean", "null"]
+              "type": "boolean"
             },
             "required": false,
             "name": "acknowledged",

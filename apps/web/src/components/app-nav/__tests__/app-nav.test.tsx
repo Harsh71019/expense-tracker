@@ -62,4 +62,19 @@ describe("AppNav", () => {
 
     expect(screen.getByText("≡")).toBeVisible();
   });
+
+  it("highlights the parent sidebar item for a nested route", () => {
+    pathname.value = "/transactions/3fa85f64-5717-4562-b3fc-2c963f66beef";
+    render(<AppNav items={items} orientation="sidebar" />);
+
+    expect(screen.getByRole("link", { name: "Transactions" })).toHaveClass("bg-accent-glow");
+    expect(screen.getByRole("link", { name: "Home" })).not.toHaveClass("bg-accent-glow");
+  });
+
+  it("does not treat an unrelated route as active by text prefix alone", () => {
+    pathname.value = "/transactions-export";
+    render(<AppNav items={items} orientation="sidebar" />);
+
+    expect(screen.getByRole("link", { name: "Transactions" })).not.toHaveClass("bg-accent-glow");
+  });
 });

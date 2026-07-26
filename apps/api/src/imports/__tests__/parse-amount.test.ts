@@ -70,5 +70,44 @@ describe("resolveAmount — debit_credit_cols", () => {
     expect(() => resolveAmount({ "Withdrawal Amt": "", "Deposit Amt": "" }, DEBIT_CREDIT)).toThrow(
       RangeError
     );
+    expect(() => resolveAmount({}, DEBIT_CREDIT)).toThrow(RangeError);
+  });
+
+  it("rejects mappings that are missing convention-required columns", () => {
+    expect(() =>
+      resolveAmount(
+        { Amount: "1" },
+        {
+          date: "Date",
+          description: "Narration",
+          dateFormat: "DD/MM/YYYY",
+          amountConvention: "single_signed"
+        }
+      )
+    ).toThrow('missing its "amount" column');
+    expect(() =>
+      resolveAmount(
+        {},
+        {
+          date: "Date",
+          description: "Narration",
+          credit: "Credit",
+          dateFormat: "DD/MM/YYYY",
+          amountConvention: "debit_credit_cols"
+        }
+      )
+    ).toThrow('missing its "debit" column');
+    expect(() =>
+      resolveAmount(
+        {},
+        {
+          date: "Date",
+          description: "Narration",
+          debit: "Debit",
+          dateFormat: "DD/MM/YYYY",
+          amountConvention: "debit_credit_cols"
+        }
+      )
+    ).toThrow('missing its "credit" column');
   });
 });

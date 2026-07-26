@@ -2714,6 +2714,149 @@ export interface paths {
     };
     trace?: never;
   };
+  "/v1/spending-warnings": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: {
+          kind?: "overall_spend_spike" | "category_spend_spike" | "unusually_large_expense";
+          severity?: "attention" | "high";
+          cursor?: string;
+          limit?: number;
+        };
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Active spending warnings and analysis coverage */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["SpendingWarningPage"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/spending-warnings/{warningId}/dismiss": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path: {
+          warningId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Dismissed warning, or idempotent replay */
+        200: {
+          headers: {
+            "Idempotency-Replayed"?: "true";
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["DismissSpendingWarningResponse"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/v1/goals": {
     parameters: {
       query?: never;
@@ -3242,6 +3385,230 @@ export interface paths {
     options?: never;
     head?: never;
     patch?: never;
+    trace?: never;
+  };
+  "/v1/budgets": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: {
+          cursor?: string;
+          limit?: number;
+          includeArchived?: "true" | "false";
+        };
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Budget page with live progress and overview totals */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["BudgetPage"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/budgets/{categoryId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path: {
+          categoryId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
+            limitMinor: number;
+          };
+        };
+      };
+      responses: {
+        /** @description Created, updated, restored budget configuration, or idempotent replay */
+        200: {
+          headers: {
+            "Idempotency-Replayed"?: "true";
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Budget"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Category not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/budgets/{budgetId}/archive": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path: {
+          budgetId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Archived budget configuration, or idempotent replay */
+        200: {
+          headers: {
+            "Idempotency-Replayed"?: "true";
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Budget"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Budget not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
     trace?: never;
   };
   "/v1/api-keys": {
@@ -4391,7 +4758,7 @@ export interface paths {
       parameters: {
         query?: {
           matchStatus?: "matched" | "missing_from_ledger" | "ambiguous";
-          acknowledged?: boolean | null;
+          acknowledged?: boolean;
           cursor?: string;
           limit?: number;
         };
@@ -5417,6 +5784,114 @@ export interface components {
       /** Format: date-time */
       updatedAt: string | null;
     };
+    SpendingWarningPage: {
+      items: {
+        /** Format: uuid */
+        id: string;
+        userId: string;
+        fingerprint: string;
+        /** @enum {string} */
+        kind: "overall_spend_spike" | "category_spend_spike" | "unusually_large_expense";
+        /** @enum {string} */
+        severity: "attention" | "high";
+        /** @enum {string} */
+        status: "active" | "dismissed" | "resolved";
+        /** Format: uuid */
+        categoryId?: string;
+        /** Format: uuid */
+        transactionId?: string;
+        /** Format: date-time */
+        windowStart: string | null;
+        /** Format: date-time */
+        windowEnd: string | null;
+        evidence:
+          | {
+              /** @enum {string} */
+              kind: "overall_spend_spike";
+              currentMinor: number;
+              baselineMedianMinor: number;
+              deltaMinor: number;
+              ratioBasisPoints: number;
+              /** Format: date-time */
+              windowStart: string | null;
+              /** Format: date-time */
+              windowEnd: string | null;
+              baselineWindowCount: number;
+              baselineExpenseCount: number;
+            }
+          | {
+              /** @enum {string} */
+              kind: "category_spend_spike";
+              /** Format: uuid */
+              categoryId?: string;
+              categoryName?: string;
+              currentMinor: number;
+              baselineMedianMinor: number;
+              deltaMinor: number;
+              ratioBasisPoints: number;
+              /** Format: date-time */
+              windowStart: string | null;
+              /** Format: date-time */
+              windowEnd: string | null;
+              baselineWindowCount: number;
+              baselineExpenseCount: number;
+              currentExpenseCount: number;
+            }
+          | {
+              /** @enum {string} */
+              kind: "unusually_large_expense";
+              /** Format: uuid */
+              transactionId: string;
+              /** Format: uuid */
+              categoryId?: string;
+              categoryName?: string;
+              amountMinor: number;
+              thresholdMinor: number;
+              baselineMedianMinor: number;
+              baselineQ1Minor: number;
+              baselineQ3Minor: number;
+              baselineExpenseCount: number;
+              /** Format: date-time */
+              occurredAt: string | null;
+            };
+        detectorVersion: number;
+        /** Format: date-time */
+        firstDetectedAt: string | null;
+        /** Format: date-time */
+        lastDetectedAt: string | null;
+        /** Format: date-time */
+        dismissedAt?: string | null;
+        /** Format: date-time */
+        resolvedAt?: string | null;
+      }[];
+      pageInfo: {
+        nextCursor: string | null;
+        hasMore: boolean;
+        limit: number;
+      };
+      analysis: {
+        /** @enum {string} */
+        status: "learning" | "ready" | "stale" | "unavailable";
+        /** Format: date-time */
+        computedAt?: string | null;
+        /** Format: date-time */
+        sourceThrough?: string | null;
+        /** Format: date-time */
+        historyStart?: string | null;
+        eligibleKinds: (
+          "overall_spend_spike" | "category_spend_spike" | "unusually_large_expense"
+        )[];
+        baselineExpenseCount: number;
+      };
+    };
+    DismissSpendingWarningResponse: {
+      /** Format: uuid */
+      id: string;
+      /** @enum {string} */
+      status: "dismissed";
+      /** Format: date-time */
+      dismissedAt: string | null;
+    };
     Goal: {
       /** Format: uuid */
       id: string;
@@ -5448,6 +5923,68 @@ export interface components {
       requiredMonthlyMinor: number | null;
       /** Format: date-time */
       projectedCompletionDate: string | null;
+    };
+    BudgetPage: {
+      month: string;
+      /** Format: date-time */
+      computedAt: string | null;
+      alertPolicy: {
+        thresholdsBps: number[];
+      };
+      overview: {
+        plannedMinor: number;
+        spentInBudgetedCategoriesMinor: number;
+        remainingMinor: number;
+        unbudgetedSpentMinor: number;
+        activeBudgetCount: number;
+      };
+      items: {
+        budget: {
+          /** Format: uuid */
+          id: string;
+          userId: string;
+          /** Format: uuid */
+          categoryId: string;
+          limitMinor: number;
+          isArchived: boolean;
+          /** Format: date-time */
+          createdAt: string | null;
+          /** Format: date-time */
+          updatedAt: string | null;
+        };
+        category: {
+          /** Format: uuid */
+          id: string;
+          name: string;
+          icon: string | null;
+          color: string | null;
+          isArchived: boolean;
+        };
+        spentMinor: number;
+        remainingMinor: number;
+        utilizationBps: number;
+        /** @enum {string} */
+        state: "under" | "approaching" | "reached";
+        isEffective: boolean;
+      }[];
+      pageInfo: {
+        nextCursor: string | null;
+        hasMore: boolean;
+        limit: number;
+      };
+    };
+    Budget: {
+      /** Format: uuid */
+      id: string;
+      userId: string;
+      /** Format: uuid */
+      categoryId: string;
+      limitMinor: number;
+      isArchived: boolean;
+      /** Format: date-time */
+      createdAt: string | null;
+      /** Format: date-time */
+      updatedAt: string | null;
     };
     DashboardSummary: {
       totalBalanceMinor: number;

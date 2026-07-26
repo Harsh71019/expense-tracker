@@ -13,6 +13,7 @@ const SIDEBAR_COMPACT_KEY = "treasury-ops-sidebar-compact";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: "⌂" },
+  { href: "/accounts", label: "Accounts", icon: "▣" },
   { href: "/insights", label: "Insights", icon: "✦" },
   { href: "/transactions", label: "Transactions", icon: "≡" },
   { href: "/transfers", label: "Transfers", icon: "⤢" },
@@ -21,7 +22,9 @@ const navItems = [
   { href: "/imports", label: "Imports", icon: "↥" },
   { href: "/assets", label: "Assets", icon: "◈" },
   { href: "/goals", label: "Goals", icon: "◎" },
+  { href: "/budgets", label: "Budgets", icon: "◫" },
   { href: "/reports", label: "Reports", icon: "◔" },
+  { href: "/spending-warnings", label: "Patterns", icon: "△" },
   { href: "/settings", label: "Settings", icon: "⚙" }
 ] as const;
 

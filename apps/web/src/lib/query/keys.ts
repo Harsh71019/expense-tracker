@@ -1,7 +1,11 @@
 import type { DashboardRange, GoalStatus, ListTransactionsQuery } from "@treasury-ops/shared";
 
+import type { SpendingWarningFilters } from "@/features/spending-warnings/model/filters";
+
 const transactionRoot = ["transactions"] as const;
+const spendingWarningRoot = ["spending-warnings"] as const;
 const goalRoot = ["goals"] as const;
+const budgetRoot = ["budgets"] as const;
 const dashboardRoot = ["dashboard"] as const;
 
 export const qk = {
@@ -14,6 +18,10 @@ export const qk = {
   goalList: (status: GoalStatus) => [...goalRoot, "list", status] as const,
   goal: (goalId: string) => [...goalRoot, "detail", goalId] as const,
   goalPlan: (goalId: string) => [...goalRoot, "plan", goalId] as const,
+  budgets: () => budgetRoot,
+  budgetLists: () => [...budgetRoot, "list"] as const,
+  budgetList: (filters: Readonly<{ includeArchived: boolean; limit: number }>) =>
+    [...budgetRoot, "list", filters] as const,
   accounts: () => ["accounts"] as const,
   categories: () => ["categories"] as const,
   categoryRules: () => ["category-rules"] as const,
@@ -26,6 +34,10 @@ export const qk = {
   importMapping: (accountId: string) => ["import-mapping", accountId] as const,
   monthlyRollup: (month: string) => ["monthly-rollup", month] as const,
   apiKeys: () => ["api-keys"] as const,
+  spendingWarnings: () => spendingWarningRoot,
+  spendingWarningLists: () => [...spendingWarningRoot, "list"] as const,
+  spendingWarningList: (filters: SpendingWarningFilters) =>
+    [...spendingWarningRoot, "list", filters] as const,
   profile: () => ["profile"] as const,
   dashboard: () => dashboardRoot,
   recentActivity: (limit: number) => [...dashboardRoot, "recent-activity", limit] as const,

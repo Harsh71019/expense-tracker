@@ -73,6 +73,9 @@ import {
   CreateAssetSchema,
   AssetSchema,
   AssetIdSchema,
+  BudgetIdSchema,
+  BudgetPageSchema,
+  BudgetSchema,
   CreateValuationSchema,
   ValuationSchema,
   ValuationPageSchema,
@@ -104,7 +107,13 @@ import {
   UpdateApiKeySchema,
   UpdateBillStatementRowSchema,
   UpdateRecurringRuleSchema,
-  UpdateGoalSchema
+  DismissSpendingWarningResponseSchema,
+  ListSpendingWarningsQuerySchema,
+  SpendingWarningIdSchema,
+  SpendingWarningPageSchema,
+  UpdateGoalSchema,
+  ListBudgetsQuerySchema,
+  UpsertBudgetSchema
 } from "@treasury-ops/shared";
 import { z } from "zod";
 
@@ -129,6 +138,12 @@ const StagedRowPage = StagedRowPageSchema.meta({ id: "StagedRowPage" });
 const UserProfile = UserProfileSchema.meta({ id: "UserProfile" });
 const MonthlyRollup = MonthlyRollupSchema.meta({ id: "MonthlyRollup" });
 const RecurringRule = RecurringRuleSchema.meta({ id: "RecurringRule" });
+const SpendingWarningPage = SpendingWarningPageSchema.meta({ id: "SpendingWarningPage" });
+const DismissSpendingWarningResponse = DismissSpendingWarningResponseSchema.meta({
+  id: "DismissSpendingWarningResponse"
+});
+const Budget = BudgetSchema.meta({ id: "Budget" });
+const BudgetPage = BudgetPageSchema.meta({ id: "BudgetPage" });
 const Goal = GoalSchema.meta({ id: "Goal" });
 const GoalPlan = GoalPlanSchema.meta({ id: "GoalPlan" });
 const DashboardSummary = DashboardSummarySchema.meta({ id: "DashboardSummary" });
@@ -160,12 +175,14 @@ const importBatchAndRowId = z.object({
 });
 const month = z.object({ month: MonthSchema });
 const recurringRuleId = z.object({ ruleId: RecurringRuleIdSchema });
+const spendingWarningId = z.object({ warningId: SpendingWarningIdSchema });
 const goalId = z.object({ goalId: GoalIdSchema });
 const billId = z.object({ billId: CreditCardBillIdSchema });
 const billAndRowId = z.object({
   billId: CreditCardBillIdSchema,
   rowId: BillStatementRowIdSchema
 });
+const budgetId = z.object({ budgetId: BudgetIdSchema });
 const json = (schema: z.ZodType): { content: { "application/json": { schema: z.ZodType } } } => ({
   content: { "application/json": { schema } }
 });
@@ -670,6 +687,35 @@ registry.registerPath({
 });
 
 registry.registerPath({
+  method: "get",
+  path: "/v1/spending-warnings",
+  security: secured,
+  request: { query: ListSpendingWarningsQuerySchema },
+  responses: {
+    200: {
+      description: "Active spending warnings and analysis coverage",
+      ...json(SpendingWarningPage)
+    },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "post",
+  path: "/v1/spending-warnings/{warningId}/dismiss",
+  security: secured,
+  request: { params: spendingWarningId, headers: idempotencyKeyHeaders },
+  responses: {
+    200: {
+      description: "Dismissed warning, or idempotent replay",
+      headers: optionalReplayHeaders,
+      ...json(DismissSpendingWarningResponse)
+    },
+    404: { description: "Not found", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
   method: "post",
   path: "/v1/imports",
   security: secured,
@@ -788,6 +834,51 @@ registry.registerPath({
   responses: {
     200: { description: "Goal contribution plan", ...json(GoalPlan) },
     404: { description: "Goal not found", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/v1/budgets",
+  security: secured,
+  request: { query: ListBudgetsQuerySchema },
+  responses: {
+    200: { description: "Budget page with live progress and overview totals", ...json(BudgetPage) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "put",
+  path: "/v1/budgets/{categoryId}",
+  security: secured,
+  request: {
+    params: categoryId,
+    body: json(UpsertBudgetSchema),
+    headers: idempotencyKeyHeaders
+  },
+  responses: {
+    200: {
+      description: "Created, updated, restored budget configuration, or idempotent replay",
+      headers: optionalReplayHeaders,
+      ...json(Budget)
+    },
+    404: { description: "Category not found", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "patch",
+  path: "/v1/budgets/{budgetId}/archive",
+  security: secured,
+  request: { params: budgetId, headers: idempotencyKeyHeaders },
+  responses: {
+    200: {
+      description: "Archived budget configuration, or idempotent replay",
+      headers: optionalReplayHeaders,
+      ...json(Budget)
+    },
+    404: { description: "Budget not found", ...json(ProblemDetails) },
     ...problemResponses
   }
 });

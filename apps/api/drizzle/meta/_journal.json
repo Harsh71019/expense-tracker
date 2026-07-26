@@ -61,8 +61,22 @@
     {
       "idx": 8,
       "version": "7",
-      "when": 1784989408533,
-      "tag": "0008_wise_liz_osborn",
+      "when": 1784989081850,
+      "tag": "0008_add_budget_module",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1785012710906,
+      "tag": "0009_spending_warnings",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1785036567472,
+      "tag": "0010_credit_card_bills",
       "breakpoints": true
     }
   ]

@@ -23,7 +23,13 @@ export class NotificationDeliveryService {
    */
   async deliver(userId: string, notificationId: string): Promise<void> {
     const notification = await this.outbox.findById(userId, notificationId);
-    if (notification === null || notification.status === "sent") return;
+    if (
+      notification === null ||
+      notification.status === "sent" ||
+      notification.failedAt !== undefined
+    ) {
+      return;
+    }
 
     await this.breaker.execute(() =>
       this.adapter.send({
@@ -33,5 +39,13 @@ export class NotificationDeliveryService {
       })
     );
     await this.outbox.markSent(userId, notification.id);
+  }
+
+  async markTerminalFailure(
+    userId: string,
+    notificationId: string,
+    attempts: number
+  ): Promise<void> {
+    await this.outbox.markTerminalFailure(userId, notificationId, attempts);
   }
 }

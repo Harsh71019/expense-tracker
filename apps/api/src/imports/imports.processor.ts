@@ -6,6 +6,7 @@ import { RuntimeConfigService } from "../common/config/runtime-config.service.js
 import { LogEvent } from "../common/logging/events.js";
 import { LoggingContextService } from "../common/logging/logging-context.service.js";
 import { createQueueConnection } from "../common/queue/queue-connection.js";
+import { isTerminalJobFailure } from "../common/queue/queue-policy.js";
 import {
   IMPORTS_QUEUE_NAME,
   PARSE_IMPORT_JOB_NAME,
@@ -58,6 +59,7 @@ export function startImportsWorker(
     { connection: createQueueConnection(config.env.REDIS_URL) }
   ).on("failed", (job, error) => {
     const data = job === undefined ? undefined : ParseImportJobDataSchema.safeParse(job.data);
+    const terminal = job !== undefined && isTerminalJobFailure(job);
     logger.error(
       {
         event: LogEvent.ImportBatchParseFailed,
@@ -66,9 +68,26 @@ export function startImportsWorker(
         ...(data?.success === true
           ? { reqId: data.data.correlationId, batchId: data.data.batchId }
           : {}),
+        terminal,
+        attemptsMade: job?.attemptsMade,
         err: error
       },
       "import batch parse job failed"
     );
+    if (data?.success === true && terminal) {
+      void service
+        .markTerminalParseFailure(data.data.userId, data.data.batchId)
+        .catch((persistError: unknown) => {
+          logger.error(
+            {
+              event: LogEvent.ImportBatchParseFailed,
+              batchId: data.data.batchId,
+              terminal: true,
+              err: persistError
+            },
+            "terminal import failure could not be persisted"
+          );
+        });
+    }
   });
 }

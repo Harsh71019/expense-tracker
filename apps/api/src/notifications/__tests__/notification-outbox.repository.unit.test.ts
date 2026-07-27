@@ -10,6 +10,9 @@ describe("NotificationOutboxRepository Unit Tests", () => {
     type: "budget_alert",
     payload: { title: "Alert", message: "Low balance" },
     status: "pending",
+    failureCode: null,
+    failedAt: null,
+    deliveryAttempts: 0,
     sentAt: null,
     createdAt: new Date()
   };

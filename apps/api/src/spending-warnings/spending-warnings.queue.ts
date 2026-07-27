@@ -6,6 +6,7 @@ import { z } from "zod";
 import { RuntimeConfigService } from "../common/config/runtime-config.service.js";
 import { LoggingContextService } from "../common/logging/logging-context.service.js";
 import { createQueueConnection } from "../common/queue/queue-connection.js";
+import { QUEUE_RETENTION } from "../common/queue/queue-policy.js";
 import { toISTCalendarDate } from "../common/time/ist.js";
 import { DETECTOR_VERSION } from "./spending-warnings.detector.js";
 
@@ -50,7 +51,8 @@ export class SpendingWarningsQueue implements OnModuleDestroy {
     await this.queue.add(ANALYZE_USER_JOB_NAME, data, {
       jobId: `${userId}:${toISTCalendarDate(asOf)}:v${DETECTOR_VERSION}`,
       attempts: 3,
-      backoff: { type: "exponential", delay: 10_000 }
+      backoff: { type: "exponential", delay: 10_000 },
+      ...QUEUE_RETENTION
     });
   }
 

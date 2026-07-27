@@ -4706,6 +4706,10 @@ export interface components {
       };
       /** @enum {string} */
       status: "pending" | "staged" | "committed" | "reverted" | "failed";
+      /** @enum {string} */
+      failureCode?: "invalid_csv" | "parse_retries_exhausted";
+      /** Format: date-time */
+      failedAt?: string | null;
       stats: {
         total: number;
         staged: number;

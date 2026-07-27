@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { and, eq } from "drizzle-orm";
 
 import { AccountRepository } from "../../../src/accounts/account.repository.js";
@@ -7,7 +7,9 @@ import { AccountMutationService } from "../../../src/accounts/account-mutation.s
 import { IdempotencyPostgresRepository } from "../../../src/common/idempotency/idempotency-postgres.repository.js";
 import { IdempotencyPostgresService } from "../../../src/common/idempotency/idempotency-postgres.service.js";
 import { EntityNotFoundError } from "../../../src/common/errors/entity-not-found.error.js";
+import { IdempotencyConflictError } from "../../../src/common/errors/idempotency-conflict.error.js";
 import { accounts } from "../../../src/common/db/schema/index.js";
+import { assertLedgerInvariants } from "../support/assert-ledger-invariants.js";
 import { createTestDb, insertTestUser } from "../support/postgres-test-db.js";
 import type { TestDb } from "../support/postgres-test-db.js";
 
@@ -31,6 +33,10 @@ describe("AccountService", () => {
 
   afterAll(async () => {
     await testDb.teardown();
+  });
+
+  afterEach(async () => {
+    await assertLedgerInvariants(testDb.db);
   });
 
   it("creates and lists accounts scoped by user", async () => {
@@ -127,5 +133,28 @@ describe("AccountService", () => {
           .where(and(eq(accounts.id, accountId), eq(accounts.isArchived, true)))
       ).length
     ).toBe(1);
+  });
+
+  it("rejects the same key when its request intent changes", async () => {
+    const key = "33333333-aaaa-4333-8333-333333333333";
+    await accountMutations.create(
+      "user-idempotent",
+      { name: "Original intent", type: "cash", openingBalanceMinor: 1_000 },
+      key
+    );
+
+    await expect(
+      accountMutations.create(
+        "user-idempotent",
+        { name: "Different intent", type: "cash", openingBalanceMinor: 2_000 },
+        key
+      )
+    ).rejects.toBeInstanceOf(IdempotencyConflictError);
+
+    const rows = await testDb.db
+      .select()
+      .from(accounts)
+      .where(and(eq(accounts.userId, "user-idempotent"), eq(accounts.name, "Different intent")));
+    expect(rows).toHaveLength(0);
   });
 });

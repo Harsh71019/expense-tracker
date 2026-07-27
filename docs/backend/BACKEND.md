@@ -475,7 +475,9 @@ Non-monetary metadata on a transfer is also group-scoped. Until a group-level me
 
 ### 3.4 Idempotency
 
-Client-initiated create/update/archive/delete operations require an `Idempotency-Key` header (the client generates one UUID per logical action and reuses it for retries). General mutations store their Zod-validated response in `idempotency_records`, uniquely keyed by `(userId, operation, key)`, in the same Mongo transaction as the business effect. Replays return that authoritative stored response; no-content operations store `null` so an archive/delete replay cannot fall through to `404`.
+Client-initiated create/update/archive/delete operations require an `Idempotency-Key` header (the client generates one UUID per logical action and reuses it for retries). General mutations store their Zod-validated response in `idempotency_records`, uniquely keyed by `(userId, operation, key)`, in the same PostgreSQL transaction as the business effect. Each record also stores a SHA-256 fingerprint of the canonicalized, validated request intent, including path identifiers. Reusing the key for the same intent returns the authoritative stored response; reusing it for different intent returns `409 common.idempotency_conflict`. No-content operations store `null` so an archive/delete replay cannot fall through to `404`.
+
+Idempotency records are retained for 30 days. Each mutation opportunistically removes only the current user's expired records through the tenant-scoped repository index `(user_id, created_at)`, avoiding an unscoped global cleanup path.
 
 Ledger transaction and transfer creation retain their unique transaction-key protection. Transaction and transfer-group reversals are naturally idempotent by the original transaction/group linkage: a concurrent duplicate returns the committed compensating entry or pair and sets `Idempotency-Replayed: true`. First creates return `201`; replayed creates return `200`; same-status mutations expose replay through that header.
 

@@ -22,16 +22,23 @@ export class AccountMutationService {
   ) {}
 
   create(userId: string, input: CreateAccount, key: string): Promise<IdempotentResult<Account>> {
-    return this.idempotency.execute(userId, "account.create", key, AccountSchema, (tx) =>
+    return this.idempotency.execute(userId, "account.create", key, input, AccountSchema, (tx) =>
       this.accounts.create(userId, input, tx)
     );
   }
 
   archive(userId: string, accountId: AccountId, key: string): Promise<IdempotentResult<null>> {
-    return this.idempotency.execute(userId, "account.archive", key, z.null(), async (tx) => {
-      if (!(await this.accounts.archive(userId, accountId, tx)))
-        throw new EntityNotFoundError("Account");
-      return null;
-    });
+    return this.idempotency.execute(
+      userId,
+      "account.archive",
+      key,
+      { accountId },
+      z.null(),
+      async (tx) => {
+        if (!(await this.accounts.archive(userId, accountId, tx)))
+          throw new EntityNotFoundError("Account");
+        return null;
+      }
+    );
   }
 }

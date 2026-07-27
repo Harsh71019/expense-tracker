@@ -65,7 +65,7 @@ describe("GoalService Unit Tests", () => {
     it("delegates create to GoalService", async () => {
       const mockGoalService = { createInTx: vi.fn(async () => sampleGoal) };
       const mockIdempotency = {
-        execute: vi.fn(async (_u, _op, _k, _s, work) => {
+        execute: vi.fn(async (_u, _op, _k, _intent, _s, work) => {
           const res = await work("tx1");
           return { result: res, replayed: false };
         })

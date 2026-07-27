@@ -25,14 +25,24 @@ export class BudgetMutationService {
     input: UpsertBudget,
     key: string
   ): Promise<IdempotentResult<Budget>> {
-    return this.idempotency.execute(userId, "budget.upsert", key, BudgetSchema, (tx) =>
-      this.budgets.upsertInTx(userId, categoryId, input, tx)
+    return this.idempotency.execute(
+      userId,
+      "budget.upsert",
+      key,
+      { categoryId, input },
+      BudgetSchema,
+      (tx) => this.budgets.upsertInTx(userId, categoryId, input, tx)
     );
   }
 
   archive(userId: string, budgetId: BudgetId, key: string): Promise<IdempotentResult<Budget>> {
-    return this.idempotency.execute(userId, "budget.archive", key, BudgetSchema, (tx) =>
-      this.budgets.archiveInTx(userId, budgetId, tx)
+    return this.idempotency.execute(
+      userId,
+      "budget.archive",
+      key,
+      { budgetId },
+      BudgetSchema,
+      (tx) => this.budgets.archiveInTx(userId, budgetId, tx)
     );
   }
 }

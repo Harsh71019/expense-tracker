@@ -83,7 +83,7 @@ return the older mapping.
 ### API-005 — Finish idempotency coverage for every mutating endpoint
 
 **Priority:** P1
-**Status:** Open
+**Status:** Complete
 
 **Scope:** import upload, staged-row patch, import commit/revert, and API-key
 create/update/revoke. The import commit/revert design must retain chunking and
@@ -116,6 +116,13 @@ crash resumability; do not wrap 50,000 rows in one database transaction.
   routes.
 - Run `assertInvariants()` after every money test.
 - Remove `--passWithNoTests` once the first suite lands.
+
+**Implemented:** `test/e2e/http-api.e2e.ts` boots the production HTTP factory
+against Testcontainers PostgreSQL and Redis. It covers session authentication,
+RFC 7807, transaction create/replay/reversal, API-key scopes, cross-tenant
+denial, multipart import handoff, readiness, and an OpenAPI-generated
+authentication probe for every secured operation. CI runs the suite and a
+zero-test run now fails.
 
 ### REL-007 — Pin volatile runtime and tooling dependencies
 

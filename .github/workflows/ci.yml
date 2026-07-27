@@ -76,6 +76,9 @@ jobs:
       - name: "Integration tests — backend (api)"
         run: pnpm --filter @treasury-ops/api test:integration
 
+      - name: "End-to-end tests — backend (api)"
+        run: pnpm --filter @treasury-ops/api test:e2e
+
       - name: "Migration verification — backend"
         run: pnpm verify:migrations
 

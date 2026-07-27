@@ -12,7 +12,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.test.json",
     "test": "vitest run --passWithNoTests",
     "test:integration": "vitest run --passWithNoTests --config vitest.integration.config.ts",
-    "test:e2e": "vitest run --passWithNoTests --config vitest.e2e.config.ts",
+    "test:e2e": "vitest run --config vitest.e2e.config.ts",
     "migrate": "drizzle-kit migrate",
     "migrate:generate": "drizzle-kit generate",
     "migrate:status": "drizzle-kit check"

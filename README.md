@@ -96,7 +96,7 @@ pnpm --filter @treasury-ops/api lint / typecheck / dev / build
 pnpm --filter @treasury-ops/web lint / typecheck / dev / build
 ```
 
-CI (`.github/workflows/ci.yml`) runs, in order: `lint` → `typecheck` → `test` → `test:integration` → `verify:migrations` → `build` → Trivy filesystem scan. Match this locally before pushing.
+CI (`.github/workflows/ci.yml`) runs, in order: `lint` → `typecheck` → `test` → `test:integration` → `test:e2e` → `verify:migrations` → `build` → Trivy filesystem scan. Match this locally before pushing.
 
 **Docker (production-style, full stack):**
 
@@ -112,8 +112,8 @@ Brings up `migrate` (one-shot) → `api` + `worker` → `web`, all behind an `ng
 
 The prioritized, evidence-backed ticket set is maintained in
 [`docs/plans/2026-07-24-stability-and-essentials.md`](docs/plans/2026-07-24-stability-and-essentials.md).
-The highest-priority remaining items are complete idempotency coverage, a real
-authenticated API e2e suite, and exact dependency pinning.
+The highest-priority remaining items are complete idempotency coverage,
+crash-resumable imports, and notification-delivery hardening.
 
 ## TODO
 

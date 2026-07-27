@@ -1,4 +1,14 @@
-import { bigint, boolean, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import {
+  bigint,
+  boolean,
+  check,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+  uuid
+} from "drizzle-orm/pg-core";
 
 import { user } from "../auth-schema.js";
 import { accountTypeEnum } from "./enums.js";
@@ -19,5 +29,15 @@ export const accounts = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull()
   },
-  (table) => [uniqueIndex("accounts_user_id_name_unique").on(table.userId, table.name)]
+  (table) => [
+    uniqueIndex("accounts_user_id_name_unique").on(table.userId, table.name),
+    check(
+      "accounts_opening_balance_minor_safe_integer",
+      sql`${table.openingBalanceMinor} between ${sql.raw(String(-Number.MAX_SAFE_INTEGER))} and ${sql.raw(String(Number.MAX_SAFE_INTEGER))}`
+    ),
+    check(
+      "accounts_balance_minor_safe_integer",
+      sql`${table.balanceMinor} between ${sql.raw(String(-Number.MAX_SAFE_INTEGER))} and ${sql.raw(String(Number.MAX_SAFE_INTEGER))}`
+    )
+  ]
 );

@@ -71,6 +71,13 @@
       "when": 1785012710906,
       "tag": "0009_spending_warnings",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1785169569502,
+      "tag": "0010_mighty_lord_hawal",
+      "breakpoints": true
     }
   ]
 }

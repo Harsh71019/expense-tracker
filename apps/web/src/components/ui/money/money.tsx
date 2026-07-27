@@ -58,7 +58,11 @@ export function Money({
     .join(" ");
 
   if (privacyMode && !ignorePrivacy) {
-    return <span className={classes}>{`${prefix}₹ ••••••`}</span>;
+    return (
+      <span className={classes} aria-label="Amount hidden in privacy mode">
+        {`${prefix}₹ ••••••`}
+      </span>
+    );
   }
 
   return <span className={classes}>{`${prefix}${formatMinor(minor)}`}</span>;

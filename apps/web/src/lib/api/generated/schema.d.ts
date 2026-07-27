@@ -107,6 +107,15 @@ export interface paths {
             "application/json": components["schemas"]["ProblemDetails"];
           };
         };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
         /** @description Validation failed */
         422: {
           headers: {
@@ -699,6 +708,15 @@ export interface paths {
             "application/json": components["schemas"]["ProblemDetails"];
           };
         };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
         /** @description Validation failed */
         422: {
           headers: {
@@ -829,6 +847,15 @@ export interface paths {
             "application/json": components["schemas"]["ProblemDetails"];
           };
         };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
         /** @description Validation failed */
         422: {
           headers: {
@@ -900,6 +927,15 @@ export interface paths {
         };
         /** @description Not found */
         404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
           headers: {
             [name: string]: unknown;
           };
@@ -983,6 +1019,15 @@ export interface paths {
         };
         /** @description Not found */
         404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
           headers: {
             [name: string]: unknown;
           };
@@ -1123,6 +1168,15 @@ export interface paths {
             "application/json": components["schemas"]["ProblemDetails"];
           };
         };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
         /** @description Validation failed */
         422: {
           headers: {
@@ -1191,6 +1245,15 @@ export interface paths {
         };
         /** @description Category rule not found */
         404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
           headers: {
             [name: string]: unknown;
           };
@@ -1488,7 +1551,7 @@ export interface paths {
             "application/json": components["schemas"]["ProblemDetails"];
           };
         };
-        /** @description Transfer legs require a group-level metadata operation */
+        /** @description Transfer legs require a group-level metadata operation, or idempotency intent conflicts */
         409: {
           headers: {
             [name: string]: unknown;
@@ -1879,6 +1942,15 @@ export interface paths {
             "application/json": components["schemas"]["ProblemDetails"];
           };
         };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
         /** @description Validation failed */
         422: {
           headers: {
@@ -1946,6 +2018,15 @@ export interface paths {
         };
         /** @description Not found */
         404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
           headers: {
             [name: string]: unknown;
           };
@@ -2101,6 +2182,15 @@ export interface paths {
         };
         /** @description Not found */
         404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
           headers: {
             [name: string]: unknown;
           };
@@ -2590,6 +2680,15 @@ export interface paths {
             "application/json": components["schemas"]["ProblemDetails"];
           };
         };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
         /** @description Validation failed */
         422: {
           headers: {
@@ -2681,6 +2780,15 @@ export interface paths {
         };
         /** @description Recurring rule, account, or category not found */
         404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
           headers: {
             [name: string]: unknown;
           };
@@ -2820,6 +2928,15 @@ export interface paths {
         };
         /** @description Not found */
         404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
           headers: {
             [name: string]: unknown;
           };
@@ -2981,7 +3098,7 @@ export interface paths {
             "application/json": components["schemas"]["ProblemDetails"];
           };
         };
-        /** @description Funding source already assigned */
+        /** @description Funding source already assigned, or idempotency intent conflicts */
         409: {
           headers: {
             [name: string]: unknown;
@@ -3063,7 +3180,7 @@ export interface paths {
             "application/json": components["schemas"]["ProblemDetails"];
           };
         };
-        /** @description Order does not contain every active goal */
+        /** @description Order is invalid, or idempotency intent conflicts */
         409: {
           headers: {
             [name: string]: unknown;
@@ -3214,6 +3331,15 @@ export interface paths {
             "application/json": components["schemas"]["ProblemDetails"];
           };
         };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
         /** @description Validation failed */
         422: {
           headers: {
@@ -3277,6 +3403,15 @@ export interface paths {
         };
         /** @description Active goal not found */
         404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
           headers: {
             [name: string]: unknown;
           };
@@ -3504,6 +3639,15 @@ export interface paths {
             "application/json": components["schemas"]["ProblemDetails"];
           };
         };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
         /** @description Validation failed */
         422: {
           headers: {
@@ -3578,6 +3722,15 @@ export interface paths {
         };
         /** @description Budget not found */
         404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
           headers: {
             [name: string]: unknown;
           };
@@ -4440,6 +4593,7 @@ export interface components {
         | "common.validation_failed"
         | "common.not_found"
         | "common.invalid_cursor"
+        | "common.idempotency_conflict"
         | "common.internal"
         | "common.dependency_unavailable"
         | "money.out_of_range"

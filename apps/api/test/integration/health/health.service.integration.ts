@@ -8,6 +8,7 @@ import type { TestDb } from "../support/postgres-test-db.js";
 
 describe("HealthService", () => {
   let testDb: TestDb;
+  const config = { env: { READINESS_TIMEOUT_MS: 1_000 } };
 
   beforeAll(async () => {
     testDb = await createTestDb();
@@ -23,7 +24,8 @@ describe("HealthService", () => {
       ping: vi.fn().mockResolvedValue(true)
     };
 
-    const healthService = new HealthService(testDb.db, redisMock);
+    // @ts-expect-error focused runtime config test double
+    const healthService = new HealthService(testDb.db, redisMock, config);
     const result = await healthService.readiness();
 
     expect(result).toEqual({
@@ -39,7 +41,8 @@ describe("HealthService", () => {
       ping: vi.fn().mockRejectedValue(new Error("Redis Down"))
     };
 
-    const healthService = new HealthService(testDb.db, redisMock);
+    // @ts-expect-error focused runtime config test double
+    const healthService = new HealthService(testDb.db, redisMock, config);
     await expect(healthService.readiness()).rejects.toThrow(DependencyUnavailableError);
   });
 
@@ -53,7 +56,8 @@ describe("HealthService", () => {
       execute: vi.fn().mockRejectedValue(new Error("Connection refused"))
     };
 
-    const healthService = new HealthService(brokenDb, redisMock);
+    // @ts-expect-error focused runtime config test double
+    const healthService = new HealthService(brokenDb, redisMock, config);
     await expect(healthService.readiness()).rejects.toThrow(DependencyUnavailableError);
   });
 });

@@ -28,7 +28,7 @@ const routeLabels: Record<string, { label: string; icon: string }> = {
 };
 
 export function AppHeader({ theme }: Readonly<{ theme: Theme | null }>): ReactNode {
-  const pathname = (typeof usePathname === "function" ? usePathname() : null) ?? "/";
+  const pathname = usePathname() ?? "/";
   const { privacyMode, togglePrivacyMode } = usePrivacy();
   const [showCreateSheet, setShowCreateSheet] = useState(false);
   const [currentDate, setCurrentDate] = useState("");
@@ -110,7 +110,6 @@ export function AppHeader({ theme }: Readonly<{ theme: Theme | null }>): ReactNo
 
           {/* Quick Add Entry Button */}
           <Button
-            size="sm"
             onClick={() => setShowCreateSheet(true)}
             className="flex items-center gap-1.5 shadow-sm transition-transform active:scale-[0.98]"
             title="Post a new transaction (⌘N)"

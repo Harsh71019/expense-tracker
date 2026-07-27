@@ -39,8 +39,8 @@ describe("RollupsRefreshService", () => {
 
     const now = new Date();
 
-    await withTxn(testDb.db, (tx) =>
-      transactions.create(
+    await withTxn(testDb.db, async (tx) => {
+      await transactions.create(
         "user-a",
         {
           accountId,
@@ -52,10 +52,11 @@ describe("RollupsRefreshService", () => {
         },
         undefined,
         tx
-      )
-    );
-    await withTxn(testDb.db, (tx) =>
-      transactions.create(
+      );
+      await accounts.applyBalanceDelta("user-a", accountId, -1_000, tx);
+    });
+    await withTxn(testDb.db, async (tx) => {
+      await transactions.create(
         "user-a",
         {
           accountId,
@@ -67,8 +68,9 @@ describe("RollupsRefreshService", () => {
         },
         undefined,
         tx
-      )
-    );
+      );
+      await accounts.applyBalanceDelta("user-a", accountId, -500, tx);
+    });
   }, 60_000);
 
   afterAll(async () => {

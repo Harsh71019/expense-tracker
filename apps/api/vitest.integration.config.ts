@@ -23,6 +23,8 @@ export default defineConfig({
   ],
   test: {
     include: ["test/integration/**/*.integration.ts"],
+    setupFiles: ["test/integration/support/integration-harness.ts"],
+    sequence: { hooks: "stack" },
     // Each file's beforeAll spins up its own testcontainers Postgres
     // (postgres-test-db.ts::createTestDb). Running files concurrently races
     // them for Docker resources and some containers miss the beforeAll hook

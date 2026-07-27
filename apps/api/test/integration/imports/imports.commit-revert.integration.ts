@@ -215,8 +215,8 @@ describe("ImportsService commit/revert", () => {
     // transaction directly (bypassing commitBatch) while the batch stays
     // "staged", exactly like an interrupted commit would leave things.
     const [firstRow] = await stagedRows.findIncludableForBatch(userId, batchId);
-    await withTxn(testDb.db, (tx) =>
-      transactions.insertImportedRows(
+    await withTxn(testDb.db, async (tx) => {
+      await transactions.insertImportedRows(
         userId,
         accountId,
         batchId,
@@ -230,8 +230,9 @@ describe("ImportsService commit/revert", () => {
           }
         ],
         tx
-      )
-    );
+      );
+      await accounts.applyBalanceDelta(userId, accountId, -2_000, tx);
+    });
     const committed = await service.commitBatch(userId, batchId);
 
     expect(committed.status).toBe("committed");
@@ -350,9 +351,10 @@ describe("ImportsService commit/revert", () => {
     // mid-revert crash would).
     const posted = await transactions.findPostedByImportBatchId(userId, batchId);
     const [firstPosted] = posted;
-    await withTxn(testDb.db, (tx) =>
-      transactions.insertBulkReversals(userId, [nonNull(firstPosted)], tx)
-    );
+    await withTxn(testDb.db, async (tx) => {
+      await transactions.insertBulkReversals(userId, [nonNull(firstPosted)], tx);
+      await accounts.applyReversalBalanceDelta(userId, accountId, 2_000, tx);
+    });
 
     const reverted = await service.revertBatch(userId, batchId);
 

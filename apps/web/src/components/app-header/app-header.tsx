@@ -28,18 +28,35 @@ const routeLabels: Record<string, { label: string; icon: string }> = {
 };
 
 export function AppHeader({ theme }: Readonly<{ theme: Theme | null }>): ReactNode {
-  const pathname = (typeof usePathname === "function" ? usePathname() : null) ?? "/";
+  const pathname = usePathname() ?? "/";
   const { privacyMode, togglePrivacyMode } = usePrivacy();
   const [showCreateSheet, setShowCreateSheet] = useState(false);
   const [currentDate, setCurrentDate] = useState("");
+  const [currentTime, setCurrentTime] = useState("");
 
   useEffect(() => {
-    const formatted = new Intl.DateTimeFormat("en-IN", {
-      weekday: "short",
-      month: "short",
-      day: "numeric"
-    }).format(new Date());
-    setCurrentDate(formatted);
+    function updateClock(): void {
+      const now = new Date();
+      const dateFormatted = new Intl.DateTimeFormat("en-IN", {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        timeZone: "Asia/Kolkata"
+      }).format(now);
+      const timeFormatted = new Intl.DateTimeFormat("en-IN", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+        timeZone: "Asia/Kolkata"
+      }).format(now);
+
+      setCurrentDate(dateFormatted);
+      setCurrentTime(timeFormatted);
+    }
+
+    updateClock();
+    const interval = setInterval(updateClock, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   // Global keyboard shortcut (⌘N or Alt+N to open new entry sheet)
@@ -76,7 +93,7 @@ export function AppHeader({ theme }: Readonly<{ theme: Theme | null }>): ReactNo
 
           <span className="text-foreground-muted/40 font-mono text-xs">/</span>
 
-          <div className="flex items-center gap-1.5 rounded-lg border border-border/50 bg-surface-muted/60 px-2.5 py-1 text-xs font-semibold text-foreground">
+          <div className="flex items-center gap-1.5 rounded-lg border border-border/50 bg-surface-muted/60 px-2.5 py-1 text-xs font-semibold text-foreground shadow-2xs">
             <span className="text-accent text-sm" aria-hidden="true">
               {routeInfo.icon}
             </span>
@@ -84,9 +101,11 @@ export function AppHeader({ theme }: Readonly<{ theme: Theme | null }>): ReactNo
           </div>
 
           {currentDate !== "" && (
-            <span className="hidden lg:inline-block ml-3 font-mono text-[11px] text-foreground-muted/70 bg-surface-muted/30 px-2 py-0.5 rounded border border-border/30">
-              {currentDate}
-            </span>
+            <div className="hidden lg:flex items-center gap-1.5 ml-2 font-mono text-[11px] text-foreground-muted/80 bg-surface-muted/30 px-2.5 py-1 rounded-lg border border-border/40">
+              <span>{currentDate}</span>
+              <span className="text-foreground-muted/40">·</span>
+              <span className="font-semibold text-foreground-muted">{currentTime} IST</span>
+            </div>
           )}
         </div>
 
@@ -98,9 +117,9 @@ export function AppHeader({ theme }: Readonly<{ theme: Theme | null }>): ReactNo
             onClick={togglePrivacyMode}
             title={privacyMode ? "Disable privacy mode" : "Enable privacy mode (hide balances)"}
             aria-label={privacyMode ? "Disable privacy mode" : "Enable privacy mode"}
-            className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-all duration-150 ${
+            className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-all duration-150 active:scale-95 ${
               privacyMode
-                ? "border-accent/40 bg-accent-glow text-accent font-semibold shadow-sm"
+                ? "border-accent/40 bg-accent-glow text-accent font-semibold shadow-xs"
                 : "border-border/60 bg-surface-muted/40 text-foreground-muted hover:border-border hover:text-foreground"
             }`}
           >
@@ -112,7 +131,7 @@ export function AppHeader({ theme }: Readonly<{ theme: Theme | null }>): ReactNo
           <Button
             size="sm"
             onClick={() => setShowCreateSheet(true)}
-            className="flex items-center gap-1.5 shadow-sm transition-transform active:scale-[0.98]"
+            className="flex items-center gap-1.5 shadow-xs transition-transform active:scale-[0.98]"
             title="Post a new transaction (⌘N)"
           >
             <span className="text-base font-bold leading-none">+</span>

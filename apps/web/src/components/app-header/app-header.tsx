@@ -28,7 +28,7 @@ const routeLabels: Record<string, { label: string; icon: string }> = {
 };
 
 export function AppHeader({ theme }: Readonly<{ theme: Theme | null }>): ReactNode {
-  const pathname = (typeof usePathname === "function" ? usePathname() : null) ?? "/";
+  const pathname = usePathname() ?? "/";
   const { privacyMode, togglePrivacyMode } = usePrivacy();
   const [showCreateSheet, setShowCreateSheet] = useState(false);
   const [currentDate, setCurrentDate] = useState("");

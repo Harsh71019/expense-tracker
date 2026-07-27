@@ -1,9 +1,11 @@
 import { NestFactory } from "@nestjs/core";
 import { Logger } from "nestjs-pino";
+import pino from "pino";
 
 import { AppModule } from "./app.module.js";
 import { RuntimeConfigService } from "./common/config/runtime-config.service.js";
 import { LogEvent } from "./common/logging/events.js";
+import { withDeadline } from "./common/process/deadline.js";
 import { RedisService } from "./common/redis/redis.service.js";
 import { ImportsService } from "./imports/imports.service.js";
 import { startImportsWorker } from "./imports/imports.processor.js";
@@ -16,6 +18,7 @@ async function bootstrapWorker(): Promise<void> {
   const app = await NestFactory.createApplicationContext(AppModule);
   const redis = app.get(RedisService);
   const logger = app.get(Logger);
+  const config = app.get(RuntimeConfigService);
 
   const recordHeartbeat = async (): Promise<void> => {
     await redis.setWorkerHeartbeat();
@@ -32,11 +35,7 @@ async function bootstrapWorker(): Promise<void> {
   }, 30_000);
   heartbeatTimer.unref();
 
-  const importsWorker = startImportsWorker(
-    app.get(RuntimeConfigService),
-    app.get(ImportsService),
-    logger
-  );
+  const importsWorker = startImportsWorker(config, app.get(ImportsService), logger);
   const notificationsWorker = startNotificationsWorker(
     app.get(RuntimeConfigService),
     app.get(NotificationDeliveryService),
@@ -56,24 +55,42 @@ async function bootstrapWorker(): Promise<void> {
     clearInterval(heartbeatTimer);
     logger.log({ event: LogEvent.WorkerStopping, signal }, "worker process stopping");
 
-    const results = await Promise.allSettled([
-      importsWorker.close(),
-      notificationsWorker.close(),
-      spendingWarningsWorker.close()
-    ]);
-    for (const result of results) {
-      if (result.status === "rejected") {
-        logger.error(
-          { event: LogEvent.WorkerStopping, err: result.reason },
-          "worker queue shutdown failed"
-        );
-      }
+    try {
+      await withDeadline(
+        "Worker graceful shutdown",
+        config.env.GRACEFUL_SHUTDOWN_TIMEOUT_MS,
+        (async () => {
+          const results = await Promise.allSettled([
+            importsWorker.close(),
+            notificationsWorker.close(),
+            spendingWarningsWorker.close()
+          ]);
+          for (const result of results) {
+            if (result.status === "rejected") {
+              logger.error(
+                { event: LogEvent.WorkerStopping, err: result.reason },
+                "worker queue shutdown failed"
+              );
+            }
+          }
+          await app.close();
+        })()
+      );
+      logger.log({ event: LogEvent.WorkerStopped }, "worker process stopped");
+    } catch (error: unknown) {
+      logger.fatal(
+        { event: "worker.shutdown_failed", signal, err: error },
+        "worker shutdown failed"
+      );
+      process.exit(1);
     }
-    await app.close();
-    logger.log({ event: LogEvent.WorkerStopped }, "worker process stopped");
   };
   process.once("SIGTERM", () => void shutdown("SIGTERM"));
   process.once("SIGINT", () => void shutdown("SIGINT"));
 }
 
-void bootstrapWorker();
+void bootstrapWorker().catch((error: unknown) => {
+  const logger = pino({ level: process.env.LOG_LEVEL ?? "error" });
+  logger.fatal({ event: "worker.bootstrap_failed", err: error }, "worker bootstrap failed");
+  process.exitCode = 1;
+});

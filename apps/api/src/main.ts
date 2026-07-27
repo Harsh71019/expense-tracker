@@ -9,6 +9,7 @@ import helmet from "helmet";
 import { toNodeHandler } from "better-auth/node";
 import { Logger } from "nestjs-pino";
 import { NestFactory } from "@nestjs/core";
+import pino from "pino";
 
 import { AppModule } from "./app.module.js";
 import { RuntimeConfigService } from "./common/config/runtime-config.service.js";
@@ -16,6 +17,7 @@ import { ProblemJsonFilter } from "./common/errors/problem-json.filter.js";
 import { AuthService } from "./auth/auth.service.js";
 import { requireSession } from "./auth/require-session.middleware.js";
 import { ImportsQueue } from "./imports/imports.queue.js";
+import { withDeadline } from "./common/process/deadline.js";
 
 const BULL_BOARD_BASE_PATH = "/api/admin/queues";
 
@@ -48,7 +50,6 @@ async function bootstrap(): Promise<void> {
   });
   httpAdapter.use(BULL_BOARD_BASE_PATH, requireSession(auth), bullBoardServerAdapter.getRouter());
 
-  app.enableShutdownHooks();
   app.useGlobalFilters(new ProblemJsonFilter(app.get(Logger)));
   app.setGlobalPrefix("api");
   app.use(helmet());
@@ -59,6 +60,33 @@ async function bootstrap(): Promise<void> {
     credentials: true
   });
   await app.listen(config.env.API_PORT, "0.0.0.0");
+
+  let isShuttingDown = false;
+  const shutdown = async (signal: NodeJS.Signals): Promise<void> => {
+    if (isShuttingDown) return;
+    isShuttingDown = true;
+    const logger = app.get(Logger);
+    logger.log({ event: "api.stopping", signal }, "api process stopping");
+    try {
+      await withDeadline(
+        "API graceful shutdown",
+        config.env.GRACEFUL_SHUTDOWN_TIMEOUT_MS,
+        app.close()
+      );
+      logger.log({ event: "api.stopped", signal }, "api process stopped");
+    } catch (error: unknown) {
+      logger.fatal({ event: "api.shutdown_failed", signal, err: error }, "api shutdown failed");
+      process.exit(1);
+    }
+  };
+  process.once("SIGTERM", () => void shutdown("SIGTERM"));
+  process.once("SIGINT", () => void shutdown("SIGINT"));
 }
 
-void bootstrap();
+void bootstrap().catch((error: unknown) => {
+  pino({ level: process.env.LOG_LEVEL ?? "error" }).fatal(
+    { event: "api.bootstrap_failed", err: error },
+    "api bootstrap failed"
+  );
+  process.exitCode = 1;
+});

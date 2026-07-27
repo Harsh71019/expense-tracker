@@ -986,6 +986,18 @@ registry.registerPath({
     ...problemResponses
   }
 });
+registry.registerPath({
+  method: "get",
+  path: "/v1/metrics",
+  security: secured,
+  responses: {
+    200: {
+      description: "Prometheus text exposition for backend runtime health",
+      content: { "text/plain": { schema: z.string() } }
+    },
+    ...problemResponses
+  }
+});
 
 registry.registerComponent("securitySchemes", "cookieAuth", {
   type: "apiKey",

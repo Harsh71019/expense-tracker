@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { Injectable } from "@nestjs/common";
 import type { OnModuleDestroy } from "@nestjs/common";
 import { Redis } from "ioredis";
+import { z } from "zod";
 
 import { RuntimeConfigService } from "../config/runtime-config.service.js";
 
@@ -60,6 +61,11 @@ end
 return {totalHits, math.ceil(timeToExpireMs / 1000), isBlocked and 1 or 0, math.ceil(timeToBlockExpireMs / 1000)}
 `;
 
+const WORKER_HEARTBEAT_KEY = "treasury-ops:worker:heartbeat";
+const WorkerHeartbeatSchema = z.iso
+  .datetime({ offset: true })
+  .transform((value) => new Date(value));
+
 @Injectable()
 export class RedisService implements OnModuleDestroy {
   private readonly client: Redis;
@@ -73,11 +79,18 @@ export class RedisService implements OnModuleDestroy {
   }
 
   async setWorkerHeartbeat(): Promise<void> {
-    await this.client.set("treasury-ops:worker:heartbeat", new Date().toISOString(), "EX", 60);
+    await this.client.set(WORKER_HEARTBEAT_KEY, new Date().toISOString(), "EX", 60);
   }
 
   async hasWorkerHeartbeat(): Promise<boolean> {
-    return (await this.client.exists("treasury-ops:worker:heartbeat")) === 1;
+    return (await this.client.exists(WORKER_HEARTBEAT_KEY)) === 1;
+  }
+
+  async workerHeartbeatAgeSeconds(now: Date = new Date()): Promise<number | null> {
+    const value = await this.client.get(WORKER_HEARTBEAT_KEY);
+    if (value === null) return null;
+    const heartbeat = WorkerHeartbeatSchema.parse(value);
+    return Math.max(0, (now.getTime() - heartbeat.getTime()) / 1000);
   }
 
   async get(key: string): Promise<string | null> {

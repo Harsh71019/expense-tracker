@@ -725,9 +725,9 @@ Conventions: controllers do HTTP only; services own business rules and transacti
 
 ## 16. Observability (upgrade from "logs + GlitchTip")
 
-- **Correlation:** `x-request-id` accepted-or-generated per request, propagated into BullMQ job data, present on every pino log line and audit entry. One id traces a CSV row from upload → parse job → commit txn → audit.
+- **Implemented correlation:** `x-request-id` is accepted or generated per request. Queue producers copy it into zod-validated job payloads, and workers restore it as the structured-log `reqId`. One id follows an upload from the API into its parse worker.
 - **OpenTelemetry:** auto-instrumentation for HTTP/Mongoose/BullMQ/Redis exporting OTLP → a tiny **Grafana LGTM stack** (or just Tempo+Grafana) in an `observability` LXC. Traces answer "why was commit slow" without printf debugging.
-- **Metrics:** `/metrics` Prometheus endpoint — RED metrics per route, queue depth/latency, txn retry count, balance-drift gauge (from the Sunday verify cron; **alert if ever non-zero**), import success ratio.
+- **Implemented metrics:** authenticated `/api/v1/metrics` exposes RED counters/duration by bounded route pattern, live BullMQ depth/failures, `withTxn` retries/outcomes/duration, worker-heartbeat age, and Redis-backed balance-drift count/verification age. See `docs/backend/OBSERVABILITY-RUNBOOK.md`.
 - **SLOs (yes, for one user — they're the point):** p95 write < 150 ms LAN, p95 dashboard read < 100 ms (rollup-backed), import commit of 1k rows < 30 s, error budget: zero balance-drift events.
 - **Log retention:** pino → Loki, 30 days; audit_log in Mongo is permanent (it's data, not logs).
 

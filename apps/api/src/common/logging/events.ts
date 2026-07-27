@@ -16,6 +16,7 @@ export const LogEvent = {
   RollupRefreshFailed: "rollups.refresh_failed",
   BalanceDriftDetected: "balances.drift_detected",
   BalancesVerified: "balances.verified",
+  MetricsWriteFailed: "observability.metrics_write_failed",
   StagedRowsCleaned: "imports.staged_rows_cleaned",
   SpendingWarningsScheduled: "spending_warnings.scheduled",
   SpendingWarningsAnalyzed: "spending_warnings.analyzed",

@@ -23,6 +23,7 @@ describe("parseRuntimeEnv", () => {
     expect(environment.DATABASE_IDLE_IN_TXN_TIMEOUT_MS).toBe(30_000);
     expect(environment.READINESS_TIMEOUT_MS).toBe(2_000);
     expect(environment.GRACEFUL_SHUTDOWN_TIMEOUT_MS).toBe(15_000);
+    expect(environment.LOG_LEVEL).toBe("info");
   });
 
   it("rejects an incomplete environment", () => {

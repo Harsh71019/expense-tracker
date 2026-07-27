@@ -77,6 +77,9 @@ describe("production HTTP composition", () => {
     expect(readiness.status).toBe(200);
     expect(await readiness.json()).toEqual({ status: "ok", postgres: "ok", redis: "ok" });
 
+    const unauthenticatedMetrics = await fetch(`${baseUrl}/api/v1/metrics`);
+    expect(unauthenticatedMetrics.status).toBe(401);
+
     const unauthenticated = await fetch(`${baseUrl}/api/v1/accounts`);
     expect(unauthenticated.status).toBe(401);
     expect(unauthenticated.headers.get("content-type")).toContain("application/problem+json");
@@ -85,6 +88,17 @@ describe("production HTTP composition", () => {
       code: "auth.unauthenticated",
       retryable: false
     });
+
+    const metrics = await fetch(`${baseUrl}/api/v1/metrics`, {
+      headers: { cookie: sessionA }
+    });
+    expect(metrics.status).toBe(200);
+    expect(metrics.headers.get("content-type")).toContain("text/plain");
+    const metricsBody = await metrics.text();
+    expect(metricsBody).toContain("treasuryops_queue_jobs");
+    expect(metricsBody).toContain("treasuryops_worker_heartbeat_age_seconds");
+    expect(metricsBody).toContain("treasuryops_balance_drift_accounts");
+    expect(metricsBody).toContain('route="/api/v1/accounts"');
   });
 
   it("creates once, replays once, and naturally replays a reversal", async () => {
@@ -211,12 +225,15 @@ describe("production HTTP composition", () => {
     expect(response.status).toBe(201);
     const batch = await parseResponse(response, ImportBatchSchema);
     expect(response.headers.get("location")).toBe(`/api/v1/imports/${batch.id}`);
+    const requestId = response.headers.get("x-request-id");
+    expect(requestId).toBeTruthy();
 
     const queued = await nonNullApp(app).get(ImportsQueue).getQueue().getJob(batch.id);
     expect(queued?.data).toMatchObject({
       batchId: batch.id,
       userId: batch.userId,
-      accountId: account.id
+      accountId: account.id,
+      correlationId: requestId
     });
   });
 

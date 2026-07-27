@@ -54,20 +54,41 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
     return () => clearTimeout(timeout);
   }, [filters, query, router]);
 
-  const isFiltered =
-    filters.q !== undefined ||
-    filters.accountId !== undefined ||
-    filters.categoryId !== undefined ||
-    filters.from !== undefined ||
-    filters.to !== undefined;
+  const activeFilterCount = [
+    filters.q,
+    filters.accountId,
+    filters.categoryId,
+    filters.from,
+    filters.to
+  ].filter((value) => value !== undefined).length;
+
+  const isFiltered = activeFilterCount > 0;
 
   function clear(): void {
     setQuery("");
     router.push("/transactions");
   }
 
+  // Keyboard shortcut: Press Escape to clear active filters
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent): void {
+      if (event.key === "Escape" && isFiltered) {
+        setQuery("");
+        router.push("/transactions");
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isFiltered, router]);
+
   return (
-    <div className="mb-4 flex flex-wrap items-center gap-2.5 rounded-2xl border border-border bg-surface-elevated p-3">
+    <div
+      className={`mb-4 flex flex-wrap items-center gap-2.5 rounded-2xl border p-3 transition-colors duration-150 ${
+        isFiltered
+          ? "border-accent/40 bg-surface-elevated shadow-sm"
+          : "border-border bg-surface-elevated"
+      }`}
+    >
       <div className="flex min-w-52 flex-1 items-center gap-2 rounded-lg border border-border bg-surface-muted px-3">
         <span className="text-foreground-muted" aria-hidden="true">
           ⌕
@@ -79,6 +100,16 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
           aria-label="Search description"
           className="w-full bg-transparent py-2.5 text-sm text-foreground outline-none placeholder:text-foreground-muted/60"
         />
+        {query !== "" && (
+          <button
+            type="button"
+            onClick={() => setQuery("")}
+            aria-label="Clear search input"
+            className="text-foreground-muted hover:text-foreground text-xs p-1"
+          >
+            ✕
+          </button>
+        )}
       </div>
       <select
         aria-label="Filter by account"
@@ -141,9 +172,14 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
         <button
           type="button"
           onClick={clear}
-          className="rounded-lg px-2.5 py-2 text-sm font-medium text-foreground-muted hover:text-foreground"
+          aria-label="Clear"
+          title="Clear all filters (Esc)"
+          className="flex items-center gap-1.5 rounded-lg border border-border/80 bg-surface-muted/60 px-3 py-2 text-xs font-semibold text-foreground-muted hover:border-expense/40 hover:bg-expense/10 hover:text-expense transition-colors"
         >
-          Clear
+          <span>Clear</span>
+          <span className="rounded-full bg-accent/20 px-1.5 py-0.2 font-mono text-[10px] text-accent">
+            {activeFilterCount}
+          </span>
         </button>
       ) : null}
     </div>

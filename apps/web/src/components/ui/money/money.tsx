@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import { formatMinor, type MinorAmount } from "@treasury-ops/shared";
 
+import { usePrivacy } from "@/lib/privacy/privacy-context";
+
 type MoneyVariant = "income" | "expense" | "neutral";
 type MoneySize = "sm" | "md" | "lg" | "hero";
 
@@ -10,6 +12,7 @@ type MoneyProps = {
   signed?: boolean;
   size?: MoneySize;
   className?: string;
+  ignorePrivacy?: boolean;
 };
 
 type SignedMoneyProps = Omit<MoneyProps, "minor" | "variant" | "signed"> & {
@@ -40,8 +43,10 @@ export function Money({
   variant = "neutral",
   signed = false,
   size = "md",
-  className
+  className,
+  ignorePrivacy = false
 }: MoneyProps): ReactNode {
+  const { privacyMode } = usePrivacy();
   const prefix = signed ? signPrefix[variant] : "";
   const classes = [
     "font-mono font-semibold tabular-nums",
@@ -51,6 +56,10 @@ export function Money({
   ]
     .filter(Boolean)
     .join(" ");
+
+  if (privacyMode && !ignorePrivacy) {
+    return <span className={classes}>{`${prefix}₹ ••••••`}</span>;
+  }
 
   return <span className={classes}>{`${prefix}${formatMinor(minor)}`}</span>;
 }

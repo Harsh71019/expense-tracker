@@ -208,7 +208,9 @@ export {
   formatMinorInput,
   formatSignedCompactMinor,
   isMinorAmount,
-  parseMinor
+  parseMinor,
+  parseSafeIntegerMinor,
+  sumMinorAmounts
 } from "./money.js";
 export type { MinorAmount } from "./money.js";
 export { PageInfoSchema } from "./pagination.js";

@@ -4,6 +4,7 @@ export const ErrorCodes = [
   "common.invalid_cursor",
   "common.internal",
   "common.dependency_unavailable",
+  "money.out_of_range",
   "auth.unauthenticated",
   "auth.insufficient_scope",
   "auth.rate_limited",

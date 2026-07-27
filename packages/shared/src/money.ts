@@ -4,6 +4,7 @@ const PAISA_PER_RUPEE = 100;
 const PAISA_PER_LAKH = 1_00_000 * PAISA_PER_RUPEE;
 const PAISA_PER_CRORE = 1_00_00_000 * PAISA_PER_RUPEE;
 const MAX_SAFE_MINOR_AMOUNT = BigInt(Number.MAX_SAFE_INTEGER);
+const MIN_SAFE_MINOR_AMOUNT = -MAX_SAFE_MINOR_AMOUNT;
 const MONEY_INPUT =
   /^(?:₹\s*)?((?:\d+|\d{1,3}(?:,\d{3})+|\d{1,2}(?:,\d{2})*,\d{3}))(?:\.(\d{1,2}))?$/;
 
@@ -77,4 +78,38 @@ export function parseMinor(input: string): MinorAmount {
   }
 
   return Number(minor);
+}
+
+export function parseSafeIntegerMinor(value: unknown): number {
+  if (typeof value === "number") {
+    if (!Number.isSafeInteger(value)) {
+      throw new RangeError("Money value exceeds the supported paise range.");
+    }
+    return value;
+  }
+
+  let parsed: bigint;
+  if (typeof value === "bigint") {
+    parsed = value;
+  } else if (typeof value === "string" && /^-?\d+$/.test(value)) {
+    parsed = BigInt(value);
+  } else {
+    throw new TypeError("Money value must be an integer number, bigint, or decimal string.");
+  }
+
+  if (parsed < MIN_SAFE_MINOR_AMOUNT || parsed > MAX_SAFE_MINOR_AMOUNT) {
+    throw new RangeError("Money value exceeds the supported paise range.");
+  }
+  return Number(parsed);
+}
+
+export function sumMinorAmounts(values: Iterable<number>): number {
+  let total = 0n;
+  for (const value of values) {
+    if (!Number.isSafeInteger(value)) {
+      throw new RangeError("Money value exceeds the supported paise range.");
+    }
+    total += BigInt(value);
+  }
+  return parseSafeIntegerMinor(total);
 }

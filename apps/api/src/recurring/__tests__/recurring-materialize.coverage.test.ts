@@ -54,7 +54,11 @@ function createMaterializer(
     findDue: vi.fn().mockResolvedValue([rule]),
     claimRun: vi.fn().mockResolvedValue(options.claimed ?? true)
   };
-  const accounts = { applyBalanceDelta: vi.fn().mockResolvedValue(options.applied ?? true) };
+  const accounts = {
+    applyBalanceDelta: vi
+      .fn()
+      .mockResolvedValue(options.applied === false ? "account_not_found" : "applied")
+  };
   const transactions = {
     create:
       options.transactionError === undefined

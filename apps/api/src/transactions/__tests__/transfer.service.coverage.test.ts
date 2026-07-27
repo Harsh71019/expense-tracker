@@ -93,7 +93,10 @@ function createService(overrides: Overrides = {}) {
 describe("TransferService create", () => {
   it("rejects a missing destination account after debiting the source", async () => {
     const accounts = {
-      applyBalanceDelta: vi.fn().mockResolvedValueOnce(true).mockResolvedValueOnce(false)
+      applyBalanceDelta: vi
+        .fn()
+        .mockResolvedValueOnce("applied")
+        .mockResolvedValueOnce("account_not_found")
     };
     const context = createService({ accounts });
 
@@ -178,7 +181,7 @@ describe("TransferService reverse", () => {
         .mockResolvedValueOnce(TO_REVERSAL),
       markReversed: vi.fn().mockResolvedValue(true)
     };
-    const accounts = { applyReversalBalanceDelta: vi.fn().mockResolvedValue(true) };
+    const accounts = { applyReversalBalanceDelta: vi.fn().mockResolvedValue("applied") };
     const context = createService({ transactions, accounts });
 
     const result = await context.service.reverse("u1", GROUP_ID);
@@ -242,7 +245,7 @@ describe("TransferService reverse", () => {
           markReversed: vi.fn().mockResolvedValue(true),
           findLegsByTransferGroupId: vi.fn().mockResolvedValue([])
         },
-        accounts: { applyReversalBalanceDelta: vi.fn().mockResolvedValue(false) },
+        accounts: { applyReversalBalanceDelta: vi.fn().mockResolvedValue("account_not_found") },
         expected: EntityNotFoundError
       }
     ];

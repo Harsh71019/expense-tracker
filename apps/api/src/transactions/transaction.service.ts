@@ -10,6 +10,7 @@ import {
 import { Logger } from "nestjs-pino";
 
 import { AccountRepository } from "../accounts/account.repository.js";
+import { assertBalanceDeltaApplied } from "../accounts/balance-delta.js";
 import { AuditRepository } from "../audit/audit.repository.js";
 import { CategoryRepository } from "../categories/category.repository.js";
 import { DATABASE_CONNECTION } from "../common/db/db.module.js";
@@ -52,9 +53,9 @@ export class TransactionService {
         }
 
         const deltaMinor = input.type === "income" ? input.amountMinor : -input.amountMinor;
-        if (!(await this.accounts.applyBalanceDelta(userId, input.accountId, deltaMinor, tx))) {
-          throw new EntityNotFoundError("Account");
-        }
+        assertBalanceDeltaApplied(
+          await this.accounts.applyBalanceDelta(userId, input.accountId, deltaMinor, tx)
+        );
 
         const created = await this.transactions.create(userId, input, idempotencyKey, tx);
         await this.audit.record(userId, "transaction.create", created.id, tx);
@@ -161,16 +162,9 @@ export class TransactionService {
 
         const deltaMinor =
           original.type === "expense" ? original.amountMinor : -original.amountMinor;
-        if (
-          !(await this.accounts.applyReversalBalanceDelta(
-            userId,
-            original.accountId,
-            deltaMinor,
-            tx
-          ))
-        ) {
-          throw new EntityNotFoundError("Account");
-        }
+        assertBalanceDeltaApplied(
+          await this.accounts.applyReversalBalanceDelta(userId, original.accountId, deltaMinor, tx)
+        );
 
         await this.audit.record(userId, "transaction.reverse", reversal.id, tx);
         return reversal;

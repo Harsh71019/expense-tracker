@@ -47,4 +47,27 @@ describe("AccountRepository tenancy and archive behavior", () => {
       .where(and(eq(accounts.userId, "user-a"), eq(accounts.name, "Cash")));
     expect(archived).toMatchObject({ isArchived: true, balanceMinor: 5_000 });
   });
+
+  it("rejects a balance delta that would exceed the JavaScript safe-integer range", async () => {
+    const account = await withTxn(testDb.db, (tx) =>
+      repository.create(
+        "user-a",
+        {
+          name: "Boundary Account",
+          type: "bank",
+          openingBalanceMinor: Number.MAX_SAFE_INTEGER
+        },
+        tx
+      )
+    );
+
+    const result = await withTxn(testDb.db, (tx) =>
+      repository.applyBalanceDelta("user-a", account.id, 1, tx)
+    );
+
+    expect(result).toBe("out_of_range");
+    expect(await repository.findById("user-a", account.id)).toMatchObject({
+      balanceMinor: Number.MAX_SAFE_INTEGER
+    });
+  });
 });

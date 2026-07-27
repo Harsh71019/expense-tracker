@@ -139,7 +139,7 @@ describe("ImportsService Unit Tests", () => {
     };
     const mockAccounts = {
       findById: vi.fn(async () => ({ id: "acc_1", balanceMinor: 10000 })),
-      applyReversalBalanceDelta: vi.fn(async () => true)
+      applyReversalBalanceDelta: vi.fn(async () => "applied")
     };
     const mockTransactions = {
       findPostedByImportBatchId: vi.fn(async () => [

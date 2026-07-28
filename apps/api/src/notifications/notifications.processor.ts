@@ -6,6 +6,7 @@ import { RuntimeConfigService } from "../common/config/runtime-config.service.js
 import { LogEvent } from "../common/logging/events.js";
 import { LoggingContextService } from "../common/logging/logging-context.service.js";
 import { createQueueConnection } from "../common/queue/queue-connection.js";
+import { isTerminalJobFailure } from "../common/queue/queue-policy.js";
 import {
   DELIVER_NOTIFICATION_JOB_NAME,
   DeliverNotificationJobDataSchema,
@@ -53,6 +54,7 @@ export function startNotificationsWorker(
   ).on("failed", (job, error) => {
     const data =
       job === undefined ? undefined : DeliverNotificationJobDataSchema.safeParse(job.data);
+    const terminal = job !== undefined && isTerminalJobFailure(job);
     logger.error(
       {
         event: LogEvent.NotificationDeliveryFailed,
@@ -64,9 +66,26 @@ export function startNotificationsWorker(
               notificationId: data.data.notificationId
             }
           : {}),
+        terminal,
+        attemptsMade: job?.attemptsMade,
         err: error
       },
       "notification delivery failed"
     );
+    if (job !== undefined && data?.success === true && terminal) {
+      void service
+        .markTerminalFailure(data.data.userId, data.data.notificationId, job.attemptsMade)
+        .catch((persistError: unknown) => {
+          logger.error(
+            {
+              event: LogEvent.NotificationDeliveryFailed,
+              notificationId: data.data.notificationId,
+              terminal: true,
+              err: persistError
+            },
+            "terminal notification failure could not be persisted"
+          );
+        });
+    }
   });
 }

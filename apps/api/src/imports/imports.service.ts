@@ -101,6 +101,10 @@ export class ImportsService {
     return batch;
   }
 
+  async markTerminalParseFailure(userId: string, batchId: ImportBatchId): Promise<void> {
+    await this.batches.markTerminalParseFailure(userId, batchId);
+  }
+
   /**
    * Parses a CSV file into staged_rows and flips the batch to "staged" (or
    * "failed" if the file itself doesn't parse as CSV at all — a per-row

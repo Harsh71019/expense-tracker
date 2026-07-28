@@ -56,6 +56,8 @@ export const ImportBatchStatusSchema = z.enum([
   "failed"
 ]);
 
+export const ImportFailureCodeSchema = z.enum(["invalid_csv", "parse_retries_exhausted"]);
+
 export const ImportBatchStatsSchema = z.object({
   total: z.number().int().min(0),
   staged: z.number().int().min(0),
@@ -71,6 +73,8 @@ export const ImportBatchSchema = z.object({
   fileHash: z.string().min(1),
   mapping: ColumnMappingSchema,
   status: ImportBatchStatusSchema,
+  failureCode: ImportFailureCodeSchema.optional(),
+  failedAt: z.coerce.date().optional(),
   stats: ImportBatchStatsSchema,
   committedAt: z.coerce.date().optional(),
   revertedAt: z.coerce.date().optional(),
@@ -160,6 +164,7 @@ export type ColumnMapping = z.infer<typeof ColumnMappingSchema>;
 export type ImportBatchId = z.infer<typeof ImportBatchIdSchema>;
 export type StagedRowId = z.infer<typeof StagedRowIdSchema>;
 export type ImportBatchStatus = z.infer<typeof ImportBatchStatusSchema>;
+export type ImportFailureCode = z.infer<typeof ImportFailureCodeSchema>;
 export type ImportBatchStats = z.infer<typeof ImportBatchStatsSchema>;
 export type ImportBatch = z.infer<typeof ImportBatchSchema>;
 export type ParsedRow = z.infer<typeof ParsedRowSchema>;

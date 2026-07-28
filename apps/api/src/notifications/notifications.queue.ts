@@ -6,6 +6,7 @@ import { z } from "zod";
 import { RuntimeConfigService } from "../common/config/runtime-config.service.js";
 import { LoggingContextService } from "../common/logging/logging-context.service.js";
 import { createQueueConnection } from "../common/queue/queue-connection.js";
+import { QUEUE_RETENTION } from "../common/queue/queue-policy.js";
 
 export const NOTIFICATIONS_QUEUE_NAME = "notifications";
 export const DELIVER_NOTIFICATION_JOB_NAME = "deliver";
@@ -46,8 +47,19 @@ export class NotificationsQueue implements OnModuleDestroy {
     await this.queue.add(DELIVER_NOTIFICATION_JOB_NAME, data, {
       jobId: notificationId,
       attempts: 5,
-      backoff: { type: "exponential", delay: 2_000 }
+      backoff: { type: "exponential", delay: 2_000 },
+      ...QUEUE_RETENTION
     });
+  }
+
+  async replaceTerminalDelivery(userId: string, notificationId: string): Promise<void> {
+    const existing = await this.queue.getJob(notificationId);
+    if (existing !== undefined) {
+      const state = await existing.getState();
+      if (state !== "completed" && state !== "failed") return;
+      await existing.remove();
+    }
+    await this.enqueueDelivery(userId, notificationId);
   }
 
   /** Read-only access to the underlying Queue — Bull Board needs the real instance. */

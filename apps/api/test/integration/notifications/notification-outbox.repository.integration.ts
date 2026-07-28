@@ -71,6 +71,30 @@ describe("NotificationOutboxRepository", () => {
     expect(ids).not.toContain(first.id);
   });
 
+  it("durably dead-letters exhausted delivery and explicitly requeues it", async () => {
+    const entry = await withTxn(testDb.db, (tx) =>
+      outbox.enqueue("user-2", "budget_alert", { budgetId: "dead-letter" }, tx)
+    );
+
+    await outbox.markTerminalFailure("user-2", entry.id, 5);
+
+    const failed = await outbox.findById("user-2", entry.id);
+    expect(failed).toMatchObject({
+      failureCode: "delivery_retries_exhausted",
+      deliveryAttempts: 5
+    });
+    expect(failed?.failedAt).toBeInstanceOf(Date);
+    expect((await outbox.systemFindPending(100)).map((item) => item.id)).not.toContain(entry.id);
+    expect(await outbox.findById("user-1", entry.id)).toBeNull();
+
+    await expect(outbox.requeueTerminalFailure("user-2", entry.id)).resolves.toBe(true);
+    const requeued = await outbox.findById("user-2", entry.id);
+    expect(requeued?.failedAt).toBeUndefined();
+    expect(requeued?.failureCode).toBeUndefined();
+    expect(requeued?.deliveryAttempts).toBe(0);
+    expect((await outbox.systemFindPending(100)).map((item) => item.id)).toContain(entry.id);
+  });
+
   it("markSent is a no-op once an entry is already sent", async () => {
     const entry = await withTxn(testDb.db, (tx) =>
       outbox.enqueue("user-3", "budget_alert", {}, tx)

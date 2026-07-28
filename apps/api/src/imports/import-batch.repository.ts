@@ -109,10 +109,30 @@ export class ImportBatchRepository {
       .update(importBatches)
       .set({
         status,
+        failureCode: status === "failed" ? "invalid_csv" : null,
+        failedAt: status === "failed" ? new Date() : null,
         statsTotal: stats.total,
         statsStaged: stats.staged,
         statsDuplicates: stats.duplicates,
         statsCommitted: stats.committed,
+        updatedAt: new Date()
+      })
+      .where(
+        and(
+          eq(importBatches.userId, userId),
+          eq(importBatches.id, batchId),
+          eq(importBatches.status, "pending")
+        )
+      );
+  }
+
+  async markTerminalParseFailure(userId: string, batchId: ImportBatchId): Promise<void> {
+    await this.db
+      .update(importBatches)
+      .set({
+        status: "failed",
+        failureCode: "parse_retries_exhausted",
+        failedAt: new Date(),
         updatedAt: new Date()
       })
       .where(
@@ -182,6 +202,8 @@ function toImportBatch(row: typeof importBatches.$inferSelect): ImportBatch {
     fileHash: row.fileHash,
     mapping: row.mapping,
     status: row.status,
+    failureCode: stripped.failureCode,
+    failedAt: stripped.failedAt,
     stats: {
       total: row.statsTotal,
       staged: row.statsStaged,

@@ -7,6 +7,7 @@ import { z } from "zod";
 import { RuntimeConfigService } from "../common/config/runtime-config.service.js";
 import { LoggingContextService } from "../common/logging/logging-context.service.js";
 import { createQueueConnection } from "../common/queue/queue-connection.js";
+import { QUEUE_RETENTION } from "../common/queue/queue-policy.js";
 
 export const IMPORTS_QUEUE_NAME = "imports";
 export const PARSE_IMPORT_JOB_NAME = "parse";
@@ -52,7 +53,8 @@ export class ImportsQueue implements OnModuleDestroy {
       // (e.g. a retried HTTP request) is a no-op, not a second job.
       jobId: jobData.batchId,
       attempts: 3,
-      backoff: { type: "exponential", delay: 5_000 }
+      backoff: { type: "exponential", delay: 5_000 },
+      ...QUEUE_RETENTION
     });
   }
 

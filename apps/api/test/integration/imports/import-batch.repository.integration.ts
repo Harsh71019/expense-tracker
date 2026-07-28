@@ -117,6 +117,27 @@ describe("ImportBatchRepository", () => {
     expect(stillStaged).toMatchObject({ status: "staged", stats: { total: 3, staged: 2 } });
   });
 
+  it("durably records terminal parse exhaustion and remains tenant scoped", async () => {
+    const batch = await batches.create(
+      "user-a",
+      accountId,
+      "terminal.csv",
+      "sha256:terminal",
+      MAPPING
+    );
+
+    await batches.markTerminalParseFailure("user-b", batch.id);
+    expect(await batches.findById("user-a", batch.id)).toMatchObject({ status: "pending" });
+
+    await batches.markTerminalParseFailure("user-a", batch.id);
+    const failed = await batches.findById("user-a", batch.id);
+    expect(failed).toMatchObject({
+      status: "failed",
+      failureCode: "parse_retries_exhausted"
+    });
+    expect(failed?.failedAt).toBeInstanceOf(Date);
+  });
+
   it("lists a user's batches newest first, scoped to that user", async () => {
     const first = await batches.create(
       "user-list",

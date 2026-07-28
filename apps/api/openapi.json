@@ -230,6 +230,14 @@
             "type": "string",
             "enum": ["pending", "staged", "committed", "reverted", "failed"]
           },
+          "failureCode": {
+            "type": "string",
+            "enum": ["invalid_csv", "parse_retries_exhausted"]
+          },
+          "failedAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
           "stats": {
             "type": "object",
             "properties": {

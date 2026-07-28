@@ -4,6 +4,7 @@ import { NotificationOutboxRepository } from "./notification-outbox.repository.j
 import { NotificationsQueue } from "./notifications.queue.js";
 import { NotificationDeliveryService } from "./notification-delivery.service.js";
 import { NotificationSweepService } from "./notification-sweep.service.js";
+import { NotificationRecoveryService } from "./notification-recovery.service.js";
 import { NOTIFICATION_ADAPTER } from "./notification-adapter.js";
 import { LoggingNotificationAdapter } from "./logging-notification-adapter.js";
 
@@ -18,9 +19,15 @@ import { LoggingNotificationAdapter } from "./logging-notification-adapter.js";
     NotificationOutboxRepository,
     NotificationsQueue,
     NotificationDeliveryService,
+    NotificationRecoveryService,
     NotificationSweepService,
     { provide: NOTIFICATION_ADAPTER, useClass: LoggingNotificationAdapter }
   ],
-  exports: [NotificationOutboxRepository, NotificationsQueue, NotificationDeliveryService]
+  exports: [
+    NotificationOutboxRepository,
+    NotificationsQueue,
+    NotificationDeliveryService,
+    NotificationRecoveryService
+  ]
 })
 export class NotificationsModule {}

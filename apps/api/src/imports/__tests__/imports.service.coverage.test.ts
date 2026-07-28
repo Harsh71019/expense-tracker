@@ -148,6 +148,15 @@ describe("assertValidImportFile", () => {
 });
 
 describe("ImportsService create and parse", () => {
+  it("persists terminal parse exhaustion through the batch repository", async () => {
+    const batches = { markTerminalParseFailure: vi.fn().mockResolvedValue(undefined) };
+    const { service } = createService({ batches });
+
+    await service.markTerminalParseFailure("u1", BATCH_ID);
+
+    expect(batches.markTerminalParseFailure).toHaveBeenCalledWith("u1", BATCH_ID);
+  });
+
   it("creates and queues a valid new batch", async () => {
     const batches = {
       findByFileHash: vi.fn().mockResolvedValue(null),

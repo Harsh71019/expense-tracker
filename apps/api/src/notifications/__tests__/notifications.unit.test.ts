@@ -24,14 +24,17 @@ describe("Notification Services Unit Tests", () => {
 
       // @ts-expect-error mock service args
       const service = new NotificationDeliveryService(mockOutboxRepo, mockAdapter);
-      await service.deliver("123e4567-e89b-12d3-a456-426614174000");
+      await service.deliver("u1", "123e4567-e89b-12d3-a456-426614174000");
 
       expect(mockAdapter.send).toHaveBeenCalledWith({
         userId: "u1",
         type: "budget_alert",
         payload: { title: "Alert", message: "Low balance" }
       });
-      expect(mockOutboxRepo.markSent).toHaveBeenCalledWith("123e4567-e89b-12d3-a456-426614174000");
+      expect(mockOutboxRepo.markSent).toHaveBeenCalledWith(
+        "u1",
+        "123e4567-e89b-12d3-a456-426614174000"
+      );
     });
   });
 
@@ -39,7 +42,7 @@ describe("Notification Services Unit Tests", () => {
     it("sweep enqueues pending deliveries on worker role", async () => {
       const mockConfig = createMockConfig("worker");
       const mockOutboxRepo = {
-        findPending: vi.fn(async () => [sampleNotification])
+        systemFindPending: vi.fn(async () => [sampleNotification])
       };
       const mockQueue = { enqueueDelivery: vi.fn(async () => undefined) };
       const mockLogger = { log: vi.fn() };
@@ -53,8 +56,9 @@ describe("Notification Services Unit Tests", () => {
       );
       await service.sweep();
 
-      expect(mockOutboxRepo.findPending).toHaveBeenCalledWith(100);
+      expect(mockOutboxRepo.systemFindPending).toHaveBeenCalledWith(100);
       expect(mockQueue.enqueueDelivery).toHaveBeenCalledWith(
+        "u1",
         "123e4567-e89b-12d3-a456-426614174000"
       );
     });

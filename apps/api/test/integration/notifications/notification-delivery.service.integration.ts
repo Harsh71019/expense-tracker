@@ -53,12 +53,12 @@ describe("NotificationDeliveryService", () => {
       outbox.enqueue("user-1", "budget_alert", { budgetId: "b1" }, tx)
     );
 
-    await service.deliver(entry.id);
+    await service.deliver("user-1", entry.id);
 
     expect(adapter.sent).toEqual([
       { userId: "user-1", type: "budget_alert", payload: { budgetId: "b1" } }
     ]);
-    const stored = await outbox.findById(entry.id);
+    const stored = await outbox.findById("user-1", entry.id);
     expect(stored?.status).toBe("sent");
     expect(stored?.sentAt).toBeInstanceOf(Date);
   });
@@ -67,7 +67,7 @@ describe("NotificationDeliveryService", () => {
     const adapter = new RecordingAdapter();
     const service = new NotificationDeliveryService(outbox, adapter);
 
-    await service.deliver("3fa85f64-5717-4562-b3fc-2c963f66beef");
+    await service.deliver("user-1", "3fa85f64-5717-4562-b3fc-2c963f66beef");
 
     expect(adapter.sent).toEqual([]);
   });
@@ -79,9 +79,9 @@ describe("NotificationDeliveryService", () => {
     const entry = await withTxn(testDb.db, (tx) =>
       outbox.enqueue("user-2", "balance_drift", { accountId: "a1" }, tx)
     );
-    await outbox.markSent(entry.id);
+    await outbox.markSent("user-2", entry.id);
 
-    await service.deliver(entry.id);
+    await service.deliver("user-2", entry.id);
 
     expect(adapter.sent).toEqual([]);
   });
@@ -95,9 +95,22 @@ describe("NotificationDeliveryService", () => {
     );
     adapter.failNextCall();
 
-    await expect(service.deliver(entry.id)).rejects.toThrow("adapter down");
+    await expect(service.deliver("user-3", entry.id)).rejects.toThrow("adapter down");
 
-    const stored = await outbox.findById(entry.id);
+    const stored = await outbox.findById("user-3", entry.id);
     expect(stored?.status).toBe("pending");
+  });
+
+  it("ignores a malformed job carrying another tenant's userId", async () => {
+    const adapter = new RecordingAdapter();
+    const service = new NotificationDeliveryService(outbox, adapter);
+    const entry = await withTxn(testDb.db, (tx) =>
+      outbox.enqueue("user-1", "budget_alert", {}, tx)
+    );
+
+    await service.deliver("user-2", entry.id);
+
+    expect(adapter.sent).toEqual([]);
+    expect(await outbox.findById("user-1", entry.id)).toMatchObject({ status: "pending" });
   });
 });

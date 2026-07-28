@@ -36,7 +36,7 @@ export function startNotificationsWorker(
           jobName: job.name
         },
         async () => {
-          await service.deliver(data.notificationId);
+          await service.deliver(data.userId, data.notificationId);
           const durationMs = performance.now() - startedAt;
           logger.log(
             {

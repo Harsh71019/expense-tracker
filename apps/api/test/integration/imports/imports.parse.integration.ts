@@ -257,7 +257,7 @@ describe("Imports parse pipeline (real BullMQ worker against real Redis)", () =>
     );
     await service.parseFile(batch.id, "user-suggest", accountIdSuggest, MAPPING, CSV);
 
-    const page = await stagedRows.findByBatchId(batch.id, undefined, 10);
+    const page = await stagedRows.findByBatchId("user-suggest", batch.id, undefined, 10);
     expect(page.items[0]).toMatchObject({ suggestedCategoryId: foodCategoryId });
     expect(page.items[1]?.suggestedCategoryId).toBeUndefined();
   });

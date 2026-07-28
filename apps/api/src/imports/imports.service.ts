@@ -116,7 +116,7 @@ export class ImportsService {
     mapping: ColumnMapping,
     fileContent: string
   ): Promise<void> {
-    await this.stagedRows.deleteAllForBatch(batchId);
+    await this.stagedRows.deleteAllForBatch(userId, batchId);
 
     let records: Record<string, string>[];
     try {
@@ -127,7 +127,7 @@ export class ImportsService {
       });
       records = RawCsvRecordsSchema.parse(raw);
     } catch {
-      await this.batches.markParsed(batchId, "failed", {
+      await this.batches.markParsed(userId, batchId, "failed", {
         total: 0,
         staged: 0,
         duplicates: 0,
@@ -203,6 +203,7 @@ export class ImportsService {
 
     for (let start = 0; start < stagedRows.length; start += STAGED_ROW_INSERT_CHUNK_SIZE) {
       await this.stagedRows.insertMany(
+        userId,
         batchId,
         stagedRows.slice(start, start + STAGED_ROW_INSERT_CHUNK_SIZE)
       );
@@ -214,7 +215,7 @@ export class ImportsService {
       duplicates,
       committed: 0
     };
-    await this.batches.markParsed(batchId, "staged", stats);
+    await this.batches.markParsed(userId, batchId, "staged", stats);
   }
 
   list(userId: string): Promise<ImportBatch[]> {
@@ -237,7 +238,7 @@ export class ImportsService {
   ): Promise<StagedRowPage> {
     const batch = await this.batches.findById(userId, batchId);
     if (batch === null) throw new EntityNotFoundError("Import batch");
-    return this.stagedRows.findByBatchId(batchId, cursor, limit);
+    return this.stagedRows.findByBatchId(userId, batchId, cursor, limit);
   }
 
   async updateRow(
@@ -251,7 +252,7 @@ export class ImportsService {
 
     if (patch.suggestedCategoryId !== undefined && patch.suggestedCategoryId !== null) {
       const [row, category] = await Promise.all([
-        this.stagedRows.findById(batchId, rowId),
+        this.stagedRows.findById(userId, batchId, rowId),
         this.categories.findActiveById(userId, patch.suggestedCategoryId)
       ]);
       if (row === null) throw new EntityNotFoundError("Staged row");
@@ -261,7 +262,7 @@ export class ImportsService {
       }
     }
 
-    const updated = await this.stagedRows.updateRow(batchId, rowId, patch);
+    const updated = await this.stagedRows.updateRow(userId, batchId, rowId, patch);
     if (updated === null) throw new EntityNotFoundError("Staged row");
     return updated;
   }
@@ -286,7 +287,7 @@ export class ImportsService {
       );
     }
 
-    const includable = await this.stagedRows.findIncludableForBatch(batchId);
+    const includable = await this.stagedRows.findIncludableForBatch(userId, batchId);
     const candidateHashes = includable
       .map((row) => row.dedupeHash)
       .filter((hash): hash is string => hash !== undefined);
@@ -323,11 +324,11 @@ export class ImportsService {
           chunkSize: chunk.length,
           netMinor
         });
-        await this.batches.incrementCommittedCount(batchId, chunk.length, tx);
+        await this.batches.incrementCommittedCount(userId, batchId, chunk.length, tx);
       });
     }
 
-    await this.batches.markCommitted(batchId);
+    await this.batches.markCommitted(userId, batchId);
     const committed = await this.batches.findById(userId, batchId);
     if (committed === null) throw new EntityNotFoundError("Import batch");
     return committed;
@@ -374,7 +375,7 @@ export class ImportsService {
       });
     }
 
-    await this.batches.markReverted(batchId);
+    await this.batches.markReverted(userId, batchId);
     const reverted = await this.batches.findById(userId, batchId);
     if (reverted === null) throw new EntityNotFoundError("Import batch");
     return reverted;

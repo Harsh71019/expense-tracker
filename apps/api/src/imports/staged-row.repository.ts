@@ -6,12 +6,12 @@ import {
   type StagedRowId,
   type UpdateStagedRow
 } from "@treasury-ops/shared";
-import { and, asc, eq, gt, isNotNull } from "drizzle-orm";
+import { and, asc, eq, exists, gt, isNotNull } from "drizzle-orm";
 import { z } from "zod";
 
 import { DATABASE_CONNECTION } from "../common/db/db.module.js";
 import type { DrizzleDb } from "../common/db/db.module.js";
-import { stagedRows } from "../common/db/schema/index.js";
+import { importBatches, stagedRows } from "../common/db/schema/index.js";
 import { InvalidCursorError } from "../common/errors/invalid-cursor.error.js";
 
 export type NewStagedRow = Omit<StagedRow, "id" | "batchId">;
@@ -34,12 +34,19 @@ export class StagedRowRepository {
    * (or double-counting) a partial prior run — parse is idempotent by
    * "clear then rewrite," not by per-row skip logic.
    */
-  async deleteAllForBatch(batchId: ImportBatchId): Promise<void> {
-    await this.db.delete(stagedRows).where(eq(stagedRows.batchId, batchId));
+  async deleteAllForBatch(userId: string, batchId: ImportBatchId): Promise<void> {
+    await this.db
+      .delete(stagedRows)
+      .where(and(eq(stagedRows.batchId, batchId), this.ownedBatch(userId)));
   }
 
-  async insertMany(batchId: ImportBatchId, rows: readonly NewStagedRow[]): Promise<void> {
+  async insertMany(
+    userId: string,
+    batchId: ImportBatchId,
+    rows: readonly NewStagedRow[]
+  ): Promise<void> {
     if (rows.length === 0) return;
+    if (!(await this.batchBelongsTo(userId, batchId))) return;
     const now = new Date();
     await this.db.insert(stagedRows).values(
       rows.map((row) => ({
@@ -61,12 +68,13 @@ export class StagedRowRepository {
   }
 
   async findByBatchId(
+    userId: string,
     batchId: ImportBatchId,
     cursor: string | undefined,
     limit: number
   ): Promise<StagedRowPageResult> {
     const afterRowNumber = cursor === undefined ? null : decodeCursor(cursor);
-    const conditions = [eq(stagedRows.batchId, batchId)];
+    const conditions = [eq(stagedRows.batchId, batchId), this.ownedBatch(userId)];
     if (afterRowNumber !== null) conditions.push(gt(stagedRows.rowNumber, afterRowNumber));
 
     const rows = await this.db
@@ -85,11 +93,17 @@ export class StagedRowRepository {
     return { items, pageInfo: { nextCursor, hasMore, limit } };
   }
 
-  async findById(batchId: ImportBatchId, rowId: StagedRowId): Promise<StagedRow | null> {
+  async findById(
+    userId: string,
+    batchId: ImportBatchId,
+    rowId: StagedRowId
+  ): Promise<StagedRow | null> {
     const [row] = await this.db
       .select()
       .from(stagedRows)
-      .where(and(eq(stagedRows.id, rowId), eq(stagedRows.batchId, batchId)));
+      .where(
+        and(eq(stagedRows.id, rowId), eq(stagedRows.batchId, batchId), this.ownedBatch(userId))
+      );
     return row === undefined ? null : toStagedRow(row);
   }
 
@@ -99,11 +113,13 @@ export class StagedRowRepository {
    * `include: true` (which implies `parsed` is set — parseFile only ever
    * marks a row includable when it parsed cleanly and wasn't a duplicate).
    */
-  async findIncludableForBatch(batchId: ImportBatchId): Promise<StagedRow[]> {
+  async findIncludableForBatch(userId: string, batchId: ImportBatchId): Promise<StagedRow[]> {
     const rows = await this.db
       .select()
       .from(stagedRows)
-      .where(and(eq(stagedRows.batchId, batchId), eq(stagedRows.include, true)))
+      .where(
+        and(eq(stagedRows.batchId, batchId), eq(stagedRows.include, true), this.ownedBatch(userId))
+      )
       .orderBy(asc(stagedRows.rowNumber));
     return rows.map(toStagedRow);
   }
@@ -116,6 +132,7 @@ export class StagedRowRepository {
    * Enforced in the filter itself rather than the caller.
    */
   async updateRow(
+    userId: string,
     batchId: ImportBatchId,
     rowId: StagedRowId,
     patch: UpdateStagedRow
@@ -126,7 +143,11 @@ export class StagedRowRepository {
       set.suggestedCategoryId = patch.suggestedCategoryId;
     }
 
-    const conditions = [eq(stagedRows.id, rowId), eq(stagedRows.batchId, batchId)];
+    const conditions = [
+      eq(stagedRows.id, rowId),
+      eq(stagedRows.batchId, batchId),
+      this.ownedBatch(userId)
+    ];
     if (patch.include === true) conditions.push(isNotNull(stagedRows.parsedOccurredAt));
 
     const [row] = await this.db
@@ -135,6 +156,24 @@ export class StagedRowRepository {
       .where(and(...conditions))
       .returning();
     return row === undefined ? null : toStagedRow(row);
+  }
+
+  private ownedBatch(userId: string): ReturnType<typeof exists> {
+    return exists(
+      this.db
+        .select({ id: importBatches.id })
+        .from(importBatches)
+        .where(and(eq(importBatches.id, stagedRows.batchId), eq(importBatches.userId, userId)))
+    );
+  }
+
+  private async batchBelongsTo(userId: string, batchId: ImportBatchId): Promise<boolean> {
+    const [row] = await this.db
+      .select({ id: importBatches.id })
+      .from(importBatches)
+      .where(and(eq(importBatches.userId, userId), eq(importBatches.id, batchId)))
+      .limit(1);
+    return row !== undefined;
   }
 }
 

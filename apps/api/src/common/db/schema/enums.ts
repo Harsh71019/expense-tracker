@@ -58,5 +58,25 @@ export const billStatementRowMatchStatusEnum = pgEnum("bill_statement_row_match_
   "missing_from_ledger",
   "ambiguous"
 ]);
+export const spendingWarningKindEnum = pgEnum("spending_warning_kind", [
+  "overall_spend_spike",
+  "category_spend_spike",
+  "unusually_large_expense"
+]);
+export const spendingWarningSeverityEnum = pgEnum("spending_warning_severity", [
+  "attention",
+  "high"
+]);
+export const spendingWarningStatusEnum = pgEnum("spending_warning_status", [
+  "active",
+  "dismissed",
+  "resolved"
+]);
+// Only the two states the worker can persist (plan §5); "stale"/"unavailable"
+// are derived at API read time from `computedAt` and never stored.
+export const spendingWarningAnalysisStateStatusEnum = pgEnum("spending_warning_analysis_status", [
+  "learning",
+  "ready"
+]);
 export const goalFundingModeEnum = pgEnum("goal_funding_mode", ["linked_account", "tagged"]);
 export const goalStatusEnum = pgEnum("goal_status", ["active", "achieved", "abandoned"]);

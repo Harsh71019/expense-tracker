@@ -8,6 +8,7 @@ import {
 import { Logger } from "nestjs-pino";
 
 import { AccountRepository } from "../accounts/account.repository.js";
+import { assertBalanceDeltaApplied } from "../accounts/balance-delta.js";
 import { AuditRepository } from "../audit/audit.repository.js";
 import { DATABASE_CONNECTION } from "../common/db/db.module.js";
 import type { DrizzleDb } from "../common/db/db.module.js";
@@ -102,16 +103,12 @@ export class TransferService {
     tx: DbTx,
     options: CreateTransferInTxOptions = {}
   ): Promise<TransferCoreResult> {
-    if (
-      !(await this.accounts.applyBalanceDelta(userId, input.fromAccountId, -input.amountMinor, tx))
-    ) {
-      throw new EntityNotFoundError("Account");
-    }
-    if (
-      !(await this.accounts.applyBalanceDelta(userId, input.toAccountId, input.amountMinor, tx))
-    ) {
-      throw new EntityNotFoundError("Account");
-    }
+    assertBalanceDeltaApplied(
+      await this.accounts.applyBalanceDelta(userId, input.fromAccountId, -input.amountMinor, tx)
+    );
+    assertBalanceDeltaApplied(
+      await this.accounts.applyBalanceDelta(userId, input.toAccountId, input.amountMinor, tx)
+    );
 
     const transferGroupId = crypto.randomUUID();
     const fromTransaction = await this.transactions.create(
@@ -181,11 +178,9 @@ export class TransferService {
             throw new TransactionNotReversibleError();
           }
           const deltaMinor = leg.type === "expense" ? leg.amountMinor : -leg.amountMinor;
-          if (
-            !(await this.accounts.applyReversalBalanceDelta(userId, leg.accountId, deltaMinor, tx))
-          ) {
-            throw new EntityNotFoundError("Account");
-          }
+          assertBalanceDeltaApplied(
+            await this.accounts.applyReversalBalanceDelta(userId, leg.accountId, deltaMinor, tx)
+          );
           await this.audit.record(userId, "transfer.reverse", reversalLeg.id, tx);
           reversedLegs.push(reversalLeg);
         }

@@ -8,6 +8,7 @@ import { accountHandlers } from "./accounts";
 import { assetHandlers } from "./assets";
 import { authHandlers } from "./auth";
 import { billHandlers } from "./bills";
+import { budgetHandlers } from "./budgets";
 import { categoryHandlers } from "./categories";
 import { categoryRuleHandlers } from "./category-rules";
 import { exportHandlers } from "./export";
@@ -17,6 +18,7 @@ import { netWorthHandlers } from "./net-worth";
 import { profileHandlers } from "./profile";
 import { reportHandlers } from "./reports";
 import { recurringHandlers } from "./recurring";
+import { spendingWarningHandlers } from "./spending-warnings";
 import { transactionHandlers } from "./transactions";
 import { transferHandlers } from "./transfers";
 
@@ -35,6 +37,7 @@ export function createHandlers(baseUrl: string, store: MockStore): HttpHandler[]
     ...billHandlers(http, store),
     ...categoryHandlers(http, store),
     ...categoryRuleHandlers(http, store),
+    ...budgetHandlers(http, store),
     ...transactionHandlers(http, store),
     ...transferHandlers(http, store),
     ...goalHandlers(http, store),
@@ -44,6 +47,7 @@ export function createHandlers(baseUrl: string, store: MockStore): HttpHandler[]
     ...exportHandlers(http, store),
     ...profileHandlers(http, store),
     ...reportHandlers(http, store),
-    ...recurringHandlers(http, store)
+    ...recurringHandlers(http, store),
+    ...spendingWarningHandlers(http, store)
   ];
 }

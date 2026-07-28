@@ -30,6 +30,7 @@ export class CategoryRuleMutationService {
       userId,
       "category-rule.create",
       key,
+      input,
       CategoryRuleSchema,
       async (tx) => {
         if (!(await this.categories.exists(userId, input.categoryId, tx))) {
@@ -41,11 +42,18 @@ export class CategoryRuleMutationService {
   }
 
   delete(userId: string, ruleId: CategoryRuleId, key: string): Promise<IdempotentResult<null>> {
-    return this.idempotency.execute(userId, "category-rule.delete", key, z.null(), async (tx) => {
-      if (!(await this.rules.delete(userId, ruleId, tx))) {
-        throw new EntityNotFoundError("Category rule");
+    return this.idempotency.execute(
+      userId,
+      "category-rule.delete",
+      key,
+      { ruleId },
+      z.null(),
+      async (tx) => {
+        if (!(await this.rules.delete(userId, ruleId, tx))) {
+          throw new EntityNotFoundError("Category rule");
+        }
+        return null;
       }
-      return null;
-    });
+    );
   }
 }

@@ -1,5 +1,10 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { MonthlyRollupSchema, type Month, type MonthlyRollup } from "@treasury-ops/shared";
+import {
+  MonthlyRollupSchema,
+  parseSafeIntegerMinor,
+  type Month,
+  type MonthlyRollup
+} from "@treasury-ops/shared";
 import { and, eq, gte, lt, sql } from "drizzle-orm";
 
 import { DATABASE_CONNECTION } from "../common/db/db.module.js";
@@ -76,16 +81,16 @@ export class MonthlyRollupRepository {
       month,
       byCategory: byCategoryRows.map((row) => ({
         ...(row.categoryId === null ? {} : { categoryId: row.categoryId }),
-        spentMinor: Number(row.spentMinor),
-        incomeMinor: Number(row.incomeMinor),
+        spentMinor: parseSafeIntegerMinor(row.spentMinor),
+        incomeMinor: parseSafeIntegerMinor(row.incomeMinor),
         txnCount: row.txnCount
       })),
       byAccount: byAccountRows.map((row) => ({
         accountId: row.accountId,
-        netMinor: Number(row.netMinor)
+        netMinor: parseSafeIntegerMinor(row.netMinor)
       })),
-      totalExpenseMinor: Number(totalsRow?.totalExpenseMinor ?? 0),
-      totalIncomeMinor: Number(totalsRow?.totalIncomeMinor ?? 0),
+      totalExpenseMinor: parseSafeIntegerMinor(totalsRow?.totalExpenseMinor ?? 0),
+      totalIncomeMinor: parseSafeIntegerMinor(totalsRow?.totalIncomeMinor ?? 0),
       computedAt: new Date()
     };
 

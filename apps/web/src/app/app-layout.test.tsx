@@ -13,10 +13,13 @@ const mocks = vi.hoisted(
   })
 );
 
-vi.mock("next/navigation", () => ({ redirect: mocks.redirect }));
+vi.mock("next/navigation", () => ({ redirect: mocks.redirect, usePathname: () => "/" }));
 vi.mock("@/lib/api/session", () => ({ getSession: async () => mocks.session }));
 vi.mock("@/lib/theme-server", () => ({ getStoredTheme: async () => "light" }));
-vi.mock("@/components/app-nav", () => ({ AppNav: () => <nav>Navigation</nav> }));
+vi.mock("@/components/app-nav", () => ({
+  AppNav: () => <nav>Navigation</nav>,
+  mainNavItems: []
+}));
 vi.mock("@/components/ui/theme-toggle", () => ({ ThemeToggle: () => <button>Theme</button> }));
 vi.mock("@/features/auth", () => ({ SignOutButton: () => <button>Sign out</button> }));
 

@@ -112,6 +112,30 @@ export type {
   ValuationSource
 } from "./asset.js";
 export {
+  BudgetAlertPolicySchema,
+  BudgetCategorySchema,
+  BudgetIdSchema,
+  BudgetOverviewSchema,
+  BudgetPageSchema,
+  BudgetProgressSchema,
+  BudgetProgressStateSchema,
+  BudgetSchema,
+  ListBudgetsQuerySchema,
+  UpsertBudgetSchema
+} from "./budget.js";
+export type {
+  Budget,
+  BudgetAlertPolicy,
+  BudgetCategory,
+  BudgetId,
+  BudgetOverview,
+  BudgetPage,
+  BudgetProgress,
+  BudgetProgressState,
+  ListBudgetsQuery,
+  UpsertBudget
+} from "./budget.js";
+export {
   CategoryGroupSchema,
   CategoryIdSchema,
   CategoryKindSchema,
@@ -213,6 +237,7 @@ export {
   DateFormatSchema,
   ImportBatchIdSchema,
   ImportBatchSchema,
+  ImportFailureCodeSchema,
   ImportBatchStatsSchema,
   ImportBatchStatusSchema,
   MAX_IMPORT_FILE_SIZE_BYTES,
@@ -235,6 +260,7 @@ export type {
   ImportBatchId,
   ImportBatchStats,
   ImportBatchStatus,
+  ImportFailureCode,
   ParsedRow,
   PreviewStagedRowsQuery,
   StagedRow,
@@ -248,7 +274,9 @@ export {
   formatMinorInput,
   formatSignedCompactMinor,
   isMinorAmount,
-  parseMinor
+  parseMinor,
+  parseSafeIntegerMinor,
+  sumMinorAmounts
 } from "./money.js";
 export type { MinorAmount } from "./money.js";
 export { PageInfoSchema } from "./pagination.js";
@@ -312,3 +340,36 @@ export {
   UserProfileUpdateSchema
 } from "./user-profile.js";
 export type { UserProfile, UserProfileUpdate } from "./user-profile.js";
+export {
+  CategorySpendSpikeEvidenceSchema,
+  DismissSpendingWarningResponseSchema,
+  ListSpendingWarningsQuerySchema,
+  OverallSpendSpikeEvidenceSchema,
+  SpendingWarningAnalysisSchema,
+  SpendingWarningAnalysisStatusSchema,
+  SpendingWarningEligibleKindsSchema,
+  SpendingWarningEvidenceSchema,
+  SpendingWarningIdSchema,
+  SpendingWarningKindSchema,
+  SpendingWarningPageSchema,
+  SpendingWarningSchema,
+  SpendingWarningSeveritySchema,
+  SpendingWarningStatusSchema,
+  UnusuallyLargeExpenseEvidenceSchema
+} from "./spending-warning.js";
+export type {
+  CategorySpendSpikeEvidence,
+  DismissSpendingWarningResponse,
+  ListSpendingWarningsQuery,
+  OverallSpendSpikeEvidence,
+  SpendingWarning,
+  SpendingWarningAnalysis,
+  SpendingWarningAnalysisStatus,
+  SpendingWarningEvidence,
+  SpendingWarningId,
+  SpendingWarningKind,
+  SpendingWarningPage,
+  SpendingWarningSeverity,
+  SpendingWarningStatus,
+  UnusuallyLargeExpenseEvidence
+} from "./spending-warning.js";

@@ -27,6 +27,7 @@ export class TransactionMutationService {
       userId,
       "transaction.metadata.update",
       key,
+      { transactionId, patch },
       TransactionSchema,
       (tx) => this.transactions.updateInTx(userId, transactionId, patch, tx)
     );

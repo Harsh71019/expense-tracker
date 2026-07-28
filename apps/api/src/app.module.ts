@@ -14,6 +14,8 @@ import { RuntimeConfigService } from "./common/config/runtime-config.service.js"
 import { DbModule } from "./common/db/db.module.js";
 import { LoggingContextService } from "./common/logging/logging-context.service.js";
 import { LoggingModule } from "./common/logging/logging.module.js";
+import { MetricsController } from "./common/observability/metrics.controller.js";
+import { ObservabilityModule } from "./common/observability/observability.module.js";
 import { IdempotencyModule } from "./common/idempotency/idempotency.module.js";
 import { RedisModule } from "./common/redis/redis.module.js";
 import { RedisService } from "./common/redis/redis.service.js";
@@ -23,6 +25,7 @@ import { AccountsModule } from "./accounts/accounts.module.js";
 import { ApiKeysModule } from "./api-keys/api-keys.module.js";
 import { AssetsModule } from "./assets/assets.module.js";
 import { AuditModule } from "./audit/audit.module.js";
+import { BudgetsModule } from "./budgets/budgets.module.js";
 import { CategoriesModule } from "./categories/categories.module.js";
 import { CategoryRulesModule } from "./category-rules/category-rules.module.js";
 import { DashboardModule } from "./dashboard/dashboard.module.js";
@@ -34,10 +37,11 @@ import { NotificationsModule } from "./notifications/notifications.module.js";
 import { OpenApiModule } from "./openapi/openapi.module.js";
 import { RecurringModule } from "./recurring/recurring.module.js";
 import { ReportsModule } from "./reports/reports.module.js";
+import { SpendingWarningsModule } from "./spending-warnings/spending-warnings.module.js";
 import { UserProfilesModule } from "./user-profiles/user-profiles.module.js";
 import { TransactionsModule } from "./transactions/transactions.module.js";
 
-const UNTHROTTLED_PATHS = new Set(["/api/healthz", "/api/readyz"]);
+const UNTHROTTLED_PATHS = new Set(["/api/healthz", "/api/readyz", "/api/v1/metrics"]);
 
 function isUnthrottledPath(context: ExecutionContext): boolean {
   const request = context.switchToHttp().getRequest<Request>();
@@ -52,6 +56,7 @@ function isUnthrottledPath(context: ExecutionContext): boolean {
     IdempotencyModule,
     BalancesModule,
     LoggingModule,
+    ObservabilityModule,
     ScheduleModule.forRoot(),
     ThrottlerModule.forRootAsync({
       inject: [RedisService, RuntimeConfigService],
@@ -77,7 +82,9 @@ function isUnthrottledPath(context: ExecutionContext): boolean {
     ExportModule,
     RecurringModule,
     ReportsModule,
+    SpendingWarningsModule,
     GoalsModule,
+    BudgetsModule,
     DashboardModule,
     OpenApiModule,
     LoggerModule.forRootAsync({
@@ -108,7 +115,10 @@ function isUnthrottledPath(context: ExecutionContext): boolean {
             censor: "[REDACTED]"
           },
           autoLogging: {
-            ignore: (request) => request.url === "/api/healthz" || request.url === "/api/readyz"
+            ignore: (request) =>
+              request.url === "/api/healthz" ||
+              request.url === "/api/readyz" ||
+              request.url === "/api/v1/metrics"
           },
           mixin: () => context.get() ?? {},
           genReqId: (request, response) => {
@@ -122,6 +132,7 @@ function isUnthrottledPath(context: ExecutionContext): boolean {
     }),
     HealthModule
   ],
+  controllers: [MetricsController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }]
 })
 export class AppModule {}

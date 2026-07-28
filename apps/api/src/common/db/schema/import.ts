@@ -35,6 +35,8 @@ export const importBatches = pgTable(
     statsStaged: integer("stats_staged").notNull().default(0),
     statsDuplicates: integer("stats_duplicates").notNull().default(0),
     statsCommitted: integer("stats_committed").notNull().default(0),
+    failureCode: text("failure_code"),
+    failedAt: timestamp("failed_at", { withTimezone: true }),
     committedAt: timestamp("committed_at", { withTimezone: true }),
     revertedAt: timestamp("reverted_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull(),

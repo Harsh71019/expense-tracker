@@ -10,6 +10,7 @@ import { useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 
 import { AmountInput } from "@/components/ui/amount-input";
+import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
@@ -21,6 +22,7 @@ import { useAccounts } from "../hooks/use-accounts";
 import { useArchiveAccount } from "../hooks/use-archive-account";
 import { useCreateAccount } from "../hooks/use-create-account";
 import { useUpdateCreditCardConfig } from "../hooks/use-update-credit-card-config";
+import { AccountDetailDialog } from "./account-detail-dialog";
 
 type TypeMeta = { value: AccountType; label: string; filterLabel: string; icon: string };
 
@@ -64,6 +66,7 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
   const [dueDay, setDueDay] = useState("");
   const [confirming, setConfirming] = useState<Account>();
   const [configuring, setConfiguring] = useState<Account>();
+  const [detailAccount, setDetailAccount] = useState<Account>();
   const [error, setError] = useState<string>();
 
   function openCreate(): void {
@@ -184,6 +187,10 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
 
   return (
     <section className="space-y-8">
+      <Breadcrumbs
+        items={[{ label: "Settings", href: "/settings?tab=management" }, { label: "Accounts" }]}
+      />
+
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="font-mono text-[10px] font-bold tracking-[0.2em] text-accent uppercase">
@@ -293,7 +300,17 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
             return (
               <article
                 key={account.id}
-                className={`rounded-2xl border border-border bg-surface-elevated p-5 ${
+                role="button"
+                tabIndex={0}
+                aria-label={`View details for ${account.name}`}
+                onClick={() => setDetailAccount(account)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    setDetailAccount(account);
+                  }
+                }}
+                className={`cursor-pointer rounded-2xl border border-border bg-surface-elevated p-5 transition-colors duration-150 hover:border-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface ${
                   account.isArchived ? "opacity-60" : ""
                 }`}
               >
@@ -348,7 +365,10 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
                       {account.type === "credit_card" ? (
                         <button
                           type="button"
-                          onClick={() => openCardConfig(account)}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            openCardConfig(account);
+                          }}
                           className="text-xs font-semibold text-accent hover:text-accent-strong"
                         >
                           {account.creditCardConfig === undefined
@@ -358,7 +378,10 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
                       ) : null}
                       <button
                         type="button"
-                        onClick={() => setConfirming(account)}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setConfirming(account);
+                        }}
                         className="text-xs font-medium text-foreground-muted hover:text-foreground"
                       >
                         Archive
@@ -609,6 +632,10 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
             </div>
           </div>
         </div>
+      )}
+
+      {detailAccount === undefined ? null : (
+        <AccountDetailDialog account={detailAccount} onClose={() => setDetailAccount(undefined)} />
       )}
     </section>
   );

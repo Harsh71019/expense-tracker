@@ -27,16 +27,23 @@ export class AccountMutationService {
       input.creditCardConfig === undefined
         ? undefined
         : computeNextCreditCardStatementAt(input.creditCardConfig.statementDay, new Date());
-    return this.idempotency.execute(userId, "account.create", key, AccountSchema, (tx) =>
+    return this.idempotency.execute(userId, "account.create", key, input, AccountSchema, (tx) =>
       this.accounts.create(userId, input, tx, nextStatementAt)
     );
   }
 
   archive(userId: string, accountId: AccountId, key: string): Promise<IdempotentResult<null>> {
-    return this.idempotency.execute(userId, "account.archive", key, z.null(), async (tx) => {
-      if (!(await this.accounts.archive(userId, accountId, tx)))
-        throw new EntityNotFoundError("Account");
-      return null;
-    });
+    return this.idempotency.execute(
+      userId,
+      "account.archive",
+      key,
+      { accountId },
+      z.null(),
+      async (tx) => {
+        if (!(await this.accounts.archive(userId, accountId, tx)))
+          throw new EntityNotFoundError("Account");
+        return null;
+      }
+    );
   }
 }

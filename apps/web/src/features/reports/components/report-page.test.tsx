@@ -54,6 +54,20 @@ describe("ReportPage", () => {
     expect(screen.getByText("Spend by category")).toBeVisible();
     expect(screen.getByText("Category breakdown")).toBeVisible();
     expect(screen.getByText("Net flow by account")).toBeVisible();
+    expect(screen.getByRole("link", { name: "Monthly budgets" })).toHaveAttribute(
+      "href",
+      "/budgets"
+    );
+  });
+
+  it("links to spending patterns for mobile discoverability", () => {
+    mocks.rollupsByMonth.set("2026-06", rollup("2026-06"));
+    render(<ReportPage initialMonth="2026-06" initialRollup={rollup("2026-06")} />);
+
+    expect(screen.getByRole("link", { name: /Spending patterns/ })).toHaveAttribute(
+      "href",
+      "/spending-warnings"
+    );
   });
 
   it("shows the empty state when there is no rollup for the month", () => {

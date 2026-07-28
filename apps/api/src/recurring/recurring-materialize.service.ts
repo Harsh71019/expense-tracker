@@ -4,12 +4,12 @@ import { computeNextOccurrence, type RecurringRule } from "@treasury-ops/shared"
 import { Logger } from "nestjs-pino";
 
 import { AccountRepository } from "../accounts/account.repository.js";
+import { assertBalanceDeltaApplied } from "../accounts/balance-delta.js";
 import { AuditRepository } from "../audit/audit.repository.js";
 import { RuntimeConfigService } from "../common/config/runtime-config.service.js";
 import { DATABASE_CONNECTION } from "../common/db/db.module.js";
 import type { DrizzleDb } from "../common/db/db.module.js";
 import { withTxn } from "../common/db/db-txn.js";
-import { EntityNotFoundError } from "../common/errors/entity-not-found.error.js";
 import { LogEvent } from "../common/logging/events.js";
 import { toISTCalendarDate } from "../common/time/ist.js";
 import { parseExplicitDate } from "../common/time/parse-date.js";
@@ -78,16 +78,9 @@ export class RecurringMaterializeService {
 
       const deltaMinor =
         rule.template.type === "income" ? rule.template.amountMinor : -rule.template.amountMinor;
-      if (
-        !(await this.accounts.applyBalanceDelta(
-          rule.userId,
-          rule.template.accountId,
-          deltaMinor,
-          tx
-        ))
-      ) {
-        throw new EntityNotFoundError("Account");
-      }
+      assertBalanceDeltaApplied(
+        await this.accounts.applyBalanceDelta(rule.userId, rule.template.accountId, deltaMinor, tx)
+      );
 
       const posted = await this.transactions.create(
         rule.userId,

@@ -257,18 +257,61 @@ exists. Without one, it projects a completion date from the since-creation
 average contribution rate. A 02:05 IST worker sweep atomically marks completed
 goals achieved and writes one `goal_achieved` outbox notification.
 
-#### `budgets`
+#### `budgets` + `budget_alert_events`
 
 ```ts
+// budgets -- one lifetime configuration per (userId, categoryId)
 {
-  _id: ObjectId,
+  id: UUID,
   userId: string,
-  categoryId: ObjectId,
-  period: 'monthly',
-  limitMinor: number,
-  alertThresholds: [0.8, 1.0]    // notify at 80% and 100%
+  categoryId: UUID,              // must belong to the user and be kind = 'expense'
+  limitMinor: number,             // positive integer paise
+  isArchived: boolean,
+  createdAt: Date, updatedAt: Date
+}
+
+// budget_alert_events -- immutable dedup/evidence rows, never updated or deleted
+{
+  id: UUID,
+  userId: string,
+  budgetId: UUID,
+  month: 'YYYY-MM',
+  policyVersion: number,          // 1 today: thresholds [8000, 10000] bps
+  thresholdBps: number,
+  spentMinor: number, limitMinor: number,  // snapshot at the moment the threshold fired
+  createdAt: Date
 }
 ```
+
+Budgets are current-month-only and exact-category (no descendant rollup, no
+overall/household budget yet). `spentMinor`/`remainingMinor`/`utilizationBps`
+are never cached on the row — `GET /v1/budgets` derives them live from one
+bounded aggregate over posted, non-transfer, exact-category expense
+transactions in the current IST month, deliberately not the nightly
+`monthly_rollups` cache (that cache doesn't exclude transfer legs; budget
+progress must not inherit that semantic). Archiving a category makes any
+budget attached to it "ineffective" (zeroed progress, no alerts) without
+touching the budget row itself, so restoring the category or re-pointing a
+new budget at it recovers cleanly.
+
+`PUT /v1/budgets/:categoryId` creates, updates, or restores the one lifetime
+row for that category in a single statement (Postgres `ON CONFLICT DO
+UPDATE` on the `(userId, categoryId)` unique index) — there is no separate
+create vs. update endpoint. `PATCH /v1/budgets/:budgetId/archive` is
+recoverable (no hard delete); restoring happens by `PUT`-ing a new limit for
+the same category.
+
+A daily 08:00 IST worker-only cron (`BudgetAlertCron`, plain `@nestjs/schedule`
+`@Cron`, not a dedicated BullMQ queue — the existing generic
+`notification_outbox` → sweep → queue → adapter pipeline already delivers
+whatever lands in the outbox, `budget_alert` included) walks every
+non-archived budget, recomputes live progress, and for any threshold newly
+crossed this month: locks the budget row (`SELECT ... FOR UPDATE`, so a
+concurrent pass blocks and then re-reads the already-recorded thresholds
+instead of racing them), inserts the missing `budget_alert_events` row(s),
+and enqueues exactly one `budget_alert` outbox entry for the highest
+newly-reached threshold — mirroring `GoalsProgressCron`'s direct
+per-entity `withTxn` + outbox-enqueue shape.
 
 #### `monthly_rollups` — materialized reports (cron-maintained)
 
@@ -283,6 +326,57 @@ goals achieved and writes one `goal_achieved` outbox notification.
   computedAt: Date
 }
 ```
+
+#### `spending_warning_analysis_state` / `spending_warnings` (worker-computed, read-only from the API)
+
+Postgres tables (`apps/api/drizzle/0006_spending_warnings.sql`), not part of the original Mongo
+design — added per `docs/plans/2026-07-24-spending-pattern-warnings-backend.md`. One state row per
+user plus append-ish warning rows (updated in place only via the reconciliation rules below, never
+deleted):
+
+```ts
+// spending_warning_analysis_state — one row per user
+{
+  userId: string,
+  detectorVersion: number,
+  status: 'learning' | 'ready',        // API derives 'stale'/'unavailable' from computedAt, never persisted
+  computedAt: Date,
+  sourceThrough: Date,                  // the analysis boundary (start of the completed IST day) this run used
+  historyStart: Date | null,            // earliest eligible expense this user has, unbounded
+  baselineExpenseCount: number,
+  eligibleKinds: SpendingWarningKind[]  // JSONB, parsed through a strict shared zod schema
+}
+
+// spending_warnings
+{
+  id: UUID,
+  userId: string,
+  fingerprint: string,                  // episode key — see below
+  kind: 'overall_spend_spike' | 'category_spend_spike' | 'unusually_large_expense',
+  severity: 'attention' | 'high',
+  status: 'active' | 'dismissed' | 'resolved',
+  categoryId?: UUID, transactionId?: UUID,
+  windowStart: Date, windowEnd: Date,
+  evidence: object,                     // strict, versioned JSONB — integer paise/bps/counts only, never a description
+  detectorVersion: number,
+  firstDetectedAt: Date, lastDetectedAt: Date,
+  dismissedAt?: Date, resolvedAt?: Date
+}
+```
+
+A worker-only daily cron (`spending-warnings.schedule`, 05:00 IST — after `rollups.refresh`,
+deliberately reading raw transactions rather than the rollup cache) enqueues one BullMQ job per
+user (`spending-warnings` queue, deterministic `jobId = userId + IST date + detectorVersion`). Each
+job runs three pure detectors — overall 7-day spend spike vs. an 8-window baseline median, 30-day
+category spend spike (Uncategorized is its own bucket) vs. a 6-window baseline median, and
+unusually-large single expenses vs. a per-transaction 180-day same-category percentile baseline —
+against bounded (~210-day), narrow aggregate queries, never a hydrated transaction history. A
+fingerprint (detector version + kind + IST week start / IST month / transaction id, depending on
+kind) gives each recurring condition a stable "episode" identity: a run upserts current findings,
+preserves an existing dismissal for the same episode, and resolves formerly-active warnings that no
+longer reproduce — upsert, resolution, and analysis-state update happen in one `withTxn` call.
+`GET /v1/spending-warnings` only ever reads this persisted snapshot; no request path triggers
+analysis.
 
 #### `audit_log`
 
@@ -381,7 +475,9 @@ Non-monetary metadata on a transfer is also group-scoped. Until a group-level me
 
 ### 3.4 Idempotency
 
-Client-initiated create/update/archive/delete operations require an `Idempotency-Key` header (the client generates one UUID per logical action and reuses it for retries). General mutations store their Zod-validated response in `idempotency_records`, uniquely keyed by `(userId, operation, key)`, in the same Mongo transaction as the business effect. Replays return that authoritative stored response; no-content operations store `null` so an archive/delete replay cannot fall through to `404`.
+Client-initiated create/update/archive/delete operations require an `Idempotency-Key` header (the client generates one UUID per logical action and reuses it for retries). General mutations store their Zod-validated response in `idempotency_records`, uniquely keyed by `(userId, operation, key)`, in the same PostgreSQL transaction as the business effect. Each record also stores a SHA-256 fingerprint of the canonicalized, validated request intent, including path identifiers. Reusing the key for the same intent returns the authoritative stored response; reusing it for different intent returns `409 common.idempotency_conflict`. No-content operations store `null` so an archive/delete replay cannot fall through to `404`.
+
+Idempotency records are retained for 30 days. Each mutation opportunistically removes only the current user's expired records through the tenant-scoped repository index `(user_id, created_at)`, avoiding an unscoped global cleanup path.
 
 Ledger transaction and transfer creation retain their unique transaction-key protection. Transaction and transfer-group reversals are naturally idempotent by the original transaction/group linkage: a concurrent duplicate returns the committed compensating entry or pair and sets `Idempotency-Replayed: true`. First creates return `201`; replayed creates return `200`; same-status mutations expose replay through that header.
 
@@ -472,7 +568,7 @@ export class AuthGuard implements CanActivate {
 
 Next.js uses the Better Auth **client SDK** for login/register/passkey UI and just forwards cookies on server-component fetches. Since it's personal: disable public signup after creating your account (`disableSignUp: true`), and consider keeping the whole thing LAN/Tailscale-only with NPMplus access lists as a second wall — CrowdSec then only matters if you ever expose it.
 
-**Multi-tenancy discipline (even for one user):** every query in every service goes through a repository layer that injects `userId` from the session. No handler ever receives `userId` from the request body. This costs nothing now and is the entire multi-user migration.
+**Multi-tenancy discipline (even for one user):** every query in every service goes through a repository layer that injects `userId` from the session. No handler ever receives `userId` from the request body. Resource-specific repository methods take `userId` first and include it in their database predicate, including staged-import and notification-outbox operations. Intentional cross-tenant worker discovery is named with a `system` prefix, returns tenant identity with each resource ID, and every follow-up read or mutation requires both values. A static architecture test protects this contract, while integration probes verify that malformed worker payloads cannot cross tenant boundaries.
 
 ---
 
@@ -480,15 +576,16 @@ Next.js uses the Better Auth **client SDK** for login/register/passkey UI and ju
 
 Scheduling via `@nestjs/schedule` for triggers, but **every job body runs through BullMQ** so jobs are retryable, observable (Bull Board dashboard), and survive process restarts. All schedules in `Asia/Kolkata`.
 
-| Job                     | Schedule                | What it does                                                                                                                                                                                                                              |
-| ----------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `recurring.materialize` | `0 1 * * *` (01:00)     | Finds `recurring_rules` with `nextRunAt <= now`, posts each templated txn **in its own transaction**, advances `nextRunAt` via rrule in the same txn. Idempotency key = `ruleId + scheduledDate` so a crashed run can't double-post rent. |
-| `rollups.refresh`       | `0 2 * * *` (02:00)     | Recomputes current + previous month `monthly_rollups` via aggregation pipeline. Dashboard reads rollups, never raw aggregation.                                                                                                           |
-| `balances.verify`       | `0 3 * * 0` (Sun 03:00) | Recomputes every account balance from `SUM(transactions)` and compares to the cached `balanceMinor`. Any drift → GlitchTip alert. This is the self-auditing safety net for the derived cache.                                             |
-| `budgets.alert`         | `0 8 * * *` (08:00)     | Evaluates budget thresholds against rollups; sends ntfy/Telegram push ("Food at 84% with 9 days left").                                                                                                                                   |
-| `backup.dump`           | `0 4 * * *` (04:00)     | `mongodump` from Atlas → your NAS, gzip, keep 30 dailies + 12 monthlies. Atlas M0 has no PITR — this cron **is** your backup strategy. Test restore quarterly.                                                                            |
-| `staging.sweep`         | TTL index               | Mongo TTL index expires `staged_rows` after 7 days — no cron needed.                                                                                                                                                                      |
-| `month.report`          | `0 9 1 * *`             | Renders last month's summary (top categories, MoM delta, biggest txns) → ntfy/email.                                                                                                                                                      |
+| Job                          | Schedule                | What it does                                                                                                                                                                                                                              |
+| ---------------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `recurring.materialize`      | `0 1 * * *` (01:00)     | Finds `recurring_rules` with `nextRunAt <= now`, posts each templated txn **in its own transaction**, advances `nextRunAt` via rrule in the same txn. Idempotency key = `ruleId + scheduledDate` so a crashed run can't double-post rent. |
+| `rollups.refresh`            | `0 2 * * *` (02:00)     | Recomputes current + previous month `monthly_rollups` via aggregation pipeline. Dashboard reads rollups, never raw aggregation.                                                                                                           |
+| `balances.verify`            | `0 3 * * 0` (Sun 03:00) | Recomputes every account balance from `SUM(transactions)` and compares to the cached `balanceMinor`. Any drift → GlitchTip alert. This is the self-auditing safety net for the derived cache.                                             |
+| `budgets.alert`              | `0 8 * * *` (08:00)     | Evaluates budget thresholds against rollups; sends ntfy/Telegram push ("Food at 84% with 9 days left").                                                                                                                                   |
+| `backup.dump`                | `0 4 * * *` (04:00)     | `mongodump` from Atlas → your NAS, gzip, keep 30 dailies + 12 monthlies. Atlas M0 has no PITR — this cron **is** your backup strategy. Test restore quarterly.                                                                            |
+| `staging.sweep`              | TTL index               | Mongo TTL index expires `staged_rows` after 7 days — no cron needed.                                                                                                                                                                      |
+| `month.report`               | `0 9 1 * *`             | Renders last month's summary (top categories, MoM delta, biggest txns) → ntfy/email.                                                                                                                                                      |
+| `spending-warnings.schedule` | `0 5 * * *` (05:00)     | Enqueues one `spending-warnings` BullMQ job per user with posted transactions (bounded attempts, exponential backoff). Each job re-runs the three spend-pattern detectors and reconciles `spending_warnings` — see §2.1 above.            |
 
 ---
 
@@ -521,11 +618,14 @@ GET    /assets/:id/valuations | POST /assets/:id/valuations
 GET    /net-worth
 GET    /profile                         read-only app profile
 GET    /recurring | POST /recurring | PATCH /recurring/:id
-GET    /budgets | PUT /budgets/:categoryId
+GET    /budgets | PUT /budgets/:categoryId | PATCH /budgets/:budgetId/archive
 
 GET    /reports/monthly/:month          reads monthly_rollups
 GET    /reports/cashflow?from&to
 GET    /export/csv?from&to              your data back out, always
+
+GET    /spending-warnings?kind&severity&cursor&limit   reads the persisted snapshot only, never scans
+POST   /spending-warnings/:warningId/dismiss           Idempotency-Key required; scoped to the episode
 
 /api/auth/*                             Better Auth handler
 GET    /healthz                         liveness (Beszel/uptime checks)
@@ -553,6 +653,7 @@ apps/api/src/
 ├─ recurring/
 ├─ budgets/
 ├─ reports/                   aggregation pipelines + rollup reader
+├─ spending-warnings/         detector (pure) + queue/processor + worker-only 05:00 IST schedule
 ├─ scheduler/                 cron definitions → enqueue BullMQ jobs
 └─ notifications/             ntfy/Telegram adapter
 ```
@@ -610,7 +711,7 @@ Conventions: controllers do HTTP only; services own business rules and transacti
 ## 14. Resilience & Correctness Under Failure
 
 - **Graceful shutdown:** on SIGTERM — stop accepting HTTP, let in-flight requests finish (10s budget), pause BullMQ workers after current job, close Mongo/Redis, exit 0. NestJS `enableShutdownHooks()` + explicit BullMQ `worker.close()`. This is what makes deploys zero-drama.
-- **Outbox pattern for notifications:** budget alerts and monthly reports are written to a `notification_outbox` collection **inside the same transaction** as the state change that triggered them; a worker drains the outbox with retries. Guarantees you never get an alert for a rollback, and never lose one to a crashed process. (Small pattern, enormous interview mileage.)
+- **Outbox pattern for notifications:** budget alerts and monthly reports are written to `notification_outbox` **inside the same transaction** as the state change that triggered them; a worker drains the outbox with retries. The system sweep emits `{ userId, notificationId }`, that pair is validated in the BullMQ payload, and delivery reads and marks the row with both predicates. This guarantees you never get an alert for a rollback, never lose one to a crashed process, and cannot use a malformed queued UUID to deliver another tenant's notification.
 - **Dead-letter queue:** BullMQ jobs that exhaust retries land in a DLQ visible in Bull Board + GlitchTip alert. `imports` jobs are the main customer.
 - **Circuit breaker on outbound calls** (ntfy/Telegram): 5 failures → open 60s → half-open probe. A down notification service must never back-pressure the ledger.
 - **Clock discipline:** LXC syncs NTP; all cron idempotency keys use `Asia/Kolkata` _calendar dates_, not timestamps, so a DST-less IST is still explicit and a re-run at 01:05 can't differ from 01:00.
@@ -626,9 +727,9 @@ Conventions: controllers do HTTP only; services own business rules and transacti
 
 ## 16. Observability (upgrade from "logs + GlitchTip")
 
-- **Correlation:** `x-request-id` accepted-or-generated per request, propagated into BullMQ job data, present on every pino log line and audit entry. One id traces a CSV row from upload → parse job → commit txn → audit.
+- **Implemented correlation:** `x-request-id` is accepted or generated per request. Queue producers copy it into zod-validated job payloads, and workers restore it as the structured-log `reqId`. One id follows an upload from the API into its parse worker.
 - **OpenTelemetry:** auto-instrumentation for HTTP/Mongoose/BullMQ/Redis exporting OTLP → a tiny **Grafana LGTM stack** (or just Tempo+Grafana) in an `observability` LXC. Traces answer "why was commit slow" without printf debugging.
-- **Metrics:** `/metrics` Prometheus endpoint — RED metrics per route, queue depth/latency, txn retry count, balance-drift gauge (from the Sunday verify cron; **alert if ever non-zero**), import success ratio.
+- **Implemented metrics:** authenticated `/api/v1/metrics` exposes RED counters/duration by bounded route pattern, live BullMQ depth/failures, `withTxn` retries/outcomes/duration, worker-heartbeat age, and Redis-backed balance-drift count/verification age. See `docs/backend/OBSERVABILITY-RUNBOOK.md`.
 - **SLOs (yes, for one user — they're the point):** p95 write < 150 ms LAN, p95 dashboard read < 100 ms (rollup-backed), import commit of 1k rows < 30 s, error budget: zero balance-drift events.
 - **Log retention:** pino → Loki, 30 days; audit_log in Mongo is permanent (it's data, not logs).
 

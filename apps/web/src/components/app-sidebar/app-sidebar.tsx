@@ -6,25 +6,10 @@ import type { ReactNode } from "react";
 
 import { type Theme } from "@/lib/theme";
 
-import { AppNav } from "../app-nav";
+import { AppNav, mainNavItems } from "../app-nav";
 import { ThemeToggle } from "../ui/theme-toggle";
 
 const SIDEBAR_COMPACT_KEY = "treasury-ops-sidebar-compact";
-
-const navItems = [
-  { href: "/", label: "Dashboard", icon: "⌂" },
-  { href: "/insights", label: "Insights", icon: "✦" },
-  { href: "/transactions", label: "Transactions", icon: "≡" },
-  { href: "/transfers", label: "Transfers", icon: "⤢" },
-  { href: "/bills", label: "Bills", icon: "▱" },
-  { href: "/categories", label: "Categories", icon: "▤" },
-  { href: "/category-rules", label: "Category rules", icon: "⌁" },
-  { href: "/imports", label: "Imports", icon: "↥" },
-  { href: "/assets", label: "Assets", icon: "◈" },
-  { href: "/goals", label: "Goals", icon: "◎" },
-  { href: "/reports", label: "Reports", icon: "◔" },
-  { href: "/settings", label: "Settings", icon: "⚙" }
-] as const;
 
 function initials(email: string): string {
   const local = email.split("@")[0] ?? "";
@@ -84,7 +69,7 @@ export function AppSidebar({
             </div>
           )}
         </div>
-        <AppNav items={navItems} orientation="sidebar" compact={compact} />
+        <AppNav items={mainNavItems} orientation="sidebar" compact={compact} />
       </div>
 
       <div className="flex flex-col gap-2">

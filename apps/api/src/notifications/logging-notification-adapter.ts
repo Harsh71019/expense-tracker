@@ -15,9 +15,15 @@ type DeliveryLogger = Pick<Logger, "log">;
 export class LoggingNotificationAdapter implements NotificationAdapter {
   constructor(@Inject(Logger) private readonly logger: DeliveryLogger) {}
 
+  /**
+   * Logs routing metadata only (userId, type) -- never the payload. Some
+   * payloads carry financial figures (budget_alert's spentMinor/limitMinor,
+   * goal_achieved's targetMinor); spreading them into logs would leak money
+   * data into a place with looser retention/access controls than the DB.
+   */
   async send(delivery: NotificationDelivery): Promise<void> {
     this.logger.log(
-      { event: "notification.delivery_stub", ...delivery },
+      { event: "notification.delivery_stub", userId: delivery.userId, type: delivery.type },
       "no real notification adapter configured — logging instead of delivering"
     );
     return Promise.resolve();

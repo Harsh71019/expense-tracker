@@ -15,6 +15,7 @@
 
   --color-income: #087a4b;
   --color-expense: #dc2626;
+  --color-warning: #b45309;
   --color-reversed: #5f6f67;
 
   --font-sans: var(--font-inter-tight), ui-sans-serif, system-ui, sans-serif;
@@ -87,6 +88,7 @@
 
     --color-income: #34d399;
     --color-expense: #f87171;
+    --color-warning: #fbbf24;
     --color-reversed: #71817a;
   }
 }
@@ -107,6 +109,7 @@
 
   --color-income: #087a4b;
   --color-expense: #dc2626;
+  --color-warning: #b45309;
   --color-reversed: #5f6f67;
 }
 
@@ -125,6 +128,7 @@
 
   --color-income: #34d399;
   --color-expense: #f87171;
+  --color-warning: #fbbf24;
   --color-reversed: #71817a;
 }
 
@@ -205,6 +209,50 @@
 
 body {
   font-variant-numeric: tabular-nums;
+}
+
+/* Modern Web Guidance: Balanced line breaking for headings & pretty paragraph wrapping */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.text-balance {
+  text-wrap: balance;
+}
+
+p,
+blockquote,
+.pretty-text {
+  text-wrap: pretty;
+}
+
+/* Modern Web Guidance: Theme-aware custom scrollbar system with WebKit fallback */
+:root {
+  --scrollbar-thumb: var(--color-border);
+  --scrollbar-track: var(--color-surface);
+}
+
+html,
+body,
+.custom-scrollbar {
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+  scrollbar-width: thin;
+}
+
+@supports not (scrollbar-color: auto) {
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--scrollbar-thumb);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-track {
+    background-color: var(--scrollbar-track);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

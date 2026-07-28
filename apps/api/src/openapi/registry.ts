@@ -73,6 +73,9 @@ import {
   CreateAssetSchema,
   AssetSchema,
   AssetIdSchema,
+  BudgetIdSchema,
+  BudgetPageSchema,
+  BudgetSchema,
   CreateValuationSchema,
   ValuationSchema,
   ValuationPageSchema,
@@ -104,7 +107,13 @@ import {
   UpdateApiKeySchema,
   UpdateBillStatementRowSchema,
   UpdateRecurringRuleSchema,
-  UpdateGoalSchema
+  DismissSpendingWarningResponseSchema,
+  ListSpendingWarningsQuerySchema,
+  SpendingWarningIdSchema,
+  SpendingWarningPageSchema,
+  UpdateGoalSchema,
+  ListBudgetsQuerySchema,
+  UpsertBudgetSchema
 } from "@treasury-ops/shared";
 import { z } from "zod";
 
@@ -129,6 +138,12 @@ const StagedRowPage = StagedRowPageSchema.meta({ id: "StagedRowPage" });
 const UserProfile = UserProfileSchema.meta({ id: "UserProfile" });
 const MonthlyRollup = MonthlyRollupSchema.meta({ id: "MonthlyRollup" });
 const RecurringRule = RecurringRuleSchema.meta({ id: "RecurringRule" });
+const SpendingWarningPage = SpendingWarningPageSchema.meta({ id: "SpendingWarningPage" });
+const DismissSpendingWarningResponse = DismissSpendingWarningResponseSchema.meta({
+  id: "DismissSpendingWarningResponse"
+});
+const Budget = BudgetSchema.meta({ id: "Budget" });
+const BudgetPage = BudgetPageSchema.meta({ id: "BudgetPage" });
 const Goal = GoalSchema.meta({ id: "Goal" });
 const GoalPlan = GoalPlanSchema.meta({ id: "GoalPlan" });
 const DashboardSummary = DashboardSummarySchema.meta({ id: "DashboardSummary" });
@@ -160,12 +175,14 @@ const importBatchAndRowId = z.object({
 });
 const month = z.object({ month: MonthSchema });
 const recurringRuleId = z.object({ ruleId: RecurringRuleIdSchema });
+const spendingWarningId = z.object({ warningId: SpendingWarningIdSchema });
 const goalId = z.object({ goalId: GoalIdSchema });
 const billId = z.object({ billId: CreditCardBillIdSchema });
 const billAndRowId = z.object({
   billId: CreditCardBillIdSchema,
   rowId: BillStatementRowIdSchema
 });
+const budgetId = z.object({ budgetId: BudgetIdSchema });
 const json = (schema: z.ZodType): { content: { "application/json": { schema: z.ZodType } } } => ({
   content: { "application/json": { schema } }
 });
@@ -181,6 +198,12 @@ const replayedHeaders = z.object({ "Idempotency-Replayed": z.literal("true") });
 const optionalReplayHeaders = z.object({
   "Idempotency-Replayed": z.literal("true").optional()
 });
+const idempotencyConflictResponse = {
+  409: {
+    description: "Idempotency key was already used for different request intent",
+    ...json(ProblemDetails)
+  }
+};
 
 registry.registerPath({
   method: "get",
@@ -200,6 +223,7 @@ registry.registerPath({
       ...json(Account)
     },
     201: { description: "Created account", ...json(Account) },
+    ...idempotencyConflictResponse,
     ...problemResponses
   }
 });
@@ -281,6 +305,7 @@ registry.registerPath({
       headers: optionalReplayHeaders
     },
     404: { description: "Not found", ...json(ProblemDetails) },
+    ...idempotencyConflictResponse,
     ...problemResponses
   }
 });
@@ -303,6 +328,7 @@ registry.registerPath({
       ...json(Category)
     },
     201: { description: "Created category", ...json(Category) },
+    ...idempotencyConflictResponse,
     ...problemResponses
   }
 });
@@ -317,6 +343,7 @@ registry.registerPath({
       headers: optionalReplayHeaders
     },
     404: { description: "Not found", ...json(ProblemDetails) },
+    ...idempotencyConflictResponse,
     ...problemResponses
   }
 });
@@ -336,6 +363,7 @@ registry.registerPath({
       ...json(Category)
     },
     404: { description: "Not found", ...json(ProblemDetails) },
+    ...idempotencyConflictResponse,
     ...problemResponses
   }
 });
@@ -362,6 +390,7 @@ registry.registerPath({
     },
     201: { description: "Created category rule", ...json(CategoryRule) },
     404: { description: "Category not found", ...json(ProblemDetails) },
+    ...idempotencyConflictResponse,
     ...problemResponses
   }
 });
@@ -376,6 +405,7 @@ registry.registerPath({
       headers: optionalReplayHeaders
     },
     404: { description: "Category rule not found", ...json(ProblemDetails) },
+    ...idempotencyConflictResponse,
     ...problemResponses
   }
 });
@@ -432,7 +462,8 @@ registry.registerPath({
     },
     404: { description: "Not found", ...json(ProblemDetails) },
     409: {
-      description: "Transfer legs require a group-level metadata operation",
+      description:
+        "Transfer legs require a group-level metadata operation, or idempotency intent conflicts",
       ...json(ProblemDetails)
     },
     ...problemResponses
@@ -498,6 +529,7 @@ registry.registerPath({
       ...json(Asset)
     },
     201: { description: "Created asset", ...json(Asset) },
+    ...idempotencyConflictResponse,
     ...problemResponses
   }
 });
@@ -523,6 +555,7 @@ registry.registerPath({
       headers: optionalReplayHeaders
     },
     404: { description: "Not found", ...json(ProblemDetails) },
+    ...idempotencyConflictResponse,
     ...problemResponses
   }
 });
@@ -544,6 +577,7 @@ registry.registerPath({
     },
     201: { description: "Created valuation", ...json(Valuation) },
     404: { description: "Not found", ...json(ProblemDetails) },
+    ...idempotencyConflictResponse,
     ...problemResponses
   }
 });
@@ -646,6 +680,7 @@ registry.registerPath({
     },
     201: { description: "Created recurring rule", ...json(RecurringRule) },
     404: { description: "Account or category not found", ...json(ProblemDetails) },
+    ...idempotencyConflictResponse,
     ...problemResponses
   }
 });
@@ -665,6 +700,37 @@ registry.registerPath({
       ...json(RecurringRule)
     },
     404: { description: "Recurring rule, account, or category not found", ...json(ProblemDetails) },
+    ...idempotencyConflictResponse,
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/v1/spending-warnings",
+  security: secured,
+  request: { query: ListSpendingWarningsQuerySchema },
+  responses: {
+    200: {
+      description: "Active spending warnings and analysis coverage",
+      ...json(SpendingWarningPage)
+    },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "post",
+  path: "/v1/spending-warnings/{warningId}/dismiss",
+  security: secured,
+  request: { params: spendingWarningId, headers: idempotencyKeyHeaders },
+  responses: {
+    200: {
+      description: "Dismissed warning, or idempotent replay",
+      headers: optionalReplayHeaders,
+      ...json(DismissSpendingWarningResponse)
+    },
+    404: { description: "Not found", ...json(ProblemDetails) },
+    ...idempotencyConflictResponse,
     ...problemResponses
   }
 });
@@ -715,7 +781,10 @@ registry.registerPath({
     },
     201: { description: "Created goal", ...json(Goal) },
     404: { description: "Linked account not found", ...json(ProblemDetails) },
-    409: { description: "Funding source already assigned", ...json(ProblemDetails) },
+    409: {
+      description: "Funding source already assigned, or idempotency intent conflicts",
+      ...json(ProblemDetails)
+    },
     ...problemResponses
   }
 });
@@ -732,7 +801,10 @@ registry.registerPath({
       description: "Goals reordered, or idempotent replay",
       headers: optionalReplayHeaders
     },
-    409: { description: "Order does not contain every active goal", ...json(ProblemDetails) },
+    409: {
+      description: "Order is invalid, or idempotency intent conflicts",
+      ...json(ProblemDetails)
+    },
     ...problemResponses
   }
 });
@@ -763,6 +835,7 @@ registry.registerPath({
       ...json(Goal)
     },
     404: { description: "Goal not found", ...json(ProblemDetails) },
+    ...idempotencyConflictResponse,
     ...problemResponses
   }
 });
@@ -777,6 +850,7 @@ registry.registerPath({
       headers: optionalReplayHeaders
     },
     404: { description: "Active goal not found", ...json(ProblemDetails) },
+    ...idempotencyConflictResponse,
     ...problemResponses
   }
 });
@@ -788,6 +862,53 @@ registry.registerPath({
   responses: {
     200: { description: "Goal contribution plan", ...json(GoalPlan) },
     404: { description: "Goal not found", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/v1/budgets",
+  security: secured,
+  request: { query: ListBudgetsQuerySchema },
+  responses: {
+    200: { description: "Budget page with live progress and overview totals", ...json(BudgetPage) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "put",
+  path: "/v1/budgets/{categoryId}",
+  security: secured,
+  request: {
+    params: categoryId,
+    body: json(UpsertBudgetSchema),
+    headers: idempotencyKeyHeaders
+  },
+  responses: {
+    200: {
+      description: "Created, updated, restored budget configuration, or idempotent replay",
+      headers: optionalReplayHeaders,
+      ...json(Budget)
+    },
+    404: { description: "Category not found", ...json(ProblemDetails) },
+    ...idempotencyConflictResponse,
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "patch",
+  path: "/v1/budgets/{budgetId}/archive",
+  security: secured,
+  request: { params: budgetId, headers: idempotencyKeyHeaders },
+  responses: {
+    200: {
+      description: "Archived budget configuration, or idempotent replay",
+      headers: optionalReplayHeaders,
+      ...json(Budget)
+    },
+    404: { description: "Budget not found", ...json(ProblemDetails) },
+    ...idempotencyConflictResponse,
     ...problemResponses
   }
 });
@@ -918,6 +1039,18 @@ registry.registerPath({
     200: {
       description: "Upcoming recurring in/out forecast over the requested range",
       ...json(RecurringForecast)
+    },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "get",
+  path: "/v1/metrics",
+  security: secured,
+  responses: {
+    200: {
+      description: "Prometheus text exposition for backend runtime health",
+      content: { "text/plain": { schema: z.string() } }
     },
     ...problemResponses
   }

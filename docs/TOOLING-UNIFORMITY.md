@@ -134,3 +134,31 @@ Ordering note: format check runs *first* and fails fast — never make a human (
 ---
 
 **The one-line summary:** Prettier at the root because style has no environments; ESLint at the root as one layered config (base culture + api/web/test layers, `projectService` bridging the tsconfigs); TS strictness defined once and extended everywhere; versions unified by catalogs and audited by syncpack; enforced editor → hook → CI so uniformity never depends on anyone remembering anything. One repo, one culture — the linter is just the culture written down.
+
+---
+
+## 9. Resolved Issue: `vitest`/esbuild couldn't resolve the `@treasury-ops/config` tsconfig `extends`
+
+**Symptom (historical)** — every `pnpm --filter @treasury-ops/api test` (and `test:integration`, `test:e2e`) run printed, before any test output:
+
+```
+▲ [WARNING] Cannot find base config file "@treasury-ops/config/tsconfig/base.json" [tsconfig.json]
+
+    ../../tsconfig.json:2:13:
+      2 │   "extends": "@treasury-ops/config/tsconfig/base.json",
+```
+
+It was cosmetic — the actual test run and coverage collection were unaffected because Vitest's own module resolver (not esbuild's) loads the workspace correctly, and `tsc --build`/`pnpm typecheck` resolve `exports` maps fine. Only esbuild's internal tsconfig-`extends` resolver (used by Vite/Vitest when pre-scanning tsconfig files for path-alias info) doesn't walk `package.json` `exports` maps — see [evanw/esbuild#2163](https://github.com/evanw/esbuild/issues/2163).
+
+**What was tried and didn't work:** adding a legacy `"main": "./tsconfig/base.json"` field to `packages/config/package.json` — irrelevant here since `extends` uses a *subpath* specifier (`@treasury-ops/config/tsconfig/base.json`), and `main` only affects bare package-root imports. Reshaping the `exports` value into `{ "default": "./tsconfig/base.json" }` also made no difference — esbuild's own `extends` resolver just doesn't consult `exports` at all, regardless of its shape.
+
+**The actual fix** — dropped the package-specifier `extends` in favor of a relative path, in all four config files:
+
+- `tsconfig.json`: `"extends": "./packages/config/tsconfig/base.json"`
+- `packages/shared/tsconfig.json`: `"extends": "../config/tsconfig/base.json"`
+- `apps/web/tsconfig.json`: `"extends": "../../packages/config/tsconfig/base.json"`
+- `apps/api/tsconfig.json`: `"extends": "../../packages/config/tsconfig/base.json"`
+
+Verified clean (`pnpm --filter @treasury-ops/api typecheck`, `pnpm --filter @treasury-ops/web typecheck`, `pnpm --filter @treasury-ops/shared build`, and the full `apps/api` unit suite) with no remaining warning from any tsconfig inside this repo. This moves the base-config extend further from the "extend by package name" convention in §1's TypeScript row, but it's the only form esbuild resolves reliably — worth revisiting if esbuild ever fixes #2163 upstream.
+
+**Note:** running the suite from inside a worktree checkout can still surface this same warning pointing at a *different* git worktree's `tsconfig.json` (Vite's workspace-root detection walks up past the current worktree looking for `.git`/lockfiles and can pick up an unrelated checkout's config on the way). That's a separate worktree's file, not something to fix from here — if you hit it, it means another checkout of this repo still has the old package-specifier `extends` and hasn't picked up this fix yet.

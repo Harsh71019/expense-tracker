@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, isNotNull, isNull } from "drizzle-orm";
 import { z } from "zod";
 
 import { DATABASE_CONNECTION } from "../common/db/db.module.js";
@@ -27,6 +27,9 @@ const NotificationOutboxSchema = z.object({
   type: NotificationTypeSchema,
   payload: z.record(z.string(), z.unknown()),
   status: z.enum(["pending", "sent"]),
+  failureCode: z.literal("delivery_retries_exhausted").optional(),
+  failedAt: z.date().optional(),
+  deliveryAttempts: z.number().int().min(0),
   createdAt: z.date(),
   sentAt: z.date().optional()
 });
@@ -56,32 +59,73 @@ export class NotificationOutboxRepository {
     return toEntry(row);
   }
 
-  async findById(id: string): Promise<NotificationOutboxEntry | null> {
+  async findById(userId: string, id: string): Promise<NotificationOutboxEntry | null> {
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) return null;
     const [row] = await this.db
       .select()
       .from(notificationOutbox)
-      .where(eq(notificationOutbox.id, id));
+      .where(and(eq(notificationOutbox.userId, userId), eq(notificationOutbox.id, id)));
     return row === undefined ? null : toEntry(row);
   }
 
   /** The sweep's source of work — oldest first, so a backlog drains in order. */
-  async findPending(limit: number): Promise<NotificationOutboxEntry[]> {
+  async systemFindPending(limit: number): Promise<NotificationOutboxEntry[]> {
     const rows = await this.db
       .select()
       .from(notificationOutbox)
-      .where(eq(notificationOutbox.status, "pending"))
+      .where(and(eq(notificationOutbox.status, "pending"), isNull(notificationOutbox.failedAt)))
       .orderBy(asc(notificationOutbox.createdAt))
       .limit(limit);
     return rows.map(toEntry);
   }
 
   /** Guarded by status: a duplicate delivery job marking an already-sent entry must not re-stamp sentAt. */
-  async markSent(id: string): Promise<void> {
+  async markSent(userId: string, id: string): Promise<void> {
     await this.db
       .update(notificationOutbox)
       .set({ status: "sent", sentAt: new Date() })
-      .where(and(eq(notificationOutbox.id, id), eq(notificationOutbox.status, "pending")));
+      .where(
+        and(
+          eq(notificationOutbox.userId, userId),
+          eq(notificationOutbox.id, id),
+          eq(notificationOutbox.status, "pending"),
+          isNull(notificationOutbox.failedAt)
+        )
+      );
+  }
+
+  async markTerminalFailure(userId: string, id: string, attempts: number): Promise<void> {
+    await this.db
+      .update(notificationOutbox)
+      .set({
+        failureCode: "delivery_retries_exhausted",
+        failedAt: new Date(),
+        deliveryAttempts: attempts
+      })
+      .where(
+        and(
+          eq(notificationOutbox.userId, userId),
+          eq(notificationOutbox.id, id),
+          eq(notificationOutbox.status, "pending"),
+          isNull(notificationOutbox.failedAt)
+        )
+      );
+  }
+
+  async requeueTerminalFailure(userId: string, id: string): Promise<boolean> {
+    const rows = await this.db
+      .update(notificationOutbox)
+      .set({ failureCode: null, failedAt: null, deliveryAttempts: 0 })
+      .where(
+        and(
+          eq(notificationOutbox.userId, userId),
+          eq(notificationOutbox.id, id),
+          eq(notificationOutbox.status, "pending"),
+          isNotNull(notificationOutbox.failedAt)
+        )
+      )
+      .returning({ id: notificationOutbox.id });
+    return rows.length === 1;
   }
 }
 

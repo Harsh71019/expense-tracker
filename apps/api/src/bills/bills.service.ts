@@ -53,6 +53,7 @@ export class BillsService {
       userId,
       "credit-card.config.update",
       key,
+      { accountId, input },
       AccountSchema,
       async (tx) => {
         const account = await this.accounts.findActiveById(userId, accountId, tx);
@@ -134,6 +135,7 @@ export class BillsService {
       userId,
       "credit-card.bill.pay",
       key,
+      { billId, input },
       BillPaymentResultSchema,
       async (tx) => {
         const bill = await this.bills.findByIdForUpdate(userId, billId, tx);

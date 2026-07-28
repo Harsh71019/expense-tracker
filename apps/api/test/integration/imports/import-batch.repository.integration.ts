@@ -96,7 +96,7 @@ describe("ImportBatchRepository", () => {
       MAPPING
     );
 
-    await batches.markParsed(batch.id, "staged", {
+    await batches.markParsed("user-a", batch.id, "staged", {
       total: 3,
       staged: 2,
       duplicates: 1,
@@ -107,7 +107,7 @@ describe("ImportBatchRepository", () => {
 
     // A second markParsed call (e.g. a duplicate job delivery) must not clobber
     // an already-resolved batch — the filter requires status: "pending".
-    await batches.markParsed(batch.id, "failed", {
+    await batches.markParsed("user-a", batch.id, "failed", {
       total: 0,
       staged: 0,
       duplicates: 0,
@@ -115,6 +115,27 @@ describe("ImportBatchRepository", () => {
     });
     const stillStaged = await batches.findById("user-a", batch.id);
     expect(stillStaged).toMatchObject({ status: "staged", stats: { total: 3, staged: 2 } });
+  });
+
+  it("durably records terminal parse exhaustion and remains tenant scoped", async () => {
+    const batch = await batches.create(
+      "user-a",
+      accountId,
+      "terminal.csv",
+      "sha256:terminal",
+      MAPPING
+    );
+
+    await batches.markTerminalParseFailure("user-b", batch.id);
+    expect(await batches.findById("user-a", batch.id)).toMatchObject({ status: "pending" });
+
+    await batches.markTerminalParseFailure("user-a", batch.id);
+    const failed = await batches.findById("user-a", batch.id);
+    expect(failed).toMatchObject({
+      status: "failed",
+      failureCode: "parse_retries_exhausted"
+    });
+    expect(failed?.failedAt).toBeInstanceOf(Date);
   });
 
   it("lists a user's batches newest first, scoped to that user", async () => {

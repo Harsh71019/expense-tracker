@@ -46,6 +46,14 @@ export const accounts = pgTable(
           AND ${table.nextStatementAt} IS NOT NULL
         )
       )`
+    ),
+    check(
+      "accounts_opening_balance_minor_safe_integer",
+      sql`${table.openingBalanceMinor} between ${sql.raw(String(-Number.MAX_SAFE_INTEGER))} and ${sql.raw(String(Number.MAX_SAFE_INTEGER))}`
+    ),
+    check(
+      "accounts_balance_minor_safe_integer",
+      sql`${table.balanceMinor} between ${sql.raw(String(-Number.MAX_SAFE_INTEGER))} and ${sql.raw(String(Number.MAX_SAFE_INTEGER))}`
     )
   ]
 );

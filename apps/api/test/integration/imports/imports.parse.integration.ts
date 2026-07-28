@@ -29,7 +29,15 @@ class TestRuntimeConfig implements RuntimeConfigService {
     LOG_PRETTY: false,
     SERVICE_ROLE: "worker" as const,
     DATABASE_URL: "postgres://test:test@localhost:5432/test",
+    DATABASE_POOL_MAX: 10,
+    DATABASE_CONNECTION_TIMEOUT_MS: 5_000,
+    DATABASE_QUERY_TIMEOUT_MS: 10_000,
+    DATABASE_STATEMENT_TIMEOUT_MS: 10_000,
+    DATABASE_LOCK_TIMEOUT_MS: 5_000,
+    DATABASE_IDLE_IN_TXN_TIMEOUT_MS: 30_000,
     REDIS_URL: TEST_REDIS_URL,
+    READINESS_TIMEOUT_MS: 2_000,
+    GRACEFUL_SHUTDOWN_TIMEOUT_MS: 15_000,
     APP_TIMEZONE: "Asia/Kolkata" as const,
     TRUSTED_ORIGINS: "http://localhost:3000",
     GIT_SHA: "test-sha",
@@ -249,7 +257,7 @@ describe("Imports parse pipeline (real BullMQ worker against real Redis)", () =>
     );
     await service.parseFile(batch.id, "user-suggest", accountIdSuggest, MAPPING, CSV);
 
-    const page = await stagedRows.findByBatchId(batch.id, undefined, 10);
+    const page = await stagedRows.findByBatchId("user-suggest", batch.id, undefined, 10);
     expect(page.items[0]).toMatchObject({ suggestedCategoryId: foodCategoryId });
     expect(page.items[1]?.suggestedCategoryId).toBeUndefined();
   });

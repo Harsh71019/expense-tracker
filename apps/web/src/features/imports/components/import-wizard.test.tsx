@@ -141,10 +141,15 @@ describe("ImportWizard", () => {
     const user = userEvent.setup();
     renderWizard();
 
+    expect(screen.getByRole("link", { name: "Settings" })).toHaveAttribute(
+      "href",
+      "/settings?tab=management"
+    );
     expect(screen.getByText("No statements imported")).toBeVisible();
     await user.click(screen.getByRole("button", { name: /New import/ }));
 
     expect(screen.getByRole("heading", { name: "New import" })).toBeVisible();
+    expect(screen.getByText("New import", { selector: "[aria-current='page']" })).toBeVisible();
     expect(screen.getByText("Which account is this statement for?")).toBeVisible();
   });
 

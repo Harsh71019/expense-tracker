@@ -733,7 +733,20 @@ Conventions: controllers do HTTP only; services own business rules and transacti
 ## 14. Resilience & Correctness Under Failure
 
 - **Graceful shutdown:** on SIGTERM — stop accepting HTTP, let in-flight requests finish (10s budget), pause BullMQ workers after current job, close Mongo/Redis, exit 0. NestJS `enableShutdownHooks()` + explicit BullMQ `worker.close()`. This is what makes deploys zero-drama.
-- **Outbox pattern for notifications:** budget alerts and monthly reports are written to `notification_outbox` **inside the same transaction** as the state change that triggered them; a worker drains the outbox with retries. The system sweep emits `{ userId, notificationId }`, that pair is validated in the BullMQ payload, and delivery reads and marks the row with both predicates. This guarantees you never get an alert for a rollback, never lose one to a crashed process, and cannot use a malformed queued UUID to deliver another tenant's notification.
+- **Outbox pattern for notifications:** budget alerts and monthly reports are written to
+  `notification_outbox` **inside the same Postgres transaction** as the state change that triggered
+  them; a worker drains the outbox with retries. The system sweep emits
+  `{ userId, notificationId }`, that pair is validated in the BullMQ payload, and every follow-up
+  operation uses both predicates. Before an external call, the worker atomically transitions the row
+  from `pending` to `delivering` with a UUID claim token, ten-minute lease, attempt count,
+  last-attempt timestamp, and bounded error summary. Only that token can acknowledge `sent` or
+  release a failed attempt. An expired lease is dispatchable again, so a worker crash cannot strand
+  the row and concurrent jobs cannot both send under a live claim.
+- **Notification delivery semantics:** the outbox row ID is the stable adapter idempotency key on
+  every retry. Adapters whose provider supports deduplication must forward it. Providers without
+  deduplication remain **at-least-once**: a crash after the provider accepts a message but before the
+  database acknowledgement can produce a duplicate after the lease expires. Ledger writes never
+  wait on notification delivery.
 - **Dead-letter queue:** BullMQ jobs that exhaust retries land in a DLQ visible in Bull Board + GlitchTip alert. `imports` jobs are the main customer.
 - **Circuit breaker on outbound calls** (ntfy/Telegram): 5 failures → open 60s → half-open probe. A down notification service must never back-pressure the ledger.
 - **Clock discipline:** LXC syncs NTP; all cron idempotency keys use `Asia/Kolkata` _calendar dates_, not timestamps, so a DST-less IST is still explicit and a re-run at 01:05 can't differ from 01:00.

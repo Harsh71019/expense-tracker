@@ -12,8 +12,9 @@ export const NOTIFICATIONS_QUEUE_NAME = "notifications";
 export const DELIVER_NOTIFICATION_JOB_NAME = "deliver";
 
 export const DeliverNotificationJobDataSchema = z.object({
-  userId: z.string().min(1),
   notificationId: z.string().uuid(),
+  userId: z.string().min(1),
+  attemptGeneration: z.number().int().nonnegative(),
   correlationId: z.string().min(1).max(128)
 });
 
@@ -33,33 +34,42 @@ export class NotificationsQueue implements OnModuleDestroy {
   }
 
   /**
-   * One delivery job per outbox entry (jobId = notificationId): the sweep
-   * re-scans "pending" entries on every tick, so re-enqueueing the same
-   * entry while its job is still active/waiting/delayed is a safe no-op —
-   * BullMQ dedupes on jobId for jobs that haven't reached a terminal state.
+   * One job per durable attempt generation. Repeated sweeps of unchanged
+   * state use the same id; a failed/released database attempt increments the
+   * generation so a later sweep can enqueue recovery even if an older Bull
+   * job remains terminal or delayed.
    */
-  async enqueueDelivery(userId: string, notificationId: string): Promise<void> {
+  async enqueueDelivery(
+    userId: string,
+    notificationId: string,
+    attemptCount: number
+  ): Promise<void> {
     const data = DeliverNotificationJobDataSchema.parse({
-      userId,
       notificationId,
+      userId,
+      attemptGeneration: attemptCount,
       correlationId: this.context.get()?.reqId ?? crypto.randomUUID()
     });
     await this.queue.add(DELIVER_NOTIFICATION_JOB_NAME, data, {
-      jobId: notificationId,
+      jobId: `${notificationId}-${data.attemptGeneration}`,
       attempts: 5,
       backoff: { type: "exponential", delay: 2_000 },
       ...QUEUE_RETENTION
     });
   }
 
-  async replaceTerminalDelivery(userId: string, notificationId: string): Promise<void> {
-    const existing = await this.queue.getJob(notificationId);
+  async replaceTerminalDelivery(
+    userId: string,
+    notificationId: string,
+    attemptCount: number
+  ): Promise<void> {
+    const existing = await this.queue.getJob(`${notificationId}-${attemptCount}`);
     if (existing !== undefined) {
       const state = await existing.getState();
       if (state !== "completed" && state !== "failed") return;
       await existing.remove();
     }
-    await this.enqueueDelivery(userId, notificationId);
+    await this.enqueueDelivery(userId, notificationId, attemptCount);
   }
 
   /** Read-only access to the underlying Queue — Bull Board needs the real instance. */

@@ -33,9 +33,9 @@ export class NotificationSweepService {
   async sweep(): Promise<void> {
     if (this.config.env.SERVICE_ROLE !== "worker") return;
 
-    const pending = await this.outbox.systemFindPending(SWEEP_BATCH_SIZE);
+    const pending = await this.outbox.systemFindDispatchable(new Date(), SWEEP_BATCH_SIZE);
     for (const entry of pending) {
-      await this.queue.enqueueDelivery(entry.userId, entry.id);
+      await this.queue.enqueueDelivery(entry.userId, entry.id, entry.attemptCount);
     }
     if (pending.length > 0) {
       this.logger.log(

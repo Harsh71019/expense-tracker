@@ -184,4 +184,54 @@ describe("ImportBatchRepository", () => {
     expect(await batches.findLatestMappingForAccount("someone-else", mappingAccountId)).toBeNull();
     expect(await batches.findLatestMappingForAccount("user-mapping", accountId)).toBeNull();
   });
+
+  it("recovers an expired worker lease and returns the owning tenant with a fresh token", async () => {
+    const created = await withTxn(testDb.db, (tx) =>
+      batches.create("user-a", accountId, "lease-recovery.csv", "sha256:lease-recovery", MAPPING, {
+        fileContentBase64: Buffer.from("Txn Date,Narration,Amount").toString("base64"),
+        correlationId: "lease-recovery-request",
+        tx
+      })
+    );
+    const claimedAt = new Date();
+    const [firstClaim] = await withTxn(testDb.db, (tx) =>
+      batches.systemClaimReady(claimedAt, new Date(claimedAt.getTime() + 60_000), 10, tx)
+    );
+    if (firstClaim === undefined) throw new Error("Expected the workflow to be claimed.");
+    expect(firstClaim).toMatchObject({
+      batchId: created.id,
+      userId: "user-a",
+      operation: "parse"
+    });
+
+    await batches.startWorkflow(
+      "user-a",
+      created.id,
+      "parse",
+      firstClaim.claimToken,
+      new Date(claimedAt.getTime() + 120_000)
+    );
+    await expect(
+      withTxn(testDb.db, (tx) =>
+        batches.systemClaimReady(
+          new Date(claimedAt.getTime() + 30_000),
+          new Date(claimedAt.getTime() + 90_000),
+          10,
+          tx
+        )
+      )
+    ).resolves.toEqual([]);
+
+    const [recovered] = await withTxn(testDb.db, (tx) =>
+      batches.systemClaimReady(
+        new Date(claimedAt.getTime() + 121_000),
+        new Date(claimedAt.getTime() + 181_000),
+        10,
+        tx
+      )
+    );
+    if (recovered === undefined) throw new Error("Expected the expired workflow to be recovered.");
+    expect(recovered.userId).toBe("user-a");
+    expect(recovered.claimToken).not.toBe(firstClaim.claimToken);
+  });
 });

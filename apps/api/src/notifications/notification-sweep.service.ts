@@ -1,9 +1,13 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable, Optional } from "@nestjs/common";
 import { Cron, CronExpression } from "@nestjs/schedule";
 import { Logger } from "nestjs-pino";
 
 import { RuntimeConfigService } from "../common/config/runtime-config.service.js";
 import { LogEvent } from "../common/logging/events.js";
+import {
+  runScheduled,
+  ScheduledRunCoordinator
+} from "../common/scheduler/scheduled-run.coordinator.js";
 import { NotificationOutboxRepository } from "./notification-outbox.repository.js";
 import { NotificationsQueue } from "./notifications.queue.js";
 
@@ -26,22 +30,26 @@ export class NotificationSweepService {
     private readonly config: RuntimeConfigService,
     private readonly outbox: NotificationOutboxRepository,
     private readonly queue: NotificationsQueue,
-    @Inject(Logger) private readonly logger: Pick<Logger, "log">
+    @Inject(Logger) private readonly logger: Pick<Logger, "log">,
+    @Optional() private readonly scheduler?: ScheduledRunCoordinator
   ) {}
 
   @Cron(CronExpression.EVERY_MINUTE)
   async sweep(): Promise<void> {
     if (this.config.env.SERVICE_ROLE !== "worker") return;
 
-    const pending = await this.outbox.systemFindPending(SWEEP_BATCH_SIZE);
-    for (const entry of pending) {
-      await this.queue.enqueueDelivery(entry.userId, entry.id);
-    }
-    if (pending.length > 0) {
-      this.logger.log(
-        { event: LogEvent.NotificationSweepEnqueued, count: pending.length },
-        "notification sweep enqueued pending deliveries"
-      );
-    }
+    await runScheduled(this.scheduler, "notifications.sweep", "minute", async () => {
+      const pending = await this.outbox.systemFindDispatchable(new Date(), SWEEP_BATCH_SIZE);
+      for (const entry of pending) {
+        await this.queue.enqueueDelivery(entry.userId, entry.id, entry.attemptCount);
+      }
+      if (pending.length > 0) {
+        this.logger.log(
+          { event: LogEvent.NotificationSweepEnqueued, count: pending.length },
+          "notification sweep enqueued pending deliveries"
+        );
+      }
+      return pending.length;
+    });
   }
 }

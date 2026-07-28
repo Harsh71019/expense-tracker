@@ -34,7 +34,8 @@ export function startNotificationsWorker(
         {
           reqId: data.correlationId,
           jobId: job.id ?? data.notificationId,
-          jobName: job.name
+          jobName: job.name,
+          userId: data.userId
         },
         async () => {
           await service.deliver(data.userId, data.notificationId);

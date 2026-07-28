@@ -155,7 +155,11 @@ Better Auth commits users in its own transaction. Profile provisioning is theref
     date: 'Txn Date', amount: 'Amount', description: 'Narration',
     dateFormat: 'DD/MM/YYYY', amountConvention: 'single_signed' | 'debit_credit_cols'
   },
-  status: 'staged' | 'committed' | 'reverted' | 'failed',
+  status:
+    | 'pending_parse' | 'parsing' | 'staged'
+    | 'commit_queued' | 'committing' | 'committed'
+    | 'revert_queued' | 'reverting' | 'reverted'
+    | 'failed',
   stats: { total: number, staged: number, duplicates: number, committed: number },
   committedAt?: Date, revertedAt?: Date,
   createdAt: Date
@@ -490,8 +494,12 @@ Manual entry is fine on the Metro, but monthly statement dumps are where this ea
 ```
 POST /imports (multipart CSV + accountId)
    │  reject if fileHash already committed
+   │  202 after batch + parse command + bounded file payload commit atomically
    ▼
-[BullMQ job: parse]                     ← csv-parse (streaming), never in the request cycle
+[Postgres workflow: pending_parse]
+   │  worker-only dispatcher claims with a lease and puts only a batch pointer in Redis
+   ▼
+[BullMQ job: parse]                     ← csv-parse, never in the request cycle
    │  per row: normalize date/amount → compute dedupeHash
    │  dedupe against BOTH existing transactions and rows within the file
    ▼
@@ -502,17 +510,31 @@ GET /imports/:id/preview                ← UI shows parsed rows, flags dupes/pr
    │                                       lets you untick rows & fix category guesses
    ▼
 POST /imports/:id/commit
-   │  chunks of 200 rows, each chunk = one Mongo transaction:
+   │  202 after the durable command transitions to commit_queued
+   ▼
+[BullMQ job: commit]
+   │  chunks of 200 rows, each chunk = one Postgres transaction:
    │    insert transactions (source:'csv_import', importBatchId, dedupeHash)
-   │    $inc account balance by chunk net
+   │    update account balance by chunk net
    │  batch.status = 'committed' only after ALL chunks succeed;
    │  a mid-way crash leaves status 'staged' + partial rows, and commit is
    │  RESUMABLE: re-running skips rows whose dedupeHash already landed.
    ▼
-POST /imports/:id/revert                ← one bulk reversal, chunked transactions,
+POST /imports/:id/revert
+   │  202 after the durable command transitions to revert_queued
+   ▼
+[BullMQ job: revert]                    ← one bulk reversal, chunked transactions,
                                           reverses every posted txn with this batchId,
                                           batch.status = 'reverted'
 ```
+
+The database row is the workflow source of truth; Redis is only a delivery mechanism. Claims carry
+a UUID token, lease expiry, attempt count, availability time, correlation id, and bounded error
+summary. A worker crash, expired lease, or Redis outage therefore converges through the dispatcher
+without losing an accepted command. Heartbeats extend active leases between 200-row chunks.
+Commit/revert request races use one conditional state transition, so repeated concurrent requests
+join the same workflow instead of creating duplicate jobs. Terminal parse failures clear the stored
+file; successful parsing does the same.
 
 **Details that matter for Indian bank CSVs:**
 
@@ -575,6 +597,18 @@ Next.js uses the Better Auth **client SDK** for login/register/passkey UI and ju
 ## 6. Cron Jobs & Background Work (the Proxmox dividend)
 
 Scheduling via `@nestjs/schedule` for triggers, but **every job body runs through BullMQ** so jobs are retryable, observable (Bull Board dashboard), and survive process restarts. All schedules in `Asia/Kolkata`.
+
+Every in-process cron first enters `ScheduledRunCoordinator`. The coordinator creates a
+deterministic run ID from the job name plus its IST day/minute schedule window and atomically claims
+that `scheduled_job_runs` row with a UUID token and one-hour lease. Multiple worker replicas can
+receive the same Nest schedule tick, but only the database lease winner executes the body. Each run
+durably records status, attempts, start/completion times, duration, processed item count, and a
+bounded failure summary.
+
+A worker-only watchdog runs every 15 minutes under the same leadership mechanism. It marks expired
+leases failed, emits `scheduler.run_overlong`, emits `scheduler.run_missing` when a previously-seen
+job exceeds its expected cadence, and removes terminal history older than 30 days. Operators can
+inspect `scheduled_job_runs` directly when reconstructing a missed or failed schedule window.
 
 | Job                          | Schedule                | What it does                                                                                                                                                                                                                              |
 | ---------------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -711,7 +745,20 @@ Conventions: controllers do HTTP only; services own business rules and transacti
 ## 14. Resilience & Correctness Under Failure
 
 - **Graceful shutdown:** on SIGTERM — stop accepting HTTP, let in-flight requests finish (10s budget), pause BullMQ workers after current job, close Mongo/Redis, exit 0. NestJS `enableShutdownHooks()` + explicit BullMQ `worker.close()`. This is what makes deploys zero-drama.
-- **Outbox pattern for notifications:** budget alerts and monthly reports are written to `notification_outbox` **inside the same transaction** as the state change that triggered them; a worker drains the outbox with retries. The system sweep emits `{ userId, notificationId }`, that pair is validated in the BullMQ payload, and delivery reads and marks the row with both predicates. This guarantees you never get an alert for a rollback, never lose one to a crashed process, and cannot use a malformed queued UUID to deliver another tenant's notification.
+- **Outbox pattern for notifications:** budget alerts and monthly reports are written to
+  `notification_outbox` **inside the same Postgres transaction** as the state change that triggered
+  them; a worker drains the outbox with retries. The system sweep emits
+  `{ userId, notificationId }`, that pair is validated in the BullMQ payload, and every follow-up
+  operation uses both predicates. Before an external call, the worker atomically transitions the row
+  from `pending` to `delivering` with a UUID claim token, ten-minute lease, attempt count,
+  last-attempt timestamp, and bounded error summary. Only that token can acknowledge `sent` or
+  release a failed attempt. An expired lease is dispatchable again, so a worker crash cannot strand
+  the row and concurrent jobs cannot both send under a live claim.
+- **Notification delivery semantics:** the outbox row ID is the stable adapter idempotency key on
+  every retry. Adapters whose provider supports deduplication must forward it. Providers without
+  deduplication remain **at-least-once**: a crash after the provider accepts a message but before the
+  database acknowledgement can produce a duplicate after the lease expires. Ledger writes never
+  wait on notification delivery.
 - **Dead-letter queue:** BullMQ jobs that exhaust retries land in a DLQ visible in Bull Board + GlitchTip alert. `imports` jobs are the main customer.
 - **Circuit breaker on outbound calls** (ntfy/Telegram): 5 failures → open 60s → half-open probe. A down notification service must never back-pressure the ledger.
 - **Clock discipline:** LXC syncs NTP; all cron idempotency keys use `Asia/Kolkata` _calendar dates_, not timestamps, so a DST-less IST is still explicit and a re-run at 01:05 can't differ from 01:00.

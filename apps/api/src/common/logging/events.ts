@@ -7,6 +7,11 @@ export const LogEvent = {
   TransferReversed: "transfer.reversed",
   ImportBatchParsed: "import.batch_parsed",
   ImportBatchParseFailed: "import.batch_parse_failed",
+  ImportWorkflowDispatchFailed: "import.workflow_dispatch_failed",
+  ImportWorkflowsDispatched: "import.workflows_dispatched",
+  ImportWorkflowCompleted: "import.workflow_completed",
+  ImportWorkflowFailed: "import.workflow_failed",
+  ImportWorkflowStateUpdateFailed: "import.workflow_state_update_failed",
   NotificationDelivered: "notification.delivered",
   NotificationDeliveryFailed: "notification.delivery_failed",
   NotificationSweepEnqueued: "notification.sweep_enqueued",
@@ -33,7 +38,11 @@ export const LogEvent = {
   CreditCardBillGenerated: "bill.generated",
   CreditCardBillGenerationFailed: "bill.generation_failed",
   BillStatementParsed: "bill.statement_parsed",
-  BillStatementParseFailed: "bill.statement_parse_failed"
+  BillStatementParseFailed: "bill.statement_parse_failed",
+  SchedulerRunCompleted: "scheduler.run_completed",
+  SchedulerRunFailed: "scheduler.run_failed",
+  SchedulerRunOverlong: "scheduler.run_overlong",
+  SchedulerRunMissing: "scheduler.run_missing"
 } as const;
 
 export type LogEvent = (typeof LogEvent)[keyof typeof LogEvent];

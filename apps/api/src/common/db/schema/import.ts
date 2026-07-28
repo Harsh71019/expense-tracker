@@ -15,7 +15,11 @@ import {
 import { user } from "../auth-schema.js";
 import { accounts } from "./account.js";
 import { categories } from "./category.js";
-import { importBatchStatusEnum, transactionTypeEnum } from "./enums.js";
+import {
+  importBatchStatusEnum,
+  importWorkflowOperationEnum,
+  transactionTypeEnum
+} from "./enums.js";
 
 export const importBatches = pgTable(
   "import_batches",
@@ -30,7 +34,15 @@ export const importBatches = pgTable(
     filename: text("filename").notNull(),
     fileHash: text("file_hash").notNull(),
     mapping: jsonb("mapping").notNull(),
+    fileContentBase64: text("file_content_base64"),
     status: importBatchStatusEnum("status").notNull(),
+    workflowOperation: importWorkflowOperationEnum("workflow_operation"),
+    workflowCorrelationId: text("workflow_correlation_id"),
+    workflowToken: uuid("workflow_token"),
+    workflowLeaseUntil: timestamp("workflow_lease_until", { withTimezone: true }),
+    workflowAvailableAt: timestamp("workflow_available_at", { withTimezone: true }),
+    workflowAttempts: integer("workflow_attempts").notNull().default(0),
+    workflowError: text("workflow_error"),
     statsTotal: integer("stats_total").notNull().default(0),
     statsStaged: integer("stats_staged").notNull().default(0),
     statsDuplicates: integer("stats_duplicates").notNull().default(0),
@@ -45,7 +57,12 @@ export const importBatches = pgTable(
   (table) => [
     uniqueIndex("import_batches_user_id_file_hash_committed_unique")
       .on(table.userId, table.fileHash)
-      .where(sql`${table.status} = 'committed'`)
+      .where(sql`${table.status} = 'committed'`),
+    index("import_batches_workflow_ready_idx").on(
+      table.status,
+      table.workflowAvailableAt,
+      table.workflowLeaseUntil
+    )
   ]
 );
 

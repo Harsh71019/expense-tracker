@@ -32,10 +32,21 @@ export const assetKindEnum = pgEnum("asset_kind", [
 export const valuationSourceEnum = pgEnum("valuation_source", ["manual", "maturity_projection"]);
 export const importBatchStatusEnum = pgEnum("import_batch_status", [
   "pending",
+  "pending_parse",
+  "parsing",
   "staged",
+  "commit_queued",
+  "committing",
   "committed",
+  "revert_queued",
+  "reverting",
   "reverted",
   "failed"
+]);
+export const importWorkflowOperationEnum = pgEnum("import_workflow_operation", [
+  "parse",
+  "commit",
+  "revert"
 ]);
 export const notificationTypeEnum = pgEnum("notification_type", [
   "budget_alert",
@@ -43,7 +54,11 @@ export const notificationTypeEnum = pgEnum("notification_type", [
   "balance_drift",
   "goal_achieved"
 ]);
-export const notificationStatusEnum = pgEnum("notification_status", ["pending", "sent"]);
+export const notificationStatusEnum = pgEnum("notification_status", [
+  "pending",
+  "delivering",
+  "sent"
+]);
 export const billReconciliationStatusEnum = pgEnum("bill_reconciliation_status", [
   "awaiting_statement",
   "reconciled"
@@ -57,6 +72,11 @@ export const billStatementRowMatchStatusEnum = pgEnum("bill_statement_row_match_
   "matched",
   "missing_from_ledger",
   "ambiguous"
+]);
+export const scheduledRunStatusEnum = pgEnum("scheduled_run_status", [
+  "running",
+  "completed",
+  "failed"
 ]);
 export const spendingWarningKindEnum = pgEnum("spending_warning_kind", [
   "overall_spend_spike",

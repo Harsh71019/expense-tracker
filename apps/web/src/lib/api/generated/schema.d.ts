@@ -221,8 +221,8 @@ export interface paths {
         };
       };
       responses: {
-        /** @description Import batch created */
-        201: {
+        /** @description Import parse workflow accepted */
+        202: {
           headers: {
             [name: string]: unknown;
           };
@@ -516,8 +516,8 @@ export interface paths {
       };
       requestBody?: never;
       responses: {
-        /** @description Committed batch */
-        200: {
+        /** @description Commit workflow accepted */
+        202: {
           headers: {
             [name: string]: unknown;
           };
@@ -598,8 +598,8 @@ export interface paths {
       };
       requestBody?: never;
       responses: {
-        /** @description Reverted batch */
-        200: {
+        /** @description Revert workflow accepted */
+        202: {
           headers: {
             [name: string]: unknown;
           };
@@ -5503,7 +5503,18 @@ export interface components {
         credit?: string;
       };
       /** @enum {string} */
-      status: "pending" | "staged" | "committed" | "reverted" | "failed";
+      status:
+        | "pending"
+        | "pending_parse"
+        | "parsing"
+        | "staged"
+        | "commit_queued"
+        | "committing"
+        | "committed"
+        | "revert_queued"
+        | "reverting"
+        | "reverted"
+        | "failed";
       /** @enum {string} */
       failureCode?: "invalid_csv" | "parse_retries_exhausted";
       /** Format: date-time */

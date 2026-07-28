@@ -1,9 +1,13 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable, Optional } from "@nestjs/common";
 import { Cron } from "@nestjs/schedule";
 import { Logger } from "nestjs-pino";
 
 import { RuntimeConfigService } from "../common/config/runtime-config.service.js";
 import { LogEvent } from "../common/logging/events.js";
+import {
+  runScheduled,
+  ScheduledRunCoordinator
+} from "../common/scheduler/scheduled-run.coordinator.js";
 import { toISTMonth } from "../common/time/ist.js";
 import { MonthlyRollupRepository } from "./monthly-rollup.repository.js";
 import { previousMonth } from "./month.js";
@@ -24,35 +28,39 @@ export class RollupsRefreshService {
   constructor(
     private readonly config: RuntimeConfigService,
     private readonly rollups: MonthlyRollupRepository,
-    @Inject(Logger) private readonly logger: RollupsRefreshLogger
+    @Inject(Logger) private readonly logger: RollupsRefreshLogger,
+    @Optional() private readonly scheduler?: ScheduledRunCoordinator
   ) {}
 
   @Cron("0 2 * * *", { timeZone: "Asia/Kolkata" })
   async refresh(): Promise<void> {
     if (this.config.env.SERVICE_ROLE !== "worker") return;
 
-    const currentMonth = toISTMonth(new Date());
-    const lastMonth = previousMonth(currentMonth);
-    const userIds = await this.rollups.distinctUserIds();
+    await runScheduled(this.scheduler, "rollups.refresh", "daily", async () => {
+      const currentMonth = toISTMonth(new Date());
+      const lastMonth = previousMonth(currentMonth);
+      const userIds = await this.rollups.distinctUserIds();
 
-    for (const userId of userIds) {
-      for (const month of [currentMonth, lastMonth]) {
-        await this.rollups.recompute(userId, month).catch((error: unknown) => {
-          this.logger.error(
-            { event: LogEvent.RollupRefreshFailed, userId, month, err: error },
-            "monthly rollup refresh failed"
-          );
-        });
+      for (const userId of userIds) {
+        for (const month of [currentMonth, lastMonth]) {
+          await this.rollups.recompute(userId, month).catch((error: unknown) => {
+            this.logger.error(
+              { event: LogEvent.RollupRefreshFailed, userId, month, err: error },
+              "monthly rollup refresh failed"
+            );
+          });
+        }
       }
-    }
 
-    this.logger.log(
-      {
-        event: LogEvent.RollupsRefreshed,
-        userCount: userIds.length,
-        months: [currentMonth, lastMonth]
-      },
-      "monthly rollups refreshed"
-    );
+      this.logger.log(
+        {
+          event: LogEvent.RollupsRefreshed,
+          userCount: userIds.length,
+          months: [currentMonth, lastMonth]
+        },
+        "monthly rollups refreshed"
+      );
+      return userIds.length * 2;
+    });
   }
 }

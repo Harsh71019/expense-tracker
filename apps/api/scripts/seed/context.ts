@@ -20,7 +20,6 @@ import * as schema from "../../src/common/db/schema/index.js";
 import { RuntimeConfigService } from "../../src/common/config/runtime-config.service.js";
 import { RedisService } from "../../src/common/redis/redis.service.js";
 import { ImportBatchRepository } from "../../src/imports/import-batch.repository.js";
-import { ImportsQueue } from "../../src/imports/imports.queue.js";
 import { ImportsService } from "../../src/imports/imports.service.js";
 import { StagedRowRepository } from "../../src/imports/staged-row.repository.js";
 import { StagedRowsCleanupCron } from "../../src/imports/staged-rows-cleanup.cron.js";
@@ -139,7 +138,6 @@ export async function createSeedContext(): Promise<SeedContext> {
   const recurring = new RecurringRuleService(db, recurringRuleRepo, accounts, categories);
   const assets = new AssetService(db, assetsRepo, valuations, audit);
 
-  const importsQueue = new ImportsQueue(config);
   const imports = new ImportsService(
     db,
     importBatches,
@@ -148,8 +146,7 @@ export async function createSeedContext(): Promise<SeedContext> {
     accounts,
     categories,
     audit,
-    categoryRulesRepo,
-    importsQueue
+    categoryRulesRepo
   );
 
   const notificationsQueue = new NotificationsQueue(config);
@@ -208,7 +205,6 @@ export async function createSeedContext(): Promise<SeedContext> {
   return {
     services,
     close: async () => {
-      await importsQueue.onModuleDestroy();
       await notificationsQueue.onModuleDestroy();
       await redis.onModuleDestroy();
       await pool.end();

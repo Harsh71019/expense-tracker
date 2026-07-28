@@ -1,4 +1,4 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable, Optional } from "@nestjs/common";
 import { Cron } from "@nestjs/schedule";
 import type { StoredGoal } from "@treasury-ops/shared";
 import { Logger } from "nestjs-pino";
@@ -9,6 +9,10 @@ import { DATABASE_CONNECTION } from "../common/db/db.module.js";
 import type { DrizzleDb } from "../common/db/db.module.js";
 import { withTxn } from "../common/db/db-txn.js";
 import { LogEvent } from "../common/logging/events.js";
+import {
+  runScheduled,
+  ScheduledRunCoordinator
+} from "../common/scheduler/scheduled-run.coordinator.js";
 import { NotificationOutboxRepository } from "../notifications/notification-outbox.repository.js";
 import { GoalRepository } from "./goal.repository.js";
 import { GoalService } from "./goal.service.js";
@@ -24,39 +28,43 @@ export class GoalsProgressCron {
     private readonly goalService: GoalService,
     private readonly outbox: NotificationOutboxRepository,
     private readonly audit: AuditRepository,
-    @Inject(Logger) private readonly logger: GoalsProgressLogger
+    @Inject(Logger) private readonly logger: GoalsProgressLogger,
+    @Optional() private readonly scheduler?: ScheduledRunCoordinator
   ) {}
 
   @Cron("5 2 * * *", { timeZone: "Asia/Kolkata" })
   async checkProgress(): Promise<void> {
     if (this.config.env.SERVICE_ROLE !== "worker") return;
 
-    const active = await this.goals.findAllActive();
-    let achievedCount = 0;
-    for (const goal of active) {
-      const achieved = await this.checkOne(goal).catch((error: unknown) => {
-        this.logger.error(
-          {
-            event: LogEvent.GoalProgressCheckFailed,
-            userId: goal.userId,
-            goalId: goal.id,
-            err: error
-          },
-          "goal progress check failed"
-        );
-        return false;
-      });
-      if (achieved) achievedCount += 1;
-    }
+    await runScheduled(this.scheduler, "goals.progress", "daily", async () => {
+      const active = await this.goals.findAllActive();
+      let achievedCount = 0;
+      for (const goal of active) {
+        const achieved = await this.checkOne(goal).catch((error: unknown) => {
+          this.logger.error(
+            {
+              event: LogEvent.GoalProgressCheckFailed,
+              userId: goal.userId,
+              goalId: goal.id,
+              err: error
+            },
+            "goal progress check failed"
+          );
+          return false;
+        });
+        if (achieved) achievedCount += 1;
+      }
 
-    this.logger.log(
-      {
-        event: LogEvent.GoalsProgressChecked,
-        activeCount: active.length,
-        achievedCount
-      },
-      "goal progress checked"
-    );
+      this.logger.log(
+        {
+          event: LogEvent.GoalsProgressChecked,
+          activeCount: active.length,
+          achievedCount
+        },
+        "goal progress checked"
+      );
+      return active.length;
+    });
   }
 
   private async checkOne(candidate: StoredGoal): Promise<boolean> {

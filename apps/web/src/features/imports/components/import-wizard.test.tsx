@@ -223,7 +223,11 @@ describe("ImportWizard", () => {
         committedAt: new Date("2026-07-17T00:00:00.000Z")
       })
     ];
-    mocks.revertMutateAsync.mockResolvedValue(mocks.batches[0]);
+    mocks.revertMutateAsync.mockResolvedValue({
+      ...mocks.batches[0],
+      status: "reverted",
+      revertedAt: new Date("2026-07-18T00:00:00.000Z")
+    });
     renderWizard();
 
     await user.click(screen.getByRole("button", { name: "Revert" }));

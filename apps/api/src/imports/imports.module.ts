@@ -5,6 +5,7 @@ import { CategoriesModule } from "../categories/categories.module.js";
 import { CategoryRulesModule } from "../category-rules/category-rules.module.js";
 import { TransactionsModule } from "../transactions/transactions.module.js";
 import { ImportBatchRepository } from "./import-batch.repository.js";
+import { ImportDispatchService } from "./import-dispatch.service.js";
 import { ImportsController } from "./imports.controller.js";
 import { ImportsQueue } from "./imports.queue.js";
 import { ImportsService } from "./imports.service.js";
@@ -16,6 +17,7 @@ import { StagedRowsCleanupCron } from "./staged-rows-cleanup.cron.js";
   controllers: [ImportsController],
   providers: [
     ImportBatchRepository,
+    ImportDispatchService,
     StagedRowRepository,
     ImportsQueue,
     ImportsService,

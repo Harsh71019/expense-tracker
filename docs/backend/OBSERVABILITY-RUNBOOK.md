@@ -66,16 +66,22 @@ investigations.
 
 Start with these thresholds and tune only from observed production behavior:
 
-| Alert                | Condition                                                      | Severity | First response                                                                                                                 |
-| -------------------- | -------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| Worker missing       | heartbeat is `-1` or greater than 60 seconds for 2 minutes     | page     | Check worker container state and Redis connectivity; restart only after reading the last worker error                          |
-| Queue failures       | any `state="failed"` gauge is greater than zero for 5 minutes  | page     | Open Bull Board, inspect the first failed job and its correlated logs, then retry only after the cause is understood           |
-| Queue backlog        | `waiting + delayed` remains above 20 for 15 minutes            | warn     | Compare active count and worker heartbeat; check dependency and job duration logs                                              |
-| HTTP 5xx             | 5xx ratio exceeds 2% with at least 10 requests in 10 minutes   | page     | Group by route, take one response `x-request-id`, then trace it in Loki                                                        |
-| Transaction retries  | retry rate exceeds 2% of committed transactions for 15 minutes | warn     | Inspect `txn.retry` logs for `40001`/`40P01`, then locate the contending write paths                                           |
-| Transaction failures | failed outcome increases in 5 minutes                          | page     | Query the matching `txn.failed` log and preserve the request id before retrying any operation                                  |
-| Balance drift        | drift gauge is greater than zero                               | page     | Stop new release work, run the invariant suite, and inspect immutable audit/ledger rows; never repair by editing a transaction |
-| Verification stale   | verification age exceeds 8 days or is `-1` after initial setup | page     | Confirm the worker role and Sunday 03:00 IST cron ran; check `balances.verified` logs                                          |
+| Alert                 | Condition                                                      | Severity | First response                                                                                                                 |
+| --------------------- | -------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Worker missing        | heartbeat is `-1` or greater than 60 seconds for 2 minutes     | page     | Check worker container state and Redis connectivity; restart only after reading the last worker error                          |
+| Queue failures        | any `state="failed"` gauge is greater than zero for 5 minutes  | page     | Open Bull Board, inspect the first failed job and its correlated logs, then retry only after the cause is understood           |
+| Queue backlog         | `waiting + delayed` remains above 20 for 15 minutes            | warn     | Compare active count and worker heartbeat; check dependency and job duration logs                                              |
+| HTTP 5xx              | 5xx ratio exceeds 2% with at least 10 requests in 10 minutes   | page     | Group by route, take one response `x-request-id`, then trace it in Loki                                                        |
+| Transaction retries   | retry rate exceeds 2% of committed transactions for 15 minutes | warn     | Inspect `txn.retry` logs for `40001`/`40P01`, then locate the contending write paths                                           |
+| Transaction failures  | failed outcome increases in 5 minutes                          | page     | Query the matching `txn.failed` log and preserve the request id before retrying any operation                                  |
+| Balance drift         | drift gauge is greater than zero                               | page     | Stop new release work, run the invariant suite, and inspect immutable audit/ledger rows; never repair by editing a transaction |
+| Verification stale    | verification age exceeds 8 days or is `-1` after initial setup | page     | Confirm the worker role and Sunday 03:00 IST cron ran; check `balances.verified` logs                                          |
+| Scheduled run failed  | `scheduler.run_failed` or `scheduler.run_overlong` log appears | page     | Query `scheduled_job_runs` by `runId`; fix the cause before invoking the same deterministic window again                       |
+| Scheduled run missing | `scheduler.run_missing` log appears                            | page     | Confirm worker heartbeat, then compare the latest row for that `jobName` with its documented IST schedule                      |
+
+The scheduler log alerts are deliberately based on low-cardinality `event` and `jobName` fields.
+Use `runId` only while investigating one incident. Run history is retained for 30 days; a live
+`running` row whose `lease_until` is in the past will be marked `failed` by the watchdog.
 
 If Redis is unavailable, `/api/readyz` and the metrics scrape can both fail.
 Treat that as a dependency incident rather than interpreting missing queue

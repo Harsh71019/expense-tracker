@@ -73,6 +73,7 @@ describe("Imports parse pipeline (real BullMQ worker against real Redis)", () =>
   let flushClient: Redis;
   let worker: ReturnType<typeof startImportsWorker>;
   let backgroundQueue: ImportsQueue;
+  let service: ImportsService;
   let accountIdA: string;
   let accountIdSuggest: string;
 
@@ -92,7 +93,7 @@ describe("Imports parse pipeline (real BullMQ worker against real Redis)", () =>
     const categoryRules = new CategoryRuleRepository(testDb.db);
     const config = new TestRuntimeConfig();
     backgroundQueue = new ImportsQueue(config);
-    const service = new ImportsService(
+    service = new ImportsService(
       testDb.db,
       batches,
       stagedRows,
@@ -100,8 +101,7 @@ describe("Imports parse pipeline (real BullMQ worker against real Redis)", () =>
       accounts,
       new CategoryRepository(testDb.db),
       audit,
-      categoryRules,
-      backgroundQueue
+      categoryRules
     );
     const logger = { log: () => undefined, error: () => undefined };
 
@@ -141,23 +141,20 @@ describe("Imports parse pipeline (real BullMQ worker against real Redis)", () =>
   });
 
   it("parses an uploaded CSV into staged_rows and flips the batch to staged", async () => {
-    const batch = await batches.create(
+    const batch = await service.createBatch(
       "user-a",
       accountIdA,
       "hdfc-july.csv",
-      "sha256:parse-e2e",
+      "text/csv",
+      Buffer.from(CSV, "utf8"),
       MAPPING
     );
 
-    const config = new TestRuntimeConfig();
-    const queue = new ImportsQueue(config);
-    await queue.enqueueParse({
-      batchId: batch.id,
-      userId: "user-a",
-      accountId: accountIdA,
-      mapping: MAPPING,
-      fileContentBase64: Buffer.from(CSV, "utf8").toString("base64")
-    });
+    const [claim] = await withTxn(testDb.db, (tx) =>
+      batches.systemClaimReady(new Date(), new Date(Date.now() + 60_000), 1, tx)
+    );
+    if (claim === undefined) throw new Error("Expected the parse workflow to be claimable.");
+    await backgroundQueue.enqueueWorkflow(claim);
 
     const staged = await waitForStatus(batches, batch.id, "staged");
     expect(staged).toMatchObject({
@@ -184,8 +181,6 @@ describe("Imports parse pipeline (real BullMQ worker against real Redis)", () =>
       parsedType: "income",
       parsedDescription: "Salary"
     });
-
-    await queue.onModuleDestroy();
   }, 20_000);
 
   it("re-parsing the same batch (a BullMQ retry) clears and re-derives staged_rows instead of duplicating them", async () => {
@@ -202,8 +197,7 @@ describe("Imports parse pipeline (real BullMQ worker against real Redis)", () =>
       accounts,
       new CategoryRepository(testDb.db),
       audit,
-      categoryRules,
-      backgroundQueue
+      categoryRules
     );
 
     const batch = await batches.create(
@@ -237,8 +231,7 @@ describe("Imports parse pipeline (real BullMQ worker against real Redis)", () =>
       accounts,
       new CategoryRepository(testDb.db),
       audit,
-      categoryRules,
-      backgroundQueue
+      categoryRules
     );
 
     const categories = new CategoryRepository(testDb.db);

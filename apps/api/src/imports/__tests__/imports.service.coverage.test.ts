@@ -66,7 +66,6 @@ type ServiceOverrides = Readonly<{
   categories?: unknown;
   audit?: unknown;
   categoryRules?: unknown;
-  queue?: unknown;
 }>;
 
 function createService(overrides: ServiceOverrides = {}) {
@@ -83,8 +82,7 @@ function createService(overrides: ServiceOverrides = {}) {
     accounts: overrides.accounts ?? {},
     categories: overrides.categories ?? {},
     audit: overrides.audit ?? { record: vi.fn().mockResolvedValue(undefined) },
-    categoryRules: overrides.categoryRules ?? {},
-    queue: overrides.queue ?? { enqueueParse: vi.fn().mockResolvedValue(undefined) }
+    categoryRules: overrides.categoryRules ?? {}
   };
   const service = new ImportsService(
     focusedTestDouble(collaborators.db),
@@ -94,8 +92,7 @@ function createService(overrides: ServiceOverrides = {}) {
     focusedTestDouble(collaborators.accounts),
     focusedTestDouble(collaborators.categories),
     focusedTestDouble(collaborators.audit),
-    focusedTestDouble(collaborators.categoryRules),
-    focusedTestDouble(collaborators.queue)
+    focusedTestDouble(collaborators.categoryRules)
   );
   return { service, tx, ...collaborators };
 }
@@ -148,32 +145,27 @@ describe("assertValidImportFile", () => {
 });
 
 describe("ImportsService create and parse", () => {
-  it("persists terminal parse exhaustion through the batch repository", async () => {
-    const batches = { markTerminalParseFailure: vi.fn().mockResolvedValue(undefined) };
-    const { service } = createService({ batches });
-
-    await service.markTerminalParseFailure("u1", BATCH_ID);
-
-    expect(batches.markTerminalParseFailure).toHaveBeenCalledWith("u1", BATCH_ID);
-  });
-
-  it("creates and queues a valid new batch", async () => {
+  it("creates a durable parse workflow in the database transaction", async () => {
     const batches = {
       findByFileHash: vi.fn().mockResolvedValue(null),
       create: vi.fn().mockResolvedValue(BATCH)
     };
-    const queue = { enqueueParse: vi.fn().mockResolvedValue(undefined) };
-    const { service } = createService({ batches, queue });
+    const { service, tx } = createService({ batches });
     const buffer = Buffer.from("Date,Amount,Description\n2026-07-01,-50,Coffee");
 
     await expect(
       service.createBatch("u1", ACCOUNT_ID, "rows.csv", "text/csv", buffer, MAPPING)
     ).resolves.toBe(BATCH);
-    expect(queue.enqueueParse).toHaveBeenCalledWith(
+    expect(batches.create).toHaveBeenCalledWith(
+      "u1",
+      ACCOUNT_ID,
+      "rows.csv",
+      expect.any(String),
+      MAPPING,
       expect.objectContaining({
-        batchId: BATCH_ID,
-        userId: "u1",
-        fileContentBase64: buffer.toString("base64")
+        correlationId: expect.any(String),
+        fileContentBase64: buffer.toString("base64"),
+        tx
       })
     );
   });

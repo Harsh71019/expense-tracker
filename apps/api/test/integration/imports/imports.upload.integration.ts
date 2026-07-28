@@ -1,58 +1,21 @@
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
 import type { ColumnMapping } from "@treasury-ops/shared";
-import { Redis } from "ioredis";
 
 import { AccountRepository } from "../../../src/accounts/account.repository.js";
 import { AuditRepository } from "../../../src/audit/audit.repository.js";
 import { CategoryRepository } from "../../../src/categories/category.repository.js";
 import { CategoryRuleRepository } from "../../../src/category-rules/category-rule.repository.js";
 import { ImportAlreadyCommittedError } from "../../../src/common/errors/import-already-committed.error.js";
-import { RuntimeConfigService } from "../../../src/common/config/runtime-config.service.js";
 import { importBatches } from "../../../src/common/db/schema/index.js";
 import { withTxn } from "../../../src/common/db/db-txn.js";
 import { EntityNotFoundError } from "../../../src/common/errors/entity-not-found.error.js";
 import { ImportBatchRepository } from "../../../src/imports/import-batch.repository.js";
 import { StagedRowRepository } from "../../../src/imports/staged-row.repository.js";
-import { ImportsQueue } from "../../../src/imports/imports.queue.js";
 import { ImportsService } from "../../../src/imports/imports.service.js";
 import { TransactionRepository } from "../../../src/transactions/transaction.repository.js";
 import { createTestDb, insertTestUser } from "../support/postgres-test-db.js";
 import type { TestDb } from "../support/postgres-test-db.js";
-
-const TEST_REDIS_URL = "redis://127.0.0.1:6379/9";
-
-class TestRuntimeConfig implements RuntimeConfigService {
-  env = {
-    NODE_ENV: "test" as const,
-    API_PORT: 4000,
-    LOG_LEVEL: "info" as const,
-    LOG_PRETTY: false,
-    SERVICE_ROLE: "api" as const,
-    DATABASE_URL: "postgres://test:test@localhost:5432/test",
-    DATABASE_POOL_MAX: 10,
-    DATABASE_CONNECTION_TIMEOUT_MS: 5_000,
-    DATABASE_QUERY_TIMEOUT_MS: 10_000,
-    DATABASE_STATEMENT_TIMEOUT_MS: 10_000,
-    DATABASE_LOCK_TIMEOUT_MS: 5_000,
-    DATABASE_IDLE_IN_TXN_TIMEOUT_MS: 30_000,
-    REDIS_URL: TEST_REDIS_URL,
-    READINESS_TIMEOUT_MS: 2_000,
-    GRACEFUL_SHUTDOWN_TIMEOUT_MS: 15_000,
-    APP_TIMEZONE: "Asia/Kolkata" as const,
-    TRUSTED_ORIGINS: "http://localhost:3000",
-    GIT_SHA: "test-sha",
-    BETTER_AUTH_SECRET: "test-secret-long-enough-32-chars-long",
-    BETTER_AUTH_URL: "http://localhost:4000",
-    AUTH_COOKIE_SECURE: false,
-    DISABLE_SIGNUP: false,
-    DISABLE_RATE_LIMITING: false
-  };
-
-  trustedOrigins(): string[] {
-    return ["http://localhost:3000"];
-  }
-}
 
 const MAPPING: ColumnMapping = {
   date: "Txn Date",
@@ -68,27 +31,22 @@ describe("ImportsService.createBatch", () => {
   let testDb: TestDb;
   let service: ImportsService;
   let accounts: AccountRepository;
-  let queue: ImportsQueue;
-  let flushClient: Redis;
+  let batches: ImportBatchRepository;
   let accountIdA: string;
   let accountIdB: string;
 
   beforeAll(async () => {
-    flushClient = new Redis(TEST_REDIS_URL);
-    await flushClient.flushdb();
-
     testDb = await createTestDb();
     for (const userId of ["user-a", "user-b", "mapping-owner"]) {
       await insertTestUser(testDb.db, userId);
     }
 
-    const batches = new ImportBatchRepository(testDb.db);
+    batches = new ImportBatchRepository(testDb.db);
     const stagedRows = new StagedRowRepository(testDb.db);
     const transactions = new TransactionRepository(testDb.db);
     accounts = new AccountRepository(testDb.db);
     const audit = new AuditRepository(testDb.db);
     const categoryRules = new CategoryRuleRepository(testDb.db);
-    queue = new ImportsQueue(new TestRuntimeConfig());
     service = new ImportsService(
       testDb.db,
       batches,
@@ -97,8 +55,7 @@ describe("ImportsService.createBatch", () => {
       accounts,
       new CategoryRepository(testDb.db),
       audit,
-      categoryRules,
-      queue
+      categoryRules
     );
 
     accountIdA = (
@@ -122,17 +79,10 @@ describe("ImportsService.createBatch", () => {
   }, 30_000);
 
   afterAll(async () => {
-    await queue.onModuleDestroy();
-    await flushClient.flushdb();
-    await flushClient.quit();
     await testDb.teardown();
   });
 
-  afterEach(async () => {
-    await flushClient.flushdb();
-  });
-
-  it("creates a pending batch and enqueues a parse job", async () => {
+  it("atomically creates a durable pending parse workflow without a Redis handoff", async () => {
     const created = await service.createBatch(
       "user-a",
       accountIdA,
@@ -142,10 +92,12 @@ describe("ImportsService.createBatch", () => {
       MAPPING
     );
 
-    expect(created).toMatchObject({ status: "pending", filename: "hdfc-july.csv" });
-
-    const job = await waitForJob(flushClient, created.id);
-    expect(job).toBe(true);
+    expect(created).toMatchObject({ status: "pending_parse", filename: "hdfc-july.csv" });
+    await expect(batches.findWorkflowPayload("user-a", created.id)).resolves.toMatchObject({
+      accountId: accountIdA,
+      mapping: MAPPING,
+      fileContentBase64: Buffer.from(CSV, "utf8").toString("base64")
+    });
   });
 
   it("rejects the exact same bytes once the prior batch has been committed", async () => {
@@ -204,7 +156,7 @@ describe("ImportsService.createBatch", () => {
     );
 
     expect(second.id).not.toBe(first.id);
-    expect(second.status).toBe("pending");
+    expect(second.status).toBe("pending_parse");
   });
 
   it("does not let one user's committed upload block another user's identical file", async () => {
@@ -224,7 +176,7 @@ describe("ImportsService.createBatch", () => {
 
     await expect(
       service.createBatch("user-b", accountIdB, "shared-bytes.csv", "text/csv", buffer, MAPPING)
-    ).resolves.toMatchObject({ status: "pending" });
+    ).resolves.toMatchObject({ status: "pending_parse" });
   });
 
   it("returns saved mappings only for an active account owned by the requester", async () => {
@@ -239,14 +191,36 @@ describe("ImportsService.createBatch", () => {
       EntityNotFoundError
     );
   });
-});
 
-async function waitForJob(redis: Redis, jobId: string, timeoutMs = 5_000): Promise<boolean> {
-  const deadline = Date.now() + timeoutMs;
-  for (;;) {
-    const exists = await redis.exists(`bull:imports:${jobId}`);
-    if (exists === 1) return true;
-    if (Date.now() > deadline) return false;
-    await new Promise((resolve) => setTimeout(resolve, 100));
-  }
-}
+  it("joins five concurrent commit requests to exactly one durable workflow", async () => {
+    const batch = await batches.create(
+      "user-a",
+      accountIdA,
+      "concurrent-commit.csv",
+      "sha256:concurrent-commit",
+      MAPPING
+    );
+    await batches.markParsed("user-a", batch.id, "staged", {
+      total: 1,
+      staged: 1,
+      duplicates: 0,
+      committed: 0
+    });
+
+    const results = await Promise.all(
+      Array.from({ length: 5 }, () => service.requestCommit("user-a", batch.id))
+    );
+
+    expect(results).toHaveLength(5);
+    expect(results.every((result) => result.status === "commit_queued")).toBe(true);
+    const claims = await withTxn(testDb.db, (tx) =>
+      batches.systemClaimReady(new Date(), new Date(Date.now() + 60_000), 100, tx)
+    );
+    const claim = claims.find((candidate) => candidate.batchId === batch.id);
+    expect(claim).toMatchObject({
+      batchId: batch.id,
+      userId: "user-a",
+      operation: "commit"
+    });
+  });
+});

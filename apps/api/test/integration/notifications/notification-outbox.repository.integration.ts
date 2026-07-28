@@ -39,6 +39,7 @@ describe("NotificationOutboxRepository", () => {
       type: "budget_alert",
       status: "pending"
     });
+    await expect(outbox.findById("user-2", enqueued.id)).resolves.toBeNull();
   });
 
   it("rolls back the enqueue if the triggering transaction aborts", async () => {
@@ -56,16 +57,24 @@ describe("NotificationOutboxRepository", () => {
     expect(logs.length).toBe(0);
   });
 
-  it("systemFindPending returns tenant identity with pending entries, oldest first", async () => {
+  it("systemFindDispatchable returns pending and expired claims, oldest first", async () => {
     const first = await withTxn(testDb.db, (tx) =>
       outbox.enqueue("user-2", "monthly_report", { month: "2026-06" }, tx)
     );
     const second = await withTxn(testDb.db, (tx) =>
       outbox.enqueue("user-2", "monthly_report", { month: "2026-07" }, tx)
     );
-    await outbox.markSent("user-2", first.id);
+    const claimToken = "00000000-0000-4000-8000-000000000000";
+    await outbox.claimForDelivery(
+      "user-2",
+      first.id,
+      claimToken,
+      new Date(),
+      new Date(Date.now() + 60_000)
+    );
+    await outbox.markSent("user-2", first.id, claimToken);
 
-    const pending = await outbox.systemFindPending(10);
+    const pending = await outbox.systemFindDispatchable(new Date(), 10);
     const ids = pending.map((entry) => entry.id);
     expect(ids).toContain(second.id);
     expect(ids).not.toContain(first.id);
@@ -84,7 +93,9 @@ describe("NotificationOutboxRepository", () => {
       deliveryAttempts: 5
     });
     expect(failed?.failedAt).toBeInstanceOf(Date);
-    expect((await outbox.systemFindPending(100)).map((item) => item.id)).not.toContain(entry.id);
+    expect(
+      (await outbox.systemFindDispatchable(new Date(), 100)).map((item) => item.id)
+    ).not.toContain(entry.id);
     expect(await outbox.findById("user-1", entry.id)).toBeNull();
 
     await expect(outbox.requeueTerminalFailure("user-2", entry.id)).resolves.toBe(true);
@@ -92,7 +103,9 @@ describe("NotificationOutboxRepository", () => {
     expect(requeued?.failedAt).toBeUndefined();
     expect(requeued?.failureCode).toBeUndefined();
     expect(requeued?.deliveryAttempts).toBe(0);
-    expect((await outbox.systemFindPending(100)).map((item) => item.id)).toContain(entry.id);
+    expect((await outbox.systemFindDispatchable(new Date(), 100)).map((item) => item.id)).toContain(
+      entry.id
+    );
   });
 
   it("markSent is a no-op once an entry is already sent", async () => {
@@ -100,10 +113,18 @@ describe("NotificationOutboxRepository", () => {
       outbox.enqueue("user-3", "budget_alert", {}, tx)
     );
 
-    await outbox.markSent("user-3", entry.id);
+    const claimToken = "00000000-0000-4000-8000-000000000000";
+    await outbox.claimForDelivery(
+      "user-3",
+      entry.id,
+      claimToken,
+      new Date(),
+      new Date(Date.now() + 60_000)
+    );
+    await outbox.markSent("user-3", entry.id, claimToken);
     const firstSent = getSent(await outbox.findById("user-3", entry.id));
 
-    await outbox.markSent("user-3", entry.id);
+    await outbox.markSent("user-3", entry.id, claimToken);
     const secondSent = getSent(await outbox.findById("user-3", entry.id));
 
     expect(secondSent.getTime()).toBe(firstSent.getTime());
@@ -117,17 +138,6 @@ describe("NotificationOutboxRepository", () => {
   it("findById returns null for a malformed id instead of throwing", async () => {
     const malformed = await outbox.findById("user-1", "not-an-object-id");
     expect(malformed).toBeNull();
-  });
-
-  it("does not read or mark another tenant's outbox entry", async () => {
-    const entry = await withTxn(testDb.db, (tx) =>
-      outbox.enqueue("user-1", "budget_alert", {}, tx)
-    );
-
-    expect(await outbox.findById("user-2", entry.id)).toBeNull();
-    await outbox.markSent("user-2", entry.id);
-
-    expect(await outbox.findById("user-1", entry.id)).toMatchObject({ status: "pending" });
   });
 });
 

@@ -160,7 +160,7 @@ database cannot make the remote side effect atomic.
 ### OBS-009 — Add minimum production observability
 
 **Priority:** P2
-**Status:** Open
+**Status:** Implemented (pending merge)
 
 **Scope:** Prometheus metrics for HTTP RED signals, BullMQ depth/failures,
 transaction retries, worker heartbeat age, and balance drift; OpenTelemetry
@@ -173,6 +173,12 @@ traces can follow after the metrics baseline.
 - No transaction descriptions, tags, cookies, tokens, or user identifiers in
   metric labels.
 - A documented dashboard and alert runbook.
+
+**Implementation:** authenticated `GET /api/v1/metrics`, bounded HTTP RED
+labels, transaction retry/outcome/duration counters, live BullMQ state, worker
+heartbeat age, Redis-backed balance-verification gauges, zod-validated
+request-to-job correlation, and
+`docs/backend/OBSERVABILITY-RUNBOOK.md`.
 
 ## Verification required for this set
 

@@ -128,6 +128,25 @@ describe("RedisService", () => {
     await expect(service.hasWorkerHeartbeat()).resolves.toBe(false);
   });
 
+  it("reports worker heartbeat age and treats an absent heartbeat as unknown", async () => {
+    const service = new RedisService(new MockRuntimeConfigService());
+    mockRedisInstance.get
+      .mockResolvedValueOnce("2026-07-28T00:00:00.000Z")
+      .mockResolvedValueOnce(null);
+
+    await expect(
+      service.workerHeartbeatAgeSeconds(new Date("2026-07-28T00:00:30.000Z"))
+    ).resolves.toBe(30);
+    await expect(service.workerHeartbeatAgeSeconds()).resolves.toBeNull();
+  });
+
+  it("rejects a malformed worker heartbeat at the Redis boundary", async () => {
+    const service = new RedisService(new MockRuntimeConfigService());
+    mockRedisInstance.get.mockResolvedValueOnce("not-an-instant");
+
+    await expect(service.workerHeartbeatAgeSeconds()).rejects.toThrow();
+  });
+
   it("rejects a non-numeric increment result", async () => {
     mockRedisInstance.eval.mockResolvedValueOnce("1");
     const service = new RedisService(new MockRuntimeConfigService());

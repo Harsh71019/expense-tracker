@@ -13,6 +13,11 @@ describe("NotificationOutboxRepository Unit Tests", () => {
     failureCode: null,
     failedAt: null,
     deliveryAttempts: 0,
+    claimToken: null,
+    leaseUntil: null,
+    attemptCount: 0,
+    lastAttemptAt: null,
+    lastError: null,
     sentAt: null,
     createdAt: new Date()
   };

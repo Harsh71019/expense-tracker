@@ -30,8 +30,8 @@ describe("repository tenancy contract", () => {
   it("names the notification sweep as system discovery and returns tenant identity", () => {
     const source = readFileSync(RESOURCE_REPOSITORIES[2], "utf8");
 
-    expect(source).toContain(
-      "async systemFindPending(limit: number): Promise<NotificationOutboxEntry[]>"
+    expect(source).toMatch(
+      /async systemFind[A-Za-z0-9_]*\([^)]*\): Promise<NotificationOutboxEntry\[\]>/
     );
     expect(source).toMatch(/NotificationOutboxSchema = z\.object\(\{\s+id:[\s\S]*userId:/);
   });

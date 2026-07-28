@@ -54,7 +54,11 @@ export const notificationTypeEnum = pgEnum("notification_type", [
   "balance_drift",
   "goal_achieved"
 ]);
-export const notificationStatusEnum = pgEnum("notification_status", ["pending", "sent"]);
+export const notificationStatusEnum = pgEnum("notification_status", [
+  "pending",
+  "delivering",
+  "sent"
+]);
 export const spendingWarningKindEnum = pgEnum("spending_warning_kind", [
   "overall_spend_spike",
   "category_spend_spike",

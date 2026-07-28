@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { and, asc, eq, isNotNull, isNull } from "drizzle-orm";
+import { and, asc, eq, isNotNull, isNull, lte, or, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import { DATABASE_CONNECTION } from "../common/db/db.module.js";
@@ -26,14 +26,20 @@ const NotificationOutboxSchema = z.object({
   userId: z.string().min(1),
   type: NotificationTypeSchema,
   payload: z.record(z.string(), z.unknown()),
-  status: z.enum(["pending", "sent"]),
+  status: z.enum(["pending", "delivering", "sent"]),
   failureCode: z.literal("delivery_retries_exhausted").optional(),
   failedAt: z.date().optional(),
   deliveryAttempts: z.number().int().min(0),
+  claimToken: z.string().uuid().optional(),
+  leaseUntil: z.date().optional(),
+  attemptCount: z.number().int().nonnegative(),
+  lastAttemptAt: z.date().optional(),
+  lastError: z.string().optional(),
   createdAt: z.date(),
   sentAt: z.date().optional()
 });
 export type NotificationOutboxEntry = z.infer<typeof NotificationOutboxSchema>;
+export type ClaimedNotification = NotificationOutboxEntry & Readonly<{ claimToken: string }>;
 
 @Injectable()
 export class NotificationOutboxRepository {
@@ -68,28 +74,113 @@ export class NotificationOutboxRepository {
     return row === undefined ? null : toEntry(row);
   }
 
-  /** The sweep's source of work — oldest first, so a backlog drains in order. */
-  async systemFindPending(limit: number): Promise<NotificationOutboxEntry[]> {
+  /**
+   * Worker-only system discovery. It returns the owning userId so every
+   * delivery mutation can remain tenant-scoped.
+   */
+  async systemFindDispatchable(now: Date, limit: number): Promise<NotificationOutboxEntry[]> {
     const rows = await this.db
       .select()
       .from(notificationOutbox)
-      .where(and(eq(notificationOutbox.status, "pending"), isNull(notificationOutbox.failedAt)))
+      .where(
+        and(
+          isNull(notificationOutbox.failedAt),
+          or(
+            eq(notificationOutbox.status, "pending"),
+            and(
+              eq(notificationOutbox.status, "delivering"),
+              or(isNull(notificationOutbox.leaseUntil), lte(notificationOutbox.leaseUntil, now))
+            )
+          )
+        )
+      )
       .orderBy(asc(notificationOutbox.createdAt))
       .limit(limit);
     return rows.map(toEntry);
   }
 
-  /** Guarded by status: a duplicate delivery job marking an already-sent entry must not re-stamp sentAt. */
-  async markSent(userId: string, id: string): Promise<void> {
-    await this.db
+  async claimForDelivery(
+    userId: string,
+    id: string,
+    claimToken: string,
+    now: Date,
+    leaseUntil: Date
+  ): Promise<ClaimedNotification | null> {
+    const [row] = await this.db
       .update(notificationOutbox)
-      .set({ status: "sent", sentAt: new Date() })
+      .set({
+        status: "delivering",
+        claimToken,
+        leaseUntil,
+        attemptCount: sql`${notificationOutbox.attemptCount} + 1`,
+        lastAttemptAt: now,
+        lastError: null
+      })
       .where(
         and(
           eq(notificationOutbox.userId, userId),
           eq(notificationOutbox.id, id),
-          eq(notificationOutbox.status, "pending"),
-          isNull(notificationOutbox.failedAt)
+          isNull(notificationOutbox.failedAt),
+          or(
+            eq(notificationOutbox.status, "pending"),
+            and(
+              eq(notificationOutbox.status, "delivering"),
+              or(isNull(notificationOutbox.leaseUntil), lte(notificationOutbox.leaseUntil, now))
+            )
+          )
+        )
+      )
+      .returning();
+    if (row === undefined) return null;
+    const entry = toEntry(row);
+    if (entry.claimToken === undefined) {
+      throw new Error("Claimed notification did not return its claim token.");
+    }
+    return { ...entry, claimToken: entry.claimToken };
+  }
+
+  async markSent(userId: string, id: string, claimToken: string): Promise<boolean> {
+    const rows = await this.db
+      .update(notificationOutbox)
+      .set({
+        status: "sent",
+        claimToken: null,
+        leaseUntil: null,
+        lastError: null,
+        sentAt: new Date()
+      })
+      .where(
+        and(
+          eq(notificationOutbox.userId, userId),
+          eq(notificationOutbox.id, id),
+          eq(notificationOutbox.status, "delivering"),
+          eq(notificationOutbox.claimToken, claimToken)
+        )
+      )
+      .returning({ id: notificationOutbox.id });
+    return rows.length === 1;
+  }
+
+  async releaseFailed(
+    userId: string,
+    id: string,
+    claimToken: string,
+    errorSummary: string
+  ): Promise<void> {
+    await this.db
+      .update(notificationOutbox)
+      .set({
+        status: "pending",
+        claimToken: null,
+        leaseUntil: null,
+        lastError: errorSummary.slice(0, 500)
+      })
+      .where(
+        and(
+          eq(notificationOutbox.userId, userId),
+          eq(notificationOutbox.id, id),
+          eq(notificationOutbox.status, "delivering"),
+          eq(notificationOutbox.claimToken, claimToken)
         )
       );
   }
@@ -98,15 +189,21 @@ export class NotificationOutboxRepository {
     await this.db
       .update(notificationOutbox)
       .set({
+        status: "pending",
         failureCode: "delivery_retries_exhausted",
         failedAt: new Date(),
-        deliveryAttempts: attempts
+        deliveryAttempts: attempts,
+        claimToken: null,
+        leaseUntil: null
       })
       .where(
         and(
           eq(notificationOutbox.userId, userId),
           eq(notificationOutbox.id, id),
-          eq(notificationOutbox.status, "pending"),
+          or(
+            eq(notificationOutbox.status, "pending"),
+            eq(notificationOutbox.status, "delivering")
+          ),
           isNull(notificationOutbox.failedAt)
         )
       );

@@ -13,7 +13,11 @@ export class NotificationRecoveryService {
   async requeue(userId: string, notificationId: string): Promise<boolean> {
     const reset = await this.outbox.requeueTerminalFailure(userId, notificationId);
     if (!reset) return false;
-    await this.queue.replaceTerminalDelivery(userId, notificationId);
+    const entry = await this.outbox.findById(userId, notificationId);
+    if (entry === null) {
+      throw new Error("Requeued notification could not be reloaded.");
+    }
+    await this.queue.replaceTerminalDelivery(userId, notificationId, entry.attemptCount);
     return true;
   }
 }

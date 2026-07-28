@@ -23,7 +23,12 @@ export class LoggingNotificationAdapter implements NotificationAdapter {
    */
   async send(delivery: NotificationDelivery): Promise<void> {
     this.logger.log(
-      { event: "notification.delivery_stub", userId: delivery.userId, type: delivery.type },
+      {
+        event: "notification.delivery_stub",
+        notificationKey: delivery.idempotencyKey,
+        userId: delivery.userId,
+        type: delivery.type
+      },
       "no real notification adapter configured — logging instead of delivering"
     );
     return Promise.resolve();

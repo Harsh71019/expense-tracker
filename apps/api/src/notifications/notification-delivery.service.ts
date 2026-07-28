@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { Inject, Injectable } from "@nestjs/common";
 
 import { CircuitBreaker } from "./circuit-breaker.js";
@@ -15,30 +16,40 @@ export class NotificationDeliveryService {
   ) {}
 
   /**
-   * Idempotent: a notification already marked "sent" (e.g. a duplicate
-   * delivery job from an overlapping sweep tick) is a silent no-op, not a
-   * re-delivery. A down/flaky adapter trips the circuit breaker rather than
-   * hammering it — the thrown error propagates to the caller (the BullMQ
-   * job), which is exactly what lets BullMQ's own attempts/backoff retry it.
+   * Claims before sending, so duplicate Bull jobs are silent no-ops while a
+   * live claim exists. Adapter failures release the row for BullMQ/sweep
+   * retry; acknowledgement failures deliberately leave the lease intact so
+   * the send/ack gap recovers only after expiry with the same adapter key.
    */
   async deliver(userId: string, notificationId: string): Promise<void> {
-    const notification = await this.outbox.findById(userId, notificationId);
-    if (
-      notification === null ||
-      notification.status === "sent" ||
-      notification.failedAt !== undefined
-    ) {
-      return;
+    const claimToken = randomUUID();
+    const now = new Date();
+    const notification = await this.outbox.claimForDelivery(
+      userId,
+      notificationId,
+      claimToken,
+      now,
+      new Date(now.getTime() + 10 * 60_000)
+    );
+    if (notification === null) return;
+
+    try {
+      await this.breaker.execute(() =>
+        this.adapter.send({
+          idempotencyKey: notification.id,
+          userId: notification.userId,
+          type: notification.type,
+          payload: notification.payload
+        })
+      );
+    } catch (error) {
+      await this.outbox.releaseFailed(userId, notification.id, claimToken, errorSummary(error));
+      throw error;
     }
 
-    await this.breaker.execute(() =>
-      this.adapter.send({
-        userId: notification.userId,
-        type: notification.type,
-        payload: notification.payload
-      })
-    );
-    await this.outbox.markSent(userId, notification.id);
+    if (!(await this.outbox.markSent(userId, notification.id, claimToken))) {
+      throw new Error("Notification delivery acknowledgement lost its database claim.");
+    }
   }
 
   async markTerminalFailure(
@@ -48,4 +59,9 @@ export class NotificationDeliveryService {
   ): Promise<void> {
     await this.outbox.markTerminalFailure(userId, notificationId, attempts);
   }
+}
+
+function errorSummary(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  return "Unknown notification adapter failure";
 }

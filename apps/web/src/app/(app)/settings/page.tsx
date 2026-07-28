@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { SettingsPanel } from "./settings-panel";
@@ -26,6 +27,21 @@ export default async function SettingsPage({
           Manage your profile, personalize the interface, and open administrative tools.
         </p>
       </header>
+
+      <Link
+        href="/bills"
+        className="flex items-center justify-between rounded-2xl border border-border bg-surface-elevated p-5 transition-colors hover:border-accent/50"
+      >
+        <span>
+          <span className="block font-semibold text-foreground">Credit card bills</span>
+          <span className="mt-1 block text-sm text-foreground-muted">
+            Card statements, reconciliation, and payments
+          </span>
+        </span>
+        <span className="text-accent" aria-hidden="true">
+          →
+        </span>
+      </Link>
 
       <SettingsTabList activeTab={activeTab} />
 

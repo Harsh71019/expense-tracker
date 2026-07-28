@@ -19,6 +19,10 @@ export type TransferDto = components["schemas"]["Transfer"];
 export type TransferReversalDto = components["schemas"]["TransferReversal"];
 export type RecurringRuleDto = components["schemas"]["RecurringRule"];
 export type GoalDto = components["schemas"]["Goal"];
+export type BillDto = components["schemas"]["CreditCardBill"];
+export type BillStatementUploadDto = components["schemas"]["BillStatementUpload"];
+export type BillStatementRowDto = components["schemas"]["BillStatementRow"];
+export type BillPaymentResultDto = components["schemas"]["BillPaymentResult"];
 export type BudgetDto = components["schemas"]["Budget"];
 /** Generated-schema shape, distinct from `@treasury-ops/shared`'s `ColumnMapping` — see toColumnMappingDto in handlers/imports.ts. */
 export type ColumnMappingDto = ImportBatchDto["mapping"];
@@ -35,6 +39,10 @@ export type DismissSpendingWarningResponseDto =
  */
 export interface MockIdempotency {
   accounts: Map<string, AccountDto>;
+  creditCardConfig: Map<string, AccountDto>;
+  billStatementUploads: Map<string, BillStatementUploadDto>;
+  billReconcile: Map<string, BillDto>;
+  billPayments: Map<string, BillPaymentResultDto>;
   accountArchive: Set<string>;
   categories: Map<string, CategoryDto>;
   categoryArchive: Set<string>;
@@ -68,6 +76,9 @@ export interface MockStore {
   spendingWarnings: SpendingWarningDto[];
   spendingWarningAnalysis: SpendingWarningAnalysisDto;
   goals: GoalDto[];
+  bills: BillDto[];
+  billStatementUploads: BillStatementUploadDto[];
+  billStatementRows: BillStatementRowDto[];
   budgets: BudgetDto[];
   profile: UserProfileDto;
   /** accountId -> the mapping last used for a successful import to that account. */
@@ -87,6 +98,8 @@ export interface MockStore {
   nextRecurringRuleId: () => string;
   nextSpendingWarningId: () => string;
   nextGoalId: () => string;
+  nextBillId: () => string;
+  nextBillStatementUploadId: () => string;
   nextBudgetId: () => string;
 }
 
@@ -1782,6 +1795,8 @@ export function createMockStore(): MockStore {
   const nextRecurringRuleId = createIdGenerator("e0");
   const nextSpendingWarningId = createIdGenerator("5e");
   const nextGoalId = createIdGenerator("60");
+  const nextBillId = createIdGenerator("b1");
+  const nextBillStatementUploadId = createIdGenerator("b2");
   const nextBudgetId = createIdGenerator("b0");
 
   const store: MockStore = {
@@ -1802,6 +1817,9 @@ export function createMockStore(): MockStore {
       baselineExpenseCount: 0
     },
     goals: [],
+    bills: [],
+    billStatementUploads: [],
+    billStatementRows: [],
     budgets: [],
     profile: {
       userId: MOCK_USER_ID,
@@ -1815,6 +1833,10 @@ export function createMockStore(): MockStore {
     committedBatchTransactionIds: new Map(),
     idempotency: {
       accounts: new Map(),
+      creditCardConfig: new Map(),
+      billStatementUploads: new Map(),
+      billReconcile: new Map(),
+      billPayments: new Map(),
       accountArchive: new Set(),
       categories: new Map(),
       categoryArchive: new Set(),
@@ -1845,6 +1867,8 @@ export function createMockStore(): MockStore {
     nextRecurringRuleId,
     nextSpendingWarningId,
     nextGoalId,
+    nextBillId,
+    nextBillStatementUploadId,
     nextBudgetId
   };
 
@@ -1853,6 +1877,7 @@ export function createMockStore(): MockStore {
   seedRecurringRules(store);
   seedCategoryRules(store);
   seedTransactions(store);
+  seedBills(store);
   seedGoals(store);
   seedAssetsAndValuations(store);
   seedImportBatch(store);
@@ -1861,6 +1886,41 @@ export function createMockStore(): MockStore {
   seedSpendingWarnings(store);
 
   return store;
+}
+
+function seedBills(store: MockStore): void {
+  const card = store.accounts.find((account) => account.type === "credit_card");
+  if (card === undefined) return;
+  const now = new Date();
+  const cycleEnd = new Date(now);
+  const cycleStart = new Date(now);
+  cycleStart.setDate(cycleStart.getDate() - 30);
+  const dueDate = new Date(now);
+  dueDate.setDate(dueDate.getDate() + 14);
+  card.creditCardConfig = {
+    statementDay: cycleEnd.getDate(),
+    dueDay: dueDate.getDate(),
+    nextStatementAt: new Date(
+      now.getFullYear(),
+      now.getMonth() + 1,
+      cycleEnd.getDate()
+    ).toISOString()
+  };
+  store.bills.push({
+    id: store.nextBillId(),
+    userId: store.profile.userId,
+    accountId: card.id,
+    cycleStart: cycleStart.toISOString(),
+    cycleEnd: cycleEnd.toISOString(),
+    dueDate: dueDate.toISOString(),
+    amountDueMinor: 32_500_00,
+    reconciliationStatus: "awaiting_statement",
+    paidMinor: 0,
+    remainingMinor: 32_500_00,
+    paymentStatus: "unpaid",
+    createdAt: now.toISOString(),
+    updatedAt: now.toISOString()
+  });
 }
 
 function seedGoals(store: MockStore): void {

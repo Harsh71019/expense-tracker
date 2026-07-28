@@ -25,6 +25,16 @@ describe("query keys", () => {
       { includeArchived: true, limit: 50 }
     ]);
     expect(qk.accounts()).toEqual(["accounts"]);
+    expect(qk.bills()).toEqual(["bills"]);
+    expect(qk.billLists()).toEqual(["bills", "list"]);
+    expect(qk.billDetail("bill-1")).toEqual(["bills", "detail", "bill-1"]);
+    expect(qk.billStatementRows("bill-1", { limit: 50 })).toEqual([
+      "bills",
+      "detail",
+      "bill-1",
+      "statement-rows",
+      { limit: 50 }
+    ]);
     expect(qk.categories()).toEqual(["categories"]);
     expect(qk.spendingWarnings()).toEqual(["spending-warnings"]);
     expect(qk.spendingWarningLists()).toEqual(["spending-warnings", "list"]);

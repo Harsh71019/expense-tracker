@@ -15,6 +15,7 @@ describe("MonthlyRollupRepository", () => {
   let testDb: TestDb;
   let rollups: MonthlyRollupRepository;
   let transactions: TransactionRepository;
+  let accounts: AccountRepository;
   let accountId: string;
   let foodCategoryId: string;
 
@@ -23,7 +24,7 @@ describe("MonthlyRollupRepository", () => {
     await insertTestUser(testDb.db, "user-a");
     await insertTestUser(testDb.db, "user-b");
 
-    const accounts = new AccountRepository(testDb.db);
+    accounts = new AccountRepository(testDb.db);
     const categories = new CategoryRepository(testDb.db);
     transactions = new TransactionRepository(testDb.db);
     rollups = new MonthlyRollupRepository(testDb.db);
@@ -67,6 +68,12 @@ describe("MonthlyRollupRepository", () => {
     await withTxn(testDb.db, async (tx) => {
       const reversal = await transactions.createReversal("user-a", reversedOriginal, tx);
       await transactions.markReversed("user-a", reversedOriginal.id, reversal.id, tx);
+      await accounts.applyReversalBalanceDelta(
+        "user-a",
+        reversedOriginal.accountId,
+        reversedOriginal.amountMinor,
+        tx
+      );
     });
     // Outside the target month — must not be picked up.
     await create({
@@ -83,8 +90,8 @@ describe("MonthlyRollupRepository", () => {
         tx
       )
     );
-    await withTxn(testDb.db, (tx) =>
-      transactions.create(
+    await withTxn(testDb.db, async (tx) => {
+      await transactions.create(
         "user-b",
         {
           accountId: otherAccount.id,
@@ -96,8 +103,9 @@ describe("MonthlyRollupRepository", () => {
         },
         undefined,
         tx
-      )
-    );
+      );
+      await accounts.applyBalanceDelta("user-b", otherAccount.id, -4_242, tx);
+    });
   }, 60_000);
 
   afterAll(async () => {
@@ -111,8 +119,8 @@ describe("MonthlyRollupRepository", () => {
     categoryId?: string;
     description: string;
   }): Promise<Transaction> {
-    return withTxn(testDb.db, (tx) =>
-      transactions.create(
+    return withTxn(testDb.db, async (tx) => {
+      const transaction = await transactions.create(
         "user-a",
         {
           accountId,
@@ -125,8 +133,15 @@ describe("MonthlyRollupRepository", () => {
         },
         undefined,
         tx
-      )
-    );
+      );
+      await accounts.applyBalanceDelta(
+        "user-a",
+        accountId,
+        input.type === "income" ? input.amountMinor : -input.amountMinor,
+        tx
+      );
+      return transaction;
+    });
   }
 
   it("aggregates by category, by account, and totals for the IST month — excluding reversed pairs, other months, and other users", async () => {

@@ -2,6 +2,7 @@ import { PostgreSqlContainer } from "@testcontainers/postgresql";
 import type { StartedPostgreSqlContainer } from "@testcontainers/postgresql";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
+import { sql } from "drizzle-orm";
 import { Pool } from "pg";
 
 import * as authSchema from "../../../src/common/db/auth-schema.js";
@@ -10,6 +11,7 @@ import * as schema from "../../../src/common/db/schema/index.js";
 import type { DrizzleDb } from "../../../src/common/db/db.module.js";
 
 const fullSchema = { ...schema, ...authSchema };
+const activeTestDbs = new Set<TestDb>();
 
 export type TestDb = Readonly<{
   db: DrizzleDb;
@@ -28,24 +30,98 @@ export type TestDb = Readonly<{
  * against `db`.
  */
 export async function createTestDb(): Promise<TestDb> {
-  const container: StartedPostgreSqlContainer = await new PostgreSqlContainer("postgres:18-alpine")
-    .withDatabase("treasury_ops_test")
-    .start();
+  let container: StartedPostgreSqlContainer | undefined;
+  let pool: Pool | undefined;
+  try {
+    container = await new PostgreSqlContainer("postgres:18-alpine")
+      .withDatabase("treasury_ops_test")
+      .start();
 
-  const connectionUri = container.getConnectionUri();
-  const pool = new Pool({ connectionString: connectionUri });
-  const db = drizzle(pool, { schema: fullSchema });
+    const connectionUri = container.getConnectionUri();
+    pool = new Pool({ connectionString: connectionUri });
+    const db = drizzle(pool, { schema: fullSchema });
+    await migrate(db, { migrationsFolder: "./drizzle" });
+    await installInvariantGuards(db);
+    const startedContainer = container;
+    const startedPool = pool;
 
-  await migrate(db, { migrationsFolder: "./drizzle" });
+    let teardownPromise: Promise<void> | undefined;
+    const testDb: TestDb = {
+      db,
+      connectionUri,
+      teardown: () => {
+        teardownPromise ??= (async () => {
+          activeTestDbs.delete(testDb);
+          try {
+            await startedPool.end();
+          } finally {
+            await startedContainer.stop();
+          }
+        })();
+        return teardownPromise;
+      }
+    };
+    activeTestDbs.add(testDb);
+    return testDb;
+  } catch (error) {
+    if (pool !== undefined) await ignoreCleanupFailure(pool.end());
+    if (container !== undefined) await ignoreCleanupFailure(container.stop());
+    throw error;
+  }
+}
 
-  return {
-    db,
-    connectionUri,
-    teardown: async () => {
-      await pool.end();
-      await container.stop();
-    }
-  };
+async function installInvariantGuards(db: DrizzleDb): Promise<void> {
+  await db.execute(sql`
+    create or replace function test_reject_transaction_ledger_mutation()
+    returns trigger
+    language plpgsql
+    as $$
+    begin
+      if tg_op = 'DELETE' then
+        raise exception 'integration invariant: transaction rows are append-only';
+      end if;
+      if old.amount_minor is distinct from new.amount_minor
+        or old.type is distinct from new.type
+        or old.account_id is distinct from new.account_id
+        or old.occurred_at is distinct from new.occurred_at then
+        raise exception 'integration invariant: transaction monetary fields are immutable';
+      end if;
+      return new;
+    end;
+    $$;
+  `);
+  await db.execute(sql`
+    create trigger test_transactions_append_only
+    before update or delete on transactions
+    for each row execute function test_reject_transaction_ledger_mutation();
+  `);
+  await db.execute(sql`
+    create or replace function test_reject_audit_mutation()
+    returns trigger
+    language plpgsql
+    as $$
+    begin
+      raise exception 'integration invariant: audit rows are write-once';
+    end;
+    $$;
+  `);
+  await db.execute(sql`
+    create trigger test_audit_log_write_once
+    before update or delete on audit_log
+    for each row execute function test_reject_audit_mutation();
+  `);
+}
+
+export function activeIntegrationTestDbs(): readonly TestDb[] {
+  return [...activeTestDbs];
+}
+
+export async function teardownActiveIntegrationTestDbs(): Promise<void> {
+  await Promise.all([...activeTestDbs].map((testDb) => testDb.teardown()));
+}
+
+async function ignoreCleanupFailure(cleanup: Promise<unknown>): Promise<void> {
+  await cleanup.catch(() => undefined);
 }
 
 /**

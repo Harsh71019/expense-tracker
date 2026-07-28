@@ -449,8 +449,8 @@ describe("TransactionService", () => {
   });
 
   it("rejects metadata edits on an individual transfer leg", async () => {
-    const transferLeg = await withTxn(testDb.db, (tx) =>
-      transactionRepository.create(
+    const transferLeg = await withTxn(testDb.db, async (tx) => {
+      const created = await transactionRepository.create(
         "user-a",
         {
           accountId,
@@ -463,8 +463,25 @@ describe("TransactionService", () => {
         undefined,
         tx,
         "3fa85f64-5717-4562-b3fc-2c963f66af99"
-      )
-    );
+      );
+      await new AccountRepository(testDb.db).applyBalanceDelta("user-a", accountId, -500, tx);
+      await transactionRepository.create(
+        "user-a",
+        {
+          accountId,
+          type: "income",
+          amountMinor: 500,
+          occurredAt: new Date("2026-07-14T14:00:00.000Z"),
+          description: "Transfer leg",
+          tags: []
+        },
+        undefined,
+        tx,
+        "3fa85f64-5717-4562-b3fc-2c963f66af99"
+      );
+      await new AccountRepository(testDb.db).applyBalanceDelta("user-a", accountId, 500, tx);
+      return created;
+    });
 
     await expect(
       transactionMutations.update(

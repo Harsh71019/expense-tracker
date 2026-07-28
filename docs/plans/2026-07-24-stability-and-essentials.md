@@ -180,6 +180,19 @@ heartbeat age, Redis-backed balance-verification gauges, zod-validated
 request-to-job correlation, and
 `docs/backend/OBSERVABILITY-RUNBOOK.md`.
 
+### TEST-017 — Make invariant checks and fixture cleanup systematic
+
+**Priority:** P2
+**Status:** Complete
+
+The integration configuration loads one shared harness for every test file.
+Databases created through `createTestDb()` receive balance-conservation and
+transfer-pairing checks after every test, PostgreSQL guards that reject ledger
+monetary mutation/deletion and audit mutation, and single-flight teardown.
+Partial setup cleans up its pool/container without masking the original
+failure. An architecture test prevents integration files from starting
+PostgreSQL outside the registered harness.
+
 ## Verification required for this set
 
 ```bash

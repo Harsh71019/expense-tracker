@@ -5,71 +5,71 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  "@typescript-eslint/typescript-estree>typescript": npm:@typescript/typescript6@*
+  "@typescript-eslint/typescript-estree>typescript": npm:@typescript/typescript6@6.0.2
   vite: 7.3.6
 
 importers:
   .:
     devDependencies:
       "@commitlint/cli":
-        specifier: latest
+        specifier: 21.2.1
         version: 21.2.1(@types/node@26.1.1)(conventional-commits-parser@7.1.0)(typescript@6.0.0-beta)
       "@commitlint/config-conventional":
-        specifier: latest
+        specifier: 21.2.0
         version: 21.2.0
       "@eslint/js":
-        specifier: ^9.39.5
+        specifier: 9.39.5
         version: 9.39.5
       "@nestjs/cli":
-        specifier: latest
+        specifier: 11.0.24
         version: 11.0.24(@swc/core@1.15.43)(@types/node@26.1.1)(lightningcss@1.32.0)(postcss@8.5.19)(prettier@3.9.5)
       "@tanstack/eslint-plugin-query":
-        specifier: ^5.101.2
+        specifier: 5.101.2
         version: 5.101.2(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.0-beta)
       "@testcontainers/postgresql":
-        specifier: ^12.0.4
+        specifier: 12.0.4
         version: 12.0.4
       "@types/node":
-        specifier: latest
+        specifier: 26.1.1
         version: 26.1.1
       "@types/react":
-        specifier: latest
+        specifier: 19.2.17
         version: 19.2.17
       "@types/react-dom":
-        specifier: latest
+        specifier: 19.2.3
         version: 19.2.3(@types/react@19.2.17)
       "@typescript/typescript6":
-        specifier: latest
+        specifier: 6.0.2
         version: 6.0.2
       eslint:
-        specifier: ^9.39.5
+        specifier: 9.39.5
         version: 9.39.5(jiti@2.7.0)
       eslint-config-next:
-        specifier: latest
+        specifier: 16.2.10
         version: 16.2.10(@typescript-eslint/parser@8.64.0(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.0-beta))(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.0-beta)
       husky:
-        specifier: latest
+        specifier: 9.1.7
         version: 9.1.7
       lint-staged:
-        specifier: latest
+        specifier: 17.1.0
         version: 17.1.0
       madge:
-        specifier: latest
+        specifier: 8.0.0
         version: 8.0.0(typescript@6.0.0-beta)
       openapi-typescript:
-        specifier: ^7.13.0
+        specifier: 7.13.0
         version: 7.13.0(typescript@6.0.0-beta)
       prettier:
-        specifier: latest
+        specifier: 3.9.5
         version: 3.9.5
       tsx:
-        specifier: latest
+        specifier: 4.23.1
         version: 4.23.1
       typescript:
         specifier: 6.0.0-beta
         version: 6.0.0-beta
       typescript-eslint:
-        specifier: latest
+        specifier: 8.64.0
         version: 8.64.0(eslint@9.39.5(jiti@2.7.0))(typescript@6.0.0-beta)
       vite:
         specifier: 7.3.6
@@ -78,119 +78,119 @@ importers:
         specifier: 4.1.10
         version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.1.1)(@vitest/coverage-v8@4.1.10)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.15.0(@types/node@26.1.1)(typescript@6.0.0-beta))(vite@7.3.6(@types/node@26.1.1)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0))
       zod:
-        specifier: latest
+        specifier: 4.4.3
         version: 4.4.3
 
   apps/api:
     dependencies:
       "@asteasolutions/zod-to-openapi":
-        specifier: ^8.5.0
+        specifier: 8.5.0
         version: 8.5.0(zod@4.4.3)
       "@better-auth/api-key":
-        specifier: latest
+        specifier: 1.6.24
         version: 1.6.24(@better-auth/core@1.6.23(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.9.1)(better-call@1.3.7(zod@4.4.3))(jose@6.2.3)(kysely@0.29.3)(nanostores@1.4.0))(@better-auth/utils@0.4.2)(better-auth@1.6.23(@opentelemetry/api@1.9.1)(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(kysely@0.29.3)(pg@8.22.0))(mongodb@7.2.0)(next@16.2.10(@opentelemetry/api@1.9.1)(@playwright/test@1.61.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(pg@8.22.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@4.1.10))(better-call@1.3.7(zod@4.4.3))
       "@bull-board/api":
-        specifier: latest
+        specifier: 8.1.2
         version: 8.1.2(@bull-board/ui@8.1.2)
       "@bull-board/express":
-        specifier: latest
+        specifier: 8.1.2
         version: 8.1.2
       "@nestjs/common":
-        specifier: latest
+        specifier: 11.1.28
         version: 11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2)
       "@nestjs/config":
-        specifier: latest
+        specifier: 4.0.4
         version: 4.0.4(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2)
       "@nestjs/core":
-        specifier: latest
+        specifier: 11.1.28
         version: 11.1.28(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/platform-express@11.1.28)(reflect-metadata@0.2.2)(rxjs@7.8.2)
       "@nestjs/platform-express":
-        specifier: latest
+        specifier: 11.1.28
         version: 11.1.28(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.28)
       "@nestjs/schedule":
-        specifier: latest
+        specifier: 6.1.3
         version: 6.1.3(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.28)
       "@nestjs/throttler":
-        specifier: ^6.5.0
+        specifier: 6.5.0
         version: 6.5.0(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.28)(reflect-metadata@0.2.2)
       "@treasury-ops/shared":
         specifier: workspace:*
         version: link:../../packages/shared
       better-auth:
-        specifier: latest
+        specifier: 1.6.23
         version: 1.6.23(@opentelemetry/api@1.9.1)(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(kysely@0.29.3)(pg@8.22.0))(mongodb@7.2.0)(next@16.2.10(@opentelemetry/api@1.9.1)(@playwright/test@1.61.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(pg@8.22.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@4.1.10)
       bullmq:
-        specifier: latest
+        specifier: 5.80.9
         version: 5.80.9
       cookie-parser:
-        specifier: latest
+        specifier: 1.4.7
         version: 1.4.7
       csv-parse:
-        specifier: latest
+        specifier: 7.0.1
         version: 7.0.1
       drizzle-kit:
-        specifier: ^0.31.10
+        specifier: 0.31.10
         version: 0.31.10
       drizzle-orm:
-        specifier: ^0.45.2
+        specifier: 0.45.2
         version: 0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(kysely@0.29.3)(pg@8.22.0)
       express:
-        specifier: latest
+        specifier: 5.2.1
         version: 5.2.1
       helmet:
-        specifier: latest
+        specifier: 8.3.0
         version: 8.3.0
       ioredis:
-        specifier: latest
+        specifier: 5.11.1
         version: 5.11.1
       nestjs-pino:
-        specifier: latest
+        specifier: 4.6.1
         version: 4.6.1(@nestjs/common@11.1.28(reflect-metadata@0.2.2)(rxjs@7.8.2))(pino-http@11.0.0)(pino@10.3.1)(rxjs@7.8.2)
       pg:
-        specifier: ^8.22.0
+        specifier: 8.22.0
         version: 8.22.0
       pino:
-        specifier: latest
+        specifier: 10.3.1
         version: 10.3.1
       reflect-metadata:
-        specifier: latest
+        specifier: 0.2.2
         version: 0.2.2
       rxjs:
-        specifier: latest
+        specifier: 7.8.2
         version: 7.8.2
       zod:
-        specifier: latest
+        specifier: 4.4.3
         version: 4.4.3
     devDependencies:
       "@swc/core":
         specifier: 1.15.43
         version: 1.15.43
       "@testcontainers/postgresql":
-        specifier: ^12.0.4
+        specifier: 12.0.4
         version: 12.0.4
       "@treasury-ops/config":
         specifier: workspace:*
         version: link:../../packages/config
       "@types/cookie-parser":
-        specifier: latest
+        specifier: 1.4.10
         version: 1.4.10(@types/express@5.0.6)
       "@types/express":
-        specifier: latest
+        specifier: 5.0.6
         version: 5.0.6
       "@types/pg":
-        specifier: ^8.20.0
+        specifier: 8.20.0
         version: 8.20.0
       "@vitest/coverage-v8":
-        specifier: ^4.1.10
+        specifier: 4.1.10
         version: 4.1.10(vitest@4.1.10)
       concurrently:
-        specifier: latest
+        specifier: 10.0.3
         version: 10.0.3
       pino-pretty:
-        specifier: ^13.1.3
+        specifier: 13.1.3
         version: 13.1.3
       testcontainers:
-        specifier: ^12.0.4
+        specifier: 12.0.4
         version: 12.0.4
       unplugin-swc:
         specifier: 1.5.9
@@ -199,65 +199,65 @@ importers:
   apps/web:
     dependencies:
       "@hookform/resolvers":
-        specifier: ^5.4.0
+        specifier: 5.4.0
         version: 5.4.0(react-hook-form@7.81.0(react@19.2.7))
       "@sentry/nextjs":
-        specifier: latest
+        specifier: 10.66.0
         version: 10.66.0(@opentelemetry/core@2.9.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.9.0(@opentelemetry/api@1.9.1))(next@16.2.10(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.61.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react@19.2.7)(webpack@5.106.2(@swc/core@1.15.43)(lightningcss@1.32.0)(postcss@8.5.19))
       "@tanstack/react-query":
-        specifier: ^5.101.2
+        specifier: 5.101.2
         version: 5.101.2(react@19.2.7)
       "@treasury-ops/shared":
         specifier: workspace:*
         version: link:../../packages/shared
       better-auth:
-        specifier: latest
+        specifier: 1.6.23
         version: 1.6.23(@opentelemetry/api@1.9.1)(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(kysely@0.29.3)(pg@8.22.0))(mongodb@7.2.0)(next@16.2.10(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.61.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(pg@8.22.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@4.1.10)
       lucide-react:
-        specifier: ^1.25.0
+        specifier: 1.25.0
         version: 1.25.0(react@19.2.7)
       next:
-        specifier: latest
+        specifier: 16.2.10
         version: 16.2.10(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.61.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       openapi-fetch:
-        specifier: ^0.17.0
+        specifier: 0.17.0
         version: 0.17.0
       react:
-        specifier: latest
+        specifier: 19.2.7
         version: 19.2.7
       react-dom:
-        specifier: latest
+        specifier: 19.2.7
         version: 19.2.7(react@19.2.7)
       react-hook-form:
-        specifier: ^7.81.0
+        specifier: 7.81.0
         version: 7.81.0(react@19.2.7)
       server-only:
-        specifier: ^0.0.1
+        specifier: 0.0.1
         version: 0.0.1
       sonner:
-        specifier: ^2.0.7
+        specifier: 2.0.7
         version: 2.0.7(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       zod:
-        specifier: latest
+        specifier: 4.4.3
         version: 4.4.3
     devDependencies:
       "@axe-core/playwright":
-        specifier: ^4.12.1
+        specifier: 4.12.1
         version: 4.12.1(playwright-core@1.61.1)
       "@playwright/test":
-        specifier: latest
+        specifier: 1.61.1
         version: 1.61.1
       "@tailwindcss/postcss":
-        specifier: latest
+        specifier: 4.3.3
         version: 4.3.3
       "@testing-library/jest-dom":
-        specifier: latest
+        specifier: 6.9.1
         version: 6.9.1
       "@testing-library/react":
-        specifier: latest
+        specifier: 16.3.2
         version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       "@testing-library/user-event":
-        specifier: latest
+        specifier: 14.6.1
         version: 14.6.1(@testing-library/dom@10.4.1)
       "@treasury-ops/config":
         specifier: workspace:*
@@ -266,19 +266,19 @@ importers:
         specifier: 5.2.0
         version: 5.2.0(vite@7.3.6(@types/node@26.1.1)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0))
       jsdom:
-        specifier: latest
+        specifier: 29.1.1
         version: 29.1.1(@noble/hashes@2.2.0)
       msw:
-        specifier: ^2.15.0
+        specifier: 2.15.0
         version: 2.15.0(@types/node@26.1.1)(typescript@6.0.0-beta)
       openapi-msw:
-        specifier: ^2.0.0
+        specifier: 2.0.0
         version: 2.0.0(msw@2.15.0(@types/node@26.1.1)(typescript@6.0.0-beta))
       tailwindcss:
-        specifier: latest
+        specifier: 4.3.3
         version: 4.3.3
       typescript:
-        specifier: beta
+        specifier: 6.0.0-beta
         version: 6.0.0-beta
 
   packages/config: {}
@@ -286,17 +286,17 @@ importers:
   packages/shared:
     dependencies:
       rrule:
-        specifier: latest
+        specifier: 2.8.1
         version: 2.8.1
       zod:
-        specifier: latest
+        specifier: 4.4.3
         version: 4.4.3
     devDependencies:
       "@treasury-ops/config":
         specifier: workspace:*
         version: link:../config
       fast-check:
-        specifier: latest
+        specifier: 4.9.0
         version: 4.9.0
 
 packages:

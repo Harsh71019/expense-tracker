@@ -1,9 +1,11 @@
-import { accounts, transactions } from "../../../src/common/db/schema/index.js";
+import { accounts, creditCardBills, transactions } from "../../../src/common/db/schema/index.js";
 import type { DrizzleDb } from "../../../src/common/db/db.module.js";
 
 export async function assertLedgerInvariants(db: DrizzleDb): Promise<void> {
   const accountRows = await db.select().from(accounts);
   const transactionRows = await db.select().from(transactions);
+  const billRows = await db.select().from(creditCardBills);
+  const billsById = new Map(billRows.map((bill) => [bill.id, bill]));
   const deltas = new Map<string, number>();
   const transferGroups = new Map<string, typeof transactionRows>();
 
@@ -21,6 +23,18 @@ export async function assertLedgerInvariants(db: DrizzleDb): Promise<void> {
       const group = transferGroups.get(transaction.transferGroupId) ?? [];
       group.push(transaction);
       transferGroups.set(transaction.transferGroupId, group);
+    }
+    if (transaction.billId !== null) {
+      const bill = billsById.get(transaction.billId);
+      if (
+        bill === undefined ||
+        transaction.type !== "income" ||
+        transaction.transferGroupId === null ||
+        transaction.accountId !== bill.accountId ||
+        transaction.userId !== bill.userId
+      ) {
+        throw new Error(`Transaction ${transaction.id} has an invalid credit-card bill tag.`);
+      }
     }
   }
 

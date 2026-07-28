@@ -22,7 +22,15 @@ import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import {
   AccountIdSchema,
   AccountSchema,
+  AcknowledgeExtraTransactionSchema,
   ApiKeySchema,
+  BillDetailSchema,
+  BillPageSchema,
+  BillPaymentResultSchema,
+  BillStatementRowIdSchema,
+  BillStatementRowPageSchema,
+  BillStatementRowSchema,
+  BillStatementUploadSchema,
   CashflowQuerySchema,
   CashflowResponseSchema,
   CategoryIdSchema,
@@ -35,6 +43,9 @@ import {
   CreateCategorySchema,
   CreateCategoryRuleSchema,
   CreateTransactionSchema,
+  CreditCardBillIdSchema,
+  CreditCardBillSchema,
+  CreditCardConfigInputSchema,
   DashboardInvestmentsSchema,
   DashboardStatsQuerySchema,
   DashboardStatsSchema,
@@ -87,10 +98,14 @@ import {
   GoalPlanSchema,
   GoalSchema,
   ListGoalsQuerySchema,
+  ListBillsQuerySchema,
+  ListBillStatementRowsQuerySchema,
   ReorderGoalsSchema,
   RecurringRuleIdSchema,
   RecurringRuleSchema,
+  PayCreditCardBillSchema,
   UpdateApiKeySchema,
+  UpdateBillStatementRowSchema,
   UpdateRecurringRuleSchema,
   DismissSpendingWarningResponseSchema,
   ListSpendingWarningsQuerySchema,
@@ -139,6 +154,13 @@ const TopSpendingItem = TopSpendingItemSchema.meta({ id: "TopSpendingItem" });
 const SpendMix = SpendMixSchema.meta({ id: "SpendMix" });
 const DashboardInvestments = DashboardInvestmentsSchema.meta({ id: "DashboardInvestments" });
 const RecurringForecast = RecurringForecastSchema.meta({ id: "RecurringForecast" });
+const CreditCardBill = CreditCardBillSchema.meta({ id: "CreditCardBill" });
+const BillPage = BillPageSchema.meta({ id: "BillPage" });
+const BillDetail = BillDetailSchema.meta({ id: "BillDetail" });
+const BillStatementUpload = BillStatementUploadSchema.meta({ id: "BillStatementUpload" });
+const BillStatementRow = BillStatementRowSchema.meta({ id: "BillStatementRow" });
+const BillStatementRowPage = BillStatementRowPageSchema.meta({ id: "BillStatementRowPage" });
+const BillPaymentResult = BillPaymentResultSchema.meta({ id: "BillPaymentResult" });
 
 const accountId = z.object({ accountId: AccountIdSchema });
 const categoryId = z.object({ categoryId: CategoryIdSchema });
@@ -155,6 +177,11 @@ const month = z.object({ month: MonthSchema });
 const recurringRuleId = z.object({ ruleId: RecurringRuleIdSchema });
 const spendingWarningId = z.object({ warningId: SpendingWarningIdSchema });
 const goalId = z.object({ goalId: GoalIdSchema });
+const billId = z.object({ billId: CreditCardBillIdSchema });
+const billAndRowId = z.object({
+  billId: CreditCardBillIdSchema,
+  rowId: BillStatementRowIdSchema
+});
 const budgetId = z.object({ budgetId: BudgetIdSchema });
 const json = (schema: z.ZodType): { content: { "application/json": { schema: z.ZodType } } } => ({
   content: { "application/json": { schema } }
@@ -1024,6 +1051,168 @@ registry.registerPath({
     200: {
       description: "Prometheus text exposition for backend runtime health",
       content: { "text/plain": { schema: z.string() } }
+    },
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "patch",
+  path: "/v1/accounts/{accountId}/credit-card-config",
+  security: secured,
+  request: {
+    params: accountId,
+    headers: idempotencyKeyHeaders,
+    body: json(CreditCardConfigInputSchema)
+  },
+  responses: {
+    200: {
+      description: "Configured credit-card cycle, or idempotent replay",
+      headers: optionalReplayHeaders,
+      ...json(Account)
+    },
+    404: { description: "Account not found", ...json(ProblemDetails) },
+    409: { description: "Account is not a credit card", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "get",
+  path: "/v1/bills",
+  security: secured,
+  request: { query: ListBillsQuerySchema },
+  responses: {
+    200: { description: "Credit-card bill page", ...json(BillPage) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "get",
+  path: "/v1/bills/{billId}",
+  security: secured,
+  request: { params: billId },
+  responses: {
+    200: { description: "Credit-card bill detail", ...json(BillDetail) },
+    404: { description: "Bill not found", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "post",
+  path: "/v1/bills/{billId}/statement",
+  security: secured,
+  request: {
+    params: billId,
+    headers: idempotencyKeyHeaders,
+    body: {
+      content: {
+        "multipart/form-data": {
+          schema: z.object({
+            file: z.string().describe("Issuer CSV statement file to upload (binary)"),
+            mapping: z.string().describe("JSON string containing ColumnMapping")
+          })
+        }
+      }
+    }
+  },
+  responses: {
+    200: {
+      description: "Idempotent statement-upload replay",
+      headers: replayedHeaders,
+      ...json(BillStatementUpload)
+    },
+    201: { description: "Statement accepted for parsing", ...json(BillStatementUpload) },
+    404: { description: "Bill not found", ...json(ProblemDetails) },
+    409: { description: "Bill is already reconciled", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "get",
+  path: "/v1/bills/{billId}/statement/rows",
+  security: secured,
+  request: { params: billId, query: ListBillStatementRowsQuerySchema },
+  responses: {
+    200: { description: "Statement reconciliation rows", ...json(BillStatementRowPage) },
+    404: { description: "Bill or statement not found", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "patch",
+  path: "/v1/bills/{billId}/statement/rows/{rowId}",
+  security: secured,
+  request: {
+    params: billAndRowId,
+    headers: idempotencyKeyHeaders,
+    body: json(UpdateBillStatementRowSchema)
+  },
+  responses: {
+    200: {
+      description: "Updated reconciliation row, or idempotent replay",
+      headers: optionalReplayHeaders,
+      ...json(BillStatementRow)
+    },
+    404: { description: "Bill, statement, row, or transaction not found", ...json(ProblemDetails) },
+    409: { description: "Statement cannot be changed", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "post",
+  path: "/v1/bills/{billId}/statement/acknowledge-extra",
+  security: secured,
+  request: {
+    params: billId,
+    headers: idempotencyKeyHeaders,
+    body: json(AcknowledgeExtraTransactionSchema)
+  },
+  responses: {
+    200: {
+      description: "Updated extra-ledger acknowledgement, or replay",
+      headers: optionalReplayHeaders,
+      ...json(BillStatementUpload)
+    },
+    404: { description: "Bill, statement, or transaction not found", ...json(ProblemDetails) },
+    409: { description: "Statement cannot be changed", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "post",
+  path: "/v1/bills/{billId}/statement/reconcile",
+  security: secured,
+  request: { params: billId, headers: idempotencyKeyHeaders },
+  responses: {
+    200: {
+      description: "Reconciled bill, or idempotent replay",
+      headers: optionalReplayHeaders,
+      ...json(CreditCardBill)
+    },
+    404: { description: "Bill or statement not found", ...json(ProblemDetails) },
+    409: { description: "Statement is not ready or has unresolved rows", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "post",
+  path: "/v1/bills/{billId}/pay",
+  security: secured,
+  request: {
+    params: billId,
+    headers: idempotencyKeyHeaders,
+    body: json(PayCreditCardBillSchema)
+  },
+  responses: {
+    200: {
+      description: "Bill payment, or idempotent replay",
+      headers: optionalReplayHeaders,
+      ...json(BillPaymentResult)
+    },
+    404: { description: "Bill or payment account not found", ...json(ProblemDetails) },
+    409: {
+      description: "Bill is unreconciled, paid, or would be overpaid",
+      ...json(ProblemDetails)
     },
     ...problemResponses
   }

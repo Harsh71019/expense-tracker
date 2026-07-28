@@ -13,6 +13,9 @@ describe("AccountRepository Unit Tests", () => {
     currency: "INR",
     isArchived: false,
     openingBalanceMinor: 0,
+    statementDay: null,
+    dueDay: null,
+    nextStatementAt: null,
     createdAt: new Date(),
     updatedAt: new Date()
   };

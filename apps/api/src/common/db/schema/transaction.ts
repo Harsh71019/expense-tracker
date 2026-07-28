@@ -13,6 +13,7 @@ import {
 import { user } from "../auth-schema.js";
 import { accounts } from "./account.js";
 import { categories } from "./category.js";
+import { creditCardBills } from "./credit-card-bill.js";
 import { transactionSourceEnum, transactionStatusEnum, transactionTypeEnum } from "./enums.js";
 import { importBatches } from "./import.js";
 
@@ -40,6 +41,7 @@ export const transactions = pgTable(
     reversedBy: uuid("reversed_by").references((): AnyPgColumn => transactions.id),
     transferGroupId: uuid("transfer_group_id"),
     importBatchId: uuid("import_batch_id").references(() => importBatches.id),
+    billId: uuid("bill_id").references(() => creditCardBills.id),
     dedupeHash: text("dedupe_hash"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull()
@@ -70,6 +72,9 @@ export const transactions = pgTable(
       .where(sql`${table.dedupeHash} IS NOT NULL`),
     index("transactions_import_batch_id")
       .on(table.importBatchId)
-      .where(sql`${table.importBatchId} IS NOT NULL`)
+      .where(sql`${table.importBatchId} IS NOT NULL`),
+    index("transactions_bill_id")
+      .on(table.billId)
+      .where(sql`${table.billId} IS NOT NULL`)
   ]
 );

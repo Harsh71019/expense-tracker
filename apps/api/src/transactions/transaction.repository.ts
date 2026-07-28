@@ -1,6 +1,7 @@
 import { Inject, Injectable } from "@nestjs/common";
 import {
   TransactionSchema,
+  type CreditCardBillId,
   type CreateTransaction,
   type ImportBatchId,
   type ListTransactionsQuery,
@@ -10,7 +11,7 @@ import {
   type TransactionSource,
   type UpdateTransaction
 } from "@treasury-ops/shared";
-import { and, desc, eq, gte, inArray, lte, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, isNull, lt, lte, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import { InvalidCursorError } from "../common/errors/invalid-cursor.error.js";
@@ -32,7 +33,8 @@ export class TransactionRepository {
     idempotencyKey: string | undefined,
     tx: DbTx,
     transferGroupId?: string,
-    source: TransactionSource = "manual"
+    source: TransactionSource = "manual",
+    billId?: CreditCardBillId
   ): Promise<Transaction> {
     const now = new Date();
     const [row] = await tx
@@ -51,6 +53,7 @@ export class TransactionRepository {
         status: "posted",
         idempotencyKey: idempotencyKey ?? null,
         transferGroupId: transferGroupId ?? null,
+        billId: billId ?? null,
         createdAt: now,
         updatedAt: now
       })
@@ -114,6 +117,79 @@ export class TransactionRepository {
     return new Set(
       rows.map((row) => row.dedupeHash).filter((hash): hash is string => hash !== null)
     );
+  }
+
+  async summarizeBillableCycle(
+    userId: string,
+    accountId: string,
+    cycleStart: Date,
+    cycleEndExclusive: Date,
+    tx: DbTx
+  ): Promise<number> {
+    const [row] = await tx
+      .select({
+        total: sql<number>`COALESCE(SUM(
+          CASE
+            WHEN ${transactions.type} = 'expense' THEN ${transactions.amountMinor}
+            ELSE -${transactions.amountMinor}
+          END
+        ), 0)`.mapWith(Number)
+      })
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.userId, userId),
+          eq(transactions.accountId, accountId),
+          eq(transactions.status, "posted"),
+          isNull(transactions.billId),
+          gte(transactions.occurredAt, cycleStart),
+          lt(transactions.occurredAt, cycleEndExclusive)
+        )
+      );
+    return Math.max(0, row?.total ?? 0);
+  }
+
+  async findReconciliationCandidates(
+    userId: string,
+    accountId: string,
+    cycleStart: Date,
+    cycleEndExclusive: Date
+  ): Promise<Transaction[]> {
+    const rows = await this.db
+      .select()
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.userId, userId),
+          eq(transactions.accountId, accountId),
+          gte(transactions.occurredAt, cycleStart),
+          lt(transactions.occurredAt, cycleEndExclusive)
+        )
+      )
+      .orderBy(transactions.occurredAt, transactions.id);
+    return rows.map((row) => TransactionSchema.parse(stripNulls(row)));
+  }
+
+  async sumPostedBillPayments(
+    userId: string,
+    billId: CreditCardBillId,
+    tx?: DbTx
+  ): Promise<number> {
+    const executor = tx ?? this.db;
+    const [row] = await executor
+      .select({
+        total: sql<number>`COALESCE(SUM(${transactions.amountMinor}), 0)`.mapWith(Number)
+      })
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.userId, userId),
+          eq(transactions.billId, billId),
+          eq(transactions.type, "income"),
+          eq(transactions.status, "posted")
+        )
+      );
+    return row?.total ?? 0;
   }
 
   async findByIdempotencyKey(userId: string, idempotencyKey: string): Promise<Transaction | null> {

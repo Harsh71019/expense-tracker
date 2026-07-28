@@ -1,0 +1,342 @@
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { eq } from "drizzle-orm";
+
+import { AccountRepository } from "../../../src/accounts/account.repository.js";
+import { AuditRepository } from "../../../src/audit/audit.repository.js";
+import { BillGenerationCron } from "../../../src/bills/bill-generation.cron.js";
+import { BillReconciliationService } from "../../../src/bills/bill-reconciliation.service.js";
+import { BillStatementRepository } from "../../../src/bills/bill-statement.repository.js";
+import { BillsService } from "../../../src/bills/bills.service.js";
+import { CreditCardBillRepository } from "../../../src/bills/credit-card-bill.repository.js";
+import { accounts as accountsTable } from "../../../src/common/db/schema/index.js";
+import { withTxn } from "../../../src/common/db/db-txn.js";
+import { BillOverpaymentError } from "../../../src/common/errors/bill-overpayment.error.js";
+import { BillNotReconciledError } from "../../../src/common/errors/bill-not-reconciled.error.js";
+import { BillStatementUnresolvedError } from "../../../src/common/errors/bill-statement-unresolved.error.js";
+import { EntityNotFoundError } from "../../../src/common/errors/entity-not-found.error.js";
+import { InvalidCreditCardAccountError } from "../../../src/common/errors/invalid-credit-card-account.error.js";
+import { IdempotencyPostgresRepository } from "../../../src/common/idempotency/idempotency-postgres.repository.js";
+import { IdempotencyPostgresService } from "../../../src/common/idempotency/idempotency-postgres.service.js";
+import { TransactionRepository } from "../../../src/transactions/transaction.repository.js";
+import { TransferService } from "../../../src/transactions/transfer.service.js";
+import { assertLedgerInvariants } from "../support/assert-ledger-invariants.js";
+import { createTestDb, insertTestUser } from "../support/postgres-test-db.js";
+import type { TestDb } from "../support/postgres-test-db.js";
+
+const USER_ID = "bill-user";
+const OTHER_USER_ID = "bill-other-user";
+const NOOP_LOGGER = { log: () => undefined, warn: () => undefined, error: () => undefined };
+const MAPPING = {
+  date: "Date",
+  description: "Description",
+  amount: "Amount",
+  dateFormat: "DD/MM/YYYY",
+  amountConvention: "single_signed"
+} as const;
+
+describe("credit-card bill lifecycle", () => {
+  let testDb: TestDb;
+  let accounts: AccountRepository;
+  let transactions: TransactionRepository;
+  let bills: CreditCardBillRepository;
+  let statements: BillStatementRepository;
+  let reconciliation: BillReconciliationService;
+  let billService: BillsService;
+  let transfers: TransferService;
+  let cardId: string;
+  let bankId: string;
+
+  beforeAll(async () => {
+    testDb = await createTestDb();
+    await insertTestUser(testDb.db, USER_ID);
+    await insertTestUser(testDb.db, OTHER_USER_ID);
+
+    accounts = new AccountRepository(testDb.db);
+    transactions = new TransactionRepository(testDb.db);
+    bills = new CreditCardBillRepository(testDb.db);
+    statements = new BillStatementRepository(testDb.db);
+    const audit = new AuditRepository(testDb.db);
+    const idempotency = new IdempotencyPostgresService(
+      testDb.db,
+      new IdempotencyPostgresRepository(testDb.db)
+    );
+    transfers = new TransferService(testDb.db, accounts, transactions, audit, NOOP_LOGGER);
+    const queue = { enqueueParse: vi.fn().mockResolvedValue(undefined) };
+    reconciliation = new BillReconciliationService(
+      testDb.db,
+      bills,
+      statements,
+      transactions,
+      audit,
+      idempotency,
+      // @ts-expect-error - structural queue stub; no Redis is needed for service integration
+      queue
+    );
+    billService = new BillsService(
+      accounts,
+      bills,
+      statements,
+      transactions,
+      transfers,
+      audit,
+      idempotency
+    );
+
+    const card = await withTxn(testDb.db, (tx) =>
+      accounts.create(
+        USER_ID,
+        {
+          name: "HDFC Card",
+          type: "credit_card",
+          openingBalanceMinor: 0,
+          creditCardConfig: { statementDay: 25, dueDay: 15 }
+        },
+        tx,
+        new Date("2026-07-25T00:00:00.000Z")
+      )
+    );
+    cardId = card.id;
+    const bank = await withTxn(testDb.db, (tx) =>
+      accounts.create(
+        USER_ID,
+        { name: "HDFC Savings", type: "bank", openingBalanceMinor: 100_000 },
+        tx
+      )
+    );
+    bankId = bank.id;
+
+    await testDb.db
+      .update(accountsTable)
+      .set({ nextStatementAt: new Date("2026-07-25T00:00:00.000Z") })
+      .where(eq(accountsTable.id, cardId));
+
+    await postCardEntry("expense", 10_000, "2026-07-10T00:00:00.000Z", "Groceries");
+    await postCardEntry("income", 2_000, "2026-07-12T00:00:00.000Z", "Refund");
+  }, 60_000);
+
+  afterAll(async () => {
+    await assertLedgerInvariants(testDb.db);
+    await testDb.teardown();
+  });
+
+  async function postCardEntry(
+    type: "expense" | "income",
+    amountMinor: number,
+    occurredAt: string,
+    description: string
+  ): Promise<void> {
+    await withTxn(testDb.db, async (tx) => {
+      const delta = type === "income" ? amountMinor : -amountMinor;
+      if (!(await accounts.applyBalanceDelta(USER_ID, cardId, delta, tx))) {
+        throw new EntityNotFoundError("Account");
+      }
+      await transactions.create(
+        USER_ID,
+        {
+          accountId: cardId,
+          type,
+          amountMinor,
+          occurredAt: new Date(occurredAt),
+          description,
+          tags: []
+        },
+        undefined,
+        tx
+      );
+    });
+  }
+
+  it("generates one ledger-derived bill under concurrent cron attempts", async () => {
+    const card = await accounts.findById(USER_ID, cardId);
+    if (card === null) throw new Error("Expected card fixture");
+    const config = { env: { SERVICE_ROLE: "worker" } };
+    const cron = new BillGenerationCron(
+      testDb.db,
+      // @ts-expect-error - only SERVICE_ROLE is used by generateOne test setup
+      config,
+      accounts,
+      bills,
+      transactions,
+      new AuditRepository(testDb.db),
+      NOOP_LOGGER
+    );
+
+    await Promise.all(Array.from({ length: 5 }, () => cron.generateOne(card)));
+    const page = await bills.findMany(USER_ID, { limit: 50 });
+
+    expect(page.items).toHaveLength(1);
+    expect(page.items[0]).toMatchObject({
+      accountId: cardId,
+      amountDueMinor: 8_000,
+      reconciliationStatus: "awaiting_statement",
+      paidMinor: 0,
+      remainingMinor: 8_000,
+      paymentStatus: "unpaid"
+    });
+  });
+
+  it("updates credit-card configuration idempotently and rejects a bank account", async () => {
+    const key = "90909090-aaaa-4909-8909-909090909090";
+    const updates = await Promise.all(
+      Array.from({ length: 5 }, () =>
+        billService.updateCreditCardConfig(USER_ID, cardId, { statementDay: 26, dueDay: 16 }, key)
+      )
+    );
+    expect(updates.filter((result) => !result.replayed)).toHaveLength(1);
+    expect(updates[0]?.result.creditCardConfig).toMatchObject({
+      statementDay: 26,
+      dueDay: 16
+    });
+    await expect(
+      billService.updateCreditCardConfig(
+        USER_ID,
+        bankId,
+        { statementDay: 25, dueDay: 15 },
+        "80808080-aaaa-4808-8808-808080808080"
+      )
+    ).rejects.toThrow(InvalidCreditCardAccountError);
+  });
+
+  it("uploads, matches, and reconciles the issuer CSV before payment", async () => {
+    const [bill] = (await bills.findMany(USER_ID, { limit: 50 })).items;
+    if (bill === undefined) throw new Error("Expected generated bill");
+    const unresolvedCsv = ["Date,Description,Amount", "10/07/2026,Unknown,-99.99"].join("\n");
+    const unresolvedUpload = await reconciliation.upload(
+      USER_ID,
+      bill.id,
+      "unresolved.csv",
+      "text/csv",
+      Buffer.from(unresolvedCsv),
+      MAPPING,
+      "10101010-aaaa-4101-8101-101010101010"
+    );
+    await reconciliation.parseStatement(
+      unresolvedUpload.result.id,
+      bill.id,
+      USER_ID,
+      MAPPING,
+      unresolvedCsv
+    );
+    await expect(
+      reconciliation.reconcile(USER_ID, bill.id, "20202020-aaaa-4202-8202-202020202020")
+    ).rejects.toThrow(BillStatementUnresolvedError);
+    await expect(
+      billService.pay(
+        USER_ID,
+        bill.id,
+        {
+          fromAccountId: bankId,
+          amountMinor: 1_000,
+          occurredAt: new Date("2026-08-01T10:00:00.000Z")
+        },
+        "30303030-aaaa-4303-8303-303030303030"
+      )
+    ).rejects.toThrow(BillNotReconciledError);
+
+    const csv = [
+      "Date,Description,Amount",
+      "10/07/2026,Groceries,-100.00",
+      "12/07/2026,Refund,20.00"
+    ].join("\n");
+    const upload = await reconciliation.upload(
+      USER_ID,
+      bill.id,
+      "statement.csv",
+      "text/csv",
+      Buffer.from(csv),
+      MAPPING,
+      "11111111-aaaa-4111-8111-111111111111"
+    );
+    expect(upload.result.status).toBe("pending");
+
+    await reconciliation.parseStatement(upload.result.id, bill.id, USER_ID, MAPPING, csv);
+    const rows = await reconciliation.listRows(USER_ID, bill.id, { limit: 50 });
+    expect(rows.items).toHaveLength(2);
+    expect(rows.items.every((row) => row.matchStatus === "matched")).toBe(true);
+
+    const reconciled = await reconciliation.reconcile(
+      USER_ID,
+      bill.id,
+      "22222222-aaaa-4222-8222-222222222222"
+    );
+    expect(reconciled.result.reconciliationStatus).toBe("reconciled");
+  });
+
+  it("pays idempotently, prevents concurrent overpayment, and derives reversal state", async () => {
+    const [bill] = (await bills.findMany(USER_ID, { limit: 50 })).items;
+    if (bill === undefined) throw new Error("Expected generated bill");
+    const key = "33333333-aaaa-4333-8333-333333333333";
+    const attempts = await Promise.all(
+      Array.from({ length: 5 }, () =>
+        billService.pay(
+          USER_ID,
+          bill.id,
+          {
+            fromAccountId: bankId,
+            amountMinor: 3_000,
+            occurredAt: new Date("2026-08-10T10:00:00.000Z")
+          },
+          key
+        )
+      )
+    );
+    expect(attempts.filter((result) => !result.replayed)).toHaveLength(1);
+    expect(new Set(attempts.map((result) => result.result.transfer.transferGroupId)).size).toBe(1);
+    expect(attempts[0]?.result.transfer.toTransaction.billId).toBe(bill.id);
+
+    const partial = await bills.findById(USER_ID, bill.id);
+    expect(partial).toMatchObject({
+      paidMinor: 3_000,
+      remainingMinor: 5_000,
+      paymentStatus: "partial"
+    });
+
+    const transferGroupId = attempts[0]?.result.transfer.transferGroupId;
+    if (transferGroupId === undefined) throw new Error("Expected transfer result");
+    await transfers.reverse(USER_ID, transferGroupId);
+    expect(await bills.findById(USER_ID, bill.id)).toMatchObject({
+      paidMinor: 0,
+      remainingMinor: 8_000,
+      paymentStatus: "unpaid"
+    });
+
+    const competing = await Promise.allSettled([
+      billService.pay(
+        USER_ID,
+        bill.id,
+        {
+          fromAccountId: bankId,
+          amountMinor: 5_000,
+          occurredAt: new Date("2026-08-11T10:00:00.000Z")
+        },
+        "44444444-aaaa-4444-8444-444444444444"
+      ),
+      billService.pay(
+        USER_ID,
+        bill.id,
+        {
+          fromAccountId: bankId,
+          amountMinor: 5_000,
+          occurredAt: new Date("2026-08-11T10:00:00.000Z")
+        },
+        "55555555-aaaa-4555-8555-555555555555"
+      )
+    ]);
+    expect(competing.filter((result) => result.status === "fulfilled")).toHaveLength(1);
+    const rejected = competing.find((result) => result.status === "rejected");
+    expect(rejected?.status === "rejected" ? rejected.reason : null).toBeInstanceOf(
+      BillOverpaymentError
+    );
+    expect(await bills.findById(USER_ID, bill.id)).toMatchObject({
+      paidMinor: 5_000,
+      remainingMinor: 3_000,
+      paymentStatus: "partial"
+    });
+  });
+
+  it("does not expose another user's bill", async () => {
+    const [bill] = (await bills.findMany(USER_ID, { limit: 50 })).items;
+    if (bill === undefined) throw new Error("Expected generated bill");
+    await expect(billService.get(OTHER_USER_ID, bill.id)).rejects.toThrow(EntityNotFoundError);
+  });
+});

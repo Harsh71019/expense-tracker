@@ -29,6 +29,7 @@ import { AuditRepository } from "../audit/audit.repository.js";
 import { CategoryRepository } from "../categories/category.repository.js";
 import { CategoryRuleRepository } from "../category-rules/category-rule.repository.js";
 import { suggestCategory } from "../category-rules/suggest-category.js";
+import { parseCsvRow } from "../common/csv/parse-csv-row.js";
 import { DATABASE_CONNECTION } from "../common/db/db.module.js";
 import type { DrizzleDb } from "../common/db/db.module.js";
 import { withTxn } from "../common/db/db-txn.js";
@@ -42,7 +43,6 @@ import { TransactionRepository } from "../transactions/transaction.repository.js
 import { computeDedupeHash } from "./dedupe-hash.js";
 import { ImportBatchRepository } from "./import-batch.repository.js";
 import type { ImportWorkflowJobData } from "./import-workflow.js";
-import { parseCsvRow } from "./parse-csv-row.js";
 import { StagedRowRepository } from "./staged-row.repository.js";
 import type { NewStagedRow } from "./staged-row.repository.js";
 

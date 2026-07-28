@@ -4,4761 +4,812 @@
  */
 
 export interface paths {
-    "/v1/accounts": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Accounts */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Account"][];
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header: {
-                    "Idempotency-Key": string;
-                };
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": {
-                        name: string;
-                        /** @enum {string} */
-                        type: "bank" | "credit_card" | "cash" | "wallet" | "investment";
-                        openingBalanceMinor: number;
-                    };
-                };
-            };
-            responses: {
-                /** @description Idempotent replay of the created account */
-                200: {
-                    headers: {
-                        "Idempotency-Replayed": "true";
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Account"];
-                    };
-                };
-                /** @description Created account */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Account"];
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Idempotency key was already used for different request intent */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+  "/v1/accounts": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/v1/imports": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Accounts */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Account"][];
+          };
         };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Import batches */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ImportBatch"][];
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
         };
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "multipart/form-data": {
-                        /** @description CSV statement file to upload (binary) */
-                        file: string;
-                        /** @description Account ID to import to */
-                        accountId: string;
-                        /** @description JSON string containing ColumnMapping */
-                        mapping: string;
-                    };
-                };
-            };
-            responses: {
-                /** @description Import parse workflow accepted */
-                202: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ImportBatch"];
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
         };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
     };
-    "/v1/imports/accounts/{accountId}/mapping": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    accountId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Saved import mapping */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["AccountImportMapping"];
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Account not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/imports/{importBatchId}/preview": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: {
-                    cursor?: string;
-                    limit?: number;
-                };
-                header?: never;
-                path: {
-                    importBatchId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Staged row page */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["StagedRowPage"];
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/imports/{importBatchId}/rows/{stagedRowId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    importBatchId: string;
-                    stagedRowId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": {
-                        include?: boolean;
-                        /** Format: uuid */
-                        suggestedCategoryId?: string | null;
-                    };
-                };
-            };
-            responses: {
-                /** @description Updated row */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["StagedRow"];
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        trace?: never;
-    };
-    "/v1/imports/{importBatchId}/commit": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    importBatchId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Commit workflow accepted */
-                202: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ImportBatch"];
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Import batch cannot be committed */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/imports/{importBatchId}/revert": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    importBatchId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Revert workflow accepted */
-                202: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ImportBatch"];
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Import batch cannot be reverted */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/accounts/{accountId}/archive": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch: {
-            parameters: {
-                query?: never;
-                header: {
-                    "Idempotency-Key": string;
-                };
-                path: {
-                    accountId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Archived, or replayed a prior successful archive */
-                204: {
-                    headers: {
-                        "Idempotency-Replayed"?: "true";
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Idempotency key was already used for different request intent */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        trace?: never;
-    };
-    "/v1/categories": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Categories */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Category"][];
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header: {
-                    "Idempotency-Key": string;
-                };
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": {
-                        name: string;
-                        /** @enum {string} */
-                        kind: "expense" | "income";
-                        /** Format: uuid */
-                        parentId?: string;
-                        icon?: string;
-                        color?: string;
-                        /** @enum {string} */
-                        group?: "essential" | "lifestyle";
-                    };
-                };
-            };
-            responses: {
-                /** @description Idempotent replay of the created category */
-                200: {
-                    headers: {
-                        "Idempotency-Replayed": "true";
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Category"];
-                    };
-                };
-                /** @description Created category */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Category"];
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Idempotency key was already used for different request intent */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/categories/{categoryId}/archive": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch: {
-            parameters: {
-                query?: never;
-                header: {
-                    "Idempotency-Key": string;
-                };
-                path: {
-                    categoryId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Archived, or replayed a prior successful archive */
-                204: {
-                    headers: {
-                        "Idempotency-Replayed"?: "true";
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Idempotency key was already used for different request intent */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        trace?: never;
-    };
-    "/v1/categories/{categoryId}/group": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch: {
-            parameters: {
-                query?: never;
-                header: {
-                    "Idempotency-Key": string;
-                };
-                path: {
-                    categoryId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": {
-                        /** @enum {string|null} */
-                        group: "essential" | "lifestyle" | null;
-                    };
-                };
-            };
-            responses: {
-                /** @description Updated category group, or idempotent replay */
-                200: {
-                    headers: {
-                        "Idempotency-Replayed"?: "true";
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Category"];
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Idempotency key was already used for different request intent */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        trace?: never;
-    };
-    "/v1/category-rules": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Category rules */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["CategoryRule"][];
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header: {
-                    "Idempotency-Key": string;
-                };
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": {
-                        pattern: string;
-                        /** Format: uuid */
-                        categoryId: string;
-                    };
-                };
-            };
-            responses: {
-                /** @description Idempotent replay of the created category rule */
-                200: {
-                    headers: {
-                        "Idempotency-Replayed": "true";
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["CategoryRule"];
-                    };
-                };
-                /** @description Created category rule */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["CategoryRule"];
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Category not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Idempotency key was already used for different request intent */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/category-rules/{ruleId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete: {
-            parameters: {
-                query?: never;
-                header: {
-                    "Idempotency-Key": string;
-                };
-                path: {
-                    ruleId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Deleted, or replayed a prior successful delete */
-                204: {
-                    headers: {
-                        "Idempotency-Replayed"?: "true";
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Category rule not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Idempotency key was already used for different request intent */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/transactions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: {
-                    accountId?: string;
-                    categoryId?: string;
-                    from?: string | null;
-                    to?: string | null;
-                    q?: string;
-                    tag?: string;
-                    cursor?: string;
-                    limit?: number;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Transaction page */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["TransactionPage"];
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header: {
-                    "Idempotency-Key": string;
-                };
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": {
-                        /** Format: uuid */
-                        accountId: string;
-                        /** Format: uuid */
-                        categoryId?: string;
-                        /** @enum {string} */
-                        type: "expense" | "income";
-                        amountMinor: number;
-                        /** Format: date-time */
-                        occurredAt: string | null;
-                        description: string;
-                        /** @default [] */
-                        tags?: string[];
-                    };
-                };
-            };
-            responses: {
-                /** @description Idempotent replay */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Transaction"];
-                    };
-                };
-                /** @description Created transaction */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Transaction"];
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/transactions/{transactionId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    transactionId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Transaction */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Transaction"];
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch: {
-            parameters: {
-                query?: never;
-                header: {
-                    "Idempotency-Key": string;
-                };
-                path: {
-                    transactionId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": {
-                        description?: string;
-                        tags?: string[];
-                        /** Format: uuid */
-                        categoryId?: string | null;
-                    };
-                };
-            };
-            responses: {
-                /** @description Updated transaction, or idempotent replay */
-                200: {
-                    headers: {
-                        "Idempotency-Replayed"?: "true";
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Transaction"];
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Transfer legs require a group-level metadata operation, or idempotency intent conflicts */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        trace?: never;
-    };
-    "/v1/transactions/{transactionId}/reverse": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    transactionId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Reversal, or natural replay for the already-reversed transaction */
-                200: {
-                    headers: {
-                        "Idempotency-Replayed"?: "true";
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Transaction"];
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Already reversed */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/transfers": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header: {
-                    "Idempotency-Key": string;
-                };
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": {
-                        /** Format: uuid */
-                        fromAccountId: string;
-                        /** Format: uuid */
-                        toAccountId: string;
-                        amountMinor: number;
-                        /** Format: date-time */
-                        occurredAt: string | null;
-                        description: string;
-                        /** @default [] */
-                        tags?: string[];
-                    };
-                };
-            };
-            responses: {
-                /** @description Idempotent replay */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Transfer"];
-                    };
-                };
-                /** @description Created transfer */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Transfer"];
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/transfers/{transferGroupId}/reverse": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    transferGroupId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Group reversal, or natural replay keyed by the original transfer group */
-                200: {
-                    headers: {
-                        "Idempotency-Replayed"?: "true";
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["TransferReversal"];
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/assets": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Asset list */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Asset"][];
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header: {
-                    "Idempotency-Key": string;
-                };
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": {
-                        /** @enum {string} */
-                        kind: "loan_receivable" | "loan_liability" | "fixed_deposit" | "gold" | "silver" | "investment";
-                        name: string;
-                        /** Format: date-time */
-                        openedAt: string | null;
-                        /** Format: date-time */
-                        maturityAt?: string | null;
-                        annualRateBps?: number;
-                        quantityMilliUnits?: number;
-                        openingValueMinor: number;
-                    };
-                };
-            };
-            responses: {
-                /** @description Idempotent replay of the created asset */
-                200: {
-                    headers: {
-                        "Idempotency-Replayed": "true";
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Asset"];
-                    };
-                };
-                /** @description Created asset */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Asset"];
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Idempotency key was already used for different request intent */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/assets/{assetId}/close": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header: {
-                    "Idempotency-Key": string;
-                };
-                path: {
-                    assetId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Closed, or replayed a prior successful close */
-                204: {
-                    headers: {
-                        "Idempotency-Replayed"?: "true";
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Idempotency key was already used for different request intent */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/assets/{assetId}/valuations": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    assetId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Valuations */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ValuationPage"];
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header: {
-                    "Idempotency-Key": string;
-                };
-                path: {
-                    assetId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": {
-                        valueMinor: number;
-                        /** Format: date-time */
-                        valuedAt: string | null;
-                        /**
-                         * @default manual
-                         * @enum {string}
-                         */
-                        source?: "manual" | "maturity_projection";
-                    };
-                };
-            };
-            responses: {
-                /** @description Idempotent replay of the created valuation */
-                200: {
-                    headers: {
-                        "Idempotency-Replayed": "true";
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Valuation"];
-                    };
-                };
-                /** @description Created valuation */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Valuation"];
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Idempotency key was already used for different request intent */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/net-worth": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Net worth summary */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["NetWorth"];
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/reports/monthly/{month}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    month: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Monthly rollup */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["MonthlyRollup"];
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/export/csv": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: {
-                    from?: string | null;
-                    to?: string | null;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Posted transactions as a formula-injection-safe CSV attachment */
-                200: {
-                    headers: {
-                        "Content-Disposition": "attachment; filename=\"treasury-ops-export.csv\"";
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/csv; charset=utf-8": string;
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/profile": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Current user profile */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["UserProfile"];
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Profile not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": {
-                        displayName: string;
-                    };
-                };
-            };
-            responses: {
-                /** @description Updated user profile */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["UserProfile"];
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Profile not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        trace?: never;
-    };
-    "/v1/recurring": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Recurring rules */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["RecurringRule"][];
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header: {
-                    "Idempotency-Key": string;
-                };
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": {
-                        template: {
-                            /** Format: uuid */
-                            accountId: string;
-                            /** Format: uuid */
-                            categoryId?: string;
-                            /** @enum {string} */
-                            type: "expense" | "income";
-                            amountMinor: number;
-                            description: string;
-                            /** @default [] */
-                            tags?: string[];
-                        };
-                        rrule: string;
-                        /** Format: date-time */
-                        startAt: string | null;
-                    };
-                };
-            };
-            responses: {
-                /** @description Idempotent replay of the created recurring rule */
-                200: {
-                    headers: {
-                        "Idempotency-Replayed": "true";
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["RecurringRule"];
-                    };
-                };
-                /** @description Created recurring rule */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["RecurringRule"];
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Account or category not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Idempotency key was already used for different request intent */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/recurring/{ruleId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch: {
-            parameters: {
-                query?: never;
-                header: {
-                    "Idempotency-Key": string;
-                };
-                path: {
-                    ruleId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": {
-                        template?: {
-                            /** Format: uuid */
-                            accountId?: string;
-                            /** Format: uuid */
-                            categoryId?: string;
-                            /** @enum {string} */
-                            type?: "expense" | "income";
-                            amountMinor?: number;
-                            description?: string;
-                            tags?: string[];
-                        };
-                        rrule?: string;
-                        isPaused?: boolean;
-                    };
-                };
-            };
-            responses: {
-                /** @description Updated recurring rule, or idempotent replay */
-                200: {
-                    headers: {
-                        "Idempotency-Replayed"?: "true";
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["RecurringRule"];
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Recurring rule, account, or category not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Idempotency key was already used for different request intent */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        trace?: never;
-    };
-    "/v1/spending-warnings": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: {
-                    kind?: "overall_spend_spike" | "category_spend_spike" | "unusually_large_expense";
-                    severity?: "attention" | "high";
-                    cursor?: string;
-                    limit?: number;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Active spending warnings and analysis coverage */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["SpendingWarningPage"];
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/spending-warnings/{warningId}/dismiss": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header: {
-                    "Idempotency-Key": string;
-                };
-                path: {
-                    warningId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Dismissed warning, or idempotent replay */
-                200: {
-                    headers: {
-                        "Idempotency-Replayed"?: "true";
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["DismissSpendingWarningResponse"];
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Idempotency key was already used for different request intent */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/goals": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: {
-                    status?: "active" | "achieved" | "abandoned";
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Goals with live progress */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Goal"][];
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header: {
-                    "Idempotency-Key": string;
-                };
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": {
-                        name: string;
-                        targetMinor: number;
-                        /** Format: date-time */
-                        targetDate?: string | null;
-                        /** @enum {string} */
-                        fundingMode: "linked_account";
-                        /** Format: uuid */
-                        linkedAccountId: string;
-                    } | {
-                        name: string;
-                        targetMinor: number;
-                        /** Format: date-time */
-                        targetDate?: string | null;
-                        /** @enum {string} */
-                        fundingMode: "tagged";
-                        tag: string;
-                    };
-                };
-            };
-            responses: {
-                /** @description Idempotent replay of the created goal */
-                200: {
-                    headers: {
-                        "Idempotency-Replayed": "true";
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Goal"];
-                    };
-                };
-                /** @description Created goal */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Goal"];
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Linked account not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Funding source already assigned, or idempotency intent conflicts */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/goals/reorder": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch: {
-            parameters: {
-                query?: never;
-                header: {
-                    "Idempotency-Key": string;
-                };
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": {
-                        goalIds: string[];
-                    };
-                };
-            };
-            responses: {
-                /** @description Goals reordered, or idempotent replay */
-                204: {
-                    headers: {
-                        "Idempotency-Replayed"?: "true";
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Order is invalid, or idempotency intent conflicts */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        trace?: never;
-    };
-    "/v1/goals/{goalId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    goalId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Goal with live progress */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Goal"];
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Goal not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch: {
-            parameters: {
-                query?: never;
-                header: {
-                    "Idempotency-Key": string;
-                };
-                path: {
-                    goalId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": {
-                        name?: string;
-                        targetMinor?: number;
-                        /** Format: date-time */
-                        targetDate?: string | null;
-                    };
-                };
-            };
-            responses: {
-                /** @description Updated goal, or idempotent replay */
-                200: {
-                    headers: {
-                        "Idempotency-Replayed"?: "true";
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Goal"];
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Goal not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Idempotency key was already used for different request intent */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        trace?: never;
-    };
-    "/v1/goals/{goalId}/abandon": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header: {
-                    "Idempotency-Key": string;
-                };
-                path: {
-                    goalId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Goal abandoned, or idempotent replay */
-                204: {
-                    headers: {
-                        "Idempotency-Replayed"?: "true";
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Active goal not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Idempotency key was already used for different request intent */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/goals/{goalId}/plan": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    goalId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Goal contribution plan */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["GoalPlan"];
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Goal not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/budgets": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: {
-                    cursor?: string;
-                    limit?: number;
-                    includeArchived?: "true" | "false";
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Budget page with live progress and overview totals */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["BudgetPage"];
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/budgets/{categoryId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put: {
-            parameters: {
-                query?: never;
-                header: {
-                    "Idempotency-Key": string;
-                };
-                path: {
-                    categoryId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": {
-                        limitMinor: number;
-                    };
-                };
-            };
-            responses: {
-                /** @description Created, updated, restored budget configuration, or idempotent replay */
-                200: {
-                    headers: {
-                        "Idempotency-Replayed"?: "true";
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Budget"];
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Category not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Idempotency key was already used for different request intent */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/budgets/{budgetId}/archive": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch: {
-            parameters: {
-                query?: never;
-                header: {
-                    "Idempotency-Key": string;
-                };
-                path: {
-                    budgetId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Archived budget configuration, or idempotent replay */
-                200: {
-                    headers: {
-                        "Idempotency-Replayed"?: "true";
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Budget"];
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Budget not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Idempotency key was already used for different request intent */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        trace?: never;
-    };
-    "/v1/api-keys": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description API keys */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            id: string;
-                            name: string;
-                            start: string | null;
-                            permissions: {
-                                transactions?: "write"[];
-                                categories?: "read"[];
-                                accounts?: "read"[];
-                            } | null;
-                            enabled: boolean;
-                            /** Format: date-time */
-                            createdAt: string | null;
-                            /** Format: date-time */
-                            expiresAt: string | null;
-                            /** Format: date-time */
-                            lastRequest: string | null;
-                        }[];
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": {
-                        name: string;
-                        permissions: {
-                            transactions?: "write"[];
-                            categories?: "read"[];
-                            accounts?: "read"[];
-                        };
-                        /** Format: date-time */
-                        expiresAt?: string | null;
-                    };
-                };
-            };
-            responses: {
-                /** @description Created API key (raw key shown once) */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            id: string;
-                            name: string;
-                            start: string | null;
-                            permissions: {
-                                transactions?: "write"[];
-                                categories?: "read"[];
-                                accounts?: "read"[];
-                            } | null;
-                            enabled: boolean;
-                            /** Format: date-time */
-                            createdAt: string | null;
-                            /** Format: date-time */
-                            expiresAt: string | null;
-                            /** Format: date-time */
-                            lastRequest: string | null;
-                            key: string;
-                        };
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/api-keys/{keyId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    keyId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description API key revoked */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        options?: never;
-        head?: never;
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    keyId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": {
-                        name?: string;
-                        permissions?: {
-                            transactions?: "write"[];
-                            categories?: "read"[];
-                            accounts?: "read"[];
-                        };
-                    };
-                };
-            };
-            responses: {
-                /** @description Updated API key */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            id: string;
-                            name: string;
-                            start: string | null;
-                            permissions: {
-                                transactions?: "write"[];
-                                categories?: "read"[];
-                                accounts?: "read"[];
-                            } | null;
-                            enabled: boolean;
-                            /** Format: date-time */
-                            createdAt: string | null;
-                            /** Format: date-time */
-                            expiresAt: string | null;
-                            /** Format: date-time */
-                            lastRequest: string | null;
-                        };
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        trace?: never;
-    };
-    "/v1/dashboard/summary": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Home dashboard summary */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["DashboardSummary"];
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/dashboard/recent-activity": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: {
-                    limit?: number;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Most recent posted transactions */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["RecentActivityItem"][];
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/dashboard/stats": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: {
-                    period?: string;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Spent/income/savingsRate/netWorth stat cards with trend */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["DashboardStats"];
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/dashboard/cashflow": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query: {
-                    range: "1W" | "1M" | "6M" | "12M";
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Income/expense buckets over the requested range */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["CashflowResponse"];
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/dashboard/top-spending": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query: {
-                    range: "1W" | "1M" | "6M" | "12M";
-                    limit?: number;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Top spending categories over the requested range */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["TopSpendingItem"][];
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/dashboard/spend-mix": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query: {
-                    range: "1W" | "1M" | "6M" | "12M";
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Essential vs. lifestyle spend split */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["SpendMix"];
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/dashboard/investments": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Investment/fixed-deposit valuation rollup */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["DashboardInvestments"];
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/dashboard/recurring-forecast": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query: {
-                    range: "1W" | "1M" | "6M" | "12M";
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Upcoming recurring in/out forecast over the requested range */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["RecurringForecast"];
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/metrics": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Prometheus text exposition for backend runtime health */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/plain": string;
-                    };
-                };
-                /** @description Unauthenticated */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Validation failed */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Internal error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-}
-export type webhooks = Record<string, never>;
-export interface components {
-    schemas: {
-        Account: {
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
             name: string;
             /** @enum {string} */
             type: "bank" | "credit_card" | "cash" | "wallet" | "investment";
             openingBalanceMinor: number;
-            /** Format: uuid */
-            id: string;
-            userId: string;
-            /** @enum {string} */
-            currency: "INR";
-            balanceMinor: number;
-            isArchived: boolean;
-            /** Format: date-time */
-            createdAt: string | null;
-            /** Format: date-time */
-            updatedAt: string | null;
+            creditCardConfig?: {
+              statementDay: number;
+              dueDay: number;
+            };
+          };
         };
-        ProblemDetails: {
-            /** Format: uri */
-            type: string;
-            title: string;
-            status: number;
-            detail: string;
-            instance: string;
-            /** @enum {string} */
-            code: "common.validation_failed" | "common.not_found" | "common.invalid_cursor" | "common.idempotency_conflict" | "common.internal" | "common.dependency_unavailable" | "money.out_of_range" | "auth.unauthenticated" | "auth.insufficient_scope" | "auth.rate_limited" | "txn.already_reversed" | "txn.transfer_metadata_requires_group" | "category.parent_kind_mismatch" | "category.kind_mismatch" | "asset.invalid_valuation_sign" | "goal.funding_source_in_use" | "goal.invalid_order" | "import.invalid_file" | "import.already_committed" | "import.invalid_state" | "recurring.no_occurrences";
-            reqId: string;
-            /** Format: date-time */
-            timestamp: string | null;
-            retryable: boolean;
-            errors: {
-                path: string;
-                code: string;
-                message: string;
-            }[] | null;
+      };
+      responses: {
+        /** @description Idempotent replay of the created account */
+        200: {
+          headers: {
+            "Idempotency-Replayed": "true";
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Account"];
+          };
         };
-        ImportBatch: {
-            /** Format: uuid */
-            id: string;
-            userId: string;
-            /** Format: uuid */
+        /** @description Created account */
+        201: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Account"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/imports": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Import batches */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ImportBatch"][];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "multipart/form-data": {
+            /** @description CSV statement file to upload (binary) */
+            file: string;
+            /** @description Account ID to import to */
             accountId: string;
-            filename: string;
-            fileHash: string;
-            mapping: {
-                date: string;
-                description: string;
-                /** @enum {string} */
-                dateFormat: "DD/MM/YYYY" | "MM/DD/YYYY" | "YYYY-MM-DD";
-                /** @enum {string} */
-                amountConvention: "single_signed" | "debit_credit_cols";
-                amount?: string;
-                debit?: string;
-                credit?: string;
-            };
-            /** @enum {string} */
-            status: "pending" | "staged" | "committed" | "reverted" | "failed";
-            stats: {
-                total: number;
-                staged: number;
-                duplicates: number;
-                committed: number;
-            };
-            /** Format: date-time */
-            committedAt?: string | null;
-            /** Format: date-time */
-            revertedAt?: string | null;
-            /** Format: date-time */
-            createdAt: string | null;
-            /** Format: date-time */
-            updatedAt: string | null;
+            /** @description JSON string containing ColumnMapping */
+            mapping: string;
+          };
         };
-        AccountImportMapping: {
-            mapping: {
-                date: string;
-                description: string;
-                /** @enum {string} */
-                dateFormat: "DD/MM/YYYY" | "MM/DD/YYYY" | "YYYY-MM-DD";
-                /** @enum {string} */
-                amountConvention: "single_signed" | "debit_credit_cols";
-                amount?: string;
-                debit?: string;
-                credit?: string;
-            } | null;
+      };
+      responses: {
+        /** @description Import parse workflow accepted */
+        202: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ImportBatch"];
+          };
         };
-        StagedRowPage: {
-            items: {
-                /** Format: uuid */
-                id: string;
-                /** Format: uuid */
-                batchId: string;
-                rowNumber: number;
-                raw: {
-                    [key: string]: string;
-                };
-                parsed?: {
-                    /** Format: date-time */
-                    occurredAt: string | null;
-                    amountMinor: number;
-                    /** @enum {string} */
-                    type: "expense" | "income";
-                    description: string;
-                };
-                dedupeHash?: string;
-                /** Format: uuid */
-                suggestedCategoryId?: string;
-                problems: string[];
-                isDuplicate: boolean;
-                include: boolean;
-            }[];
-            pageInfo: {
-                nextCursor: string | null;
-                hasMore: boolean;
-                limit: number;
-            };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
         };
-        StagedRow: {
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/imports/accounts/{accountId}/mapping": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          accountId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Saved import mapping */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["AccountImportMapping"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Account not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/imports/{importBatchId}/preview": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: {
+          cursor?: string;
+          limit?: number;
+        };
+        header?: never;
+        path: {
+          importBatchId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Staged row page */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["StagedRowPage"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/imports/{importBatchId}/rows/{stagedRowId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          importBatchId: string;
+          stagedRowId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
+            include?: boolean;
             /** Format: uuid */
-            id: string;
-            /** Format: uuid */
-            batchId: string;
-            rowNumber: number;
-            raw: {
-                [key: string]: string;
-            };
-            parsed?: {
-                /** Format: date-time */
-                occurredAt: string | null;
-                amountMinor: number;
-                /** @enum {string} */
-                type: "expense" | "income";
-                description: string;
-            };
-            dedupeHash?: string;
-            /** Format: uuid */
-            suggestedCategoryId?: string;
-            problems: string[];
-            isDuplicate: boolean;
-            include: boolean;
+            suggestedCategoryId?: string | null;
+          };
         };
-        Category: {
+      };
+      responses: {
+        /** @description Updated row */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["StagedRow"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    trace?: never;
+  };
+  "/v1/imports/{importBatchId}/commit": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          importBatchId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Commit workflow accepted */
+        202: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ImportBatch"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Import batch cannot be committed */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/imports/{importBatchId}/revert": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          importBatchId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Revert workflow accepted */
+        202: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ImportBatch"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Import batch cannot be reverted */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/accounts/{accountId}/archive": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path: {
+          accountId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Archived, or replayed a prior successful archive */
+        204: {
+          headers: {
+            "Idempotency-Replayed"?: "true";
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    trace?: never;
+  };
+  "/v1/categories": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Categories */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Category"][];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
             name: string;
             /** @enum {string} */
             kind: "expense" | "income";
@@ -4768,70 +819,553 @@ export interface components {
             color?: string;
             /** @enum {string} */
             group?: "essential" | "lifestyle";
-            /** Format: uuid */
-            id: string;
-            userId: string;
-            isArchived: boolean;
-            /** Format: date-time */
-            createdAt: string | null;
-            /** Format: date-time */
-            updatedAt: string | null;
+          };
         };
-        CategoryRule: {
+      };
+      responses: {
+        /** @description Idempotent replay of the created category */
+        200: {
+          headers: {
+            "Idempotency-Replayed": "true";
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Category"];
+          };
+        };
+        /** @description Created category */
+        201: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Category"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/categories/{categoryId}/archive": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path: {
+          categoryId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Archived, or replayed a prior successful archive */
+        204: {
+          headers: {
+            "Idempotency-Replayed"?: "true";
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    trace?: never;
+  };
+  "/v1/categories/{categoryId}/group": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path: {
+          categoryId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
+            /** @enum {string|null} */
+            group: "essential" | "lifestyle" | null;
+          };
+        };
+      };
+      responses: {
+        /** @description Updated category group, or idempotent replay */
+        200: {
+          headers: {
+            "Idempotency-Replayed"?: "true";
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Category"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    trace?: never;
+  };
+  "/v1/category-rules": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Category rules */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["CategoryRule"][];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
             pattern: string;
             /** Format: uuid */
             categoryId: string;
-            /** Format: uuid */
-            id: string;
-            userId: string;
-            /** Format: date-time */
-            createdAt: string | null;
-            /** Format: date-time */
-            updatedAt: string | null;
+          };
         };
-        TransactionPage: {
-            items: {
-                /** Format: uuid */
-                accountId: string;
-                /** Format: uuid */
-                categoryId?: string;
-                /** @enum {string} */
-                type: "expense" | "income";
-                amountMinor: number;
-                /** Format: date-time */
-                occurredAt: string | null;
-                description: string;
-                /** @default [] */
-                tags: string[];
-                /** Format: uuid */
-                id: string;
-                userId: string;
-                /** @enum {string} */
-                currency: "INR";
-                /** @enum {string} */
-                source: "manual" | "csv_import" | "recurring" | "api";
-                /** @enum {string} */
-                status: "posted" | "reversed" | "reversal";
-                /** Format: uuid */
-                idempotencyKey?: string;
-                /** Format: uuid */
-                reversalOf?: string;
-                /** Format: uuid */
-                reversedBy?: string;
-                /** Format: uuid */
-                transferGroupId?: string;
-                /** Format: date-time */
-                createdAt: string | null;
-                /** Format: date-time */
-                updatedAt: string | null;
-            }[];
-            pageInfo: {
-                nextCursor: string | null;
-                hasMore: boolean;
-                limit: number;
-            };
+      };
+      responses: {
+        /** @description Idempotent replay of the created category rule */
+        200: {
+          headers: {
+            "Idempotency-Replayed": "true";
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["CategoryRule"];
+          };
         };
-        Transaction: {
+        /** @description Created category rule */
+        201: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["CategoryRule"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Category not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/category-rules/{ruleId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path: {
+          ruleId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Deleted, or replayed a prior successful delete */
+        204: {
+          headers: {
+            "Idempotency-Replayed"?: "true";
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Category rule not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/transactions": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: {
+          accountId?: string;
+          categoryId?: string;
+          from?: string | null;
+          to?: string | null;
+          q?: string;
+          tag?: string;
+          cursor?: string;
+          limit?: number;
+        };
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Transaction page */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["TransactionPage"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
             /** Format: uuid */
             accountId: string;
             /** Format: uuid */
@@ -4843,185 +1377,535 @@ export interface components {
             occurredAt: string | null;
             description: string;
             /** @default [] */
-            tags: string[];
+            tags?: string[];
+          };
+        };
+      };
+      responses: {
+        /** @description Idempotent replay */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Transaction"];
+          };
+        };
+        /** @description Created transaction */
+        201: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Transaction"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/transactions/{transactionId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          transactionId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Transaction */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Transaction"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path: {
+          transactionId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
+            description?: string;
+            tags?: string[];
             /** Format: uuid */
-            id: string;
-            userId: string;
-            /** @enum {string} */
-            currency: "INR";
-            /** @enum {string} */
-            source: "manual" | "csv_import" | "recurring" | "api";
-            /** @enum {string} */
-            status: "posted" | "reversed" | "reversal";
+            categoryId?: string | null;
+          };
+        };
+      };
+      responses: {
+        /** @description Updated transaction, or idempotent replay */
+        200: {
+          headers: {
+            "Idempotency-Replayed"?: "true";
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Transaction"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Transfer legs require a group-level metadata operation, or idempotency intent conflicts */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    trace?: never;
+  };
+  "/v1/transactions/{transactionId}/reverse": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          transactionId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Reversal, or natural replay for the already-reversed transaction */
+        200: {
+          headers: {
+            "Idempotency-Replayed"?: "true";
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Transaction"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Already reversed */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/transfers": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
             /** Format: uuid */
-            idempotencyKey?: string;
+            fromAccountId: string;
             /** Format: uuid */
-            reversalOf?: string;
-            /** Format: uuid */
-            reversedBy?: string;
-            /** Format: uuid */
-            transferGroupId?: string;
+            toAccountId: string;
+            amountMinor: number;
             /** Format: date-time */
-            createdAt: string | null;
-            /** Format: date-time */
-            updatedAt: string | null;
+            occurredAt: string | null;
+            description: string;
+            /** @default [] */
+            tags?: string[];
+          };
         };
-        Transfer: {
-            /** Format: uuid */
-            transferGroupId: string;
-            fromTransaction: {
-                /** Format: uuid */
-                accountId: string;
-                /** Format: uuid */
-                categoryId?: string;
-                /** @enum {string} */
-                type: "expense" | "income";
-                amountMinor: number;
-                /** Format: date-time */
-                occurredAt: string | null;
-                description: string;
-                /** @default [] */
-                tags: string[];
-                /** Format: uuid */
-                id: string;
-                userId: string;
-                /** @enum {string} */
-                currency: "INR";
-                /** @enum {string} */
-                source: "manual" | "csv_import" | "recurring" | "api";
-                /** @enum {string} */
-                status: "posted" | "reversed" | "reversal";
-                /** Format: uuid */
-                idempotencyKey?: string;
-                /** Format: uuid */
-                reversalOf?: string;
-                /** Format: uuid */
-                reversedBy?: string;
-                /** Format: uuid */
-                transferGroupId?: string;
-                /** Format: date-time */
-                createdAt: string | null;
-                /** Format: date-time */
-                updatedAt: string | null;
-            };
-            toTransaction: {
-                /** Format: uuid */
-                accountId: string;
-                /** Format: uuid */
-                categoryId?: string;
-                /** @enum {string} */
-                type: "expense" | "income";
-                amountMinor: number;
-                /** Format: date-time */
-                occurredAt: string | null;
-                description: string;
-                /** @default [] */
-                tags: string[];
-                /** Format: uuid */
-                id: string;
-                userId: string;
-                /** @enum {string} */
-                currency: "INR";
-                /** @enum {string} */
-                source: "manual" | "csv_import" | "recurring" | "api";
-                /** @enum {string} */
-                status: "posted" | "reversed" | "reversal";
-                /** Format: uuid */
-                idempotencyKey?: string;
-                /** Format: uuid */
-                reversalOf?: string;
-                /** Format: uuid */
-                reversedBy?: string;
-                /** Format: uuid */
-                transferGroupId?: string;
-                /** Format: date-time */
-                createdAt: string | null;
-                /** Format: date-time */
-                updatedAt: string | null;
-            };
+      };
+      responses: {
+        /** @description Idempotent replay */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Transfer"];
+          };
         };
-        TransferReversal: {
-            /** Format: uuid */
-            transferGroupId: string;
-            legs: [
-                {
-                    /** Format: uuid */
-                    accountId: string;
-                    /** Format: uuid */
-                    categoryId?: string;
-                    /** @enum {string} */
-                    type: "expense" | "income";
-                    amountMinor: number;
-                    /** Format: date-time */
-                    occurredAt: string | null;
-                    description: string;
-                    /** @default [] */
-                    tags: string[];
-                    /** Format: uuid */
-                    id: string;
-                    userId: string;
-                    /** @enum {string} */
-                    currency: "INR";
-                    /** @enum {string} */
-                    source: "manual" | "csv_import" | "recurring" | "api";
-                    /** @enum {string} */
-                    status: "posted" | "reversed" | "reversal";
-                    /** Format: uuid */
-                    idempotencyKey?: string;
-                    /** Format: uuid */
-                    reversalOf?: string;
-                    /** Format: uuid */
-                    reversedBy?: string;
-                    /** Format: uuid */
-                    transferGroupId?: string;
-                    /** Format: date-time */
-                    createdAt: string | null;
-                    /** Format: date-time */
-                    updatedAt: string | null;
-                },
-                {
-                    /** Format: uuid */
-                    accountId: string;
-                    /** Format: uuid */
-                    categoryId?: string;
-                    /** @enum {string} */
-                    type: "expense" | "income";
-                    amountMinor: number;
-                    /** Format: date-time */
-                    occurredAt: string | null;
-                    description: string;
-                    /** @default [] */
-                    tags: string[];
-                    /** Format: uuid */
-                    id: string;
-                    userId: string;
-                    /** @enum {string} */
-                    currency: "INR";
-                    /** @enum {string} */
-                    source: "manual" | "csv_import" | "recurring" | "api";
-                    /** @enum {string} */
-                    status: "posted" | "reversed" | "reversal";
-                    /** Format: uuid */
-                    idempotencyKey?: string;
-                    /** Format: uuid */
-                    reversalOf?: string;
-                    /** Format: uuid */
-                    reversedBy?: string;
-                    /** Format: uuid */
-                    transferGroupId?: string;
-                    /** Format: date-time */
-                    createdAt: string | null;
-                    /** Format: date-time */
-                    updatedAt: string | null;
-                }
-            ];
+        /** @description Created transfer */
+        201: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Transfer"];
+          };
         };
-        Asset: {
-            /** Format: uuid */
-            id: string;
-            userId: string;
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/transfers/{transferGroupId}/reverse": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          transferGroupId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Group reversal, or natural replay keyed by the original transfer group */
+        200: {
+          headers: {
+            "Idempotency-Replayed"?: "true";
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["TransferReversal"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/assets": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Asset list */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Asset"][];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
             /** @enum {string} */
-            kind: "loan_receivable" | "loan_liability" | "fixed_deposit" | "gold" | "silver" | "investment";
+            kind:
+              | "loan_receivable"
+              | "loan_liability"
+              | "fixed_deposit"
+              | "gold"
+              | "silver"
+              | "investment";
             name: string;
             /** Format: date-time */
             openedAt: string | null;
@@ -5029,13 +1913,237 @@ export interface components {
             maturityAt?: string | null;
             annualRateBps?: number;
             quantityMilliUnits?: number;
-            isClosed: boolean;
-            /** Format: date-time */
-            createdAt: string | null;
-            /** Format: date-time */
-            updatedAt: string | null;
+            openingValueMinor: number;
+          };
         };
-        Valuation: {
+      };
+      responses: {
+        /** @description Idempotent replay of the created asset */
+        200: {
+          headers: {
+            "Idempotency-Replayed": "true";
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Asset"];
+          };
+        };
+        /** @description Created asset */
+        201: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Asset"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/assets/{assetId}/close": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path: {
+          assetId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Closed, or replayed a prior successful close */
+        204: {
+          headers: {
+            "Idempotency-Replayed"?: "true";
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/assets/{assetId}/valuations": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          assetId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Valuations */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ValuationPage"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path: {
+          assetId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
             valueMinor: number;
             /** Format: date-time */
             valuedAt: string | null;
@@ -5043,438 +2151,4585 @@ export interface components {
              * @default manual
              * @enum {string}
              */
-            source: "manual" | "maturity_projection";
-            /** Format: uuid */
-            id: string;
-            /** Format: uuid */
-            assetId: string;
-            userId: string;
-            /** Format: date-time */
-            createdAt: string | null;
+            source?: "manual" | "maturity_projection";
+          };
         };
-        ValuationPage: {
-            items: {
-                valueMinor: number;
-                /** Format: date-time */
-                valuedAt: string | null;
-                /**
-                 * @default manual
-                 * @enum {string}
-                 */
-                source: "manual" | "maturity_projection";
-                /** Format: uuid */
-                id: string;
-                /** Format: uuid */
-                assetId: string;
-                userId: string;
-                /** Format: date-time */
-                createdAt: string | null;
-            }[];
-            pageInfo: {
-                nextCursor: string | null;
-                hasMore: boolean;
-                limit: number;
-            };
+      };
+      responses: {
+        /** @description Idempotent replay of the created valuation */
+        200: {
+          headers: {
+            "Idempotency-Replayed": "true";
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Valuation"];
+          };
         };
-        NetWorth: {
-            /** Format: date-time */
-            asOf: string | null;
-            netWorthMinor: number;
-            accounts: {
-                /** Format: uuid */
-                accountId: string;
-                name: string;
-                balanceMinor: number;
-            }[];
-            assets: {
-                /** Format: uuid */
-                assetId: string;
-                name: string;
-                /** @enum {string} */
-                kind: "loan_receivable" | "loan_liability" | "fixed_deposit" | "gold" | "silver" | "investment";
-                valueMinor: number;
-                /** Format: date-time */
-                valuedAt: string | null;
-            }[];
+        /** @description Created valuation */
+        201: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Valuation"];
+          };
         };
-        MonthlyRollup: {
-            userId: string;
-            month: string;
-            byCategory: {
-                /** Format: uuid */
-                categoryId?: string;
-                spentMinor: number;
-                incomeMinor: number;
-                txnCount: number;
-            }[];
-            byAccount: {
-                /** Format: uuid */
-                accountId: string;
-                netMinor: number;
-            }[];
-            totalExpenseMinor: number;
-            totalIncomeMinor: number;
-            /** Format: date-time */
-            computedAt: string | null;
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
         };
-        UserProfile: {
-            userId: string;
+        /** @description Not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/net-worth": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Net worth summary */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["NetWorth"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/reports/monthly/{month}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          month: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Monthly rollup */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["MonthlyRollup"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/export/csv": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: {
+          from?: string | null;
+          to?: string | null;
+        };
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Posted transactions as a formula-injection-safe CSV attachment */
+        200: {
+          headers: {
+            "Content-Disposition": 'attachment; filename="treasury-ops-export.csv"';
+            [name: string]: unknown;
+          };
+          content: {
+            "text/csv; charset=utf-8": string;
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/profile": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Current user profile */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["UserProfile"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Profile not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
             displayName: string;
-            /** @enum {string} */
-            locale: "en-IN";
-            /** @enum {string} */
-            timezone: "Asia/Kolkata";
-            /** Format: date-time */
-            createdAt: string | null;
-            /** Format: date-time */
-            updatedAt: string | null;
+          };
         };
-        RecurringRule: {
-            /** Format: uuid */
-            id: string;
-            userId: string;
+      };
+      responses: {
+        /** @description Updated user profile */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["UserProfile"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Profile not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    trace?: never;
+  };
+  "/v1/recurring": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Recurring rules */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["RecurringRule"][];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
             template: {
-                /** Format: uuid */
-                accountId: string;
-                /** Format: uuid */
-                categoryId?: string;
-                /** @enum {string} */
-                type: "expense" | "income";
-                amountMinor: number;
-                description: string;
-                /** @default [] */
-                tags: string[];
+              /** Format: uuid */
+              accountId: string;
+              /** Format: uuid */
+              categoryId?: string;
+              /** @enum {string} */
+              type: "expense" | "income";
+              amountMinor: number;
+              description: string;
+              /** @default [] */
+              tags?: string[];
             };
             rrule: string;
             /** Format: date-time */
             startAt: string | null;
-            /** Format: date-time */
-            nextRunAt: string | null;
-            /** Format: date-time */
-            lastRunAt?: string | null;
-            isPaused: boolean;
-            /** Format: date-time */
-            createdAt: string | null;
-            /** Format: date-time */
-            updatedAt: string | null;
+          };
         };
-        SpendingWarningPage: {
-            items: {
-                /** Format: uuid */
-                id: string;
-                userId: string;
-                fingerprint: string;
-                /** @enum {string} */
-                kind: "overall_spend_spike" | "category_spend_spike" | "unusually_large_expense";
-                /** @enum {string} */
-                severity: "attention" | "high";
-                /** @enum {string} */
-                status: "active" | "dismissed" | "resolved";
-                /** Format: uuid */
-                categoryId?: string;
-                /** Format: uuid */
-                transactionId?: string;
-                /** Format: date-time */
-                windowStart: string | null;
-                /** Format: date-time */
-                windowEnd: string | null;
-                evidence: {
-                    /** @enum {string} */
-                    kind: "overall_spend_spike";
-                    currentMinor: number;
-                    baselineMedianMinor: number;
-                    deltaMinor: number;
-                    ratioBasisPoints: number;
-                    /** Format: date-time */
-                    windowStart: string | null;
-                    /** Format: date-time */
-                    windowEnd: string | null;
-                    baselineWindowCount: number;
-                    baselineExpenseCount: number;
-                } | {
-                    /** @enum {string} */
-                    kind: "category_spend_spike";
-                    /** Format: uuid */
-                    categoryId?: string;
-                    categoryName?: string;
-                    currentMinor: number;
-                    baselineMedianMinor: number;
-                    deltaMinor: number;
-                    ratioBasisPoints: number;
-                    /** Format: date-time */
-                    windowStart: string | null;
-                    /** Format: date-time */
-                    windowEnd: string | null;
-                    baselineWindowCount: number;
-                    baselineExpenseCount: number;
-                    currentExpenseCount: number;
-                } | {
-                    /** @enum {string} */
-                    kind: "unusually_large_expense";
-                    /** Format: uuid */
-                    transactionId: string;
-                    /** Format: uuid */
-                    categoryId?: string;
-                    categoryName?: string;
-                    amountMinor: number;
-                    thresholdMinor: number;
-                    baselineMedianMinor: number;
-                    baselineQ1Minor: number;
-                    baselineQ3Minor: number;
-                    baselineExpenseCount: number;
-                    /** Format: date-time */
-                    occurredAt: string | null;
-                };
-                detectorVersion: number;
-                /** Format: date-time */
-                firstDetectedAt: string | null;
-                /** Format: date-time */
-                lastDetectedAt: string | null;
-                /** Format: date-time */
-                dismissedAt?: string | null;
-                /** Format: date-time */
-                resolvedAt?: string | null;
-            }[];
-            pageInfo: {
-                nextCursor: string | null;
-                hasMore: boolean;
-                limit: number;
+      };
+      responses: {
+        /** @description Idempotent replay of the created recurring rule */
+        200: {
+          headers: {
+            "Idempotency-Replayed": "true";
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["RecurringRule"];
+          };
+        };
+        /** @description Created recurring rule */
+        201: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["RecurringRule"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Account or category not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/recurring/{ruleId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path: {
+          ruleId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
+            template?: {
+              /** Format: uuid */
+              accountId?: string;
+              /** Format: uuid */
+              categoryId?: string;
+              /** @enum {string} */
+              type?: "expense" | "income";
+              amountMinor?: number;
+              description?: string;
+              tags?: string[];
             };
-            analysis: {
+            rrule?: string;
+            isPaused?: boolean;
+          };
+        };
+      };
+      responses: {
+        /** @description Updated recurring rule, or idempotent replay */
+        200: {
+          headers: {
+            "Idempotency-Replayed"?: "true";
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["RecurringRule"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Recurring rule, account, or category not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    trace?: never;
+  };
+  "/v1/spending-warnings": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: {
+          kind?: "overall_spend_spike" | "category_spend_spike" | "unusually_large_expense";
+          severity?: "attention" | "high";
+          cursor?: string;
+          limit?: number;
+        };
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Active spending warnings and analysis coverage */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["SpendingWarningPage"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/spending-warnings/{warningId}/dismiss": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path: {
+          warningId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Dismissed warning, or idempotent replay */
+        200: {
+          headers: {
+            "Idempotency-Replayed"?: "true";
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["DismissSpendingWarningResponse"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/goals": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: {
+          status?: "active" | "achieved" | "abandoned";
+        };
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Goals with live progress */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Goal"][];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json":
+            | {
+                name: string;
+                targetMinor: number;
+                /** Format: date-time */
+                targetDate?: string | null;
                 /** @enum {string} */
-                status: "learning" | "ready" | "stale" | "unavailable";
+                fundingMode: "linked_account";
+                /** Format: uuid */
+                linkedAccountId: string;
+              }
+            | {
+                name: string;
+                targetMinor: number;
                 /** Format: date-time */
-                computedAt?: string | null;
-                /** Format: date-time */
-                sourceThrough?: string | null;
-                /** Format: date-time */
-                historyStart?: string | null;
-                eligibleKinds: ("overall_spend_spike" | "category_spend_spike" | "unusually_large_expense")[];
-                baselineExpenseCount: number;
-            };
+                targetDate?: string | null;
+                /** @enum {string} */
+                fundingMode: "tagged";
+                tag: string;
+              };
         };
-        DismissSpendingWarningResponse: {
-            /** Format: uuid */
-            id: string;
-            /** @enum {string} */
-            status: "dismissed";
-            /** Format: date-time */
-            dismissedAt: string | null;
+      };
+      responses: {
+        /** @description Idempotent replay of the created goal */
+        200: {
+          headers: {
+            "Idempotency-Replayed": "true";
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Goal"];
+          };
         };
-        Goal: {
-            /** Format: uuid */
-            id: string;
-            userId: string;
-            name: string;
-            targetMinor: number;
+        /** @description Created goal */
+        201: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Goal"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Linked account not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Funding source already assigned, or idempotency intent conflicts */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/goals/reorder": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
+            goalIds: string[];
+          };
+        };
+      };
+      responses: {
+        /** @description Goals reordered, or idempotent replay */
+        204: {
+          headers: {
+            "Idempotency-Replayed"?: "true";
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Order is invalid, or idempotency intent conflicts */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    trace?: never;
+  };
+  "/v1/goals/{goalId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          goalId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Goal with live progress */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Goal"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Goal not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path: {
+          goalId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
+            name?: string;
+            targetMinor?: number;
             /** Format: date-time */
             targetDate?: string | null;
-            /** @enum {string} */
-            fundingMode: "linked_account" | "tagged";
-            /** Format: uuid */
-            linkedAccountId?: string;
-            tag?: string;
-            priority: number;
-            /** @enum {string} */
-            status: "active" | "achieved" | "abandoned";
-            startedMinor: number;
-            /** Format: date-time */
-            createdAt: string | null;
-            /** Format: date-time */
-            updatedAt: string | null;
-            progressMinor: number;
+          };
         };
-        GoalPlan: {
-            /** Format: uuid */
-            goalId: string;
-            /** @enum {string} */
-            mode: "target_date" | "at_current_rate";
-            requiredMonthlyMinor: number | null;
-            /** Format: date-time */
-            projectedCompletionDate: string | null;
+      };
+      responses: {
+        /** @description Updated goal, or idempotent replay */
+        200: {
+          headers: {
+            "Idempotency-Replayed"?: "true";
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Goal"];
+          };
         };
-        BudgetPage: {
-            month: string;
-            /** Format: date-time */
-            computedAt: string | null;
-            alertPolicy: {
-                thresholdsBps: number[];
-            };
-            overview: {
-                plannedMinor: number;
-                spentInBudgetedCategoriesMinor: number;
-                remainingMinor: number;
-                unbudgetedSpentMinor: number;
-                activeBudgetCount: number;
-            };
-            items: {
-                budget: {
-                    /** Format: uuid */
-                    id: string;
-                    userId: string;
-                    /** Format: uuid */
-                    categoryId: string;
-                    limitMinor: number;
-                    isArchived: boolean;
-                    /** Format: date-time */
-                    createdAt: string | null;
-                    /** Format: date-time */
-                    updatedAt: string | null;
-                };
-                category: {
-                    /** Format: uuid */
-                    id: string;
-                    name: string;
-                    icon: string | null;
-                    color: string | null;
-                    isArchived: boolean;
-                };
-                spentMinor: number;
-                remainingMinor: number;
-                utilizationBps: number;
-                /** @enum {string} */
-                state: "under" | "approaching" | "reached";
-                isEffective: boolean;
-            }[];
-            pageInfo: {
-                nextCursor: string | null;
-                hasMore: boolean;
-                limit: number;
-            };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
         };
-        Budget: {
-            /** Format: uuid */
-            id: string;
-            userId: string;
-            /** Format: uuid */
-            categoryId: string;
+        /** @description Goal not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    trace?: never;
+  };
+  "/v1/goals/{goalId}/abandon": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path: {
+          goalId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Goal abandoned, or idempotent replay */
+        204: {
+          headers: {
+            "Idempotency-Replayed"?: "true";
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Active goal not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/goals/{goalId}/plan": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          goalId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Goal contribution plan */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["GoalPlan"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Goal not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/budgets": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: {
+          cursor?: string;
+          limit?: number;
+          includeArchived?: "true" | "false";
+        };
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Budget page with live progress and overview totals */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["BudgetPage"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/budgets/{categoryId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path: {
+          categoryId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
             limitMinor: number;
-            isArchived: boolean;
-            /** Format: date-time */
-            createdAt: string | null;
-            /** Format: date-time */
-            updatedAt: string | null;
+          };
         };
-        DashboardSummary: {
-            totalBalanceMinor: number;
-            activeAccountCount: number;
-            assetsMinor: number;
-            liabilitiesMinor: number;
+      };
+      responses: {
+        /** @description Created, updated, restored budget configuration, or idempotent replay */
+        200: {
+          headers: {
+            "Idempotency-Replayed"?: "true";
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Budget"];
+          };
         };
-        RecentActivityItem: {
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Category not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/budgets/{budgetId}/archive": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path: {
+          budgetId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Archived budget configuration, or idempotent replay */
+        200: {
+          headers: {
+            "Idempotency-Replayed"?: "true";
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Budget"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Budget not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    trace?: never;
+  };
+  "/v1/api-keys": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description API keys */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              id: string;
+              name: string;
+              start: string | null;
+              permissions: {
+                transactions?: "write"[];
+                categories?: "read"[];
+                accounts?: "read"[];
+              } | null;
+              enabled: boolean;
+              /** Format: date-time */
+              createdAt: string | null;
+              /** Format: date-time */
+              expiresAt: string | null;
+              /** Format: date-time */
+              lastRequest: string | null;
+            }[];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
+            name: string;
+            permissions: {
+              transactions?: "write"[];
+              categories?: "read"[];
+              accounts?: "read"[];
+            };
+            /** Format: date-time */
+            expiresAt?: string | null;
+          };
+        };
+      };
+      responses: {
+        /** @description Created API key (raw key shown once) */
+        201: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              id: string;
+              name: string;
+              start: string | null;
+              permissions: {
+                transactions?: "write"[];
+                categories?: "read"[];
+                accounts?: "read"[];
+              } | null;
+              enabled: boolean;
+              /** Format: date-time */
+              createdAt: string | null;
+              /** Format: date-time */
+              expiresAt: string | null;
+              /** Format: date-time */
+              lastRequest: string | null;
+              key: string;
+            };
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/api-keys/{keyId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          keyId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description API key revoked */
+        204: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    options?: never;
+    head?: never;
+    patch: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          keyId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
+            name?: string;
+            permissions?: {
+              transactions?: "write"[];
+              categories?: "read"[];
+              accounts?: "read"[];
+            };
+          };
+        };
+      };
+      responses: {
+        /** @description Updated API key */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              id: string;
+              name: string;
+              start: string | null;
+              permissions: {
+                transactions?: "write"[];
+                categories?: "read"[];
+                accounts?: "read"[];
+              } | null;
+              enabled: boolean;
+              /** Format: date-time */
+              createdAt: string | null;
+              /** Format: date-time */
+              expiresAt: string | null;
+              /** Format: date-time */
+              lastRequest: string | null;
+            };
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    trace?: never;
+  };
+  "/v1/dashboard/summary": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Home dashboard summary */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["DashboardSummary"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/dashboard/recent-activity": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: {
+          limit?: number;
+        };
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Most recent posted transactions */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["RecentActivityItem"][];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/dashboard/stats": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: {
+          period?: string;
+        };
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Spent/income/savingsRate/netWorth stat cards with trend */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["DashboardStats"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/dashboard/cashflow": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query: {
+          range: "1W" | "1M" | "6M" | "12M";
+        };
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Income/expense buckets over the requested range */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["CashflowResponse"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/dashboard/top-spending": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query: {
+          range: "1W" | "1M" | "6M" | "12M";
+          limit?: number;
+        };
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Top spending categories over the requested range */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["TopSpendingItem"][];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/dashboard/spend-mix": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query: {
+          range: "1W" | "1M" | "6M" | "12M";
+        };
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Essential vs. lifestyle spend split */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["SpendMix"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/dashboard/investments": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Investment/fixed-deposit valuation rollup */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["DashboardInvestments"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/dashboard/recurring-forecast": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query: {
+          range: "1W" | "1M" | "6M" | "12M";
+        };
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Upcoming recurring in/out forecast over the requested range */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["RecurringForecast"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/metrics": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Prometheus text exposition for backend runtime health */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": string;
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/accounts/{accountId}/credit-card-config": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path: {
+          accountId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
+            statementDay: number;
+            dueDay: number;
+          };
+        };
+      };
+      responses: {
+        /** @description Configured credit-card cycle, or idempotent replay */
+        200: {
+          headers: {
+            "Idempotency-Replayed"?: "true";
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Account"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Account not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Account is not a credit card */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    trace?: never;
+  };
+  "/v1/bills": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: {
+          accountId?: string;
+          reconciliationStatus?: "awaiting_statement" | "reconciled";
+          paymentStatus?: "unpaid" | "partial" | "paid";
+          cursor?: string;
+          limit?: number;
+        };
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Credit-card bill page */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["BillPage"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/bills/{billId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          billId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Credit-card bill detail */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["BillDetail"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Bill not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/bills/{billId}/statement": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path: {
+          billId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "multipart/form-data": {
+            /** @description Issuer CSV statement file to upload (binary) */
+            file: string;
+            /** @description JSON string containing ColumnMapping */
+            mapping: string;
+          };
+        };
+      };
+      responses: {
+        /** @description Idempotent statement-upload replay */
+        200: {
+          headers: {
+            "Idempotency-Replayed": "true";
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["BillStatementUpload"];
+          };
+        };
+        /** @description Statement accepted for parsing */
+        201: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["BillStatementUpload"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Bill not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Bill is already reconciled */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/bills/{billId}/statement/rows": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: {
+          matchStatus?: "matched" | "missing_from_ledger" | "ambiguous";
+          acknowledged?: boolean;
+          cursor?: string;
+          limit?: number;
+        };
+        header?: never;
+        path: {
+          billId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Statement reconciliation rows */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["BillStatementRowPage"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Bill or statement not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/bills/{billId}/statement/rows/{rowId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path: {
+          billId: string;
+          rowId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
             /** Format: uuid */
-            id: string;
+            matchedTransactionId?: string | null;
+            acknowledged?: boolean;
+          };
+        };
+      };
+      responses: {
+        /** @description Updated reconciliation row, or idempotent replay */
+        200: {
+          headers: {
+            "Idempotency-Replayed"?: "true";
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["BillStatementRow"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Bill, statement, row, or transaction not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Statement cannot be changed */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    trace?: never;
+  };
+  "/v1/bills/{billId}/statement/acknowledge-extra": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path: {
+          billId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
             /** Format: uuid */
-            accountId: string;
-            accountName: string;
+            transactionId: string;
+            acknowledged: boolean;
+          };
+        };
+      };
+      responses: {
+        /** @description Updated extra-ledger acknowledgement, or replay */
+        200: {
+          headers: {
+            "Idempotency-Replayed"?: "true";
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["BillStatementUpload"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Bill, statement, or transaction not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Statement cannot be changed */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/bills/{billId}/statement/reconcile": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path: {
+          billId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Reconciled bill, or idempotent replay */
+        200: {
+          headers: {
+            "Idempotency-Replayed"?: "true";
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["CreditCardBill"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Bill or statement not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Statement is not ready or has unresolved rows */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/bills/{billId}/pay": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path: {
+          billId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
             /** Format: uuid */
-            categoryId?: string;
-            /** @enum {string} */
-            type: "expense" | "income";
+            fromAccountId: string;
             amountMinor: number;
-            description: string;
             /** Format: date-time */
             occurredAt: string | null;
-            tags: string[];
+          };
         };
-        DashboardStats: {
-            period: string;
-            spent: {
-                valueMinor: number;
-                deltaPct: number | null;
-                trend: number[];
-            };
-            income: {
-                valueMinor: number;
-                deltaPct: number | null;
-                trend: number[];
-            };
-            savingsRate: {
-                valuePct: number;
-                deltaPct: number | null;
-                trend: number[];
-            };
-            netWorth: {
-                valueMinor: number;
-                deltaPct: number | null;
-                trend: number[];
-            };
+      };
+      responses: {
+        /** @description Bill payment, or idempotent replay */
+        200: {
+          headers: {
+            "Idempotency-Replayed"?: "true";
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["BillPaymentResult"];
+          };
         };
-        CashflowResponse: {
-            /** @enum {string} */
-            range: "1W" | "1M" | "6M" | "12M";
-            buckets: {
-                label: string;
-                incomeMinor: number;
-                expenseMinor: number;
-            }[];
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
         };
-        TopSpendingItem: {
-            /** Format: uuid */
-            categoryId?: string;
-            name: string;
-            icon?: string;
-            color?: string;
-            amountMinor: number;
-            txnCount: number;
+        /** @description Bill or payment account not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
         };
-        SpendMix: {
-            /** @enum {string} */
-            range: "1W" | "1M" | "6M" | "12M";
-            totalMinor: number;
-            essential: {
-                amountMinor: number;
-                pct: number;
-            };
-            lifestyle: {
-                amountMinor: number;
-                pct: number;
-            };
-            uncategorized: {
-                amountMinor: number;
-                pct: number;
-            };
+        /** @description Bill is unreconciled, paid, or would be overpaid */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
         };
-        DashboardInvestments: {
-            items: {
-                /** Format: uuid */
-                assetId: string;
-                name: string;
-                /** @enum {string} */
-                kind: "loan_receivable" | "loan_liability" | "fixed_deposit" | "gold" | "silver" | "investment";
-                currentValueMinor: number;
-                returnPct: number | null;
-                series: {
-                    /** Format: date-time */
-                    valuedAt: string | null;
-                    valueMinor: number;
-                }[];
-            }[];
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
         };
-        RecurringForecast: {
-            /** @enum {string} */
-            range: "1W" | "1M" | "6M" | "12M";
-            inMinor: number;
-            outMinor: number;
-            netMinor: number;
-            upcoming: {
-                /** Format: uuid */
-                ruleId: string;
-                name: string;
-                icon?: string;
-                /** @enum {string} */
-                type: "expense" | "income";
-                amountMinor: number;
-                /** Format: date-time */
-                nextRunAt: string | null;
-            }[];
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
         };
+      };
     };
-    responses: never;
-    parameters: never;
-    requestBodies: never;
-    headers: never;
-    pathItems: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+}
+export type webhooks = Record<string, never>;
+export interface components {
+  schemas: {
+    Account: {
+      name: string;
+      /** @enum {string} */
+      type: "bank" | "credit_card" | "cash" | "wallet" | "investment";
+      openingBalanceMinor: number;
+      /** Format: uuid */
+      id: string;
+      userId: string;
+      /** @enum {string} */
+      currency: "INR";
+      balanceMinor: number;
+      creditCardConfig?: {
+        statementDay: number;
+        dueDay: number;
+        /** Format: date-time */
+        nextStatementAt: string | null;
+      };
+      isArchived: boolean;
+      /** Format: date-time */
+      createdAt: string | null;
+      /** Format: date-time */
+      updatedAt: string | null;
+    };
+    ProblemDetails: {
+      /** Format: uri */
+      type: string;
+      title: string;
+      status: number;
+      detail: string;
+      instance: string;
+      /** @enum {string} */
+      code:
+        | "common.validation_failed"
+        | "common.not_found"
+        | "common.invalid_cursor"
+        | "common.idempotency_conflict"
+        | "common.internal"
+        | "common.dependency_unavailable"
+        | "money.out_of_range"
+        | "auth.unauthenticated"
+        | "auth.insufficient_scope"
+        | "auth.rate_limited"
+        | "txn.already_reversed"
+        | "txn.transfer_metadata_requires_group"
+        | "category.parent_kind_mismatch"
+        | "category.kind_mismatch"
+        | "asset.invalid_valuation_sign"
+        | "goal.funding_source_in_use"
+        | "goal.invalid_order"
+        | "import.invalid_file"
+        | "import.already_committed"
+        | "import.invalid_state"
+        | "bill.invalid_account_type"
+        | "bill.not_reconciled"
+        | "bill.overpayment"
+        | "bill.invalid_statement_file"
+        | "bill.statement_not_ready"
+        | "bill.unresolved_statement"
+        | "bill.already_reconciled"
+        | "recurring.no_occurrences";
+      reqId: string;
+      /** Format: date-time */
+      timestamp: string | null;
+      retryable: boolean;
+      errors:
+        | {
+            path: string;
+            code: string;
+            message: string;
+          }[]
+        | null;
+    };
+    ImportBatch: {
+      /** Format: uuid */
+      id: string;
+      userId: string;
+      /** Format: uuid */
+      accountId: string;
+      filename: string;
+      fileHash: string;
+      mapping: {
+        date: string;
+        description: string;
+        /** @enum {string} */
+        dateFormat: "DD/MM/YYYY" | "MM/DD/YYYY" | "YYYY-MM-DD";
+        /** @enum {string} */
+        amountConvention: "single_signed" | "debit_credit_cols";
+        amount?: string;
+        debit?: string;
+        credit?: string;
+      };
+      /** @enum {string} */
+      status:
+        | "pending"
+        | "pending_parse"
+        | "parsing"
+        | "staged"
+        | "commit_queued"
+        | "committing"
+        | "committed"
+        | "revert_queued"
+        | "reverting"
+        | "reverted"
+        | "failed";
+      /** @enum {string} */
+      failureCode?: "invalid_csv" | "parse_retries_exhausted";
+      /** Format: date-time */
+      failedAt?: string | null;
+      stats: {
+        total: number;
+        staged: number;
+        duplicates: number;
+        committed: number;
+      };
+      /** Format: date-time */
+      committedAt?: string | null;
+      /** Format: date-time */
+      revertedAt?: string | null;
+      /** Format: date-time */
+      createdAt: string | null;
+      /** Format: date-time */
+      updatedAt: string | null;
+    };
+    AccountImportMapping: {
+      mapping: {
+        date: string;
+        description: string;
+        /** @enum {string} */
+        dateFormat: "DD/MM/YYYY" | "MM/DD/YYYY" | "YYYY-MM-DD";
+        /** @enum {string} */
+        amountConvention: "single_signed" | "debit_credit_cols";
+        amount?: string;
+        debit?: string;
+        credit?: string;
+      } | null;
+    };
+    StagedRowPage: {
+      items: {
+        /** Format: uuid */
+        id: string;
+        /** Format: uuid */
+        batchId: string;
+        rowNumber: number;
+        raw: {
+          [key: string]: string;
+        };
+        parsed?: {
+          /** Format: date-time */
+          occurredAt: string | null;
+          amountMinor: number;
+          /** @enum {string} */
+          type: "expense" | "income";
+          description: string;
+        };
+        dedupeHash?: string;
+        /** Format: uuid */
+        suggestedCategoryId?: string;
+        problems: string[];
+        isDuplicate: boolean;
+        include: boolean;
+      }[];
+      pageInfo: {
+        nextCursor: string | null;
+        hasMore: boolean;
+        limit: number;
+      };
+    };
+    StagedRow: {
+      /** Format: uuid */
+      id: string;
+      /** Format: uuid */
+      batchId: string;
+      rowNumber: number;
+      raw: {
+        [key: string]: string;
+      };
+      parsed?: {
+        /** Format: date-time */
+        occurredAt: string | null;
+        amountMinor: number;
+        /** @enum {string} */
+        type: "expense" | "income";
+        description: string;
+      };
+      dedupeHash?: string;
+      /** Format: uuid */
+      suggestedCategoryId?: string;
+      problems: string[];
+      isDuplicate: boolean;
+      include: boolean;
+    };
+    Category: {
+      name: string;
+      /** @enum {string} */
+      kind: "expense" | "income";
+      /** Format: uuid */
+      parentId?: string;
+      icon?: string;
+      color?: string;
+      /** @enum {string} */
+      group?: "essential" | "lifestyle";
+      /** Format: uuid */
+      id: string;
+      userId: string;
+      isArchived: boolean;
+      /** Format: date-time */
+      createdAt: string | null;
+      /** Format: date-time */
+      updatedAt: string | null;
+    };
+    CategoryRule: {
+      pattern: string;
+      /** Format: uuid */
+      categoryId: string;
+      /** Format: uuid */
+      id: string;
+      userId: string;
+      /** Format: date-time */
+      createdAt: string | null;
+      /** Format: date-time */
+      updatedAt: string | null;
+    };
+    TransactionPage: {
+      items: {
+        /** Format: uuid */
+        accountId: string;
+        /** Format: uuid */
+        categoryId?: string;
+        /** @enum {string} */
+        type: "expense" | "income";
+        amountMinor: number;
+        /** Format: date-time */
+        occurredAt: string | null;
+        description: string;
+        /** @default [] */
+        tags: string[];
+        /** Format: uuid */
+        id: string;
+        userId: string;
+        /** @enum {string} */
+        currency: "INR";
+        /** @enum {string} */
+        source: "manual" | "csv_import" | "recurring" | "api";
+        /** @enum {string} */
+        status: "posted" | "reversed" | "reversal";
+        /** Format: uuid */
+        idempotencyKey?: string;
+        /** Format: uuid */
+        reversalOf?: string;
+        /** Format: uuid */
+        reversedBy?: string;
+        /** Format: uuid */
+        transferGroupId?: string;
+        /** Format: uuid */
+        billId?: string;
+        /** Format: date-time */
+        createdAt: string | null;
+        /** Format: date-time */
+        updatedAt: string | null;
+      }[];
+      pageInfo: {
+        nextCursor: string | null;
+        hasMore: boolean;
+        limit: number;
+      };
+    };
+    Transaction: {
+      /** Format: uuid */
+      accountId: string;
+      /** Format: uuid */
+      categoryId?: string;
+      /** @enum {string} */
+      type: "expense" | "income";
+      amountMinor: number;
+      /** Format: date-time */
+      occurredAt: string | null;
+      description: string;
+      /** @default [] */
+      tags: string[];
+      /** Format: uuid */
+      id: string;
+      userId: string;
+      /** @enum {string} */
+      currency: "INR";
+      /** @enum {string} */
+      source: "manual" | "csv_import" | "recurring" | "api";
+      /** @enum {string} */
+      status: "posted" | "reversed" | "reversal";
+      /** Format: uuid */
+      idempotencyKey?: string;
+      /** Format: uuid */
+      reversalOf?: string;
+      /** Format: uuid */
+      reversedBy?: string;
+      /** Format: uuid */
+      transferGroupId?: string;
+      /** Format: uuid */
+      billId?: string;
+      /** Format: date-time */
+      createdAt: string | null;
+      /** Format: date-time */
+      updatedAt: string | null;
+    };
+    Transfer: {
+      /** Format: uuid */
+      transferGroupId: string;
+      fromTransaction: {
+        /** Format: uuid */
+        accountId: string;
+        /** Format: uuid */
+        categoryId?: string;
+        /** @enum {string} */
+        type: "expense" | "income";
+        amountMinor: number;
+        /** Format: date-time */
+        occurredAt: string | null;
+        description: string;
+        /** @default [] */
+        tags: string[];
+        /** Format: uuid */
+        id: string;
+        userId: string;
+        /** @enum {string} */
+        currency: "INR";
+        /** @enum {string} */
+        source: "manual" | "csv_import" | "recurring" | "api";
+        /** @enum {string} */
+        status: "posted" | "reversed" | "reversal";
+        /** Format: uuid */
+        idempotencyKey?: string;
+        /** Format: uuid */
+        reversalOf?: string;
+        /** Format: uuid */
+        reversedBy?: string;
+        /** Format: uuid */
+        transferGroupId?: string;
+        /** Format: uuid */
+        billId?: string;
+        /** Format: date-time */
+        createdAt: string | null;
+        /** Format: date-time */
+        updatedAt: string | null;
+      };
+      toTransaction: {
+        /** Format: uuid */
+        accountId: string;
+        /** Format: uuid */
+        categoryId?: string;
+        /** @enum {string} */
+        type: "expense" | "income";
+        amountMinor: number;
+        /** Format: date-time */
+        occurredAt: string | null;
+        description: string;
+        /** @default [] */
+        tags: string[];
+        /** Format: uuid */
+        id: string;
+        userId: string;
+        /** @enum {string} */
+        currency: "INR";
+        /** @enum {string} */
+        source: "manual" | "csv_import" | "recurring" | "api";
+        /** @enum {string} */
+        status: "posted" | "reversed" | "reversal";
+        /** Format: uuid */
+        idempotencyKey?: string;
+        /** Format: uuid */
+        reversalOf?: string;
+        /** Format: uuid */
+        reversedBy?: string;
+        /** Format: uuid */
+        transferGroupId?: string;
+        /** Format: uuid */
+        billId?: string;
+        /** Format: date-time */
+        createdAt: string | null;
+        /** Format: date-time */
+        updatedAt: string | null;
+      };
+    };
+    TransferReversal: {
+      /** Format: uuid */
+      transferGroupId: string;
+      legs: [
+        {
+          /** Format: uuid */
+          accountId: string;
+          /** Format: uuid */
+          categoryId?: string;
+          /** @enum {string} */
+          type: "expense" | "income";
+          amountMinor: number;
+          /** Format: date-time */
+          occurredAt: string | null;
+          description: string;
+          /** @default [] */
+          tags: string[];
+          /** Format: uuid */
+          id: string;
+          userId: string;
+          /** @enum {string} */
+          currency: "INR";
+          /** @enum {string} */
+          source: "manual" | "csv_import" | "recurring" | "api";
+          /** @enum {string} */
+          status: "posted" | "reversed" | "reversal";
+          /** Format: uuid */
+          idempotencyKey?: string;
+          /** Format: uuid */
+          reversalOf?: string;
+          /** Format: uuid */
+          reversedBy?: string;
+          /** Format: uuid */
+          transferGroupId?: string;
+          /** Format: uuid */
+          billId?: string;
+          /** Format: date-time */
+          createdAt: string | null;
+          /** Format: date-time */
+          updatedAt: string | null;
+        },
+        {
+          /** Format: uuid */
+          accountId: string;
+          /** Format: uuid */
+          categoryId?: string;
+          /** @enum {string} */
+          type: "expense" | "income";
+          amountMinor: number;
+          /** Format: date-time */
+          occurredAt: string | null;
+          description: string;
+          /** @default [] */
+          tags: string[];
+          /** Format: uuid */
+          id: string;
+          userId: string;
+          /** @enum {string} */
+          currency: "INR";
+          /** @enum {string} */
+          source: "manual" | "csv_import" | "recurring" | "api";
+          /** @enum {string} */
+          status: "posted" | "reversed" | "reversal";
+          /** Format: uuid */
+          idempotencyKey?: string;
+          /** Format: uuid */
+          reversalOf?: string;
+          /** Format: uuid */
+          reversedBy?: string;
+          /** Format: uuid */
+          transferGroupId?: string;
+          /** Format: uuid */
+          billId?: string;
+          /** Format: date-time */
+          createdAt: string | null;
+          /** Format: date-time */
+          updatedAt: string | null;
+        }
+      ];
+    };
+    Asset: {
+      /** Format: uuid */
+      id: string;
+      userId: string;
+      /** @enum {string} */
+      kind:
+        "loan_receivable" | "loan_liability" | "fixed_deposit" | "gold" | "silver" | "investment";
+      name: string;
+      /** Format: date-time */
+      openedAt: string | null;
+      /** Format: date-time */
+      maturityAt?: string | null;
+      annualRateBps?: number;
+      quantityMilliUnits?: number;
+      isClosed: boolean;
+      /** Format: date-time */
+      createdAt: string | null;
+      /** Format: date-time */
+      updatedAt: string | null;
+    };
+    Valuation: {
+      valueMinor: number;
+      /** Format: date-time */
+      valuedAt: string | null;
+      /**
+       * @default manual
+       * @enum {string}
+       */
+      source: "manual" | "maturity_projection";
+      /** Format: uuid */
+      id: string;
+      /** Format: uuid */
+      assetId: string;
+      userId: string;
+      /** Format: date-time */
+      createdAt: string | null;
+    };
+    ValuationPage: {
+      items: {
+        valueMinor: number;
+        /** Format: date-time */
+        valuedAt: string | null;
+        /**
+         * @default manual
+         * @enum {string}
+         */
+        source: "manual" | "maturity_projection";
+        /** Format: uuid */
+        id: string;
+        /** Format: uuid */
+        assetId: string;
+        userId: string;
+        /** Format: date-time */
+        createdAt: string | null;
+      }[];
+      pageInfo: {
+        nextCursor: string | null;
+        hasMore: boolean;
+        limit: number;
+      };
+    };
+    NetWorth: {
+      /** Format: date-time */
+      asOf: string | null;
+      netWorthMinor: number;
+      accounts: {
+        /** Format: uuid */
+        accountId: string;
+        name: string;
+        balanceMinor: number;
+      }[];
+      assets: {
+        /** Format: uuid */
+        assetId: string;
+        name: string;
+        /** @enum {string} */
+        kind:
+          "loan_receivable" | "loan_liability" | "fixed_deposit" | "gold" | "silver" | "investment";
+        valueMinor: number;
+        /** Format: date-time */
+        valuedAt: string | null;
+      }[];
+    };
+    MonthlyRollup: {
+      userId: string;
+      month: string;
+      byCategory: {
+        /** Format: uuid */
+        categoryId?: string;
+        spentMinor: number;
+        incomeMinor: number;
+        txnCount: number;
+      }[];
+      byAccount: {
+        /** Format: uuid */
+        accountId: string;
+        netMinor: number;
+      }[];
+      totalExpenseMinor: number;
+      totalIncomeMinor: number;
+      /** Format: date-time */
+      computedAt: string | null;
+    };
+    UserProfile: {
+      userId: string;
+      displayName: string;
+      /** @enum {string} */
+      locale: "en-IN";
+      /** @enum {string} */
+      timezone: "Asia/Kolkata";
+      /** Format: date-time */
+      createdAt: string | null;
+      /** Format: date-time */
+      updatedAt: string | null;
+    };
+    RecurringRule: {
+      /** Format: uuid */
+      id: string;
+      userId: string;
+      template: {
+        /** Format: uuid */
+        accountId: string;
+        /** Format: uuid */
+        categoryId?: string;
+        /** @enum {string} */
+        type: "expense" | "income";
+        amountMinor: number;
+        description: string;
+        /** @default [] */
+        tags: string[];
+      };
+      rrule: string;
+      /** Format: date-time */
+      startAt: string | null;
+      /** Format: date-time */
+      nextRunAt: string | null;
+      /** Format: date-time */
+      lastRunAt?: string | null;
+      isPaused: boolean;
+      /** Format: date-time */
+      createdAt: string | null;
+      /** Format: date-time */
+      updatedAt: string | null;
+    };
+    SpendingWarningPage: {
+      items: {
+        /** Format: uuid */
+        id: string;
+        userId: string;
+        fingerprint: string;
+        /** @enum {string} */
+        kind: "overall_spend_spike" | "category_spend_spike" | "unusually_large_expense";
+        /** @enum {string} */
+        severity: "attention" | "high";
+        /** @enum {string} */
+        status: "active" | "dismissed" | "resolved";
+        /** Format: uuid */
+        categoryId?: string;
+        /** Format: uuid */
+        transactionId?: string;
+        /** Format: date-time */
+        windowStart: string | null;
+        /** Format: date-time */
+        windowEnd: string | null;
+        evidence:
+          | {
+              /** @enum {string} */
+              kind: "overall_spend_spike";
+              currentMinor: number;
+              baselineMedianMinor: number;
+              deltaMinor: number;
+              ratioBasisPoints: number;
+              /** Format: date-time */
+              windowStart: string | null;
+              /** Format: date-time */
+              windowEnd: string | null;
+              baselineWindowCount: number;
+              baselineExpenseCount: number;
+            }
+          | {
+              /** @enum {string} */
+              kind: "category_spend_spike";
+              /** Format: uuid */
+              categoryId?: string;
+              categoryName?: string;
+              currentMinor: number;
+              baselineMedianMinor: number;
+              deltaMinor: number;
+              ratioBasisPoints: number;
+              /** Format: date-time */
+              windowStart: string | null;
+              /** Format: date-time */
+              windowEnd: string | null;
+              baselineWindowCount: number;
+              baselineExpenseCount: number;
+              currentExpenseCount: number;
+            }
+          | {
+              /** @enum {string} */
+              kind: "unusually_large_expense";
+              /** Format: uuid */
+              transactionId: string;
+              /** Format: uuid */
+              categoryId?: string;
+              categoryName?: string;
+              amountMinor: number;
+              thresholdMinor: number;
+              baselineMedianMinor: number;
+              baselineQ1Minor: number;
+              baselineQ3Minor: number;
+              baselineExpenseCount: number;
+              /** Format: date-time */
+              occurredAt: string | null;
+            };
+        detectorVersion: number;
+        /** Format: date-time */
+        firstDetectedAt: string | null;
+        /** Format: date-time */
+        lastDetectedAt: string | null;
+        /** Format: date-time */
+        dismissedAt?: string | null;
+        /** Format: date-time */
+        resolvedAt?: string | null;
+      }[];
+      pageInfo: {
+        nextCursor: string | null;
+        hasMore: boolean;
+        limit: number;
+      };
+      analysis: {
+        /** @enum {string} */
+        status: "learning" | "ready" | "stale" | "unavailable";
+        /** Format: date-time */
+        computedAt?: string | null;
+        /** Format: date-time */
+        sourceThrough?: string | null;
+        /** Format: date-time */
+        historyStart?: string | null;
+        eligibleKinds: (
+          "overall_spend_spike" | "category_spend_spike" | "unusually_large_expense"
+        )[];
+        baselineExpenseCount: number;
+      };
+    };
+    DismissSpendingWarningResponse: {
+      /** Format: uuid */
+      id: string;
+      /** @enum {string} */
+      status: "dismissed";
+      /** Format: date-time */
+      dismissedAt: string | null;
+    };
+    Goal: {
+      /** Format: uuid */
+      id: string;
+      userId: string;
+      name: string;
+      targetMinor: number;
+      /** Format: date-time */
+      targetDate?: string | null;
+      /** @enum {string} */
+      fundingMode: "linked_account" | "tagged";
+      /** Format: uuid */
+      linkedAccountId?: string;
+      tag?: string;
+      priority: number;
+      /** @enum {string} */
+      status: "active" | "achieved" | "abandoned";
+      startedMinor: number;
+      /** Format: date-time */
+      createdAt: string | null;
+      /** Format: date-time */
+      updatedAt: string | null;
+      progressMinor: number;
+    };
+    GoalPlan: {
+      /** Format: uuid */
+      goalId: string;
+      /** @enum {string} */
+      mode: "target_date" | "at_current_rate";
+      requiredMonthlyMinor: number | null;
+      /** Format: date-time */
+      projectedCompletionDate: string | null;
+    };
+    BudgetPage: {
+      month: string;
+      /** Format: date-time */
+      computedAt: string | null;
+      alertPolicy: {
+        thresholdsBps: number[];
+      };
+      overview: {
+        plannedMinor: number;
+        spentInBudgetedCategoriesMinor: number;
+        remainingMinor: number;
+        unbudgetedSpentMinor: number;
+        activeBudgetCount: number;
+      };
+      items: {
+        budget: {
+          /** Format: uuid */
+          id: string;
+          userId: string;
+          /** Format: uuid */
+          categoryId: string;
+          limitMinor: number;
+          isArchived: boolean;
+          /** Format: date-time */
+          createdAt: string | null;
+          /** Format: date-time */
+          updatedAt: string | null;
+        };
+        category: {
+          /** Format: uuid */
+          id: string;
+          name: string;
+          icon: string | null;
+          color: string | null;
+          isArchived: boolean;
+        };
+        spentMinor: number;
+        remainingMinor: number;
+        utilizationBps: number;
+        /** @enum {string} */
+        state: "under" | "approaching" | "reached";
+        isEffective: boolean;
+      }[];
+      pageInfo: {
+        nextCursor: string | null;
+        hasMore: boolean;
+        limit: number;
+      };
+    };
+    Budget: {
+      /** Format: uuid */
+      id: string;
+      userId: string;
+      /** Format: uuid */
+      categoryId: string;
+      limitMinor: number;
+      isArchived: boolean;
+      /** Format: date-time */
+      createdAt: string | null;
+      /** Format: date-time */
+      updatedAt: string | null;
+    };
+    DashboardSummary: {
+      totalBalanceMinor: number;
+      activeAccountCount: number;
+      assetsMinor: number;
+      liabilitiesMinor: number;
+    };
+    RecentActivityItem: {
+      /** Format: uuid */
+      id: string;
+      /** Format: uuid */
+      accountId: string;
+      accountName: string;
+      /** Format: uuid */
+      categoryId?: string;
+      /** @enum {string} */
+      type: "expense" | "income";
+      amountMinor: number;
+      description: string;
+      /** Format: date-time */
+      occurredAt: string | null;
+      tags: string[];
+    };
+    DashboardStats: {
+      period: string;
+      spent: {
+        valueMinor: number;
+        deltaPct: number | null;
+        trend: number[];
+      };
+      income: {
+        valueMinor: number;
+        deltaPct: number | null;
+        trend: number[];
+      };
+      savingsRate: {
+        valuePct: number;
+        deltaPct: number | null;
+        trend: number[];
+      };
+      netWorth: {
+        valueMinor: number;
+        deltaPct: number | null;
+        trend: number[];
+      };
+    };
+    CashflowResponse: {
+      /** @enum {string} */
+      range: "1W" | "1M" | "6M" | "12M";
+      buckets: {
+        label: string;
+        incomeMinor: number;
+        expenseMinor: number;
+      }[];
+    };
+    TopSpendingItem: {
+      /** Format: uuid */
+      categoryId?: string;
+      name: string;
+      icon?: string;
+      color?: string;
+      amountMinor: number;
+      txnCount: number;
+    };
+    SpendMix: {
+      /** @enum {string} */
+      range: "1W" | "1M" | "6M" | "12M";
+      totalMinor: number;
+      essential: {
+        amountMinor: number;
+        pct: number;
+      };
+      lifestyle: {
+        amountMinor: number;
+        pct: number;
+      };
+      uncategorized: {
+        amountMinor: number;
+        pct: number;
+      };
+    };
+    DashboardInvestments: {
+      items: {
+        /** Format: uuid */
+        assetId: string;
+        name: string;
+        /** @enum {string} */
+        kind:
+          "loan_receivable" | "loan_liability" | "fixed_deposit" | "gold" | "silver" | "investment";
+        currentValueMinor: number;
+        returnPct: number | null;
+        series: {
+          /** Format: date-time */
+          valuedAt: string | null;
+          valueMinor: number;
+        }[];
+      }[];
+    };
+    RecurringForecast: {
+      /** @enum {string} */
+      range: "1W" | "1M" | "6M" | "12M";
+      inMinor: number;
+      outMinor: number;
+      netMinor: number;
+      upcoming: {
+        /** Format: uuid */
+        ruleId: string;
+        name: string;
+        icon?: string;
+        /** @enum {string} */
+        type: "expense" | "income";
+        amountMinor: number;
+        /** Format: date-time */
+        nextRunAt: string | null;
+      }[];
+    };
+    BillPage: {
+      items: {
+        /** Format: uuid */
+        id: string;
+        userId: string;
+        /** Format: uuid */
+        accountId: string;
+        /** Format: date-time */
+        cycleStart: string | null;
+        /** Format: date-time */
+        cycleEnd: string | null;
+        /** Format: date-time */
+        dueDate: string | null;
+        amountDueMinor: number;
+        /** @enum {string} */
+        reconciliationStatus: "awaiting_statement" | "reconciled";
+        paidMinor: number;
+        remainingMinor: number;
+        /** @enum {string} */
+        paymentStatus: "unpaid" | "partial" | "paid";
+        /** Format: date-time */
+        createdAt: string | null;
+        /** Format: date-time */
+        updatedAt: string | null;
+      }[];
+      pageInfo: {
+        nextCursor: string | null;
+        hasMore: boolean;
+        limit: number;
+      };
+    };
+    BillDetail: {
+      bill: {
+        /** Format: uuid */
+        id: string;
+        userId: string;
+        /** Format: uuid */
+        accountId: string;
+        /** Format: date-time */
+        cycleStart: string | null;
+        /** Format: date-time */
+        cycleEnd: string | null;
+        /** Format: date-time */
+        dueDate: string | null;
+        amountDueMinor: number;
+        /** @enum {string} */
+        reconciliationStatus: "awaiting_statement" | "reconciled";
+        paidMinor: number;
+        remainingMinor: number;
+        /** @enum {string} */
+        paymentStatus: "unpaid" | "partial" | "paid";
+        /** Format: date-time */
+        createdAt: string | null;
+        /** Format: date-time */
+        updatedAt: string | null;
+      };
+      account: {
+        name: string;
+        /** @enum {string} */
+        type: "bank" | "credit_card" | "cash" | "wallet" | "investment";
+        openingBalanceMinor: number;
+        /** Format: uuid */
+        id: string;
+        userId: string;
+        /** @enum {string} */
+        currency: "INR";
+        balanceMinor: number;
+        creditCardConfig?: {
+          statementDay: number;
+          dueDay: number;
+          /** Format: date-time */
+          nextStatementAt: string | null;
+        };
+        isArchived: boolean;
+        /** Format: date-time */
+        createdAt: string | null;
+        /** Format: date-time */
+        updatedAt: string | null;
+      };
+      activeStatement?: {
+        /** Format: uuid */
+        id: string;
+        userId: string;
+        /** Format: uuid */
+        billId: string;
+        filename: string;
+        fileHash: string;
+        mapping: {
+          date: string;
+          description: string;
+          /** @enum {string} */
+          dateFormat: "DD/MM/YYYY" | "MM/DD/YYYY" | "YYYY-MM-DD";
+          /** @enum {string} */
+          amountConvention: "single_signed" | "debit_credit_cols";
+          amount?: string;
+          debit?: string;
+          credit?: string;
+        };
+        /** @enum {string} */
+        status: "pending" | "staged" | "failed";
+        active: boolean;
+        stats: {
+          total: number;
+          matched: number;
+          missing: number;
+          ambiguous: number;
+          acknowledged: number;
+        };
+        acknowledgedExtraTransactionIds: string[];
+        /** Format: date-time */
+        createdAt: string | null;
+        /** Format: date-time */
+        updatedAt: string | null;
+      };
+      reconciliation: {
+        stats: {
+          total: number;
+          matched: number;
+          missing: number;
+          ambiguous: number;
+          acknowledged: number;
+        };
+        unresolved: number;
+        canReconcile: boolean;
+        extraTransactions: {
+          /** Format: uuid */
+          accountId: string;
+          /** Format: uuid */
+          categoryId?: string;
+          /** @enum {string} */
+          type: "expense" | "income";
+          amountMinor: number;
+          /** Format: date-time */
+          occurredAt: string | null;
+          description: string;
+          /** @default [] */
+          tags: string[];
+          /** Format: uuid */
+          id: string;
+          userId: string;
+          /** @enum {string} */
+          currency: "INR";
+          /** @enum {string} */
+          source: "manual" | "csv_import" | "recurring" | "api";
+          /** @enum {string} */
+          status: "posted" | "reversed" | "reversal";
+          /** Format: uuid */
+          idempotencyKey?: string;
+          /** Format: uuid */
+          reversalOf?: string;
+          /** Format: uuid */
+          reversedBy?: string;
+          /** Format: uuid */
+          transferGroupId?: string;
+          /** Format: uuid */
+          billId?: string;
+          /** Format: date-time */
+          createdAt: string | null;
+          /** Format: date-time */
+          updatedAt: string | null;
+        }[];
+      };
+    };
+    BillStatementUpload: {
+      /** Format: uuid */
+      id: string;
+      userId: string;
+      /** Format: uuid */
+      billId: string;
+      filename: string;
+      fileHash: string;
+      mapping: {
+        date: string;
+        description: string;
+        /** @enum {string} */
+        dateFormat: "DD/MM/YYYY" | "MM/DD/YYYY" | "YYYY-MM-DD";
+        /** @enum {string} */
+        amountConvention: "single_signed" | "debit_credit_cols";
+        amount?: string;
+        debit?: string;
+        credit?: string;
+      };
+      /** @enum {string} */
+      status: "pending" | "staged" | "failed";
+      active: boolean;
+      stats: {
+        total: number;
+        matched: number;
+        missing: number;
+        ambiguous: number;
+        acknowledged: number;
+      };
+      acknowledgedExtraTransactionIds: string[];
+      /** Format: date-time */
+      createdAt: string | null;
+      /** Format: date-time */
+      updatedAt: string | null;
+    };
+    BillStatementRowPage: {
+      items: {
+        /** Format: uuid */
+        id: string;
+        userId: string;
+        /** Format: uuid */
+        uploadId: string;
+        rowNumber: number;
+        raw: {
+          [key: string]: string;
+        };
+        parsed?: {
+          /** Format: date-time */
+          occurredAt: string | null;
+          amountMinor: number;
+          /** @enum {string} */
+          type: "expense" | "income";
+          description: string;
+        };
+        /** Format: uuid */
+        matchedTransactionId?: string;
+        /** @enum {string} */
+        matchStatus: "matched" | "missing_from_ledger" | "ambiguous";
+        acknowledged: boolean;
+        problems: string[];
+        /** Format: date-time */
+        createdAt: string | null;
+        /** Format: date-time */
+        updatedAt: string | null;
+      }[];
+      pageInfo: {
+        nextCursor: string | null;
+        hasMore: boolean;
+        limit: number;
+      };
+    };
+    BillStatementRow: {
+      /** Format: uuid */
+      id: string;
+      userId: string;
+      /** Format: uuid */
+      uploadId: string;
+      rowNumber: number;
+      raw: {
+        [key: string]: string;
+      };
+      parsed?: {
+        /** Format: date-time */
+        occurredAt: string | null;
+        amountMinor: number;
+        /** @enum {string} */
+        type: "expense" | "income";
+        description: string;
+      };
+      /** Format: uuid */
+      matchedTransactionId?: string;
+      /** @enum {string} */
+      matchStatus: "matched" | "missing_from_ledger" | "ambiguous";
+      acknowledged: boolean;
+      problems: string[];
+      /** Format: date-time */
+      createdAt: string | null;
+      /** Format: date-time */
+      updatedAt: string | null;
+    };
+    CreditCardBill: {
+      /** Format: uuid */
+      id: string;
+      userId: string;
+      /** Format: uuid */
+      accountId: string;
+      /** Format: date-time */
+      cycleStart: string | null;
+      /** Format: date-time */
+      cycleEnd: string | null;
+      /** Format: date-time */
+      dueDate: string | null;
+      amountDueMinor: number;
+      /** @enum {string} */
+      reconciliationStatus: "awaiting_statement" | "reconciled";
+      paidMinor: number;
+      remainingMinor: number;
+      /** @enum {string} */
+      paymentStatus: "unpaid" | "partial" | "paid";
+      /** Format: date-time */
+      createdAt: string | null;
+      /** Format: date-time */
+      updatedAt: string | null;
+    };
+    BillPaymentResult: {
+      bill: {
+        /** Format: uuid */
+        id: string;
+        userId: string;
+        /** Format: uuid */
+        accountId: string;
+        /** Format: date-time */
+        cycleStart: string | null;
+        /** Format: date-time */
+        cycleEnd: string | null;
+        /** Format: date-time */
+        dueDate: string | null;
+        amountDueMinor: number;
+        /** @enum {string} */
+        reconciliationStatus: "awaiting_statement" | "reconciled";
+        paidMinor: number;
+        remainingMinor: number;
+        /** @enum {string} */
+        paymentStatus: "unpaid" | "partial" | "paid";
+        /** Format: date-time */
+        createdAt: string | null;
+        /** Format: date-time */
+        updatedAt: string | null;
+      };
+      transfer: {
+        /** Format: uuid */
+        transferGroupId: string;
+        fromTransaction: {
+          /** Format: uuid */
+          accountId: string;
+          /** Format: uuid */
+          categoryId?: string;
+          /** @enum {string} */
+          type: "expense" | "income";
+          amountMinor: number;
+          /** Format: date-time */
+          occurredAt: string | null;
+          description: string;
+          /** @default [] */
+          tags: string[];
+          /** Format: uuid */
+          id: string;
+          userId: string;
+          /** @enum {string} */
+          currency: "INR";
+          /** @enum {string} */
+          source: "manual" | "csv_import" | "recurring" | "api";
+          /** @enum {string} */
+          status: "posted" | "reversed" | "reversal";
+          /** Format: uuid */
+          idempotencyKey?: string;
+          /** Format: uuid */
+          reversalOf?: string;
+          /** Format: uuid */
+          reversedBy?: string;
+          /** Format: uuid */
+          transferGroupId?: string;
+          /** Format: uuid */
+          billId?: string;
+          /** Format: date-time */
+          createdAt: string | null;
+          /** Format: date-time */
+          updatedAt: string | null;
+        };
+        toTransaction: {
+          /** Format: uuid */
+          accountId: string;
+          /** Format: uuid */
+          categoryId?: string;
+          /** @enum {string} */
+          type: "expense" | "income";
+          amountMinor: number;
+          /** Format: date-time */
+          occurredAt: string | null;
+          description: string;
+          /** @default [] */
+          tags: string[];
+          /** Format: uuid */
+          id: string;
+          userId: string;
+          /** @enum {string} */
+          currency: "INR";
+          /** @enum {string} */
+          source: "manual" | "csv_import" | "recurring" | "api";
+          /** @enum {string} */
+          status: "posted" | "reversed" | "reversal";
+          /** Format: uuid */
+          idempotencyKey?: string;
+          /** Format: uuid */
+          reversalOf?: string;
+          /** Format: uuid */
+          reversedBy?: string;
+          /** Format: uuid */
+          transferGroupId?: string;
+          /** Format: uuid */
+          billId?: string;
+          /** Format: date-time */
+          createdAt: string | null;
+          /** Format: date-time */
+          updatedAt: string | null;
+        };
+      };
+    };
+  };
+  responses: never;
+  parameters: never;
+  requestBodies: never;
+  headers: never;
+  pathItems: never;
 }
 export type $defs = Record<string, never>;
 export type operations = Record<string, never>;

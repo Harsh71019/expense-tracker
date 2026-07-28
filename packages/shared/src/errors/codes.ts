@@ -19,6 +19,13 @@ export const ErrorCodes = [
   "import.invalid_file",
   "import.already_committed",
   "import.invalid_state",
+  "bill.invalid_account_type",
+  "bill.not_reconciled",
+  "bill.overpayment",
+  "bill.invalid_statement_file",
+  "bill.statement_not_ready",
+  "bill.unresolved_statement",
+  "bill.already_reconciled",
   "recurring.no_occurrences"
 ] as const;
 

@@ -1,6 +1,11 @@
 "use client";
 
-import { CreateAccountSchema, type Account, type AccountType } from "@treasury-ops/shared";
+import {
+  CreateAccountSchema,
+  CreditCardConfigInputSchema,
+  type Account,
+  type AccountType
+} from "@treasury-ops/shared";
 import { useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 
@@ -11,10 +16,12 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { Money, SignedMoney } from "@/components/ui/money";
 import { toast } from "@/lib/toast";
+import { formatBillDate } from "@/features/bills/model/bill-presentation";
 
 import { useAccounts } from "../hooks/use-accounts";
 import { useArchiveAccount } from "../hooks/use-archive-account";
 import { useCreateAccount } from "../hooks/use-create-account";
+import { useUpdateCreditCardConfig } from "../hooks/use-update-credit-card-config";
 import { AccountDetailDialog } from "./account-detail-dialog";
 
 type TypeMeta = { value: AccountType; label: string; filterLabel: string; icon: string };
@@ -47,6 +54,7 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
   const accounts = useAccounts(initialAccounts);
   const createAccount = useCreateAccount();
   const archiveAccount = useArchiveAccount();
+  const updateCardConfig = useUpdateCreditCardConfig();
   const [createOpen, setCreateOpen] = useState(false);
   const [filter, setFilter] = useState<Filter>("all");
   const [showArchived, setShowArchived] = useState(false);
@@ -54,7 +62,10 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
   const [type, setType] = useState<AccountType>("bank");
   const [amountMinor, setAmountMinor] = useState(0);
   const [direction, setDirection] = useState<"available" | "owed">("available");
+  const [statementDay, setStatementDay] = useState("");
+  const [dueDay, setDueDay] = useState("");
   const [confirming, setConfirming] = useState<Account>();
+  const [configuring, setConfiguring] = useState<Account>();
   const [detailAccount, setDetailAccount] = useState<Account>();
   const [error, setError] = useState<string>();
 
@@ -63,8 +74,25 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
     setAmountMinor(0);
     setDirection("available");
     setType("bank");
+    setStatementDay("");
+    setDueDay("");
     setError(undefined);
     setCreateOpen(true);
+  }
+
+  function closeCreate(): void {
+    setCreateOpen(false);
+    setStatementDay("");
+    setDueDay("");
+    setError(undefined);
+  }
+
+  function selectType(nextType: AccountType): void {
+    setType(nextType);
+    if (nextType !== "credit_card") {
+      setStatementDay("");
+      setDueDay("");
+    }
   }
 
   async function submit(event: FormEvent<HTMLFormElement>): Promise<void> {
@@ -72,7 +100,15 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
     const parsed = CreateAccountSchema.safeParse({
       name,
       type,
-      openingBalanceMinor: direction === "owed" ? -amountMinor : amountMinor
+      openingBalanceMinor: direction === "owed" ? -amountMinor : amountMinor,
+      ...(type === "credit_card"
+        ? {
+            creditCardConfig: {
+              statementDay: Number(statementDay),
+              dueDay: Number(dueDay)
+            }
+          }
+        : {})
     });
     if (!parsed.success) {
       setError(parsed.error.issues[0]?.message ?? "Check the account details.");
@@ -80,11 +116,42 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
     }
     try {
       await createAccount.mutateAsync(parsed.data);
-      setCreateOpen(false);
+      closeCreate();
       setError(undefined);
       toast.success("Account created");
     } catch (caught: unknown) {
       const message = caught instanceof Error ? caught.message : "Could not create this account.";
+      setError(message);
+      toast.error(message);
+    }
+  }
+
+  function openCardConfig(account: Account): void {
+    setConfiguring(account);
+    setStatementDay(account.creditCardConfig?.statementDay.toString() ?? "");
+    setDueDay(account.creditCardConfig?.dueDay.toString() ?? "");
+    setError(undefined);
+  }
+
+  async function saveCardConfig(event: FormEvent<HTMLFormElement>): Promise<void> {
+    event.preventDefault();
+    if (configuring === undefined) return;
+    const parsed = CreditCardConfigInputSchema.safeParse({
+      statementDay: Number(statementDay),
+      dueDay: Number(dueDay)
+    });
+    if (!parsed.success) {
+      setError(parsed.error.issues[0]?.message ?? "Check the billing cycle.");
+      return;
+    }
+    try {
+      await updateCardConfig.mutateAsync({ accountId: configuring.id, config: parsed.data });
+      setConfiguring(undefined);
+      setError(undefined);
+      toast.success("Billing cycle updated");
+    } catch (caught: unknown) {
+      const message =
+        caught instanceof Error ? caught.message : "Could not update the billing cycle.";
       setError(message);
       toast.error(message);
     }
@@ -276,20 +343,50 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
                 </div>
 
                 <div className="mt-4 flex items-center justify-between border-t border-border pt-3.5">
-                  <span className="font-mono text-[11px] text-foreground-muted">
-                    Opening <SignedMoney minor={account.openingBalanceMinor} size="sm" />
-                  </span>
+                  <div>
+                    <span className="font-mono text-[11px] text-foreground-muted">
+                      Opening <SignedMoney minor={account.openingBalanceMinor} size="sm" />
+                    </span>
+                    {account.type === "credit_card" ? (
+                      <p className="mt-2 text-xs text-foreground-muted">
+                        {account.creditCardConfig === undefined
+                          ? "Billing cycle not configured"
+                          : `Statement day ${account.creditCardConfig.statementDay} · due day ${account.creditCardConfig.dueDay}`}
+                      </p>
+                    ) : null}
+                    {account.type === "credit_card" && account.creditCardConfig !== undefined ? (
+                      <p className="mt-1 text-xs text-foreground-muted">
+                        Next statement {formatBillDate(account.creditCardConfig.nextStatementAt)}
+                      </p>
+                    ) : null}
+                  </div>
                   {account.isArchived ? null : (
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        setConfirming(account);
-                      }}
-                      className="text-xs font-medium text-foreground-muted hover:text-foreground"
-                    >
-                      Archive
-                    </button>
+                    <div className="flex flex-col items-end gap-2">
+                      {account.type === "credit_card" ? (
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            openCardConfig(account);
+                          }}
+                          className="text-xs font-semibold text-accent hover:text-accent-strong"
+                        >
+                          {account.creditCardConfig === undefined
+                            ? "Set billing cycle"
+                            : "Edit billing cycle"}
+                        </button>
+                      ) : null}
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setConfirming(account);
+                        }}
+                        className="text-xs font-medium text-foreground-muted hover:text-foreground"
+                      >
+                        Archive
+                      </button>
+                    </div>
                   )}
                 </div>
               </article>
@@ -302,7 +399,7 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
         <div
           role="presentation"
           className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-6 backdrop-blur-sm animate-fade-in"
-          onClick={() => setCreateOpen(false)}
+          onClick={closeCreate}
         >
           <div
             role="dialog"
@@ -337,7 +434,7 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
                     <button
                       key={meta.value}
                       type="button"
-                      onClick={() => setType(meta.value)}
+                      onClick={() => selectType(meta.value)}
                       className={`flex flex-col items-center gap-1.5 rounded-xl border px-2 py-3 text-[11px] font-semibold transition-colors duration-150 ${
                         type === meta.value
                           ? "border-accent bg-accent-glow text-accent"
@@ -350,6 +447,35 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
                   ))}
                 </div>
               </div>
+
+              {type === "credit_card" ? (
+                <div className="rounded-xl border border-border bg-surface-muted p-4">
+                  <p className="text-sm font-semibold text-foreground">Billing cycle</p>
+                  <div className="mt-3 grid grid-cols-2 gap-3">
+                    <Input
+                      id="statement-day"
+                      label="Statement day"
+                      type="number"
+                      min={1}
+                      max={31}
+                      value={statementDay}
+                      onChange={(event) => setStatementDay(event.target.value)}
+                    />
+                    <Input
+                      id="due-day"
+                      label="Due day"
+                      type="number"
+                      min={1}
+                      max={31}
+                      value={dueDay}
+                      onChange={(event) => setDueDay(event.target.value)}
+                    />
+                  </div>
+                  <p className="mt-2 text-xs leading-relaxed text-foreground-muted">
+                    Days 29–31 automatically clamp to the last calendar day in shorter months.
+                  </p>
+                </div>
+              ) : null}
 
               <div>
                 <AmountInput
@@ -388,7 +514,7 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
               )}
 
               <div className="flex justify-end gap-2 pt-1">
-                <Button type="button" variant="secondary" onClick={() => setCreateOpen(false)}>
+                <Button type="button" variant="secondary" onClick={closeCreate}>
                   Cancel
                 </Button>
                 <Button type="submit" disabled={createAccount.isPending}>
@@ -399,6 +525,77 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
           </div>
         </div>
       ) : null}
+
+      {configuring === undefined ? null : (
+        <div
+          role="presentation"
+          className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-6 backdrop-blur-sm animate-fade-in"
+          onClick={() => setConfiguring(undefined)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="billing-cycle-title"
+            className="w-full max-w-sm rounded-2xl border border-border bg-surface-elevated p-6 shadow-glow-strong animate-scale-up sm:p-7"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 id="billing-cycle-title" className="text-lg font-bold text-foreground">
+                  Billing cycle
+                </h2>
+                <p className="mt-1 text-sm text-foreground-muted">{configuring.name}</p>
+              </div>
+              <button
+                type="button"
+                aria-label="Close billing cycle"
+                onClick={() => setConfiguring(undefined)}
+                className="text-foreground-muted hover:text-foreground"
+              >
+                ✕
+              </button>
+            </div>
+            <form className="mt-5 space-y-4" onSubmit={saveCardConfig}>
+              <div className="grid grid-cols-2 gap-3">
+                <Input
+                  id="edit-statement-day"
+                  label="Statement day"
+                  type="number"
+                  min={1}
+                  max={31}
+                  value={statementDay}
+                  onChange={(event) => setStatementDay(event.target.value)}
+                />
+                <Input
+                  id="edit-due-day"
+                  label="Due day"
+                  type="number"
+                  min={1}
+                  max={31}
+                  value={dueDay}
+                  onChange={(event) => setDueDay(event.target.value)}
+                />
+              </div>
+              <p className="text-xs leading-relaxed text-foreground-muted">
+                This schedules future cycles. Existing generated bills are never recalculated.
+              </p>
+              {error === undefined ? null : (
+                <p role="alert" className="text-sm text-expense">
+                  {error}
+                </p>
+              )}
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="secondary" onClick={() => setConfiguring(undefined)}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={updateCardConfig.isPending}>
+                  {updateCardConfig.isPending ? "Saving…" : "Save cycle"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {confirming === undefined ? null : (
         <div

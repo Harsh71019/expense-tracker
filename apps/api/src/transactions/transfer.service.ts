@@ -1,5 +1,10 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { type CreateTransfer, type Transaction, type TransferGroupId } from "@treasury-ops/shared";
+import {
+  type CreateTransfer,
+  type CreditCardBillId,
+  type Transaction,
+  type TransferGroupId
+} from "@treasury-ops/shared";
 import { Logger } from "nestjs-pino";
 
 import { AccountRepository } from "../accounts/account.repository.js";
@@ -8,6 +13,7 @@ import { AuditRepository } from "../audit/audit.repository.js";
 import { DATABASE_CONNECTION } from "../common/db/db.module.js";
 import type { DrizzleDb } from "../common/db/db.module.js";
 import { withTxn } from "../common/db/db-txn.js";
+import type { DbTx } from "../common/db/db-txn.js";
 import { isUniqueViolation } from "../common/db/postgres-error.js";
 import { EntityNotFoundError } from "../common/errors/entity-not-found.error.js";
 import { TransactionNotReversibleError } from "../common/errors/transaction-not-reversible.error.js";
@@ -28,6 +34,11 @@ export type TransferReverseResult = Readonly<{
 }>;
 
 type TransferLogger = Pick<Logger, "log" | "warn">;
+type TransferCoreResult = Omit<TransferResult, "replayed">;
+type CreateTransferInTxOptions = Readonly<{
+  idempotencyKey?: string;
+  toLegBillId?: CreditCardBillId;
+}>;
 
 @Injectable()
 export class TransferService {
@@ -45,49 +56,9 @@ export class TransferService {
     idempotencyKey: string | undefined
   ): Promise<TransferResult> {
     try {
-      const transfer = await withTxn(this.db, async (tx) => {
-        assertBalanceDeltaApplied(
-          await this.accounts.applyBalanceDelta(userId, input.fromAccountId, -input.amountMinor, tx)
-        );
-        assertBalanceDeltaApplied(
-          await this.accounts.applyBalanceDelta(userId, input.toAccountId, input.amountMinor, tx)
-        );
-
-        const transferGroupId = crypto.randomUUID();
-        const fromTransaction = await this.transactions.create(
-          userId,
-          {
-            accountId: input.fromAccountId,
-            type: "expense",
-            amountMinor: input.amountMinor,
-            occurredAt: input.occurredAt,
-            description: input.description,
-            tags: input.tags
-          },
-          idempotencyKey,
-          tx,
-          transferGroupId
-        );
-        const toTransaction = await this.transactions.create(
-          userId,
-          {
-            accountId: input.toAccountId,
-            type: "income",
-            amountMinor: input.amountMinor,
-            occurredAt: input.occurredAt,
-            description: input.description,
-            tags: input.tags
-          },
-          undefined,
-          tx,
-          transferGroupId
-        );
-
-        await this.audit.record(userId, "transfer.create", fromTransaction.id, tx);
-        await this.audit.record(userId, "transfer.create", toTransaction.id, tx);
-
-        return { transferGroupId, fromTransaction, toTransaction };
-      });
+      const transfer = await withTxn(this.db, (tx) =>
+        this.createInTx(userId, input, tx, idempotencyKey === undefined ? {} : { idempotencyKey })
+      );
       this.logger.log(
         {
           event: LogEvent.TransferCreated,
@@ -124,6 +95,57 @@ export class TransferService {
         replayed: true
       };
     }
+  }
+
+  async createInTx(
+    userId: string,
+    input: CreateTransfer,
+    tx: DbTx,
+    options: CreateTransferInTxOptions = {}
+  ): Promise<TransferCoreResult> {
+    assertBalanceDeltaApplied(
+      await this.accounts.applyBalanceDelta(userId, input.fromAccountId, -input.amountMinor, tx)
+    );
+    assertBalanceDeltaApplied(
+      await this.accounts.applyBalanceDelta(userId, input.toAccountId, input.amountMinor, tx)
+    );
+
+    const transferGroupId = crypto.randomUUID();
+    const fromTransaction = await this.transactions.create(
+      userId,
+      {
+        accountId: input.fromAccountId,
+        type: "expense",
+        amountMinor: input.amountMinor,
+        occurredAt: input.occurredAt,
+        description: input.description,
+        tags: input.tags
+      },
+      options.idempotencyKey,
+      tx,
+      transferGroupId
+    );
+    const toTransaction = await this.transactions.create(
+      userId,
+      {
+        accountId: input.toAccountId,
+        type: "income",
+        amountMinor: input.amountMinor,
+        occurredAt: input.occurredAt,
+        description: input.description,
+        tags: input.tags
+      },
+      undefined,
+      tx,
+      transferGroupId,
+      "manual",
+      options.toLegBillId
+    );
+
+    await this.audit.record(userId, "transfer.create", fromTransaction.id, tx);
+    await this.audit.record(userId, "transfer.create", toTransaction.id, tx);
+
+    return { transferGroupId, fromTransaction, toTransaction };
   }
 
   async reverse(userId: string, transferGroupId: TransferGroupId): Promise<TransferReverseResult> {

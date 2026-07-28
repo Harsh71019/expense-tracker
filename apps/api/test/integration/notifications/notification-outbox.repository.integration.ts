@@ -103,9 +103,9 @@ describe("NotificationOutboxRepository", () => {
     expect(requeued?.failedAt).toBeUndefined();
     expect(requeued?.failureCode).toBeUndefined();
     expect(requeued?.deliveryAttempts).toBe(0);
-    expect(
-      (await outbox.systemFindDispatchable(new Date(), 100)).map((item) => item.id)
-    ).toContain(entry.id);
+    expect((await outbox.systemFindDispatchable(new Date(), 100)).map((item) => item.id)).toContain(
+      entry.id
+    );
   });
 
   it("markSent is a no-op once an entry is already sent", async () => {

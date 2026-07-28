@@ -12,6 +12,7 @@ import { Logger } from "nestjs-pino";
 import { AppModule } from "./app.module.js";
 import { AuthService } from "./auth/auth.service.js";
 import { requireSession } from "./auth/require-session.middleware.js";
+import { BillStatementsQueue } from "./bills/bill-statements.queue.js";
 import { RuntimeConfigService } from "./common/config/runtime-config.service.js";
 import { ProblemJsonFilter } from "./common/errors/problem-json.filter.js";
 import { ImportsQueue } from "./imports/imports.queue.js";
@@ -36,7 +37,10 @@ export async function createHttpApp(): Promise<INestApplication> {
   const bullBoardServerAdapter = new ExpressAdapter();
   bullBoardServerAdapter.setBasePath(BULL_BOARD_BASE_PATH);
   createBullBoard({
-    queues: [new BullMQAdapter(app.get(ImportsQueue).getQueue())],
+    queues: [
+      new BullMQAdapter(app.get(ImportsQueue).getQueue()),
+      new BullMQAdapter(app.get(BillStatementsQueue).getQueue())
+    ],
     serverAdapter: bullBoardServerAdapter
   });
   httpAdapter.use(BULL_BOARD_BASE_PATH, requireSession(auth), bullBoardServerAdapter.getRouter());

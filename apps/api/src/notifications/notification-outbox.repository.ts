@@ -200,10 +200,7 @@ export class NotificationOutboxRepository {
         and(
           eq(notificationOutbox.userId, userId),
           eq(notificationOutbox.id, id),
-          or(
-            eq(notificationOutbox.status, "pending"),
-            eq(notificationOutbox.status, "delivering")
-          ),
+          or(eq(notificationOutbox.status, "pending"), eq(notificationOutbox.status, "delivering")),
           isNull(notificationOutbox.failedAt)
         )
       );

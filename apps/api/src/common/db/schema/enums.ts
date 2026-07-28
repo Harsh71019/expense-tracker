@@ -59,6 +59,20 @@ export const notificationStatusEnum = pgEnum("notification_status", [
   "delivering",
   "sent"
 ]);
+export const billReconciliationStatusEnum = pgEnum("bill_reconciliation_status", [
+  "awaiting_statement",
+  "reconciled"
+]);
+export const billStatementUploadStatusEnum = pgEnum("bill_statement_upload_status", [
+  "pending",
+  "staged",
+  "failed"
+]);
+export const billStatementRowMatchStatusEnum = pgEnum("bill_statement_row_match_status", [
+  "matched",
+  "missing_from_ledger",
+  "ambiguous"
+]);
 export const scheduledRunStatusEnum = pgEnum("scheduled_run_status", [
   "running",
   "completed",

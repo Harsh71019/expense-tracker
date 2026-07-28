@@ -3,6 +3,8 @@ import { Logger } from "nestjs-pino";
 import pino from "pino";
 
 import { AppModule } from "./app.module.js";
+import { BillReconciliationService } from "./bills/bill-reconciliation.service.js";
+import { startBillStatementsWorker } from "./bills/bill-statements.processor.js";
 import { RuntimeConfigService } from "./common/config/runtime-config.service.js";
 import { LogEvent } from "./common/logging/events.js";
 import { LoggingContextService } from "./common/logging/logging-context.service.js";
@@ -44,6 +46,11 @@ async function bootstrapWorker(): Promise<void> {
     logger,
     loggingContext
   );
+  const billStatementsWorker = startBillStatementsWorker(
+    app.get(RuntimeConfigService),
+    app.get(BillReconciliationService),
+    logger
+  );
   const spendingWarningsWorker = startSpendingWarningsWorker(
     app.get(RuntimeConfigService),
     app.get(SpendingWarningsService),
@@ -67,6 +74,7 @@ async function bootstrapWorker(): Promise<void> {
           const results = await Promise.allSettled([
             importsWorker.close(),
             notificationsWorker.close(),
+            billStatementsWorker.close(),
             spendingWarningsWorker.close()
           ]);
           for (const result of results) {

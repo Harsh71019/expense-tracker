@@ -18,6 +18,6 @@ import { TransferService } from "./transfer.service.js";
     TransactionMutationService,
     TransferService
   ],
-  exports: [TransactionRepository]
+  exports: [TransactionRepository, TransferService]
 })
 export class TransactionsModule {}

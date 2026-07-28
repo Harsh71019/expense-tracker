@@ -1,4 +1,4 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable, Optional } from "@nestjs/common";
 import { Cron } from "@nestjs/schedule";
 import { computeNextOccurrence, type RecurringRule } from "@treasury-ops/shared";
 import { Logger } from "nestjs-pino";
@@ -11,6 +11,10 @@ import { DATABASE_CONNECTION } from "../common/db/db.module.js";
 import type { DrizzleDb } from "../common/db/db.module.js";
 import { withTxn } from "../common/db/db-txn.js";
 import { LogEvent } from "../common/logging/events.js";
+import {
+  runScheduled,
+  ScheduledRunCoordinator
+} from "../common/scheduler/scheduled-run.coordinator.js";
 import { toISTCalendarDate } from "../common/time/ist.js";
 import { parseExplicitDate } from "../common/time/parse-date.js";
 import { TransactionRepository } from "../transactions/transaction.repository.js";
@@ -43,23 +47,27 @@ export class RecurringMaterializeService {
     private readonly accounts: AccountRepository,
     private readonly transactions: TransactionRepository,
     private readonly audit: AuditRepository,
-    @Inject(Logger) private readonly logger: MaterializeLogger
+    @Inject(Logger) private readonly logger: MaterializeLogger,
+    @Optional() private readonly scheduler?: ScheduledRunCoordinator
   ) {}
 
   @Cron("0 1 * * *", { timeZone: "Asia/Kolkata" })
   async materialize(): Promise<void> {
     if (this.config.env.SERVICE_ROLE !== "worker") return;
 
-    const today = parseExplicitDate(toISTCalendarDate(new Date()), "YYYY-MM-DD");
-    const due = await this.rules.findDue(today);
-    for (const rule of due) {
-      await this.materializeOne(rule).catch((error: unknown) => {
-        this.logger.error(
-          { event: LogEvent.RecurringMaterializeFailed, ruleId: rule.id, err: error },
-          "recurring rule materialization failed"
-        );
-      });
-    }
+    await runScheduled(this.scheduler, "recurring.materialize", "daily", async () => {
+      const today = parseExplicitDate(toISTCalendarDate(new Date()), "YYYY-MM-DD");
+      const due = await this.rules.findDue(today);
+      for (const rule of due) {
+        await this.materializeOne(rule).catch((error: unknown) => {
+          this.logger.error(
+            { event: LogEvent.RecurringMaterializeFailed, ruleId: rule.id, err: error },
+            "recurring rule materialization failed"
+          );
+        });
+      }
+      return due.length;
+    });
   }
 
   private async materializeOne(rule: RecurringRule): Promise<void> {

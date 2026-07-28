@@ -59,6 +59,11 @@ export const notificationStatusEnum = pgEnum("notification_status", [
   "delivering",
   "sent"
 ]);
+export const scheduledRunStatusEnum = pgEnum("scheduled_run_status", [
+  "running",
+  "completed",
+  "failed"
+]);
 export const spendingWarningKindEnum = pgEnum("spending_warning_kind", [
   "overall_spend_spike",
   "category_spend_spike",

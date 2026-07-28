@@ -598,6 +598,18 @@ Next.js uses the Better Auth **client SDK** for login/register/passkey UI and ju
 
 Scheduling via `@nestjs/schedule` for triggers, but **every job body runs through BullMQ** so jobs are retryable, observable (Bull Board dashboard), and survive process restarts. All schedules in `Asia/Kolkata`.
 
+Every in-process cron first enters `ScheduledRunCoordinator`. The coordinator creates a
+deterministic run ID from the job name plus its IST day/minute schedule window and atomically claims
+that `scheduled_job_runs` row with a UUID token and one-hour lease. Multiple worker replicas can
+receive the same Nest schedule tick, but only the database lease winner executes the body. Each run
+durably records status, attempts, start/completion times, duration, processed item count, and a
+bounded failure summary.
+
+A worker-only watchdog runs every 15 minutes under the same leadership mechanism. It marks expired
+leases failed, emits `scheduler.run_overlong`, emits `scheduler.run_missing` when a previously-seen
+job exceeds its expected cadence, and removes terminal history older than 30 days. Operators can
+inspect `scheduled_job_runs` directly when reconstructing a missed or failed schedule window.
+
 | Job                          | Schedule                | What it does                                                                                                                                                                                                                              |
 | ---------------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `recurring.materialize`      | `0 1 * * *` (01:00)     | Finds `recurring_rules` with `nextRunAt <= now`, posts each templated txn **in its own transaction**, advances `nextRunAt` via rrule in the same txn. Idempotency key = `ruleId + scheduledDate` so a crashed run can't double-post rent. |

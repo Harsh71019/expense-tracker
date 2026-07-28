@@ -32,7 +32,7 @@ describe("NotificationOutboxRepository Unit Tests", () => {
     const mockDb = createMockDrizzleDb([sampleNotificationRow]);
     const repo = new NotificationOutboxRepository(mockDb);
 
-    const res = await repo.findById(sampleNotificationRow.id);
+    const res = await repo.findById("u1", sampleNotificationRow.id);
     expect(res?.id).toBe(sampleNotificationRow.id);
   });
 });

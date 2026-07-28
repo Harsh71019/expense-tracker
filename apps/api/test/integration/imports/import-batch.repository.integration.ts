@@ -96,7 +96,7 @@ describe("ImportBatchRepository", () => {
       MAPPING
     );
 
-    await batches.markParsed(batch.id, "staged", {
+    await batches.markParsed("user-a", batch.id, "staged", {
       total: 3,
       staged: 2,
       duplicates: 1,
@@ -107,7 +107,7 @@ describe("ImportBatchRepository", () => {
 
     // A second markParsed call (e.g. a duplicate job delivery) must not clobber
     // an already-resolved batch — the filter requires status: "pending".
-    await batches.markParsed(batch.id, "failed", {
+    await batches.markParsed("user-a", batch.id, "failed", {
       total: 0,
       staged: 0,
       duplicates: 0,

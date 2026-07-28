@@ -56,17 +56,17 @@ export class NotificationOutboxRepository {
     return toEntry(row);
   }
 
-  async findById(id: string): Promise<NotificationOutboxEntry | null> {
+  async findById(userId: string, id: string): Promise<NotificationOutboxEntry | null> {
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) return null;
     const [row] = await this.db
       .select()
       .from(notificationOutbox)
-      .where(eq(notificationOutbox.id, id));
+      .where(and(eq(notificationOutbox.userId, userId), eq(notificationOutbox.id, id)));
     return row === undefined ? null : toEntry(row);
   }
 
   /** The sweep's source of work — oldest first, so a backlog drains in order. */
-  async findPending(limit: number): Promise<NotificationOutboxEntry[]> {
+  async systemFindPending(limit: number): Promise<NotificationOutboxEntry[]> {
     const rows = await this.db
       .select()
       .from(notificationOutbox)
@@ -77,11 +77,17 @@ export class NotificationOutboxRepository {
   }
 
   /** Guarded by status: a duplicate delivery job marking an already-sent entry must not re-stamp sentAt. */
-  async markSent(id: string): Promise<void> {
+  async markSent(userId: string, id: string): Promise<void> {
     await this.db
       .update(notificationOutbox)
       .set({ status: "sent", sentAt: new Date() })
-      .where(and(eq(notificationOutbox.id, id), eq(notificationOutbox.status, "pending")));
+      .where(
+        and(
+          eq(notificationOutbox.userId, userId),
+          eq(notificationOutbox.id, id),
+          eq(notificationOutbox.status, "pending")
+        )
+      );
   }
 }
 

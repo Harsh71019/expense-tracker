@@ -151,8 +151,8 @@ describe("ImportsService commit/revert", () => {
       `sha256:${Math.random().toString(36).slice(2)}`,
       MAPPING
     );
-    await stagedRows.insertMany(batch.id, rows);
-    await batches.markParsed(batch.id, "staged", {
+    await stagedRows.insertMany(userId, batch.id, rows);
+    await batches.markParsed(userId, batch.id, "staged", {
       total: rows.length,
       staged: rows.length,
       duplicates: 0,
@@ -214,7 +214,7 @@ describe("ImportsService commit/revert", () => {
     // Simulate a crash after chunk 1 of a resumed run: land row 1's
     // transaction directly (bypassing commitBatch) while the batch stays
     // "staged", exactly like an interrupted commit would leave things.
-    const [firstRow] = await stagedRows.findIncludableForBatch(batchId);
+    const [firstRow] = await stagedRows.findIncludableForBatch(userId, batchId);
     await withTxn(testDb.db, (tx) =>
       transactions.insertImportedRows(
         userId,
@@ -269,7 +269,7 @@ describe("ImportsService commit/revert", () => {
     const userId = "user-category-guard";
     const accountId = await seedAccount(userId);
     const batchId = await seedStagedBatch(userId, accountId, [includableRow()]);
-    const [row] = await stagedRows.findIncludableForBatch(batchId);
+    const [row] = await stagedRows.findIncludableForBatch(userId, batchId);
     const foreignCategory = await categories.create("category-victim", {
       name: "Private category",
       kind: "expense"

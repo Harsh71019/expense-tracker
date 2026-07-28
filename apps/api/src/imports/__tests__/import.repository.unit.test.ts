@@ -100,7 +100,7 @@ describe("Import Repositories Unit Tests", () => {
       const mockDb = createMockDrizzleDb([]);
       const repo = new ImportBatchRepository(mockDb);
 
-      await repo.markParsed(sampleBatchRow.id, "staged", {
+      await repo.markParsed("u1", sampleBatchRow.id, "staged", {
         total: 10,
         staged: 10,
         duplicates: 0,
@@ -114,7 +114,7 @@ describe("Import Repositories Unit Tests", () => {
       const repo = new ImportBatchRepository(mockDb);
 
       // @ts-expect-error mock tx
-      await repo.incrementCommittedCount(sampleBatchRow.id, 5, mockDb);
+      await repo.incrementCommittedCount("u1", sampleBatchRow.id, 5, mockDb);
       expect(mockDb.update).toHaveBeenCalled();
     });
 
@@ -122,7 +122,7 @@ describe("Import Repositories Unit Tests", () => {
       const mockDb = createMockDrizzleDb([]);
       const repo = new ImportBatchRepository(mockDb);
 
-      await repo.markCommitted(sampleBatchRow.id);
+      await repo.markCommitted("u1", sampleBatchRow.id);
       expect(mockDb.update).toHaveBeenCalled();
     });
 
@@ -130,7 +130,7 @@ describe("Import Repositories Unit Tests", () => {
       const mockDb = createMockDrizzleDb([]);
       const repo = new ImportBatchRepository(mockDb);
 
-      await repo.markReverted(sampleBatchRow.id);
+      await repo.markReverted("u1", sampleBatchRow.id);
       expect(mockDb.update).toHaveBeenCalled();
     });
   });
@@ -140,15 +140,15 @@ describe("Import Repositories Unit Tests", () => {
       const mockDb = createMockDrizzleDb([]);
       const repo = new StagedRowRepository(mockDb);
 
-      await repo.deleteAllForBatch(sampleBatchRow.id);
+      await repo.deleteAllForBatch("u1", sampleBatchRow.id);
       expect(mockDb.delete).toHaveBeenCalled();
     });
 
     it("insertMany inserts staged rows", async () => {
-      const mockDb = createMockDrizzleDb([]);
+      const mockDb = createMockDrizzleDb([{ id: sampleBatchRow.id }]);
       const repo = new StagedRowRepository(mockDb);
 
-      await repo.insertMany(sampleBatchRow.id, [
+      await repo.insertMany("u1", sampleBatchRow.id, [
         {
           rowNumber: 1,
           raw: { Date: "2026-01-01" },
@@ -165,14 +165,14 @@ describe("Import Repositories Unit Tests", () => {
       ]);
       expect(mockDb.insert).toHaveBeenCalled();
 
-      await repo.insertMany(sampleBatchRow.id, []);
+      await repo.insertMany("u1", sampleBatchRow.id, []);
     });
 
     it("findByBatchId returns paginated staged rows", async () => {
       const mockDb = createMockDrizzleDb([sampleStagedRow]);
       const repo = new StagedRowRepository(mockDb);
 
-      const res = await repo.findByBatchId(sampleBatchRow.id, undefined, 10);
+      const res = await repo.findByBatchId("u1", sampleBatchRow.id, undefined, 10);
       expect(res.items).toHaveLength(1);
       expect(res.pageInfo.hasMore).toBe(false);
     });
@@ -181,7 +181,7 @@ describe("Import Repositories Unit Tests", () => {
       const mockDb = createMockDrizzleDb([sampleStagedRow]);
       const repo = new StagedRowRepository(mockDb);
 
-      const res = await repo.findById(sampleBatchRow.id, sampleStagedRow.id);
+      const res = await repo.findById("u1", sampleBatchRow.id, sampleStagedRow.id);
       expect(res?.id).toBe(sampleStagedRow.id);
     });
 
@@ -189,7 +189,7 @@ describe("Import Repositories Unit Tests", () => {
       const mockDb = createMockDrizzleDb([sampleStagedRow]);
       const repo = new StagedRowRepository(mockDb);
 
-      const res = await repo.findIncludableForBatch(sampleBatchRow.id);
+      const res = await repo.findIncludableForBatch("u1", sampleBatchRow.id);
       expect(res).toHaveLength(1);
     });
 
@@ -197,7 +197,9 @@ describe("Import Repositories Unit Tests", () => {
       const mockDb = createMockDrizzleDb([sampleStagedRow]);
       const repo = new StagedRowRepository(mockDb);
 
-      const res = await repo.updateRow(sampleBatchRow.id, sampleStagedRow.id, { include: true });
+      const res = await repo.updateRow("u1", sampleBatchRow.id, sampleStagedRow.id, {
+        include: true
+      });
       expect(res?.include).toBe(true);
     });
   });

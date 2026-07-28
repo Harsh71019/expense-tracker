@@ -21,8 +21,8 @@ export class NotificationDeliveryService {
    * hammering it — the thrown error propagates to the caller (the BullMQ
    * job), which is exactly what lets BullMQ's own attempts/backoff retry it.
    */
-  async deliver(notificationId: string): Promise<void> {
-    const notification = await this.outbox.findById(notificationId);
+  async deliver(userId: string, notificationId: string): Promise<void> {
+    const notification = await this.outbox.findById(userId, notificationId);
     if (notification === null || notification.status === "sent") return;
 
     await this.breaker.execute(() =>
@@ -32,6 +32,6 @@ export class NotificationDeliveryService {
         payload: notification.payload
       })
     );
-    await this.outbox.markSent(notification.id);
+    await this.outbox.markSent(userId, notification.id);
   }
 }

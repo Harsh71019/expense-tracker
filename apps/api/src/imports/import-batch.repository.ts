@@ -100,6 +100,7 @@ export class ImportBatchRepository {
    * Only the parse job transitions a batch out of "pending" — never a controller.
    */
   async markParsed(
+    userId: string,
     batchId: ImportBatchId,
     status: Extract<ImportBatchStatus, "staged" | "failed">,
     stats: ImportBatchStats
@@ -114,7 +115,13 @@ export class ImportBatchRepository {
         statsCommitted: stats.committed,
         updatedAt: new Date()
       })
-      .where(and(eq(importBatches.id, batchId), eq(importBatches.status, "pending")));
+      .where(
+        and(
+          eq(importBatches.userId, userId),
+          eq(importBatches.id, batchId),
+          eq(importBatches.status, "pending")
+        )
+      );
   }
 
   /**
@@ -122,29 +129,46 @@ export class ImportBatchRepository {
    * transaction — so a mid-commit crash leaves stats.committed exactly
    * matching what actually landed, never ahead of it.
    */
-  async incrementCommittedCount(batchId: ImportBatchId, delta: number, tx: DbTx): Promise<void> {
+  async incrementCommittedCount(
+    userId: string,
+    batchId: ImportBatchId,
+    delta: number,
+    tx: DbTx
+  ): Promise<void> {
     await tx
       .update(importBatches)
       .set({
         statsCommitted: sql`${importBatches.statsCommitted} + ${delta}`,
         updatedAt: new Date()
       })
-      .where(eq(importBatches.id, batchId));
+      .where(and(eq(importBatches.userId, userId), eq(importBatches.id, batchId)));
   }
 
   /** Only after every includable row has landed — never mid-commit. */
-  async markCommitted(batchId: ImportBatchId): Promise<void> {
+  async markCommitted(userId: string, batchId: ImportBatchId): Promise<void> {
     await this.db
       .update(importBatches)
       .set({ status: "committed", committedAt: new Date(), updatedAt: new Date() })
-      .where(and(eq(importBatches.id, batchId), eq(importBatches.status, "staged")));
+      .where(
+        and(
+          eq(importBatches.userId, userId),
+          eq(importBatches.id, batchId),
+          eq(importBatches.status, "staged")
+        )
+      );
   }
 
-  async markReverted(batchId: ImportBatchId): Promise<void> {
+  async markReverted(userId: string, batchId: ImportBatchId): Promise<void> {
     await this.db
       .update(importBatches)
       .set({ status: "reverted", revertedAt: new Date(), updatedAt: new Date() })
-      .where(and(eq(importBatches.id, batchId), eq(importBatches.status, "committed")));
+      .where(
+        and(
+          eq(importBatches.userId, userId),
+          eq(importBatches.id, batchId),
+          eq(importBatches.status, "committed")
+        )
+      );
   }
 }
 

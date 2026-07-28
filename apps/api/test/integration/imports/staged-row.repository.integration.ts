@@ -41,6 +41,7 @@ describe("StagedRowRepository", () => {
   beforeAll(async () => {
     testDb = await createTestDb();
     await insertTestUser(testDb.db, "user-a");
+    await insertTestUser(testDb.db, "user-b");
     rows = new StagedRowRepository(testDb.db);
     batches = new ImportBatchRepository(testDb.db);
     const accounts = new AccountRepository(testDb.db);
@@ -68,14 +69,14 @@ describe("StagedRowRepository", () => {
 
   it("inserts nothing for an empty batch instead of erroring on an empty insertMany", async () => {
     const batchId = await newBatchId("sha256:empty");
-    await expect(rows.insertMany(batchId, [])).resolves.toBeUndefined();
+    await expect(rows.insertMany("user-a", batchId, [])).resolves.toBeUndefined();
   });
 
   it("bulk-inserts staged rows scoped to their batch", async () => {
     const batchId = await newBatchId("sha256:bulk");
     const otherBatchId = await newBatchId("sha256:bulk-other");
 
-    await rows.insertMany(batchId, [
+    await rows.insertMany("user-a", batchId, [
       row({ rowNumber: 1 }),
       row({
         rowNumber: 2,
@@ -88,7 +89,7 @@ describe("StagedRowRepository", () => {
         dedupeHash: "hash-2"
       })
     ]);
-    await rows.insertMany(otherBatchId, [row({ rowNumber: 1 })]);
+    await rows.insertMany("user-a", otherBatchId, [row({ rowNumber: 1 })]);
 
     const stored = await testDb.db
       .select()
@@ -105,10 +106,10 @@ describe("StagedRowRepository", () => {
   it("clears only the target batch's rows, leaving other batches untouched", async () => {
     const batchId = await newBatchId("sha256:clear");
     const otherBatchId = await newBatchId("sha256:clear-other");
-    await rows.insertMany(batchId, [row({ rowNumber: 1 })]);
-    await rows.insertMany(otherBatchId, [row({ rowNumber: 1 })]);
+    await rows.insertMany("user-a", batchId, [row({ rowNumber: 1 })]);
+    await rows.insertMany("user-a", otherBatchId, [row({ rowNumber: 1 })]);
 
-    await rows.deleteAllForBatch(batchId);
+    await rows.deleteAllForBatch("user-a", batchId);
 
     expect(
       (await testDb.db.select().from(stagedRowsTable).where(eq(stagedRowsTable.batchId, batchId)))
@@ -128,17 +129,19 @@ describe("StagedRowRepository", () => {
     const batchId = await newBatchId("sha256:paginate");
     const otherBatchId = await newBatchId("sha256:paginate-other");
     await rows.insertMany(
+      "user-a",
       batchId,
       Array.from({ length: 5 }, (_unused, index) => row({ rowNumber: index + 1 }))
     );
-    await rows.insertMany(otherBatchId, [row({ rowNumber: 1 })]);
+    await rows.insertMany("user-a", otherBatchId, [row({ rowNumber: 1 })]);
 
-    const firstPage = await rows.findByBatchId(batchId, undefined, 2);
+    const firstPage = await rows.findByBatchId("user-a", batchId, undefined, 2);
     expect(firstPage.items.map((item) => item.rowNumber)).toEqual([1, 2]);
     expect(firstPage.pageInfo.hasMore).toBe(true);
     expect(firstPage.pageInfo.nextCursor).not.toBeNull();
 
     const secondPage = await rows.findByBatchId(
+      "user-a",
       batchId,
       firstPage.pageInfo.nextCursor ?? undefined,
       2
@@ -146,6 +149,7 @@ describe("StagedRowRepository", () => {
     expect(secondPage.items.map((item) => item.rowNumber)).toEqual([3, 4]);
 
     const thirdPage = await rows.findByBatchId(
+      "user-a",
       batchId,
       secondPage.pageInfo.nextCursor ?? undefined,
       2
@@ -158,28 +162,30 @@ describe("StagedRowRepository", () => {
   it("updateRow toggles include and sets/clears suggestedCategoryId, scoped to its batch", async () => {
     const batchId = await newBatchId("sha256:update");
     const otherBatchId = await newBatchId("sha256:update-other");
-    await rows.insertMany(batchId, [row({ rowNumber: 1 })]);
-    const [inserted] = (await rows.findByBatchId(batchId, undefined, 10)).items;
+    await rows.insertMany("user-a", batchId, [row({ rowNumber: 1 })]);
+    const [inserted] = (await rows.findByBatchId("user-a", batchId, undefined, 10)).items;
     const rowId = nonNull(inserted).id;
 
-    expect(await rows.updateRow(batchId, rowId, { include: false })).toMatchObject({
+    expect(await rows.updateRow("user-a", batchId, rowId, { include: false })).toMatchObject({
       include: false
     });
 
-    const withCategory = await rows.updateRow(batchId, rowId, {
+    const withCategory = await rows.updateRow("user-a", batchId, rowId, {
       suggestedCategoryId: categoryId
     });
     expect(withCategory).toMatchObject({ suggestedCategoryId: categoryId });
 
-    const cleared = await rows.updateRow(batchId, rowId, { suggestedCategoryId: null });
+    const cleared = await rows.updateRow("user-a", batchId, rowId, {
+      suggestedCategoryId: null
+    });
     expect(cleared?.suggestedCategoryId).toBeUndefined();
 
-    expect(await rows.updateRow(otherBatchId, rowId, { include: false })).toBeNull();
+    expect(await rows.updateRow("user-a", otherBatchId, rowId, { include: false })).toBeNull();
   });
 
   it("updateRow refuses to set include: true on a row with no parsed data", async () => {
     const batchId = await newBatchId("sha256:no-parsed");
-    await rows.insertMany(batchId, [
+    await rows.insertMany("user-a", batchId, [
       row({
         rowNumber: 1,
         parsed: undefined,
@@ -189,15 +195,32 @@ describe("StagedRowRepository", () => {
         include: false
       })
     ]);
-    const [inserted] = (await rows.findByBatchId(batchId, undefined, 10)).items;
+    const [inserted] = (await rows.findByBatchId("user-a", batchId, undefined, 10)).items;
     const rowId = nonNull(inserted).id;
 
-    expect(await rows.updateRow(batchId, rowId, { include: true })).toBeNull();
+    expect(await rows.updateRow("user-a", batchId, rowId, { include: true })).toBeNull();
 
     // Editing its category is still fine — only flipping it includable is blocked.
-    expect(await rows.updateRow(batchId, rowId, { suggestedCategoryId: categoryId })).toMatchObject(
-      { suggestedCategoryId: categoryId, include: false }
-    );
+    expect(
+      await rows.updateRow("user-a", batchId, rowId, { suggestedCategoryId: categoryId })
+    ).toMatchObject({ suggestedCategoryId: categoryId, include: false });
+  });
+
+  it("rejects every resource operation when the batch belongs to another tenant", async () => {
+    const batchId = await newBatchId("sha256:tenant-owner");
+    await rows.insertMany("user-a", batchId, [row({ rowNumber: 1 })]);
+    const [inserted] = (await rows.findByBatchId("user-a", batchId, undefined, 10)).items;
+    const rowId = nonNull(inserted).id;
+
+    expect((await rows.findByBatchId("user-b", batchId, undefined, 10)).items).toEqual([]);
+    expect(await rows.findById("user-b", batchId, rowId)).toBeNull();
+    expect(await rows.findIncludableForBatch("user-b", batchId)).toEqual([]);
+    expect(await rows.updateRow("user-b", batchId, rowId, { include: false })).toBeNull();
+
+    await rows.insertMany("user-b", batchId, [row({ rowNumber: 2 })]);
+    await rows.deleteAllForBatch("user-b", batchId);
+
+    expect((await rows.findByBatchId("user-a", batchId, undefined, 10)).items).toHaveLength(1);
   });
 });
 

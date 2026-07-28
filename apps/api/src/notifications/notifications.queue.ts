@@ -11,6 +11,7 @@ export const NOTIFICATIONS_QUEUE_NAME = "notifications";
 export const DELIVER_NOTIFICATION_JOB_NAME = "deliver";
 
 export const DeliverNotificationJobDataSchema = z.object({
+  userId: z.string().min(1),
   notificationId: z.string().uuid(),
   correlationId: z.string().min(1).max(128)
 });
@@ -36,8 +37,9 @@ export class NotificationsQueue implements OnModuleDestroy {
    * entry while its job is still active/waiting/delayed is a safe no-op —
    * BullMQ dedupes on jobId for jobs that haven't reached a terminal state.
    */
-  async enqueueDelivery(notificationId: string): Promise<void> {
+  async enqueueDelivery(userId: string, notificationId: string): Promise<void> {
     const data = DeliverNotificationJobDataSchema.parse({
+      userId,
       notificationId,
       correlationId: this.context.get()?.reqId ?? crypto.randomUUID()
     });

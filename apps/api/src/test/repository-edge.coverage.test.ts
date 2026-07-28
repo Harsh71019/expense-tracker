@@ -163,8 +163,8 @@ describe("repository edge branches", () => {
         db
       )
     ).rejects.toThrow("Notification outbox insert did not return a row.");
-    await expect(repository.findById("not-a-uuid")).resolves.toBeNull();
-    await expect(repository.findById(ID)).resolves.toBeNull();
+    await expect(repository.findById("u1", "not-a-uuid")).resolves.toBeNull();
+    await expect(repository.findById("u1", ID)).resolves.toBeNull();
   });
 
   it("covers missing user profiles, failed ensure, and lost update", async () => {

@@ -24,6 +24,7 @@ import { parse } from "csv-parse/sync";
 import { z } from "zod";
 
 import { AccountRepository } from "../accounts/account.repository.js";
+import { assertBalanceDeltaApplied } from "../accounts/balance-delta.js";
 import { AuditRepository } from "../audit/audit.repository.js";
 import { CategoryRepository } from "../categories/category.repository.js";
 import { CategoryRuleRepository } from "../category-rules/category-rule.repository.js";
@@ -314,13 +315,9 @@ export class ImportsService {
       await withTxn(this.db, async (tx) => {
         await this.transactions.insertImportedRows(userId, batch.accountId, batchId, rows, tx);
         if (netMinor !== 0) {
-          const applied = await this.accounts.applyBalanceDelta(
-            userId,
-            batch.accountId,
-            netMinor,
-            tx
+          assertBalanceDeltaApplied(
+            await this.accounts.applyBalanceDelta(userId, batch.accountId, netMinor, tx)
           );
-          if (!applied) throw new EntityNotFoundError("Account");
         }
         await this.audit.record(userId, "import.commit", batchId, tx, {
           chunkSize: chunk.length,
@@ -366,13 +363,9 @@ export class ImportsService {
       await withTxn(this.db, async (tx) => {
         await this.transactions.insertBulkReversals(userId, chunk, tx);
         if (netMinor !== 0) {
-          const applied = await this.accounts.applyReversalBalanceDelta(
-            userId,
-            batch.accountId,
-            netMinor,
-            tx
+          assertBalanceDeltaApplied(
+            await this.accounts.applyReversalBalanceDelta(userId, batch.accountId, netMinor, tx)
           );
-          if (!applied) throw new EntityNotFoundError("Account");
         }
         await this.audit.record(userId, "import.revert", batchId, tx, {
           chunkSize: chunk.length,

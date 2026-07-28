@@ -10,6 +10,7 @@ export class RequestContextMiddleware implements NestMiddleware {
   use(request: Request, response: Response, next: NextFunction): void {
     const requestedId = request.headers["x-request-id"];
     const reqId = typeof requestedId === "string" ? requestedId : crypto.randomUUID();
+    request.headers["x-request-id"] = reqId;
     response.setHeader("x-request-id", reqId);
     this.context.run({ reqId }, next);
   }

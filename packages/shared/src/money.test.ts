@@ -1,7 +1,14 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
-import { formatMinor, formatMinorInput, formatSignedCompactMinor, parseMinor } from "./money.js";
+import {
+  formatMinor,
+  formatMinorInput,
+  formatSignedCompactMinor,
+  parseMinor,
+  parseSafeIntegerMinor,
+  sumMinorAmounts
+} from "./money.js";
 
 describe("INR money utilities", () => {
   it.each([
@@ -36,5 +43,20 @@ describe("INR money utilities", () => {
       }),
       { numRuns: 10_000 }
     );
+  });
+
+  it("parses signed database bigint strings without losing paise", () => {
+    expect(parseSafeIntegerMinor("9007199254740991")).toBe(Number.MAX_SAFE_INTEGER);
+    expect(parseSafeIntegerMinor("-9007199254740991")).toBe(-Number.MAX_SAFE_INTEGER);
+  });
+
+  it("rejects database aggregates outside the supported range", () => {
+    expect(() => parseSafeIntegerMinor("9007199254740992")).toThrow(RangeError);
+    expect(() => parseSafeIntegerMinor("-9007199254740992")).toThrow(RangeError);
+  });
+
+  it("sums through BigInt intermediates and rejects overflow", () => {
+    expect(sumMinorAmounts([Number.MAX_SAFE_INTEGER - 1, 1])).toBe(Number.MAX_SAFE_INTEGER);
+    expect(() => sumMinorAmounts([Number.MAX_SAFE_INTEGER, 1])).toThrow(RangeError);
   });
 });

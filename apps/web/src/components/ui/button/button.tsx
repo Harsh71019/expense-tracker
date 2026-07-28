@@ -44,12 +44,20 @@ export function Button({
     .join(" ");
 
   return (
-    <button className={classes} disabled={props.disabled || isLoading} {...props}>
+    <button
+      className={classes}
+      disabled={props.disabled || isLoading}
+      aria-busy={isLoading ? true : undefined}
+      {...props}
+    >
       {isLoading ? (
-        <span
-          className="mr-2 inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent"
-          aria-hidden="true"
-        />
+        <>
+          <span
+            className="mr-2 inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent"
+            aria-hidden="true"
+          />
+          <span className="sr-only">Loading</span>
+        </>
       ) : null}
       {children}
     </button>

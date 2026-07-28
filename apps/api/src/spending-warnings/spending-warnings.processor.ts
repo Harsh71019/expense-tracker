@@ -3,10 +3,15 @@ import { Worker } from "bullmq";
 import { Logger } from "nestjs-pino";
 
 import { RuntimeConfigService } from "../common/config/runtime-config.service.js";
-import { createQueueConnection } from "../common/queue/queue-connection.js";
 import { LogEvent } from "../common/logging/events.js";
-import type { AnalyzeUserJobData } from "./spending-warnings.queue.js";
-import { SPENDING_WARNINGS_QUEUE_NAME } from "./spending-warnings.queue.js";
+import { LoggingContextService } from "../common/logging/logging-context.service.js";
+import { createQueueConnection } from "../common/queue/queue-connection.js";
+import {
+  ANALYZE_USER_JOB_NAME,
+  AnalyzeUserJobDataSchema,
+  type AnalyzeUserJobData,
+  SPENDING_WARNINGS_QUEUE_NAME
+} from "./spending-warnings.queue.js";
 import { SpendingWarningsService } from "./spending-warnings.service.js";
 
 /**
@@ -20,33 +25,52 @@ import { SpendingWarningsService } from "./spending-warnings.service.js";
 export function startSpendingWarningsWorker(
   config: RuntimeConfigService,
   service: SpendingWarningsService,
-  logger: Pick<Logger, "log" | "error">
+  logger: Pick<Logger, "log" | "error">,
+  context: LoggingContextService = new LoggingContextService()
 ): Worker<AnalyzeUserJobData> {
   return new Worker<AnalyzeUserJobData>(
     SPENDING_WARNINGS_QUEUE_NAME,
     async (job: Job<AnalyzeUserJobData>) => {
       const startedAt = performance.now();
-      const { userId, asOf, detectorVersion } = job.data;
-      const state = await service.analyzeUser(userId, new Date(asOf));
-      logger.log(
+      const data = AnalyzeUserJobDataSchema.parse(job.data);
+      return context.run(
         {
-          event: LogEvent.SpendingWarningsAnalyzed,
-          userId,
-          detectorVersion,
-          status: state.status,
-          eligibleKindCount: state.eligibleKinds.length,
-          durationMs: Math.round(performance.now() - startedAt)
+          reqId: data.correlationId,
+          jobId: job.id ?? `${data.userId}:${data.asOf}`,
+          jobName: job.name,
+          userId: data.userId
         },
-        "spending warnings analyzed"
+        async () => {
+          const state = await service.analyzeUser(data.userId, new Date(data.asOf));
+          const durationMs = performance.now() - startedAt;
+          logger.log(
+            {
+              event: LogEvent.SpendingWarningsAnalyzed,
+              detectorVersion: data.detectorVersion,
+              status: state.status,
+              eligibleKindCount: state.eligibleKinds.length,
+              durationMs: Math.round(durationMs)
+            },
+            "spending warnings analyzed"
+          );
+        }
       );
     },
     { connection: createQueueConnection(config.env.REDIS_URL) }
   ).on("failed", (job, error) => {
+    const data = job === undefined ? undefined : AnalyzeUserJobDataSchema.safeParse(job.data);
     logger.error(
       {
         event: LogEvent.SpendingWarningsAnalyzeFailed,
-        userId: job?.data.userId,
-        detectorVersion: job?.data.detectorVersion,
+        ...(job?.id === undefined ? {} : { jobId: job.id }),
+        jobName: job?.name ?? ANALYZE_USER_JOB_NAME,
+        ...(data?.success === true
+          ? {
+              reqId: data.data.correlationId,
+              userId: data.data.userId,
+              detectorVersion: data.data.detectorVersion
+            }
+          : {}),
         err: error
       },
       "spending warnings analysis job failed"

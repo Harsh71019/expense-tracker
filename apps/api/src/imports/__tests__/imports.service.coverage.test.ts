@@ -533,7 +533,7 @@ describe("ImportsService commit and revert", () => {
     const failedBalance = createService({
       ...collaborators,
       batches: { findById: vi.fn().mockResolvedValue(BATCH) },
-      accounts: { applyBalanceDelta: vi.fn().mockResolvedValue(false) }
+      accounts: { applyBalanceDelta: vi.fn().mockResolvedValue("account_not_found") }
     });
     await expect(failedBalance.service.commitBatch("u1", BATCH_ID)).rejects.toBeInstanceOf(
       EntityNotFoundError
@@ -546,7 +546,7 @@ describe("ImportsService commit and revert", () => {
         incrementCommittedCount: vi.fn().mockResolvedValue(undefined),
         markCommitted: vi.fn().mockResolvedValue(undefined)
       },
-      accounts: { applyBalanceDelta: vi.fn().mockResolvedValue(true) }
+      accounts: { applyBalanceDelta: vi.fn().mockResolvedValue("applied") }
     });
     await expect(missingFinal.service.commitBatch("u1", BATCH_ID)).rejects.toBeInstanceOf(
       EntityNotFoundError
@@ -603,7 +603,7 @@ describe("ImportsService commit and revert", () => {
     const failedBalance = createService({
       ...collaborators,
       batches: { findById: vi.fn().mockResolvedValue(committed) },
-      accounts: { applyReversalBalanceDelta: vi.fn().mockResolvedValue(false) }
+      accounts: { applyReversalBalanceDelta: vi.fn().mockResolvedValue("account_not_found") }
     });
     await expect(failedBalance.service.revertBatch("u1", BATCH_ID)).rejects.toBeInstanceOf(
       EntityNotFoundError
@@ -615,7 +615,7 @@ describe("ImportsService commit and revert", () => {
         findById: vi.fn().mockResolvedValueOnce(committed).mockResolvedValueOnce(null),
         markReverted: vi.fn().mockResolvedValue(undefined)
       },
-      accounts: { applyReversalBalanceDelta: vi.fn().mockResolvedValue(true) }
+      accounts: { applyReversalBalanceDelta: vi.fn().mockResolvedValue("applied") }
     });
     await expect(missingFinal.service.revertBatch("u1", BATCH_ID)).rejects.toBeInstanceOf(
       EntityNotFoundError

@@ -22,13 +22,13 @@ export class AssetMutationService {
   ) {}
 
   create(userId: string, input: CreateAsset, key: string): Promise<IdempotentResult<Asset>> {
-    return this.idempotency.execute(userId, "asset.create", key, AssetSchema, (tx) =>
+    return this.idempotency.execute(userId, "asset.create", key, input, AssetSchema, (tx) =>
       this.assets.createInTx(userId, input, tx)
     );
   }
 
   close(userId: string, assetId: AssetId, key: string): Promise<IdempotentResult<null>> {
-    return this.idempotency.execute(userId, "asset.close", key, z.null(), (tx) =>
+    return this.idempotency.execute(userId, "asset.close", key, { assetId }, z.null(), (tx) =>
       this.assets.closeInTx(userId, assetId, tx)
     );
   }
@@ -39,8 +39,13 @@ export class AssetMutationService {
     input: CreateValuation,
     key: string
   ): Promise<IdempotentResult<Valuation>> {
-    return this.idempotency.execute(userId, "asset.valuation.create", key, ValuationSchema, (tx) =>
-      this.assets.addValuationInTx(userId, assetId, input, tx)
+    return this.idempotency.execute(
+      userId,
+      "asset.valuation.create",
+      key,
+      { assetId, input },
+      ValuationSchema,
+      (tx) => this.assets.addValuationInTx(userId, assetId, input, tx)
     );
   }
 }

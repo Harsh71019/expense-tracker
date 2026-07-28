@@ -107,8 +107,10 @@
               "common.validation_failed",
               "common.not_found",
               "common.invalid_cursor",
+              "common.idempotency_conflict",
               "common.internal",
               "common.dependency_unavailable",
+              "money.out_of_range",
               "auth.unauthenticated",
               "auth.insufficient_scope",
               "auth.rate_limited",
@@ -2829,6 +2831,16 @@
               }
             }
           },
+          "409": {
+            "description": "Idempotency key was already used for different request intent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "422": {
             "description": "Validation failed",
             "content": {
@@ -3466,6 +3478,16 @@
               }
             }
           },
+          "409": {
+            "description": "Idempotency key was already used for different request intent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "422": {
             "description": "Validation failed",
             "content": {
@@ -3640,6 +3662,16 @@
               }
             }
           },
+          "409": {
+            "description": "Idempotency key was already used for different request intent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "422": {
             "description": "Validation failed",
             "content": {
@@ -3715,6 +3747,16 @@
           },
           "404": {
             "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency key was already used for different request intent",
             "content": {
               "application/json": {
                 "schema": {
@@ -3821,6 +3863,16 @@
           },
           "404": {
             "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency key was already used for different request intent",
             "content": {
               "application/json": {
                 "schema": {
@@ -3993,6 +4045,16 @@
               }
             }
           },
+          "409": {
+            "description": "Idempotency key was already used for different request intent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "422": {
             "description": "Validation failed",
             "content": {
@@ -4068,6 +4130,16 @@
           },
           "404": {
             "description": "Category rule not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency key was already used for different request intent",
             "content": {
               "application/json": {
                 "schema": {
@@ -4516,7 +4588,7 @@
             }
           },
           "409": {
-            "description": "Transfer legs require a group-level metadata operation",
+            "description": "Transfer legs require a group-level metadata operation, or idempotency intent conflicts",
             "content": {
               "application/json": {
                 "schema": {
@@ -4950,6 +5022,16 @@
               }
             }
           },
+          "409": {
+            "description": "Idempotency key was already used for different request intent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "422": {
             "description": "Validation failed",
             "content": {
@@ -5085,6 +5167,16 @@
               }
             }
           },
+          "409": {
+            "description": "Idempotency key was already used for different request intent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "422": {
             "description": "Validation failed",
             "content": {
@@ -5203,6 +5295,16 @@
           },
           "404": {
             "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency key was already used for different request intent",
             "content": {
               "application/json": {
                 "schema": {
@@ -5822,6 +5924,16 @@
               }
             }
           },
+          "409": {
+            "description": "Idempotency key was already used for different request intent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "422": {
             "description": "Validation failed",
             "content": {
@@ -5958,6 +6070,16 @@
           },
           "404": {
             "description": "Recurring rule, account, or category not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency key was already used for different request intent",
             "content": {
               "application/json": {
                 "schema": {
@@ -6139,6 +6261,16 @@
           },
           "404": {
             "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency key was already used for different request intent",
             "content": {
               "application/json": {
                 "schema": {
@@ -6372,7 +6504,7 @@
             }
           },
           "409": {
-            "description": "Funding source already assigned",
+            "description": "Funding source already assigned, or idempotency intent conflicts",
             "content": {
               "application/json": {
                 "schema": {
@@ -6466,7 +6598,7 @@
             }
           },
           "409": {
-            "description": "Order does not contain every active goal",
+            "description": "Order is invalid, or idempotency intent conflicts",
             "content": {
               "application/json": {
                 "schema": {
@@ -6661,6 +6793,16 @@
               }
             }
           },
+          "409": {
+            "description": "Idempotency key was already used for different request intent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "422": {
             "description": "Validation failed",
             "content": {
@@ -6736,6 +6878,16 @@
           },
           "404": {
             "description": "Active goal not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency key was already used for different request intent",
             "content": {
               "application/json": {
                 "schema": {
@@ -7013,6 +7165,16 @@
               }
             }
           },
+          "409": {
+            "description": "Idempotency key was already used for different request intent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "422": {
             "description": "Validation failed",
             "content": {
@@ -7095,6 +7257,16 @@
           },
           "404": {
             "description": "Budget not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency key was already used for different request intent",
             "content": {
               "application/json": {
                 "schema": {
@@ -8080,6 +8252,57 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RecurringForecast"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/metrics": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Prometheus text exposition for backend runtime health",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
                 }
               }
             }

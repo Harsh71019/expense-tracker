@@ -33,7 +33,7 @@ describe("Recurring Materialization Unit Tests", () => {
       claimRun: vi.fn(async () => true)
     };
     const mockAccountRepo = {
-      applyBalanceDelta: vi.fn(async () => true)
+      applyBalanceDelta: vi.fn(async () => "applied")
     };
     const mockTxRepo = {
       create: vi.fn(async () => ({

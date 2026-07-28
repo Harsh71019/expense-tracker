@@ -24,23 +24,37 @@ export class CategoryMutationService {
   ) {}
 
   create(userId: string, input: CreateCategory, key: string): Promise<IdempotentResult<Category>> {
-    return this.idempotency.execute(userId, "category.create", key, CategorySchema, async (tx) => {
-      if (input.parentId !== undefined) {
-        const parent = await this.categories.findActiveById(userId, input.parentId, tx);
-        if (parent === null) throw new EntityNotFoundError("Parent category");
-        if (parent.kind !== input.kind) throw new CategoryParentKindMismatchError();
+    return this.idempotency.execute(
+      userId,
+      "category.create",
+      key,
+      input,
+      CategorySchema,
+      async (tx) => {
+        if (input.parentId !== undefined) {
+          const parent = await this.categories.findActiveById(userId, input.parentId, tx);
+          if (parent === null) throw new EntityNotFoundError("Parent category");
+          if (parent.kind !== input.kind) throw new CategoryParentKindMismatchError();
+        }
+        return this.categories.create(userId, input, tx);
       }
-      return this.categories.create(userId, input, tx);
-    });
+    );
   }
 
   archive(userId: string, categoryId: CategoryId, key: string): Promise<IdempotentResult<null>> {
-    return this.idempotency.execute(userId, "category.archive", key, z.null(), async (tx) => {
-      if (!(await this.categories.archive(userId, categoryId, tx))) {
-        throw new EntityNotFoundError("Category");
+    return this.idempotency.execute(
+      userId,
+      "category.archive",
+      key,
+      { categoryId },
+      z.null(),
+      async (tx) => {
+        if (!(await this.categories.archive(userId, categoryId, tx))) {
+          throw new EntityNotFoundError("Category");
+        }
+        return null;
       }
-      return null;
-    });
+    );
   }
 
   updateGroup(
@@ -53,6 +67,7 @@ export class CategoryMutationService {
       userId,
       "category.update_group",
       key,
+      { categoryId, patch },
       CategorySchema,
       async (tx) => {
         const updated = await this.categories.updateGroup(userId, categoryId, patch, tx);

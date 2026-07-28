@@ -78,6 +78,13 @@
       "when": 1785169569502,
       "tag": "0010_mighty_lord_hawal",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1785177570017,
+      "tag": "0011_idempotency_request_fingerprint",
+      "breakpoints": true
     }
   ]
 }

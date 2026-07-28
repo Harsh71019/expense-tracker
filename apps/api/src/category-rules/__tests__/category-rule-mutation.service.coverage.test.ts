@@ -24,6 +24,7 @@ function createService(rules: object, categories: object) {
         _userId: string,
         _operation: string,
         _key: string,
+        _intent: unknown,
         _schema: unknown,
         work: (value: object) => Promise<unknown>
       ) => ({ result: await work(tx), replayed: false })

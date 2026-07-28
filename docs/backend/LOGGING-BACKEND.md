@@ -1,6 +1,6 @@
 # TreasuryOps — Backend Logging & Debugging Architecture
 
-> Consolidates the logging decisions scattered across `BACKEND.md` (§16) into one authoritative doc, and upgrades them from "we have logs" to "any bug is traceable in under 5 minutes." Stack: **pino → stdout → Docker → Loki (Grafana LGTM LXC), GlitchTip for errors, OTel for traces, `audit_log` in Mongo for money history.**
+> Consolidates the logging decisions scattered across `BACKEND.md` (§16) into one authoritative doc. The implemented stack is **pino → stdout**, PostgreSQL `audit_log` for permanent money history, and an authenticated Prometheus endpoint. Loki, GlitchTip, and OpenTelemetry remain deployment/future integrations.
 >
 > **Prime directive:** every log line answers _who, what, which request, which money_. A log line you can't correlate is noise.
 
@@ -8,11 +8,11 @@
 
 ## 1. The Three Planes (don't mix them)
 
-| Plane                            | Store     | Retention | Purpose                                                                                                  |
-| -------------------------------- | --------- | --------- | -------------------------------------------------------------------------------------------------------- |
-| **Logs** (pino → Loki)           | Loki      | 30 days   | Debugging: what the code did                                                                             |
-| **Errors** (GlitchTip)           | GlitchTip | 90 days   | Alerting: what the code did _wrong_, deduplicated, with stack traces                                     |
-| **Audit** (`audit_log` in Mongo) | Mongo     | Forever   | Business history: what happened to money. **Not logging** — it's data, written in-transaction, immutable |
+| Plane                                 | Store      | Retention | Purpose                                                                                                   |
+| ------------------------------------- | ---------- | --------- | --------------------------------------------------------------------------------------------------------- |
+| **Logs** (pino → Loki)                | Loki       | 30 days   | Debugging: what the code did                                                                              |
+| **Errors** (GlitchTip)                | GlitchTip  | 90 days   | Alerting: what the code did _wrong_, deduplicated, with stack traces                                      |
+| **Audit** (`audit_log` in PostgreSQL) | PostgreSQL | Forever   | Business history: what happened to money. **Not logging** — it is data, written in-transaction, immutable |
 
 Rule: money events go to audit (in-transaction) _and_ get a log line (best-effort). Never rely on Loki for money questions; never put debugging chatter in audit.
 
@@ -37,9 +37,9 @@ Every log line carries a **context object**, bound once, propagated everywhere:
 **Propagation rules (this is the architecture):**
 
 1. **HTTP:** `pino-http` + `AsyncLocalStorage` (NestJS CLS). Middleware creates the context; every `this.logger` call anywhere in the request automatically inherits `reqId`/`userId`/`traceId`. No manual threading, no logger params in function signatures.
-2. **Into queues:** when a service enqueues a BullMQ job, it copies `{reqId, userId}` into `job.data.ctx`. The worker's processor opens a new ALS scope from it. Result: the CSV upload's `reqId` appears on the parse job's logs _and_ on the commit logs — one `{reqId="abc"}` Loki query shows the entire import lifecycle across two processes.
+2. **Into queues:** each producer copies the active `reqId` into the job's validated top-level `correlationId` field (or generates one for cron/service-originated work). The worker parses the complete payload with zod, then opens a new ALS scope using `correlationId` as `reqId`. One `reqId="abc"` query therefore follows work across API and worker processes.
 3. **Cron-originated work** has no request; the scheduler mints `reqId = cron:<jobName>:<IST-date>` — deterministic, so "what did the salary run do on July 1" is a one-line query you can guess without looking anything up.
-4. **Into Mongo:** `withTxn` stamps `reqId` on every `audit_log` entry. Audit ↔ logs ↔ traces all join on the same id.
+4. **Into PostgreSQL:** money writes and their immutable `audit_log` rows are committed together through `withTxn`. Request/job correlation remains in structured logs; adding a persistent `reqId` audit column would require a separate additive migration.
 5. **Back to the client:** every response returns `x-request-id`. The frontend attaches it to GlitchTip events (see frontend doc), so a user-visible error links straight to the exact backend Loki query.
 
 ---
@@ -144,3 +144,12 @@ The `event` vocabulary lives in `common/logging/events.ts` as a const union — 
 - `console.log` is banned by ESLint in `apps/api` — everything goes through the logger (AGENTS.md §7 already says this; here's why: console lines have no context object, so they're invisible to every playbook above).
 - Log volume budget: at info level this system should produce ~2–4 lines per request and ~5–20 per job. If a module chats more, its lines belong at debug. Review checklist item.
 - Docker: `json-file` driver with `max-size: 10m, max-file: 3` on every service (belt) + Promtail/Alloy shipping to Loki (suspenders) — a Loki outage never fills the LXC disk.
+
+## 9. Implemented runtime metrics
+
+`GET /api/v1/metrics` now exposes authenticated Prometheus text for HTTP RED
+signals, `withTxn` retries/outcomes/duration, live BullMQ queue states, worker
+heartbeat age, and the most recent balance-drift verification. Metric labels
+are intentionally low-cardinality and contain no tenant or financial data.
+Dashboard queries, alert thresholds, and incident steps live in
+`docs/backend/OBSERVABILITY-RUNBOOK.md`.

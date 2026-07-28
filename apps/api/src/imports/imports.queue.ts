@@ -1,28 +1,37 @@
 import { Injectable } from "@nestjs/common";
 import type { OnModuleDestroy } from "@nestjs/common";
-import type { ColumnMapping, ImportBatchId } from "@treasury-ops/shared";
+import { AccountIdSchema, ColumnMappingSchema, ImportBatchIdSchema } from "@treasury-ops/shared";
 import { Queue } from "bullmq";
+import { z } from "zod";
 
 import { RuntimeConfigService } from "../common/config/runtime-config.service.js";
+import { LoggingContextService } from "../common/logging/logging-context.service.js";
 import { createQueueConnection } from "../common/queue/queue-connection.js";
 
 export const IMPORTS_QUEUE_NAME = "imports";
 export const PARSE_IMPORT_JOB_NAME = "parse";
 
-export type ParseImportJobData = Readonly<{
-  batchId: ImportBatchId;
-  userId: string;
-  accountId: string;
-  mapping: ColumnMapping;
+export const ParseImportJobDataSchema = z.object({
+  batchId: ImportBatchIdSchema,
+  userId: z.string().min(1),
+  accountId: AccountIdSchema,
+  mapping: ColumnMappingSchema,
   /** Base64-encoded raw CSV bytes — see HANDOFF note in imports.processor.ts. */
-  fileContentBase64: string;
-}>;
+  fileContentBase64: z.string().min(1),
+  correlationId: z.string().min(1).max(128)
+});
+
+export type ParseImportJobData = z.infer<typeof ParseImportJobDataSchema>;
+type ParseImportCommand = Omit<ParseImportJobData, "correlationId">;
 
 @Injectable()
 export class ImportsQueue implements OnModuleDestroy {
   private readonly queue: Queue<ParseImportJobData>;
 
-  constructor(config: RuntimeConfigService) {
+  constructor(
+    config: RuntimeConfigService,
+    private readonly context: LoggingContextService = new LoggingContextService()
+  ) {
     this.queue = new Queue<ParseImportJobData>(IMPORTS_QUEUE_NAME, {
       connection: createQueueConnection(config.env.REDIS_URL)
     });
@@ -33,11 +42,15 @@ export class ImportsQueue implements OnModuleDestroy {
     return this.queue;
   }
 
-  async enqueueParse(data: ParseImportJobData): Promise<void> {
-    await this.queue.add(PARSE_IMPORT_JOB_NAME, data, {
+  async enqueueParse(data: ParseImportCommand): Promise<void> {
+    const jobData = ParseImportJobDataSchema.parse({
+      ...data,
+      correlationId: this.context.get()?.reqId ?? crypto.randomUUID()
+    });
+    await this.queue.add(PARSE_IMPORT_JOB_NAME, jobData, {
       // One parse job per batch: a duplicate enqueue for the same batchId
       // (e.g. a retried HTTP request) is a no-op, not a second job.
-      jobId: data.batchId,
+      jobId: jobData.batchId,
       attempts: 3,
       backoff: { type: "exponential", delay: 5_000 }
     });

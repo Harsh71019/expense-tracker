@@ -129,7 +129,6 @@ export function AppHeader({ theme }: Readonly<{ theme: Theme | null }>): ReactNo
 
           {/* Quick Add Entry Button */}
           <Button
-            size="sm"
             onClick={() => setShowCreateSheet(true)}
             className="flex items-center gap-1.5 shadow-xs transition-transform active:scale-[0.98]"
             title="Post a new transaction (⌘N)"

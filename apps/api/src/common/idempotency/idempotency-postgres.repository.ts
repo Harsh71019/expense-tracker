@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { and, eq } from "drizzle-orm";
+import { and, eq, lt } from "drizzle-orm";
 import { z } from "zod";
 
 import { DATABASE_CONNECTION } from "../db/db.module.js";
@@ -7,7 +7,7 @@ import type { DrizzleDb } from "../db/db.module.js";
 import { idempotencyRecords } from "../db/schema/index.js";
 import type { DbTx } from "../db/db-txn.js";
 
-type IdempotencyRecord<T> = Readonly<{ result: T }>;
+type IdempotencyRecord<T> = Readonly<{ requestFingerprint: string; result: T }>;
 
 /**
  * Postgres-backed idempotency records, coexisting with the Mongo
@@ -41,18 +41,33 @@ export class IdempotencyPostgresRepository {
         )
       );
     if (row === undefined) return null;
-    return { result: resultSchema.parse(row.result) };
+    return {
+      requestFingerprint: row.requestFingerprint,
+      result: resultSchema.parse(row.result)
+    };
   }
 
   async record<T>(
     userId: string,
     operation: string,
     key: string,
+    requestFingerprint: string,
     result: T,
     tx: DbTx
   ): Promise<void> {
-    await tx
-      .insert(idempotencyRecords)
-      .values({ userId, operation, key, result, createdAt: new Date() });
+    await tx.insert(idempotencyRecords).values({
+      userId,
+      operation,
+      key,
+      requestFingerprint,
+      result,
+      createdAt: new Date()
+    });
+  }
+
+  async deleteExpired(userId: string, cutoff: Date): Promise<void> {
+    await this.db
+      .delete(idempotencyRecords)
+      .where(and(eq(idempotencyRecords.userId, userId), lt(idempotencyRecords.createdAt, cutoff)));
   }
 }

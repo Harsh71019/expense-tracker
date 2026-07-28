@@ -32,7 +32,13 @@
           },
           "type": {
             "type": "string",
-            "enum": ["bank", "credit_card", "cash", "wallet", "investment"]
+            "enum": [
+              "bank",
+              "credit_card",
+              "cash",
+              "wallet",
+              "investment"
+            ]
           },
           "openingBalanceMinor": {
             "type": "integer",
@@ -49,7 +55,9 @@
           },
           "currency": {
             "type": "string",
-            "enum": ["INR"]
+            "enum": [
+              "INR"
+            ]
           },
           "balanceMinor": {
             "type": "integer",
@@ -60,11 +68,17 @@
             "type": "boolean"
           },
           "createdAt": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           },
           "updatedAt": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           }
         },
@@ -131,14 +145,20 @@
             "type": "string"
           },
           "timestamp": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           },
           "retryable": {
             "type": "boolean"
           },
           "errors": {
-            "type": ["array", "null"],
+            "type": [
+              "array",
+              "null"
+            ],
             "items": {
               "type": "object",
               "properties": {
@@ -152,7 +172,11 @@
                   "type": "string"
                 }
               },
-              "required": ["path", "code", "message"]
+              "required": [
+                "path",
+                "code",
+                "message"
+              ]
             }
           }
         },
@@ -205,11 +229,18 @@
               },
               "dateFormat": {
                 "type": "string",
-                "enum": ["DD/MM/YYYY", "MM/DD/YYYY", "YYYY-MM-DD"]
+                "enum": [
+                  "DD/MM/YYYY",
+                  "MM/DD/YYYY",
+                  "YYYY-MM-DD"
+                ]
               },
               "amountConvention": {
                 "type": "string",
-                "enum": ["single_signed", "debit_credit_cols"]
+                "enum": [
+                  "single_signed",
+                  "debit_credit_cols"
+                ]
               },
               "amount": {
                 "type": "string",
@@ -224,19 +255,22 @@
                 "minLength": 1
               }
             },
-            "required": ["date", "description", "dateFormat", "amountConvention"]
+            "required": [
+              "date",
+              "description",
+              "dateFormat",
+              "amountConvention"
+            ]
           },
           "status": {
             "type": "string",
-            "enum": ["pending", "staged", "committed", "reverted", "failed"]
-          },
-          "failureCode": {
-            "type": "string",
-            "enum": ["invalid_csv", "parse_retries_exhausted"]
-          },
-          "failedAt": {
-            "type": ["string", "null"],
-            "format": "date-time"
+            "enum": [
+              "pending",
+              "staged",
+              "committed",
+              "reverted",
+              "failed"
+            ]
           },
           "stats": {
             "type": "object",
@@ -258,22 +292,39 @@
                 "minimum": 0
               }
             },
-            "required": ["total", "staged", "duplicates", "committed"]
+            "required": [
+              "total",
+              "staged",
+              "duplicates",
+              "committed"
+            ]
           },
           "committedAt": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           },
           "revertedAt": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           },
           "createdAt": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           },
           "updatedAt": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           }
         },
@@ -294,7 +345,10 @@
         "type": "object",
         "properties": {
           "mapping": {
-            "type": ["object", "null"],
+            "type": [
+              "object",
+              "null"
+            ],
             "properties": {
               "date": {
                 "type": "string",
@@ -306,11 +360,18 @@
               },
               "dateFormat": {
                 "type": "string",
-                "enum": ["DD/MM/YYYY", "MM/DD/YYYY", "YYYY-MM-DD"]
+                "enum": [
+                  "DD/MM/YYYY",
+                  "MM/DD/YYYY",
+                  "YYYY-MM-DD"
+                ]
               },
               "amountConvention": {
                 "type": "string",
-                "enum": ["single_signed", "debit_credit_cols"]
+                "enum": [
+                  "single_signed",
+                  "debit_credit_cols"
+                ]
               },
               "amount": {
                 "type": "string",
@@ -325,10 +386,17 @@
                 "minLength": 1
               }
             },
-            "required": ["date", "description", "dateFormat", "amountConvention"]
+            "required": [
+              "date",
+              "description",
+              "dateFormat",
+              "amountConvention"
+            ]
           }
         },
-        "required": ["mapping"]
+        "required": [
+          "mapping"
+        ]
       },
       "StagedRowPage": {
         "type": "object",
@@ -360,7 +428,10 @@
                   "type": "object",
                   "properties": {
                     "occurredAt": {
-                      "type": ["string", "null"],
+                      "type": [
+                        "string",
+                        "null"
+                      ],
                       "format": "date-time"
                     },
                     "amountMinor": {
@@ -369,13 +440,21 @@
                     },
                     "type": {
                       "type": "string",
-                      "enum": ["expense", "income"]
+                      "enum": [
+                        "expense",
+                        "income"
+                      ]
                     },
                     "description": {
                       "type": "string"
                     }
                   },
-                  "required": ["occurredAt", "amountMinor", "type", "description"]
+                  "required": [
+                    "occurredAt",
+                    "amountMinor",
+                    "type",
+                    "description"
+                  ]
                 },
                 "dedupeHash": {
                   "type": "string"
@@ -412,7 +491,10 @@
             "type": "object",
             "properties": {
               "nextCursor": {
-                "type": ["string", "null"]
+                "type": [
+                  "string",
+                  "null"
+                ]
               },
               "hasMore": {
                 "type": "boolean"
@@ -422,10 +504,17 @@
                 "exclusiveMinimum": 0
               }
             },
-            "required": ["nextCursor", "hasMore", "limit"]
+            "required": [
+              "nextCursor",
+              "hasMore",
+              "limit"
+            ]
           }
         },
-        "required": ["items", "pageInfo"]
+        "required": [
+          "items",
+          "pageInfo"
+        ]
       },
       "StagedRow": {
         "type": "object",
@@ -452,7 +541,10 @@
             "type": "object",
             "properties": {
               "occurredAt": {
-                "type": ["string", "null"],
+                "type": [
+                  "string",
+                  "null"
+                ],
                 "format": "date-time"
               },
               "amountMinor": {
@@ -461,13 +553,21 @@
               },
               "type": {
                 "type": "string",
-                "enum": ["expense", "income"]
+                "enum": [
+                  "expense",
+                  "income"
+                ]
               },
               "description": {
                 "type": "string"
               }
             },
-            "required": ["occurredAt", "amountMinor", "type", "description"]
+            "required": [
+              "occurredAt",
+              "amountMinor",
+              "type",
+              "description"
+            ]
           },
           "dedupeHash": {
             "type": "string"
@@ -489,7 +589,15 @@
             "type": "boolean"
           }
         },
-        "required": ["id", "batchId", "rowNumber", "raw", "problems", "isDuplicate", "include"]
+        "required": [
+          "id",
+          "batchId",
+          "rowNumber",
+          "raw",
+          "problems",
+          "isDuplicate",
+          "include"
+        ]
       },
       "Category": {
         "type": "object",
@@ -501,7 +609,10 @@
           },
           "kind": {
             "type": "string",
-            "enum": ["expense", "income"]
+            "enum": [
+              "expense",
+              "income"
+            ]
           },
           "parentId": {
             "type": "string",
@@ -518,7 +629,10 @@
           },
           "group": {
             "type": "string",
-            "enum": ["essential", "lifestyle"]
+            "enum": [
+              "essential",
+              "lifestyle"
+            ]
           },
           "id": {
             "type": "string",
@@ -532,15 +646,29 @@
             "type": "boolean"
           },
           "createdAt": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           },
           "updatedAt": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           }
         },
-        "required": ["name", "kind", "id", "userId", "isArchived", "createdAt", "updatedAt"]
+        "required": [
+          "name",
+          "kind",
+          "id",
+          "userId",
+          "isArchived",
+          "createdAt",
+          "updatedAt"
+        ]
       },
       "CategoryRule": {
         "type": "object",
@@ -563,15 +691,28 @@
             "minLength": 1
           },
           "createdAt": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           },
           "updatedAt": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           }
         },
-        "required": ["pattern", "categoryId", "id", "userId", "createdAt", "updatedAt"]
+        "required": [
+          "pattern",
+          "categoryId",
+          "id",
+          "userId",
+          "createdAt",
+          "updatedAt"
+        ]
       },
       "TransactionPage": {
         "type": "object",
@@ -591,7 +732,10 @@
                 },
                 "type": {
                   "type": "string",
-                  "enum": ["expense", "income"]
+                  "enum": [
+                    "expense",
+                    "income"
+                  ]
                 },
                 "amountMinor": {
                   "type": "integer",
@@ -599,7 +743,10 @@
                   "maximum": 9007199254740991
                 },
                 "occurredAt": {
-                  "type": ["string", "null"],
+                  "type": [
+                    "string",
+                    "null"
+                  ],
                   "format": "date-time"
                 },
                 "description": {
@@ -627,15 +774,26 @@
                 },
                 "currency": {
                   "type": "string",
-                  "enum": ["INR"]
+                  "enum": [
+                    "INR"
+                  ]
                 },
                 "source": {
                   "type": "string",
-                  "enum": ["manual", "csv_import", "recurring", "api"]
+                  "enum": [
+                    "manual",
+                    "csv_import",
+                    "recurring",
+                    "api"
+                  ]
                 },
                 "status": {
                   "type": "string",
-                  "enum": ["posted", "reversed", "reversal"]
+                  "enum": [
+                    "posted",
+                    "reversed",
+                    "reversal"
+                  ]
                 },
                 "idempotencyKey": {
                   "type": "string",
@@ -654,11 +812,17 @@
                   "format": "uuid"
                 },
                 "createdAt": {
-                  "type": ["string", "null"],
+                  "type": [
+                    "string",
+                    "null"
+                  ],
                   "format": "date-time"
                 },
                 "updatedAt": {
-                  "type": ["string", "null"],
+                  "type": [
+                    "string",
+                    "null"
+                  ],
                   "format": "date-time"
                 }
               },
@@ -682,7 +846,10 @@
             "type": "object",
             "properties": {
               "nextCursor": {
-                "type": ["string", "null"]
+                "type": [
+                  "string",
+                  "null"
+                ]
               },
               "hasMore": {
                 "type": "boolean"
@@ -692,10 +859,17 @@
                 "exclusiveMinimum": 0
               }
             },
-            "required": ["nextCursor", "hasMore", "limit"]
+            "required": [
+              "nextCursor",
+              "hasMore",
+              "limit"
+            ]
           }
         },
-        "required": ["items", "pageInfo"]
+        "required": [
+          "items",
+          "pageInfo"
+        ]
       },
       "Transaction": {
         "type": "object",
@@ -710,7 +884,10 @@
           },
           "type": {
             "type": "string",
-            "enum": ["expense", "income"]
+            "enum": [
+              "expense",
+              "income"
+            ]
           },
           "amountMinor": {
             "type": "integer",
@@ -718,7 +895,10 @@
             "maximum": 9007199254740991
           },
           "occurredAt": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           },
           "description": {
@@ -746,15 +926,26 @@
           },
           "currency": {
             "type": "string",
-            "enum": ["INR"]
+            "enum": [
+              "INR"
+            ]
           },
           "source": {
             "type": "string",
-            "enum": ["manual", "csv_import", "recurring", "api"]
+            "enum": [
+              "manual",
+              "csv_import",
+              "recurring",
+              "api"
+            ]
           },
           "status": {
             "type": "string",
-            "enum": ["posted", "reversed", "reversal"]
+            "enum": [
+              "posted",
+              "reversed",
+              "reversal"
+            ]
           },
           "idempotencyKey": {
             "type": "string",
@@ -773,11 +964,17 @@
             "format": "uuid"
           },
           "createdAt": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           },
           "updatedAt": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           }
         },
@@ -816,7 +1013,10 @@
               },
               "type": {
                 "type": "string",
-                "enum": ["expense", "income"]
+                "enum": [
+                  "expense",
+                  "income"
+                ]
               },
               "amountMinor": {
                 "type": "integer",
@@ -824,7 +1024,10 @@
                 "maximum": 9007199254740991
               },
               "occurredAt": {
-                "type": ["string", "null"],
+                "type": [
+                  "string",
+                  "null"
+                ],
                 "format": "date-time"
               },
               "description": {
@@ -852,15 +1055,26 @@
               },
               "currency": {
                 "type": "string",
-                "enum": ["INR"]
+                "enum": [
+                  "INR"
+                ]
               },
               "source": {
                 "type": "string",
-                "enum": ["manual", "csv_import", "recurring", "api"]
+                "enum": [
+                  "manual",
+                  "csv_import",
+                  "recurring",
+                  "api"
+                ]
               },
               "status": {
                 "type": "string",
-                "enum": ["posted", "reversed", "reversal"]
+                "enum": [
+                  "posted",
+                  "reversed",
+                  "reversal"
+                ]
               },
               "idempotencyKey": {
                 "type": "string",
@@ -879,11 +1093,17 @@
                 "format": "uuid"
               },
               "createdAt": {
-                "type": ["string", "null"],
+                "type": [
+                  "string",
+                  "null"
+                ],
                 "format": "date-time"
               },
               "updatedAt": {
-                "type": ["string", "null"],
+                "type": [
+                  "string",
+                  "null"
+                ],
                 "format": "date-time"
               }
             },
@@ -915,7 +1135,10 @@
               },
               "type": {
                 "type": "string",
-                "enum": ["expense", "income"]
+                "enum": [
+                  "expense",
+                  "income"
+                ]
               },
               "amountMinor": {
                 "type": "integer",
@@ -923,7 +1146,10 @@
                 "maximum": 9007199254740991
               },
               "occurredAt": {
-                "type": ["string", "null"],
+                "type": [
+                  "string",
+                  "null"
+                ],
                 "format": "date-time"
               },
               "description": {
@@ -951,15 +1177,26 @@
               },
               "currency": {
                 "type": "string",
-                "enum": ["INR"]
+                "enum": [
+                  "INR"
+                ]
               },
               "source": {
                 "type": "string",
-                "enum": ["manual", "csv_import", "recurring", "api"]
+                "enum": [
+                  "manual",
+                  "csv_import",
+                  "recurring",
+                  "api"
+                ]
               },
               "status": {
                 "type": "string",
-                "enum": ["posted", "reversed", "reversal"]
+                "enum": [
+                  "posted",
+                  "reversed",
+                  "reversal"
+                ]
               },
               "idempotencyKey": {
                 "type": "string",
@@ -978,11 +1215,17 @@
                 "format": "uuid"
               },
               "createdAt": {
-                "type": ["string", "null"],
+                "type": [
+                  "string",
+                  "null"
+                ],
                 "format": "date-time"
               },
               "updatedAt": {
-                "type": ["string", "null"],
+                "type": [
+                  "string",
+                  "null"
+                ],
                 "format": "date-time"
               }
             },
@@ -1002,7 +1245,11 @@
             ]
           }
         },
-        "required": ["transferGroupId", "fromTransaction", "toTransaction"]
+        "required": [
+          "transferGroupId",
+          "fromTransaction",
+          "toTransaction"
+        ]
       },
       "TransferReversal": {
         "type": "object",
@@ -1027,7 +1274,10 @@
                   },
                   "type": {
                     "type": "string",
-                    "enum": ["expense", "income"]
+                    "enum": [
+                      "expense",
+                      "income"
+                    ]
                   },
                   "amountMinor": {
                     "type": "integer",
@@ -1035,7 +1285,10 @@
                     "maximum": 9007199254740991
                   },
                   "occurredAt": {
-                    "type": ["string", "null"],
+                    "type": [
+                      "string",
+                      "null"
+                    ],
                     "format": "date-time"
                   },
                   "description": {
@@ -1063,15 +1316,26 @@
                   },
                   "currency": {
                     "type": "string",
-                    "enum": ["INR"]
+                    "enum": [
+                      "INR"
+                    ]
                   },
                   "source": {
                     "type": "string",
-                    "enum": ["manual", "csv_import", "recurring", "api"]
+                    "enum": [
+                      "manual",
+                      "csv_import",
+                      "recurring",
+                      "api"
+                    ]
                   },
                   "status": {
                     "type": "string",
-                    "enum": ["posted", "reversed", "reversal"]
+                    "enum": [
+                      "posted",
+                      "reversed",
+                      "reversal"
+                    ]
                   },
                   "idempotencyKey": {
                     "type": "string",
@@ -1090,11 +1354,17 @@
                     "format": "uuid"
                   },
                   "createdAt": {
-                    "type": ["string", "null"],
+                    "type": [
+                      "string",
+                      "null"
+                    ],
                     "format": "date-time"
                   },
                   "updatedAt": {
-                    "type": ["string", "null"],
+                    "type": [
+                      "string",
+                      "null"
+                    ],
                     "format": "date-time"
                   }
                 },
@@ -1126,7 +1396,10 @@
                   },
                   "type": {
                     "type": "string",
-                    "enum": ["expense", "income"]
+                    "enum": [
+                      "expense",
+                      "income"
+                    ]
                   },
                   "amountMinor": {
                     "type": "integer",
@@ -1134,7 +1407,10 @@
                     "maximum": 9007199254740991
                   },
                   "occurredAt": {
-                    "type": ["string", "null"],
+                    "type": [
+                      "string",
+                      "null"
+                    ],
                     "format": "date-time"
                   },
                   "description": {
@@ -1162,15 +1438,26 @@
                   },
                   "currency": {
                     "type": "string",
-                    "enum": ["INR"]
+                    "enum": [
+                      "INR"
+                    ]
                   },
                   "source": {
                     "type": "string",
-                    "enum": ["manual", "csv_import", "recurring", "api"]
+                    "enum": [
+                      "manual",
+                      "csv_import",
+                      "recurring",
+                      "api"
+                    ]
                   },
                   "status": {
                     "type": "string",
-                    "enum": ["posted", "reversed", "reversal"]
+                    "enum": [
+                      "posted",
+                      "reversed",
+                      "reversal"
+                    ]
                   },
                   "idempotencyKey": {
                     "type": "string",
@@ -1189,11 +1476,17 @@
                     "format": "uuid"
                   },
                   "createdAt": {
-                    "type": ["string", "null"],
+                    "type": [
+                      "string",
+                      "null"
+                    ],
                     "format": "date-time"
                   },
                   "updatedAt": {
-                    "type": ["string", "null"],
+                    "type": [
+                      "string",
+                      "null"
+                    ],
                     "format": "date-time"
                   }
                 },
@@ -1215,7 +1508,10 @@
             ]
           }
         },
-        "required": ["transferGroupId", "legs"]
+        "required": [
+          "transferGroupId",
+          "legs"
+        ]
       },
       "Asset": {
         "type": "object",
@@ -1245,11 +1541,17 @@
             "maxLength": 80
           },
           "openedAt": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           },
           "maturityAt": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           },
           "annualRateBps": {
@@ -1265,11 +1567,17 @@
             "type": "boolean"
           },
           "createdAt": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           },
           "updatedAt": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           }
         },
@@ -1293,12 +1601,18 @@
             "maximum": 9007199254740991
           },
           "valuedAt": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           },
           "source": {
             "type": "string",
-            "enum": ["manual", "maturity_projection"],
+            "enum": [
+              "manual",
+              "maturity_projection"
+            ],
             "default": "manual"
           },
           "id": {
@@ -1314,11 +1628,21 @@
             "minLength": 1
           },
           "createdAt": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           }
         },
-        "required": ["valueMinor", "valuedAt", "id", "assetId", "userId", "createdAt"]
+        "required": [
+          "valueMinor",
+          "valuedAt",
+          "id",
+          "assetId",
+          "userId",
+          "createdAt"
+        ]
       },
       "ValuationPage": {
         "type": "object",
@@ -1334,12 +1658,18 @@
                   "maximum": 9007199254740991
                 },
                 "valuedAt": {
-                  "type": ["string", "null"],
+                  "type": [
+                    "string",
+                    "null"
+                  ],
                   "format": "date-time"
                 },
                 "source": {
                   "type": "string",
-                  "enum": ["manual", "maturity_projection"],
+                  "enum": [
+                    "manual",
+                    "maturity_projection"
+                  ],
                   "default": "manual"
                 },
                 "id": {
@@ -1355,18 +1685,31 @@
                   "minLength": 1
                 },
                 "createdAt": {
-                  "type": ["string", "null"],
+                  "type": [
+                    "string",
+                    "null"
+                  ],
                   "format": "date-time"
                 }
               },
-              "required": ["valueMinor", "valuedAt", "id", "assetId", "userId", "createdAt"]
+              "required": [
+                "valueMinor",
+                "valuedAt",
+                "id",
+                "assetId",
+                "userId",
+                "createdAt"
+              ]
             }
           },
           "pageInfo": {
             "type": "object",
             "properties": {
               "nextCursor": {
-                "type": ["string", "null"]
+                "type": [
+                  "string",
+                  "null"
+                ]
               },
               "hasMore": {
                 "type": "boolean"
@@ -1376,16 +1719,26 @@
                 "exclusiveMinimum": 0
               }
             },
-            "required": ["nextCursor", "hasMore", "limit"]
+            "required": [
+              "nextCursor",
+              "hasMore",
+              "limit"
+            ]
           }
         },
-        "required": ["items", "pageInfo"]
+        "required": [
+          "items",
+          "pageInfo"
+        ]
       },
       "NetWorth": {
         "type": "object",
         "properties": {
           "asOf": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           },
           "netWorthMinor": {
@@ -1411,7 +1764,11 @@
                   "maximum": 9007199254740991
                 }
               },
-              "required": ["accountId", "name", "balanceMinor"]
+              "required": [
+                "accountId",
+                "name",
+                "balanceMinor"
+              ]
             }
           },
           "assets": {
@@ -1443,15 +1800,29 @@
                   "maximum": 9007199254740991
                 },
                 "valuedAt": {
-                  "type": ["string", "null"],
+                  "type": [
+                    "string",
+                    "null"
+                  ],
                   "format": "date-time"
                 }
               },
-              "required": ["assetId", "name", "kind", "valueMinor", "valuedAt"]
+              "required": [
+                "assetId",
+                "name",
+                "kind",
+                "valueMinor",
+                "valuedAt"
+              ]
             }
           }
         },
-        "required": ["asOf", "netWorthMinor", "accounts", "assets"]
+        "required": [
+          "asOf",
+          "netWorthMinor",
+          "accounts",
+          "assets"
+        ]
       },
       "MonthlyRollup": {
         "type": "object",
@@ -1486,7 +1857,11 @@
                   "minimum": 0
                 }
               },
-              "required": ["spentMinor", "incomeMinor", "txnCount"]
+              "required": [
+                "spentMinor",
+                "incomeMinor",
+                "txnCount"
+              ]
             }
           },
           "byAccount": {
@@ -1502,7 +1877,10 @@
                   "type": "integer"
                 }
               },
-              "required": ["accountId", "netMinor"]
+              "required": [
+                "accountId",
+                "netMinor"
+              ]
             }
           },
           "totalExpenseMinor": {
@@ -1514,7 +1892,10 @@
             "minimum": 0
           },
           "computedAt": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           }
         },
@@ -1542,22 +1923,39 @@
           },
           "locale": {
             "type": "string",
-            "enum": ["en-IN"]
+            "enum": [
+              "en-IN"
+            ]
           },
           "timezone": {
             "type": "string",
-            "enum": ["Asia/Kolkata"]
+            "enum": [
+              "Asia/Kolkata"
+            ]
           },
           "createdAt": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           },
           "updatedAt": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           }
         },
-        "required": ["userId", "displayName", "locale", "timezone", "createdAt", "updatedAt"]
+        "required": [
+          "userId",
+          "displayName",
+          "locale",
+          "timezone",
+          "createdAt",
+          "updatedAt"
+        ]
       },
       "RecurringRule": {
         "type": "object",
@@ -1583,7 +1981,10 @@
               },
               "type": {
                 "type": "string",
-                "enum": ["expense", "income"]
+                "enum": [
+                  "expense",
+                  "income"
+                ]
               },
               "amountMinor": {
                 "type": "integer",
@@ -1606,33 +2007,53 @@
                 "default": []
               }
             },
-            "required": ["accountId", "type", "amountMinor", "description"]
+            "required": [
+              "accountId",
+              "type",
+              "amountMinor",
+              "description"
+            ]
           },
           "rrule": {
             "type": "string",
             "minLength": 1
           },
           "startAt": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           },
           "nextRunAt": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           },
           "lastRunAt": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           },
           "isPaused": {
             "type": "boolean"
           },
           "createdAt": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           },
           "updatedAt": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           }
         },
@@ -1670,15 +2091,26 @@
                 },
                 "kind": {
                   "type": "string",
-                  "enum": ["overall_spend_spike", "category_spend_spike", "unusually_large_expense"]
+                  "enum": [
+                    "overall_spend_spike",
+                    "category_spend_spike",
+                    "unusually_large_expense"
+                  ]
                 },
                 "severity": {
                   "type": "string",
-                  "enum": ["attention", "high"]
+                  "enum": [
+                    "attention",
+                    "high"
+                  ]
                 },
                 "status": {
                   "type": "string",
-                  "enum": ["active", "dismissed", "resolved"]
+                  "enum": [
+                    "active",
+                    "dismissed",
+                    "resolved"
+                  ]
                 },
                 "categoryId": {
                   "type": "string",
@@ -1689,11 +2121,17 @@
                   "format": "uuid"
                 },
                 "windowStart": {
-                  "type": ["string", "null"],
+                  "type": [
+                    "string",
+                    "null"
+                  ],
                   "format": "date-time"
                 },
                 "windowEnd": {
-                  "type": ["string", "null"],
+                  "type": [
+                    "string",
+                    "null"
+                  ],
                   "format": "date-time"
                 },
                 "evidence": {
@@ -1703,7 +2141,9 @@
                       "properties": {
                         "kind": {
                           "type": "string",
-                          "enum": ["overall_spend_spike"]
+                          "enum": [
+                            "overall_spend_spike"
+                          ]
                         },
                         "currentMinor": {
                           "type": "integer",
@@ -1725,11 +2165,17 @@
                           "minimum": 0
                         },
                         "windowStart": {
-                          "type": ["string", "null"],
+                          "type": [
+                            "string",
+                            "null"
+                          ],
                           "format": "date-time"
                         },
                         "windowEnd": {
-                          "type": ["string", "null"],
+                          "type": [
+                            "string",
+                            "null"
+                          ],
                           "format": "date-time"
                         },
                         "baselineWindowCount": {
@@ -1758,7 +2204,9 @@
                       "properties": {
                         "kind": {
                           "type": "string",
-                          "enum": ["category_spend_spike"]
+                          "enum": [
+                            "category_spend_spike"
+                          ]
                         },
                         "categoryId": {
                           "type": "string",
@@ -1787,11 +2235,17 @@
                           "minimum": 0
                         },
                         "windowStart": {
-                          "type": ["string", "null"],
+                          "type": [
+                            "string",
+                            "null"
+                          ],
                           "format": "date-time"
                         },
                         "windowEnd": {
-                          "type": ["string", "null"],
+                          "type": [
+                            "string",
+                            "null"
+                          ],
                           "format": "date-time"
                         },
                         "baselineWindowCount": {
@@ -1825,7 +2279,9 @@
                       "properties": {
                         "kind": {
                           "type": "string",
-                          "enum": ["unusually_large_expense"]
+                          "enum": [
+                            "unusually_large_expense"
+                          ]
                         },
                         "transactionId": {
                           "type": "string",
@@ -1868,7 +2324,10 @@
                           "minimum": 0
                         },
                         "occurredAt": {
-                          "type": ["string", "null"],
+                          "type": [
+                            "string",
+                            "null"
+                          ],
                           "format": "date-time"
                         }
                       },
@@ -1891,19 +2350,31 @@
                   "exclusiveMinimum": 0
                 },
                 "firstDetectedAt": {
-                  "type": ["string", "null"],
+                  "type": [
+                    "string",
+                    "null"
+                  ],
                   "format": "date-time"
                 },
                 "lastDetectedAt": {
-                  "type": ["string", "null"],
+                  "type": [
+                    "string",
+                    "null"
+                  ],
                   "format": "date-time"
                 },
                 "dismissedAt": {
-                  "type": ["string", "null"],
+                  "type": [
+                    "string",
+                    "null"
+                  ],
                   "format": "date-time"
                 },
                 "resolvedAt": {
-                  "type": ["string", "null"],
+                  "type": [
+                    "string",
+                    "null"
+                  ],
                   "format": "date-time"
                 }
               },
@@ -1927,7 +2398,10 @@
             "type": "object",
             "properties": {
               "nextCursor": {
-                "type": ["string", "null"]
+                "type": [
+                  "string",
+                  "null"
+                ]
               },
               "hasMore": {
                 "type": "boolean"
@@ -1937,32 +2411,54 @@
                 "exclusiveMinimum": 0
               }
             },
-            "required": ["nextCursor", "hasMore", "limit"]
+            "required": [
+              "nextCursor",
+              "hasMore",
+              "limit"
+            ]
           },
           "analysis": {
             "type": "object",
             "properties": {
               "status": {
                 "type": "string",
-                "enum": ["learning", "ready", "stale", "unavailable"]
+                "enum": [
+                  "learning",
+                  "ready",
+                  "stale",
+                  "unavailable"
+                ]
               },
               "computedAt": {
-                "type": ["string", "null"],
+                "type": [
+                  "string",
+                  "null"
+                ],
                 "format": "date-time"
               },
               "sourceThrough": {
-                "type": ["string", "null"],
+                "type": [
+                  "string",
+                  "null"
+                ],
                 "format": "date-time"
               },
               "historyStart": {
-                "type": ["string", "null"],
+                "type": [
+                  "string",
+                  "null"
+                ],
                 "format": "date-time"
               },
               "eligibleKinds": {
                 "type": "array",
                 "items": {
                   "type": "string",
-                  "enum": ["overall_spend_spike", "category_spend_spike", "unusually_large_expense"]
+                  "enum": [
+                    "overall_spend_spike",
+                    "category_spend_spike",
+                    "unusually_large_expense"
+                  ]
                 }
               },
               "baselineExpenseCount": {
@@ -1970,10 +2466,18 @@
                 "minimum": 0
               }
             },
-            "required": ["status", "eligibleKinds", "baselineExpenseCount"]
+            "required": [
+              "status",
+              "eligibleKinds",
+              "baselineExpenseCount"
+            ]
           }
         },
-        "required": ["items", "pageInfo", "analysis"]
+        "required": [
+          "items",
+          "pageInfo",
+          "analysis"
+        ]
       },
       "DismissSpendingWarningResponse": {
         "type": "object",
@@ -1984,14 +2488,23 @@
           },
           "status": {
             "type": "string",
-            "enum": ["dismissed"]
+            "enum": [
+              "dismissed"
+            ]
           },
           "dismissedAt": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           }
         },
-        "required": ["id", "status", "dismissedAt"]
+        "required": [
+          "id",
+          "status",
+          "dismissedAt"
+        ]
       },
       "Goal": {
         "type": "object",
@@ -2015,12 +2528,18 @@
             "maximum": 9007199254740991
           },
           "targetDate": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           },
           "fundingMode": {
             "type": "string",
-            "enum": ["linked_account", "tagged"]
+            "enum": [
+              "linked_account",
+              "tagged"
+            ]
           },
           "linkedAccountId": {
             "type": "string",
@@ -2037,7 +2556,11 @@
           },
           "status": {
             "type": "string",
-            "enum": ["active", "achieved", "abandoned"]
+            "enum": [
+              "active",
+              "achieved",
+              "abandoned"
+            ]
           },
           "startedMinor": {
             "type": "integer",
@@ -2045,11 +2568,17 @@
             "maximum": 9007199254740991
           },
           "createdAt": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           },
           "updatedAt": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           },
           "progressMinor": {
@@ -2081,19 +2610,33 @@
           },
           "mode": {
             "type": "string",
-            "enum": ["target_date", "at_current_rate"]
+            "enum": [
+              "target_date",
+              "at_current_rate"
+            ]
           },
           "requiredMonthlyMinor": {
-            "type": ["integer", "null"],
+            "type": [
+              "integer",
+              "null"
+            ],
             "minimum": 0,
             "maximum": 9007199254740991
           },
           "projectedCompletionDate": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           }
         },
-        "required": ["goalId", "mode", "requiredMonthlyMinor", "projectedCompletionDate"]
+        "required": [
+          "goalId",
+          "mode",
+          "requiredMonthlyMinor",
+          "projectedCompletionDate"
+        ]
       },
       "BudgetPage": {
         "type": "object",
@@ -2103,7 +2646,10 @@
             "pattern": "^\\d{4}-\\d{2}$"
           },
           "computedAt": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           },
           "alertPolicy": {
@@ -2118,7 +2664,9 @@
                 }
               }
             },
-            "required": ["thresholdsBps"]
+            "required": [
+              "thresholdsBps"
+            ]
           },
           "overview": {
             "type": "object",
@@ -2185,11 +2733,17 @@
                       "type": "boolean"
                     },
                     "createdAt": {
-                      "type": ["string", "null"],
+                      "type": [
+                        "string",
+                        "null"
+                      ],
                       "format": "date-time"
                     },
                     "updatedAt": {
-                      "type": ["string", "null"],
+                      "type": [
+                        "string",
+                        "null"
+                      ],
                       "format": "date-time"
                     }
                   },
@@ -2214,16 +2768,28 @@
                       "type": "string"
                     },
                     "icon": {
-                      "type": ["string", "null"]
+                      "type": [
+                        "string",
+                        "null"
+                      ]
                     },
                     "color": {
-                      "type": ["string", "null"]
+                      "type": [
+                        "string",
+                        "null"
+                      ]
                     },
                     "isArchived": {
                       "type": "boolean"
                     }
                   },
-                  "required": ["id", "name", "icon", "color", "isArchived"]
+                  "required": [
+                    "id",
+                    "name",
+                    "icon",
+                    "color",
+                    "isArchived"
+                  ]
                 },
                 "spentMinor": {
                   "type": "integer",
@@ -2241,7 +2807,11 @@
                 },
                 "state": {
                   "type": "string",
-                  "enum": ["under", "approaching", "reached"]
+                  "enum": [
+                    "under",
+                    "approaching",
+                    "reached"
+                  ]
                 },
                 "isEffective": {
                   "type": "boolean"
@@ -2262,7 +2832,10 @@
             "type": "object",
             "properties": {
               "nextCursor": {
-                "type": ["string", "null"]
+                "type": [
+                  "string",
+                  "null"
+                ]
               },
               "hasMore": {
                 "type": "boolean"
@@ -2272,10 +2845,21 @@
                 "exclusiveMinimum": 0
               }
             },
-            "required": ["nextCursor", "hasMore", "limit"]
+            "required": [
+              "nextCursor",
+              "hasMore",
+              "limit"
+            ]
           }
         },
-        "required": ["month", "computedAt", "alertPolicy", "overview", "items", "pageInfo"]
+        "required": [
+          "month",
+          "computedAt",
+          "alertPolicy",
+          "overview",
+          "items",
+          "pageInfo"
+        ]
       },
       "Budget": {
         "type": "object",
@@ -2301,11 +2885,17 @@
             "type": "boolean"
           },
           "createdAt": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           },
           "updatedAt": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           }
         },
@@ -2338,7 +2928,12 @@
             "minimum": 0
           }
         },
-        "required": ["totalBalanceMinor", "activeAccountCount", "assetsMinor", "liabilitiesMinor"]
+        "required": [
+          "totalBalanceMinor",
+          "activeAccountCount",
+          "assetsMinor",
+          "liabilitiesMinor"
+        ]
       },
       "RecentActivityItem": {
         "type": "object",
@@ -2360,7 +2955,10 @@
           },
           "type": {
             "type": "string",
-            "enum": ["expense", "income"]
+            "enum": [
+              "expense",
+              "income"
+            ]
           },
           "amountMinor": {
             "type": "integer",
@@ -2370,7 +2968,10 @@
             "type": "string"
           },
           "occurredAt": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           },
           "tags": {
@@ -2405,7 +3006,10 @@
                 "type": "integer"
               },
               "deltaPct": {
-                "type": ["number", "null"]
+                "type": [
+                  "number",
+                  "null"
+                ]
               },
               "trend": {
                 "type": "array",
@@ -2414,7 +3018,11 @@
                 }
               }
             },
-            "required": ["valueMinor", "deltaPct", "trend"]
+            "required": [
+              "valueMinor",
+              "deltaPct",
+              "trend"
+            ]
           },
           "income": {
             "type": "object",
@@ -2423,7 +3031,10 @@
                 "type": "integer"
               },
               "deltaPct": {
-                "type": ["number", "null"]
+                "type": [
+                  "number",
+                  "null"
+                ]
               },
               "trend": {
                 "type": "array",
@@ -2432,7 +3043,11 @@
                 }
               }
             },
-            "required": ["valueMinor", "deltaPct", "trend"]
+            "required": [
+              "valueMinor",
+              "deltaPct",
+              "trend"
+            ]
           },
           "savingsRate": {
             "type": "object",
@@ -2441,7 +3056,10 @@
                 "type": "number"
               },
               "deltaPct": {
-                "type": ["number", "null"]
+                "type": [
+                  "number",
+                  "null"
+                ]
               },
               "trend": {
                 "type": "array",
@@ -2450,7 +3068,11 @@
                 }
               }
             },
-            "required": ["valuePct", "deltaPct", "trend"]
+            "required": [
+              "valuePct",
+              "deltaPct",
+              "trend"
+            ]
           },
           "netWorth": {
             "type": "object",
@@ -2459,7 +3081,10 @@
                 "type": "integer"
               },
               "deltaPct": {
-                "type": ["number", "null"]
+                "type": [
+                  "number",
+                  "null"
+                ]
               },
               "trend": {
                 "type": "array",
@@ -2468,17 +3093,32 @@
                 }
               }
             },
-            "required": ["valueMinor", "deltaPct", "trend"]
+            "required": [
+              "valueMinor",
+              "deltaPct",
+              "trend"
+            ]
           }
         },
-        "required": ["period", "spent", "income", "savingsRate", "netWorth"]
+        "required": [
+          "period",
+          "spent",
+          "income",
+          "savingsRate",
+          "netWorth"
+        ]
       },
       "CashflowResponse": {
         "type": "object",
         "properties": {
           "range": {
             "type": "string",
-            "enum": ["1W", "1M", "6M", "12M"]
+            "enum": [
+              "1W",
+              "1M",
+              "6M",
+              "12M"
+            ]
           },
           "buckets": {
             "type": "array",
@@ -2497,11 +3137,18 @@
                   "minimum": 0
                 }
               },
-              "required": ["label", "incomeMinor", "expenseMinor"]
+              "required": [
+                "label",
+                "incomeMinor",
+                "expenseMinor"
+              ]
             }
           }
         },
-        "required": ["range", "buckets"]
+        "required": [
+          "range",
+          "buckets"
+        ]
       },
       "TopSpendingItem": {
         "type": "object",
@@ -2528,14 +3175,23 @@
             "minimum": 0
           }
         },
-        "required": ["name", "amountMinor", "txnCount"]
+        "required": [
+          "name",
+          "amountMinor",
+          "txnCount"
+        ]
       },
       "SpendMix": {
         "type": "object",
         "properties": {
           "range": {
             "type": "string",
-            "enum": ["1W", "1M", "6M", "12M"]
+            "enum": [
+              "1W",
+              "1M",
+              "6M",
+              "12M"
+            ]
           },
           "totalMinor": {
             "type": "integer",
@@ -2554,7 +3210,10 @@
                 "maximum": 100
               }
             },
-            "required": ["amountMinor", "pct"]
+            "required": [
+              "amountMinor",
+              "pct"
+            ]
           },
           "lifestyle": {
             "type": "object",
@@ -2569,7 +3228,10 @@
                 "maximum": 100
               }
             },
-            "required": ["amountMinor", "pct"]
+            "required": [
+              "amountMinor",
+              "pct"
+            ]
           },
           "uncategorized": {
             "type": "object",
@@ -2584,10 +3246,19 @@
                 "maximum": 100
               }
             },
-            "required": ["amountMinor", "pct"]
+            "required": [
+              "amountMinor",
+              "pct"
+            ]
           }
         },
-        "required": ["range", "totalMinor", "essential", "lifestyle", "uncategorized"]
+        "required": [
+          "range",
+          "totalMinor",
+          "essential",
+          "lifestyle",
+          "uncategorized"
+        ]
       },
       "DashboardInvestments": {
         "type": "object",
@@ -2619,7 +3290,10 @@
                   "type": "integer"
                 },
                 "returnPct": {
-                  "type": ["number", "null"]
+                  "type": [
+                    "number",
+                    "null"
+                  ]
                 },
                 "series": {
                   "type": "array",
@@ -2627,29 +3301,49 @@
                     "type": "object",
                     "properties": {
                       "valuedAt": {
-                        "type": ["string", "null"],
+                        "type": [
+                          "string",
+                          "null"
+                        ],
                         "format": "date-time"
                       },
                       "valueMinor": {
                         "type": "integer"
                       }
                     },
-                    "required": ["valuedAt", "valueMinor"]
+                    "required": [
+                      "valuedAt",
+                      "valueMinor"
+                    ]
                   }
                 }
               },
-              "required": ["assetId", "name", "kind", "currentValueMinor", "returnPct", "series"]
+              "required": [
+                "assetId",
+                "name",
+                "kind",
+                "currentValueMinor",
+                "returnPct",
+                "series"
+              ]
             }
           }
         },
-        "required": ["items"]
+        "required": [
+          "items"
+        ]
       },
       "RecurringForecast": {
         "type": "object",
         "properties": {
           "range": {
             "type": "string",
-            "enum": ["1W", "1M", "6M", "12M"]
+            "enum": [
+              "1W",
+              "1M",
+              "6M",
+              "12M"
+            ]
           },
           "inMinor": {
             "type": "integer",
@@ -2679,22 +3373,40 @@
                 },
                 "type": {
                   "type": "string",
-                  "enum": ["expense", "income"]
+                  "enum": [
+                    "expense",
+                    "income"
+                  ]
                 },
                 "amountMinor": {
                   "type": "integer",
                   "exclusiveMinimum": 0
                 },
                 "nextRunAt": {
-                  "type": ["string", "null"],
+                  "type": [
+                    "string",
+                    "null"
+                  ],
                   "format": "date-time"
                 }
               },
-              "required": ["ruleId", "name", "type", "amountMinor", "nextRunAt"]
+              "required": [
+                "ruleId",
+                "name",
+                "type",
+                "amountMinor",
+                "nextRunAt"
+              ]
             }
           }
         },
-        "required": ["range", "inMinor", "outMinor", "netMinor", "upcoming"]
+        "required": [
+          "range",
+          "inMinor",
+          "outMinor",
+          "netMinor",
+          "upcoming"
+        ]
       }
     },
     "parameters": {}
@@ -2786,7 +3498,13 @@
                   },
                   "type": {
                     "type": "string",
-                    "enum": ["bank", "credit_card", "cash", "wallet", "investment"]
+                    "enum": [
+                      "bank",
+                      "credit_card",
+                      "cash",
+                      "wallet",
+                      "investment"
+                    ]
                   },
                   "openingBalanceMinor": {
                     "type": "integer",
@@ -2794,7 +3512,11 @@
                     "maximum": 9007199254740991
                   }
                 },
-                "required": ["name", "type", "openingBalanceMinor"]
+                "required": [
+                  "name",
+                  "type",
+                  "openingBalanceMinor"
+                ]
               }
             }
           }
@@ -2806,7 +3528,9 @@
               "Idempotency-Replayed": {
                 "schema": {
                   "type": "string",
-                  "enum": ["true"]
+                  "enum": [
+                    "true"
+                  ]
                 },
                 "required": true
               }
@@ -2950,14 +3674,18 @@
                     "description": "JSON string containing ColumnMapping"
                   }
                 },
-                "required": ["file", "accountId", "mapping"]
+                "required": [
+                  "file",
+                  "accountId",
+                  "mapping"
+                ]
               }
             }
           }
         },
         "responses": {
-          "201": {
-            "description": "Import batch created",
+          "202": {
+            "description": "Import parse workflow accepted",
             "content": {
               "application/json": {
                 "schema": {
@@ -3200,7 +3928,10 @@
                     "type": "boolean"
                   },
                   "suggestedCategoryId": {
-                    "type": ["string", "null"],
+                    "type": [
+                      "string",
+                      "null"
+                    ],
                     "format": "uuid"
                   }
                 }
@@ -3281,8 +4012,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "Committed batch",
+          "202": {
+            "description": "Commit workflow accepted",
             "content": {
               "application/json": {
                 "schema": {
@@ -3363,8 +4094,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "Reverted batch",
+          "202": {
+            "description": "Revert workflow accepted",
             "content": {
               "application/json": {
                 "schema": {
@@ -3460,7 +4191,9 @@
               "Idempotency-Replayed": {
                 "schema": {
                   "type": "string",
-                  "enum": ["true"]
+                  "enum": [
+                    "true"
+                  ]
                 },
                 "required": false
               }
@@ -3605,7 +4338,10 @@
                   },
                   "kind": {
                     "type": "string",
-                    "enum": ["expense", "income"]
+                    "enum": [
+                      "expense",
+                      "income"
+                    ]
                   },
                   "parentId": {
                     "type": "string",
@@ -3622,10 +4358,16 @@
                   },
                   "group": {
                     "type": "string",
-                    "enum": ["essential", "lifestyle"]
+                    "enum": [
+                      "essential",
+                      "lifestyle"
+                    ]
                   }
                 },
-                "required": ["name", "kind"]
+                "required": [
+                  "name",
+                  "kind"
+                ]
               }
             }
           }
@@ -3637,7 +4379,9 @@
               "Idempotency-Replayed": {
                 "schema": {
                   "type": "string",
-                  "enum": ["true"]
+                  "enum": [
+                    "true"
+                  ]
                 },
                 "required": true
               }
@@ -3737,7 +4481,9 @@
               "Idempotency-Replayed": {
                 "schema": {
                   "type": "string",
-                  "enum": ["true"]
+                  "enum": [
+                    "true"
+                  ]
                 },
                 "required": false
               }
@@ -3830,11 +4576,20 @@
                 "type": "object",
                 "properties": {
                   "group": {
-                    "type": ["string", "null"],
-                    "enum": ["essential", "lifestyle", null]
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "enum": [
+                      "essential",
+                      "lifestyle",
+                      null
+                    ]
                   }
                 },
-                "required": ["group"]
+                "required": [
+                  "group"
+                ]
               }
             }
           }
@@ -3846,7 +4601,9 @@
               "Idempotency-Replayed": {
                 "schema": {
                   "type": "string",
-                  "enum": ["true"]
+                  "enum": [
+                    "true"
+                  ]
                 },
                 "required": false
               }
@@ -3998,7 +4755,10 @@
                     "format": "uuid"
                   }
                 },
-                "required": ["pattern", "categoryId"]
+                "required": [
+                  "pattern",
+                  "categoryId"
+                ]
               }
             }
           }
@@ -4010,7 +4770,9 @@
               "Idempotency-Replayed": {
                 "schema": {
                   "type": "string",
-                  "enum": ["true"]
+                  "enum": [
+                    "true"
+                  ]
                 },
                 "required": true
               }
@@ -4120,7 +4882,9 @@
               "Idempotency-Replayed": {
                 "schema": {
                   "type": "string",
-                  "enum": ["true"]
+                  "enum": [
+                    "true"
+                  ]
                 },
                 "required": false
               }
@@ -4207,7 +4971,10 @@
           },
           {
             "schema": {
-              "type": ["string", "null"],
+              "type": [
+                "string",
+                "null"
+              ],
               "format": "date-time"
             },
             "required": false,
@@ -4216,7 +4983,10 @@
           },
           {
             "schema": {
-              "type": ["string", "null"],
+              "type": [
+                "string",
+                "null"
+              ],
               "format": "date-time"
             },
             "required": false,
@@ -4343,7 +5113,10 @@
                   },
                   "type": {
                     "type": "string",
-                    "enum": ["expense", "income"]
+                    "enum": [
+                      "expense",
+                      "income"
+                    ]
                   },
                   "amountMinor": {
                     "type": "integer",
@@ -4351,7 +5124,10 @@
                     "maximum": 9007199254740991
                   },
                   "occurredAt": {
-                    "type": ["string", "null"],
+                    "type": [
+                      "string",
+                      "null"
+                    ],
                     "format": "date-time"
                   },
                   "description": {
@@ -4370,7 +5146,13 @@
                     "default": []
                   }
                 },
-                "required": ["accountId", "type", "amountMinor", "occurredAt", "description"]
+                "required": [
+                  "accountId",
+                  "type",
+                  "amountMinor",
+                  "occurredAt",
+                  "description"
+                ]
               }
             }
           }
@@ -4547,7 +5329,10 @@
                     "maxItems": 20
                   },
                   "categoryId": {
-                    "type": ["string", "null"],
+                    "type": [
+                      "string",
+                      "null"
+                    ],
                     "format": "uuid"
                   }
                 }
@@ -4562,7 +5347,9 @@
               "Idempotency-Replayed": {
                 "schema": {
                   "type": "string",
-                  "enum": ["true"]
+                  "enum": [
+                    "true"
+                  ]
                 },
                 "required": false
               }
@@ -4653,7 +5440,9 @@
               "Idempotency-Replayed": {
                 "schema": {
                   "type": "string",
-                  "enum": ["true"]
+                  "enum": [
+                    "true"
+                  ]
                 },
                 "required": false
               }
@@ -4757,7 +5546,10 @@
                     "maximum": 9007199254740991
                   },
                   "occurredAt": {
-                    "type": ["string", "null"],
+                    "type": [
+                      "string",
+                      "null"
+                    ],
                     "format": "date-time"
                   },
                   "description": {
@@ -4866,7 +5658,9 @@
               "Idempotency-Replayed": {
                 "schema": {
                   "type": "string",
-                  "enum": ["true"]
+                  "enum": [
+                    "true"
+                  ]
                 },
                 "required": false
               }
@@ -4963,11 +5757,17 @@
                     "maxLength": 80
                   },
                   "openedAt": {
-                    "type": ["string", "null"],
+                    "type": [
+                      "string",
+                      "null"
+                    ],
                     "format": "date-time"
                   },
                   "maturityAt": {
-                    "type": ["string", "null"],
+                    "type": [
+                      "string",
+                      "null"
+                    ],
                     "format": "date-time"
                   },
                   "annualRateBps": {
@@ -4985,7 +5785,12 @@
                     "maximum": 9007199254740991
                   }
                 },
-                "required": ["kind", "name", "openedAt", "openingValueMinor"]
+                "required": [
+                  "kind",
+                  "name",
+                  "openedAt",
+                  "openingValueMinor"
+                ]
               }
             }
           }
@@ -4997,7 +5802,9 @@
               "Idempotency-Replayed": {
                 "schema": {
                   "type": "string",
-                  "enum": ["true"]
+                  "enum": [
+                    "true"
+                  ]
                 },
                 "required": true
               }
@@ -5149,7 +5956,9 @@
               "Idempotency-Replayed": {
                 "schema": {
                   "type": "string",
-                  "enum": ["true"]
+                  "enum": [
+                    "true"
+                  ]
                 },
                 "required": false
               }
@@ -5247,16 +6056,25 @@
                     "maximum": 9007199254740991
                   },
                   "valuedAt": {
-                    "type": ["string", "null"],
+                    "type": [
+                      "string",
+                      "null"
+                    ],
                     "format": "date-time"
                   },
                   "source": {
                     "type": "string",
-                    "enum": ["manual", "maturity_projection"],
+                    "enum": [
+                      "manual",
+                      "maturity_projection"
+                    ],
                     "default": "manual"
                   }
                 },
-                "required": ["valueMinor", "valuedAt"]
+                "required": [
+                  "valueMinor",
+                  "valuedAt"
+                ]
               }
             }
           }
@@ -5268,7 +6086,9 @@
               "Idempotency-Replayed": {
                 "schema": {
                   "type": "string",
-                  "enum": ["true"]
+                  "enum": [
+                    "true"
+                  ]
                 },
                 "required": true
               }
@@ -5547,7 +6367,10 @@
         "parameters": [
           {
             "schema": {
-              "type": ["string", "null"],
+              "type": [
+                "string",
+                "null"
+              ],
               "format": "date-time"
             },
             "required": false,
@@ -5556,7 +6379,10 @@
           },
           {
             "schema": {
-              "type": ["string", "null"],
+              "type": [
+                "string",
+                "null"
+              ],
               "format": "date-time"
             },
             "required": false,
@@ -5571,7 +6397,9 @@
               "Content-Disposition": {
                 "schema": {
                   "type": "string",
-                  "enum": ["attachment; filename=\"treasury-ops-export.csv\""]
+                  "enum": [
+                    "attachment; filename=\"treasury-ops-export.csv\""
+                  ]
                 },
                 "required": true
               }
@@ -5695,7 +6523,9 @@
                     "maxLength": 100
                   }
                 },
-                "required": ["displayName"]
+                "required": [
+                  "displayName"
+                ]
               }
             }
           }
@@ -5843,7 +6673,10 @@
                       },
                       "type": {
                         "type": "string",
-                        "enum": ["expense", "income"]
+                        "enum": [
+                          "expense",
+                          "income"
+                        ]
                       },
                       "amountMinor": {
                         "type": "integer",
@@ -5866,18 +6699,30 @@
                         "default": []
                       }
                     },
-                    "required": ["accountId", "type", "amountMinor", "description"]
+                    "required": [
+                      "accountId",
+                      "type",
+                      "amountMinor",
+                      "description"
+                    ]
                   },
                   "rrule": {
                     "type": "string",
                     "minLength": 1
                   },
                   "startAt": {
-                    "type": ["string", "null"],
+                    "type": [
+                      "string",
+                      "null"
+                    ],
                     "format": "date-time"
                   }
                 },
-                "required": ["template", "rrule", "startAt"]
+                "required": [
+                  "template",
+                  "rrule",
+                  "startAt"
+                ]
               }
             }
           }
@@ -5889,7 +6734,9 @@
               "Idempotency-Replayed": {
                 "schema": {
                   "type": "string",
-                  "enum": ["true"]
+                  "enum": [
+                    "true"
+                  ]
                 },
                 "required": true
               }
@@ -6011,7 +6858,10 @@
                       },
                       "type": {
                         "type": "string",
-                        "enum": ["expense", "income"]
+                        "enum": [
+                          "expense",
+                          "income"
+                        ]
                       },
                       "amountMinor": {
                         "type": "integer",
@@ -6053,7 +6903,9 @@
               "Idempotency-Replayed": {
                 "schema": {
                   "type": "string",
-                  "enum": ["true"]
+                  "enum": [
+                    "true"
+                  ]
                 },
                 "required": false
               }
@@ -6130,7 +6982,11 @@
           {
             "schema": {
               "type": "string",
-              "enum": ["overall_spend_spike", "category_spend_spike", "unusually_large_expense"]
+              "enum": [
+                "overall_spend_spike",
+                "category_spend_spike",
+                "unusually_large_expense"
+              ]
             },
             "required": false,
             "name": "kind",
@@ -6139,7 +6995,10 @@
           {
             "schema": {
               "type": "string",
-              "enum": ["attention", "high"]
+              "enum": [
+                "attention",
+                "high"
+              ]
             },
             "required": false,
             "name": "severity",
@@ -6244,7 +7103,9 @@
               "Idempotency-Replayed": {
                 "schema": {
                   "type": "string",
-                  "enum": ["true"]
+                  "enum": [
+                    "true"
+                  ]
                 },
                 "required": false
               }
@@ -6321,7 +7182,11 @@
           {
             "schema": {
               "type": "string",
-              "enum": ["active", "achieved", "abandoned"],
+              "enum": [
+                "active",
+                "achieved",
+                "abandoned"
+              ],
               "default": "active"
             },
             "required": false,
@@ -6411,19 +7276,29 @@
                         "maximum": 9007199254740991
                       },
                       "targetDate": {
-                        "type": ["string", "null"],
+                        "type": [
+                          "string",
+                          "null"
+                        ],
                         "format": "date-time"
                       },
                       "fundingMode": {
                         "type": "string",
-                        "enum": ["linked_account"]
+                        "enum": [
+                          "linked_account"
+                        ]
                       },
                       "linkedAccountId": {
                         "type": "string",
                         "format": "uuid"
                       }
                     },
-                    "required": ["name", "targetMinor", "fundingMode", "linkedAccountId"],
+                    "required": [
+                      "name",
+                      "targetMinor",
+                      "fundingMode",
+                      "linkedAccountId"
+                    ],
                     "additionalProperties": false
                   },
                   {
@@ -6440,12 +7315,17 @@
                         "maximum": 9007199254740991
                       },
                       "targetDate": {
-                        "type": ["string", "null"],
+                        "type": [
+                          "string",
+                          "null"
+                        ],
                         "format": "date-time"
                       },
                       "fundingMode": {
                         "type": "string",
-                        "enum": ["tagged"]
+                        "enum": [
+                          "tagged"
+                        ]
                       },
                       "tag": {
                         "type": "string",
@@ -6453,7 +7333,12 @@
                         "maxLength": 40
                       }
                     },
-                    "required": ["name", "targetMinor", "fundingMode", "tag"],
+                    "required": [
+                      "name",
+                      "targetMinor",
+                      "fundingMode",
+                      "tag"
+                    ],
                     "additionalProperties": false
                   }
                 ]
@@ -6468,7 +7353,9 @@
               "Idempotency-Replayed": {
                 "schema": {
                   "type": "string",
-                  "enum": ["true"]
+                  "enum": [
+                    "true"
+                  ]
                 },
                 "required": true
               }
@@ -6577,7 +7464,9 @@
                     "maxItems": 200
                   }
                 },
-                "required": ["goalIds"]
+                "required": [
+                  "goalIds"
+                ]
               }
             }
           }
@@ -6589,7 +7478,9 @@
               "Idempotency-Replayed": {
                 "schema": {
                   "type": "string",
-                  "enum": ["true"]
+                  "enum": [
+                    "true"
+                  ]
                 },
                 "required": false
               }
@@ -6752,7 +7643,10 @@
                     "maximum": 9007199254740991
                   },
                   "targetDate": {
-                    "type": ["string", "null"],
+                    "type": [
+                      "string",
+                      "null"
+                    ],
                     "format": "date-time"
                   }
                 },
@@ -6768,7 +7662,9 @@
               "Idempotency-Replayed": {
                 "schema": {
                   "type": "string",
-                  "enum": ["true"]
+                  "enum": [
+                    "true"
+                  ]
                 },
                 "required": false
               }
@@ -6868,7 +7764,9 @@
               "Idempotency-Replayed": {
                 "schema": {
                   "type": "string",
-                  "enum": ["true"]
+                  "enum": [
+                    "true"
+                  ]
                 },
                 "required": false
               }
@@ -7032,11 +7930,15 @@
               "anyOf": [
                 {
                   "type": "string",
-                  "enum": ["true"]
+                  "enum": [
+                    "true"
+                  ]
                 },
                 {
                   "type": "string",
-                  "enum": ["false"]
+                  "enum": [
+                    "false"
+                  ]
                 }
               ]
             },
@@ -7128,7 +8030,9 @@
                     "maximum": 9007199254740991
                   }
                 },
-                "required": ["limitMinor"]
+                "required": [
+                  "limitMinor"
+                ]
               }
             }
           }
@@ -7140,7 +8044,9 @@
               "Idempotency-Replayed": {
                 "schema": {
                   "type": "string",
-                  "enum": ["true"]
+                  "enum": [
+                    "true"
+                  ]
                 },
                 "required": false
               }
@@ -7240,7 +8146,9 @@
               "Idempotency-Replayed": {
                 "schema": {
                   "type": "string",
-                  "enum": ["true"]
+                  "enum": [
+                    "true"
+                  ]
                 },
                 "required": false
               }
@@ -7331,31 +8239,43 @@
                         "type": "array",
                         "items": {
                           "type": "string",
-                          "enum": ["write"]
+                          "enum": [
+                            "write"
+                          ]
                         }
                       },
                       "categories": {
                         "type": "array",
                         "items": {
                           "type": "string",
-                          "enum": ["read"]
+                          "enum": [
+                            "read"
+                          ]
                         }
                       },
                       "accounts": {
                         "type": "array",
                         "items": {
                           "type": "string",
-                          "enum": ["read"]
+                          "enum": [
+                            "read"
+                          ]
                         }
                       }
                     }
                   },
                   "expiresAt": {
-                    "type": ["string", "null"],
+                    "type": [
+                      "string",
+                      "null"
+                    ],
                     "format": "date-time"
                   }
                 },
-                "required": ["name", "permissions"]
+                "required": [
+                  "name",
+                  "permissions"
+                ]
               }
             }
           }
@@ -7376,30 +8296,42 @@
                       "type": "string"
                     },
                     "start": {
-                      "type": ["string", "null"]
+                      "type": [
+                        "string",
+                        "null"
+                      ]
                     },
                     "permissions": {
-                      "type": ["object", "null"],
+                      "type": [
+                        "object",
+                        "null"
+                      ],
                       "properties": {
                         "transactions": {
                           "type": "array",
                           "items": {
                             "type": "string",
-                            "enum": ["write"]
+                            "enum": [
+                              "write"
+                            ]
                           }
                         },
                         "categories": {
                           "type": "array",
                           "items": {
                             "type": "string",
-                            "enum": ["read"]
+                            "enum": [
+                              "read"
+                            ]
                           }
                         },
                         "accounts": {
                           "type": "array",
                           "items": {
                             "type": "string",
-                            "enum": ["read"]
+                            "enum": [
+                              "read"
+                            ]
                           }
                         }
                       }
@@ -7408,15 +8340,24 @@
                       "type": "boolean"
                     },
                     "createdAt": {
-                      "type": ["string", "null"],
+                      "type": [
+                        "string",
+                        "null"
+                      ],
                       "format": "date-time"
                     },
                     "expiresAt": {
-                      "type": ["string", "null"],
+                      "type": [
+                        "string",
+                        "null"
+                      ],
                       "format": "date-time"
                     },
                     "lastRequest": {
-                      "type": ["string", "null"],
+                      "type": [
+                        "string",
+                        "null"
+                      ],
                       "format": "date-time"
                     },
                     "key": {
@@ -7494,30 +8435,42 @@
                         "type": "string"
                       },
                       "start": {
-                        "type": ["string", "null"]
+                        "type": [
+                          "string",
+                          "null"
+                        ]
                       },
                       "permissions": {
-                        "type": ["object", "null"],
+                        "type": [
+                          "object",
+                          "null"
+                        ],
                         "properties": {
                           "transactions": {
                             "type": "array",
                             "items": {
                               "type": "string",
-                              "enum": ["write"]
+                              "enum": [
+                                "write"
+                              ]
                             }
                           },
                           "categories": {
                             "type": "array",
                             "items": {
                               "type": "string",
-                              "enum": ["read"]
+                              "enum": [
+                                "read"
+                              ]
                             }
                           },
                           "accounts": {
                             "type": "array",
                             "items": {
                               "type": "string",
-                              "enum": ["read"]
+                              "enum": [
+                                "read"
+                              ]
                             }
                           }
                         }
@@ -7526,15 +8479,24 @@
                         "type": "boolean"
                       },
                       "createdAt": {
-                        "type": ["string", "null"],
+                        "type": [
+                          "string",
+                          "null"
+                        ],
                         "format": "date-time"
                       },
                       "expiresAt": {
-                        "type": ["string", "null"],
+                        "type": [
+                          "string",
+                          "null"
+                        ],
                         "format": "date-time"
                       },
                       "lastRequest": {
-                        "type": ["string", "null"],
+                        "type": [
+                          "string",
+                          "null"
+                        ],
                         "format": "date-time"
                       }
                     },
@@ -7621,21 +8583,27 @@
                         "type": "array",
                         "items": {
                           "type": "string",
-                          "enum": ["write"]
+                          "enum": [
+                            "write"
+                          ]
                         }
                       },
                       "categories": {
                         "type": "array",
                         "items": {
                           "type": "string",
-                          "enum": ["read"]
+                          "enum": [
+                            "read"
+                          ]
                         }
                       },
                       "accounts": {
                         "type": "array",
                         "items": {
                           "type": "string",
-                          "enum": ["read"]
+                          "enum": [
+                            "read"
+                          ]
                         }
                       }
                     }
@@ -7661,30 +8629,42 @@
                       "type": "string"
                     },
                     "start": {
-                      "type": ["string", "null"]
+                      "type": [
+                        "string",
+                        "null"
+                      ]
                     },
                     "permissions": {
-                      "type": ["object", "null"],
+                      "type": [
+                        "object",
+                        "null"
+                      ],
                       "properties": {
                         "transactions": {
                           "type": "array",
                           "items": {
                             "type": "string",
-                            "enum": ["write"]
+                            "enum": [
+                              "write"
+                            ]
                           }
                         },
                         "categories": {
                           "type": "array",
                           "items": {
                             "type": "string",
-                            "enum": ["read"]
+                            "enum": [
+                              "read"
+                            ]
                           }
                         },
                         "accounts": {
                           "type": "array",
                           "items": {
                             "type": "string",
-                            "enum": ["read"]
+                            "enum": [
+                              "read"
+                            ]
                           }
                         }
                       }
@@ -7693,15 +8673,24 @@
                       "type": "boolean"
                     },
                     "createdAt": {
-                      "type": ["string", "null"],
+                      "type": [
+                        "string",
+                        "null"
+                      ],
                       "format": "date-time"
                     },
                     "expiresAt": {
-                      "type": ["string", "null"],
+                      "type": [
+                        "string",
+                        "null"
+                      ],
                       "format": "date-time"
                     },
                     "lastRequest": {
-                      "type": ["string", "null"],
+                      "type": [
+                        "string",
+                        "null"
+                      ],
                       "format": "date-time"
                     }
                   },
@@ -7995,7 +8984,12 @@
           {
             "schema": {
               "type": "string",
-              "enum": ["1W", "1M", "6M", "12M"]
+              "enum": [
+                "1W",
+                "1M",
+                "6M",
+                "12M"
+              ]
             },
             "required": true,
             "name": "range",
@@ -8057,7 +9051,12 @@
           {
             "schema": {
               "type": "string",
-              "enum": ["1W", "1M", "6M", "12M"]
+              "enum": [
+                "1W",
+                "1M",
+                "6M",
+                "12M"
+              ]
             },
             "required": true,
             "name": "range",
@@ -8133,7 +9132,12 @@
           {
             "schema": {
               "type": "string",
-              "enum": ["1W", "1M", "6M", "12M"]
+              "enum": [
+                "1W",
+                "1M",
+                "6M",
+                "12M"
+              ]
             },
             "required": true,
             "name": "range",
@@ -8246,7 +9250,12 @@
           {
             "schema": {
               "type": "string",
-              "enum": ["1W", "1M", "6M", "12M"]
+              "enum": [
+                "1W",
+                "1M",
+                "6M",
+                "12M"
+              ]
             },
             "required": true,
             "name": "range",

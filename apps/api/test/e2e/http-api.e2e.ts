@@ -11,7 +11,7 @@ import type { StartedTestContainer } from "testcontainers";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { z } from "zod";
 
-import { ImportsQueue } from "../../src/imports/imports.queue.js";
+import { ImportBatchRepository } from "../../src/imports/import-batch.repository.js";
 import { OpenApiController } from "../../src/openapi/openapi.controller.js";
 import { assertLedgerInvariants } from "../integration/support/assert-ledger-invariants.js";
 import { createTestDb } from "../integration/support/postgres-test-db.js";
@@ -195,7 +195,7 @@ describe("production HTTP composition", () => {
     });
   });
 
-  it("accepts multipart CSV upload and hands the parse command to BullMQ", async () => {
+  it("accepts multipart CSV upload and durably records the parse workflow", async () => {
     const account = await createAccount(baseUrl, sessionA, "CSV account");
     const form = new FormData();
     form.set(
@@ -222,18 +222,19 @@ describe("production HTTP composition", () => {
       headers: { cookie: sessionA },
       body: form
     });
-    expect(response.status).toBe(201);
+    expect(response.status).toBe(202);
     const batch = await parseResponse(response, ImportBatchSchema);
+    expect(batch.status).toBe("pending_parse");
     expect(response.headers.get("location")).toBe(`/api/v1/imports/${batch.id}`);
     const requestId = response.headers.get("x-request-id");
     expect(requestId).toBeTruthy();
 
-    const queued = await nonNullApp(app).get(ImportsQueue).getQueue().getJob(batch.id);
-    expect(queued?.data).toMatchObject({
-      batchId: batch.id,
-      userId: batch.userId,
+    const payload = await nonNullApp(app)
+      .get(ImportBatchRepository)
+      .findWorkflowPayload(batch.userId, batch.id);
+    expect(payload).toMatchObject({
       accountId: account.id,
-      correlationId: requestId
+      fileContentBase64: expect.any(String)
     });
   });
 

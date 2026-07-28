@@ -6,7 +6,6 @@ import { AccountRepository } from "../../../src/accounts/account.repository.js";
 import { AuditRepository } from "../../../src/audit/audit.repository.js";
 import { CategoryRepository } from "../../../src/categories/category.repository.js";
 import { CategoryRuleRepository } from "../../../src/category-rules/category-rule.repository.js";
-import { RuntimeConfigService } from "../../../src/common/config/runtime-config.service.js";
 import { accounts as accountsTable, auditLog } from "../../../src/common/db/schema/index.js";
 import { transactions as transactionsTable } from "../../../src/common/db/schema/index.js";
 import { withTxn } from "../../../src/common/db/db-txn.js";
@@ -14,45 +13,12 @@ import { CategoryKindMismatchError } from "../../../src/common/errors/category-k
 import { EntityNotFoundError } from "../../../src/common/errors/entity-not-found.error.js";
 import { ImportBatchNotReadyError } from "../../../src/common/errors/import-batch-not-ready.error.js";
 import { ImportBatchRepository } from "../../../src/imports/import-batch.repository.js";
-import { ImportsQueue } from "../../../src/imports/imports.queue.js";
 import { ImportsService } from "../../../src/imports/imports.service.js";
 import { StagedRowRepository } from "../../../src/imports/staged-row.repository.js";
 import type { NewStagedRow } from "../../../src/imports/staged-row.repository.js";
 import { TransactionRepository } from "../../../src/transactions/transaction.repository.js";
 import { createTestDb, insertTestUser } from "../support/postgres-test-db.js";
 import type { TestDb } from "../support/postgres-test-db.js";
-
-class TestRuntimeConfig implements RuntimeConfigService {
-  env = {
-    NODE_ENV: "test" as const,
-    API_PORT: 4000,
-    LOG_LEVEL: "info" as const,
-    LOG_PRETTY: false,
-    SERVICE_ROLE: "api" as const,
-    DATABASE_URL: "postgres://test:test@localhost:5432/test",
-    DATABASE_POOL_MAX: 10,
-    DATABASE_CONNECTION_TIMEOUT_MS: 5_000,
-    DATABASE_QUERY_TIMEOUT_MS: 10_000,
-    DATABASE_STATEMENT_TIMEOUT_MS: 10_000,
-    DATABASE_LOCK_TIMEOUT_MS: 5_000,
-    DATABASE_IDLE_IN_TXN_TIMEOUT_MS: 30_000,
-    REDIS_URL: "redis://127.0.0.1:6379/15",
-    READINESS_TIMEOUT_MS: 2_000,
-    GRACEFUL_SHUTDOWN_TIMEOUT_MS: 15_000,
-    APP_TIMEZONE: "Asia/Kolkata" as const,
-    TRUSTED_ORIGINS: "http://localhost:3000",
-    GIT_SHA: "test-sha",
-    BETTER_AUTH_SECRET: "test-secret-long-enough-32-chars-long",
-    BETTER_AUTH_URL: "http://localhost:4000",
-    AUTH_COOKIE_SECURE: false,
-    DISABLE_SIGNUP: false,
-    DISABLE_RATE_LIMITING: false
-  };
-
-  trustedOrigins(): string[] {
-    return ["http://localhost:3000"];
-  }
-}
 
 const MAPPING: ColumnMapping = {
   date: "Txn Date",
@@ -114,7 +80,6 @@ describe("ImportsService commit/revert", () => {
     categories = new CategoryRepository(testDb.db);
     const audit = new AuditRepository(testDb.db);
     const categoryRules = new CategoryRuleRepository(testDb.db);
-    const queue = new ImportsQueue(new TestRuntimeConfig());
     service = new ImportsService(
       testDb.db,
       batches,
@@ -123,8 +88,7 @@ describe("ImportsService commit/revert", () => {
       accounts,
       categories,
       audit,
-      categoryRules,
-      queue
+      categoryRules
     );
   }, 30_000);
 

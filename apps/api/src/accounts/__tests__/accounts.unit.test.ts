@@ -37,7 +37,7 @@ describe("Account Services Unit Tests", () => {
     it("create delegates to idempotency service", async () => {
       const mockRepo = { create: vi.fn(async () => sampleAccount) };
       const mockIdempotency = {
-        execute: vi.fn(async (_userId, _op, _key, _schema, work) => {
+        execute: vi.fn(async (_userId, _op, _key, _intent, _schema, work) => {
           const res = await work({});
           return { result: res, replayed: false };
         })
@@ -63,7 +63,7 @@ describe("Account Services Unit Tests", () => {
     it("archive delegates to idempotency service", async () => {
       const mockRepo = { archive: vi.fn(async () => true) };
       const mockIdempotency = {
-        execute: vi.fn(async (_userId, _op, _key, _schema, work) => {
+        execute: vi.fn(async (_userId, _op, _key, _intent, _schema, work) => {
           await work({});
           return { result: null, replayed: false };
         })

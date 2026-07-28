@@ -171,6 +171,12 @@ const replayedHeaders = z.object({ "Idempotency-Replayed": z.literal("true") });
 const optionalReplayHeaders = z.object({
   "Idempotency-Replayed": z.literal("true").optional()
 });
+const idempotencyConflictResponse = {
+  409: {
+    description: "Idempotency key was already used for different request intent",
+    ...json(ProblemDetails)
+  }
+};
 
 registry.registerPath({
   method: "get",
@@ -190,6 +196,7 @@ registry.registerPath({
       ...json(Account)
     },
     201: { description: "Created account", ...json(Account) },
+    ...idempotencyConflictResponse,
     ...problemResponses
   }
 });
@@ -271,6 +278,7 @@ registry.registerPath({
       headers: optionalReplayHeaders
     },
     404: { description: "Not found", ...json(ProblemDetails) },
+    ...idempotencyConflictResponse,
     ...problemResponses
   }
 });
@@ -293,6 +301,7 @@ registry.registerPath({
       ...json(Category)
     },
     201: { description: "Created category", ...json(Category) },
+    ...idempotencyConflictResponse,
     ...problemResponses
   }
 });
@@ -307,6 +316,7 @@ registry.registerPath({
       headers: optionalReplayHeaders
     },
     404: { description: "Not found", ...json(ProblemDetails) },
+    ...idempotencyConflictResponse,
     ...problemResponses
   }
 });
@@ -326,6 +336,7 @@ registry.registerPath({
       ...json(Category)
     },
     404: { description: "Not found", ...json(ProblemDetails) },
+    ...idempotencyConflictResponse,
     ...problemResponses
   }
 });
@@ -352,6 +363,7 @@ registry.registerPath({
     },
     201: { description: "Created category rule", ...json(CategoryRule) },
     404: { description: "Category not found", ...json(ProblemDetails) },
+    ...idempotencyConflictResponse,
     ...problemResponses
   }
 });
@@ -366,6 +378,7 @@ registry.registerPath({
       headers: optionalReplayHeaders
     },
     404: { description: "Category rule not found", ...json(ProblemDetails) },
+    ...idempotencyConflictResponse,
     ...problemResponses
   }
 });
@@ -422,7 +435,8 @@ registry.registerPath({
     },
     404: { description: "Not found", ...json(ProblemDetails) },
     409: {
-      description: "Transfer legs require a group-level metadata operation",
+      description:
+        "Transfer legs require a group-level metadata operation, or idempotency intent conflicts",
       ...json(ProblemDetails)
     },
     ...problemResponses
@@ -488,6 +502,7 @@ registry.registerPath({
       ...json(Asset)
     },
     201: { description: "Created asset", ...json(Asset) },
+    ...idempotencyConflictResponse,
     ...problemResponses
   }
 });
@@ -513,6 +528,7 @@ registry.registerPath({
       headers: optionalReplayHeaders
     },
     404: { description: "Not found", ...json(ProblemDetails) },
+    ...idempotencyConflictResponse,
     ...problemResponses
   }
 });
@@ -534,6 +550,7 @@ registry.registerPath({
     },
     201: { description: "Created valuation", ...json(Valuation) },
     404: { description: "Not found", ...json(ProblemDetails) },
+    ...idempotencyConflictResponse,
     ...problemResponses
   }
 });
@@ -636,6 +653,7 @@ registry.registerPath({
     },
     201: { description: "Created recurring rule", ...json(RecurringRule) },
     404: { description: "Account or category not found", ...json(ProblemDetails) },
+    ...idempotencyConflictResponse,
     ...problemResponses
   }
 });
@@ -655,6 +673,7 @@ registry.registerPath({
       ...json(RecurringRule)
     },
     404: { description: "Recurring rule, account, or category not found", ...json(ProblemDetails) },
+    ...idempotencyConflictResponse,
     ...problemResponses
   }
 });
@@ -684,6 +703,7 @@ registry.registerPath({
       ...json(DismissSpendingWarningResponse)
     },
     404: { description: "Not found", ...json(ProblemDetails) },
+    ...idempotencyConflictResponse,
     ...problemResponses
   }
 });
@@ -734,7 +754,10 @@ registry.registerPath({
     },
     201: { description: "Created goal", ...json(Goal) },
     404: { description: "Linked account not found", ...json(ProblemDetails) },
-    409: { description: "Funding source already assigned", ...json(ProblemDetails) },
+    409: {
+      description: "Funding source already assigned, or idempotency intent conflicts",
+      ...json(ProblemDetails)
+    },
     ...problemResponses
   }
 });
@@ -751,7 +774,10 @@ registry.registerPath({
       description: "Goals reordered, or idempotent replay",
       headers: optionalReplayHeaders
     },
-    409: { description: "Order does not contain every active goal", ...json(ProblemDetails) },
+    409: {
+      description: "Order is invalid, or idempotency intent conflicts",
+      ...json(ProblemDetails)
+    },
     ...problemResponses
   }
 });
@@ -782,6 +808,7 @@ registry.registerPath({
       ...json(Goal)
     },
     404: { description: "Goal not found", ...json(ProblemDetails) },
+    ...idempotencyConflictResponse,
     ...problemResponses
   }
 });
@@ -796,6 +823,7 @@ registry.registerPath({
       headers: optionalReplayHeaders
     },
     404: { description: "Active goal not found", ...json(ProblemDetails) },
+    ...idempotencyConflictResponse,
     ...problemResponses
   }
 });
@@ -837,6 +865,7 @@ registry.registerPath({
       ...json(Budget)
     },
     404: { description: "Category not found", ...json(ProblemDetails) },
+    ...idempotencyConflictResponse,
     ...problemResponses
   }
 });
@@ -852,6 +881,7 @@ registry.registerPath({
       ...json(Budget)
     },
     404: { description: "Budget not found", ...json(ProblemDetails) },
+    ...idempotencyConflictResponse,
     ...problemResponses
   }
 });

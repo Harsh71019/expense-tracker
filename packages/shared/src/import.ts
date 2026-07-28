@@ -50,8 +50,14 @@ export const ColumnMappingSchema = z
 
 export const ImportBatchStatusSchema = z.enum([
   "pending",
+  "pending_parse",
+  "parsing",
   "staged",
+  "commit_queued",
+  "committing",
   "committed",
+  "revert_queued",
+  "reverting",
   "reverted",
   "failed"
 ]);

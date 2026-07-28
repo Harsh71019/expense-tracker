@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
   Param,
   Patch,
   Post,
@@ -53,6 +54,7 @@ export class ImportsController {
   constructor(private readonly imports: ImportsService) {}
 
   @Post()
+  @HttpCode(202)
   @UseInterceptors(FileInterceptor("file"))
   async upload(
     @CurrentUser() user: AuthenticatedUser,
@@ -117,19 +119,21 @@ export class ImportsController {
   }
 
   @Post(":importBatchId/commit")
+  @HttpCode(202)
   commit(
     @CurrentUser() user: AuthenticatedUser,
     @Param("importBatchId") importBatchId: string
   ): Promise<ImportBatch> {
-    return this.imports.commitBatch(user.id, ImportBatchIdSchema.parse(importBatchId));
+    return this.imports.requestCommit(user.id, ImportBatchIdSchema.parse(importBatchId));
   }
 
   @Post(":importBatchId/revert")
+  @HttpCode(202)
   revert(
     @CurrentUser() user: AuthenticatedUser,
     @Param("importBatchId") importBatchId: string
   ): Promise<ImportBatch> {
-    return this.imports.revertBatch(user.id, ImportBatchIdSchema.parse(importBatchId));
+    return this.imports.requestRevert(user.id, ImportBatchIdSchema.parse(importBatchId));
   }
 }
 

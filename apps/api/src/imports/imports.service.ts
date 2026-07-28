@@ -37,10 +37,11 @@ import { EntityNotFoundError } from "../common/errors/entity-not-found.error.js"
 import { ImportAlreadyCommittedError } from "../common/errors/import-already-committed.error.js";
 import { ImportBatchNotReadyError } from "../common/errors/import-batch-not-ready.error.js";
 import { InvalidImportFileError } from "../common/errors/invalid-import-file.error.js";
+import { LoggingContextService } from "../common/logging/logging-context.service.js";
 import { TransactionRepository } from "../transactions/transaction.repository.js";
 import { computeDedupeHash } from "./dedupe-hash.js";
 import { ImportBatchRepository } from "./import-batch.repository.js";
-import { ImportsQueue } from "./imports.queue.js";
+import type { ImportWorkflowJobData } from "./import-workflow.js";
 import { parseCsvRow } from "./parse-csv-row.js";
 import { StagedRowRepository } from "./staged-row.repository.js";
 import type { NewStagedRow } from "./staged-row.repository.js";
@@ -48,6 +49,8 @@ import type { NewStagedRow } from "./staged-row.repository.js";
 const STAGED_ROW_INSERT_CHUNK_SIZE = 200;
 const COMMIT_CHUNK_SIZE = 200;
 const REVERT_CHUNK_SIZE = 200;
+const WORKFLOW_LEASE_MS = 5 * 60_000;
+const WORKFLOW_RETRY_DELAY_MS = 60_000;
 
 const RawCsvRecordsSchema = z.array(z.record(z.string(), z.string()));
 
@@ -62,7 +65,7 @@ export class ImportsService {
     private readonly categories: CategoryRepository,
     private readonly audit: AuditRepository,
     private readonly categoryRules: CategoryRuleRepository,
-    private readonly queue: ImportsQueue
+    private readonly context: LoggingContextService = new LoggingContextService()
   ) {}
 
   /**
@@ -71,8 +74,9 @@ export class ImportsService {
    * committed" — narrower than "already uploaded": a staged, reverted, or
    * failed prior attempt at the same file must not block a fresh try, per
    * Gate 3's "revert the batch ... re-import -> clean"), creates the batch,
-   * and enqueues the parse job. The actual parse happens off the request
-   * cycle (ImportsProcessor).
+   * and persists the parse command and bounded file payload in the same
+   * transaction. A worker-only dispatcher later hands a pointer to BullMQ,
+   * so an unavailable queue cannot strand an accepted upload.
    */
   async createBatch(
     userId: string,
@@ -90,15 +94,64 @@ export class ImportsService {
       throw new ImportAlreadyCommittedError();
     }
 
-    const batch = await this.batches.create(userId, accountId, filename, fileHash, mapping);
-    await this.queue.enqueueParse({
-      batchId: batch.id,
-      userId,
-      accountId,
-      mapping,
-      fileContentBase64: buffer.toString("base64")
-    });
-    return batch;
+    const correlationId = this.context.get()?.reqId ?? crypto.randomUUID();
+    return withTxn(this.db, (tx) =>
+      this.batches.create(userId, accountId, filename, fileHash, mapping, {
+        fileContentBase64: buffer.toString("base64"),
+        correlationId,
+        tx
+      })
+    );
+  }
+
+  async runWorkflow(data: ImportWorkflowJobData): Promise<void> {
+    const started = await this.batches.startWorkflow(
+      data.userId,
+      data.batchId,
+      data.operation,
+      data.claimToken,
+      workflowLeaseUntil()
+    );
+    if (!started) return;
+
+    const heartbeat = () =>
+      this.batches.heartbeatWorkflow(
+        data.userId,
+        data.batchId,
+        data.claimToken,
+        workflowLeaseUntil()
+      );
+
+    if (data.operation === "parse") {
+      const payload = await this.batches.findWorkflowPayload(data.userId, data.batchId);
+      if (payload === null) throw new EntityNotFoundError("Import workflow payload");
+      await this.parseFile(
+        data.batchId,
+        data.userId,
+        payload.accountId,
+        payload.mapping,
+        Buffer.from(payload.fileContentBase64, "base64").toString("utf8"),
+        data.claimToken,
+        heartbeat
+      );
+      return;
+    }
+    if (data.operation === "commit") {
+      await this.commitBatch(data.userId, data.batchId, data.claimToken, heartbeat);
+      return;
+    }
+    await this.revertBatch(data.userId, data.batchId, data.claimToken, heartbeat);
+  }
+
+  async markWorkflowFailed(data: ImportWorkflowJobData, error: unknown): Promise<void> {
+    await this.batches.failWorkflow(
+      data.userId,
+      data.batchId,
+      data.operation,
+      data.claimToken,
+      errorSummary(error),
+      new Date(Date.now() + WORKFLOW_RETRY_DELAY_MS)
+    );
   }
 
   async markTerminalParseFailure(userId: string, batchId: ImportBatchId): Promise<void> {
@@ -118,8 +171,11 @@ export class ImportsService {
     userId: string,
     accountId: string,
     mapping: ColumnMapping,
-    fileContent: string
+    fileContent: string,
+    claimToken?: string,
+    heartbeat?: () => Promise<boolean>
   ): Promise<void> {
+    await assertWorkflowLease(heartbeat);
     await this.stagedRows.deleteAllForBatch(userId, batchId);
 
     let records: Record<string, string>[];
@@ -131,12 +187,25 @@ export class ImportsService {
       });
       records = RawCsvRecordsSchema.parse(raw);
     } catch {
-      await this.batches.markParsed(userId, batchId, "failed", {
+      const failedStats = {
         total: 0,
         staged: 0,
         duplicates: 0,
         committed: 0
-      });
+      } as const;
+      if (claimToken === undefined) {
+        await this.batches.markParsed(userId, batchId, "failed", failedStats);
+      } else {
+        await assertWorkflowLease(heartbeat);
+        await this.batches.completeWorkflow(
+          userId,
+          batchId,
+          "parse",
+          claimToken,
+          "failed",
+          failedStats
+        );
+      }
       return;
     }
 
@@ -206,6 +275,7 @@ export class ImportsService {
     });
 
     for (let start = 0; start < stagedRows.length; start += STAGED_ROW_INSERT_CHUNK_SIZE) {
+      await assertWorkflowLease(heartbeat);
       await this.stagedRows.insertMany(
         userId,
         batchId,
@@ -219,7 +289,12 @@ export class ImportsService {
       duplicates,
       committed: 0
     };
-    await this.batches.markParsed(userId, batchId, "staged", stats);
+    if (claimToken === undefined) {
+      await this.batches.markParsed(userId, batchId, "staged", stats);
+    } else {
+      await assertWorkflowLease(heartbeat);
+      await this.batches.completeWorkflow(userId, batchId, "parse", claimToken, "staged", stats);
+    }
   }
 
   list(userId: string): Promise<ImportBatch[]> {
@@ -271,6 +346,60 @@ export class ImportsService {
     return updated;
   }
 
+  async requestCommit(userId: string, batchId: ImportBatchId): Promise<ImportBatch> {
+    const batch = await this.batches.findById(userId, batchId);
+    if (batch === null) throw new EntityNotFoundError("Import batch");
+    if (
+      batch.status === "committed" ||
+      batch.status === "commit_queued" ||
+      batch.status === "committing"
+    ) {
+      return batch;
+    }
+    if (batch.status !== "staged" && batch.status !== "failed") {
+      throw new ImportBatchNotReadyError(
+        `Only a staged batch can be queued for commit (current status: "${batch.status}").`
+      );
+    }
+    const queuedWorkflow = await this.batches.queueWorkflow(
+      userId,
+      batchId,
+      "commit",
+      this.context.get()?.reqId ?? crypto.randomUUID()
+    );
+    if (!queuedWorkflow) return this.getConcurrentWorkflow(userId, batchId, "commit");
+    const queued = await this.batches.findById(userId, batchId);
+    if (queued === null) throw new EntityNotFoundError("Import batch");
+    return queued;
+  }
+
+  async requestRevert(userId: string, batchId: ImportBatchId): Promise<ImportBatch> {
+    const batch = await this.batches.findById(userId, batchId);
+    if (batch === null) throw new EntityNotFoundError("Import batch");
+    if (
+      batch.status === "reverted" ||
+      batch.status === "revert_queued" ||
+      batch.status === "reverting"
+    ) {
+      return batch;
+    }
+    if (batch.status !== "committed" && batch.status !== "failed") {
+      throw new ImportBatchNotReadyError(
+        `Only a committed batch can be queued for revert (current status: "${batch.status}").`
+      );
+    }
+    const queuedWorkflow = await this.batches.queueWorkflow(
+      userId,
+      batchId,
+      "revert",
+      this.context.get()?.reqId ?? crypto.randomUUID()
+    );
+    if (!queuedWorkflow) return this.getConcurrentWorkflow(userId, batchId, "revert");
+    const queued = await this.batches.findById(userId, batchId);
+    if (queued === null) throw new EntityNotFoundError("Import batch");
+    return queued;
+  }
+
   /**
    * Chunks of 200 rows, each chunk = one Postgres transaction (insert +
    * balance update + stats + audit), per BACKEND.md §4. Resumable: rows
@@ -282,15 +411,21 @@ export class ImportsService {
    * row has landed; a crash mid-run leaves it "staged" with partial
    * transactions, exactly as designed.
    */
-  async commitBatch(userId: string, batchId: ImportBatchId): Promise<ImportBatch> {
+  async commitBatch(
+    userId: string,
+    batchId: ImportBatchId,
+    claimToken?: string,
+    heartbeat?: () => Promise<boolean>
+  ): Promise<ImportBatch> {
     const batch = await this.batches.findById(userId, batchId);
     if (batch === null) throw new EntityNotFoundError("Import batch");
-    if (batch.status !== "staged") {
+    if (batch.status !== "staged" && batch.status !== "committing") {
       throw new ImportBatchNotReadyError(
         `Only a staged batch can be committed (current status: "${batch.status}").`
       );
     }
 
+    await assertWorkflowLease(heartbeat);
     const includable = await this.stagedRows.findIncludableForBatch(userId, batchId);
     const candidateHashes = includable
       .map((row) => row.dedupeHash)
@@ -305,6 +440,7 @@ export class ImportsService {
     );
 
     for (let start = 0; start < remaining.length; start += COMMIT_CHUNK_SIZE) {
+      await assertWorkflowLease(heartbeat);
       const chunk = remaining.slice(start, start + COMMIT_CHUNK_SIZE);
       const rows = chunk.map((row) => toCommitRow(row));
       for (const row of rows) {
@@ -332,7 +468,12 @@ export class ImportsService {
       });
     }
 
-    await this.batches.markCommitted(userId, batchId);
+    if (claimToken === undefined) {
+      await this.batches.markCommitted(userId, batchId);
+    } else {
+      await assertWorkflowLease(heartbeat);
+      await this.batches.completeWorkflow(userId, batchId, "commit", claimToken, "committed");
+    }
     const committed = await this.batches.findById(userId, batchId);
     if (committed === null) throw new EntityNotFoundError("Import batch");
     return committed;
@@ -346,18 +487,25 @@ export class ImportsService {
    * $inc, so a re-invoked revert's findPostedByImportBatchId query simply
    * no longer returns whatever already landed.
    */
-  async revertBatch(userId: string, batchId: ImportBatchId): Promise<ImportBatch> {
+  async revertBatch(
+    userId: string,
+    batchId: ImportBatchId,
+    claimToken?: string,
+    heartbeat?: () => Promise<boolean>
+  ): Promise<ImportBatch> {
     const batch = await this.batches.findById(userId, batchId);
     if (batch === null) throw new EntityNotFoundError("Import batch");
-    if (batch.status !== "committed") {
+    if (batch.status !== "committed" && batch.status !== "reverting") {
       throw new ImportBatchNotReadyError(
         `Only a committed batch can be reverted (current status: "${batch.status}").`
       );
     }
 
+    await assertWorkflowLease(heartbeat);
     const posted = await this.transactions.findPostedByImportBatchId(userId, batchId);
 
     for (let start = 0; start < posted.length; start += REVERT_CHUNK_SIZE) {
+      await assertWorkflowLease(heartbeat);
       const chunk = posted.slice(start, start + REVERT_CHUNK_SIZE);
       const netMinor = chunk.reduce(
         (sum, original) =>
@@ -379,10 +527,43 @@ export class ImportsService {
       });
     }
 
-    await this.batches.markReverted(userId, batchId);
+    if (claimToken === undefined) {
+      await this.batches.markReverted(userId, batchId);
+    } else {
+      await assertWorkflowLease(heartbeat);
+      await this.batches.completeWorkflow(userId, batchId, "revert", claimToken, "reverted");
+    }
     const reverted = await this.batches.findById(userId, batchId);
     if (reverted === null) throw new EntityNotFoundError("Import batch");
     return reverted;
+  }
+
+  private async getConcurrentWorkflow(
+    userId: string,
+    batchId: ImportBatchId,
+    operation: "commit" | "revert"
+  ): Promise<ImportBatch> {
+    const current = await this.batches.findById(userId, batchId);
+    if (current === null) throw new EntityNotFoundError("Import batch");
+    if (
+      operation === "commit" &&
+      (current.status === "commit_queued" ||
+        current.status === "committing" ||
+        current.status === "committed")
+    ) {
+      return current;
+    }
+    if (
+      operation === "revert" &&
+      (current.status === "revert_queued" ||
+        current.status === "reverting" ||
+        current.status === "reverted")
+    ) {
+      return current;
+    }
+    throw new ImportBatchNotReadyError(
+      `The batch does not contain a recoverable ${operation} workflow.`
+    );
   }
 }
 
@@ -441,5 +622,20 @@ export function assertValidImportFile(filename: string, mimetype: string, buffer
     throw new InvalidImportFileError(
       `File has approximately ${approximateRowCount} rows, exceeding the ${MAX_IMPORT_ROWS}-row cap.`
     );
+  }
+}
+
+function workflowLeaseUntil(): Date {
+  return new Date(Date.now() + WORKFLOW_LEASE_MS);
+}
+
+function errorSummary(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  return "Unknown import workflow failure";
+}
+
+async function assertWorkflowLease(heartbeat: (() => Promise<boolean>) | undefined): Promise<void> {
+  if (heartbeat !== undefined && !(await heartbeat())) {
+    throw new Error("Import workflow lease was superseded by a newer claim.");
   }
 }

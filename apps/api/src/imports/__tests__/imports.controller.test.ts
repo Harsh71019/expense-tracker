@@ -212,28 +212,28 @@ describe("ImportsController", () => {
   });
 
   it("commits a batch", async () => {
-    const mockService = { commitBatch: vi.fn().mockResolvedValue(sampleBatch) };
+    const mockService = { requestCommit: vi.fn().mockResolvedValue(sampleBatch) };
     // @ts-expect-error - mock ImportsService for unit testing
     const controller = new ImportsController(mockService);
 
     const result = await controller.commit(user, "3fa85f64-5717-4562-b3fc-2c963f66beef");
 
     expect(result).toEqual(sampleBatch);
-    expect(mockService.commitBatch).toHaveBeenCalledWith(
+    expect(mockService.requestCommit).toHaveBeenCalledWith(
       "user-1",
       "3fa85f64-5717-4562-b3fc-2c963f66beef"
     );
   });
 
   it("reverts a batch", async () => {
-    const mockService = { revertBatch: vi.fn().mockResolvedValue(sampleBatch) };
+    const mockService = { requestRevert: vi.fn().mockResolvedValue(sampleBatch) };
     // @ts-expect-error - mock ImportsService for unit testing
     const controller = new ImportsController(mockService);
 
     const result = await controller.revert(user, "3fa85f64-5717-4562-b3fc-2c963f66beef");
 
     expect(result).toEqual(sampleBatch);
-    expect(mockService.revertBatch).toHaveBeenCalledWith(
+    expect(mockService.requestRevert).toHaveBeenCalledWith(
       "user-1",
       "3fa85f64-5717-4562-b3fc-2c963f66beef"
     );

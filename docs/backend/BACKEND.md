@@ -155,7 +155,11 @@ Better Auth commits users in its own transaction. Profile provisioning is theref
     date: 'Txn Date', amount: 'Amount', description: 'Narration',
     dateFormat: 'DD/MM/YYYY', amountConvention: 'single_signed' | 'debit_credit_cols'
   },
-  status: 'staged' | 'committed' | 'reverted' | 'failed',
+  status:
+    | 'pending_parse' | 'parsing' | 'staged'
+    | 'commit_queued' | 'committing' | 'committed'
+    | 'revert_queued' | 'reverting' | 'reverted'
+    | 'failed',
   stats: { total: number, staged: number, duplicates: number, committed: number },
   committedAt?: Date, revertedAt?: Date,
   createdAt: Date
@@ -490,8 +494,12 @@ Manual entry is fine on the Metro, but monthly statement dumps are where this ea
 ```
 POST /imports (multipart CSV + accountId)
    │  reject if fileHash already committed
+   │  202 after batch + parse command + bounded file payload commit atomically
    ▼
-[BullMQ job: parse]                     ← csv-parse (streaming), never in the request cycle
+[Postgres workflow: pending_parse]
+   │  worker-only dispatcher claims with a lease and puts only a batch pointer in Redis
+   ▼
+[BullMQ job: parse]                     ← csv-parse, never in the request cycle
    │  per row: normalize date/amount → compute dedupeHash
    │  dedupe against BOTH existing transactions and rows within the file
    ▼
@@ -502,17 +510,31 @@ GET /imports/:id/preview                ← UI shows parsed rows, flags dupes/pr
    │                                       lets you untick rows & fix category guesses
    ▼
 POST /imports/:id/commit
-   │  chunks of 200 rows, each chunk = one Mongo transaction:
+   │  202 after the durable command transitions to commit_queued
+   ▼
+[BullMQ job: commit]
+   │  chunks of 200 rows, each chunk = one Postgres transaction:
    │    insert transactions (source:'csv_import', importBatchId, dedupeHash)
-   │    $inc account balance by chunk net
+   │    update account balance by chunk net
    │  batch.status = 'committed' only after ALL chunks succeed;
    │  a mid-way crash leaves status 'staged' + partial rows, and commit is
    │  RESUMABLE: re-running skips rows whose dedupeHash already landed.
    ▼
-POST /imports/:id/revert                ← one bulk reversal, chunked transactions,
+POST /imports/:id/revert
+   │  202 after the durable command transitions to revert_queued
+   ▼
+[BullMQ job: revert]                    ← one bulk reversal, chunked transactions,
                                           reverses every posted txn with this batchId,
                                           batch.status = 'reverted'
 ```
+
+The database row is the workflow source of truth; Redis is only a delivery mechanism. Claims carry
+a UUID token, lease expiry, attempt count, availability time, correlation id, and bounded error
+summary. A worker crash, expired lease, or Redis outage therefore converges through the dispatcher
+without losing an accepted command. Heartbeats extend active leases between 200-row chunks.
+Commit/revert request races use one conditional state transition, so repeated concurrent requests
+join the same workflow instead of creating duplicate jobs. Terminal parse failures clear the stored
+file; successful parsing does the same.
 
 **Details that matter for Indian bank CSVs:**
 

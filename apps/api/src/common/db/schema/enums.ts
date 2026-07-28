@@ -32,10 +32,21 @@ export const assetKindEnum = pgEnum("asset_kind", [
 export const valuationSourceEnum = pgEnum("valuation_source", ["manual", "maturity_projection"]);
 export const importBatchStatusEnum = pgEnum("import_batch_status", [
   "pending",
+  "pending_parse",
+  "parsing",
   "staged",
+  "commit_queued",
+  "committing",
   "committed",
+  "revert_queued",
+  "reverting",
   "reverted",
   "failed"
+]);
+export const importWorkflowOperationEnum = pgEnum("import_workflow_operation", [
+  "parse",
+  "commit",
+  "revert"
 ]);
 export const notificationTypeEnum = pgEnum("notification_type", [
   "budget_alert",

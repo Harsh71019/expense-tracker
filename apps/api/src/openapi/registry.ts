@@ -249,7 +249,7 @@ registry.registerPath({
   security: secured,
   request: { params: importBatchId },
   responses: {
-    200: { description: "Committed batch", ...json(ImportBatch) },
+    202: { description: "Commit workflow accepted", ...json(ImportBatch) },
     404: { description: "Not found", ...json(ProblemDetails) },
     409: { description: "Import batch cannot be committed", ...json(ProblemDetails) },
     ...problemResponses
@@ -261,7 +261,7 @@ registry.registerPath({
   security: secured,
   request: { params: importBatchId },
   responses: {
-    200: { description: "Reverted batch", ...json(ImportBatch) },
+    202: { description: "Revert workflow accepted", ...json(ImportBatch) },
     404: { description: "Not found", ...json(ProblemDetails) },
     409: { description: "Import batch cannot be reverted", ...json(ProblemDetails) },
     ...problemResponses
@@ -726,7 +726,7 @@ registry.registerPath({
     }
   },
   responses: {
-    201: { description: "Import batch created", ...json(ImportBatch) },
+    202: { description: "Import parse workflow accepted", ...json(ImportBatch) },
     ...problemResponses
   }
 });

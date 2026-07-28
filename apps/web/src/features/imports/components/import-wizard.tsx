@@ -90,8 +90,13 @@ export function ImportWizard({
     try {
       const batch = await upload.mutateAsync({ file, accountId, mapping });
       setCurrentBatch(batch);
-      setStep(2);
-      toast.success("Statement staged for review");
+      if (batch.status === "staged") {
+        setStep(2);
+        toast.success("Statement staged for review");
+      } else {
+        setView("list");
+        toast.success("Statement queued for parsing");
+      }
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : "Could not upload this statement");
     }
@@ -100,10 +105,12 @@ export function ImportWizard({
   async function doCommit(): Promise<void> {
     if (currentBatch === undefined) return;
     try {
-      await commit.mutateAsync(currentBatch.id);
+      const batch = await commit.mutateAsync(currentBatch.id);
       setCommitOpen(false);
       setView("list");
-      toast.success("Import committed to the ledger");
+      toast.success(
+        batch.status === "committed" ? "Import committed to the ledger" : "Import queued to commit"
+      );
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : "Could not commit this import");
     }
@@ -112,9 +119,9 @@ export function ImportWizard({
   async function doRevert(): Promise<void> {
     if (revertTarget === undefined) return;
     try {
-      await revert.mutateAsync(revertTarget.id);
+      const batch = await revert.mutateAsync(revertTarget.id);
       setRevertTarget(undefined);
-      toast.success("Import reversed");
+      toast.success(batch.status === "reverted" ? "Import reversed" : "Import queued to revert");
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : "Could not revert this import");
     }

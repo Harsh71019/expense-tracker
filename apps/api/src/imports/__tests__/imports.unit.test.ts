@@ -53,7 +53,6 @@ describe("ImportsService Unit Tests", () => {
     mockCategories?: unknown;
     mockRules?: unknown;
     mockAudit?: unknown;
-    mockQueue?: unknown;
   }) => {
     const db = opts.mockDb ?? {
       transaction: vi.fn(async (cb: (tx: string) => Promise<unknown>) => cb("tx1"))
@@ -65,7 +64,6 @@ describe("ImportsService Unit Tests", () => {
     const categories = opts.mockCategories ?? {};
     const rules = opts.mockRules ?? {};
     const audit = opts.mockAudit ?? {};
-    const queue = opts.mockQueue ?? { enqueueParse: vi.fn(async () => undefined) };
 
     return new ImportsService(
       // @ts-expect-error mock service args
@@ -76,8 +74,7 @@ describe("ImportsService Unit Tests", () => {
       accounts,
       categories,
       audit,
-      rules,
-      queue
+      rules
     );
   };
 

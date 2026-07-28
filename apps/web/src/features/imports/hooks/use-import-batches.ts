@@ -9,6 +9,14 @@ import { toAppError, toNetworkError } from "@/lib/api/problem";
 import { qk } from "@/lib/query/keys";
 
 const ImportBatchesSchema = z.array(ImportBatchSchema);
+const ACTIVE_WORKFLOW_STATUSES = new Set([
+  "pending_parse",
+  "parsing",
+  "commit_queued",
+  "committing",
+  "revert_queued",
+  "reverting"
+]);
 
 export function useImportBatches(
   initialData?: ImportBatch[]
@@ -16,6 +24,10 @@ export function useImportBatches(
   return useQuery({
     queryKey: qk.importBatches(),
     ...(initialData === undefined ? {} : { placeholderData: initialData }),
+    refetchInterval: (query): number | false =>
+      query.state.data?.some((batch) => ACTIVE_WORKFLOW_STATUSES.has(batch.status)) === true
+        ? 1_000
+        : false,
     queryFn: async (): Promise<ImportBatch[]> => {
       try {
         const result = await apiClient.GET("/v1/imports");

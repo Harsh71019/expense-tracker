@@ -174,7 +174,7 @@ export function importHandlers(http: MockHttp, store: MockStore): HttpHandler[] 
         });
       });
 
-      return response(201).json(batch);
+      return response(202).json(batch);
     }),
 
     http.get("/v1/imports/accounts/{accountId}/mapping", ({ params, response }) => {
@@ -283,7 +283,7 @@ export function importHandlers(http: MockHttp, store: MockStore): HttpHandler[] 
       batch.stats = { ...batch.stats, committed: createdIds.length };
       batch.committedAt = new Date().toISOString();
       batch.updatedAt = batch.committedAt;
-      return response(200).json(batch);
+      return response(202).json(batch);
     }),
 
     http.post("/v1/imports/{importBatchId}/revert", ({ params, response }) => {
@@ -327,7 +327,7 @@ export function importHandlers(http: MockHttp, store: MockStore): HttpHandler[] 
       batch.status = "reverted";
       batch.revertedAt = new Date().toISOString();
       batch.updatedAt = batch.revertedAt;
-      return response(200).json(batch);
+      return response(202).json(batch);
     })
   ];
 }

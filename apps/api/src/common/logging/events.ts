@@ -34,7 +34,11 @@ export const LogEvent = {
   BudgetAlertsChecked: "budgets.alerts_checked",
   WorkerHeartbeatFailed: "worker.heartbeat_failed",
   WorkerStopping: "worker.stopping",
-  WorkerStopped: "worker.stopped"
+  WorkerStopped: "worker.stopped",
+  SchedulerRunCompleted: "scheduler.run_completed",
+  SchedulerRunFailed: "scheduler.run_failed",
+  SchedulerRunOverlong: "scheduler.run_overlong",
+  SchedulerRunMissing: "scheduler.run_missing"
 } as const;
 
 export type LogEvent = (typeof LogEvent)[keyof typeof LogEvent];

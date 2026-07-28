@@ -1,4 +1,4 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable, Optional } from "@nestjs/common";
 import { Cron } from "@nestjs/schedule";
 import { lt } from "drizzle-orm";
 import { Logger } from "nestjs-pino";
@@ -8,6 +8,10 @@ import { DATABASE_CONNECTION } from "../common/db/db.module.js";
 import type { DrizzleDb } from "../common/db/db.module.js";
 import { stagedRows } from "../common/db/schema/index.js";
 import { LogEvent } from "../common/logging/events.js";
+import {
+  runScheduled,
+  ScheduledRunCoordinator
+} from "../common/scheduler/scheduled-run.coordinator.js";
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -24,22 +28,26 @@ export class StagedRowsCleanupCron {
   constructor(
     @Inject(DATABASE_CONNECTION) private readonly db: DrizzleDb,
     private readonly config: RuntimeConfigService,
-    @Inject(Logger) private readonly logger: CleanupLogger
+    @Inject(Logger) private readonly logger: CleanupLogger,
+    @Optional() private readonly scheduler?: ScheduledRunCoordinator
   ) {}
 
   @Cron("0 4 * * *", { timeZone: "Asia/Kolkata" })
   async run(): Promise<void> {
     if (this.config.env.SERVICE_ROLE !== "worker") return;
 
-    const cutoff = new Date(Date.now() - SEVEN_DAYS_MS);
-    const deleted = await this.db
-      .delete(stagedRows)
-      .where(lt(stagedRows.createdAt, cutoff))
-      .returning({ id: stagedRows.id });
+    await runScheduled(this.scheduler, "imports.staged_rows_cleanup", "daily", async () => {
+      const cutoff = new Date(Date.now() - SEVEN_DAYS_MS);
+      const deleted = await this.db
+        .delete(stagedRows)
+        .where(lt(stagedRows.createdAt, cutoff))
+        .returning({ id: stagedRows.id });
 
-    this.logger.log(
-      { event: LogEvent.StagedRowsCleaned, deletedCount: deleted.length },
-      "staged_rows cleanup: deleted rows older than 7 days"
-    );
+      this.logger.log(
+        { event: LogEvent.StagedRowsCleaned, deletedCount: deleted.length },
+        "staged_rows cleanup: deleted rows older than 7 days"
+      );
+      return deleted.length;
+    });
   }
 }

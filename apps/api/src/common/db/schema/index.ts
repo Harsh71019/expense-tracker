@@ -14,3 +14,4 @@ export * from "./recurring.js";
 export * from "./report.js";
 export * from "./spending-warning.js";
 export * from "./goal.js";
+export * from "./scheduled-run.js";

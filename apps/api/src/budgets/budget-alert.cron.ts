@@ -1,4 +1,4 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable, Optional } from "@nestjs/common";
 import { Cron } from "@nestjs/schedule";
 import type { Budget } from "@treasury-ops/shared";
 import { Logger } from "nestjs-pino";
@@ -9,6 +9,10 @@ import { DATABASE_CONNECTION } from "../common/db/db.module.js";
 import type { DrizzleDb } from "../common/db/db.module.js";
 import { withTxn } from "../common/db/db-txn.js";
 import { LogEvent } from "../common/logging/events.js";
+import {
+  runScheduled,
+  ScheduledRunCoordinator
+} from "../common/scheduler/scheduled-run.coordinator.js";
 import { toISTMonth } from "../common/time/ist.js";
 import { NotificationOutboxRepository } from "../notifications/notification-outbox.repository.js";
 import {
@@ -38,35 +42,39 @@ export class BudgetAlertCron {
     private readonly budgets: BudgetRepository,
     private readonly categories: CategoryRepository,
     private readonly outbox: NotificationOutboxRepository,
-    @Inject(Logger) private readonly logger: BudgetAlertLogger
+    @Inject(Logger) private readonly logger: BudgetAlertLogger,
+    @Optional() private readonly scheduler?: ScheduledRunCoordinator
   ) {}
 
   @Cron("0 8 * * *", { timeZone: "Asia/Kolkata" })
   async checkThresholds(): Promise<void> {
     if (this.config.env.SERVICE_ROLE !== "worker") return;
 
-    const active = await this.budgets.findAllActive();
-    let alertedCount = 0;
-    for (const budget of active) {
-      const alerted = await this.checkOne(budget, new Date()).catch((error: unknown) => {
-        this.logger.error(
-          {
-            event: LogEvent.BudgetAlertCheckFailed,
-            userId: budget.userId,
-            budgetId: budget.id,
-            err: error
-          },
-          "budget alert check failed"
-        );
-        return false;
-      });
-      if (alerted) alertedCount += 1;
-    }
+    await runScheduled(this.scheduler, "budgets.alerts", "daily", async () => {
+      const active = await this.budgets.findAllActive();
+      let alertedCount = 0;
+      for (const budget of active) {
+        const alerted = await this.checkOne(budget, new Date()).catch((error: unknown) => {
+          this.logger.error(
+            {
+              event: LogEvent.BudgetAlertCheckFailed,
+              userId: budget.userId,
+              budgetId: budget.id,
+              err: error
+            },
+            "budget alert check failed"
+          );
+          return false;
+        });
+        if (alerted) alertedCount += 1;
+      }
 
-    this.logger.log(
-      { event: LogEvent.BudgetAlertsChecked, activeCount: active.length, alertedCount },
-      "budget alert thresholds checked"
-    );
+      this.logger.log(
+        { event: LogEvent.BudgetAlertsChecked, activeCount: active.length, alertedCount },
+        "budget alert thresholds checked"
+      );
+      return active.length;
+    });
   }
 
   private async checkOne(candidate: Budget, now: Date): Promise<boolean> {

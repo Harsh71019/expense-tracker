@@ -1,4 +1,4 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable, Optional } from "@nestjs/common";
 import { Cron } from "@nestjs/schedule";
 import { Logger } from "nestjs-pino";
 
@@ -8,6 +8,10 @@ import type { DrizzleDb } from "../common/db/db.module.js";
 import { withTxn } from "../common/db/db-txn.js";
 import { LogEvent } from "../common/logging/events.js";
 import { MetricsService } from "../common/observability/metrics.service.js";
+import {
+  runScheduled,
+  ScheduledRunCoordinator
+} from "../common/scheduler/scheduled-run.coordinator.js";
 import { NotificationOutboxRepository } from "../notifications/notification-outbox.repository.js";
 import { BalanceVerifyRepository } from "./balance-verify.repository.js";
 
@@ -30,70 +34,74 @@ export class BalanceVerifyService {
     private readonly balances: BalanceVerifyRepository,
     private readonly outbox: NotificationOutboxRepository,
     @Inject(Logger) private readonly logger: BalanceVerifyLogger,
-    private readonly metrics?: MetricsService
+    private readonly metrics?: MetricsService,
+    @Optional() private readonly scheduler?: ScheduledRunCoordinator
   ) {}
 
   @Cron("0 3 * * 0", { timeZone: "Asia/Kolkata" })
   async verify(): Promise<void> {
     if (this.config.env.SERVICE_ROLE !== "worker") return;
 
-    const [accounts, deltasByAccount] = await Promise.all([
-      this.balances.findAllAccounts(),
-      this.balances.sumDeltasByAccount()
-    ]);
+    await runScheduled(this.scheduler, "balances.verify", "daily", async () => {
+      const [accounts, deltasByAccount] = await Promise.all([
+        this.balances.findAllAccounts(),
+        this.balances.sumDeltasByAccount()
+      ]);
 
-    let driftCount = 0;
-    for (const account of accounts) {
-      const expectedBalanceMinor =
-        account.openingBalanceMinor + (deltasByAccount.get(account.id) ?? 0);
-      if (expectedBalanceMinor === account.balanceMinor) continue;
+      let driftCount = 0;
+      for (const account of accounts) {
+        const expectedBalanceMinor =
+          account.openingBalanceMinor + (deltasByAccount.get(account.id) ?? 0);
+        if (expectedBalanceMinor === account.balanceMinor) continue;
 
-      driftCount += 1;
-      const driftMinor = account.balanceMinor - expectedBalanceMinor;
-      await withTxn(this.db, (tx) =>
-        this.outbox.enqueue(
-          account.userId,
-          "balance_drift",
+        driftCount += 1;
+        const driftMinor = account.balanceMinor - expectedBalanceMinor;
+        await withTxn(this.db, (tx) =>
+          this.outbox.enqueue(
+            account.userId,
+            "balance_drift",
+            {
+              accountId: account.id,
+              accountName: account.name,
+              expectedBalanceMinor,
+              actualBalanceMinor: account.balanceMinor,
+              driftMinor
+            },
+            tx
+          )
+        );
+        this.logger.error(
           {
+            event: LogEvent.BalanceDriftDetected,
             accountId: account.id,
-            accountName: account.name,
+            userId: account.userId,
             expectedBalanceMinor,
             actualBalanceMinor: account.balanceMinor,
             driftMinor
           },
-          tx
-        )
-      );
-      this.logger.error(
-        {
-          event: LogEvent.BalanceDriftDetected,
-          accountId: account.id,
-          userId: account.userId,
-          expectedBalanceMinor,
-          actualBalanceMinor: account.balanceMinor,
-          driftMinor
-        },
-        "account balance drift detected"
-      );
-    }
-
-    if (this.metrics !== undefined) {
-      try {
-        await this.metrics.recordBalanceVerification(driftCount);
-      } catch (error) {
-        this.logger.error(
-          {
-            event: LogEvent.MetricsWriteFailed,
-            metric: "balance_verification",
-            err: error
-          },
-          "balance verification metric write failed"
+          "account balance drift detected"
         );
       }
-    }
-    this.logger.log(
-      { event: LogEvent.BalancesVerified, accountCount: accounts.length, driftCount },
-      "balance verification complete"
-    );
+
+      if (this.metrics !== undefined) {
+        try {
+          await this.metrics.recordBalanceVerification(driftCount);
+        } catch (error) {
+          this.logger.error(
+            {
+              event: LogEvent.MetricsWriteFailed,
+              metric: "balance_verification",
+              err: error
+            },
+            "balance verification metric write failed"
+          );
+        }
+      }
+      this.logger.log(
+        { event: LogEvent.BalancesVerified, accountCount: accounts.length, driftCount },
+        "balance verification complete"
+      );
+      return accounts.length;
+    });
   }
 }

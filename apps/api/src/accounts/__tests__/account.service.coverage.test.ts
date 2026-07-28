@@ -34,6 +34,7 @@ describe("Account service edge coverage", () => {
           _userId: string,
           _operation: string,
           _key: string,
+          _intent: unknown,
           _schema: unknown,
           work: (value: object) => Promise<unknown>
         ) => ({ result: await work({}), replayed: false })

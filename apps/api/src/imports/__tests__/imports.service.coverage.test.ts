@@ -148,6 +148,15 @@ describe("assertValidImportFile", () => {
 });
 
 describe("ImportsService create and parse", () => {
+  it("persists terminal parse exhaustion through the batch repository", async () => {
+    const batches = { markTerminalParseFailure: vi.fn().mockResolvedValue(undefined) };
+    const { service } = createService({ batches });
+
+    await service.markTerminalParseFailure("u1", BATCH_ID);
+
+    expect(batches.markTerminalParseFailure).toHaveBeenCalledWith("u1", BATCH_ID);
+  });
+
   it("creates and queues a valid new batch", async () => {
     const batches = {
       findByFileHash: vi.fn().mockResolvedValue(null),
@@ -207,7 +216,7 @@ describe("ImportsService create and parse", () => {
     const { service } = createService({ batches, stagedRows });
 
     await service.parseFile(BATCH_ID, "u1", ACCOUNT_ID, MAPPING, '"unterminated');
-    expect(batches.markParsed).toHaveBeenCalledWith(BATCH_ID, "failed", {
+    expect(batches.markParsed).toHaveBeenCalledWith("u1", BATCH_ID, "failed", {
       total: 0,
       staged: 0,
       duplicates: 0,
@@ -260,7 +269,7 @@ describe("ImportsService create and parse", () => {
     await service.parseFile(BATCH_ID, "u1", ACCOUNT_ID, MAPPING, csv);
 
     expect(stagedRows.insertMany).toHaveBeenCalledOnce();
-    const inserted = stagedRows.insertMany.mock.calls[0]?.[1];
+    const inserted = stagedRows.insertMany.mock.calls[0]?.[2];
     expect(inserted).toEqual([
       expect.objectContaining({
         isDuplicate: true,
@@ -275,6 +284,7 @@ describe("ImportsService create and parse", () => {
       expect.objectContaining({ isDuplicate: false, include: false })
     ]);
     expect(batches.markParsed).toHaveBeenCalledWith(
+      "u1",
       BATCH_ID,
       "staged",
       expect.objectContaining({ total: 3, staged: 3, duplicates: 2, committed: 0 })
@@ -306,8 +316,8 @@ describe("ImportsService create and parse", () => {
     await service.parseFile(BATCH_ID, "u1", ACCOUNT_ID, MAPPING, csv);
 
     expect(stagedRows.insertMany).toHaveBeenCalledTimes(2);
-    expect(stagedRows.insertMany.mock.calls[0]?.[1]).toHaveLength(200);
-    expect(stagedRows.insertMany.mock.calls[1]?.[1]).toHaveLength(1);
+    expect(stagedRows.insertMany.mock.calls[0]?.[2]).toHaveLength(200);
+    expect(stagedRows.insertMany.mock.calls[1]?.[2]).toHaveLength(1);
   });
 });
 
@@ -467,7 +477,12 @@ describe("ImportsService commit and revert", () => {
     incomeRow.suggestedCategoryId = undefined;
     await expect(service.commitBatch("u1", BATCH_ID)).resolves.toBe(committed);
     expect(accounts.applyBalanceDelta).not.toHaveBeenCalled();
-    expect(batches.incrementCommittedCount).toHaveBeenCalledWith(BATCH_ID, 2, expect.anything());
+    expect(batches.incrementCommittedCount).toHaveBeenCalledWith(
+      "u1",
+      BATCH_ID,
+      2,
+      expect.anything()
+    );
   });
 
   it("skips already-landed rows and marks an empty remainder committed", async () => {
@@ -487,7 +502,7 @@ describe("ImportsService commit and revert", () => {
     });
 
     await expect(service.commitBatch("u1", BATCH_ID)).resolves.toBe(committed);
-    expect(batches.markCommitted).toHaveBeenCalledWith(BATCH_ID);
+    expect(batches.markCommitted).toHaveBeenCalledWith("u1", BATCH_ID);
   });
 
   it("rejects invalid includable rows and invalid category assignments", async () => {
@@ -533,7 +548,7 @@ describe("ImportsService commit and revert", () => {
     const failedBalance = createService({
       ...collaborators,
       batches: { findById: vi.fn().mockResolvedValue(BATCH) },
-      accounts: { applyBalanceDelta: vi.fn().mockResolvedValue(false) }
+      accounts: { applyBalanceDelta: vi.fn().mockResolvedValue("account_not_found") }
     });
     await expect(failedBalance.service.commitBatch("u1", BATCH_ID)).rejects.toBeInstanceOf(
       EntityNotFoundError
@@ -546,7 +561,7 @@ describe("ImportsService commit and revert", () => {
         incrementCommittedCount: vi.fn().mockResolvedValue(undefined),
         markCommitted: vi.fn().mockResolvedValue(undefined)
       },
-      accounts: { applyBalanceDelta: vi.fn().mockResolvedValue(true) }
+      accounts: { applyBalanceDelta: vi.fn().mockResolvedValue("applied") }
     });
     await expect(missingFinal.service.commitBatch("u1", BATCH_ID)).rejects.toBeInstanceOf(
       EntityNotFoundError
@@ -603,7 +618,7 @@ describe("ImportsService commit and revert", () => {
     const failedBalance = createService({
       ...collaborators,
       batches: { findById: vi.fn().mockResolvedValue(committed) },
-      accounts: { applyReversalBalanceDelta: vi.fn().mockResolvedValue(false) }
+      accounts: { applyReversalBalanceDelta: vi.fn().mockResolvedValue("account_not_found") }
     });
     await expect(failedBalance.service.revertBatch("u1", BATCH_ID)).rejects.toBeInstanceOf(
       EntityNotFoundError
@@ -615,7 +630,7 @@ describe("ImportsService commit and revert", () => {
         findById: vi.fn().mockResolvedValueOnce(committed).mockResolvedValueOnce(null),
         markReverted: vi.fn().mockResolvedValue(undefined)
       },
-      accounts: { applyReversalBalanceDelta: vi.fn().mockResolvedValue(true) }
+      accounts: { applyReversalBalanceDelta: vi.fn().mockResolvedValue("applied") }
     });
     await expect(missingFinal.service.revertBatch("u1", BATCH_ID)).rejects.toBeInstanceOf(
       EntityNotFoundError

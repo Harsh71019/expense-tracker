@@ -35,6 +35,7 @@ describe("RecurringRuleMutationService", () => {
       "user-1",
       "recurring-rule.create",
       "key-1",
+      input,
       expect.anything(),
       expect.any(Function)
     );
@@ -43,6 +44,10 @@ describe("RecurringRuleMutationService", () => {
       "user-1",
       "recurring-rule.update",
       "key-2",
+      {
+        patch: { isPaused: true },
+        ruleId: "3fa85f64-5717-4562-b3fc-2c963f66bef0"
+      },
       expect.anything(),
       expect.any(Function)
     );

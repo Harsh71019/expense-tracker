@@ -111,6 +111,15 @@ export interface paths {
             "application/json": components["schemas"]["ProblemDetails"];
           };
         };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
         /** @description Validation failed */
         422: {
           headers: {
@@ -703,6 +712,15 @@ export interface paths {
             "application/json": components["schemas"]["ProblemDetails"];
           };
         };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
         /** @description Validation failed */
         422: {
           headers: {
@@ -833,6 +851,15 @@ export interface paths {
             "application/json": components["schemas"]["ProblemDetails"];
           };
         };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
         /** @description Validation failed */
         422: {
           headers: {
@@ -904,6 +931,15 @@ export interface paths {
         };
         /** @description Not found */
         404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
           headers: {
             [name: string]: unknown;
           };
@@ -987,6 +1023,15 @@ export interface paths {
         };
         /** @description Not found */
         404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
           headers: {
             [name: string]: unknown;
           };
@@ -1127,6 +1172,15 @@ export interface paths {
             "application/json": components["schemas"]["ProblemDetails"];
           };
         };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
         /** @description Validation failed */
         422: {
           headers: {
@@ -1195,6 +1249,15 @@ export interface paths {
         };
         /** @description Category rule not found */
         404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
           headers: {
             [name: string]: unknown;
           };
@@ -1492,7 +1555,7 @@ export interface paths {
             "application/json": components["schemas"]["ProblemDetails"];
           };
         };
-        /** @description Transfer legs require a group-level metadata operation */
+        /** @description Transfer legs require a group-level metadata operation, or idempotency intent conflicts */
         409: {
           headers: {
             [name: string]: unknown;
@@ -1883,6 +1946,15 @@ export interface paths {
             "application/json": components["schemas"]["ProblemDetails"];
           };
         };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
         /** @description Validation failed */
         422: {
           headers: {
@@ -1950,6 +2022,15 @@ export interface paths {
         };
         /** @description Not found */
         404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
           headers: {
             [name: string]: unknown;
           };
@@ -2105,6 +2186,15 @@ export interface paths {
         };
         /** @description Not found */
         404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
           headers: {
             [name: string]: unknown;
           };
@@ -2594,6 +2684,15 @@ export interface paths {
             "application/json": components["schemas"]["ProblemDetails"];
           };
         };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
         /** @description Validation failed */
         422: {
           headers: {
@@ -2685,6 +2784,15 @@ export interface paths {
         };
         /** @description Recurring rule, account, or category not found */
         404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
           headers: {
             [name: string]: unknown;
           };
@@ -2824,6 +2932,15 @@ export interface paths {
         };
         /** @description Not found */
         404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
           headers: {
             [name: string]: unknown;
           };
@@ -2985,7 +3102,7 @@ export interface paths {
             "application/json": components["schemas"]["ProblemDetails"];
           };
         };
-        /** @description Funding source already assigned */
+        /** @description Funding source already assigned, or idempotency intent conflicts */
         409: {
           headers: {
             [name: string]: unknown;
@@ -3067,7 +3184,7 @@ export interface paths {
             "application/json": components["schemas"]["ProblemDetails"];
           };
         };
-        /** @description Order does not contain every active goal */
+        /** @description Order is invalid, or idempotency intent conflicts */
         409: {
           headers: {
             [name: string]: unknown;
@@ -3218,6 +3335,15 @@ export interface paths {
             "application/json": components["schemas"]["ProblemDetails"];
           };
         };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
         /** @description Validation failed */
         422: {
           headers: {
@@ -3281,6 +3407,15 @@ export interface paths {
         };
         /** @description Active goal not found */
         404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
           headers: {
             [name: string]: unknown;
           };
@@ -3508,6 +3643,15 @@ export interface paths {
             "application/json": components["schemas"]["ProblemDetails"];
           };
         };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
         /** @description Validation failed */
         422: {
           headers: {
@@ -3582,6 +3726,15 @@ export interface paths {
         };
         /** @description Budget not found */
         404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
           headers: {
             [name: string]: unknown;
           };
@@ -4372,6 +4525,68 @@ export interface paths {
           };
           content: {
             "application/json": components["schemas"]["RecurringForecast"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/metrics": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Prometheus text exposition for backend runtime health */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/plain": string;
           };
         };
         /** @description Unauthenticated */
@@ -5231,8 +5446,10 @@ export interface components {
         | "common.validation_failed"
         | "common.not_found"
         | "common.invalid_cursor"
+        | "common.idempotency_conflict"
         | "common.internal"
         | "common.dependency_unavailable"
+        | "money.out_of_range"
         | "auth.unauthenticated"
         | "auth.insufficient_scope"
         | "auth.rate_limited"
@@ -5287,6 +5504,10 @@ export interface components {
       };
       /** @enum {string} */
       status: "pending" | "staged" | "committed" | "reverted" | "failed";
+      /** @enum {string} */
+      failureCode?: "invalid_csv" | "parse_retries_exhausted";
+      /** Format: date-time */
+      failedAt?: string | null;
       stats: {
         total: number;
         staged: number;

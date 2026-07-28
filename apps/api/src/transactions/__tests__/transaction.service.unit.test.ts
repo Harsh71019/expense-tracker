@@ -57,7 +57,7 @@ describe("TransactionService Unit Tests", () => {
   describe("create", () => {
     it("creates transaction and applies balance delta when valid", async () => {
       const mockAccounts = {
-        applyBalanceDelta: vi.fn(async () => true)
+        applyBalanceDelta: vi.fn(async () => "applied")
       };
       const mockTx = { create: vi.fn(async () => sampleTx) };
 
@@ -81,7 +81,7 @@ describe("TransactionService Unit Tests", () => {
     });
 
     it("throws EntityNotFoundError if account does not exist on create", async () => {
-      const mockAccounts = { applyBalanceDelta: vi.fn(async () => false) };
+      const mockAccounts = { applyBalanceDelta: vi.fn(async () => "account_not_found") };
       const service = createService({ mockAccounts });
 
       await expect(

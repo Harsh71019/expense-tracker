@@ -211,6 +211,50 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/* Modern Web Guidance: Balanced line breaking for headings & pretty paragraph wrapping */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.text-balance {
+  text-wrap: balance;
+}
+
+p,
+blockquote,
+.pretty-text {
+  text-wrap: pretty;
+}
+
+/* Modern Web Guidance: Theme-aware custom scrollbar system with WebKit fallback */
+:root {
+  --scrollbar-thumb: var(--color-border);
+  --scrollbar-track: var(--color-surface);
+}
+
+html,
+body,
+.custom-scrollbar {
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+  scrollbar-width: thin;
+}
+
+@supports not (scrollbar-color: auto) {
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--scrollbar-thumb);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-track {
+    background-color: var(--scrollbar-track);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.01ms !important;

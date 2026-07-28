@@ -37,6 +37,34 @@ export function AmountInput({
     }
   }
 
+  function addPreset(rupees: number): void {
+    let currentMinor = 0;
+    try {
+      currentMinor = parseMinor(draft);
+    } catch {
+      currentMinor = 0;
+    }
+    const nextMinor = currentMinor + rupees * 100;
+    const formatted = formatMinor(nextMinor);
+    setDraft(formatted);
+    try {
+      onChange(nextMinor);
+      setParseError(null);
+    } catch {
+      // Invalid minor amount
+    }
+  }
+
+  function clearAmount(): void {
+    setDraft("0.00");
+    try {
+      onChange(0);
+      setParseError(null);
+    } catch {
+      // Ignore
+    }
+  }
+
   const message = error ?? parseError;
   return (
     <div className="flex flex-col gap-2">
@@ -60,6 +88,30 @@ export function AmountInput({
           className="w-full rounded-xl border border-border bg-surface px-4 py-4.5 text-center font-mono text-3xl font-extrabold text-foreground tabular-nums transition-colors duration-150 placeholder:text-foreground-muted/30 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
         />
       </div>
+
+      {/* Fast Preset adjustment buttons */}
+      <div className="flex items-center justify-center gap-1.5 pt-0.5">
+        {[100, 500, 1000].map((preset) => (
+          <button
+            key={preset}
+            type="button"
+            onClick={() => addPreset(preset)}
+            className="rounded-md border border-border/60 bg-surface-muted/60 px-2 py-1 font-mono text-xs font-semibold text-foreground-muted transition-colors hover:border-accent/40 hover:bg-accent-glow hover:text-accent"
+          >
+            +₹{preset}
+          </button>
+        ))}
+        {draft !== "0.00" && draft !== "0" && (
+          <button
+            type="button"
+            onClick={clearAmount}
+            className="rounded-md border border-border/40 bg-surface-muted/30 px-2 py-1 font-mono text-xs font-medium text-foreground-muted/70 hover:border-expense/40 hover:text-expense transition-colors"
+          >
+            Clear
+          </button>
+        )}
+      </div>
+
       {message === undefined || message === null ? null : (
         <p
           id={`${id}-error`}

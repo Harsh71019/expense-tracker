@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { AccountSchema, type Account } from "@treasury-ops/shared";
+import { AccountSchema, parseSafeIntegerMinor, type Account } from "@treasury-ops/shared";
 import { sql } from "drizzle-orm";
 
 import { DATABASE_CONNECTION } from "../common/db/db.module.js";
@@ -44,6 +44,6 @@ export class BalanceVerifyRepository {
       })
       .from(transactions)
       .groupBy(transactions.accountId);
-    return new Map(rows.map((row) => [row.accountId, Number(row.netMinor)]));
+    return new Map(rows.map((row) => [row.accountId, parseSafeIntegerMinor(row.netMinor)]));
   }
 }

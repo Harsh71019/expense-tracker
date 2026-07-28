@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
 import type { CreateTransaction, Transaction } from "@treasury-ops/shared";
 
@@ -115,6 +115,20 @@ describe("BalanceVerifyService", () => {
     await testDb.teardown();
   });
 
+  beforeEach(async () => {
+    await testDb.db
+      .update(accountsTable)
+      .set({ balanceMinor: 7_000 })
+      .where(eq(accountsTable.id, driftedAccountId));
+  });
+
+  afterEach(async () => {
+    await testDb.db
+      .update(accountsTable)
+      .set({ balanceMinor: 8_000 })
+      .where(eq(accountsTable.id, driftedAccountId));
+  });
+
   function newVerifier(serviceRole: "api" | "worker"): BalanceVerifyService {
     process.env.SERVICE_ROLE = serviceRole;
     return new BalanceVerifyService(
@@ -179,8 +193,8 @@ describe("BalanceVerifyService", () => {
         tx
       )
     );
-    await withTxn(testDb.db, (tx) =>
-      transactionsRepo.create(
+    await withTxn(testDb.db, async (tx) => {
+      await transactionsRepo.create(
         "user-a",
         {
           accountId: account.id,
@@ -192,10 +206,11 @@ describe("BalanceVerifyService", () => {
         },
         undefined,
         tx
-      )
-    );
-    await withTxn(testDb.db, (tx) =>
-      transactionsRepo.create(
+      );
+      await accounts.applyBalanceDelta("user-a", account.id, 1_200_000_000, tx);
+    });
+    await withTxn(testDb.db, async (tx) => {
+      await transactionsRepo.create(
         "user-a",
         {
           accountId: account.id,
@@ -207,8 +222,9 @@ describe("BalanceVerifyService", () => {
         },
         undefined,
         tx
-      )
-    );
+      );
+      await accounts.applyBalanceDelta("user-a", account.id, 1_200_000_000, tx);
+    });
 
     const deltas = await new BalanceVerifyRepository(testDb.db).sumDeltasByAccount();
     expect(deltas.get(account.id)).toBe(2_400_000_000);

@@ -1,16 +1,18 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import {
   CategorySpendSpikeEvidenceSchema,
   OverallSpendSpikeEvidenceSchema
 } from "@treasury-ops/shared";
 
 import { AccountRepository } from "../../../src/accounts/account.repository.js";
+import { assertBalanceDeltaApplied } from "../../../src/accounts/balance-delta.js";
 import { AuditRepository } from "../../../src/audit/audit.repository.js";
 import { CategoryRepository } from "../../../src/categories/category.repository.js";
 import { withTxn } from "../../../src/common/db/db-txn.js";
 import {
   auditLog,
+  accounts as accountsTable,
   idempotencyRecords,
   spendingWarningAnalysisState,
   spendingWarnings,
@@ -34,13 +36,14 @@ describe("SpendingWarningsService (integration)", () => {
   let accountId: string;
   let otherAccountId: string;
   let categoryId: string;
+  let accounts: AccountRepository;
 
   beforeAll(async () => {
     testDb = await createTestDb();
     await insertTestUser(testDb.db, "user-a");
     await insertTestUser(testDb.db, "user-b");
 
-    const accounts = new AccountRepository(testDb.db);
+    accounts = new AccountRepository(testDb.db);
     const categories = new CategoryRepository(testDb.db);
     const audit = new AuditRepository(testDb.db);
     repository = new SpendingWarningsRepository(testDb.db);
@@ -70,9 +73,15 @@ describe("SpendingWarningsService (integration)", () => {
   beforeEach(async () => {
     await testDb.db.delete(spendingWarnings);
     await testDb.db.delete(spendingWarningAnalysisState);
-    await testDb.db.delete(transactionsTable);
-    await testDb.db.delete(auditLog);
+    // Analytics fixtures intentionally rebuild their synthetic ledger for
+    // each test. TRUNCATE is the explicit test-only reset boundary; normal
+    // UPDATE/DELETE remains blocked by the integration append-only guards.
+    await testDb.db.execute(sql`truncate table transactions, audit_log cascade`);
     await testDb.db.delete(idempotencyRecords);
+    await testDb.db
+      .update(accountsTable)
+      .set({ balanceMinor: 0 })
+      .where(inArray(accountsTable.id, [accountId, otherAccountId]));
   });
 
   async function insertExpense(opts: {
@@ -85,22 +94,33 @@ describe("SpendingWarningsService (integration)", () => {
     type?: "expense" | "income";
     transferGroupId?: string | null;
   }): Promise<void> {
-    const now = new Date();
-    await testDb.db.insert(transactionsTable).values({
-      userId: opts.userId,
-      accountId: opts.accountId,
-      categoryId: opts.categoryId ?? null,
-      type: opts.type ?? "expense",
-      amountMinor: opts.amountMinor,
-      currency: "INR",
-      occurredAt: opts.occurredAt,
-      description: "fixture",
-      tags: [],
-      source: "manual",
-      status: opts.status ?? "posted",
-      transferGroupId: opts.transferGroupId ?? null,
-      createdAt: now,
-      updatedAt: now
+    const type = opts.type ?? "expense";
+    await withTxn(testDb.db, async (tx) => {
+      const now = new Date();
+      await tx.insert(transactionsTable).values({
+        userId: opts.userId,
+        accountId: opts.accountId,
+        categoryId: opts.categoryId ?? null,
+        type,
+        amountMinor: opts.amountMinor,
+        currency: "INR",
+        occurredAt: opts.occurredAt,
+        description: "fixture",
+        tags: [],
+        source: "manual",
+        status: opts.status ?? "posted",
+        transferGroupId: opts.transferGroupId ?? null,
+        createdAt: now,
+        updatedAt: now
+      });
+      assertBalanceDeltaApplied(
+        await accounts.applyBalanceDelta(
+          opts.userId,
+          opts.accountId,
+          type === "income" ? opts.amountMinor : -opts.amountMinor,
+          tx
+        )
+      );
     });
   }
 
@@ -177,6 +197,14 @@ describe("SpendingWarningsService (integration)", () => {
         accountId,
         amountMinor: 5_000_000,
         occurredAt: daysBefore(1),
+        transferGroupId
+      });
+      await insertExpense({
+        userId: "user-a",
+        accountId,
+        amountMinor: 5_000_000,
+        occurredAt: daysBefore(1),
+        type: "income",
         transferGroupId
       });
 
@@ -303,9 +331,11 @@ describe("SpendingWarningsService (integration)", () => {
         .where(eq(spendingWarnings.id, warning.id));
       expect(stillDismissed?.status).toBe("dismissed");
 
-      // Now the spike condition stops reproducing (delete the current-window rows).
+      // Now the spike condition stops reproducing. Mark these fixtures
+      // reversed rather than deleting ledger rows.
       await testDb.db
-        .delete(transactionsTable)
+        .update(transactionsTable)
+        .set({ status: "reversed" })
         .where(
           and(eq(transactionsTable.userId, "user-a"), eq(transactionsTable.amountMinor, 100_000))
         );
@@ -340,7 +370,8 @@ describe("SpendingWarningsService (integration)", () => {
       expect(warning.status).toBe("active");
 
       await testDb.db
-        .delete(transactionsTable)
+        .update(transactionsTable)
+        .set({ status: "reversed" })
         .where(
           and(eq(transactionsTable.userId, "user-a"), eq(transactionsTable.amountMinor, 100_000))
         );

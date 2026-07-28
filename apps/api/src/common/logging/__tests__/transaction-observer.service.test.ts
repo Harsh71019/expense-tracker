@@ -15,9 +15,13 @@ describe("TransactionObserverService", () => {
     const mockContext = {
       get: vi.fn().mockReturnValue({ reqId: "req-1" })
     };
+    const mockMetrics = {
+      recordTransactionRetry: vi.fn(),
+      recordTransaction: vi.fn()
+    };
 
     // @ts-expect-error - mock dependencies for unit testing
-    new TransactionObserverService(mockLogger, mockContext);
+    new TransactionObserverService(mockLogger, mockContext, mockMetrics);
 
     // Verify getter returns the instantiated observer wrapper
     const active = transactionObserver();
@@ -33,6 +37,7 @@ describe("TransactionObserverService", () => {
 
       // Test retried event
       active.retried(2);
+      expect(mockMetrics.recordTransactionRetry).toHaveBeenCalledOnce();
       expect(mockLogger.warn).toHaveBeenCalledWith(
         { event: "txn.retry", attempt: 2, reqId: "req-1" },
         "transaction retrying"
@@ -40,6 +45,7 @@ describe("TransactionObserverService", () => {
 
       // Test completed event (< 500ms)
       active.completed(120);
+      expect(mockMetrics.recordTransaction).toHaveBeenCalledWith("committed", 120);
       expect(mockLogger.debug).toHaveBeenCalledWith(
         { event: "txn.committed", durationMs: 120, reqId: "req-1" },
         "transaction completed"
@@ -55,6 +61,7 @@ describe("TransactionObserverService", () => {
       // Test failed event
       const testError = new Error("Conflict");
       active.failed(testError, 80);
+      expect(mockMetrics.recordTransaction).toHaveBeenCalledWith("failed", 80);
       expect(mockLogger.error).toHaveBeenCalledWith(
         { event: "txn.failed", err: testError, durationMs: 80, reqId: "req-1" },
         "transaction failed"

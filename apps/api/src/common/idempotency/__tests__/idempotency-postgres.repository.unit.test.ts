@@ -9,6 +9,7 @@ describe("IdempotencyPostgresRepository Unit Tests", () => {
     userId: "u1",
     operation: "test_op",
     key: "key_123",
+    requestFingerprint: "fingerprint",
     result: { ok: true, id: "res_1" },
     createdAt: new Date()
   };
@@ -20,6 +21,7 @@ describe("IdempotencyPostgresRepository Unit Tests", () => {
     const repo = new IdempotencyPostgresRepository(mockDb);
 
     const res = await repo.find("u1", "test_op", "key_123", DummySchema);
+    expect(res?.requestFingerprint).toBe("fingerprint");
     expect(res?.result).toEqual({ ok: true, id: "res_1" });
   });
 
@@ -39,10 +41,20 @@ describe("IdempotencyPostgresRepository Unit Tests", () => {
       "u1",
       "test_op",
       "key_123",
+      "fingerprint",
       { ok: true, id: "res_1" },
       // @ts-expect-error mock tx
       mockDb
     );
     expect(mockDb.insert).toHaveBeenCalled();
+  });
+
+  it("deletes only the user's expired records", async () => {
+    const mockDb = createMockDrizzleDb();
+    const repo = new IdempotencyPostgresRepository(mockDb);
+
+    await repo.deleteExpired("u1", new Date("2026-06-01T00:00:00.000Z"));
+
+    expect(mockDb.delete).toHaveBeenCalled();
   });
 });

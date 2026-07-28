@@ -1,27 +1,36 @@
 import { Injectable } from "@nestjs/common";
 import type { OnModuleDestroy } from "@nestjs/common";
 import { Queue } from "bullmq";
+import { z } from "zod";
 
 import { RuntimeConfigService } from "../common/config/runtime-config.service.js";
+import { LoggingContextService } from "../common/logging/logging-context.service.js";
 import { createQueueConnection } from "../common/queue/queue-connection.js";
+import { QUEUE_RETENTION } from "../common/queue/queue-policy.js";
 import { toISTCalendarDate } from "../common/time/ist.js";
 import { DETECTOR_VERSION } from "./spending-warnings.detector.js";
 
 export const SPENDING_WARNINGS_QUEUE_NAME = "spending-warnings";
 export const ANALYZE_USER_JOB_NAME = "analyze";
 
-export type AnalyzeUserJobData = Readonly<{
-  userId: string;
+export const AnalyzeUserJobDataSchema = z.object({
+  userId: z.string().min(1),
   /** ISO instant — the single fixed `asOf` every detector in this run shares (plan §4). */
-  asOf: string;
-  detectorVersion: number;
-}>;
+  asOf: z.iso.datetime({ offset: true }),
+  detectorVersion: z.number().int().positive(),
+  correlationId: z.string().min(1).max(128)
+});
+
+export type AnalyzeUserJobData = z.infer<typeof AnalyzeUserJobDataSchema>;
 
 @Injectable()
 export class SpendingWarningsQueue implements OnModuleDestroy {
   private readonly queue: Queue<AnalyzeUserJobData>;
 
-  constructor(config: RuntimeConfigService) {
+  constructor(
+    config: RuntimeConfigService,
+    private readonly context: LoggingContextService = new LoggingContextService()
+  ) {
     this.queue = new Queue<AnalyzeUserJobData>(SPENDING_WARNINGS_QUEUE_NAME, {
       connection: createQueueConnection(config.env.REDIS_URL)
     });
@@ -33,15 +42,18 @@ export class SpendingWarningsQueue implements OnModuleDestroy {
    * schedule invocation is a safe no-op rather than a second analysis run.
    */
   async enqueueAnalysis(userId: string, asOf: Date): Promise<void> {
-    await this.queue.add(
-      ANALYZE_USER_JOB_NAME,
-      { userId, asOf: asOf.toISOString(), detectorVersion: DETECTOR_VERSION },
-      {
-        jobId: `${userId}:${toISTCalendarDate(asOf)}:v${DETECTOR_VERSION}`,
-        attempts: 3,
-        backoff: { type: "exponential", delay: 10_000 }
-      }
-    );
+    const data = AnalyzeUserJobDataSchema.parse({
+      userId,
+      asOf: asOf.toISOString(),
+      detectorVersion: DETECTOR_VERSION,
+      correlationId: this.context.get()?.reqId ?? crypto.randomUUID()
+    });
+    await this.queue.add(ANALYZE_USER_JOB_NAME, data, {
+      jobId: `${userId}:${toISTCalendarDate(asOf)}:v${DETECTOR_VERSION}`,
+      attempts: 3,
+      backoff: { type: "exponential", delay: 10_000 },
+      ...QUEUE_RETENTION
+    });
   }
 
   /** Read-only access to the underlying Queue — Bull Board needs the real instance. */

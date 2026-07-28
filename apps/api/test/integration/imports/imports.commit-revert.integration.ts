@@ -30,7 +30,15 @@ class TestRuntimeConfig implements RuntimeConfigService {
     LOG_PRETTY: false,
     SERVICE_ROLE: "api" as const,
     DATABASE_URL: "postgres://test:test@localhost:5432/test",
+    DATABASE_POOL_MAX: 10,
+    DATABASE_CONNECTION_TIMEOUT_MS: 5_000,
+    DATABASE_QUERY_TIMEOUT_MS: 10_000,
+    DATABASE_STATEMENT_TIMEOUT_MS: 10_000,
+    DATABASE_LOCK_TIMEOUT_MS: 5_000,
+    DATABASE_IDLE_IN_TXN_TIMEOUT_MS: 30_000,
     REDIS_URL: "redis://127.0.0.1:6379/15",
+    READINESS_TIMEOUT_MS: 2_000,
+    GRACEFUL_SHUTDOWN_TIMEOUT_MS: 15_000,
     APP_TIMEZONE: "Asia/Kolkata" as const,
     TRUSTED_ORIGINS: "http://localhost:3000",
     GIT_SHA: "test-sha",
@@ -143,8 +151,8 @@ describe("ImportsService commit/revert", () => {
       `sha256:${Math.random().toString(36).slice(2)}`,
       MAPPING
     );
-    await stagedRows.insertMany(batch.id, rows);
-    await batches.markParsed(batch.id, "staged", {
+    await stagedRows.insertMany(userId, batch.id, rows);
+    await batches.markParsed(userId, batch.id, "staged", {
       total: rows.length,
       staged: rows.length,
       duplicates: 0,
@@ -206,9 +214,9 @@ describe("ImportsService commit/revert", () => {
     // Simulate a crash after chunk 1 of a resumed run: land row 1's
     // transaction directly (bypassing commitBatch) while the batch stays
     // "staged", exactly like an interrupted commit would leave things.
-    const [firstRow] = await stagedRows.findIncludableForBatch(batchId);
-    await withTxn(testDb.db, (tx) =>
-      transactions.insertImportedRows(
+    const [firstRow] = await stagedRows.findIncludableForBatch(userId, batchId);
+    await withTxn(testDb.db, async (tx) => {
+      await transactions.insertImportedRows(
         userId,
         accountId,
         batchId,
@@ -222,8 +230,9 @@ describe("ImportsService commit/revert", () => {
           }
         ],
         tx
-      )
-    );
+      );
+      await accounts.applyBalanceDelta(userId, accountId, -2_000, tx);
+    });
     const committed = await service.commitBatch(userId, batchId);
 
     expect(committed.status).toBe("committed");
@@ -261,7 +270,7 @@ describe("ImportsService commit/revert", () => {
     const userId = "user-category-guard";
     const accountId = await seedAccount(userId);
     const batchId = await seedStagedBatch(userId, accountId, [includableRow()]);
-    const [row] = await stagedRows.findIncludableForBatch(batchId);
+    const [row] = await stagedRows.findIncludableForBatch(userId, batchId);
     const foreignCategory = await categories.create("category-victim", {
       name: "Private category",
       kind: "expense"
@@ -342,9 +351,10 @@ describe("ImportsService commit/revert", () => {
     // mid-revert crash would).
     const posted = await transactions.findPostedByImportBatchId(userId, batchId);
     const [firstPosted] = posted;
-    await withTxn(testDb.db, (tx) =>
-      transactions.insertBulkReversals(userId, [nonNull(firstPosted)], tx)
-    );
+    await withTxn(testDb.db, async (tx) => {
+      await transactions.insertBulkReversals(userId, [nonNull(firstPosted)], tx);
+      await accounts.applyReversalBalanceDelta(userId, accountId, 2_000, tx);
+    });
 
     const reverted = await service.revertBatch(userId, batchId);
 

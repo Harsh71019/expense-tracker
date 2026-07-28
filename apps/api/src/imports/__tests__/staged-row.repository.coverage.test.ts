@@ -26,8 +26,8 @@ const ROW = {
 
 describe("StagedRowRepository edge coverage", () => {
   it("maps optional fields while inserting parsed and unparsed rows", async () => {
-    const db = createMockDrizzleDb();
-    await new StagedRowRepository(db).insertMany(BATCH_ID, [
+    const db = createMockDrizzleDb([{ id: BATCH_ID }]);
+    await new StagedRowRepository(db).insertMany("u1", BATCH_ID, [
       {
         rowNumber: 1,
         raw: {},
@@ -59,20 +59,20 @@ describe("StagedRowRepository edge coverage", () => {
     const repository = new StagedRowRepository(db);
     const cursor = Buffer.from(JSON.stringify({ rowNumber: 1 }), "utf8").toString("base64url");
 
-    await expect(repository.findByBatchId(BATCH_ID, cursor, 1)).resolves.toMatchObject({
+    await expect(repository.findByBatchId("u1", BATCH_ID, cursor, 1)).resolves.toMatchObject({
       items: [expect.objectContaining({ id: ROW_ID })],
       pageInfo: { hasMore: true, limit: 1, nextCursor: expect.any(String) }
     });
-    await expect(repository.findByBatchId(BATCH_ID, "invalid", 1)).rejects.toBeInstanceOf(
+    await expect(repository.findByBatchId("u1", BATCH_ID, "invalid", 1)).rejects.toBeInstanceOf(
       InvalidCursorError
     );
   });
 
   it("returns null for missing rows and lost updates", async () => {
     const repository = new StagedRowRepository(createMockDrizzleDb());
-    await expect(repository.findById(BATCH_ID, ROW_ID)).resolves.toBeNull();
+    await expect(repository.findById("u1", BATCH_ID, ROW_ID)).resolves.toBeNull();
     await expect(
-      repository.updateRow(BATCH_ID, ROW_ID, { suggestedCategoryId: null })
+      repository.updateRow("u1", BATCH_ID, ROW_ID, { suggestedCategoryId: null })
     ).resolves.toBeNull();
   });
 
@@ -80,13 +80,13 @@ describe("StagedRowRepository edge coverage", () => {
     const db = createMockDrizzleDb([ROW]);
     const repository = new StagedRowRepository(db);
 
-    await expect(repository.updateRow(BATCH_ID, ROW_ID, { include: false })).resolves.toMatchObject(
-      {
-        include: true
-      }
-    );
     await expect(
-      repository.updateRow(BATCH_ID, ROW_ID, {
+      repository.updateRow("u1", BATCH_ID, ROW_ID, { include: false })
+    ).resolves.toMatchObject({
+      include: true
+    });
+    await expect(
+      repository.updateRow("u1", BATCH_ID, ROW_ID, {
         suggestedCategoryId: "323e4567-e89b-42d3-a456-426614174000"
       })
     ).resolves.toMatchObject({ id: ROW_ID });
@@ -102,7 +102,7 @@ describe("StagedRowRepository edge coverage", () => {
 
     for (const row of incompleteRows) {
       const repository = new StagedRowRepository(createMockDrizzleDb([row]));
-      await expect(repository.findById(BATCH_ID, ROW_ID)).resolves.toMatchObject({
+      await expect(repository.findById("u1", BATCH_ID, ROW_ID)).resolves.toMatchObject({
         parsed: undefined
       });
     }

@@ -13,6 +13,11 @@ import type { DrizzleDb } from "../common/db/db.module.js";
 import { accounts } from "../common/db/schema/index.js";
 import type { DbTx } from "../common/db/db-txn.js";
 
+const MAX_SAFE_MINOR = Number.MAX_SAFE_INTEGER;
+const MIN_SAFE_MINOR = -Number.MAX_SAFE_INTEGER;
+
+export type BalanceDeltaResult = "applied" | "account_not_found" | "out_of_range";
+
 @Injectable()
 export class AccountRepository {
   constructor(@Inject(DATABASE_CONNECTION) private readonly db: DrizzleDb) {}
@@ -175,15 +180,23 @@ export class AccountRepository {
     accountId: AccountId,
     deltaMinor: number,
     tx: DbTx
-  ): Promise<boolean> {
+  ): Promise<BalanceDeltaResult> {
     const rows = await tx
       .update(accounts)
       .set({ balanceMinor: sql`${accounts.balanceMinor} + ${deltaMinor}`, updatedAt: new Date() })
       .where(
-        and(eq(accounts.id, accountId), eq(accounts.userId, userId), eq(accounts.isArchived, false))
+        and(
+          eq(accounts.id, accountId),
+          eq(accounts.userId, userId),
+          eq(accounts.isArchived, false),
+          sql`${accounts.balanceMinor} + ${deltaMinor} between ${MIN_SAFE_MINOR} and ${MAX_SAFE_MINOR}`
+        )
       )
       .returning({ id: accounts.id });
-    return rows.length === 1;
+    if (rows.length === 1) return "applied";
+    return (await this.activeAccountExists(userId, accountId, tx))
+      ? "out_of_range"
+      : "account_not_found";
   }
 
   /**
@@ -197,12 +210,41 @@ export class AccountRepository {
     accountId: AccountId,
     deltaMinor: number,
     tx: DbTx
-  ): Promise<boolean> {
+  ): Promise<BalanceDeltaResult> {
     const rows = await tx
       .update(accounts)
       .set({ balanceMinor: sql`${accounts.balanceMinor} + ${deltaMinor}`, updatedAt: new Date() })
-      .where(and(eq(accounts.id, accountId), eq(accounts.userId, userId)))
+      .where(
+        and(
+          eq(accounts.id, accountId),
+          eq(accounts.userId, userId),
+          sql`${accounts.balanceMinor} + ${deltaMinor} between ${MIN_SAFE_MINOR} and ${MAX_SAFE_MINOR}`
+        )
+      )
       .returning({ id: accounts.id });
+    if (rows.length === 1) return "applied";
+    return (await this.accountExists(userId, accountId, tx)) ? "out_of_range" : "account_not_found";
+  }
+
+  private async activeAccountExists(
+    userId: string,
+    accountId: AccountId,
+    tx: DbTx
+  ): Promise<boolean> {
+    const rows = await tx
+      .select({ id: accounts.id })
+      .from(accounts)
+      .where(
+        and(eq(accounts.id, accountId), eq(accounts.userId, userId), eq(accounts.isArchived, false))
+      );
+    return rows.length === 1;
+  }
+
+  private async accountExists(userId: string, accountId: AccountId, tx: DbTx): Promise<boolean> {
+    const rows = await tx
+      .select({ id: accounts.id })
+      .from(accounts)
+      .where(and(eq(accounts.id, accountId), eq(accounts.userId, userId)));
     return rows.length === 1;
   }
 }

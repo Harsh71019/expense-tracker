@@ -84,7 +84,7 @@ function createService(overrides: Overrides = {}) {
 describe("TransactionService create and reads", () => {
   it("creates an income transaction without a category and logs it", async () => {
     const income = { ...TRANSACTION, type: "income" as const };
-    const accounts = { applyBalanceDelta: vi.fn().mockResolvedValue(true) };
+    const accounts = { applyBalanceDelta: vi.fn().mockResolvedValue("applied") };
     const transactions = { create: vi.fn().mockResolvedValue(income) };
     const context = createService({ accounts, transactions });
 
@@ -288,7 +288,7 @@ describe("TransactionService reversals", () => {
       createReversal: vi.fn().mockResolvedValue(REVERSAL),
       markReversed: vi.fn().mockResolvedValue(true)
     };
-    const accounts = { applyReversalBalanceDelta: vi.fn().mockResolvedValue(true) };
+    const accounts = { applyReversalBalanceDelta: vi.fn().mockResolvedValue("applied") };
     const context = createService({ transactions, accounts });
 
     await expect(context.service.reverse("u1", TRANSACTION_ID)).resolves.toEqual({
@@ -310,7 +310,7 @@ describe("TransactionService reversals", () => {
       createReversal: vi.fn().mockResolvedValue({ ...REVERSAL, type: "expense" }),
       markReversed: vi.fn().mockResolvedValue(true)
     };
-    const accounts = { applyReversalBalanceDelta: vi.fn().mockResolvedValue(true) };
+    const accounts = { applyReversalBalanceDelta: vi.fn().mockResolvedValue("applied") };
     const context = createService({ transactions, accounts });
 
     await context.service.reverse("u1", TRANSACTION_ID);
@@ -360,7 +360,7 @@ describe("TransactionService reversals", () => {
           markReversed: vi.fn().mockResolvedValue(true),
           findByReversalOf: vi.fn().mockResolvedValue(null)
         },
-        accounts: { applyReversalBalanceDelta: vi.fn().mockResolvedValue(false) }
+        accounts: { applyReversalBalanceDelta: vi.fn().mockResolvedValue("account_not_found") }
       }
     ];
 
@@ -403,6 +403,7 @@ describe("TransactionMutationService", () => {
           _userId: string,
           _operation: string,
           _key: string,
+          _intent: unknown,
           _schema: unknown,
           work: (value: object) => Promise<Transaction>
         ) => ({ result: await work(tx), replayed: false })

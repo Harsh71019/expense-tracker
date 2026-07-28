@@ -78,6 +78,7 @@ export class BillReconciliationService {
       userId,
       "credit-card.statement.upload",
       key,
+      { billId, filename, fileHash, mapping },
       BillStatementUploadSchema,
       async (tx) => {
         const bill = await this.bills.findByIdForUpdate(userId, billId, tx);
@@ -195,6 +196,7 @@ export class BillReconciliationService {
       userId,
       "credit-card.statement.row.update",
       key,
+      { billId, rowId, patch },
       BillStatementRowSchema,
       async (tx) => {
         const bill = await this.bills.findByIdForUpdate(userId, billId, tx);
@@ -236,6 +238,7 @@ export class BillReconciliationService {
       userId,
       "credit-card.statement.extra.acknowledge",
       key,
+      { billId, transactionId, acknowledged },
       BillStatementUploadSchema,
       async (tx) => {
         const bill = await this.bills.findByIdForUpdate(userId, billId, tx);
@@ -291,6 +294,7 @@ export class BillReconciliationService {
       userId,
       "credit-card.statement.reconcile",
       key,
+      { billId },
       CreditCardBillSchema,
       async (tx) => {
         const bill = await this.bills.findByIdForUpdate(userId, billId, tx);

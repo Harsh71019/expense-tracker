@@ -68,7 +68,7 @@ describe("TransferService Unit Tests", () => {
 
   it("creates paired transfer transactions successfully", async () => {
     const mockAccounts = {
-      applyBalanceDelta: vi.fn(async () => true)
+      applyBalanceDelta: vi.fn(async () => "applied")
     };
     const mockTx = {
       create: vi.fn().mockResolvedValueOnce(sampleTxOut).mockResolvedValueOnce(sampleTxIn)
@@ -95,7 +95,7 @@ describe("TransferService Unit Tests", () => {
 
   it("throws EntityNotFoundError if source account does not exist", async () => {
     const mockAccounts = {
-      applyBalanceDelta: vi.fn(async () => false)
+      applyBalanceDelta: vi.fn(async () => "account_not_found")
     };
     const service = createService({ mockAccounts });
 

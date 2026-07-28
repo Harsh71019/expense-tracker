@@ -1,4 +1,4 @@
-import { index, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { index, integer, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 import { user } from "../auth-schema.js";
 import { notificationStatusEnum, notificationTypeEnum } from "./enums.js";
@@ -13,6 +13,9 @@ export const notificationOutbox = pgTable(
     type: notificationTypeEnum("type").notNull(),
     payload: jsonb("payload").notNull(),
     status: notificationStatusEnum("status").notNull(),
+    failureCode: text("failure_code"),
+    failedAt: timestamp("failed_at", { withTimezone: true }),
+    deliveryAttempts: integer("delivery_attempts").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
     sentAt: timestamp("sent_at", { withTimezone: true })
   },

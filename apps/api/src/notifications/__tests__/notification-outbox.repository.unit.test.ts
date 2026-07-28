@@ -10,6 +10,9 @@ describe("NotificationOutboxRepository Unit Tests", () => {
     type: "budget_alert",
     payload: { title: "Alert", message: "Low balance" },
     status: "pending",
+    failureCode: null,
+    failedAt: null,
+    deliveryAttempts: 0,
     sentAt: null,
     createdAt: new Date()
   };
@@ -32,7 +35,7 @@ describe("NotificationOutboxRepository Unit Tests", () => {
     const mockDb = createMockDrizzleDb([sampleNotificationRow]);
     const repo = new NotificationOutboxRepository(mockDb);
 
-    const res = await repo.findById(sampleNotificationRow.id);
+    const res = await repo.findById("u1", sampleNotificationRow.id);
     expect(res?.id).toBe(sampleNotificationRow.id);
   });
 });

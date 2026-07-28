@@ -10,6 +10,8 @@ import { QueryProvider } from "../lib/query/provider";
 import { Toaster } from "../components/ui/sonner";
 import { MockApiBoot } from "../mocks/MockApiBoot";
 
+import { PrivacyProvider } from "../lib/privacy/privacy-context";
+
 const interTight = Inter_Tight({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
@@ -43,9 +45,11 @@ export default async function RootLayout({
       {/* ColorZilla injects cz-shortcut-listen on body before React hydrates. */}
       <body suppressHydrationWarning className="bg-surface font-sans text-foreground antialiased">
         <QueryProvider>
-          {children}
-          <Toaster theme={theme ?? "system"} />
-          <MockApiBoot />
+          <PrivacyProvider>
+            {children}
+            <Toaster theme={theme ?? "system"} />
+            <MockApiBoot />
+          </PrivacyProvider>
         </QueryProvider>
       </body>
     </html>

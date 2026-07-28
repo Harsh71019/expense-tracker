@@ -7,6 +7,7 @@ import { DATABASE_CONNECTION } from "../common/db/db.module.js";
 import type { DrizzleDb } from "../common/db/db.module.js";
 import { withTxn } from "../common/db/db-txn.js";
 import { LogEvent } from "../common/logging/events.js";
+import { MetricsService } from "../common/observability/metrics.service.js";
 import { NotificationOutboxRepository } from "../notifications/notification-outbox.repository.js";
 import { BalanceVerifyRepository } from "./balance-verify.repository.js";
 
@@ -28,7 +29,8 @@ export class BalanceVerifyService {
     private readonly config: RuntimeConfigService,
     private readonly balances: BalanceVerifyRepository,
     private readonly outbox: NotificationOutboxRepository,
-    @Inject(Logger) private readonly logger: BalanceVerifyLogger
+    @Inject(Logger) private readonly logger: BalanceVerifyLogger,
+    private readonly metrics?: MetricsService
   ) {}
 
   @Cron("0 3 * * 0", { timeZone: "Asia/Kolkata" })
@@ -75,6 +77,20 @@ export class BalanceVerifyService {
       );
     }
 
+    if (this.metrics !== undefined) {
+      try {
+        await this.metrics.recordBalanceVerification(driftCount);
+      } catch (error) {
+        this.logger.error(
+          {
+            event: LogEvent.MetricsWriteFailed,
+            metric: "balance_verification",
+            err: error
+          },
+          "balance verification metric write failed"
+        );
+      }
+    }
     this.logger.log(
       { event: LogEvent.BalancesVerified, accountCount: accounts.length, driftCount },
       "balance verification complete"

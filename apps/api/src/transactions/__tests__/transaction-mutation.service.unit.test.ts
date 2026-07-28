@@ -28,7 +28,7 @@ describe("TransactionMutationService Unit Tests", () => {
     };
     // @ts-expect-error mock idempotency service
     const mockIdempotency: IdempotencyPostgresService = {
-      execute: vi.fn(async (_u, _op, _k, _s, work) => {
+      execute: vi.fn(async (_u, _op, _k, _intent, _s, work) => {
         const result = await work("tx1");
         return { result, replayed: false };
       })

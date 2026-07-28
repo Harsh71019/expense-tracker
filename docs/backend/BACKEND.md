@@ -475,7 +475,9 @@ Non-monetary metadata on a transfer is also group-scoped. Until a group-level me
 
 ### 3.4 Idempotency
 
-Client-initiated create/update/archive/delete operations require an `Idempotency-Key` header (the client generates one UUID per logical action and reuses it for retries). General mutations store their Zod-validated response in `idempotency_records`, uniquely keyed by `(userId, operation, key)`, in the same Mongo transaction as the business effect. Replays return that authoritative stored response; no-content operations store `null` so an archive/delete replay cannot fall through to `404`.
+Client-initiated create/update/archive/delete operations require an `Idempotency-Key` header (the client generates one UUID per logical action and reuses it for retries). General mutations store their Zod-validated response in `idempotency_records`, uniquely keyed by `(userId, operation, key)`, in the same PostgreSQL transaction as the business effect. Each record also stores a SHA-256 fingerprint of the canonicalized, validated request intent, including path identifiers. Reusing the key for the same intent returns the authoritative stored response; reusing it for different intent returns `409 common.idempotency_conflict`. No-content operations store `null` so an archive/delete replay cannot fall through to `404`.
+
+Idempotency records are retained for 30 days. Each mutation opportunistically removes only the current user's expired records through the tenant-scoped repository index `(user_id, created_at)`, avoiding an unscoped global cleanup path.
 
 Ledger transaction and transfer creation retain their unique transaction-key protection. Transaction and transfer-group reversals are naturally idempotent by the original transaction/group linkage: a concurrent duplicate returns the committed compensating entry or pair and sets `Idempotency-Replayed: true`. First creates return `201`; replayed creates return `200`; same-status mutations expose replay through that header.
 
@@ -566,7 +568,7 @@ export class AuthGuard implements CanActivate {
 
 Next.js uses the Better Auth **client SDK** for login/register/passkey UI and just forwards cookies on server-component fetches. Since it's personal: disable public signup after creating your account (`disableSignUp: true`), and consider keeping the whole thing LAN/Tailscale-only with NPMplus access lists as a second wall — CrowdSec then only matters if you ever expose it.
 
-**Multi-tenancy discipline (even for one user):** every query in every service goes through a repository layer that injects `userId` from the session. No handler ever receives `userId` from the request body. This costs nothing now and is the entire multi-user migration.
+**Multi-tenancy discipline (even for one user):** every query in every service goes through a repository layer that injects `userId` from the session. No handler ever receives `userId` from the request body. Resource-specific repository methods take `userId` first and include it in their database predicate, including staged-import and notification-outbox operations. Intentional cross-tenant worker discovery is named with a `system` prefix, returns tenant identity with each resource ID, and every follow-up read or mutation requires both values. A static architecture test protects this contract, while integration probes verify that malformed worker payloads cannot cross tenant boundaries.
 
 ---
 
@@ -709,7 +711,7 @@ Conventions: controllers do HTTP only; services own business rules and transacti
 ## 14. Resilience & Correctness Under Failure
 
 - **Graceful shutdown:** on SIGTERM — stop accepting HTTP, let in-flight requests finish (10s budget), pause BullMQ workers after current job, close Mongo/Redis, exit 0. NestJS `enableShutdownHooks()` + explicit BullMQ `worker.close()`. This is what makes deploys zero-drama.
-- **Outbox pattern for notifications:** budget alerts and monthly reports are written to a `notification_outbox` collection **inside the same transaction** as the state change that triggered them; a worker drains the outbox with retries. Guarantees you never get an alert for a rollback, and never lose one to a crashed process. (Small pattern, enormous interview mileage.)
+- **Outbox pattern for notifications:** budget alerts and monthly reports are written to `notification_outbox` **inside the same transaction** as the state change that triggered them; a worker drains the outbox with retries. The system sweep emits `{ userId, notificationId }`, that pair is validated in the BullMQ payload, and delivery reads and marks the row with both predicates. This guarantees you never get an alert for a rollback, never lose one to a crashed process, and cannot use a malformed queued UUID to deliver another tenant's notification.
 - **Dead-letter queue:** BullMQ jobs that exhaust retries land in a DLQ visible in Bull Board + GlitchTip alert. `imports` jobs are the main customer.
 - **Circuit breaker on outbound calls** (ntfy/Telegram): 5 failures → open 60s → half-open probe. A down notification service must never back-pressure the ledger.
 - **Clock discipline:** LXC syncs NTP; all cron idempotency keys use `Asia/Kolkata` _calendar dates_, not timestamps, so a DST-less IST is still explicit and a re-run at 01:05 can't differ from 01:00.
@@ -725,9 +727,9 @@ Conventions: controllers do HTTP only; services own business rules and transacti
 
 ## 16. Observability (upgrade from "logs + GlitchTip")
 
-- **Correlation:** `x-request-id` accepted-or-generated per request, propagated into BullMQ job data, present on every pino log line and audit entry. One id traces a CSV row from upload → parse job → commit txn → audit.
+- **Implemented correlation:** `x-request-id` is accepted or generated per request. Queue producers copy it into zod-validated job payloads, and workers restore it as the structured-log `reqId`. One id follows an upload from the API into its parse worker.
 - **OpenTelemetry:** auto-instrumentation for HTTP/Mongoose/BullMQ/Redis exporting OTLP → a tiny **Grafana LGTM stack** (or just Tempo+Grafana) in an `observability` LXC. Traces answer "why was commit slow" without printf debugging.
-- **Metrics:** `/metrics` Prometheus endpoint — RED metrics per route, queue depth/latency, txn retry count, balance-drift gauge (from the Sunday verify cron; **alert if ever non-zero**), import success ratio.
+- **Implemented metrics:** authenticated `/api/v1/metrics` exposes RED counters/duration by bounded route pattern, live BullMQ depth/failures, `withTxn` retries/outcomes/duration, worker-heartbeat age, and Redis-backed balance-drift count/verification age. See `docs/backend/OBSERVABILITY-RUNBOOK.md`.
 - **SLOs (yes, for one user — they're the point):** p95 write < 150 ms LAN, p95 dashboard read < 100 ms (rollup-backed), import commit of 1k rows < 30 s, error budget: zero balance-drift events.
 - **Log retention:** pino → Loki, 30 days; audit_log in Mongo is permanent (it's data, not logs).
 

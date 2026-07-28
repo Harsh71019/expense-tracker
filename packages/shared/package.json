@@ -26,11 +26,11 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "rrule": "latest",
-    "zod": "latest"
+    "rrule": "2.8.1",
+    "zod": "4.4.3"
   },
   "devDependencies": {
     "@treasury-ops/config": "workspace:*",
-    "fast-check": "latest"
+    "fast-check": "4.9.0"
   }
 }

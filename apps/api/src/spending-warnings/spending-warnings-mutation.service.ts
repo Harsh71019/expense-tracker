@@ -24,6 +24,7 @@ export class SpendingWarningsMutationService {
       userId,
       "spending_warning.dismiss",
       key,
+      { warningId },
       DismissSpendingWarningResponseSchema,
       (tx) => this.warnings.dismissInTx(userId, warningId, tx)
     );

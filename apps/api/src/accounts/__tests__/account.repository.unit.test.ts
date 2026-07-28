@@ -67,7 +67,7 @@ describe("AccountRepository Unit Tests", () => {
 
     // @ts-expect-error mock tx
     const res = await repo.applyBalanceDelta("u1", sampleAccountRow.id, 5000, mockDb);
-    expect(res).toBe(true);
+    expect(res).toBe("applied");
   });
 
   it("applyReversalBalanceDelta updates balance even on archived accounts", async () => {
@@ -76,7 +76,7 @@ describe("AccountRepository Unit Tests", () => {
 
     // @ts-expect-error mock tx
     const res = await repo.applyReversalBalanceDelta("u1", sampleAccountRow.id, 5000, mockDb);
-    expect(res).toBe(true);
+    expect(res).toBe("applied");
   });
 
   it("archive sets isArchived true", async () => {

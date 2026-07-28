@@ -237,6 +237,7 @@ export {
   DateFormatSchema,
   ImportBatchIdSchema,
   ImportBatchSchema,
+  ImportFailureCodeSchema,
   ImportBatchStatsSchema,
   ImportBatchStatusSchema,
   MAX_IMPORT_FILE_SIZE_BYTES,
@@ -259,6 +260,7 @@ export type {
   ImportBatchId,
   ImportBatchStats,
   ImportBatchStatus,
+  ImportFailureCode,
   ParsedRow,
   PreviewStagedRowsQuery,
   StagedRow,
@@ -272,7 +274,9 @@ export {
   formatMinorInput,
   formatSignedCompactMinor,
   isMinorAmount,
-  parseMinor
+  parseMinor,
+  parseSafeIntegerMinor,
+  sumMinorAmounts
 } from "./money.js";
 export type { MinorAmount } from "./money.js";
 export { PageInfoSchema } from "./pagination.js";

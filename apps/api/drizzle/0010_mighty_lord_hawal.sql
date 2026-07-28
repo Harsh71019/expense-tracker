@@ -1,0 +1,2 @@
+ALTER TABLE "accounts" ADD CONSTRAINT "accounts_opening_balance_minor_safe_integer" CHECK ("accounts"."opening_balance_minor" between -9007199254740991 and 9007199254740991);--> statement-breakpoint
+ALTER TABLE "accounts" ADD CONSTRAINT "accounts_balance_minor_safe_integer" CHECK ("accounts"."balance_minor" between -9007199254740991 and 9007199254740991);

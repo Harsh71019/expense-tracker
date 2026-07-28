@@ -5,6 +5,7 @@ import pino from "pino";
 import { AppModule } from "./app.module.js";
 import { RuntimeConfigService } from "./common/config/runtime-config.service.js";
 import { LogEvent } from "./common/logging/events.js";
+import { LoggingContextService } from "./common/logging/logging-context.service.js";
 import { withDeadline } from "./common/process/deadline.js";
 import { RedisService } from "./common/redis/redis.service.js";
 import { ImportsService } from "./imports/imports.service.js";
@@ -19,6 +20,7 @@ async function bootstrapWorker(): Promise<void> {
   const redis = app.get(RedisService);
   const logger = app.get(Logger);
   const config = app.get(RuntimeConfigService);
+  const loggingContext = app.get(LoggingContextService);
 
   const recordHeartbeat = async (): Promise<void> => {
     await redis.setWorkerHeartbeat();
@@ -35,16 +37,18 @@ async function bootstrapWorker(): Promise<void> {
   }, 30_000);
   heartbeatTimer.unref();
 
-  const importsWorker = startImportsWorker(config, app.get(ImportsService), logger);
+  const importsWorker = startImportsWorker(config, app.get(ImportsService), logger, loggingContext);
   const notificationsWorker = startNotificationsWorker(
     app.get(RuntimeConfigService),
     app.get(NotificationDeliveryService),
-    logger
+    logger,
+    loggingContext
   );
   const spendingWarningsWorker = startSpendingWarningsWorker(
     app.get(RuntimeConfigService),
     app.get(SpendingWarningsService),
-    logger
+    logger,
+    loggingContext
   );
   logger.log({ event: "worker.started" }, "worker process started");
 

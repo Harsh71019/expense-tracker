@@ -29,6 +29,7 @@ export class RecurringRuleMutationService {
       userId,
       "recurring-rule.create",
       key,
+      input,
       RecurringRuleSchema,
       (tx) => this.rules.createInTxn(userId, input, tx)
     );
@@ -44,6 +45,7 @@ export class RecurringRuleMutationService {
       userId,
       "recurring-rule.update",
       key,
+      { ruleId, patch },
       RecurringRuleSchema,
       (tx) => this.rules.updateInTxn(userId, ruleId, patch, tx)
     );

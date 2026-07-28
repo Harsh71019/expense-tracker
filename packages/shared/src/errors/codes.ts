@@ -2,6 +2,7 @@ export const ErrorCodes = [
   "common.validation_failed",
   "common.not_found",
   "common.invalid_cursor",
+  "common.idempotency_conflict",
   "common.internal",
   "common.dependency_unavailable",
   "money.out_of_range",

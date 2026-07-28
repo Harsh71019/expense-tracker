@@ -16,6 +16,7 @@ export function Badge({
 }: Readonly<{ children: ReactNode; variant: BadgeVariant }>): ReactNode {
   return (
     <span
+      role="status"
       className={[
         "rounded-full border px-2.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider",
         variantClasses[variant]

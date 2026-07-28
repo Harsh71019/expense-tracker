@@ -83,7 +83,7 @@ return the older mapping.
 ### API-005 — Finish idempotency coverage for every mutating endpoint
 
 **Priority:** P1
-**Status:** Open
+**Status:** Complete
 
 **Scope:** import upload, staged-row patch, import commit/revert, and API-key
 create/update/revoke. The import commit/revert design must retain chunking and
@@ -116,6 +116,13 @@ crash resumability; do not wrap 50,000 rows in one database transaction.
   routes.
 - Run `assertInvariants()` after every money test.
 - Remove `--passWithNoTests` once the first suite lands.
+
+**Implemented:** `test/e2e/http-api.e2e.ts` boots the production HTTP factory
+against Testcontainers PostgreSQL and Redis. It covers session authentication,
+RFC 7807, transaction create/replay/reversal, API-key scopes, cross-tenant
+denial, multipart import handoff, readiness, and an OpenAPI-generated
+authentication probe for every secured operation. CI runs the suite and a
+zero-test run now fails.
 
 ### REL-007 — Pin volatile runtime and tooling dependencies
 
@@ -153,7 +160,7 @@ database cannot make the remote side effect atomic.
 ### OBS-009 — Add minimum production observability
 
 **Priority:** P2
-**Status:** Open
+**Status:** Implemented (pending merge)
 
 **Scope:** Prometheus metrics for HTTP RED signals, BullMQ depth/failures,
 transaction retries, worker heartbeat age, and balance drift; OpenTelemetry
@@ -166,6 +173,12 @@ traces can follow after the metrics baseline.
 - No transaction descriptions, tags, cookies, tokens, or user identifiers in
   metric labels.
 - A documented dashboard and alert runbook.
+
+**Implementation:** authenticated `GET /api/v1/metrics`, bounded HTTP RED
+labels, transaction retry/outcome/duration counters, live BullMQ state, worker
+heartbeat age, Redis-backed balance-verification gauges, zod-validated
+request-to-job correlation, and
+`docs/backend/OBSERVABILITY-RUNBOOK.md`.
 
 ## Verification required for this set
 

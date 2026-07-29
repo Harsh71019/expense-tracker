@@ -1,0 +1,22 @@
+[Unit]
+Description=Prune and verify TreasuryOps backup repositories
+Documentation=file:/opt/treasury-backup/README.md
+Wants=network-online.target
+After=network-online.target
+ConditionPathExists=/etc/treasury-backup/backup.env
+
+[Service]
+Type=oneshot
+Environment=BACKUP_CONFIG_FILE=/etc/treasury-backup/backup.env
+ExecStart=/opt/treasury-backup/bin/maintain-repositories.sh
+User=root
+Group=root
+UMask=0077
+Nice=15
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=full
+TimeoutStartSec=12h

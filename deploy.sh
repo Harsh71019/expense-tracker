@@ -59,7 +59,9 @@ for i in $(seq 1 12); do
     echo "    TreasuryOps is healthy at ${APP_URL} (${DEPLOYED_SHA:-sha unknown})"
 
     echo "==> Smoke test: write + reverse against canary account..."
-    if docker compose exec -T api node dist/scripts/smoke.js; then
+    # distroless nodejs base image doesn't put node on $PATH for `docker exec`
+    # sessions (only its own ENTRYPOINT bypasses PATH lookup) -- full path required.
+    if docker compose exec -T api /nodejs/bin/node dist/scripts/smoke.js; then
       echo "    Smoke test passed. Deploy of ${TARGET_TAG} complete."
       exit 0
     else

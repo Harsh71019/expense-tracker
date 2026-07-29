@@ -1,0 +1,11 @@
+[Unit]
+Description=Run TreasuryOps PostgreSQL backup every six hours
+
+[Timer]
+OnCalendar=*-*-* 00,06,12,18:15:00 Asia/Kolkata
+RandomizedDelaySec=5m
+Persistent=true
+Unit=treasury-backup.service
+
+[Install]
+WantedBy=timers.target

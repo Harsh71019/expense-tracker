@@ -1,0 +1,11 @@
+[Unit]
+Description=Run TreasuryOps off-site restore verification monthly
+
+[Timer]
+OnCalendar=Sun *-*-01..07 04:30:00 Asia/Kolkata
+RandomizedDelaySec=15m
+Persistent=true
+Unit=treasury-backup-restore-test.service
+
+[Install]
+WantedBy=timers.target

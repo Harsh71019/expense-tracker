@@ -11,13 +11,13 @@ Drop-in section for `DEPLOYMENT.md`. Same LXC, same conventions, port **3006**.
 
 ### How it differs from Taskflow / JS Mastery
 
-|              | Taskflow / JS Mastery             | TreasuryOps                                                                                 |
-| ------------ | --------------------------------- | -------------------------------------------------------------------------------------------- |
-| Containers   | 2 (nginx SPA + Express)           | 5 (nginx proxy + Next.js SSR + NestJS API + BullMQ worker + one-shot `migrate`)               |
-| Frontend     | Vite static build served by nginx | Next.js **server** — nginx proxies to it, doesn't serve files                                |
-| Exposed port | nginx :80 → host                  | same, nginx :80 → host **3006** (only exposed container)                                     |
-| Deploy       | `git pull && up -d --build`       | same, **plus** one-shot `migrate` container runs before restart, **plus** smoke test after   |
-| State        | none local                        | none local — Postgres + Redis are shared infra on container 102, no volumes on this LXC      |
+|              | Taskflow / JS Mastery             | TreasuryOps                                                                                |
+| ------------ | --------------------------------- | ------------------------------------------------------------------------------------------ |
+| Containers   | 2 (nginx SPA + Express)           | 5 (nginx proxy + Next.js SSR + NestJS API + BullMQ worker + one-shot `migrate`)            |
+| Frontend     | Vite static build served by nginx | Next.js **server** — nginx proxies to it, doesn't serve files                              |
+| Exposed port | nginx :80 → host                  | same, nginx :80 → host **3006** (only exposed container)                                   |
+| Deploy       | `git pull && up -d --build`       | same, **plus** one-shot `migrate` container runs before restart, **plus** smoke test after |
+| State        | none local                        | none local — Postgres + Redis are shared infra on container 102, no volumes on this LXC    |
 
 ### Container map
 
@@ -128,9 +128,22 @@ ssh root@192.168.0.226 "docker exec -it treasury-ops-api-1 sh"
 ssh root@192.168.0.226 "cd /opt/apps/treasury-ops && git checkout <sha> && docker compose --env-file .env up -d --build"
 ```
 
-### Host crontab additions (LXC, `crontab -e`)
+### Infrastructure backup timers
 
-The app's business crons (recurring txns, rollups, alerts) run **inside the worker** via BullMQ — nothing needed on TreasuryOps' host for those. Postgres backups are no longer per-app: since Postgres moved to shared infra on container 102, its single centralized backup job covers TreasuryOps' `treasury_ops` database along with every other app's — nothing to add to this LXC's crontab for that either.
+The app's business crons (recurring txns, rollups, alerts) run **inside the
+worker** via BullMQ — nothing is added to TreasuryOps' app-LXC crontab.
+
+PostgreSQL backups run independently on shared-infrastructure LXC 102. The
+versioned implementation and recovery runbook live under
+[`infra/backup`](../infra/backup/README.md). Its systemd timers create
+six-hour logical dumps, maintain a local and an encrypted off-site Restic
+repository, and restore the off-site copy into an isolated PostgreSQL 18
+container every month.
+
+The systemd timers must not be enabled until one manual backup and one restore
+test both succeed. Nightly Proxmox/PBS backups of LXC 102 and the TreasuryOps
+app LXC remain separate host-level jobs; the latter protects the production
+`.env`, which is not reachable from LXC 102.
 
 ### Notes
 

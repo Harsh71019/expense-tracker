@@ -1,0 +1,11 @@
+[Unit]
+Description=Run TreasuryOps backup maintenance weekly
+
+[Timer]
+OnCalendar=Sun *-*-* 03:15:00 Asia/Kolkata
+RandomizedDelaySec=15m
+Persistent=true
+Unit=treasury-backup-maintenance.service
+
+[Install]
+WantedBy=timers.target

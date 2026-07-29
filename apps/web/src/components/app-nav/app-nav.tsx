@@ -9,11 +9,13 @@ type NavItem = Readonly<{ href: string; label: string; icon?: string }>;
 export function AppNav({
   items,
   orientation,
-  compact = false
+  compact = false,
+  onNavigate
 }: Readonly<{
   items: readonly NavItem[];
   orientation: "sidebar" | "bottom";
   compact?: boolean;
+  onNavigate?: () => void;
 }>): ReactNode {
   const pathname = usePathname() ?? "";
   const isActive = (href: string): boolean =>
@@ -30,6 +32,7 @@ export function AppNav({
               href={item.href}
               title={compact ? item.label : undefined}
               aria-label={compact ? item.label : undefined}
+              {...(onNavigate === undefined ? {} : { onClick: onNavigate })}
               className={`relative flex items-center rounded-lg border px-3 py-2.5 text-sm transition-colors duration-150 ${compact ? "h-10 w-10 justify-center px-0" : "gap-3"} ${
                 active
                   ? "border-border bg-accent-glow font-semibold text-foreground"

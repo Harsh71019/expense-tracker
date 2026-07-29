@@ -20,7 +20,7 @@ There is deliberately **no general log shipping from the browser**: at single-us
 
 ## 2. Correlation (the contract with the backend)
 
-1. **Outbound:** `lib/api/client.ts` generates `x-request-id` (`crypto.randomUUID()`) per request and sends it. The backend adopts it — so the id in a failed fetch is the id in Loki.
+1. **Outbound:** `lib/request-id.ts` generates a UUID v4 `x-request-id` with `crypto.getRandomValues()` per request and the API clients send it. Unlike `crypto.randomUUID()`, this remains available on the deployment's plain-HTTP LAN origin. The backend adopts it — so the id in a failed fetch is the id in Loki.
 2. **On failure:** the API wrapper attaches `{reqId, method, route, status, problemType}` to the thrown `AppError`, records a breadcrumb, and the GlitchTip event handler copies `reqId` into event **tags** — searchable, and one paste away from the Loki query.
 3. **Visible to you:** error boundary fallback UIs render the short reqId ("Something went wrong · ref `a1b2c3`"). When future-you hits a bug on the train, the screenshot alone is enough to debug that night. Copy-on-tap.
 4. **Offline queue entries** keep their idempotency key as the correlation handle — a sync failure logs `{idemKey}`, and that same key is on the backend's dedupe/insert lines.

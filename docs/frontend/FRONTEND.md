@@ -197,7 +197,7 @@ export function useCreateTxn() {
 }
 ```
 
-- The **idempotency key is generated when the form mounts** (`crypto.randomUUID()`), not on submit — a double-tap or a timeout-then-retry reuses the same key and the API dedupes. Key rotates only after confirmed success.
+- The **idempotency key is generated when the form mounts** (`generateRequestId()`), not on submit — a double-tap or a timeout-then-retry reuses the same key and the API dedupes. `generateRequestId()` uses `crypto.getRandomValues()` so it also works on the deployment's plain-HTTP LAN origin. The key rotates only after confirmed success.
 - Reversal gets a distinct optimistic treatment: the row flips to `reversed` styling immediately; on error it flips back with a toast.
 
 ---

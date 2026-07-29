@@ -8,13 +8,14 @@ import { AmountInput } from "@/components/ui/amount-input";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useCreateTxn } from "@/features/quick-add";
+import { generateRequestId } from "@/lib/request-id";
 import { toast } from "@/lib/toast";
 
 type QuickAddPanelProps = Readonly<{ accounts: Account[] }>;
 
 export function QuickAddPanel({ accounts }: QuickAddPanelProps): ReactNode {
   const create = useCreateTxn();
-  const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
+  const [idempotencyKey, setIdempotencyKey] = useState(generateRequestId);
   const [type, setType] = useState<TransactionType>("expense");
   const [amountMinor, setAmountMinor] = useState(0);
   const [accountId, setAccountId] = useState(accounts[0]?.id ?? "");
@@ -44,7 +45,7 @@ export function QuickAddPanel({ accounts }: QuickAddPanelProps): ReactNode {
       setAmountMinor(0);
       setDescription("");
       setJustAdded(true);
-      setIdempotencyKey(crypto.randomUUID());
+      setIdempotencyKey(generateRequestId());
       setTimeout(() => setJustAdded(false), 1600);
     } catch (caught: unknown) {
       setError(caught instanceof Error ? caught.message : "Could not record this transaction.");

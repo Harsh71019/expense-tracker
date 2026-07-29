@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toDatetimeLocalValue } from "@/lib/datetime-local";
 import { ValidationError } from "@/lib/errors";
+import { generateRequestId } from "@/lib/request-id";
 import { toast } from "@/lib/toast";
 
 import { useAccounts } from "../hooks/use-accounts";
@@ -33,7 +34,7 @@ function fieldErrorName(path: string): keyof CreateTransaction | null {
 }
 
 export function QuickAddForm(): ReactNode {
-  const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
+  const [idempotencyKey, setIdempotencyKey] = useState(generateRequestId);
   const accounts = useAccounts();
   const categories = useCategories();
   const create = useCreateTxn();
@@ -72,7 +73,7 @@ export function QuickAddForm(): ReactNode {
         description: "",
         tags: []
       });
-      setIdempotencyKey(crypto.randomUUID());
+      setIdempotencyKey(generateRequestId());
     } catch (error: unknown) {
       if (error instanceof ValidationError) {
         for (const field of error.fields) {

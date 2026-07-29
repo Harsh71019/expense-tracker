@@ -10,6 +10,8 @@ import { CreateTxnSheet } from "@/features/transactions/components/create-txn-sh
 import { usePrivacy } from "@/lib/privacy/privacy-context";
 import type { Theme } from "@/lib/theme";
 
+import { MobileMenu } from "../mobile-menu";
+
 const routeLabels: Record<string, { label: string; icon: string }> = {
   "/": { label: "Dashboard", icon: "⌂" },
   "/accounts": { label: "Accounts", icon: "▣" },
@@ -27,7 +29,10 @@ const routeLabels: Record<string, { label: string; icon: string }> = {
   "/settings": { label: "Settings", icon: "⚙" }
 };
 
-export function AppHeader({ theme }: Readonly<{ theme: Theme | null }>): ReactNode {
+export function AppHeader({
+  email,
+  theme
+}: Readonly<{ email: string; theme: Theme | null }>): ReactNode {
   const pathname = usePathname() ?? "/";
   const { privacyMode, togglePrivacyMode } = usePrivacy();
   const [showCreateSheet, setShowCreateSheet] = useState(false);
@@ -81,6 +86,8 @@ export function AppHeader({ theme }: Readonly<{ theme: Theme | null }>): ReactNo
       <header className="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-border/60 bg-surface/85 px-4 backdrop-blur-md transition-colors sm:px-6">
         {/* Left: Breadcrumbs & Current Page Indicator */}
         <div className="flex items-center gap-2">
+          <MobileMenu email={email} />
+
           <Link
             href="/"
             className="flex items-center gap-1.5 text-xs font-medium text-foreground-muted transition-colors hover:text-foreground"

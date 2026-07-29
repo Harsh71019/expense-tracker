@@ -38,7 +38,7 @@ describe("AppLayout", () => {
 
     expect(screen.getByText("Dashboard content")).toBeVisible();
     expect(screen.getByText("harsh@example.com")).toBeVisible();
-    expect(screen.getAllByText("Navigation")).toHaveLength(2);
+    expect(screen.getAllByText("Navigation")).toHaveLength(1);
   });
 
   it("redirects when the API session is absent", async () => {

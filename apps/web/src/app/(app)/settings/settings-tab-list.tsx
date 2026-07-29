@@ -63,16 +63,18 @@ export function SettingsTabList({ activeTab }: Readonly<{ activeTab: SettingsTab
                   : "text-foreground-muted hover:bg-accent-glow hover:text-foreground"
               }`}
             >
-              <span
-                aria-hidden="true"
-                className={`hidden h-8 w-8 shrink-0 place-items-center rounded-lg text-sm sm:grid ${
-                  active
-                    ? "bg-black/10 text-current"
-                    : "bg-surface-muted text-accent group-hover:bg-surface"
-                }`}
-              >
-                {tab.icon}
-              </span>
+              {"icon" in tab ? (
+                <span
+                  aria-hidden="true"
+                  className={`hidden h-8 w-8 shrink-0 place-items-center rounded-lg text-sm sm:grid ${
+                    active
+                      ? "bg-black/10 text-current"
+                      : "bg-surface-muted text-accent group-hover:bg-surface"
+                  }`}
+                >
+                  {tab.icon}
+                </span>
+              ) : null}
               <span className="min-w-0">
                 <span className="block truncate text-xs font-semibold sm:text-sm">{tab.label}</span>
                 <span

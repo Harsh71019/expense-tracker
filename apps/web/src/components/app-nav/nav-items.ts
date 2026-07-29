@@ -1,4 +1,4 @@
-export type NavItem = Readonly<{ href: string; label: string; icon: string }>;
+export type NavItem = Readonly<{ href: string; label: string; icon?: string }>;
 
 export const mainNavItems: readonly NavItem[] = [
   { href: "/", label: "Dashboard", icon: "⌂" },
@@ -14,5 +14,5 @@ export const mainNavItems: readonly NavItem[] = [
   { href: "/budgets", label: "Budgets", icon: "◫" },
   { href: "/reports", label: "Reports", icon: "◔" },
   { href: "/spending-warnings", label: "Patterns", icon: "△" },
-  { href: "/settings", label: "Settings", icon: "⚙" }
+  { href: "/settings", label: "Settings" }
 ] as const;

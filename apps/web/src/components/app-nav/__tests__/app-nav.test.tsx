@@ -64,6 +64,18 @@ describe("AppNav", () => {
     expect(screen.getByText("⌂")).toBeVisible();
   });
 
+  it("omits iconless destinations from the compact sidebar", () => {
+    render(
+      <AppNav
+        items={[...iconItems, { href: "/settings", label: "Settings" }]}
+        orientation="sidebar"
+        compact
+      />
+    );
+
+    expect(screen.queryByRole("link", { name: "Settings" })).toBeNull();
+  });
+
   it("renders icons in the mobile navigation", () => {
     render(<AppNav items={iconItems} orientation="bottom" />);
 

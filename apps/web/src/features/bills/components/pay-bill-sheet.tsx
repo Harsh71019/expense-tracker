@@ -65,7 +65,7 @@ export function PayBillSheet({
         role="dialog"
         aria-modal="true"
         aria-labelledby="pay-bill-title"
-        className="h-screen w-full max-w-md overflow-y-auto border-l border-border bg-surface-elevated p-7"
+        className="h-dvh w-full max-w-md overflow-y-auto overscroll-contain border-l border-border bg-surface-elevated p-7"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3">

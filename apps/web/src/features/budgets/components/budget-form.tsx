@@ -89,7 +89,7 @@ export function BudgetForm({
         role="dialog"
         aria-modal="true"
         aria-labelledby="budget-editor-title"
-        className="h-screen w-full max-w-[520px] overflow-y-auto border-l border-border bg-surface-elevated px-5 py-6 sm:px-8"
+        className="h-dvh w-full max-w-[520px] overflow-y-auto overscroll-contain border-l border-border bg-surface-elevated px-5 py-6 sm:px-8"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-4">

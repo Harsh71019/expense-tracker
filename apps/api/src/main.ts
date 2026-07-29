@@ -33,6 +33,9 @@ async function bootstrap(): Promise<void> {
         app.close()
       );
       logger.log({ event: "api.stopped", signal }, "api process stopped");
+      // pino's pretty-print transport (LOG_PRETTY) runs in a worker thread that
+      // isn't tied to Nest's lifecycle, so the event loop never drains on its own.
+      process.exit(0);
     } catch (error: unknown) {
       logger.fatal({ event: "api.shutdown_failed", signal, err: error }, "api shutdown failed");
       process.exit(1);

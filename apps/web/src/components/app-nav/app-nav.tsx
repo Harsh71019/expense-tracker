@@ -25,6 +25,10 @@ export function AppNav({
     return (
       <nav className="flex flex-col gap-1" aria-label="Main navigation">
         {items.map((item) => {
+          if (compact && item.icon === undefined) {
+            return null;
+          }
+
           const active = isActive(item.href);
           return (
             <Link

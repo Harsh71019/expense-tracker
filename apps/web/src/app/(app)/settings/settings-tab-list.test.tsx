@@ -22,6 +22,9 @@ describe("SettingsTabList", () => {
       "href",
       "/settings?tab=management"
     );
+    expect(
+      screen.getByRole("tab", { name: /Management/ }).querySelector('[aria-hidden="true"]')
+    ).toBeNull();
   });
 
   it("moves focus with arrow, Home, and End keys", async () => {

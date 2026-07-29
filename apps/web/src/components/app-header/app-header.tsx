@@ -1,5 +1,6 @@
 "use client";
 
+import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect, type ReactNode } from "react";
@@ -12,7 +13,7 @@ import type { Theme } from "@/lib/theme";
 
 import { MobileMenu } from "../mobile-menu";
 
-const routeLabels: Record<string, { label: string; icon: string }> = {
+const routeLabels: Record<string, { label: string; icon?: string }> = {
   "/": { label: "Dashboard", icon: "⌂" },
   "/accounts": { label: "Accounts", icon: "▣" },
   "/insights": { label: "Insights", icon: "✦" },
@@ -26,7 +27,7 @@ const routeLabels: Record<string, { label: string; icon: string }> = {
   "/budgets": { label: "Budgets", icon: "◫" },
   "/reports": { label: "Reports", icon: "◔" },
   "/spending-warnings": { label: "Patterns", icon: "△" },
-  "/settings": { label: "Settings", icon: "⚙" }
+  "/settings": { label: "Settings" }
 };
 
 export function AppHeader({
@@ -80,6 +81,7 @@ export function AppHeader({
     label: pathname.slice(1).charAt(0).toUpperCase() + pathname.slice(2),
     icon: "❖"
   };
+  const PrivacyIcon = privacyMode ? EyeOff : Eye;
 
   return (
     <>
@@ -101,9 +103,11 @@ export function AppHeader({
           <span className="text-foreground-muted/40 font-mono text-xs">/</span>
 
           <div className="flex items-center gap-1.5 rounded-lg border border-border/50 bg-surface-muted/60 px-2.5 py-1 text-xs font-semibold text-foreground shadow-2xs">
-            <span className="text-accent text-sm" aria-hidden="true">
-              {routeInfo.icon}
-            </span>
+            {routeInfo.icon === undefined ? null : (
+              <span className="text-accent text-sm" aria-hidden="true">
+                {routeInfo.icon}
+              </span>
+            )}
             <span>{routeInfo.label}</span>
           </div>
 
@@ -130,7 +134,7 @@ export function AppHeader({
                 : "border-border/60 bg-surface-muted/40 text-foreground-muted hover:border-border hover:text-foreground"
             }`}
           >
-            <span className="text-sm">{privacyMode ? "🙈" : "👁"}</span>
+            <PrivacyIcon size={16} strokeWidth={2} aria-hidden="true" />
             <span className="hidden sm:inline">{privacyMode ? "Privacy Mode" : "Privacy"}</span>
           </button>
 

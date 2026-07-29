@@ -13,6 +13,7 @@ import { useCategories } from "@/features/categories";
 import { useCreateTxn } from "@/features/quick-add";
 import { toDatetimeLocalValue } from "@/lib/datetime-local";
 import { ValidationError } from "@/lib/errors";
+import { generateRequestId } from "@/lib/request-id";
 
 const selectClasses =
   "w-full rounded-lg border border-border bg-surface-muted px-3.5 py-2.5 text-sm font-medium text-foreground transition-colors duration-150 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30";
@@ -33,7 +34,7 @@ function fieldErrorName(path: string): keyof CreateTransaction | null {
 }
 
 export function CreateTxnSheet({ onClose }: Readonly<{ onClose: () => void }>): ReactNode {
-  const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
+  const [idempotencyKey, setIdempotencyKey] = useState(generateRequestId);
   const accounts = useAccounts();
   const categories = useCategories();
   const create = useCreateTxn();
@@ -65,7 +66,7 @@ export function CreateTxnSheet({ onClose }: Readonly<{ onClose: () => void }>): 
     try {
       await create.mutateAsync({ ...parsed.data, idempotencyKey });
       toast.success("Transaction posted to the ledger");
-      setIdempotencyKey(crypto.randomUUID());
+      setIdempotencyKey(generateRequestId());
       onClose();
     } catch (error: unknown) {
       if (error instanceof ValidationError) {

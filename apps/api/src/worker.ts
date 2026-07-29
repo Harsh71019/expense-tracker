@@ -89,6 +89,9 @@ async function bootstrapWorker(): Promise<void> {
         })()
       );
       logger.log({ event: LogEvent.WorkerStopped }, "worker process stopped");
+      // pino's pretty-print transport (LOG_PRETTY) runs in a worker thread that
+      // isn't tied to Nest's lifecycle, so the event loop never drains on its own.
+      process.exit(0);
     } catch (error: unknown) {
       logger.fatal(
         { event: "worker.shutdown_failed", signal, err: error },

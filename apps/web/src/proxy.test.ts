@@ -38,4 +38,19 @@ describe("proxy", () => {
     expect(response.headers.get("x-middleware-next")).toBe("1");
     expect(mockedGetSessionCookie).not.toHaveBeenCalled();
   });
+
+  it.each(["/login", "/register"])(
+    "redirects a stray POST to %s back to a GET of the same URL",
+    (path) => {
+      const response = proxy(
+        new NextRequest(`http://localhost:3000${path}?next=%2Ftransactions`, { method: "POST" })
+      );
+
+      expect(response.status).toBe(303);
+      expect(response.headers.get("location")).toBe(
+        `http://localhost:3000${path}?next=%2Ftransactions`
+      );
+      expect(mockedGetSessionCookie).not.toHaveBeenCalled();
+    }
+  );
 });

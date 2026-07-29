@@ -25,6 +25,21 @@ describe("CreateAccountModal", () => {
     expect(screen.getByRole("button", { name: /Investment/ })).toHaveClass("border-accent");
   });
 
+  it("keeps the dialog scrollable within the mobile viewport", () => {
+    render(<CreateAccountModal open initialType="bank" onClose={vi.fn()} />);
+
+    expect(screen.getByRole("presentation")).toHaveClass(
+      "items-start",
+      "overflow-y-auto",
+      "overscroll-contain"
+    );
+    expect(screen.getByRole("dialog")).toHaveClass(
+      "max-h-[calc(100dvh-2rem)]",
+      "overflow-y-auto",
+      "overscroll-contain"
+    );
+  });
+
   it("validates the account name before creating an account", async () => {
     const user = userEvent.setup();
     render(<CreateAccountModal open initialType="bank" onClose={vi.fn()} />);

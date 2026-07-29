@@ -92,7 +92,7 @@ export function CreateTxnSheet({ onClose }: Readonly<{ onClose: () => void }>): 
         role="dialog"
         aria-modal="true"
         aria-labelledby="create-txn-title"
-        className="h-screen w-full max-w-md overflow-y-auto border-l border-border bg-surface-elevated p-7 animate-drawer-in"
+        className="h-dvh w-full max-w-md overflow-y-auto overscroll-contain border-l border-border bg-surface-elevated p-7 animate-drawer-in"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-4">
@@ -197,8 +197,8 @@ export function CreateTxnSheet({ onClose }: Readonly<{ onClose: () => void }>): 
             )}
           </label>
 
-          <div className="flex gap-3">
-            <label className="flex flex-1 flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <label className="flex min-w-0 flex-1 flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
               Date & time
               <input
                 type="datetime-local"
@@ -211,7 +211,7 @@ export function CreateTxnSheet({ onClose }: Readonly<{ onClose: () => void }>): 
                 }
               />
             </label>
-            <label className="flex flex-1 flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+            <label className="flex min-w-0 flex-1 flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
               Category
               <select className={selectClasses} {...form.register("categoryId")}>
                 <option value="">Uncategorized</option>

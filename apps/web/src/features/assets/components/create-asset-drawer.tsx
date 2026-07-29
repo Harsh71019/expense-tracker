@@ -95,7 +95,7 @@ export function CreateAssetDrawer({ onClose }: Readonly<{ onClose: () => void }>
         role="dialog"
         aria-modal="true"
         aria-labelledby="create-asset-title"
-        className="h-screen w-full max-w-md overflow-y-auto border-l border-border bg-surface-elevated p-7 animate-drawer-in"
+        className="h-dvh w-full max-w-md overflow-y-auto overscroll-contain border-l border-border bg-surface-elevated p-7 animate-drawer-in"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-4">

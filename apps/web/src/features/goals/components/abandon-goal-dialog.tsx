@@ -19,12 +19,12 @@ export function AbandonGoalDialog({
   onConfirm
 }: AbandonGoalDialogProps): ReactNode {
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 px-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 grid items-start justify-items-center overflow-y-auto overscroll-contain bg-black/60 p-4 backdrop-blur-sm sm:items-center">
       <div
         role="alertdialog"
         aria-modal="true"
         aria-labelledby="abandon-goal-title"
-        className="w-full max-w-md rounded-2xl border border-border bg-surface-elevated p-6 shadow-2xl"
+        className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto overscroll-contain rounded-2xl border border-border bg-surface-elevated p-6 shadow-2xl"
       >
         <h2 id="abandon-goal-title" className="text-xl font-bold text-foreground">
           Abandon “{goal.name}”?

@@ -36,6 +36,20 @@ describe("CreateTxnSheet", () => {
     mocks.mutateAsync.mockReset();
   });
 
+  it("uses the dynamic mobile viewport and contains sheet scrolling", () => {
+    render(<CreateTxnSheet onClose={vi.fn()} />);
+
+    expect(screen.getByRole("dialog")).toHaveClass(
+      "h-dvh",
+      "overflow-y-auto",
+      "overscroll-contain"
+    );
+    expect(screen.getByLabelText("Date & time").closest("div")).toHaveClass(
+      "flex-col",
+      "sm:flex-row"
+    );
+  });
+
   it("disables Post entry until amount and description are both present", async () => {
     const user = userEvent.setup();
     render(<CreateTxnSheet onClose={vi.fn()} />);

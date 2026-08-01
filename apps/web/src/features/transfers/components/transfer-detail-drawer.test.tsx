@@ -130,7 +130,10 @@ describe("TransferDetailDrawer", () => {
   it("uses the shared full-height drawer and a phone-sized close target", () => {
     render(<TransferDetailDrawer legs={[from, to]} accounts={accounts} onClose={vi.fn()} />);
 
-    expect(screen.getByRole("dialog", { name: /Transfer · grp-1/ })).toHaveClass("h-dvh");
+    expect(screen.getByRole("dialog", { name: /Transfer · grp-1/ })).toHaveClass(
+      "max-h-[92dvh]",
+      "sm:h-dvh"
+    );
     expect(screen.getByRole("button", { name: "Close transfer details" })).toHaveClass(
       "h-11",
       "w-11"

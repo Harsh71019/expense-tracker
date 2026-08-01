@@ -40,7 +40,8 @@ describe("CreateTxnSheet", () => {
     render(<CreateTxnSheet onClose={vi.fn()} />);
 
     expect(screen.getByRole("dialog")).toHaveClass(
-      "h-dvh",
+      "max-h-[92dvh]",
+      "sm:h-dvh",
       "overflow-y-auto",
       "overscroll-contain"
     );

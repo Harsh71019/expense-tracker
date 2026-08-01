@@ -17,5 +17,9 @@ describe("Breadcrumbs", () => {
       "/settings?tab=management"
     );
     expect(within(breadcrumbs).getByText("Imports")).toHaveAttribute("aria-current", "page");
+    expect(within(breadcrumbs).getByRole("link", { name: "Back to Settings" })).toHaveClass(
+      "min-h-11",
+      "sm:hidden"
+    );
   });
 });

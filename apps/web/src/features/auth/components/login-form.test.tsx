@@ -35,6 +35,14 @@ describe("LoginForm", () => {
     mocks.toastError.mockReset();
   });
 
+  it("configures the email field for a mobile email keyboard", () => {
+    render(<LoginForm />);
+
+    expect(screen.getByLabelText("Email")).toHaveAttribute("inputmode", "email");
+    expect(screen.getByLabelText("Email")).toHaveAttribute("autocapitalize", "none");
+    expect(screen.getByLabelText("Email")).toHaveAttribute("spellcheck", "false");
+  });
+
   it("submits entered credentials to the requested internal return path and navigates there", async () => {
     mocks.signInWithEmail.mockResolvedValue({ error: null });
     const user = userEvent.setup();

@@ -230,7 +230,10 @@ describe("bill actions", () => {
       bill: { ...detail.bill, paymentStatus: "paid", paidMinor: 10_000, remainingMinor: 0 }
     });
     render(<PayBillSheet detail={detail} accounts={[card, bank]} onClose={closePayment} />);
-    expect(screen.getByRole("dialog", { name: "Pay credit card bill" })).toHaveClass("h-dvh");
+    expect(screen.getByRole("dialog", { name: "Pay credit card bill" })).toHaveClass(
+      "max-h-[92dvh]",
+      "sm:h-dvh"
+    );
     expect(screen.getByLabelText("Pay from")).toHaveClass("min-h-11", "text-base");
     await user.click(screen.getByRole("button", { name: "Confirm payment" }));
     await waitFor(() =>

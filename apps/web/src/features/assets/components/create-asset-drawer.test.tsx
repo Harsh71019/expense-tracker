@@ -40,7 +40,10 @@ describe("CreateAssetDrawer", () => {
     const user = userEvent.setup();
     render(<CreateAssetDrawer onClose={vi.fn()} />);
 
-    expect(screen.getByRole("dialog", { name: "New asset" })).toHaveClass("h-dvh");
+    expect(screen.getByRole("dialog", { name: "New asset" })).toHaveClass(
+      "max-h-[92dvh]",
+      "sm:h-dvh"
+    );
     expect(screen.getByRole("button", { name: "Close asset form" })).toHaveClass("h-11", "w-11");
     expect(screen.getByRole("button", { name: "Create asset" })).toBeDisabled();
     await user.type(screen.getByLabelText("Name"), "HDFC FD 2026");

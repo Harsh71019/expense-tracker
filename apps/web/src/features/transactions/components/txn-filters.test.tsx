@@ -42,6 +42,22 @@ describe("TxnFilters", () => {
     expect(mocks.push).toHaveBeenCalledWith("/transactions?from=2026-07-01T00%3A00%3A00.000Z");
   });
 
+  it("keeps secondary filters collapsed on mobile until requested", () => {
+    render(<TxnFilters filters={{ limit: 50 }} />);
+
+    const toggle = screen.getByRole("button", { name: "Filters" });
+    const controls = document.querySelector("#transaction-filter-controls");
+
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(controls).toHaveClass("hidden", "sm:contents");
+
+    fireEvent.click(toggle);
+
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    expect(controls).toHaveClass("grid");
+    expect(controls).not.toHaveClass("hidden");
+  });
+
   it("clears active filters back to the canonical ledger URL", () => {
     render(<TxnFilters filters={{ q: "chai", limit: 50 }} />);
 

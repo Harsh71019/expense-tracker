@@ -108,6 +108,9 @@ export function RegisterForm(): ReactNode {
         type="email"
         label="Email"
         autoComplete="email"
+        inputMode="email"
+        autoCapitalize="none"
+        spellCheck={false}
         value={email}
         onChange={(event) => setEmail(event.target.value)}
         required

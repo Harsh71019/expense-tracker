@@ -100,7 +100,10 @@ describe("CreateTransferSheet", () => {
   it("uses the shared drawer behavior and phone-safe controls", () => {
     render(<CreateTransferSheet onClose={vi.fn()} />);
 
-    expect(screen.getByRole("dialog", { name: "New transfer" })).toHaveClass("h-dvh");
+    expect(screen.getByRole("dialog", { name: "New transfer" })).toHaveClass(
+      "max-h-[92dvh]",
+      "sm:h-dvh"
+    );
     expect(screen.getByLabelText("From account")).toHaveClass(
       "min-h-11",
       "text-base",

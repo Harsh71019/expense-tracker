@@ -7,9 +7,20 @@ export type BreadcrumbItem = Readonly<{
 }>;
 
 export function Breadcrumbs({ items }: Readonly<{ items: readonly BreadcrumbItem[] }>): ReactNode {
+  const mobileBackTarget = items.length > 1 ? items[0] : undefined;
+
   return (
     <nav aria-label="Breadcrumb">
-      <ol className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-foreground-muted">
+      {mobileBackTarget?.href === undefined ? null : (
+        <Link
+          href={mobileBackTarget.href}
+          className="inline-flex min-h-11 max-w-full items-center gap-2 rounded-lg px-2 text-sm font-semibold text-foreground-muted transition-colors hover:bg-surface-muted hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:hidden"
+        >
+          <span aria-hidden="true">←</span>
+          <span className="truncate">Back to {mobileBackTarget.label}</span>
+        </Link>
+      )}
+      <ol className="hidden flex-wrap items-center gap-x-2 gap-y-1 text-sm text-foreground-muted sm:flex">
         {items.map((item, index) => {
           const isCurrent = index === items.length - 1;
 
@@ -30,7 +41,7 @@ export function Breadcrumbs({ items }: Readonly<{ items: readonly BreadcrumbItem
               ) : (
                 <Link
                   href={item.href}
-                  className="rounded-sm transition-colors hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+                  className="inline-flex min-h-11 items-center rounded-sm transition-colors hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
                 >
                   {item.label}
                 </Link>

@@ -1,0 +1,145 @@
+# Quickstart compose file for running TreasuryOps from published GHCR images --
+# no clone or build required. See the release notes on any `v*` tag for the
+# exact curl commands to fetch this file, nginx.conf, and env.example.
+#
+# Same service shape as docker-compose.yml (the source-build variant used for
+# local dev and the home-lab LXC deploy via deploy.sh) -- only the `api`,
+# `worker`, and `web` services differ, referencing `image:` instead of
+# `build:`. Set TREASURY_OPS_VERSION to pin an old release; unset tracks
+# `latest`.
+services:
+  # Local-dev-only throwaway Postgres. Not started by default -- production and any
+  # normal `docker compose up` don't touch it, since Postgres is shared infra
+  # reached over the network via DATABASE_URL. Set COMPOSE_PROFILES=local in your
+  # own .env to include it automatically.
+  postgres:
+    image: postgres:18-alpine
+    profiles: ["local"]
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      POSTGRES_DB: treasury_ops
+      POSTGRES_USER: treasury_ops
+    ports:
+      - "${POSTGRES_BIND_ADDR:-127.0.0.1}:5433:5432"
+    volumes:
+      - treasury-ops-postgres-data:/var/lib/postgresql
+    networks:
+      - treasury-ops-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U treasury_ops -d treasury_ops"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    logging: &json_logging
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+  # One-shot: runs drizzle-kit migrate, exits 0. Gates everything else.
+  migrate:
+    image: ghcr.io/harsh71019/treasury-ops-api:${TREASURY_OPS_VERSION:-latest}
+    command: ["node_modules/drizzle-kit/bin.cjs", "migrate"]
+    env_file: .env
+    networks:
+      - treasury-ops-net
+    restart: "no"
+    logging: *json_logging
+
+  api:
+    image: ghcr.io/harsh71019/treasury-ops-api:${TREASURY_OPS_VERSION:-latest}
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      SERVICE_ROLE: api
+      GIT_SHA: ${TREASURY_OPS_VERSION:-latest}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    networks:
+      - treasury-ops-net
+    logging: *json_logging
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/nodejs/bin/node",
+          "-e",
+          "require('http').get('http://localhost:4000/api/readyz', (response) => process.exit(response.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  worker:
+    image: ghcr.io/harsh71019/treasury-ops-api:${TREASURY_OPS_VERSION:-latest}
+    command: ["dist/worker.js"]
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      SERVICE_ROLE: worker
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    networks:
+      - treasury-ops-net
+    logging: *json_logging
+    healthcheck:
+      test: ["CMD", "/nodejs/bin/node", "dist/worker-health.js"] # pings its own heartbeat key in redis
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  web:
+    image: ghcr.io/harsh71019/treasury-ops-web:${TREASURY_OPS_VERSION:-latest}
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - treasury-ops-net
+    logging: *json_logging
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/nodejs/bin/node",
+          "-e",
+          "require('http').get('http://localhost:3000/login', (response) => process.exit(response.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  # The ONLY exposed container. /api/* -> NestJS, /* -> Next.js SSR.
+  proxy:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "3006:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      web:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+    networks:
+      - treasury-ops-net
+    logging: *json_logging
+
+networks:
+  treasury-ops-net:
+    driver: bridge
+
+volumes:
+  treasury-ops-postgres-data:

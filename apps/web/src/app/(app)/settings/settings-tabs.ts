@@ -14,7 +14,8 @@ export const SETTINGS_TABS = [
   {
     id: "management",
     label: "Management",
-    description: "Accounts and tools"
+    description: "Accounts and tools",
+    icon: "▦"
   }
 ] as const;
 

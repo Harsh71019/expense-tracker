@@ -288,6 +288,27 @@ describe("route shells", () => {
     expect(screen.queryByText("Signed in as")).not.toBeInTheDocument();
   });
 
+  it("groups management tools by purpose and keeps key destinations easy to find", async () => {
+    render(
+      await SettingsPage({
+        searchParams: Promise.resolve({ tab: "management" })
+      })
+    );
+
+    expect(screen.getByRole("heading", { name: "Money & ledger" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Planning & automation" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Data & access" })).toBeVisible();
+    expect(screen.getByRole("link", { name: /Credit card bills/ })).toHaveAttribute(
+      "href",
+      "/bills"
+    );
+    expect(screen.getByRole("link", { name: /Goals/ })).toHaveAttribute("href", "/goals");
+    expect(screen.getByRole("link", { name: /API keys/ })).toHaveAttribute(
+      "href",
+      "/settings/api-keys"
+    );
+  });
+
   it("falls back to the profile tab for an unknown settings section", async () => {
     render(
       await SettingsPage({

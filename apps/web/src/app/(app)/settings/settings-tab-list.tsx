@@ -36,11 +36,17 @@ export function SettingsTabList({ activeTab }: Readonly<{ activeTab: SettingsTab
   }
 
   return (
-    <nav aria-label="Settings sections">
+    <nav
+      aria-label="Settings sections"
+      className="rounded-2xl border border-border bg-surface-elevated p-1.5 lg:p-2"
+    >
+      <p className="hidden px-2.5 pt-1 pb-2 font-mono text-[10px] font-bold tracking-[0.16em] text-foreground-muted uppercase lg:block">
+        Settings menu
+      </p>
       <div
         role="tablist"
         aria-label="Settings sections"
-        className="flex gap-1 overflow-x-auto rounded-2xl border border-border bg-surface-elevated p-1.5"
+        className="flex gap-1 overflow-x-auto lg:flex-col lg:overflow-visible"
       >
         {SETTINGS_TABS.map((tab, index) => {
           const active = tab.id === activeTab;
@@ -57,29 +63,27 @@ export function SettingsTabList({ activeTab }: Readonly<{ activeTab: SettingsTab
               tabIndex={active ? 0 : -1}
               scroll={false}
               onKeyDown={(event) => moveFocus(event, index)}
-              className={`group flex min-h-11 min-w-[6.5rem] flex-1 items-center justify-center rounded-xl px-2 py-2.5 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface sm:min-w-0 sm:justify-start sm:gap-2.5 sm:px-3.5 sm:text-left ${
+              className={`group flex min-h-12 min-w-[6.5rem] flex-1 items-center justify-center gap-2 rounded-xl border px-2 py-2.5 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface sm:min-w-0 lg:justify-start lg:px-3 lg:text-left ${
                 active
-                  ? "bg-accent text-accent-foreground shadow-glow"
-                  : "text-foreground-muted hover:bg-accent-glow hover:text-foreground"
+                  ? "border-accent/40 bg-accent-glow text-accent shadow-sm"
+                  : "border-transparent text-foreground-muted hover:border-border hover:bg-surface-muted hover:text-foreground"
               }`}
             >
-              {"icon" in tab ? (
-                <span
-                  aria-hidden="true"
-                  className={`hidden h-8 w-8 shrink-0 place-items-center rounded-lg text-sm sm:grid ${
-                    active
-                      ? "bg-black/10 text-current"
-                      : "bg-surface-muted text-accent group-hover:bg-surface"
-                  }`}
-                >
-                  {tab.icon}
-                </span>
-              ) : null}
+              <span
+                aria-hidden="true"
+                className={`hidden h-8 w-8 shrink-0 place-items-center rounded-lg text-sm sm:grid ${
+                  active
+                    ? "bg-surface-elevated text-current"
+                    : "bg-surface-muted text-accent group-hover:bg-surface"
+                }`}
+              >
+                {tab.icon}
+              </span>
               <span className="min-w-0">
                 <span className="block truncate text-xs font-semibold sm:text-sm">{tab.label}</span>
                 <span
-                  className={`mt-0.5 hidden truncate text-[10px] md:block ${
-                    active ? "text-current opacity-75" : "text-foreground-muted"
+                  className={`mt-0.5 hidden truncate text-[10px] lg:block ${
+                    active ? "text-accent/80" : "text-foreground-muted"
                   }`}
                 >
                   {tab.description}

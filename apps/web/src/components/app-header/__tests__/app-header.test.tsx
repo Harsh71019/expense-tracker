@@ -1,4 +1,5 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -20,7 +21,7 @@ vi.mock("@/components/ui/theme-toggle", () => ({
   ThemeToggle: () => <button type="button">Theme</button>
 }));
 vi.mock("@/features/transactions/components/create-txn-sheet", () => ({
-  CreateTxnSheet: () => null
+  CreateTxnSheet: () => <div role="dialog" aria-label="New transaction" />
 }));
 vi.mock("@/lib/privacy/privacy-context", () => ({
   usePrivacy: () => ({
@@ -72,5 +73,20 @@ describe("AppHeader", () => {
     render(<AppHeader email="harsh@example.com" theme={null} />);
 
     expect(screen.getByText("Transactions")).toBeVisible();
+  });
+
+  it("shows a clear Add label and does not reserve the browser new-window shortcut", async () => {
+    const user = userEvent.setup();
+    render(<AppHeader email="harsh@example.com" theme={null} />);
+
+    const addButton = screen.getByRole("button", { name: "Add" });
+    expect(addButton).toBeVisible();
+    expect(screen.queryByText("⌘N")).toBeNull();
+
+    fireEvent.keyDown(window, { key: "n", metaKey: true });
+    expect(screen.queryByRole("dialog", { name: "New transaction" })).toBeNull();
+
+    await user.click(addButton);
+    expect(screen.getByRole("dialog", { name: "New transaction" })).toBeVisible();
   });
 });

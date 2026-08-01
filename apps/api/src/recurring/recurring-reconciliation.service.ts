@@ -3,6 +3,7 @@ import {
   RecurringReconciliationSchema,
   type RecurringReconciliation,
   type RecurringReconciliationId,
+  type RecurringReconciliationReviewItem,
   type ResolveRecurringReconciliation,
   type Transaction
 } from "@treasury-ops/shared";
@@ -143,8 +144,39 @@ export class RecurringReconciliationService implements TransactionCreatedHook {
     );
   }
 
-  listPending(userId: string): Promise<RecurringReconciliation[]> {
-    return this.reconciliations.findPending(userId);
+  /**
+   * A bare `RecurringReconciliation` only carries transaction ids -- not
+   * enough for a human to judge "is this really the same charge" -- so this
+   * populates the incoming and candidate transactions at read time. Pending
+   * rows are expected to be few (an exception queue, not a ledger view), so
+   * one lookup per referenced transaction is simpler than adding a batch
+   * fetch method to TransactionRepository for this one caller.
+   */
+  async listPending(userId: string): Promise<RecurringReconciliationReviewItem[]> {
+    const rows = await this.reconciliations.findPending(userId);
+    const items: RecurringReconciliationReviewItem[] = [];
+    for (const row of rows) {
+      const incomingTransaction = await this.transactions.findById(
+        userId,
+        row.incomingTransactionId
+      );
+      if (incomingTransaction === null) continue;
+      const candidateTransactions = await this.findCandidateTransactions(userId, row);
+      items.push({ ...row, incomingTransaction, candidateTransactions });
+    }
+    return items;
+  }
+
+  private async findCandidateTransactions(
+    userId: string,
+    row: RecurringReconciliation
+  ): Promise<Transaction[]> {
+    const transactions: Transaction[] = [];
+    for (const candidateId of row.candidateRecurringTransactionIds) {
+      const candidate = await this.transactions.findById(userId, candidateId);
+      if (candidate !== null) transactions.push(candidate);
+    }
+    return transactions;
   }
 
   resolve(

@@ -29,6 +29,15 @@ vi.mock("./recurring-rule-drawer", () => ({
     <div role="dialog">{rule === undefined ? "New recurring rule" : "Edit recurring rule"}</div>
   )
 }));
+vi.mock("../hooks/use-recurring-reconciliations", () => ({
+  useRecurringReconciliations: (items: unknown[]) => ({ data: items, error: null }),
+  useResolveRecurringReconciliation: () => ({
+    mutate: vi.fn(),
+    isPending: false,
+    isError: false,
+    error: null
+  })
+}));
 
 const timestamp = new Date("2026-07-19T00:00:00.000Z");
 const account: Account = {
@@ -76,7 +85,14 @@ const rule: RecurringRule = {
 describe("RecurringManager", () => {
   it("renders schedule details and pauses a rule", async () => {
     mocks.update.mockResolvedValue({ ...rule, isPaused: true });
-    render(<RecurringManager initialRules={[rule]} accounts={[account]} categories={[category]} />);
+    render(
+      <RecurringManager
+        initialRules={[rule]}
+        accounts={[account]}
+        categories={[category]}
+        initialReconciliations={[]}
+      />
+    );
 
     expect(screen.getByRole("heading", { name: "Recurring" })).toBeVisible();
     expect(screen.getByText("Monthly rent")).toBeVisible();
@@ -90,13 +106,27 @@ describe("RecurringManager", () => {
   });
 
   it("opens create and edit drawers", async () => {
-    render(<RecurringManager initialRules={[rule]} accounts={[account]} categories={[category]} />);
+    render(
+      <RecurringManager
+        initialRules={[rule]}
+        accounts={[account]}
+        categories={[category]}
+        initialReconciliations={[]}
+      />
+    );
     await userEvent.click(screen.getByRole("button", { name: /New rule/ }));
     expect(screen.getByRole("dialog")).toHaveTextContent("New recurring rule");
   });
 
   it("explains the account prerequisite in an empty state", () => {
-    render(<RecurringManager initialRules={[]} accounts={[]} categories={[]} />);
+    render(
+      <RecurringManager
+        initialRules={[]}
+        accounts={[]}
+        categories={[]}
+        initialReconciliations={[]}
+      />
+    );
     expect(screen.getByText(/Create an account before adding/)).toBeVisible();
     expect(screen.getByRole("button", { name: /Create recurring rule/ })).toBeDisabled();
   });

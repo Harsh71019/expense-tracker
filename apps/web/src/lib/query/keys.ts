@@ -35,6 +35,7 @@ export const qk = {
   categoryList: (includeArchived: boolean) => ["categories", "list", { includeArchived }] as const,
   categoryRules: () => ["category-rules"] as const,
   recurringRules: () => ["recurring-rules"] as const,
+  recurringReconciliations: () => ["recurring-reconciliations"] as const,
   assets: () => ["assets"] as const,
   assetValuations: (assetId: string) => ["asset-valuations", assetId] as const,
   netWorth: () => ["net-worth"] as const,

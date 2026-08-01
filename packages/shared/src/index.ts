@@ -308,6 +308,7 @@ export {
   ListRecurringReconciliationsQuerySchema,
   RecurringReconciliationIdSchema,
   RecurringReconciliationResolutionSchema,
+  RecurringReconciliationReviewItemSchema,
   RecurringReconciliationSchema,
   RecurringReconciliationStatusSchema,
   ResolveRecurringReconciliationSchema
@@ -317,6 +318,7 @@ export type {
   RecurringReconciliation,
   RecurringReconciliationId,
   RecurringReconciliationResolution,
+  RecurringReconciliationReviewItem,
   RecurringReconciliationStatus,
   ResolveRecurringReconciliation
 } from "./recurring-reconciliation.js";

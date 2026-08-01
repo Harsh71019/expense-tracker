@@ -41,12 +41,16 @@ function buildService(overrides: {
   candidates?: unknown[];
   reconciliations?: Record<string, unknown>;
   notifications?: Record<string, unknown>;
+  transactions?: Record<string, unknown>;
 }) {
   reverseTransactionInTx.mockClear();
   const db = {
     transaction: vi.fn((operation: (tx: string) => Promise<unknown>) => operation("tx1"))
   };
-  const transactions = {};
+  const transactions = {
+    findById: vi.fn(async () => null),
+    ...overrides.transactions
+  };
   const accounts = {};
   const reconciliations = {
     findUnreconciledRecurringCandidates: vi.fn(async () => overrides.candidates ?? []),
@@ -89,7 +93,7 @@ function buildService(overrides: {
     idempotency,
     logger
   );
-  return { service, reconciliations, notifications, audit, idempotency };
+  return { service, reconciliations, notifications, audit, idempotency, transactions };
 }
 
 describe("RecurringReconciliationService.reconcileIncoming", () => {
@@ -310,5 +314,66 @@ describe("RecurringReconciliationService.resolve", () => {
     await expect(
       service.resolve("user-a", ambiguousRow.id, { resolution: "confirmed_distinct" }, "key-1")
     ).rejects.toBeInstanceOf(InvalidReconciliationResolutionError);
+  });
+});
+
+describe("RecurringReconciliationService.listPending", () => {
+  const pendingRow = {
+    id: "77777777-7777-4777-8777-777777777777",
+    userId: "user-a",
+    incomingTransactionId: INCOMING_TXN_ID,
+    candidateRecurringTransactionIds: [RECURRING_TXN_ID, OTHER_RECURRING_TXN_ID],
+    status: "ambiguous" as const,
+    createdAt: new Date(),
+    updatedAt: new Date()
+  };
+
+  function transactionWithId(id: string) {
+    return { ...incomingTransaction, id };
+  }
+
+  it("populates the incoming and candidate transactions for each pending row", async () => {
+    const { service } = buildService({
+      reconciliations: { findPending: vi.fn(async () => [pendingRow]) },
+      transactions: {
+        findById: vi.fn(async (_userId: string, id: string) => transactionWithId(id))
+      }
+    });
+
+    const items = await service.listPending("user-a");
+
+    expect(items).toEqual([
+      {
+        ...pendingRow,
+        incomingTransaction: transactionWithId(INCOMING_TXN_ID),
+        candidateTransactions: [
+          transactionWithId(RECURRING_TXN_ID),
+          transactionWithId(OTHER_RECURRING_TXN_ID)
+        ]
+      }
+    ]);
+  });
+
+  it("skips a row whose incoming transaction can no longer be found", async () => {
+    const { service } = buildService({
+      reconciliations: { findPending: vi.fn(async () => [pendingRow]) },
+      transactions: { findById: vi.fn(async () => null) }
+    });
+
+    expect(await service.listPending("user-a")).toEqual([]);
+  });
+
+  it("omits a candidate transaction that can no longer be found, without failing the row", async () => {
+    const { service } = buildService({
+      reconciliations: { findPending: vi.fn(async () => [pendingRow]) },
+      transactions: {
+        findById: vi.fn(async (_userId: string, id: string) =>
+          id === RECURRING_TXN_ID ? null : transactionWithId(id)
+        )
+      }
+    });
+
+    const [item] = await service.listPending("user-a");
+    expect(item?.candidateTransactions.map((txn) => txn.id)).toEqual([OTHER_RECURRING_TXN_ID]);
   });
 });

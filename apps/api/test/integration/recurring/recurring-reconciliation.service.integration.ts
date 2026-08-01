@@ -203,6 +203,14 @@ describe("RecurringReconciliationService (integration)", () => {
         )
       );
     expect(notification).toBeDefined();
+
+    const pending = await reconciliationService.listPending(USER_ID);
+    const listed = pending.find((item) => item.id === row.id);
+    if (listed === undefined) throw new Error("Expected the pending row to be listed.");
+    expect(listed.incomingTransaction.id).toBe(incoming.id);
+    expect(listed.candidateTransactions.map((txn) => txn.id).sort()).toEqual(
+      [first.id, second.id].sort()
+    );
   });
 
   it("flags a same-account, in-window candidate with a different amount as amount_mismatch, and resolving it as a duplicate reverses the recurring txn exactly once even when replayed", async () => {

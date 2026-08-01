@@ -1740,6 +1740,347 @@
           "updatedAt"
         ]
       },
+      "RecurringReconciliationReviewItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "userId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "incomingTransactionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "recurringRuleId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "recurringTransactionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "candidateRecurringTransactionIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": ["auto_matched", "ambiguous", "amount_mismatch"]
+          },
+          "resolution": {
+            "type": "string",
+            "enum": ["confirmed_duplicate", "confirmed_distinct"]
+          },
+          "resolvedAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "incomingTransaction": {
+            "type": "object",
+            "properties": {
+              "accountId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "categoryId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "type": {
+                "type": "string",
+                "enum": ["expense", "income"]
+              },
+              "amountMinor": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              "occurredAt": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 40
+                },
+                "maxItems": 20,
+                "default": []
+              },
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "userId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "currency": {
+                "type": "string",
+                "enum": ["INR"]
+              },
+              "source": {
+                "type": "string",
+                "enum": ["manual", "csv_import", "recurring", "api"]
+              },
+              "status": {
+                "type": "string",
+                "enum": ["posted", "reversed", "reversal"]
+              },
+              "idempotencyKey": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "reversalOf": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "reversedBy": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "transferGroupId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "billId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "recurringRuleId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "createdAt": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              },
+              "updatedAt": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "accountId",
+              "type",
+              "amountMinor",
+              "occurredAt",
+              "description",
+              "id",
+              "userId",
+              "currency",
+              "source",
+              "status",
+              "createdAt",
+              "updatedAt"
+            ]
+          },
+          "candidateTransactions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "accountId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "categoryId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": ["expense", "income"]
+                },
+                "amountMinor": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                "occurredAt": {
+                  "type": ["string", "null"],
+                  "format": "date-time"
+                },
+                "description": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 500
+                },
+                "tags": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 40
+                  },
+                  "maxItems": 20,
+                  "default": []
+                },
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "userId": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "currency": {
+                  "type": "string",
+                  "enum": ["INR"]
+                },
+                "source": {
+                  "type": "string",
+                  "enum": ["manual", "csv_import", "recurring", "api"]
+                },
+                "status": {
+                  "type": "string",
+                  "enum": ["posted", "reversed", "reversal"]
+                },
+                "idempotencyKey": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "reversalOf": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "reversedBy": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "transferGroupId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "billId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "recurringRuleId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "createdAt": {
+                  "type": ["string", "null"],
+                  "format": "date-time"
+                },
+                "updatedAt": {
+                  "type": ["string", "null"],
+                  "format": "date-time"
+                }
+              },
+              "required": [
+                "accountId",
+                "type",
+                "amountMinor",
+                "occurredAt",
+                "description",
+                "id",
+                "userId",
+                "currency",
+                "source",
+                "status",
+                "createdAt",
+                "updatedAt"
+              ]
+            }
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "incomingTransactionId",
+          "candidateRecurringTransactionIds",
+          "status",
+          "createdAt",
+          "updatedAt",
+          "incomingTransaction",
+          "candidateTransactions"
+        ]
+      },
+      "RecurringReconciliation": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "userId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "incomingTransactionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "recurringRuleId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "recurringTransactionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "candidateRecurringTransactionIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": ["auto_matched", "ambiguous", "amount_mismatch"]
+          },
+          "resolution": {
+            "type": "string",
+            "enum": ["confirmed_duplicate", "confirmed_distinct"]
+          },
+          "resolvedAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "incomingTransactionId",
+          "candidateRecurringTransactionIds",
+          "status",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
       "SpendingWarningPage": {
         "type": "object",
         "properties": {
@@ -7756,6 +8097,191 @@
           },
           "409": {
             "description": "Idempotency key was already used for different request intent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/recurring/reconciliations": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["pending"]
+            },
+            "required": false,
+            "name": "status",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pending recurring reconciliations awaiting review",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RecurringReconciliationReviewItem"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/recurring/reconciliations/{id}/resolve": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "Idempotency-Key",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "resolution": {
+                    "type": "string",
+                    "enum": ["confirmed_duplicate", "confirmed_distinct"]
+                  },
+                  "chosenRecurringTransactionId": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                "required": ["resolution"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Resolved reconciliation, or idempotent replay",
+            "headers": {
+              "Idempotency-Replayed": {
+                "schema": {
+                  "type": "string",
+                  "enum": ["true"]
+                },
+                "required": false
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecurringReconciliation"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurring reconciliation not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Already resolved, or idempotency key reused for a different request",
             "content": {
               "application/json": {
                 "schema": {

@@ -3,7 +3,8 @@ import {
   ListRecurringReconciliationsQuerySchema,
   RecurringReconciliationIdSchema,
   ResolveRecurringReconciliationSchema,
-  type RecurringReconciliation
+  type RecurringReconciliation,
+  type RecurringReconciliationReviewItem
 } from "@treasury-ops/shared";
 import type { Response } from "express";
 import { z } from "zod";
@@ -27,7 +28,7 @@ export class RecurringReconciliationController {
   list(
     @CurrentUser() user: AuthenticatedUser,
     @Query() query: unknown
-  ): Promise<RecurringReconciliation[]> {
+  ): Promise<RecurringReconciliationReviewItem[]> {
     ListRecurringReconciliationsQuerySchema.parse(query);
     return this.reconciliations.listPending(user.id);
   }

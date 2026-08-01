@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { RecurringRuleIdSchema } from "./recurring.js";
-import { TransactionIdSchema } from "./transaction.js";
+import { TransactionIdSchema, TransactionSchema } from "./transaction.js";
 
 export const RecurringReconciliationIdSchema = z
   .string()
@@ -49,12 +49,27 @@ export const ListRecurringReconciliationsQuerySchema = z.object({
   status: z.enum(["pending"]).optional()
 });
 
+/**
+ * The list endpoint's actual response shape: a bare `RecurringReconciliation`
+ * only carries transaction *ids*, which isn't enough for a human to judge
+ * "is this really the same charge" -- the review UI needs to show the real
+ * amounts/dates/descriptions, so the service populates them at read time
+ * (not stored redundantly; `transactions` is still the source of truth).
+ */
+export const RecurringReconciliationReviewItemSchema = RecurringReconciliationSchema.extend({
+  incomingTransaction: TransactionSchema,
+  candidateTransactions: z.array(TransactionSchema)
+});
+
 export type RecurringReconciliationId = z.infer<typeof RecurringReconciliationIdSchema>;
 export type RecurringReconciliationStatus = z.infer<typeof RecurringReconciliationStatusSchema>;
 export type RecurringReconciliationResolution = z.infer<
   typeof RecurringReconciliationResolutionSchema
 >;
 export type RecurringReconciliation = z.infer<typeof RecurringReconciliationSchema>;
+export type RecurringReconciliationReviewItem = z.infer<
+  typeof RecurringReconciliationReviewItemSchema
+>;
 export type ResolveRecurringReconciliation = z.infer<typeof ResolveRecurringReconciliationSchema>;
 export type ListRecurringReconciliationsQuery = z.infer<
   typeof ListRecurringReconciliationsQuerySchema

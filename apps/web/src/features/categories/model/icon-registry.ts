@@ -1,15 +1,27 @@
 import {
+  Baby,
   Briefcase,
   Car,
+  Coffee,
+  Dumbbell,
   Film,
+  Gift,
+  GraduationCap,
+  HeartPulse,
   Home,
   Laptop,
+  PawPrint,
   Percent,
+  PiggyBank,
   Plane,
+  ReceiptText,
   ShoppingBag,
   ShoppingCart,
+  Smartphone,
+  Train,
   Utensils,
   UtensilsCrossed,
+  Wrench,
   Zap
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -26,7 +38,19 @@ export const ICON_CHOICES = [
   "film",
   "briefcase",
   "percent",
-  "laptop"
+  "laptop",
+  "coffee",
+  "dumbbell",
+  "gift",
+  "graduation-cap",
+  "heart-pulse",
+  "paw-print",
+  "piggy-bank",
+  "receipt-text",
+  "smartphone",
+  "train",
+  "wrench",
+  "baby"
 ] as const;
 
 export type CategoryIconKey = (typeof ICON_CHOICES)[number];
@@ -43,7 +67,19 @@ export const CATEGORY_ICONS: Record<CategoryIconKey, LucideIcon> = {
   film: Film,
   briefcase: Briefcase,
   percent: Percent,
-  laptop: Laptop
+  laptop: Laptop,
+  coffee: Coffee,
+  dumbbell: Dumbbell,
+  gift: Gift,
+  "graduation-cap": GraduationCap,
+  "heart-pulse": HeartPulse,
+  "paw-print": PawPrint,
+  "piggy-bank": PiggyBank,
+  "receipt-text": ReceiptText,
+  smartphone: Smartphone,
+  train: Train,
+  wrench: Wrench,
+  baby: Baby
 };
 
 export function isCategoryIconKey(value: string): value is CategoryIconKey {

@@ -52,6 +52,7 @@ import {
   DashboardSummarySchema,
   ExportCsvQuerySchema,
   ListTransactionsQuerySchema,
+  ListCategoriesQuerySchema,
   ProblemDetailsSchema,
   RecentActivityItemSchema,
   RecentActivityQuerySchema,
@@ -65,6 +66,7 @@ import {
   TransactionPageSchema,
   TransactionSchema,
   UpdateCategoryGroupSchema,
+  UpdateCategorySchema,
   UpdateTransactionSchema,
   CreateTransferSchema,
   TransferSchema,
@@ -314,6 +316,7 @@ registry.registerPath({
   method: "get",
   path: "/v1/categories",
   security: securedByKeyOrCookie,
+  request: { query: ListCategoriesQuerySchema },
   responses: { 200: { description: "Categories", ...json(z.array(Category)) }, ...problemResponses }
 });
 registry.registerPath({
@@ -333,6 +336,26 @@ registry.registerPath({
   }
 });
 registry.registerPath({
+  method: "put",
+  path: "/v1/categories/{categoryId}",
+  security: secured,
+  request: {
+    params: categoryId,
+    body: json(UpdateCategorySchema),
+    headers: idempotencyKeyHeaders
+  },
+  responses: {
+    200: {
+      description: "Updated category, or idempotent replay",
+      headers: optionalReplayHeaders,
+      ...json(Category)
+    },
+    404: { description: "Category not found", ...json(ProblemDetails) },
+    409: { description: "Name or hierarchy conflict", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
   method: "patch",
   path: "/v1/categories/{categoryId}/archive",
   security: secured,
@@ -344,6 +367,37 @@ registry.registerPath({
     },
     404: { description: "Not found", ...json(ProblemDetails) },
     ...idempotencyConflictResponse,
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "patch",
+  path: "/v1/categories/{categoryId}/unarchive",
+  security: secured,
+  request: { params: categoryId, headers: idempotencyKeyHeaders },
+  responses: {
+    200: {
+      description: "Restored category, or idempotent replay",
+      headers: optionalReplayHeaders,
+      ...json(Category)
+    },
+    404: { description: "Archived category not found", ...json(ProblemDetails) },
+    409: { description: "Active sibling name or parent conflict", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "delete",
+  path: "/v1/categories/{categoryId}/permanent",
+  security: secured,
+  request: { params: categoryId, headers: idempotencyKeyHeaders },
+  responses: {
+    204: {
+      description: "Permanently deleted, or replayed a prior successful delete",
+      headers: optionalReplayHeaders
+    },
+    404: { description: "Category not found", ...json(ProblemDetails) },
+    409: { description: "Category is active or still has linked records", ...json(ProblemDetails) },
     ...problemResponses
   }
 });

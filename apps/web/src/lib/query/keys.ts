@@ -32,6 +32,7 @@ export const qk = {
   billStatementRows: (billId: string, filters: object) =>
     [...billRoot, "detail", billId, "statement-rows", filters] as const,
   categories: () => ["categories"] as const,
+  categoryList: (includeArchived: boolean) => ["categories", "list", { includeArchived }] as const,
   categoryRules: () => ["category-rules"] as const,
   recurringRules: () => ["recurring-rules"] as const,
   assets: () => ["assets"] as const,

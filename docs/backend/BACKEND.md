@@ -95,6 +95,16 @@ Better Auth commits users in its own transaction. Profile provisioning is theref
 }
 ```
 
+Category names are unique only among active siblings: separate partial indexes cover root and
+nested categories with `is_archived = false`. Archiving therefore releases the name immediately.
+Restoring checks the same active sibling scope and returns `category.name_conflict` (409) when a
+rename is required. `PUT /v1/categories/:id` updates name/icon/color/parent while rejecting
+cross-kind parents, self-parenting, and descendant cycles; the tree validation is isolated in
+`CategoryService.reparentCategory` so it can move behind a worker if scale warrants it. Archiving a
+parent archives its active subtree atomically. Permanent deletion is allowed only for an archived
+leaf with no transactions, budgets, category rules, recurring templates, staged import rows, or
+spending-warning references; linked historical data is never cascaded.
+
 #### `transactions` — the ledger (append-only)
 
 ```ts
@@ -645,7 +655,9 @@ POST   /imports/:id/commit
 POST   /imports/:id/revert
 
 GET    /accounts | POST /accounts | PATCH /accounts/:id/archive
-GET    /categories | POST /categories | PATCH /categories/:id/archive
+GET    /categories?includeArchived=true | POST /categories | PUT /categories/:id
+PATCH  /categories/:id/archive | PATCH /categories/:id/unarchive
+DELETE /categories/:id/permanent              archived, unreferenced leaves only
 GET    /category-rules | POST /category-rules | DELETE /category-rules/:id
 GET    /assets | POST /assets | POST /assets/:id/close
 GET    /assets/:id/valuations | POST /assets/:id/valuations

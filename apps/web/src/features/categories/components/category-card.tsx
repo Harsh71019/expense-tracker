@@ -1,6 +1,7 @@
 "use client";
 
 import type { Category } from "@treasury-ops/shared";
+import { useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 
 import { glyphFor, lighten, tint } from "../model/palette";
@@ -27,10 +28,19 @@ function swatchStyle(color: string | undefined): CSSProperties | undefined {
 type CategoryCardProps = Readonly<{
   parent: Category;
   subcategories: readonly Category[];
+  categories?: readonly Category[];
+  onEdit?: (category: Category) => void;
   onArchive: (category: Category) => void;
 }>;
 
-export function CategoryCard({ parent, subcategories, onArchive }: CategoryCardProps): ReactNode {
+export function CategoryCard({
+  parent,
+  subcategories,
+  categories = subcategories,
+  onEdit,
+  onArchive
+}: CategoryCardProps): ReactNode {
+  const [menuOpen, setMenuOpen] = useState(false);
   return (
     <div className="relative overflow-hidden rounded-[22px] border border-border bg-surface-elevated p-5.5 shadow-sm animate-fade-in">
       <div className="flex items-start gap-4">
@@ -58,41 +68,168 @@ export function CategoryCard({ parent, subcategories, onArchive }: CategoryCardP
             <span aria-hidden="true">🕘</span> Created {dateFormatter.format(parent.createdAt)}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => onArchive(parent)}
-          title="Archive"
-          aria-label={`Archive ${parent.name}`}
-          className="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-border bg-surface-muted text-xs text-foreground-muted transition-colors duration-150 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-        >
-          ✕
-        </button>
+        <div className="relative">
+          <button
+            type="button"
+            aria-label={`Actions for ${parent.name}`}
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((open) => !open)}
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-border bg-surface-muted text-lg text-foreground-muted transition-colors duration-150 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          >
+            ⋯
+          </button>
+          {menuOpen ? (
+            <CategoryActionMenu
+              category={parent}
+              onEdit={onEdit}
+              onArchive={onArchive}
+              onClose={() => setMenuOpen(false)}
+            />
+          ) : null}
+        </div>
       </div>
       {subcategories.length === 0 ? null : (
-        <div className="mt-4.5 flex flex-wrap gap-2 border-t border-border pt-4.5">
+        <div className="mt-4.5 space-y-2 border-t border-border pt-4.5">
           {subcategories.map((child) => (
-            <button
+            <CategoryTreeItem
               key={child.id}
-              type="button"
-              onClick={() => onArchive(child)}
-              title={`Created ${dateFormatter.format(child.createdAt)} · click to archive`}
-              className="inline-flex min-h-11 items-center gap-2 rounded-full border border-border bg-surface-muted py-1.5 pr-2.5 pl-1.5 text-[13px] font-semibold text-foreground transition-colors duration-150 hover:border-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-            >
-              <span
-                style={swatchStyle(child.color)}
-                className={`grid h-5.5 w-5.5 place-items-center overflow-hidden rounded-full text-xs ${
-                  child.color === undefined ? "bg-accent text-accent-foreground" : "text-white"
-                }`}
-                aria-hidden="true"
-              >
-                <IconGlyph value={glyphFor(child)} size={13} />
-              </span>
-              <span>{child.name}</span>
-              <span className="text-[10px] text-foreground-muted">✕</span>
-            </button>
+              category={child}
+              categories={categories}
+              depth={0}
+              onEdit={onEdit}
+              onArchive={onArchive}
+            />
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+type CategoryTreeItemProps = Readonly<{
+  category: Category;
+  categories: readonly Category[];
+  depth: number;
+  onEdit: ((category: Category) => void) | undefined;
+  onArchive: (category: Category) => void;
+}>;
+
+function CategoryTreeItem({
+  category,
+  categories,
+  depth,
+  onEdit,
+  onArchive
+}: CategoryTreeItemProps): ReactNode {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const children = categories.filter((item) => item.parentId === category.id);
+  return (
+    <div style={{ marginLeft: Math.min(depth, 4) * 12 }}>
+      <div className="relative flex min-h-11 items-center gap-2 rounded-xl border border-border bg-surface-muted py-1.5 pr-1.5 pl-2 text-[13px] font-semibold text-foreground">
+        <span
+          style={swatchStyle(category.color)}
+          className={`grid h-7 w-7 shrink-0 place-items-center overflow-hidden rounded-lg text-xs ${
+            category.color === undefined ? "bg-accent text-accent-foreground" : "text-white"
+          }`}
+          aria-hidden="true"
+        >
+          <IconGlyph value={glyphFor(category)} size={14} />
+        </span>
+        <span className="min-w-0 flex-1 truncate">{category.name}</span>
+        {category.color === undefined ? null : (
+          <span
+            aria-label={`Colour ${category.color}`}
+            title={category.color}
+            style={{ backgroundColor: category.color }}
+            className="h-2.5 w-2.5 shrink-0 rounded-full ring-2 ring-surface-elevated"
+          />
+        )}
+        <button
+          type="button"
+          aria-label={`Actions for ${category.name}`}
+          aria-expanded={menuOpen}
+          onClick={() => setMenuOpen((open) => !open)}
+          className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-base text-foreground-muted hover:bg-surface-elevated hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        >
+          ⋯
+        </button>
+        {menuOpen ? (
+          <CategoryActionMenu
+            category={category}
+            onEdit={onEdit}
+            onArchive={onArchive}
+            onClose={() => setMenuOpen(false)}
+          />
+        ) : null}
+      </div>
+      {children.length === 0 ? null : (
+        <div className="mt-2 space-y-2 border-l border-border pl-2">
+          {children.map((child) => (
+            <CategoryTreeItem
+              key={child.id}
+              category={child}
+              categories={categories}
+              depth={depth + 1}
+              onEdit={onEdit}
+              onArchive={onArchive}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+type CategoryActionMenuProps = Readonly<{
+  category: Category;
+  onEdit: ((category: Category) => void) | undefined;
+  onArchive: (category: Category) => void;
+  onClose: () => void;
+}>;
+
+function CategoryActionMenu({
+  category,
+  onEdit,
+  onArchive,
+  onClose
+}: CategoryActionMenuProps): ReactNode {
+  function edit(): void {
+    onClose();
+    onEdit?.(category);
+  }
+
+  function archive(): void {
+    onClose();
+    onArchive(category);
+  }
+
+  return (
+    <div className="absolute top-11 right-0 z-20 w-44 overflow-hidden rounded-xl border border-border bg-surface-elevated p-1.5 shadow-xl">
+      {onEdit === undefined ? null : (
+        <>
+          <button
+            type="button"
+            onClick={edit}
+            className="min-h-10 w-full rounded-lg px-3 text-left text-xs font-semibold text-foreground hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          >
+            Edit
+          </button>
+          <button
+            type="button"
+            onClick={edit}
+            className="min-h-10 w-full rounded-lg px-3 text-left text-xs font-semibold text-foreground hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          >
+            Re-parent
+          </button>
+        </>
+      )}
+      <button
+        type="button"
+        onClick={archive}
+        className="min-h-10 w-full rounded-lg px-3 text-left text-xs font-semibold text-expense hover:bg-expense/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-expense"
+      >
+        Archive
+      </button>
     </div>
   );
 }

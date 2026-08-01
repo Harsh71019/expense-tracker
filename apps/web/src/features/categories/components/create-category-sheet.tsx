@@ -2,9 +2,9 @@
 
 import {
   CreateCategorySchema,
+  UpdateCategorySchema,
   type Category,
-  type CategoryKind,
-  type CreateCategory
+  type CategoryKind
 } from "@treasury-ops/shared";
 import { useState } from "react";
 import type { FormEvent, ReactNode } from "react";
@@ -13,9 +13,9 @@ import { toast } from "@/lib/toast";
 import { Button } from "@/components/ui/button";
 import { DialogSurface } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { ValidationError } from "@/lib/errors";
+import { ConflictError, ValidationError } from "@/lib/errors";
 
-import { useCreateCategory } from "../hooks/use-category-mutations";
+import { useCreateCategory, useUpdateCategory } from "../hooks/use-category-mutations";
 import { IconGlyph } from "./icon-glyph";
 import { ICON_CHOICES } from "../model/icon-registry";
 import { COLOR_CHOICES } from "../model/palette";
@@ -23,7 +23,9 @@ import { COLOR_CHOICES } from "../model/palette";
 const selectClasses =
   "min-h-11 w-full rounded-lg border border-border bg-surface-muted px-3.5 py-2.5 text-base font-medium text-foreground transition-colors duration-150 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 sm:text-sm";
 
-function fieldErrorName(path: string): keyof CreateCategory | null {
+type CategoryFormField = "name" | "kind" | "parentId" | "icon" | "color";
+
+function fieldErrorName(path: string): CategoryFormField | null {
   if (
     path === "name" ||
     path === "kind" ||
@@ -39,24 +41,39 @@ function fieldErrorName(path: string): keyof CreateCategory | null {
 type CreateCategorySheetProps = Readonly<{
   defaultKind: CategoryKind;
   categories: readonly Category[];
+  category?: Category;
+  quickRename?: boolean;
   onClose: () => void;
+  onSaved?: (category: Category) => void | Promise<void>;
 }>;
 
 export function CreateCategorySheet({
   defaultKind,
   categories,
-  onClose
+  category,
+  quickRename = false,
+  onClose,
+  onSaved
 }: CreateCategorySheetProps): ReactNode {
   const create = useCreateCategory();
-  const [kind, setKind] = useState<CategoryKind>(defaultKind);
-  const [name, setName] = useState("");
-  const [parentId, setParentId] = useState("");
-  const [icon, setIcon] = useState("");
-  const [color, setColor] = useState("");
-  const [errors, setErrors] = useState<Partial<Record<keyof CreateCategory, string>>>({});
+  const update = useUpdateCategory();
+  const editing = category !== undefined;
+  const [kind, setKind] = useState<CategoryKind>(category?.kind ?? defaultKind);
+  const [name, setName] = useState(category?.name ?? "");
+  const [parentId, setParentId] = useState(category?.parentId ?? "");
+  const [icon, setIcon] = useState(category?.icon ?? "");
+  const [color, setColor] = useState(category?.color ?? "");
+  const [errors, setErrors] = useState<Partial<Record<CategoryFormField, string>>>({});
+
+  const excludedParentIds =
+    category === undefined ? new Set<string>() : descendantIds(categories, category.id);
 
   const parentOptions = categories.filter(
-    (category) => category.kind === kind && category.parentId === undefined
+    (option) =>
+      (!option.isArchived || (category?.isArchived === true && option.id === category.parentId)) &&
+      option.kind === kind &&
+      option.id !== category?.id &&
+      !excludedParentIds.has(option.id)
   );
 
   function changeKind(next: CategoryKind): void {
@@ -66,37 +83,61 @@ export function CreateCategorySheet({
 
   async function submit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
-    const parsed = CreateCategorySchema.safeParse({
-      name,
-      kind,
-      ...(parentId === "" ? {} : { parentId }),
-      ...(icon === "" ? {} : { icon }),
-      ...(color === "" ? {} : { color })
-    });
-    if (!parsed.success) {
-      const next: Partial<Record<keyof CreateCategory, string>> = {};
-      for (const issue of parsed.error.issues) {
-        const field = fieldErrorName(issue.path.join("."));
-        if (field !== null) next[field] = issue.message;
-      }
-      setErrors(next);
-      return;
-    }
     setErrors({});
     try {
-      await create.mutateAsync(parsed.data);
-      toast.success("Category created");
+      let saved: Category;
+      if (category === undefined) {
+        const parsed = CreateCategorySchema.safeParse({
+          name,
+          kind,
+          ...(parentId === "" ? {} : { parentId }),
+          ...(icon === "" ? {} : { icon }),
+          ...(color === "" ? {} : { color })
+        });
+        if (!parsed.success) {
+          const next: Partial<Record<CategoryFormField, string>> = {};
+          for (const issue of parsed.error.issues) {
+            const field = fieldErrorName(issue.path.join("."));
+            if (field !== null) next[field] = issue.message;
+          }
+          setErrors(next);
+          return;
+        }
+        saved = await create.mutateAsync(parsed.data);
+      } else {
+        const parsed = UpdateCategorySchema.safeParse({
+          name,
+          parentId: parentId === "" ? null : parentId,
+          icon: icon === "" ? null : icon,
+          color: color === "" ? null : color
+        });
+        if (!parsed.success) {
+          const next: Partial<Record<CategoryFormField, string>> = {};
+          for (const issue of parsed.error.issues) {
+            const field = fieldErrorName(issue.path.join("."));
+            if (field !== null) next[field] = issue.message;
+          }
+          setErrors(next);
+          return;
+        }
+        saved = await update.mutateAsync({ categoryId: category.id, patch: parsed.data });
+      }
+      toast.success(editing ? "Category updated" : "Category created");
+      await onSaved?.(saved);
       onClose();
     } catch (error: unknown) {
       if (error instanceof ValidationError) {
-        const next: Partial<Record<keyof CreateCategory, string>> = {};
+        const next: Partial<Record<CategoryFormField, string>> = {};
         for (const field of error.fields) {
           const name = fieldErrorName(field.path);
           if (name !== null) next[name] = field.message;
         }
         setErrors(next);
+      } else if (error instanceof ConflictError) {
+        const field = error.context.problemType === "category.name_conflict" ? "name" : "parentId";
+        setErrors({ [field]: error.message });
       } else {
-        toast.error("Could not create this category");
+        toast.error(`Could not ${editing ? "update" : "create"} this category`);
       }
     }
   }
@@ -105,10 +146,10 @@ export function CreateCategorySheet({
   const canSubmit = name.trim().length > 0;
 
   return (
-    <DialogSurface variant="drawer" labelledBy="create-category-title" onClose={onClose}>
+    <DialogSurface variant="drawer" labelledBy="category-form-title" onClose={onClose}>
       <div className="flex items-start justify-between gap-4">
-        <h2 id="create-category-title" className="text-xl font-bold tracking-tight text-foreground">
-          New category
+        <h2 id="category-form-title" className="text-xl font-bold tracking-tight text-foreground">
+          {quickRename ? "Rename to restore" : editing ? "Edit category" : "New category"}
         </h2>
         <button
           type="button"
@@ -120,7 +161,9 @@ export function CreateCategorySheet({
         </button>
       </div>
       <p className="mt-1 text-sm text-foreground-muted">
-        Name, kind, icon, colour, and parent are set once and can&apos;t be changed later.
+        {quickRename
+          ? "Choose a name that is not used by an active sibling. Saving will restore the category."
+          : "Set the name, icon, colour, and place in your category tree."}
       </p>
 
       <form onSubmit={(event) => void submit(event)} className="mt-6 space-y-5">
@@ -128,23 +171,29 @@ export function CreateCategorySheet({
           <span className="mb-1.5 block font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
             Kind
           </span>
-          <div className="flex gap-2">
-            {(["expense", "income"] as const).map((value) => (
-              <button
-                key={value}
-                type="button"
-                aria-pressed={kind === value}
-                onClick={() => changeKind(value)}
-                className={`min-h-11 flex-1 rounded-lg border px-3 py-2.5 text-sm font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-                  kind === value
-                    ? "border-accent bg-accent-glow text-accent"
-                    : "border-border text-foreground-muted hover:text-foreground"
-                }`}
-              >
-                {value === "expense" ? "Expense" : "Income"}
-              </button>
-            ))}
-          </div>
+          {editing ? (
+            <div className="flex min-h-11 items-center rounded-lg border border-border bg-surface-muted px-3.5 text-sm font-semibold text-foreground">
+              {kind === "expense" ? "Expense" : "Income"}
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              {(["expense", "income"] as const).map((value) => (
+                <button
+                  key={value}
+                  type="button"
+                  aria-pressed={kind === value}
+                  onClick={() => changeKind(value)}
+                  className={`min-h-11 flex-1 rounded-lg border px-3 py-2.5 text-sm font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                    kind === value
+                      ? "border-accent bg-accent-glow text-accent"
+                      : "border-border text-foreground-muted hover:text-foreground"
+                  }`}
+                >
+                  {value === "expense" ? "Expense" : "Income"}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div>
@@ -184,7 +233,19 @@ export function CreateCategorySheet({
               </option>
             ))}
           </select>
+          {errors.parentId === undefined ? null : (
+            <span className="font-sans text-[11px] font-medium normal-case tracking-normal text-expense">
+              {errors.parentId}
+            </span>
+          )}
         </label>
+
+        {editing && (category.parentId ?? "") !== parentId ? (
+          <p className="rounded-xl border border-accent/25 bg-accent-glow px-3.5 py-3 text-xs leading-relaxed text-foreground-muted">
+            Moving this category changes where its full sub-tree appears. Existing transactions keep
+            their category.
+          </p>
+        ) : null}
 
         <div>
           <span className="mb-1.5 block font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
@@ -255,6 +316,28 @@ export function CreateCategorySheet({
               />
             ))}
           </div>
+          <div className="mt-3 flex items-end gap-2.5">
+            <Input
+              id="category-color"
+              label="Custom hex"
+              value={color}
+              name="categoryColor"
+              autoComplete="off"
+              maxLength={7}
+              placeholder="#2563EB"
+              onChange={(event) => setColor(event.target.value)}
+            />
+            <span
+              aria-hidden="true"
+              style={/^#[a-f\d]{6}$/i.test(color) ? { backgroundColor: color } : undefined}
+              className="mb-0.5 h-10 w-10 shrink-0 rounded-lg border border-border bg-surface-muted"
+            />
+          </div>
+          {errors.color === undefined ? null : (
+            <span className="mt-1.5 inline-block text-xs font-medium text-expense">
+              {errors.color}
+            </span>
+          )}
         </div>
 
         <div className="rounded-xl border border-border bg-surface-muted p-4">
@@ -288,12 +371,36 @@ export function CreateCategorySheet({
           <Button
             className="flex-1 sm:flex-none"
             type="submit"
-            disabled={!canSubmit || create.isPending}
+            disabled={!canSubmit || create.isPending || update.isPending}
           >
-            {create.isPending ? "Creating…" : "Create category"}
+            {create.isPending || update.isPending
+              ? editing
+                ? "Saving…"
+                : "Creating…"
+              : quickRename
+                ? "Save and unarchive"
+                : editing
+                  ? "Save changes"
+                  : "Create category"}
           </Button>
         </div>
       </form>
     </DialogSurface>
   );
+}
+
+function descendantIds(categories: readonly Category[], categoryId: string): Set<string> {
+  const descendants = new Set<string>();
+  const pending = [categoryId];
+  while (pending.length > 0) {
+    const parentId = pending.shift();
+    if (parentId === undefined) break;
+    for (const category of categories) {
+      if (category.parentId === parentId && !descendants.has(category.id)) {
+        descendants.add(category.id);
+        pending.push(category.id);
+      }
+    }
+  }
+  return descendants;
 }

@@ -2,6 +2,10 @@ export function isUniqueViolation(error: unknown): boolean {
   return postgresErrorField(error, "code") === "23505";
 }
 
+export function isForeignKeyViolation(error: unknown): boolean {
+  return postgresErrorField(error, "code") === "23503";
+}
+
 export function postgresConstraint(error: unknown): string | undefined {
   return postgresErrorField(error, "constraint");
 }

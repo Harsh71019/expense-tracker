@@ -28,6 +28,9 @@ describe("CategoryController edge coverage", () => {
     const categories = {
       create: vi.fn().mockResolvedValue(CATEGORY),
       archive: vi.fn().mockResolvedValue(undefined),
+      update: vi.fn().mockResolvedValue(CATEGORY),
+      unarchive: vi.fn().mockResolvedValue(CATEGORY),
+      permanentlyDelete: vi.fn().mockResolvedValue(undefined),
       updateGroup: vi.fn().mockResolvedValue(CATEGORY)
     };
     // @ts-expect-error - focused service double.
@@ -37,6 +40,16 @@ describe("CategoryController edge coverage", () => {
       CATEGORY
     );
     await expect(controller.archive(USER, CATEGORY_ID)).resolves.toBeUndefined();
+    await expect(
+      controller.update(USER, CATEGORY_ID, {
+        name: "Food",
+        parentId: null,
+        icon: null,
+        color: null
+      })
+    ).resolves.toBe(CATEGORY);
+    await expect(controller.unarchive(USER, CATEGORY_ID)).resolves.toBe(CATEGORY);
+    await expect(controller.permanentlyDelete(USER, CATEGORY_ID)).resolves.toBeUndefined();
     await expect(controller.updateGroup(USER, CATEGORY_ID, { group: "essential" })).resolves.toBe(
       CATEGORY
     );
@@ -46,12 +59,18 @@ describe("CategoryController edge coverage", () => {
     const mutations = {
       create: vi.fn().mockResolvedValue({ result: CATEGORY, replayed: false }),
       archive: vi.fn().mockResolvedValue({ result: null, replayed: true }),
+      update: vi.fn().mockResolvedValue({ result: CATEGORY, replayed: true }),
+      unarchive: vi.fn().mockResolvedValue({ result: CATEGORY, replayed: true }),
+      permanentlyDelete: vi.fn().mockResolvedValue({ result: null, replayed: true }),
       updateGroup: vi.fn().mockResolvedValue({ result: CATEGORY, replayed: true })
     };
     // @ts-expect-error - focused service doubles.
     const controller = new CategoryController({}, mutations);
     const createResponse = response();
     const archiveResponse = response();
+    const updateCategoryResponse = response();
+    const unarchiveResponse = response();
+    const deleteResponse = response();
     const updateResponse = response();
 
     await controller.create(
@@ -68,6 +87,28 @@ describe("CategoryController edge coverage", () => {
       // @ts-expect-error - focused response double.
       archiveResponse
     );
+    await controller.update(
+      USER,
+      CATEGORY_ID,
+      { name: "Food", parentId: null, icon: null, color: null },
+      KEY,
+      // @ts-expect-error - focused response double.
+      updateCategoryResponse
+    );
+    await controller.unarchive(
+      USER,
+      CATEGORY_ID,
+      KEY,
+      // @ts-expect-error - focused response double.
+      unarchiveResponse
+    );
+    await controller.permanentlyDelete(
+      USER,
+      CATEGORY_ID,
+      KEY,
+      // @ts-expect-error - focused response double.
+      deleteResponse
+    );
     await controller.updateGroup(
       USER,
       CATEGORY_ID,
@@ -79,6 +120,9 @@ describe("CategoryController edge coverage", () => {
 
     expect(createResponse.setHeader).not.toHaveBeenCalled();
     expect(archiveResponse.setHeader).toHaveBeenCalledWith("Idempotency-Replayed", "true");
+    expect(updateCategoryResponse.status).toHaveBeenCalledWith(200);
+    expect(unarchiveResponse.status).toHaveBeenCalledWith(200);
+    expect(deleteResponse.setHeader).toHaveBeenCalledWith("Idempotency-Replayed", "true");
     expect(updateResponse.status).toHaveBeenCalledWith(200);
   });
 
@@ -86,6 +130,9 @@ describe("CategoryController edge coverage", () => {
     const mutations = {
       create: vi.fn().mockResolvedValue({ result: CATEGORY, replayed: true }),
       archive: vi.fn().mockResolvedValue({ result: null, replayed: true }),
+      update: vi.fn().mockResolvedValue({ result: CATEGORY, replayed: true }),
+      unarchive: vi.fn().mockResolvedValue({ result: CATEGORY, replayed: true }),
+      permanentlyDelete: vi.fn().mockResolvedValue({ result: null, replayed: true }),
       updateGroup: vi.fn().mockResolvedValue({ result: CATEGORY, replayed: true })
     };
     // @ts-expect-error - focused service doubles.
@@ -95,6 +142,16 @@ describe("CategoryController edge coverage", () => {
       CATEGORY
     );
     await expect(controller.archive(USER, CATEGORY_ID, KEY)).resolves.toBeUndefined();
+    await expect(
+      controller.update(
+        USER,
+        CATEGORY_ID,
+        { name: "Food", parentId: null, icon: null, color: null },
+        KEY
+      )
+    ).resolves.toBe(CATEGORY);
+    await expect(controller.unarchive(USER, CATEGORY_ID, KEY)).resolves.toBe(CATEGORY);
+    await expect(controller.permanentlyDelete(USER, CATEGORY_ID, KEY)).resolves.toBeUndefined();
     await expect(controller.updateGroup(USER, CATEGORY_ID, { group: null }, KEY)).resolves.toBe(
       CATEGORY
     );

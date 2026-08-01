@@ -20,7 +20,7 @@ See `BACKEND.md` for the full target architecture, `AGENTS.md` for the non-negot
 **Backend (`apps/api`) — feature-complete for the core ledger + several planned modules:**
 
 - **Auth** — Better Auth (email/password), session cookies, `AuthGuard` + `@CurrentUser()`, per-user data isolation
-- **Accounts & categories** — CRUD, archive-not-delete
+- **Accounts & categories** — editable category trees, archive/restore, and guarded permanent delete
 - **Transactions** — create (expense/income), cursor-paginated list with filters (`accountId`, `categoryId`, date range, description search), non-monetary edits (description/tags/category), reversal via compensating entries
 - **Transfers** — atomic two-leg transfers between accounts, group-level reversal
 - **Idempotency** — `Idempotency-Key` header support on money-writing endpoints; duplicate requests replay the original result instead of double-posting

@@ -28,9 +28,9 @@ export const categories = pgTable(
     // for root categories, each enforcing uniqueness within its own scope.
     uniqueIndex("categories_user_id_parent_id_name_unique")
       .on(table.userId, table.parentId, table.name)
-      .where(sql`${table.parentId} IS NOT NULL`),
+      .where(sql`${table.parentId} IS NOT NULL AND ${table.isArchived} = false`),
     uniqueIndex("categories_user_id_name_root_unique")
       .on(table.userId, table.name)
-      .where(sql`${table.parentId} IS NULL`)
+      .where(sql`${table.parentId} IS NULL AND ${table.isArchived} = false`)
   ]
 );

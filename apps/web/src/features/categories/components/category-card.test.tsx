@@ -28,7 +28,8 @@ describe("CategoryCard", () => {
     expect(screen.getByText("Food & Dining")).toBeVisible();
     expect(screen.getByText("Top-level category")).toBeVisible();
 
-    await user.click(screen.getByRole("button", { name: "Archive Food & Dining" }));
+    await user.click(screen.getByRole("button", { name: "Actions for Food & Dining" }));
+    await user.click(screen.getByRole("button", { name: "Archive" }));
     expect(onArchive).toHaveBeenCalledWith(parent);
   });
 
@@ -44,7 +45,8 @@ describe("CategoryCard", () => {
     render(<CategoryCard parent={parent} subcategories={[child]} onArchive={onArchive} />);
 
     expect(screen.getByText("1 subcategory")).toBeVisible();
-    await user.click(screen.getByRole("button", { name: /Groceries/ }));
+    await user.click(screen.getByRole("button", { name: "Actions for Groceries" }));
+    await user.click(screen.getByRole("button", { name: "Archive" }));
     expect(onArchive).toHaveBeenCalledWith(child);
   });
 

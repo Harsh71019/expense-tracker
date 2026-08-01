@@ -10,13 +10,18 @@ import { qk } from "@/lib/query/keys";
 
 const CategoriesSchema = z.array(CategorySchema);
 
-export function useCategories(initialData?: Category[]): UseQueryResult<Category[], Error> {
+export function useCategories(
+  initialData?: Category[],
+  includeArchived = false
+): UseQueryResult<Category[], Error> {
   return useQuery({
-    queryKey: qk.categories(),
+    queryKey: qk.categoryList(includeArchived),
     ...(initialData === undefined ? {} : { initialData }),
     queryFn: async (): Promise<Category[]> => {
       try {
-        const result = await apiClient.GET("/v1/categories");
+        const result = await apiClient.GET("/v1/categories", {
+          params: { query: { includeArchived: includeArchived ? "true" : "false" } }
+        });
         if (result.error !== undefined) throw toAppError(result.error, result.response.status);
         const parsed = CategoriesSchema.safeParse(result.data);
         if (!parsed.success) throw toAppError(undefined, result.response.status);

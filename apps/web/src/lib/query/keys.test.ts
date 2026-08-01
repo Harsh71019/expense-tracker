@@ -36,6 +36,7 @@ describe("query keys", () => {
       { limit: 50 }
     ]);
     expect(qk.categories()).toEqual(["categories"]);
+    expect(qk.categoryList(true)).toEqual(["categories", "list", { includeArchived: true }]);
     expect(qk.spendingWarnings()).toEqual(["spending-warnings"]);
     expect(qk.spendingWarningLists()).toEqual(["spending-warnings", "list"]);
     expect(qk.spendingWarningList({ filter: "spikes" })).toEqual([

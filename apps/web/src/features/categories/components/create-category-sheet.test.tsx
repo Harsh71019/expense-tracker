@@ -9,13 +9,19 @@ import { CreateCategorySheet } from "./create-category-sheet";
 
 const mocks = vi.hoisted(() => ({
   mutateAsync: vi.fn(),
+  updateMutateAsync: vi.fn(),
   pending: false,
+  updatePending: false,
   toastError: vi.fn(),
   toastSuccess: vi.fn()
 }));
 
 vi.mock("../hooks/use-category-mutations", () => ({
-  useCreateCategory: () => ({ mutateAsync: mocks.mutateAsync, isPending: mocks.pending })
+  useCreateCategory: () => ({ mutateAsync: mocks.mutateAsync, isPending: mocks.pending }),
+  useUpdateCategory: () => ({
+    mutateAsync: mocks.updateMutateAsync,
+    isPending: mocks.updatePending
+  })
 }));
 
 vi.mock("@/lib/toast", () => ({
@@ -45,7 +51,9 @@ const salary: Category = {
 describe("CreateCategorySheet", () => {
   beforeEach(() => {
     mocks.pending = false;
+    mocks.updatePending = false;
     mocks.mutateAsync.mockReset();
+    mocks.updateMutateAsync.mockReset();
     mocks.toastError.mockReset();
     mocks.toastSuccess.mockReset();
   });
@@ -99,6 +107,38 @@ describe("CreateCategorySheet", () => {
     await user.click(screen.getByRole("button", { name: "Income" }));
     expect(screen.getByRole("option", { name: "Salary" })).toBeVisible();
     expect(screen.queryByRole("option", { name: "Groceries" })).not.toBeInTheDocument();
+  });
+
+  it("edits name, icon, colour, and parent without changing kind", async () => {
+    const user = userEvent.setup();
+    mocks.updateMutateAsync.mockResolvedValue({ ...groceries, name: "Home food" });
+    const onClose = vi.fn();
+    render(
+      <CreateCategorySheet
+        defaultKind="expense"
+        categories={[groceries]}
+        category={groceries}
+        onClose={onClose}
+      />
+    );
+
+    expect(screen.queryByRole("button", { name: "Income" })).not.toBeInTheDocument();
+    await user.clear(screen.getByLabelText("Name"));
+    await user.type(screen.getByLabelText("Name"), "Home food");
+    await user.click(screen.getByRole("button", { name: "coffee" }));
+    await user.click(screen.getByRole("button", { name: "#3b82f6" }));
+    await user.click(screen.getByRole("button", { name: "Save changes" }));
+
+    expect(mocks.updateMutateAsync).toHaveBeenCalledWith({
+      categoryId: groceries.id,
+      patch: {
+        name: "Home food",
+        parentId: null,
+        icon: "coffee",
+        color: "#3b82f6"
+      }
+    });
+    expect(onClose).toHaveBeenCalled();
   });
 
   it("closes without creating on Cancel", async () => {

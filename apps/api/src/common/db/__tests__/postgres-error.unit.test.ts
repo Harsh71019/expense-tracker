@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { isUniqueViolation, postgresConstraint } from "../postgres-error.js";
+import { isForeignKeyViolation, isUniqueViolation, postgresConstraint } from "../postgres-error.js";
 
 describe("postgres-error", () => {
   it("detects unique violation code 23505 directly and via cause", () => {
@@ -18,5 +18,11 @@ describe("postgres-error", () => {
     );
     expect(postgresConstraint({ code: "23505" })).toBeUndefined();
     expect(postgresConstraint(undefined)).toBeUndefined();
+  });
+
+  it("detects foreign-key violations", () => {
+    expect(isForeignKeyViolation({ code: "23503" })).toBe(true);
+    expect(isForeignKeyViolation({ cause: { code: "23503" } })).toBe(true);
+    expect(isForeignKeyViolation({ code: "23505" })).toBe(false);
   });
 });

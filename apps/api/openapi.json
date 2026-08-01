@@ -154,7 +154,9 @@
               "bill.statement_not_ready",
               "bill.unresolved_statement",
               "bill.already_reconciled",
-              "recurring.no_occurrences"
+              "recurring.no_occurrences",
+              "recurring.reconciliation_already_resolved",
+              "recurring.invalid_reconciliation_resolution"
             ]
           },
           "reqId": {
@@ -699,6 +701,10 @@
                   "type": "string",
                   "format": "uuid"
                 },
+                "recurringRuleId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
                 "createdAt": {
                   "type": ["string", "null"],
                   "format": "date-time"
@@ -822,6 +828,10 @@
             "type": "string",
             "format": "uuid"
           },
+          "recurringRuleId": {
+            "type": "string",
+            "format": "uuid"
+          },
           "createdAt": {
             "type": ["string", "null"],
             "format": "date-time"
@@ -932,6 +942,10 @@
                 "type": "string",
                 "format": "uuid"
               },
+              "recurringRuleId": {
+                "type": "string",
+                "format": "uuid"
+              },
               "createdAt": {
                 "type": ["string", "null"],
                 "format": "date-time"
@@ -1032,6 +1046,10 @@
                 "format": "uuid"
               },
               "billId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "recurringRuleId": {
                 "type": "string",
                 "format": "uuid"
               },
@@ -1151,6 +1169,10 @@
                     "type": "string",
                     "format": "uuid"
                   },
+                  "recurringRuleId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
                   "createdAt": {
                     "type": ["string", "null"],
                     "format": "date-time"
@@ -1251,6 +1273,10 @@
                     "format": "uuid"
                   },
                   "billId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "recurringRuleId": {
                     "type": "string",
                     "format": "uuid"
                   },
@@ -3257,6 +3283,10 @@
                       "type": "string",
                       "format": "uuid"
                     },
+                    "recurringRuleId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
                     "createdAt": {
                       "type": ["string", "null"],
                       "format": "date-time"
@@ -3843,6 +3873,10 @@
                     "type": "string",
                     "format": "uuid"
                   },
+                  "recurringRuleId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
                   "createdAt": {
                     "type": ["string", "null"],
                     "format": "date-time"
@@ -3943,6 +3977,10 @@
                     "format": "uuid"
                   },
                   "billId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "recurringRuleId": {
                     "type": "string",
                     "format": "uuid"
                   },

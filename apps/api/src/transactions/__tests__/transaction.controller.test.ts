@@ -46,9 +46,10 @@ describe("TransactionController", () => {
     };
     const key = "10d11a9c-04ff-4e65-a22a-87b7f9681d98";
     const response = mockResponse();
+    const request = { authMethod: "session" as const };
 
-    // @ts-expect-error - mock Response for unit testing
-    const result = await controller.create(user, body, key, response);
+    // @ts-expect-error - mock Request/Response for unit testing
+    const result = await controller.create(user, body, key, request, response);
 
     expect(result).toEqual(sampleTransaction);
     expect(response.setHeader).toHaveBeenCalledWith("Location", "/api/v1/transactions/txn-1");
@@ -63,7 +64,41 @@ describe("TransactionController", () => {
         description: "Chai",
         tags: ["food"]
       },
-      "10d11a9c-04ff-4e65-a22a-87b7f9681d98"
+      "10d11a9c-04ff-4e65-a22a-87b7f9681d98",
+      "manual"
+    );
+  });
+
+  it('stamps source "api" when the request was authenticated via an API key', async () => {
+    const mockService = {
+      create: vi.fn().mockResolvedValue({ transaction: sampleTransaction, replayed: false })
+    };
+    // @ts-expect-error - mock TransactionService for unit testing
+    const controller = new TransactionController(mockService);
+    const response = mockResponse();
+    const request = { authMethod: "api-key" as const };
+
+    await controller.create(
+      user,
+      {
+        accountId: "3fa85f64-5717-4562-b3fc-2c963f66beef",
+        type: "expense",
+        amountMinor: 250,
+        occurredAt: "2026-07-12T09:00:00.000Z",
+        description: "Chai",
+        tags: ["food"]
+      },
+      "10d11a9c-04ff-4e65-a22a-87b7f9681d98",
+      // @ts-expect-error - mock Request/Response for unit testing
+      request,
+      response
+    );
+
+    expect(mockService.create).toHaveBeenCalledWith(
+      "user-1",
+      expect.anything(),
+      "10d11a9c-04ff-4e65-a22a-87b7f9681d98",
+      "api"
     );
   });
 
@@ -86,7 +121,8 @@ describe("TransactionController", () => {
         tags: ["food"]
       },
       "10d11a9c-04ff-4e65-a22a-87b7f9681d98",
-      // @ts-expect-error - mock Response for unit testing
+      // @ts-expect-error - mock Request/Response for unit testing
+      { authMethod: "session" },
       response
     );
 
@@ -257,7 +293,8 @@ describe("TransactionController", () => {
           description: "Chai"
         },
         "not-a-uuid",
-        // @ts-expect-error - mock Response for unit testing
+        // @ts-expect-error - mock Request/Response for unit testing
+        { authMethod: "session" },
         response
       )
     ).rejects.toThrow();
@@ -281,7 +318,8 @@ describe("TransactionController", () => {
           description: "Chai"
         },
         undefined,
-        // @ts-expect-error - mock Response for unit testing
+        // @ts-expect-error - mock Request/Response for unit testing
+        { authMethod: "session" },
         response
       )
     ).rejects.toThrow();

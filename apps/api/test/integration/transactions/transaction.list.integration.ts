@@ -28,7 +28,7 @@ describe("TransactionService.list", () => {
       categoryRepository,
       new TransactionRepository(testDb.db),
       new AuditRepository(testDb.db),
-      { log: () => undefined, warn: () => undefined }
+      { log: () => undefined, warn: () => undefined, error: () => undefined }
     );
 
     const hdfc = await withTxn(testDb.db, (tx) =>

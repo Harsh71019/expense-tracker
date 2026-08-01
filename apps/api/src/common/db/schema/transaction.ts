@@ -16,6 +16,7 @@ import { categories } from "./category.js";
 import { creditCardBills } from "./credit-card-bill.js";
 import { transactionSourceEnum, transactionStatusEnum, transactionTypeEnum } from "./enums.js";
 import { importBatches } from "./import.js";
+import { recurringRules } from "./recurring.js";
 
 export const transactions = pgTable(
   "transactions",
@@ -42,6 +43,7 @@ export const transactions = pgTable(
     transferGroupId: uuid("transfer_group_id"),
     importBatchId: uuid("import_batch_id").references(() => importBatches.id),
     billId: uuid("bill_id").references(() => creditCardBills.id),
+    recurringRuleId: uuid("recurring_rule_id").references(() => recurringRules.id),
     dedupeHash: text("dedupe_hash"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull()
@@ -75,6 +77,9 @@ export const transactions = pgTable(
       .where(sql`${table.importBatchId} IS NOT NULL`),
     index("transactions_bill_id")
       .on(table.billId)
-      .where(sql`${table.billId} IS NOT NULL`)
+      .where(sql`${table.billId} IS NOT NULL`),
+    index("transactions_recurring_rule_id")
+      .on(table.recurringRuleId)
+      .where(sql`${table.recurringRuleId} IS NOT NULL`)
   ]
 );

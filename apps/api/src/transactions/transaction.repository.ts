@@ -34,7 +34,8 @@ export class TransactionRepository {
     tx: DbTx,
     transferGroupId?: string,
     source: TransactionSource = "manual",
-    billId?: CreditCardBillId
+    billId?: CreditCardBillId,
+    recurringRuleId?: string
   ): Promise<Transaction> {
     const now = new Date();
     const [row] = await tx
@@ -54,6 +55,7 @@ export class TransactionRepository {
         idempotencyKey: idempotencyKey ?? null,
         transferGroupId: transferGroupId ?? null,
         billId: billId ?? null,
+        recurringRuleId: recurringRuleId ?? null,
         createdAt: now,
         updatedAt: now
       })

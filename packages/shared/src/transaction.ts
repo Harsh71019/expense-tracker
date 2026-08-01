@@ -23,6 +23,9 @@ export const CreateTransactionSchema = z.object({
 
 export const TransferGroupIdSchema = z.string().uuid("Transfer group id must be a UUID.");
 export const CreditCardBillReferenceIdSchema = z.string().uuid("Bill id must be a UUID.");
+// Re-declared rather than imported from ./recurring.js to avoid a circular import
+// (recurring.ts already imports TransactionTypeSchema from this module).
+export const RecurringRuleReferenceIdSchema = z.string().uuid("Recurring rule id must be a UUID.");
 
 export const TransactionSchema = CreateTransactionSchema.extend({
   id: TransactionIdSchema,
@@ -35,6 +38,7 @@ export const TransactionSchema = CreateTransactionSchema.extend({
   reversedBy: TransactionIdSchema.optional(),
   transferGroupId: TransferGroupIdSchema.optional(),
   billId: CreditCardBillReferenceIdSchema.optional(),
+  recurringRuleId: RecurringRuleReferenceIdSchema.optional(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date()
 });

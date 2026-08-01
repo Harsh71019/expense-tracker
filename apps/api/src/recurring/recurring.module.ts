@@ -4,6 +4,9 @@ import { AccountsModule } from "../accounts/accounts.module.js";
 import { CategoriesModule } from "../categories/categories.module.js";
 import { TransactionsModule } from "../transactions/transactions.module.js";
 import { RecurringMaterializeService } from "./recurring-materialize.service.js";
+import { RecurringReconciliationController } from "./recurring-reconciliation.controller.js";
+import { RecurringReconciliationRepository } from "./recurring-reconciliation.repository.js";
+import { RecurringReconciliationService } from "./recurring-reconciliation.service.js";
 import { RecurringRuleController } from "./recurring-rule.controller.js";
 import { RecurringRuleRepository } from "./recurring-rule.repository.js";
 import { RecurringRuleService } from "./recurring-rule.service.js";
@@ -11,13 +14,15 @@ import { RecurringRuleMutationService } from "./recurring-rule-mutation.service.
 
 @Module({
   imports: [AccountsModule, CategoriesModule, TransactionsModule],
-  controllers: [RecurringRuleController],
+  controllers: [RecurringRuleController, RecurringReconciliationController],
   providers: [
     RecurringRuleRepository,
     RecurringRuleService,
     RecurringRuleMutationService,
-    RecurringMaterializeService
+    RecurringMaterializeService,
+    RecurringReconciliationRepository,
+    RecurringReconciliationService
   ],
-  exports: [RecurringRuleRepository]
+  exports: [RecurringRuleRepository, RecurringReconciliationService]
 })
 export class RecurringModule {}

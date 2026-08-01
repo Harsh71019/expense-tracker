@@ -5738,7 +5738,9 @@ export interface components {
         | "bill.statement_not_ready"
         | "bill.unresolved_statement"
         | "bill.already_reconciled"
-        | "recurring.no_occurrences";
+        | "recurring.no_occurrences"
+        | "recurring.reconciliation_already_resolved"
+        | "recurring.invalid_reconciliation_resolution";
       reqId: string;
       /** Format: date-time */
       timestamp: string | null;
@@ -5934,6 +5936,8 @@ export interface components {
         transferGroupId?: string;
         /** Format: uuid */
         billId?: string;
+        /** Format: uuid */
+        recurringRuleId?: string;
         /** Format: date-time */
         createdAt: string | null;
         /** Format: date-time */
@@ -5977,6 +5981,8 @@ export interface components {
       transferGroupId?: string;
       /** Format: uuid */
       billId?: string;
+      /** Format: uuid */
+      recurringRuleId?: string;
       /** Format: date-time */
       createdAt: string | null;
       /** Format: date-time */
@@ -6017,6 +6023,8 @@ export interface components {
         transferGroupId?: string;
         /** Format: uuid */
         billId?: string;
+        /** Format: uuid */
+        recurringRuleId?: string;
         /** Format: date-time */
         createdAt: string | null;
         /** Format: date-time */
@@ -6054,6 +6062,8 @@ export interface components {
         transferGroupId?: string;
         /** Format: uuid */
         billId?: string;
+        /** Format: uuid */
+        recurringRuleId?: string;
         /** Format: date-time */
         createdAt: string | null;
         /** Format: date-time */
@@ -6096,6 +6106,8 @@ export interface components {
           transferGroupId?: string;
           /** Format: uuid */
           billId?: string;
+          /** Format: uuid */
+          recurringRuleId?: string;
           /** Format: date-time */
           createdAt: string | null;
           /** Format: date-time */
@@ -6133,6 +6145,8 @@ export interface components {
           transferGroupId?: string;
           /** Format: uuid */
           billId?: string;
+          /** Format: uuid */
+          recurringRuleId?: string;
           /** Format: date-time */
           createdAt: string | null;
           /** Format: date-time */
@@ -6757,6 +6771,8 @@ export interface components {
           transferGroupId?: string;
           /** Format: uuid */
           billId?: string;
+          /** Format: uuid */
+          recurringRuleId?: string;
           /** Format: date-time */
           createdAt: string | null;
           /** Format: date-time */
@@ -6948,6 +6964,8 @@ export interface components {
           transferGroupId?: string;
           /** Format: uuid */
           billId?: string;
+          /** Format: uuid */
+          recurringRuleId?: string;
           /** Format: date-time */
           createdAt: string | null;
           /** Format: date-time */
@@ -6985,6 +7003,8 @@ export interface components {
           transferGroupId?: string;
           /** Format: uuid */
           billId?: string;
+          /** Format: uuid */
+          recurringRuleId?: string;
           /** Format: date-time */
           createdAt: string | null;
           /** Format: date-time */

@@ -45,7 +45,7 @@ describe("TransactionService", () => {
       categoryRepository,
       transactionRepository,
       new AuditRepository(testDb.db),
-      { log: () => undefined, warn: () => undefined }
+      { log: () => undefined, warn: () => undefined, error: () => undefined }
     );
     transactionMutations = new TransactionMutationService(
       transactions,

@@ -8,6 +8,7 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   Res
 } from "@nestjs/common";
 import {
@@ -18,7 +19,7 @@ import {
   type Transaction,
   type TransactionPage
 } from "@treasury-ops/shared";
-import type { Response } from "express";
+import type { Request, Response } from "express";
 import { z } from "zod";
 
 import type { AuthenticatedUser } from "../auth/auth.guard.js";
@@ -55,12 +56,15 @@ export class TransactionController {
     @CurrentUser() user: AuthenticatedUser,
     @Body() body: unknown,
     @Headers("idempotency-key") idempotencyKey: string | undefined,
+    @Req() request: Request,
     @Res({ passthrough: true }) response: Response
   ): Promise<Transaction> {
+    const source = request.authMethod === "api-key" ? "api" : "manual";
     const result = await this.transactions.create(
       user.id,
       CreateTransactionSchema.parse(body),
-      IdempotencyKeySchema.parse(idempotencyKey)
+      IdempotencyKeySchema.parse(idempotencyKey),
+      source
     );
     if (result.replayed) {
       response.status(200).setHeader("Idempotency-Replayed", "true");

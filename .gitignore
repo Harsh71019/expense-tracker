@@ -19,3 +19,9 @@ backup.sh
 restore.sh
 backups/
 *.dump
+
+# personal/local-only notes and skill-install artifacts, not project docs
+PROXMOX_ACCESS.md
+.agents/
+.claude/skills/
+skills-lock.json

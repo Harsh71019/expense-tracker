@@ -38,7 +38,10 @@ describe("RecurringRuleDrawer", () => {
     const user = userEvent.setup();
     render(<RecurringRuleDrawer accounts={[account]} categories={[category]} onClose={vi.fn()} />);
 
-    expect(screen.getByRole("dialog", { name: "New recurring rule" })).toHaveClass("h-dvh");
+    expect(screen.getByRole("dialog", { name: "New recurring rule" })).toHaveClass(
+      "max-h-[92dvh]",
+      "sm:h-dvh"
+    );
     expect(screen.getByRole("button", { name: "Close recurring rule" })).toHaveClass(
       "h-11",
       "w-11"

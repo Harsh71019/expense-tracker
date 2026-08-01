@@ -1,5 +1,6 @@
 "use client";
 
+import { ChartPie, House, LayoutGrid, ReceiptText } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -8,10 +9,10 @@ import type { ReactNode } from "react";
 import { CreateTxnSheet } from "@/features/transactions/components/create-txn-sheet";
 
 const MOBILE_NAV_ITEMS = [
-  { href: "/", label: "Home", icon: "⌂" },
-  { href: "/transactions", label: "Transactions", icon: "≡" },
-  { href: "/reports", label: "Reports", icon: "◔" },
-  { href: "/more", label: "More", icon: "∷" }
+  { href: "/", label: "Home", icon: House },
+  { href: "/transactions", label: "Transactions", icon: ReceiptText },
+  { href: "/reports", label: "Reports", icon: ChartPie },
+  { href: "/more", label: "More", icon: LayoutGrid }
 ] as const;
 
 function isActiveRoute(pathname: string, href: string): boolean {
@@ -31,23 +32,24 @@ export function MobileBottomNav(): ReactNode {
         className="mobile-bottom-nav fixed inset-x-0 bottom-0 z-40 border-t border-border/80 bg-surface-elevated/95 px-2 pt-1.5 shadow-[0_-10px_30px_rgba(0,0,0,0.08)] backdrop-blur-xl md:hidden"
       >
         <div className="mx-auto grid max-w-lg grid-cols-5 items-end">
-          {firstItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              aria-current={isActiveRoute(pathname, item.href) ? "page" : undefined}
-              className={`flex min-h-14 min-w-0 touch-manipulation flex-col items-center justify-center gap-0.5 rounded-xl px-1 text-[10px] font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-                isActiveRoute(pathname, item.href)
-                  ? "text-accent"
-                  : "text-foreground-muted hover:bg-surface-muted hover:text-foreground"
-              }`}
-            >
-              <span className="text-xl leading-none" aria-hidden="true">
-                {item.icon}
-              </span>
-              <span className="max-w-full truncate">{item.label}</span>
-            </Link>
-          ))}
+          {firstItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={isActiveRoute(pathname, item.href) ? "page" : undefined}
+                className={`flex min-h-14 min-w-0 touch-manipulation flex-col items-center justify-center gap-0.5 rounded-xl px-1 text-[10px] font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                  isActiveRoute(pathname, item.href)
+                    ? "bg-accent-glow text-accent"
+                    : "text-foreground-muted hover:bg-surface-muted hover:text-foreground"
+                }`}
+              >
+                <Icon size={20} strokeWidth={2.2} aria-hidden="true" />
+                <span className="max-w-full truncate">{item.label}</span>
+              </Link>
+            );
+          })}
 
           <button
             type="button"
@@ -62,23 +64,24 @@ export function MobileBottomNav(): ReactNode {
             <span className="-mt-2">Add</span>
           </button>
 
-          {lastItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              aria-current={isActiveRoute(pathname, item.href) ? "page" : undefined}
-              className={`flex min-h-14 min-w-0 touch-manipulation flex-col items-center justify-center gap-0.5 rounded-xl px-1 text-[10px] font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-                isActiveRoute(pathname, item.href)
-                  ? "text-accent"
-                  : "text-foreground-muted hover:bg-surface-muted hover:text-foreground"
-              }`}
-            >
-              <span className="text-xl leading-none" aria-hidden="true">
-                {item.icon}
-              </span>
-              <span className="max-w-full truncate">{item.label}</span>
-            </Link>
-          ))}
+          {lastItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={isActiveRoute(pathname, item.href) ? "page" : undefined}
+                className={`flex min-h-14 min-w-0 touch-manipulation flex-col items-center justify-center gap-0.5 rounded-xl px-1 text-[10px] font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                  isActiveRoute(pathname, item.href)
+                    ? "bg-accent-glow text-accent"
+                    : "text-foreground-muted hover:bg-surface-muted hover:text-foreground"
+                }`}
+              >
+                <Icon size={20} strokeWidth={2.2} aria-hidden="true" />
+                <span className="max-w-full truncate">{item.label}</span>
+              </Link>
+            );
+          })}
         </div>
       </nav>
 

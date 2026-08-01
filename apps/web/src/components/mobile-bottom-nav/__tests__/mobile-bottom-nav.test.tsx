@@ -34,7 +34,10 @@ describe("MobileBottomNav", () => {
     render(<MobileBottomNav />);
 
     expect(screen.getByRole("navigation", { name: "Mobile navigation" })).toBeVisible();
-    expect(screen.getByRole("link", { name: "Home" })).toHaveAttribute("aria-current", "page");
+    const home = screen.getByRole("link", { name: "Home" });
+    expect(home).toHaveAttribute("aria-current", "page");
+    expect(home).toHaveClass("bg-accent-glow");
+    expect(home.querySelector("svg")).not.toBeNull();
     expect(screen.getByRole("link", { name: "Transactions" })).toHaveAttribute(
       "href",
       "/transactions"

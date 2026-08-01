@@ -33,6 +33,14 @@ describe("RegisterForm", () => {
     mocks.toastError.mockReset();
   });
 
+  it("configures the email field for a mobile email keyboard", () => {
+    render(<RegisterForm />);
+
+    expect(screen.getByLabelText("Email")).toHaveAttribute("inputmode", "email");
+    expect(screen.getByLabelText("Email")).toHaveAttribute("autocapitalize", "none");
+    expect(screen.getByLabelText("Email")).toHaveAttribute("spellcheck", "false");
+  });
+
   it("submits trimmed details and routes the user to login with the safe return path", async () => {
     mocks.signUpWithEmail.mockResolvedValue({ error: null });
     const user = userEvent.setup();

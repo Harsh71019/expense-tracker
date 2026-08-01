@@ -50,6 +50,14 @@ function NestedDialogHarness(): ReactNode {
   );
 }
 
+function DrawerHarness(): ReactNode {
+  return (
+    <DialogSurface variant="drawer" labelledBy="drawer-title" onClose={() => undefined}>
+      <h2 id="drawer-title">Mobile drawer</h2>
+    </DialogSurface>
+  );
+}
+
 describe("DialogSurface", () => {
   afterEach(() => {
     document.body.style.overflow = "";
@@ -100,5 +108,13 @@ describe("DialogSurface", () => {
     expect(screen.queryByRole("dialog", { name: "Child dialog" })).toBeNull();
     expect(screen.getByRole("dialog", { name: "Parent dialog" })).toBeVisible();
     expect(document.body.style.overflow).toBe("hidden");
+  });
+
+  it("uses a bottom sheet on phones and preserves the desktop side drawer", () => {
+    render(<DrawerHarness />);
+
+    const drawer = screen.getByRole("dialog", { name: "Mobile drawer" });
+    expect(drawer).toHaveClass("max-h-[92dvh]", "rounded-t-3xl", "animate-sheet-in");
+    expect(drawer).toHaveClass("sm:h-dvh", "sm:rounded-none", "sm:animate-drawer-in");
   });
 });

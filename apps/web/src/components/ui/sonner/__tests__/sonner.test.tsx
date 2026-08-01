@@ -38,6 +38,7 @@ vi.mock("sonner", () => ({
       data-close-label={toastOptions?.closeButtonAriaLabel}
       data-theme={theme}
       data-rich-colors={String(richColors)}
+      data-width={style?.["--width"]}
       data-normal-bg={style?.["--normal-bg"]}
       data-normal-border={style?.["--normal-border"]}
       data-info-text={style?.["--info-text"]}
@@ -61,6 +62,7 @@ describe("Toaster", () => {
     expect(region).toHaveAttribute("data-close-label", "Dismiss notification");
     expect(region).toHaveAttribute("data-theme", "system");
     expect(region).toHaveAttribute("data-rich-colors", "true");
+    expect(region).toHaveAttribute("data-width", "min(356px, calc(100vw - 24px))");
     expect(region).toHaveAttribute("data-normal-bg", "var(--color-surface-elevated)");
     expect(region).toHaveAttribute(
       "data-normal-border",

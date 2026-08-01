@@ -13,6 +13,27 @@ type AmountInputProps = Readonly<{
   inputRef?: Ref<HTMLInputElement>;
 }>;
 
+function evaluateMathExpression(raw: string): string {
+  const sanitized = raw.trim();
+  if (/^[0-9.]*$/.test(sanitized)) return sanitized;
+  if (!/^[0-9.\s+\-*/()]+$/.test(sanitized)) return raw;
+  try {
+    const fn = new Function(`"use strict"; return (${sanitized});`);
+    const evaluated: unknown = fn();
+    if (
+      typeof evaluated === "number" &&
+      !isNaN(evaluated) &&
+      isFinite(evaluated) &&
+      evaluated >= 0
+    ) {
+      return evaluated.toFixed(2);
+    }
+  } catch {
+    // Fall back to original raw string if syntax is incomplete
+  }
+  return raw;
+}
+
 export function AmountInput({
   id,
   label,
@@ -29,8 +50,12 @@ export function AmountInput({
   }, [value]);
 
   function commit(): void {
+    const evaluatedDraft = evaluateMathExpression(draft);
+    if (evaluatedDraft !== draft) {
+      setDraft(evaluatedDraft);
+    }
     try {
-      onChange(parseMinor(draft));
+      onChange(parseMinor(evaluatedDraft));
       setParseError(null);
     } catch (caught: unknown) {
       setParseError(caught instanceof RangeError ? caught.message : "Enter a valid amount.");
@@ -40,7 +65,7 @@ export function AmountInput({
   function addPreset(rupees: number): void {
     let currentMinor = 0;
     try {
-      currentMinor = parseMinor(draft);
+      currentMinor = parseMinor(evaluateMathExpression(draft));
     } catch {
       currentMinor = 0;
     }
@@ -85,6 +110,11 @@ export function AmountInput({
           aria-describedby={message === undefined || message === null ? undefined : `${id}-error`}
           onChange={(event) => setDraft(event.target.value)}
           onBlur={commit}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              commit();
+            }
+          }}
           className="w-full rounded-xl border border-border bg-surface px-4 py-4.5 text-center font-mono text-3xl font-extrabold text-foreground tabular-nums transition-colors duration-150 placeholder:text-foreground-muted/30 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
         />
       </div>

@@ -1,11 +1,13 @@
 "use client";
 
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Search } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
+import { CommandPalette } from "@/components/ui/command-palette";
+import { KeyboardShortcutsDialog } from "@/components/ui/keyboard-shortcuts-dialog";
 import { CreateTxnSheet } from "@/features/transactions/components/create-txn-sheet";
 import { usePrivacy } from "@/lib/privacy/privacy-context";
 import type { Theme } from "@/lib/theme";
@@ -37,6 +39,8 @@ export function AppHeader({
   const pathname = usePathname() ?? "/";
   const { privacyMode, togglePrivacyMode } = usePrivacy();
   const [showCreateSheet, setShowCreateSheet] = useState(false);
+  const [showCommandPalette, setShowCommandPalette] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
   const [currentDate, setCurrentDate] = useState("");
   const [currentTime, setCurrentTime] = useState("");
 
@@ -64,6 +68,27 @@ export function AppHeader({
     const interval = setInterval(updateClock, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  // Global keyboard shortcuts (⌘K for command palette, ⌘P for privacy, ? for shortcuts)
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent): void {
+      const activeTag = document.activeElement?.tagName.toLowerCase();
+      const isInput = activeTag === "input" || activeTag === "textarea" || activeTag === "select";
+
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setShowCommandPalette((prev) => !prev);
+      } else if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "p") {
+        event.preventDefault();
+        togglePrivacyMode();
+      } else if (event.key === "?" && !isInput) {
+        event.preventDefault();
+        setShowShortcuts((prev) => !prev);
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [togglePrivacyMode]);
 
   const parentRoute = Object.keys(routeLabels).find(
     (route) => route !== "/" && pathname.startsWith(`${route}/`)
@@ -112,14 +137,30 @@ export function AppHeader({
           )}
         </div>
 
-        {/* Right: Actions, Privacy Mode Toggle & Quick Add */}
+        {/* Right: Actions, Command Search, Privacy Mode Toggle & Quick Add */}
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+          {/* Command Palette Trigger */}
+          <button
+            type="button"
+            onClick={() => setShowCommandPalette(true)}
+            title="Search actions or pages (⌘K)"
+            aria-label="Search actions or pages"
+            className="hidden h-11 items-center gap-2 rounded-xl border border-border/60 bg-surface-muted/40 px-3 text-xs font-medium text-foreground-muted transition-colors hover:border-border hover:text-foreground sm:flex"
+          >
+            <Search size={15} />
+            <span className="hidden md:inline">Search...</span>
+            <kbd className="rounded border border-border/80 bg-surface px-1.5 font-mono text-[10px] font-semibold text-foreground-muted">
+              ⌘K
+            </kbd>
+          </button>
+
           {/* Privacy Toggle */}
           <button
             type="button"
             onClick={togglePrivacyMode}
-            title={privacyMode ? "Disable privacy mode" : "Enable privacy mode (hide balances)"}
+            title={privacyMode ? "Disable privacy mode (⌘P)" : "Enable privacy mode (⌘P)"}
             aria-label={privacyMode ? "Disable privacy mode" : "Enable privacy mode"}
+            aria-pressed={privacyMode}
             className={`flex h-11 w-11 touch-manipulation items-center justify-center gap-1.5 rounded-xl border text-xs font-medium transition-[color,background-color,border-color,transform] duration-150 active:scale-95 sm:w-auto sm:px-3 ${
               privacyMode
                 ? "border-accent/40 bg-accent-glow text-accent font-semibold shadow-xs"
@@ -146,6 +187,20 @@ export function AppHeader({
 
       {/* Quick Add Sheet Drawer Modal */}
       {showCreateSheet && <CreateTxnSheet onClose={() => setShowCreateSheet(false)} />}
+
+      {/* Global Command Palette Modal */}
+      {showCommandPalette && (
+        <CommandPalette
+          open={showCommandPalette}
+          onClose={() => setShowCommandPalette(false)}
+          onOpenCreateTxn={() => setShowCreateSheet(true)}
+        />
+      )}
+
+      {/* Keyboard Shortcuts Dialog */}
+      {showShortcuts && (
+        <KeyboardShortcutsDialog open={showShortcuts} onClose={() => setShowShortcuts(false)} />
+      )}
     </>
   );
 }

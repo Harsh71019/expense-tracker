@@ -16,7 +16,11 @@ vi.mock("next/link", () => ({
     <a href={href}>{children}</a>
   )
 }));
-vi.mock("next/navigation", () => ({ usePathname: () => mocks.pathname }));
+vi.mock("next/navigation", () => ({
+  usePathname: () => mocks.pathname,
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() })
+}));
+
 vi.mock("@/components/ui/theme-toggle", () => ({
   ThemeToggle: () => <button type="button">Theme</button>
 }));

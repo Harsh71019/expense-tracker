@@ -13,7 +13,7 @@ type BudgetMeterProps = Readonly<{
 
 const fillClasses = {
   under: "bg-accent",
-  approaching: "bg-income",
+  approaching: "bg-warning",
   reached: "bg-expense"
 } as const;
 

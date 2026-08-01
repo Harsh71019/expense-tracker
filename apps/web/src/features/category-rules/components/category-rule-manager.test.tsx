@@ -87,7 +87,7 @@ describe("CategoryRuleManager", () => {
     expect(screen.getByText("1 rule")).toBeVisible();
     expect(screen.getByText('"bigbasket"')).toBeVisible();
 
-    await user.click(screen.getByRole("button", { name: "Delete" }));
+    await user.click(screen.getByRole("button", { name: "Delete rule containing bigbasket" }));
     expect(mocks.deleteMutateAsync).toHaveBeenCalledWith(bigbasketRule.id);
     expect(mocks.toastSuccess).toHaveBeenCalledWith("Category rule deleted");
   });

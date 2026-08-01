@@ -28,11 +28,13 @@ export function RuleTester({ rules, categories }: RuleTesterProps): ReactNode {
         Try it · type a description to see what would match
       </p>
       <input
+        name="ruleTestDescription"
+        autoComplete="off"
         value={testText}
         onChange={(event) => setTestText(event.target.value)}
-        placeholder="e.g. SWIGGY*ORDER 4821 BANGALORE"
+        placeholder="SWIGGY*ORDER 4821 BANGALORE…"
         aria-label="Test a description against your rules"
-        className="w-full rounded-[11px] border border-border bg-surface-muted px-3.5 py-3 font-mono text-sm text-foreground transition-colors duration-150 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
+        className="min-h-11 w-full rounded-[11px] border border-border bg-surface-muted px-3.5 py-3 font-mono text-base text-foreground transition-colors duration-150 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 sm:text-sm"
       />
       {active ? (
         <div className="mt-3.5 border-t border-border pt-3.5">

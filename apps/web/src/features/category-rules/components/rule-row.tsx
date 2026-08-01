@@ -26,7 +26,7 @@ type RuleRowProps = Readonly<{
 export function RuleRow({ rule, category, onDelete }: RuleRowProps): ReactNode {
   const categoryName = category?.name ?? "Unavailable category";
   return (
-    <div className="flex flex-wrap items-center gap-4 rounded-[13px] border border-border bg-surface-elevated px-4.5 py-3.5 animate-fade-in">
+    <div className="flex flex-col items-stretch gap-4 rounded-[13px] border border-border bg-surface-elevated px-4.5 py-3.5 animate-fade-in sm:flex-row sm:flex-wrap sm:items-center">
       <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3">
         <span className="rounded-[5px] border border-border bg-surface-muted px-1.5 py-0.5 font-mono text-[9.5px] font-semibold tracking-wider text-foreground-muted uppercase">
           Contains
@@ -46,7 +46,7 @@ export function RuleRow({ rule, category, onDelete }: RuleRowProps): ReactNode {
           {categoryName}
         </span>
       </div>
-      <div className="flex shrink-0 items-center gap-3.5">
+      <div className="flex shrink-0 items-center justify-between gap-3.5 sm:justify-start">
         <span className="font-mono text-xs whitespace-nowrap text-foreground-muted">
           Added {dateFormatter.format(rule.createdAt)}
         </span>
@@ -54,7 +54,8 @@ export function RuleRow({ rule, category, onDelete }: RuleRowProps): ReactNode {
           type="button"
           onClick={() => onDelete(rule)}
           title="Delete rule"
-          className="rounded-md px-1.5 py-1 text-sm font-medium text-expense transition-colors duration-150 hover:bg-expense/10"
+          aria-label={`Delete rule containing ${rule.pattern}`}
+          className="min-h-11 rounded-md px-3 py-1 text-sm font-medium text-expense transition-colors duration-150 hover:bg-expense/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-expense"
         >
           Delete
         </button>

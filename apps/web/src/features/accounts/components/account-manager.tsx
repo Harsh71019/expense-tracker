@@ -12,6 +12,7 @@ import type { FormEvent, ReactNode } from "react";
 import { AmountInput } from "@/components/ui/amount-input";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { Button } from "@/components/ui/button";
+import { DialogSurface } from "@/components/ui/dialog";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { Money, SignedMoney } from "@/components/ui/money";
@@ -44,7 +45,7 @@ type Filter = "all" | AccountType;
 
 const pillClasses = (active: boolean): string =>
   [
-    "rounded-lg px-3.5 py-2 text-sm font-medium transition-colors duration-150",
+    "min-h-11 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
     active
       ? "border border-accent bg-accent-glow text-accent"
       : "border border-transparent text-foreground-muted hover:text-foreground"
@@ -191,8 +192,8 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
         items={[{ label: "Settings", href: "/settings?tab=management" }, { label: "Accounts" }]}
       />
 
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div>
+      <header className="flex flex-col items-stretch gap-4 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
+        <div className="min-w-0">
           <p className="font-mono text-[10px] font-bold tracking-[0.2em] text-accent uppercase">
             Expense tracker
           </p>
@@ -203,7 +204,7 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
             The containers your money lives in. Balances update automatically as transactions post.
           </p>
         </div>
-        <Button type="button" onClick={openCreate}>
+        <Button className="w-full sm:w-auto" type="button" onClick={openCreate}>
           <span className="mr-1 text-base leading-none">+</span> New account
         </Button>
       </header>
@@ -268,12 +269,12 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
           ))}
           <div className="flex-1" />
           {hasArchived ? (
-            <label className="flex items-center gap-2 text-sm text-foreground-muted select-none">
+            <label className="flex min-h-11 items-center gap-2 rounded-lg px-1 text-sm text-foreground-muted select-none">
               <input
                 type="checkbox"
                 checked={showArchived}
                 onChange={(event) => setShowArchived(event.target.checked)}
-                className="h-3.5 w-3.5 accent-accent"
+                className="h-5 w-5 accent-accent"
               />
               Show archived
             </label>
@@ -300,21 +301,17 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
             return (
               <article
                 key={account.id}
-                role="button"
-                tabIndex={0}
-                aria-label={`View details for ${account.name}`}
-                onClick={() => setDetailAccount(account)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
-                    setDetailAccount(account);
-                  }
-                }}
-                className={`cursor-pointer rounded-2xl border border-border bg-surface-elevated p-5 transition-colors duration-150 hover:border-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface ${
+                className={`relative rounded-2xl border border-border bg-surface-elevated p-5 transition-colors duration-150 hover:border-accent/40 ${
                   account.isArchived ? "opacity-60" : ""
                 }`}
               >
-                <div className="flex items-center justify-between gap-3">
+                <button
+                  type="button"
+                  aria-label={`View details for ${account.name}`}
+                  onClick={() => setDetailAccount(account)}
+                  className="absolute inset-0 z-0 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+                />
+                <div className="pointer-events-none relative z-10 flex items-center justify-between gap-3">
                   <div className="flex min-w-0 items-center gap-3">
                     <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-border bg-surface-muted text-xl">
                       {meta.icon}
@@ -335,14 +332,14 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
                   ) : null}
                 </div>
 
-                <p className="mt-5 font-mono text-[10px] font-bold tracking-[0.15em] text-foreground-muted uppercase">
+                <p className="pointer-events-none relative z-10 mt-5 font-mono text-[10px] font-bold tracking-[0.15em] text-foreground-muted uppercase">
                   Balance
                 </p>
-                <div className="mt-1">
+                <div className="pointer-events-none relative z-10 mt-1">
                   <SignedMoney minor={account.balanceMinor} size="lg" />
                 </div>
 
-                <div className="mt-4 flex items-center justify-between border-t border-border pt-3.5">
+                <div className="pointer-events-none relative z-10 mt-4 flex items-center justify-between border-t border-border pt-3.5">
                   <div>
                     <span className="font-mono text-[11px] text-foreground-muted">
                       Opening <SignedMoney minor={account.openingBalanceMinor} size="sm" />
@@ -361,7 +358,7 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
                     ) : null}
                   </div>
                   {account.isArchived ? null : (
-                    <div className="flex flex-col items-end gap-2">
+                    <div className="pointer-events-auto flex flex-col items-end gap-2">
                       {account.type === "credit_card" ? (
                         <button
                           type="button"
@@ -369,7 +366,7 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
                             event.stopPropagation();
                             openCardConfig(account);
                           }}
-                          className="text-xs font-semibold text-accent hover:text-accent-strong"
+                          className="min-h-11 rounded-lg px-2 text-xs font-semibold text-accent hover:bg-accent-glow hover:text-accent-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                         >
                           {account.creditCardConfig === undefined
                             ? "Set billing cycle"
@@ -382,7 +379,7 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
                           event.stopPropagation();
                           setConfirming(account);
                         }}
-                        className="text-xs font-medium text-foreground-muted hover:text-foreground"
+                        className="min-h-11 rounded-lg px-2 text-xs font-medium text-foreground-muted hover:bg-surface-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                       >
                         Archive
                       </button>
@@ -396,242 +393,243 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
       )}
 
       {createOpen ? (
-        <div
-          role="presentation"
-          className="fixed inset-0 z-50 grid items-start justify-items-center overflow-y-auto overscroll-contain bg-black/60 p-4 backdrop-blur-sm animate-fade-in sm:items-center sm:p-6"
-          onClick={closeCreate}
+        <DialogSurface
+          labelledBy="create-account-title"
+          onClose={closeCreate}
+          panelClassName="max-w-md"
         >
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="create-account-title"
-            className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto overscroll-contain rounded-2xl border border-border bg-surface-elevated p-6 shadow-glow-strong animate-scale-up sm:p-7"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <h2 id="create-account-title" className="text-lg font-bold text-foreground">
-              New account
-            </h2>
-            <p className="mt-1 text-sm text-foreground-muted">
-              Name, type, and opening balance are set once and can&apos;t be changed later.
-            </p>
+          <h2 id="create-account-title" className="text-lg font-bold text-foreground">
+            New account
+          </h2>
+          <p className="mt-1 text-sm text-foreground-muted">
+            Name, type, and opening balance are set once and can&apos;t be changed later.
+          </p>
 
-            <form className="mt-6 space-y-5" onSubmit={submit}>
-              <Input
-                id="account-name"
-                label="Account name"
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                placeholder="e.g. HDFC Savings"
-                maxLength={80}
+          <form className="mt-6 space-y-5" onSubmit={submit}>
+            <Input
+              id="account-name"
+              label="Account name"
+              value={name}
+              name="accountName"
+              autoComplete="off"
+              onChange={(event) => setName(event.target.value)}
+              placeholder="HDFC Savings…"
+              maxLength={80}
+            />
+
+            <div>
+              <p className="font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+                Type
+              </p>
+              <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-5">
+                {accountTypes.map((meta) => (
+                  <button
+                    key={meta.value}
+                    type="button"
+                    onClick={() => selectType(meta.value)}
+                    className={`flex min-h-11 flex-col items-center gap-1.5 rounded-xl border px-2 py-3 text-[11px] font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                      type === meta.value
+                        ? "border-accent bg-accent-glow text-accent"
+                        : "border-border bg-surface text-foreground-muted"
+                    }`}
+                  >
+                    <span className="text-lg leading-none">{meta.icon}</span>
+                    <span>{meta.filterLabel}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {type === "credit_card" ? (
+              <div className="rounded-xl border border-border bg-surface-muted p-4">
+                <p className="text-sm font-semibold text-foreground">Billing cycle</p>
+                <div className="mt-3 grid grid-cols-2 gap-3">
+                  <Input
+                    id="statement-day"
+                    label="Statement day"
+                    type="number"
+                    name="statementDay"
+                    inputMode="numeric"
+                    autoComplete="off"
+                    min={1}
+                    max={31}
+                    value={statementDay}
+                    onChange={(event) => setStatementDay(event.target.value)}
+                  />
+                  <Input
+                    id="due-day"
+                    label="Due day"
+                    type="number"
+                    name="dueDay"
+                    inputMode="numeric"
+                    autoComplete="off"
+                    min={1}
+                    max={31}
+                    value={dueDay}
+                    onChange={(event) => setDueDay(event.target.value)}
+                  />
+                </div>
+                <p className="mt-2 text-xs leading-relaxed text-foreground-muted">
+                  Days 29–31 automatically clamp to the last calendar day in shorter months.
+                </p>
+              </div>
+            ) : null}
+
+            <div>
+              <AmountInput
+                id="opening-balance"
+                label="Opening balance"
+                value={amountMinor}
+                onChange={setAmountMinor}
               />
-
-              <div>
-                <p className="font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
-                  Type
-                </p>
-                <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-5">
-                  {accountTypes.map((meta) => (
-                    <button
-                      key={meta.value}
-                      type="button"
-                      onClick={() => selectType(meta.value)}
-                      className={`flex flex-col items-center gap-1.5 rounded-xl border px-2 py-3 text-[11px] font-semibold transition-colors duration-150 ${
-                        type === meta.value
-                          ? "border-accent bg-accent-glow text-accent"
-                          : "border-border bg-surface text-foreground-muted"
-                      }`}
-                    >
-                      <span className="text-lg leading-none">{meta.icon}</span>
-                      <span>{meta.filterLabel}</span>
-                    </button>
-                  ))}
-                </div>
+              <div className="mt-3 flex justify-center gap-2">
+                {(["available", "owed"] as const).map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setDirection(value)}
+                    className={`min-h-11 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                      direction === value
+                        ? value === "owed"
+                          ? "border border-expense/40 bg-expense/10 text-expense"
+                          : "border border-accent bg-accent-glow text-accent"
+                        : "border border-border text-foreground-muted"
+                    }`}
+                  >
+                    {value === "available" ? "+ Available" : "− Owed"}
+                  </button>
+                ))}
               </div>
+              <p className="mt-2 text-center text-xs text-foreground-muted">
+                Use owed for accounts that start in debt, like a credit card.
+              </p>
+            </div>
 
-              {type === "credit_card" ? (
-                <div className="rounded-xl border border-border bg-surface-muted p-4">
-                  <p className="text-sm font-semibold text-foreground">Billing cycle</p>
-                  <div className="mt-3 grid grid-cols-2 gap-3">
-                    <Input
-                      id="statement-day"
-                      label="Statement day"
-                      type="number"
-                      min={1}
-                      max={31}
-                      value={statementDay}
-                      onChange={(event) => setStatementDay(event.target.value)}
-                    />
-                    <Input
-                      id="due-day"
-                      label="Due day"
-                      type="number"
-                      min={1}
-                      max={31}
-                      value={dueDay}
-                      onChange={(event) => setDueDay(event.target.value)}
-                    />
-                  </div>
-                  <p className="mt-2 text-xs leading-relaxed text-foreground-muted">
-                    Days 29–31 automatically clamp to the last calendar day in shorter months.
-                  </p>
-                </div>
-              ) : null}
+            {error === undefined ? null : (
+              <p role="alert" className="text-sm text-expense">
+                {error}
+              </p>
+            )}
 
-              <div>
-                <AmountInput
-                  id="opening-balance"
-                  label="Opening balance"
-                  value={amountMinor}
-                  onChange={setAmountMinor}
-                />
-                <div className="mt-3 flex justify-center gap-2">
-                  {(["available", "owed"] as const).map((value) => (
-                    <button
-                      key={value}
-                      type="button"
-                      onClick={() => setDirection(value)}
-                      className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors duration-150 ${
-                        direction === value
-                          ? value === "owed"
-                            ? "border border-expense/40 bg-expense/10 text-expense"
-                            : "border border-accent bg-accent-glow text-accent"
-                          : "border border-border text-foreground-muted"
-                      }`}
-                    >
-                      {value === "available" ? "+ Available" : "− Owed"}
-                    </button>
-                  ))}
-                </div>
-                <p className="mt-2 text-center text-xs text-foreground-muted">
-                  Use owed for accounts that start in debt, like a credit card.
-                </p>
-              </div>
-
-              {error === undefined ? null : (
-                <p role="alert" className="text-sm text-expense">
-                  {error}
-                </p>
-              )}
-
-              <div className="flex justify-end gap-2 pt-1">
-                <Button type="button" variant="secondary" onClick={closeCreate}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={createAccount.isPending}>
-                  {createAccount.isPending ? "Creating…" : "Create account"}
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
+            <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end">
+              <Button
+                className="w-full sm:w-auto"
+                type="button"
+                variant="secondary"
+                onClick={closeCreate}
+              >
+                Cancel
+              </Button>
+              <Button className="w-full sm:w-auto" type="submit" disabled={createAccount.isPending}>
+                {createAccount.isPending ? "Creating…" : "Create account"}
+              </Button>
+            </div>
+          </form>
+        </DialogSurface>
       ) : null}
 
       {configuring === undefined ? null : (
-        <div
-          role="presentation"
-          className="fixed inset-0 z-50 grid items-start justify-items-center overflow-y-auto overscroll-contain bg-black/60 p-4 backdrop-blur-sm animate-fade-in sm:items-center sm:p-6"
-          onClick={() => setConfiguring(undefined)}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="billing-cycle-title"
-            className="max-h-[calc(100dvh-2rem)] w-full max-w-sm overflow-y-auto overscroll-contain rounded-2xl border border-border bg-surface-elevated p-6 shadow-glow-strong animate-scale-up sm:p-7"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <h2 id="billing-cycle-title" className="text-lg font-bold text-foreground">
-                  Billing cycle
-                </h2>
-                <p className="mt-1 text-sm text-foreground-muted">{configuring.name}</p>
-              </div>
-              <button
-                type="button"
-                aria-label="Close billing cycle"
-                onClick={() => setConfiguring(undefined)}
-                className="text-foreground-muted hover:text-foreground"
-              >
-                ✕
-              </button>
+        <DialogSurface labelledBy="billing-cycle-title" onClose={() => setConfiguring(undefined)}>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h2 id="billing-cycle-title" className="text-lg font-bold text-foreground">
+                Billing cycle
+              </h2>
+              <p className="mt-1 text-sm text-foreground-muted">{configuring.name}</p>
             </div>
-            <form className="mt-5 space-y-4" onSubmit={saveCardConfig}>
-              <div className="grid grid-cols-2 gap-3">
-                <Input
-                  id="edit-statement-day"
-                  label="Statement day"
-                  type="number"
-                  min={1}
-                  max={31}
-                  value={statementDay}
-                  onChange={(event) => setStatementDay(event.target.value)}
-                />
-                <Input
-                  id="edit-due-day"
-                  label="Due day"
-                  type="number"
-                  min={1}
-                  max={31}
-                  value={dueDay}
-                  onChange={(event) => setDueDay(event.target.value)}
-                />
-              </div>
-              <p className="text-xs leading-relaxed text-foreground-muted">
-                This schedules future cycles. Existing generated bills are never recalculated.
-              </p>
-              {error === undefined ? null : (
-                <p role="alert" className="text-sm text-expense">
-                  {error}
-                </p>
-              )}
-              <div className="flex justify-end gap-2">
-                <Button type="button" variant="secondary" onClick={() => setConfiguring(undefined)}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={updateCardConfig.isPending}>
-                  {updateCardConfig.isPending ? "Saving…" : "Save cycle"}
-                </Button>
-              </div>
-            </form>
+            <button
+              type="button"
+              aria-label="Close billing cycle"
+              onClick={() => setConfiguring(undefined)}
+              className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-foreground-muted hover:bg-surface-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            >
+              ✕
+            </button>
           </div>
-        </div>
-      )}
-
-      {confirming === undefined ? null : (
-        <div
-          role="presentation"
-          className="fixed inset-0 z-50 grid items-start justify-items-center overflow-y-auto overscroll-contain bg-black/60 p-4 backdrop-blur-sm animate-fade-in sm:items-center sm:p-6"
-          onClick={() => setConfirming(undefined)}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="archive-account-title"
-            className="max-h-[calc(100dvh-2rem)] w-full max-w-sm overflow-y-auto overscroll-contain rounded-2xl border border-border bg-surface-elevated p-6 shadow-glow-strong animate-scale-up sm:p-7"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <h2 id="archive-account-title" className="text-lg font-bold text-foreground">
-              Archive {confirming.name}?
-            </h2>
-            <p className="mt-2 text-sm text-foreground-muted">
-              It drops out of active lists and totals, but its transaction history stays intact.
-              This can&apos;t be undone — archiving is one-way.
+          <form className="mt-5 space-y-4" onSubmit={saveCardConfig}>
+            <div className="grid grid-cols-2 gap-3">
+              <Input
+                id="edit-statement-day"
+                label="Statement day"
+                type="number"
+                name="editStatementDay"
+                inputMode="numeric"
+                autoComplete="off"
+                min={1}
+                max={31}
+                value={statementDay}
+                onChange={(event) => setStatementDay(event.target.value)}
+              />
+              <Input
+                id="edit-due-day"
+                label="Due day"
+                type="number"
+                name="editDueDay"
+                inputMode="numeric"
+                autoComplete="off"
+                min={1}
+                max={31}
+                value={dueDay}
+                onChange={(event) => setDueDay(event.target.value)}
+              />
+            </div>
+            <p className="text-xs leading-relaxed text-foreground-muted">
+              This schedules future cycles. Existing generated bills are never recalculated.
             </p>
-            <div className="mt-4 flex justify-end gap-2">
-              <Button type="button" variant="secondary" onClick={() => setConfirming(undefined)}>
+            {error === undefined ? null : (
+              <p role="alert" className="text-sm text-expense">
+                {error}
+              </p>
+            )}
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button
+                className="w-full sm:w-auto"
+                type="button"
+                variant="secondary"
+                onClick={() => setConfiguring(undefined)}
+              >
                 Cancel
               </Button>
               <Button
-                type="button"
-                onClick={() => void archive()}
-                disabled={archiveAccount.isPending}
-                className="bg-expense text-white hover:bg-expense/90"
+                className="w-full sm:w-auto"
+                type="submit"
+                disabled={updateCardConfig.isPending}
               >
-                {archiveAccount.isPending ? "Archiving…" : "Archive account"}
+                {updateCardConfig.isPending ? "Saving…" : "Save cycle"}
               </Button>
             </div>
+          </form>
+        </DialogSurface>
+      )}
+
+      {confirming === undefined ? null : (
+        <DialogSurface labelledBy="archive-account-title" onClose={() => setConfirming(undefined)}>
+          <h2 id="archive-account-title" className="text-lg font-bold text-foreground">
+            Archive {confirming.name}?
+          </h2>
+          <p className="mt-2 text-sm text-foreground-muted">
+            It drops out of active lists and totals, but its transaction history stays intact. This
+            can&apos;t be undone — archiving is one-way.
+          </p>
+          <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button
+              className="w-full sm:w-auto"
+              type="button"
+              variant="secondary"
+              onClick={() => setConfirming(undefined)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={() => void archive()}
+              disabled={archiveAccount.isPending}
+              className="w-full bg-expense text-white hover:bg-expense/90 sm:w-auto"
+            >
+              {archiveAccount.isPending ? "Archiving…" : "Archive account"}
+            </Button>
           </div>
-        </div>
+        </DialogSurface>
       )}
 
       {detailAccount === undefined ? null : (

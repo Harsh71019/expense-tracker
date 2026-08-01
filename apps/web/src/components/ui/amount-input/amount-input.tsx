@@ -90,13 +90,13 @@ export function AmountInput({
       </div>
 
       {/* Fast Preset adjustment buttons */}
-      <div className="flex items-center justify-center gap-1.5 pt-0.5">
+      <div className="grid grid-cols-3 gap-1.5 pt-0.5">
         {[100, 500, 1000].map((preset) => (
           <button
             key={preset}
             type="button"
             onClick={() => addPreset(preset)}
-            className="rounded-md border border-border/60 bg-surface-muted/60 px-2 py-1 font-mono text-xs font-semibold text-foreground-muted transition-colors hover:border-accent/40 hover:bg-accent-glow hover:text-accent"
+            className="min-h-11 rounded-lg border border-border/60 bg-surface-muted/60 px-2 py-2 font-mono text-xs font-semibold text-foreground-muted transition-colors hover:border-accent/40 hover:bg-accent-glow hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
             +₹{preset}
           </button>
@@ -105,7 +105,7 @@ export function AmountInput({
           <button
             type="button"
             onClick={clearAmount}
-            className="rounded-md border border-border/40 bg-surface-muted/30 px-2 py-1 font-mono text-xs font-medium text-foreground-muted/70 hover:border-expense/40 hover:text-expense transition-colors"
+            className="col-span-3 min-h-11 rounded-lg border border-border/40 bg-surface-muted/30 px-2 py-2 font-mono text-xs font-medium text-foreground-muted/70 transition-colors hover:border-expense/40 hover:text-expense focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
             Clear
           </button>

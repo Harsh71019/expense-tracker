@@ -21,6 +21,6 @@ describe("ThemeToggle", () => {
   it("uses an icon-sized accessible control in compact mode", () => {
     render(<ThemeToggle current="light" compact />);
 
-    expect(screen.getByRole("button", { name: "Switch to dark" })).toHaveClass("h-10", "w-10");
+    expect(screen.getByRole("button", { name: "Switch to dark" })).toHaveClass("h-11", "w-11");
   });
 });

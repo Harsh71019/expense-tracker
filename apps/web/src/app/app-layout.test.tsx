@@ -20,6 +20,9 @@ vi.mock("@/components/app-nav", () => ({
   AppNav: () => <nav>Navigation</nav>,
   mainNavItems: []
 }));
+vi.mock("@/components/mobile-bottom-nav", () => ({
+  MobileBottomNav: () => <nav>Mobile navigation</nav>
+}));
 vi.mock("@/components/ui/theme-toggle", () => ({ ThemeToggle: () => <button>Theme</button> }));
 vi.mock("@/features/auth", () => ({ SignOutButton: () => <button>Sign out</button> }));
 
@@ -39,6 +42,8 @@ describe("AppLayout", () => {
     expect(screen.getByText("Dashboard content")).toBeVisible();
     expect(screen.getByText("harsh@example.com")).toBeVisible();
     expect(screen.getAllByText("Navigation")).toHaveLength(1);
+    expect(screen.getByText("Mobile navigation")).toBeVisible();
+    expect(screen.getByRole("main")).toHaveAttribute("id", "main-content");
   });
 
   it("redirects when the API session is absent", async () => {

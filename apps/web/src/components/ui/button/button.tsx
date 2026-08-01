@@ -33,7 +33,7 @@ export function Button({
   ...props
 }: ButtonProps): ReactNode {
   const classes = [
-    "rounded-lg px-4 py-2.5 text-sm font-semibold tracking-tight transition-colors duration-150",
+    "min-h-11 touch-manipulation rounded-lg px-4 py-2.5 text-sm font-semibold tracking-tight transition-colors duration-150",
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface",
     "disabled:pointer-events-none disabled:opacity-50",
     size === "md" ? "" : sizeClasses[size],

@@ -10,12 +10,12 @@ export default async function AuthLayout({
   const theme = await getStoredTheme();
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-surface lg:grid lg:grid-cols-2">
-      <div className="absolute top-5 right-5 z-20">
+    <div className="relative min-h-dvh overflow-hidden bg-surface lg:grid lg:grid-cols-2">
+      <div className="absolute top-[max(1.25rem,env(safe-area-inset-top,0px))] right-[max(1.25rem,env(safe-area-inset-right,0px))] z-20">
         <ThemeToggle current={theme} compact />
       </div>
 
-      <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-5 py-12 sm:px-10 lg:px-16 xl:px-24 animate-fade-in">
+      <main className="auth-safe-area relative flex min-h-dvh items-center justify-center overflow-hidden animate-fade-in">
         <span
           aria-hidden="true"
           className="pointer-events-none absolute -top-32 -right-20 h-[480px] w-[480px] animate-float-glow rounded-full bg-accent-glow blur-3xl"

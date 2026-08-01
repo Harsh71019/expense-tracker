@@ -83,12 +83,12 @@ export function LoginForm(): ReactNode {
         autoComplete="current-password"
         onChange={setPassword}
       />
-      <label className="flex items-center gap-2 text-sm text-foreground-muted select-none">
+      <label className="flex min-h-11 items-center gap-3 rounded-lg text-sm text-foreground-muted select-none">
         <input
           type="checkbox"
           checked={rememberMe}
           onChange={(event) => setRememberMe(event.target.checked)}
-          className="h-3.5 w-3.5 accent-accent"
+          className="h-5 w-5 accent-accent"
         />
         Keep me signed in
       </label>

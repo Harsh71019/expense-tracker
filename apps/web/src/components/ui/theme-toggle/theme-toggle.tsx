@@ -15,7 +15,7 @@ export function ThemeToggle({
         type="submit"
         aria-label={compact ? (isDark ? "Switch to light" : "Switch to dark") : undefined}
         title={compact ? (isDark ? "Switch to light" : "Switch to dark") : undefined}
-        className={`flex w-full items-center gap-2 rounded-lg border border-border bg-surface-elevated px-3 py-2 text-[11px] font-bold text-foreground-muted transition-colors duration-150 hover:border-accent/40 hover:text-foreground ${compact ? "h-10 w-10 justify-center px-0" : ""}`}
+        className={`flex min-h-11 w-full items-center gap-2 rounded-lg border border-border bg-surface-elevated px-3 py-2 text-[11px] font-bold text-foreground-muted transition-colors duration-150 hover:border-accent/40 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${compact ? "h-11 w-11 justify-center px-0" : ""}`}
       >
         <span className={compact ? "text-base" : "text-sm"} aria-hidden="true">
           {isDark ? "☼" : "☾"}

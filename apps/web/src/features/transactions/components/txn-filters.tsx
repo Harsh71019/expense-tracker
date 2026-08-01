@@ -21,7 +21,7 @@ function parseDate(value: string): Date | undefined {
 }
 
 const selectClasses =
-  "rounded-lg border border-border bg-surface-muted px-3 py-2.5 text-sm font-medium text-foreground outline-none transition-colors duration-150 focus:border-accent focus:ring-2 focus:ring-accent/30";
+  "min-h-11 w-full rounded-lg border border-border bg-surface-muted px-3 py-2.5 text-base font-medium text-foreground outline-none transition-colors duration-150 focus:border-accent focus:ring-2 focus:ring-accent/30 sm:w-auto sm:text-sm";
 
 export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuery }>): ReactNode {
   const router = useRouter();
@@ -89,23 +89,25 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
           : "border-border bg-surface-elevated"
       }`}
     >
-      <div className="flex min-w-52 flex-1 items-center gap-2 rounded-lg border border-border bg-surface-muted px-3">
+      <div className="flex min-w-0 flex-1 basis-full items-center gap-2 rounded-lg border border-border bg-surface-muted px-3 sm:min-w-52 sm:basis-auto">
         <span className="text-foreground-muted" aria-hidden="true">
           ⌕
         </span>
         <input
           value={query}
+          name="transactionSearch"
+          autoComplete="off"
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Search description…"
           aria-label="Search description"
-          className="w-full bg-transparent py-2.5 text-sm text-foreground outline-none placeholder:text-foreground-muted/60"
+          className="min-h-11 w-full bg-transparent py-2.5 text-base text-foreground outline-none placeholder:text-foreground-muted/60 sm:text-sm"
         />
         {query !== "" && (
           <button
             type="button"
             onClick={() => setQuery("")}
             aria-label="Clear search input"
-            className="text-foreground-muted hover:text-foreground text-xs p-1"
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-lg text-xs text-foreground-muted hover:bg-surface-elevated hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
             ✕
           </button>
@@ -113,6 +115,8 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
       </div>
       <select
         aria-label="Filter by account"
+        name="transactionAccount"
+        autoComplete="off"
         className={selectClasses}
         value={filters.accountId ?? ""}
         onChange={(event) =>
@@ -132,6 +136,8 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
       </select>
       <select
         aria-label="Filter by category"
+        name="transactionCategory"
+        autoComplete="off"
         className={selectClasses}
         value={filters.categoryId ?? ""}
         onChange={(event) =>
@@ -149,23 +155,27 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
           </option>
         ))}
       </select>
-      <div className="flex items-center gap-1.5 rounded-lg border border-border bg-surface-muted px-2.5">
+      <div className="grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1.5 rounded-lg border border-border bg-surface-muted px-2.5 sm:flex sm:w-auto">
         <input
           type="date"
+          name="transactionFrom"
+          autoComplete="off"
           aria-label="From date"
           value={toDateInputValue(filters.from)}
           onChange={(event) => navigate({ from: parseDate(event.target.value) })}
-          className="bg-transparent py-2.5 font-mono text-xs text-foreground outline-none"
+          className="min-h-11 min-w-0 bg-transparent py-2.5 font-mono text-base text-foreground outline-none sm:text-xs"
         />
         <span className="text-xs text-foreground-muted" aria-hidden="true">
           →
         </span>
         <input
           type="date"
+          name="transactionTo"
+          autoComplete="off"
           aria-label="To date"
           value={toDateInputValue(filters.to)}
           onChange={(event) => navigate({ to: parseDate(event.target.value) })}
-          className="bg-transparent py-2.5 font-mono text-xs text-foreground outline-none"
+          className="min-h-11 min-w-0 bg-transparent py-2.5 font-mono text-base text-foreground outline-none sm:text-xs"
         />
       </div>
       {isFiltered ? (

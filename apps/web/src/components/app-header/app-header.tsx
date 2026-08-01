@@ -6,7 +6,6 @@ import { usePathname } from "next/navigation";
 import { useState, useEffect, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { CreateTxnSheet } from "@/features/transactions/components/create-txn-sheet";
 import { usePrivacy } from "@/lib/privacy/privacy-context";
 import type { Theme } from "@/lib/theme";
@@ -77,22 +76,26 @@ export function AppHeader({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  const routeInfo = routeLabels[pathname] ?? {
-    label: pathname.slice(1).charAt(0).toUpperCase() + pathname.slice(2),
-    icon: "❖"
-  };
+  const parentRoute = Object.keys(routeLabels).find(
+    (route) => route !== "/" && pathname.startsWith(`${route}/`)
+  );
+  const routeInfo = routeLabels[pathname] ??
+    (parentRoute === undefined ? undefined : routeLabels[parentRoute]) ?? {
+      label: pathname.slice(1).charAt(0).toUpperCase() + pathname.slice(2),
+      icon: "❖"
+    };
   const PrivacyIcon = privacyMode ? EyeOff : Eye;
 
   return (
     <>
-      <header className="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-border/60 bg-surface/85 px-4 backdrop-blur-md transition-colors sm:px-6">
+      <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between gap-2 border-b border-border/60 bg-surface/90 px-3 backdrop-blur-md transition-colors sm:px-6">
         {/* Left: Breadcrumbs & Current Page Indicator */}
-        <div className="flex items-center gap-2">
-          <MobileMenu email={email} />
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          <MobileMenu email={email} theme={theme} />
 
           <Link
             href="/"
-            className="flex items-center gap-1.5 text-xs font-medium text-foreground-muted transition-colors hover:text-foreground"
+            className="hidden items-center gap-1.5 text-xs font-medium text-foreground-muted transition-colors hover:text-foreground sm:flex"
           >
             <span className="font-mono text-sm text-accent">₹</span>
             <span className="hidden sm:inline font-mono text-[11px] uppercase tracking-wider">
@@ -100,15 +103,15 @@ export function AppHeader({
             </span>
           </Link>
 
-          <span className="text-foreground-muted/40 font-mono text-xs">/</span>
+          <span className="hidden font-mono text-xs text-foreground-muted/40 sm:inline">/</span>
 
-          <div className="flex items-center gap-1.5 rounded-lg border border-border/50 bg-surface-muted/60 px-2.5 py-1 text-xs font-semibold text-foreground shadow-2xs">
+          <div className="flex min-w-0 items-center gap-1.5 rounded-lg border border-border/50 bg-surface-muted/60 px-2.5 py-1.5 text-xs font-semibold text-foreground shadow-2xs">
             {routeInfo.icon === undefined ? null : (
               <span className="text-accent text-sm" aria-hidden="true">
                 {routeInfo.icon}
               </span>
             )}
-            <span>{routeInfo.label}</span>
+            <span className="truncate">{routeInfo.label}</span>
           </div>
 
           {currentDate !== "" && (
@@ -121,14 +124,14 @@ export function AppHeader({
         </div>
 
         {/* Right: Actions, Privacy Mode Toggle, Quick Add & Shortcuts */}
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           {/* Privacy Toggle */}
           <button
             type="button"
             onClick={togglePrivacyMode}
             title={privacyMode ? "Disable privacy mode" : "Enable privacy mode (hide balances)"}
             aria-label={privacyMode ? "Disable privacy mode" : "Enable privacy mode"}
-            className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-all duration-150 active:scale-95 ${
+            className={`flex h-11 w-11 touch-manipulation items-center justify-center gap-1.5 rounded-xl border text-xs font-medium transition-[color,background-color,border-color,transform] duration-150 active:scale-95 sm:w-auto sm:px-3 ${
               privacyMode
                 ? "border-accent/40 bg-accent-glow text-accent font-semibold shadow-xs"
                 : "border-border/60 bg-surface-muted/40 text-foreground-muted hover:border-border hover:text-foreground"
@@ -141,7 +144,7 @@ export function AppHeader({
           {/* Quick Add Entry Button */}
           <Button
             onClick={() => setShowCreateSheet(true)}
-            className="flex items-center gap-1.5 shadow-xs transition-transform active:scale-[0.98]"
+            className="hidden items-center gap-1.5 shadow-xs transition-transform active:scale-[0.98] sm:inline-flex"
             title="Post a new transaction (⌘N)"
           >
             <span className="text-base font-bold leading-none">+</span>
@@ -150,11 +153,6 @@ export function AppHeader({
               ⌘N
             </kbd>
           </Button>
-
-          {/* Mobile Theme Toggle */}
-          <div className="md:hidden">
-            <ThemeToggle current={theme} />
-          </div>
         </div>
       </header>
 

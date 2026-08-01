@@ -12,3 +12,10 @@ test-results/
 .design-sync
 .ds-sync
 ds-bundle
+
+# server-side pre-deploy backup tooling (deliberately untracked -- see
+# backup.sh's own header comment for why)
+backup.sh
+restore.sh
+backups/
+*.dump

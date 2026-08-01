@@ -38,6 +38,7 @@ export function TxnRow({ transaction, category, onOpen }: TxnRowProps): ReactNod
     <button
       type="button"
       onClick={() => onOpen(transaction)}
+      aria-label={`${transaction.description}, ${category?.name ?? "Uncategorized"}, ${dateFormatter.format(transaction.occurredAt)}`}
       className={`${TXN_ROW_GRID} w-full px-4 py-3.5 text-left transition-colors duration-150 hover:bg-surface-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent sm:px-5 ${
         isReversed ? "opacity-55" : ""
       }`}

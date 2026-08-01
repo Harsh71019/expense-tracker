@@ -65,13 +65,17 @@ export function EditDisplayNameForm({ initialProfile }: EditDisplayNameFormProps
             maxLength={100}
           />
           {error === null ? null : (
-            <span className="mt-1.5 inline-block rounded-lg border border-expense/25 bg-expense/10 px-2.5 py-0.5 font-mono text-[10px] text-expense">
+            <span
+              role="alert"
+              aria-live="polite"
+              className="mt-1.5 inline-block rounded-lg border border-expense/25 bg-expense/10 px-2.5 py-0.5 font-mono text-[10px] text-expense"
+            >
               {error}
             </span>
           )}
         </div>
         <Button type="submit" disabled={update.isPending || unchanged || displayName.trim() === ""}>
-          {update.isPending ? "Saving..." : "Save"}
+          {update.isPending ? "Saving…" : "Save"}
         </Button>
       </form>
     </section>

@@ -27,8 +27,12 @@ export function GoalProgressRing({
     <div
       className="relative grid shrink-0 place-items-center"
       style={{ width: size, height: size }}
+      role="progressbar"
       aria-label={`${geometry.percentage}% funded`}
-      role="img"
+      aria-valuenow={geometry.percentage}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuetext={`${geometry.percentage}% funded`}
     >
       <svg className="-rotate-90" width={size} height={size} aria-hidden="true">
         <circle

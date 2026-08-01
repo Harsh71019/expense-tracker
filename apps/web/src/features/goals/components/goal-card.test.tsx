@@ -38,7 +38,7 @@ describe("GoalCard", () => {
       "href",
       `/goals/${goal.id}`
     );
-    expect(screen.getByRole("img", { name: "25% funded" })).toBeVisible();
+    expect(screen.getByRole("progressbar", { name: "25% funded" })).toBeVisible();
     expect(screen.getByText("Savings")).toBeVisible();
     expect(screen.getByRole("button", { name: "Move Emergency fund up" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Move Emergency fund down" })).toBeEnabled();

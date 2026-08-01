@@ -212,4 +212,18 @@ describe("ReviewStep", () => {
     await user.click(screen.getByRole("button", { name: "Load more" }));
     expect(mocks.fetchNextPage).toHaveBeenCalled();
   });
+
+  it("renders staged rows as mobile cards and restores the desktop row at md", () => {
+    mocks.rows = [row()];
+    render(<ReviewStep batchId="b1" categories={[groceries]} onCountsChange={vi.fn()} />, {
+      wrapper
+    });
+
+    expect(screen.getByLabelText("Include row 1")).toHaveClass("h-5", "w-5");
+    expect(screen.getByLabelText("Category for row 1")).toHaveClass("min-h-11", "text-base");
+    expect(screen.getByText("SWIGGY*ORDER 4821").closest(".grid")).toHaveClass(
+      "grid-cols-[2.75rem_minmax(0,1fr)_auto]",
+      "md:flex"
+    );
+  });
 });

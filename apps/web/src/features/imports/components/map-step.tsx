@@ -16,7 +16,7 @@ type MapStepProps = Readonly<{
 export function MapStep({ accountId, accountName, onChange }: MapStepProps): ReactNode {
   const saved = useSavedImportMapping(accountId).data?.mapping ?? undefined;
   return (
-    <div className="mt-5.5 animate-fade-in rounded-[18px] border border-border bg-surface-elevated p-6.5">
+    <div className="mt-5.5 animate-fade-in rounded-[18px] border border-border bg-surface-elevated p-4 sm:p-6.5">
       <ColumnMappingForm
         {...(saved === undefined ? {} : { initialMapping: saved })}
         savedMappingLabel={`Using your last mapping for ${accountName}.`}

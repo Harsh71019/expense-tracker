@@ -52,7 +52,7 @@ export function StatementUploadStep({ billId }: Readonly<{ billId: string }>): R
   }
 
   return (
-    <section className="rounded-2xl border border-border bg-surface-elevated p-6">
+    <section className="rounded-2xl border border-border bg-surface-elevated p-4 sm:p-6">
       <h2 className="text-lg font-bold text-foreground">Upload issuer statement</h2>
       <p className="mt-1 text-sm text-foreground-muted">
         CSV only · up to 5 MB · the backend verifies every row against this bill cycle.
@@ -60,10 +60,11 @@ export function StatementUploadStep({ billId }: Readonly<{ billId: string }>): R
       <form className="mt-5" onSubmit={submit}>
         <label
           htmlFor="bill-statement-file"
-          className="flex cursor-pointer flex-col items-center rounded-xl border border-dashed border-border bg-surface-muted p-7 text-center hover:border-accent/60"
+          className="flex cursor-pointer flex-col items-center rounded-xl border border-dashed border-border bg-surface-muted p-5 text-center hover:border-accent/60 focus-within:ring-2 focus-within:ring-accent sm:p-7"
         >
           <input
             id="bill-statement-file"
+            name="billStatementFile"
             className="sr-only"
             type="file"
             accept=".csv,text/csv"
@@ -89,8 +90,9 @@ export function StatementUploadStep({ billId }: Readonly<{ billId: string }>): R
             {error}
           </p>
         )}
-        <div className="mt-5 flex justify-end">
+        <div className="mt-5 flex justify-stretch sm:justify-end">
           <Button
+            className="w-full sm:w-auto"
             type="submit"
             disabled={file === undefined || mapping === undefined || upload.isPending}
           >

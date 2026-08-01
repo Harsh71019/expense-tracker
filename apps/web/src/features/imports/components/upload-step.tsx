@@ -67,7 +67,7 @@ export function UploadStep({
   }
 
   return (
-    <div className="mt-5.5 animate-fade-in rounded-[18px] border border-border bg-surface-elevated p-6.5">
+    <div className="mt-5.5 animate-fade-in rounded-[18px] border border-border bg-surface-elevated p-4 sm:p-6.5">
       <label
         htmlFor="import-account"
         className="mt-0 mb-2 block text-xs font-semibold text-foreground"
@@ -76,9 +76,11 @@ export function UploadStep({
       </label>
       <select
         id="import-account"
+        name="accountId"
+        autoComplete="off"
         value={accountId}
         onChange={(event) => onAccountChange(event.target.value)}
-        className="w-full rounded-[11px] border border-border bg-surface-muted px-3.5 py-3 text-[15px] font-medium text-foreground transition-colors duration-150 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
+        className="min-h-11 w-full rounded-[11px] border border-border bg-surface-muted px-3.5 py-3 text-base font-medium text-foreground transition-colors duration-150 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 sm:text-[15px]"
       >
         <option value="">Select an account</option>
         {accounts.map((account) => (
@@ -96,7 +98,7 @@ export function UploadStep({
       </label>
       <label
         htmlFor="import-file"
-        className={`flex cursor-pointer flex-col items-center rounded-[14px] border-[1.5px] border-dashed p-10 text-center transition-colors ${
+        className={`flex cursor-pointer flex-col items-center rounded-[14px] border-[1.5px] border-dashed p-6 text-center transition-colors focus-within:ring-2 focus-within:ring-accent sm:p-10 ${
           isDragging ? "border-accent bg-accent-glow" : "border-border bg-surface-muted"
         }`}
         onDragEnter={() => setIsDragging(true)}
@@ -106,6 +108,7 @@ export function UploadStep({
       >
         <input
           id="import-file"
+          name="statementFile"
           type="file"
           accept=".csv"
           onChange={onInputChange}
@@ -137,7 +140,7 @@ export function UploadStep({
             type="button"
             onClick={() => onFileChange(undefined)}
             aria-label="Remove file"
-            className="grid h-7.5 w-7.5 shrink-0 place-items-center rounded-lg border border-border bg-surface text-sm text-foreground-muted hover:text-foreground"
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-border bg-surface text-sm text-foreground-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
             ✕
           </button>
@@ -145,7 +148,10 @@ export function UploadStep({
       )}
 
       {error === undefined ? null : (
-        <div className="mt-4.5 flex gap-3 rounded-xl border border-expense/30 bg-expense/10 px-4.5 py-3.5">
+        <div
+          role="alert"
+          className="mt-4.5 flex gap-3 rounded-xl border border-expense/30 bg-expense/10 px-4.5 py-3.5"
+        >
           <span className="shrink-0 text-[17px] text-expense" aria-hidden="true">
             ⚠
           </span>

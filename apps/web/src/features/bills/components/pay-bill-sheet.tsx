@@ -6,6 +6,7 @@ import type { FormEvent, ReactNode } from "react";
 
 import { AmountInput } from "@/components/ui/amount-input";
 import { Button } from "@/components/ui/button";
+import { DialogSurface } from "@/components/ui/dialog";
 import { Money, SignedMoney } from "@/components/ui/money";
 import { toast } from "@/lib/toast";
 
@@ -13,7 +14,7 @@ import { usePayBill } from "../hooks/use-pay-bill";
 import { eligiblePaymentAccounts } from "../model/bill-presentation";
 
 const selectClasses =
-  "w-full rounded-lg border border-border bg-surface-muted px-3.5 py-2.5 text-sm font-medium text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30";
+  "min-h-11 w-full rounded-lg border border-border bg-surface-muted px-3.5 py-2.5 text-base font-medium text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 sm:text-sm";
 
 export function PayBillSheet({
   detail,
@@ -56,101 +57,97 @@ export function PayBillSheet({
   }
 
   return (
-    <div
-      role="presentation"
-      className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-sm"
-      onClick={onClose}
-    >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="pay-bill-title"
-        className="h-dvh w-full max-w-md overflow-y-auto overscroll-contain border-l border-border bg-surface-elevated p-7"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h2 id="pay-bill-title" className="text-xl font-bold text-foreground">
-              Pay credit card bill
-            </h2>
-            <p className="mt-1 text-sm text-foreground-muted">Destination: {detail.account.name}</p>
-          </div>
-          <button
-            type="button"
-            aria-label="Close payment"
-            onClick={onClose}
-            className="text-foreground-muted hover:text-foreground"
-          >
-            ✕
-          </button>
+    <DialogSurface variant="drawer" labelledBy="pay-bill-title" onClose={onClose}>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h2 id="pay-bill-title" className="text-xl font-bold text-foreground">
+            Pay credit card bill
+          </h2>
+          <p className="mt-1 text-sm text-foreground-muted">Destination: {detail.account.name}</p>
         </div>
-
-        <form className="mt-7 space-y-5" onSubmit={submit}>
-          <AmountInput
-            id="bill-payment-amount"
-            label="Payment amount"
-            value={amountMinor}
-            onChange={setAmountMinor}
-            {...(error === undefined ? {} : { error })}
-          />
-
-          <label className="block text-xs font-semibold text-foreground">
-            Pay from
-            <select
-              className={`${selectClasses} mt-2`}
-              value={sourceId}
-              onChange={(event) => setSourceId(event.target.value)}
-            >
-              <option value="">Choose an account</option>
-              {sources.map((account) => (
-                <option key={account.id} value={account.id}>
-                  {account.name}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          {source === undefined ? (
-            <p className="rounded-xl border border-border bg-surface-muted p-3 text-sm text-foreground-muted">
-              Add an active bank, cash, or wallet account before paying this bill.
-            </p>
-          ) : (
-            <div className="rounded-xl border border-border bg-surface-muted p-4 text-sm">
-              <p className="text-foreground-muted">After this transfer</p>
-              <div className="mt-2 flex items-center justify-between">
-                <span>{source.name}</span>
-                <SignedMoney minor={source.balanceMinor - amountMinor} size="sm" />
-              </div>
-              <div className="mt-2 flex items-center justify-between">
-                <span>Bill remaining</span>
-                <Money minor={Math.max(0, detail.bill.remainingMinor - amountMinor)} size="sm" />
-              </div>
-            </div>
-          )}
-
-          <p className="text-xs leading-relaxed text-foreground-muted">
-            This creates an append-only transfer. Any correction happens through the existing
-            reversal flow.
-          </p>
-
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="secondary" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={
-                pay.isPending ||
-                source === undefined ||
-                amountMinor <= 0 ||
-                amountMinor > detail.bill.remainingMinor
-              }
-            >
-              {pay.isPending ? "Paying…" : "Confirm payment"}
-            </Button>
-          </div>
-        </form>
+        <button
+          type="button"
+          aria-label="Close payment"
+          onClick={onClose}
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-border bg-surface-muted text-foreground-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        >
+          ✕
+        </button>
       </div>
-    </div>
+
+      <form className="mt-7 space-y-5" onSubmit={submit}>
+        <AmountInput
+          id="bill-payment-amount"
+          label="Payment amount"
+          value={amountMinor}
+          onChange={setAmountMinor}
+          {...(error === undefined ? {} : { error })}
+        />
+
+        <label className="block text-xs font-semibold text-foreground">
+          Pay from
+          <select
+            name="fromAccountId"
+            autoComplete="off"
+            className={`${selectClasses} mt-2`}
+            value={sourceId}
+            onChange={(event) => setSourceId(event.target.value)}
+          >
+            <option value="">Choose an account</option>
+            {sources.map((account) => (
+              <option key={account.id} value={account.id}>
+                {account.name}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        {source === undefined ? (
+          <p className="rounded-xl border border-border bg-surface-muted p-3 text-sm text-foreground-muted">
+            Add an active bank, cash, or wallet account before paying this bill.
+          </p>
+        ) : (
+          <div className="rounded-xl border border-border bg-surface-muted p-4 text-sm">
+            <p className="text-foreground-muted">After this transfer</p>
+            <div className="mt-2 flex items-center justify-between">
+              <span>{source.name}</span>
+              <SignedMoney minor={source.balanceMinor - amountMinor} size="sm" />
+            </div>
+            <div className="mt-2 flex items-center justify-between">
+              <span>Bill remaining</span>
+              <Money minor={Math.max(0, detail.bill.remainingMinor - amountMinor)} size="sm" />
+            </div>
+          </div>
+        )}
+
+        <p className="text-xs leading-relaxed text-foreground-muted">
+          This creates an append-only transfer. Any correction happens through the existing reversal
+          flow.
+        </p>
+
+        <div className="safe-area-bottom sticky bottom-0 flex gap-2 border-t border-border bg-surface-elevated/95 pt-4 backdrop-blur sm:justify-end">
+          <Button
+            className="flex-1 sm:flex-none"
+            type="button"
+            variant="secondary"
+            onClick={onClose}
+          >
+            Cancel
+          </Button>
+          <Button
+            className="flex-1 sm:flex-none"
+            type="submit"
+            disabled={
+              pay.isPending ||
+              source === undefined ||
+              amountMinor <= 0 ||
+              amountMinor > detail.bill.remainingMinor
+            }
+          >
+            {pay.isPending ? "Paying…" : "Confirm payment"}
+          </Button>
+        </div>
+      </form>
+    </DialogSurface>
   );
 }

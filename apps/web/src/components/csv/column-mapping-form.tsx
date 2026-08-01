@@ -10,9 +10,9 @@ import { useEffect, useEffectEvent, useState } from "react";
 import type { ReactNode } from "react";
 
 const selectClasses =
-  "w-full rounded-[11px] border border-border bg-surface-muted px-3.5 py-3 text-[15px] font-medium text-foreground transition-colors duration-150 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30";
+  "min-h-11 w-full rounded-[11px] border border-border bg-surface-muted px-3.5 py-3 text-base font-medium text-foreground transition-colors duration-150 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 sm:text-[15px]";
 const inputClasses =
-  "w-full rounded-[11px] border border-border bg-surface-muted px-3.5 py-3 font-mono text-[15px] text-foreground transition-colors duration-150 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30";
+  "min-h-11 w-full rounded-[11px] border border-border bg-surface-muted px-3.5 py-3 font-mono text-base text-foreground transition-colors duration-150 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 sm:text-[15px]";
 const labelClasses = "mb-2 mt-5 block text-xs font-semibold text-foreground";
 
 type MappingDraft = Readonly<{
@@ -108,7 +108,7 @@ export function ColumnMappingForm({
             key={name}
             type="button"
             onClick={() => update(fromMapping(preset))}
-            className="rounded-[9px] border border-border bg-accent-glow px-4 py-2 text-[13px] font-semibold text-accent"
+            className="min-h-11 rounded-[9px] border border-border bg-accent-glow px-4 py-2 text-[13px] font-semibold text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
             {name.toUpperCase()}
           </button>
@@ -128,9 +128,11 @@ export function ColumnMappingForm({
           </label>
           <input
             id="map-date"
+            name="dateColumn"
+            autoComplete="off"
             value={effectiveDraft.date}
             onChange={(event) => update({ ...effectiveDraft, date: event.target.value })}
-            placeholder="e.g. Date"
+            placeholder="Date…"
             className={inputClasses}
           />
         </div>
@@ -140,6 +142,8 @@ export function ColumnMappingForm({
           </label>
           <select
             id="map-date-format"
+            name="dateFormat"
+            autoComplete="off"
             value={effectiveDraft.dateFormat}
             onChange={(event) => {
               const value = DateFormatSchema.safeParse(event.target.value);
@@ -164,14 +168,16 @@ export function ColumnMappingForm({
       </label>
       <input
         id="map-description"
+        name="descriptionColumn"
+        autoComplete="off"
         value={effectiveDraft.description}
         onChange={(event) => update({ ...effectiveDraft, description: event.target.value })}
-        placeholder="e.g. Narration"
+        placeholder="Narration…"
         className={inputClasses}
       />
 
       <span className={labelClasses}>How are amounts stored?</span>
-      <div className="flex gap-2.5">
+      <div className="flex flex-col gap-2.5 sm:flex-row">
         {(
           [
             {
@@ -193,7 +199,7 @@ export function ColumnMappingForm({
               type="button"
               aria-pressed={selected}
               onClick={() => update({ ...effectiveDraft, amountConvention: option.key })}
-              className={`flex-1 rounded-xl border px-4 py-3.5 text-left transition-colors duration-150 ${
+              className={`min-h-11 flex-1 rounded-xl border px-4 py-3.5 text-left transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                 selected ? "border-accent bg-accent-glow" : "border-border bg-surface-muted"
               }`}
             >
@@ -219,9 +225,11 @@ export function ColumnMappingForm({
           </label>
           <input
             id="map-amount"
+            name="amountColumn"
+            autoComplete="off"
             value={effectiveDraft.amount}
             onChange={(event) => update({ ...effectiveDraft, amount: event.target.value })}
-            placeholder="e.g. Amount"
+            placeholder="Amount…"
             className={inputClasses}
           />
         </div>
@@ -233,9 +241,11 @@ export function ColumnMappingForm({
             </label>
             <input
               id="map-debit"
+              name="debitColumn"
+              autoComplete="off"
               value={effectiveDraft.debit}
               onChange={(event) => update({ ...effectiveDraft, debit: event.target.value })}
-              placeholder="e.g. Withdrawal Amt."
+              placeholder="Withdrawal amount…"
               className={inputClasses}
             />
           </div>
@@ -245,9 +255,11 @@ export function ColumnMappingForm({
             </label>
             <input
               id="map-credit"
+              name="creditColumn"
+              autoComplete="off"
               value={effectiveDraft.credit}
               onChange={(event) => update({ ...effectiveDraft, credit: event.target.value })}
-              placeholder="e.g. Deposit Amt."
+              placeholder="Deposit amount…"
               className={inputClasses}
             />
           </div>

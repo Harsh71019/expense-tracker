@@ -72,4 +72,11 @@ describe("MapStep", () => {
     await user.type(screen.getByLabelText("Date column"), "Date");
     expect(screen.queryByText("Using your last mapping for HDFC Savings.")).not.toBeInTheDocument();
   });
+
+  it("uses phone-safe mapping controls", () => {
+    render(<MapStep accountId="a1" accountName="HDFC Savings" onChange={vi.fn()} />);
+
+    expect(screen.getByLabelText("Date column")).toHaveClass("min-h-11", "text-base");
+    expect(screen.getByRole("button", { name: /One signed column/ })).toHaveClass("min-h-11");
+  });
 });

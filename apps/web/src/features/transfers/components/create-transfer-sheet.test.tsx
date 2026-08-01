@@ -96,4 +96,20 @@ describe("CreateTransferSheet", () => {
     expect(onClose).toHaveBeenCalled();
     expect(mocks.mutateAsync).not.toHaveBeenCalled();
   });
+
+  it("uses the shared drawer behavior and phone-safe controls", () => {
+    render(<CreateTransferSheet onClose={vi.fn()} />);
+
+    expect(screen.getByRole("dialog", { name: "New transfer" })).toHaveClass("h-dvh");
+    expect(screen.getByLabelText("From account")).toHaveClass(
+      "min-h-11",
+      "text-base",
+      "sm:text-sm"
+    );
+    expect(screen.getByRole("button", { name: "Swap from and to accounts" })).toHaveClass(
+      "h-11",
+      "w-11"
+    );
+    expect(screen.getByRole("button", { name: "Close transfer form" })).toHaveClass("h-11", "w-11");
+  });
 });

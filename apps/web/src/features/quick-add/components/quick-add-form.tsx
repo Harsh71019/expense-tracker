@@ -97,7 +97,7 @@ export function QuickAddForm(): ReactNode {
   }
 
   const inputClasses =
-    "w-full rounded-lg border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground transition-colors duration-150 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30";
+    "min-h-11 w-full rounded-lg border border-border bg-surface px-3.5 py-2.5 text-base text-foreground transition-colors duration-150 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 sm:text-sm";
   return (
     <section>
       <div className="mb-6">
@@ -110,7 +110,7 @@ export function QuickAddForm(): ReactNode {
       </div>
       <form
         onSubmit={form.handleSubmit(submit)}
-        className="space-y-6 rounded-xl border border-border bg-surface-elevated p-6"
+        className="space-y-6 rounded-xl border border-border bg-surface-elevated p-4 sm:p-6"
       >
         <div
           className="relative grid grid-cols-2 rounded-lg bg-surface-muted p-1 border border-border/50"
@@ -128,7 +128,7 @@ export function QuickAddForm(): ReactNode {
               key={value}
               type="button"
               aria-pressed={type === value}
-              className={`relative z-10 flex py-2 text-xs font-semibold items-center justify-center transition-colors rounded-lg focus:outline-none ${
+              className={`relative z-10 flex min-h-11 items-center justify-center rounded-lg py-2 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                 type === value ? "text-accent" : "text-foreground-muted hover:text-foreground"
               }`}
               onClick={() => form.setValue("type", value, { shouldValidate: true })}
@@ -151,7 +151,7 @@ export function QuickAddForm(): ReactNode {
         <div className="grid gap-5 sm:grid-cols-2">
           <label className="flex flex-col gap-1.5 font-mono text-[10px] font-bold tracking-wider text-foreground-muted uppercase">
             Account
-            <select className={inputClasses} {...form.register("accountId")}>
+            <select autoComplete="off" className={inputClasses} {...form.register("accountId")}>
               <option value="">Choose account</option>
               {(accounts.data ?? [])
                 .filter((account) => !account.isArchived)
@@ -169,7 +169,7 @@ export function QuickAddForm(): ReactNode {
           </label>
           <label className="flex flex-col gap-1.5 font-mono text-[10px] font-bold tracking-wider text-foreground-muted uppercase">
             Category
-            <select className={inputClasses} {...form.register("categoryId")}>
+            <select autoComplete="off" className={inputClasses} {...form.register("categoryId")}>
               <option value="">No category</option>
               {matchingCategories.map((category) => (
                 <option key={category.id} value={category.id}>
@@ -183,7 +183,8 @@ export function QuickAddForm(): ReactNode {
           <Input
             id="description"
             label="What was it?"
-            placeholder="Chai near the station"
+            placeholder="Chai near the station…"
+            autoComplete="off"
             {...form.register("description")}
           />
           {form.formState.errors.description?.message === undefined ? null : (
@@ -195,7 +196,9 @@ export function QuickAddForm(): ReactNode {
         <Input
           id="tags"
           label="Tags (optional, comma separated)"
-          placeholder="food, commute"
+          name="tags"
+          placeholder="food, commute…"
+          autoComplete="off"
           value={form.watch("tags").join(", ")}
           onChange={(event) =>
             form.setValue(
@@ -211,7 +214,9 @@ export function QuickAddForm(): ReactNode {
         <label className="flex flex-col gap-1.5 font-mono text-[10px] font-bold tracking-wider text-foreground-muted uppercase">
           When
           <input
+            name="occurredAt"
             type="datetime-local"
+            autoComplete="off"
             className={inputClasses}
             value={toDatetimeLocalValue(form.watch("occurredAt"))}
             onChange={(event) =>
@@ -220,18 +225,26 @@ export function QuickAddForm(): ReactNode {
           />
         </label>
         {create.isError && !(create.error instanceof ValidationError) ? (
-          <p className="text-expense border border-expense/20 bg-expense/10 px-3.5 py-2.5 rounded-lg font-mono text-[11px] font-semibold text-center">
+          <p
+            role="alert"
+            className="text-expense border border-expense/20 bg-expense/10 px-3.5 py-2.5 rounded-lg font-mono text-[11px] font-semibold text-center"
+          >
             Could not save. Your entry is still ready to retry.
           </p>
         ) : null}
         {create.isSuccess ? (
-          <p className="text-income border border-income/20 bg-income/10 px-3.5 py-2.5 rounded-lg font-mono text-[11px] font-semibold text-center animate-fade-in">
+          <p
+            role="status"
+            className="text-income border border-income/20 bg-income/10 px-3.5 py-2.5 rounded-lg font-mono text-[11px] font-semibold text-center animate-fade-in"
+          >
             Saved to your ledger.
           </p>
         ) : null}
-        <Button type="submit" className="w-full py-3" disabled={create.isPending}>
-          {create.isPending ? "Posting safely…" : "Add to ledger"}
-        </Button>
+        <div className="sticky bottom-[calc(var(--mobile-nav-height)+env(safe-area-inset-bottom,0px))] z-20 -mx-4 border-t border-border bg-surface-elevated/95 p-4 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none">
+          <Button type="submit" className="w-full py-3" disabled={create.isPending}>
+            {create.isPending ? "Posting safely…" : "Add to ledger"}
+          </Button>
+        </div>
       </form>
     </section>
   );

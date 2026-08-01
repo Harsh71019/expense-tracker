@@ -52,18 +52,20 @@ export function TransferList({
         />
       </div>
 
-      <header className="mb-7 flex flex-wrap items-start justify-between gap-4">
-        <div>
+      <header className="mb-7 flex flex-col items-stretch gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
           <p className="font-mono text-[11px] font-bold tracking-[0.2em] text-accent uppercase">
             Ledger
           </p>
-          <h1 className="mt-1.5 text-3xl font-bold tracking-tight text-foreground">Transfers</h1>
+          <h1 className="mt-1.5 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+            Transfers
+          </h1>
           <p className="mt-2 max-w-md text-sm text-foreground-muted">
             Move money between your own accounts. Each transfer posts as two linked legs — an
             expense on one side, income on the other.
           </p>
         </div>
-        <Button type="button" onClick={() => setCreateOpen(true)}>
+        <Button className="w-full sm:w-auto" type="button" onClick={() => setCreateOpen(true)}>
           <span className="mr-1 text-base leading-none">+</span> New transfer
         </Button>
       </header>

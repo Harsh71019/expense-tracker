@@ -103,4 +103,10 @@ describe("TransferGroupRow", () => {
     );
     expect(screen.getByText("Reversal")).toBeVisible();
   });
+
+  it("stacks transfer details on phones and restores a row layout on larger screens", () => {
+    render(<TransferGroupRow legs={[from, to]} accounts={accounts} onOpen={vi.fn()} />);
+
+    expect(screen.getByRole("button")).toHaveClass("flex-col", "sm:flex-row");
+  });
 });

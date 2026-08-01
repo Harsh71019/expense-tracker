@@ -175,8 +175,11 @@ describe("route shells", () => {
     expect(screen.getByRole("heading", { name: "Welcome to Ledger" })).toBeVisible();
     expect(screen.getByText("harsh@example.com")).toBeVisible();
 
-    render(await SettingsPage({ searchParams: Promise.resolve({}) }));
-    expect(screen.getByRole("heading", { name: "Settings" })).toBeVisible();
+    const settings = render(await SettingsPage({ searchParams: Promise.resolve({}) }));
+    const settingsHeading = screen.getByRole("heading", { name: "Settings" });
+    expect(settingsHeading).toBeVisible();
+    expect(settings.container.firstElementChild).toHaveClass("w-full");
+    expect(settings.container.firstElementChild).not.toHaveClass("max-w-[920px]");
     expect(screen.getByText("Signed in as")).toBeVisible();
     expect(screen.getAllByText("harsh@example.com")).toHaveLength(2);
   });

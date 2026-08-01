@@ -109,6 +109,6 @@ describe("QuickAddPanel", () => {
     await user.click(screen.getByRole("button", { name: "Add transaction" }));
 
     expect(mocks.mutateAsync).toHaveBeenCalledWith(expect.objectContaining({ type: "income" }));
-    expect(await screen.findByText("Could not reach the ledger")).toBeVisible();
+    expect(await screen.findByText("Could not record this transaction.")).toBeVisible();
   });
 });

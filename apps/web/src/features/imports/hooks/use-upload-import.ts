@@ -37,7 +37,6 @@ export function useUploadImport(): UseMutationResult<ImportBatch, Error, UploadI
         if (!parsed.success) throw toAppError(undefined, response.status);
         return parsed.data;
       } catch (error: unknown) {
-        if (error instanceof Error) throw error;
         throw toNetworkError(error);
       }
     },

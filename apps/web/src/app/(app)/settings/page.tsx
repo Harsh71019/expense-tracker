@@ -15,7 +15,7 @@ export default async function SettingsPage({
   const activeTab = settingsTabFromParam((await searchParams).tab);
 
   return (
-    <div className="mx-auto flex w-full max-w-[920px] flex-col gap-5">
+    <div className="flex w-full flex-col gap-6">
       <header className="mb-1">
         <p className="font-mono text-[10px] font-bold tracking-[0.2em] text-accent uppercase">
           TreasuryOps · Settings

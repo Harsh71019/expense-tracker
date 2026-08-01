@@ -6,6 +6,7 @@ import type { FormEvent, ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { userErrorMessage } from "@/lib/errors";
 import { toast } from "@/lib/toast";
 
 import { useCreateAccount } from "../hooks/use-create-account";
@@ -36,8 +37,7 @@ export function AccountSetup(): ReactNode {
       await createAccount.mutateAsync(parsed.data);
       toast.success("Account created");
     } catch (requestError: unknown) {
-      const message =
-        requestError instanceof Error ? requestError.message : "Could not create the account.";
+      const message = userErrorMessage(requestError, "Could not create the account.");
       setError(message);
       toast.error(message);
     }

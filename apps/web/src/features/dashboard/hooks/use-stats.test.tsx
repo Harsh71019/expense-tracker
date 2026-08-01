@@ -22,6 +22,7 @@ const problem = {
   title: "Validation failed",
   status: 422,
   detail: "Check your entry",
+  message: "Check your entry",
   instance: "/api/v1/dashboard/stats",
   code: "common.validation_failed",
   reqId: "request-1",
@@ -59,7 +60,9 @@ describe("useStats", () => {
     mocks.GET.mockRejectedValueOnce("offline");
     const transportFailure = renderHook(() => useStats(), { wrapper });
     await waitFor(() => expect(transportFailure.result.current.isError).toBe(true));
-    expect(transportFailure.result.current.error?.message).toBe("The network request failed.");
+    expect(transportFailure.result.current.error?.message).toBe(
+      "We could not reach TreasuryOps. Check your connection and try again."
+    );
   });
 
   it("rejects malformed payloads", async () => {

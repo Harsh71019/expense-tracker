@@ -9,7 +9,7 @@ import { AmountInput } from "@/components/ui/amount-input";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toDatetimeLocalValue } from "@/lib/datetime-local";
-import { ValidationError } from "@/lib/errors";
+import { userErrorMessage, ValidationError } from "@/lib/errors";
 import { generateRequestId } from "@/lib/request-id";
 import { toast } from "@/lib/toast";
 
@@ -83,7 +83,7 @@ export function QuickAddForm(): ReactNode {
           }
         }
       } else {
-        toast.error("Failed to record transaction");
+        toast.error(userErrorMessage(error, "Could not record this transaction."));
       }
     }
   }

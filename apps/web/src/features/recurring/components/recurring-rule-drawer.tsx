@@ -16,6 +16,7 @@ import { AmountInput } from "@/components/ui/amount-input";
 import { Button } from "@/components/ui/button";
 import { DialogSurface } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { userErrorMessage } from "@/lib/errors";
 
 import { useCreateRecurringRule, useUpdateRecurringRule } from "../hooks/use-recurring-rules";
 import {
@@ -189,7 +190,7 @@ export function RecurringRuleDrawer({
       }
       onClose();
     } catch (caught: unknown) {
-      setError(caught instanceof Error ? caught.message : "Could not save this recurring rule.");
+      setError(userErrorMessage(caught, "Could not save this recurring rule."));
     }
   }
 

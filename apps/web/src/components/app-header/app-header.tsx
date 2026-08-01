@@ -17,6 +17,7 @@ const routeLabels: Record<string, { label: string; icon?: string }> = {
   "/accounts": { label: "Accounts", icon: "▣" },
   "/insights": { label: "Insights", icon: "✦" },
   "/transactions": { label: "Transactions", icon: "≡" },
+  "/recurring": { label: "Recurring transactions", icon: "↻" },
   "/transfers": { label: "Transfers", icon: "⤢" },
   "/categories": { label: "Categories", icon: "▤" },
   "/category-rules": { label: "Category Rules", icon: "⌁" },
@@ -26,7 +27,7 @@ const routeLabels: Record<string, { label: string; icon?: string }> = {
   "/budgets": { label: "Budgets", icon: "◫" },
   "/reports": { label: "Reports", icon: "◔" },
   "/spending-warnings": { label: "Patterns", icon: "△" },
-  "/settings": { label: "Settings" }
+  "/settings": { label: "Settings", icon: "⚙" }
 };
 
 export function AppHeader({

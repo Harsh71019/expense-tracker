@@ -94,8 +94,8 @@ describe("AccountManager", () => {
     await user.type(screen.getByLabelText("Account name"), "HDFC");
     await user.click(screen.getByRole("button", { name: "Create account" }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("Account already exists");
-    expect(mocks.toastError).toHaveBeenCalledWith("Account already exists");
+    expect(await screen.findByRole("alert")).toHaveTextContent("Could not create this account.");
+    expect(mocks.toastError).toHaveBeenCalledWith("Could not create this account.");
   });
 
   it("submits billing-cycle configuration only for a credit card", async () => {

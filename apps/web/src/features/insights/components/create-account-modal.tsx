@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { DialogSurface } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useCreateAccount } from "@/features/accounts";
+import { userErrorMessage } from "@/lib/errors";
 
 export const ACCOUNT_TYPE_META: ReadonlyArray<
   Readonly<{ value: AccountType; label: string; icon: string }>
@@ -63,7 +64,7 @@ export function CreateAccountModal({
       await createAccount.mutateAsync(parsed.data);
       onClose();
     } catch (caught: unknown) {
-      setError(caught instanceof Error ? caught.message : "Could not create this account.");
+      setError(userErrorMessage(caught, "Could not create this account."));
     }
   }
 

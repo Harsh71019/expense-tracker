@@ -13,7 +13,7 @@ import { useAccounts } from "@/features/accounts";
 import { useCategories } from "@/features/categories";
 import { useCreateTxn } from "@/features/quick-add";
 import { toDatetimeLocalValue } from "@/lib/datetime-local";
-import { ValidationError } from "@/lib/errors";
+import { userErrorMessage, ValidationError } from "@/lib/errors";
 import { generateRequestId } from "@/lib/request-id";
 
 const selectClasses =
@@ -76,7 +76,7 @@ export function CreateTxnSheet({ onClose }: Readonly<{ onClose: () => void }>): 
           if (name !== null) form.setError(name, { message: field.message });
         }
       } else {
-        toast.error("Could not post this entry");
+        toast.error(userErrorMessage(error, "Could not post this entry."));
       }
     }
   }

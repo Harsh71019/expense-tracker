@@ -16,6 +16,7 @@ import { DialogSurface } from "@/components/ui/dialog";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { Money, SignedMoney } from "@/components/ui/money";
+import { userErrorMessage } from "@/lib/errors";
 import { toast } from "@/lib/toast";
 import { formatBillDate } from "@/features/bills/model/bill-presentation";
 
@@ -121,7 +122,7 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
       setError(undefined);
       toast.success("Account created");
     } catch (caught: unknown) {
-      const message = caught instanceof Error ? caught.message : "Could not create this account.";
+      const message = userErrorMessage(caught, "Could not create this account.");
       setError(message);
       toast.error(message);
     }
@@ -151,8 +152,7 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
       setError(undefined);
       toast.success("Billing cycle updated");
     } catch (caught: unknown) {
-      const message =
-        caught instanceof Error ? caught.message : "Could not update the billing cycle.";
+      const message = userErrorMessage(caught, "Could not update the billing cycle.");
       setError(message);
       toast.error(message);
     }
@@ -166,7 +166,7 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
       setError(undefined);
       toast.success("Account archived");
     } catch (caught: unknown) {
-      const message = caught instanceof Error ? caught.message : "Could not archive this account.";
+      const message = userErrorMessage(caught, "Could not archive this account.");
       setError(message);
       toast.error(message);
     }

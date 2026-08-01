@@ -8,6 +8,7 @@ import { AmountInput } from "@/components/ui/amount-input";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useCreateTxn } from "@/features/quick-add";
+import { userErrorMessage } from "@/lib/errors";
 import { generateRequestId } from "@/lib/request-id";
 import { toast } from "@/lib/toast";
 
@@ -48,7 +49,7 @@ export function QuickAddPanel({ accounts }: QuickAddPanelProps): ReactNode {
       setIdempotencyKey(generateRequestId());
       setTimeout(() => setJustAdded(false), 1600);
     } catch (caught: unknown) {
-      setError(caught instanceof Error ? caught.message : "Could not record this transaction.");
+      setError(userErrorMessage(caught, "Could not record this transaction."));
     }
   }
 

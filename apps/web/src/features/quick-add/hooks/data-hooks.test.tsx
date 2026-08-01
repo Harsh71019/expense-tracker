@@ -24,6 +24,7 @@ const problem = {
   title: "Validation failed",
   status: 422,
   detail: "Check your entry",
+  message: "Check your entry",
   instance: "/api/v1/transactions",
   code: "common.validation_failed",
   reqId: "request-1",
@@ -108,7 +109,9 @@ describe("quick-add data hooks", () => {
     await waitFor(() => expect(accounts.result.current.isError).toBe(true));
     await waitFor(() => expect(categories.result.current.isError).toBe(true));
     expect(accounts.result.current.error?.message).toBe("Check your entry");
-    expect(categories.result.current.error?.message).toBe("The network request failed.");
+    expect(categories.result.current.error?.message).toBe(
+      "We could not reach TreasuryOps. Check your connection and try again."
+    );
   });
 
   it("rejects malformed transaction responses", async () => {
@@ -158,7 +161,7 @@ describe("quick-add data hooks", () => {
 
     await expect(apiFailure.result.current.mutateAsync(input)).rejects.toThrow("Check your entry");
     await expect(transportFailure.result.current.mutateAsync(input)).rejects.toThrow(
-      "The network request failed."
+      "We could not reach TreasuryOps. Check your connection and try again."
     );
   });
 
@@ -191,7 +194,7 @@ describe("quick-add data hooks", () => {
 
     await expect(apiFailure.result.current.mutateAsync(input)).rejects.toThrow("Check your entry");
     await expect(transportFailure.result.current.mutateAsync(input)).rejects.toThrow(
-      "The network request failed."
+      "We could not reach TreasuryOps. Check your connection and try again."
     );
   });
 });

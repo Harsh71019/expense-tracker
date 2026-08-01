@@ -22,6 +22,7 @@ const problem = {
   title: "Conflict",
   status: 409,
   detail: "Could not dismiss",
+  message: "Could not dismiss",
   instance: "/api/v1/spending-warnings/3fa85f64-5717-4562-b3fc-2c963f66be01/dismiss",
   code: "common.internal",
   reqId: "request-1",
@@ -87,7 +88,7 @@ describe("useSpendingWarnings", () => {
   it("surfaces a load error when there is no initial page to fall back on", async () => {
     mocks.GET.mockResolvedValue({
       data: undefined,
-      error: { ...problem, detail: "Down for maintenance" },
+      error: { ...problem, detail: "Down for maintenance", message: "Down for maintenance" },
       response: problemResponse
     });
     const hook = renderHook(() => useSpendingWarnings({ filter: "all" }, null), { wrapper });
@@ -157,7 +158,7 @@ describe("useDismissSpendingWarning", () => {
     const hook = renderHook(() => useDismissSpendingWarning(), { wrapper });
 
     await expect(hook.result.current.mutateAsync("warning-1")).rejects.toThrow(
-      "The network request failed."
+      "We could not reach TreasuryOps. Check your connection and try again."
     );
   });
 });

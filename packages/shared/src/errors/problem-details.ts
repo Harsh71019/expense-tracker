@@ -13,6 +13,7 @@ export const ProblemDetailsSchema = z.object({
   title: z.string(),
   status: z.number().int().positive(),
   detail: z.string(),
+  message: z.string(),
   instance: z.string(),
   code: z.enum(ErrorCodes),
   reqId: z.string(),

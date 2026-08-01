@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
-  createClient: vi.fn(() => ({ GET: vi.fn() })),
+  use: vi.fn(),
+  createClient: vi.fn(() => ({ GET: vi.fn(), use: mocks.use })),
   cookies: vi.fn(),
   requestId: vi.fn(() => "request-1")
 }));
@@ -23,6 +24,7 @@ describe("getServerApiClient", () => {
       headers: { cookie: "treasury-ops.session=abc", "x-request-id": "request-1" },
       fetch: expect.any(Function)
     });
+    expect(mocks.use).toHaveBeenCalledWith({ onError: expect.any(Function) });
   });
 
   it("disables Next.js caching for mutable API reads", async () => {

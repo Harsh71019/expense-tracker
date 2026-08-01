@@ -116,6 +116,6 @@ describe("EditDisplayNameForm", () => {
     await user.type(screen.getByLabelText("Display name"), "New Name");
     await user.click(screen.getByRole("button", { name: "Save" }));
 
-    expect(mocks.toastError).toHaveBeenCalledWith("Could not update profile");
+    expect(mocks.toastError).toHaveBeenCalledWith("Could not update your profile.");
   });
 });

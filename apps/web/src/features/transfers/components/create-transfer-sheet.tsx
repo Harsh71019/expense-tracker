@@ -11,7 +11,7 @@ import { DialogSurface } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useAccounts } from "@/features/accounts";
 import { toDatetimeLocalValue } from "@/lib/datetime-local";
-import { ValidationError } from "@/lib/errors";
+import { userErrorMessage, ValidationError } from "@/lib/errors";
 
 import { useCreateTransfer } from "../hooks/use-transfers";
 
@@ -86,7 +86,7 @@ export function CreateTransferSheet({ onClose }: Readonly<{ onClose: () => void 
           if (name !== null) form.setError(name, { message: field.message });
         }
       } else {
-        toast.error("Could not post this transfer");
+        toast.error(userErrorMessage(error, "Could not post this transfer."));
       }
     }
   }

@@ -8,6 +8,7 @@ import { toast } from "@/lib/toast";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useCategories } from "@/features/categories";
+import { userErrorMessage } from "@/lib/errors";
 
 import {
   useCategoryRules,
@@ -42,8 +43,8 @@ export function CategoryRuleManager({
       setPattern("");
       setCategoryId("");
       toast.success("Category rule created");
-    } catch {
-      toast.error("Could not create this rule");
+    } catch (error: unknown) {
+      toast.error(userErrorMessage(error, "Could not create this rule."));
     }
   }
 
@@ -51,13 +52,13 @@ export function CategoryRuleManager({
     try {
       await deleteRule.mutateAsync(rule.id);
       toast.success("Category rule deleted");
-    } catch {
-      toast.error("Could not delete this rule");
+    } catch (error: unknown) {
+      toast.error(userErrorMessage(error, "Could not delete this rule."));
     }
   }
 
   return (
-    <section className="mx-auto max-w-[940px] space-y-6">
+    <section className="w-full space-y-6">
       <Breadcrumbs
         items={[
           { label: "Settings", href: "/settings?tab=management" },

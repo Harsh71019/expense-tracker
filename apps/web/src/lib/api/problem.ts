@@ -1,16 +1,26 @@
 import { ProblemDetailsSchema } from "@treasury-ops/shared";
 
-import { AppError, AuthError, ConflictError, NetworkError, ValidationError } from "../errors";
+import {
+  AppError,
+  AuthError,
+  ConflictError,
+  NetworkError,
+  PermissionError,
+  ValidationError
+} from "../errors";
 
 export function toAppError(error: unknown, status: number): AppError {
   const parsed = ProblemDetailsSchema.safeParse(error);
-  const message = parsed.success ? parsed.data.detail : "The request could not be completed.";
+  const message = parsed.success ? parsed.data.message : "The request could not be completed.";
   const context = parsed.success
     ? { reqId: parsed.data.reqId, status, problemType: parsed.data.code }
     : { status };
 
   if (status === 401) {
     return new AuthError(message, context);
+  }
+  if (status === 403) {
+    return new PermissionError(message, context);
   }
   if (status === 409) {
     return new ConflictError(message, context);
@@ -24,7 +34,9 @@ export function toAppError(error: unknown, status: number): AppError {
   return new AppError(message, context);
 }
 
-export function toNetworkError(error: unknown): NetworkError {
-  const message = error instanceof Error ? error.message : "The network request failed.";
-  return new NetworkError(message);
+export function toNetworkError(error: unknown): AppError {
+  if (error instanceof AppError) {
+    return error;
+  }
+  return new NetworkError("We could not reach TreasuryOps. Check your connection and try again.");
 }

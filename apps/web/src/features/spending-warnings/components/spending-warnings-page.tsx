@@ -25,7 +25,7 @@ export function SpendingWarningsPage({
   const hasLoadError = list.isError && list.data === undefined;
 
   return (
-    <section className="mx-auto max-w-3xl">
+    <section className="w-full space-y-6">
       <header>
         <p className="font-mono text-[11px] font-bold tracking-[0.2em] text-accent uppercase">
           Insights
@@ -39,7 +39,7 @@ export function SpendingWarningsPage({
         </p>
       </header>
 
-      <div className="mt-6">
+      <div>
         <AnalysisStatus
           analysis={analysis}
           hasLoadError={hasLoadError}
@@ -47,7 +47,7 @@ export function SpendingWarningsPage({
         />
       </div>
 
-      <div className="mt-6">
+      <div>
         <WarningFilters filters={filters} />
 
         {hasLoadError ? null : (

@@ -60,8 +60,8 @@ describe("AccountSetup", () => {
     await user.type(screen.getByLabelText("Account name"), "Cash");
     await user.click(screen.getByRole("button", { name: "Create account" }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("Account name is already in use");
-    expect(mocks.toastError).toHaveBeenCalledWith("Account name is already in use");
+    expect(await screen.findByRole("alert")).toHaveTextContent("Could not create the account.");
+    expect(mocks.toastError).toHaveBeenCalledWith("Could not create the account.");
   });
 
   it("uses a safe fallback for non-Error failures", async () => {

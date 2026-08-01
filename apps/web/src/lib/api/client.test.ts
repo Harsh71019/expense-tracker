@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ createClient: vi.fn(() => ({ GET: vi.fn() })) }));
+const mocks = vi.hoisted(() => ({
+  use: vi.fn(),
+  createClient: vi.fn(() => ({ GET: vi.fn(), use: mocks.use }))
+}));
 vi.mock("openapi-fetch", () => ({ default: mocks.createClient }));
 
 describe("apiClient", () => {
@@ -10,5 +13,6 @@ describe("apiClient", () => {
     await import("./client");
 
     expect(mocks.createClient).toHaveBeenCalledWith({ baseUrl: "/api" });
+    expect(mocks.use).toHaveBeenCalledWith({ onError: expect.any(Function) });
   });
 });

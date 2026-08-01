@@ -1,8 +1,15 @@
 import createClient from "openapi-fetch";
 
 import type { paths } from "./generated/schema";
+import { toNetworkError } from "./problem";
 
 export const apiClient = createClient<paths>({ baseUrl: "/api" });
+
+apiClient.use({
+  onError({ error }) {
+    return toNetworkError(error);
+  }
+});
 
 if (process.env.NEXT_PUBLIC_MOCK_API === "1") {
   // Every client-side request waits for the mock worker to finish its async

@@ -42,7 +42,7 @@ export function CategoryCard({
 }: CategoryCardProps): ReactNode {
   const [menuOpen, setMenuOpen] = useState(false);
   return (
-    <div className="relative overflow-hidden rounded-[22px] border border-border bg-surface-elevated p-5.5 shadow-sm animate-fade-in">
+    <div className="relative overflow-visible rounded-[22px] border border-border bg-surface-elevated p-5.5 shadow-sm animate-fade-in focus-within:z-30">
       <div className="flex items-start gap-4">
         <div
           style={swatchStyle(parent.color)}
@@ -204,7 +204,10 @@ function CategoryActionMenu({
   }
 
   return (
-    <div className="absolute top-11 right-0 z-20 w-44 overflow-hidden rounded-xl border border-border bg-surface-elevated p-1.5 shadow-xl">
+    <div
+      aria-label={`Actions for ${category.name}`}
+      className="absolute top-11 right-0 z-50 w-44 overflow-hidden rounded-xl border border-border bg-surface-elevated p-1.5 shadow-xl"
+    >
       {onEdit === undefined ? null : (
         <>
           <button

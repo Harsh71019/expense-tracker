@@ -65,18 +65,6 @@ export function AppHeader({
     return () => clearInterval(interval);
   }, []);
 
-  // Global keyboard shortcut (⌘N or Alt+N to open new entry sheet)
-  useEffect(() => {
-    function handleKeyDown(event: KeyboardEvent): void {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "n") {
-        event.preventDefault();
-        setShowCreateSheet((prev) => !prev);
-      }
-    }
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
-
   const parentRoute = Object.keys(routeLabels).find(
     (route) => route !== "/" && pathname.startsWith(`${route}/`)
   );
@@ -124,7 +112,7 @@ export function AppHeader({
           )}
         </div>
 
-        {/* Right: Actions, Privacy Mode Toggle, Quick Add & Shortcuts */}
+        {/* Right: Actions, Privacy Mode Toggle & Quick Add */}
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           {/* Privacy Toggle */}
           <button
@@ -146,13 +134,12 @@ export function AppHeader({
           <Button
             onClick={() => setShowCreateSheet(true)}
             className="hidden items-center gap-1.5 shadow-xs transition-transform active:scale-[0.98] sm:inline-flex"
-            title="Post a new transaction (⌘N)"
+            title="Add transaction"
           >
-            <span className="text-base font-bold leading-none">+</span>
-            <span className="hidden xs:inline">New Entry</span>
-            <kbd className="hidden md:inline-flex items-center gap-0.5 rounded border border-accent-foreground/20 bg-accent-foreground/10 px-1 font-mono text-[10px] opacity-80">
-              ⌘N
-            </kbd>
+            <span className="text-base font-bold leading-none" aria-hidden="true">
+              +
+            </span>
+            <span>Add</span>
           </Button>
         </div>
       </header>

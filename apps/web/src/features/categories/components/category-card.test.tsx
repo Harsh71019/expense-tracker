@@ -23,12 +23,18 @@ describe("CategoryCard", () => {
     const user = userEvent.setup();
     const onArchive = vi.fn();
     const parent = category();
-    render(<CategoryCard parent={parent} subcategories={[]} onArchive={onArchive} />);
+    const { container } = render(
+      <CategoryCard parent={parent} subcategories={[]} onArchive={onArchive} />
+    );
 
     expect(screen.getByText("Food & Dining")).toBeVisible();
     expect(screen.getByText("Top-level category")).toBeVisible();
+    expect(container.firstElementChild).toHaveClass("overflow-visible", "focus-within:z-30");
 
     await user.click(screen.getByRole("button", { name: "Actions for Food & Dining" }));
+    expect(screen.getByLabelText("Actions for Food & Dining", { selector: "div" })).toHaveClass(
+      "z-50"
+    );
     await user.click(screen.getByRole("button", { name: "Archive" }));
     expect(onArchive).toHaveBeenCalledWith(parent);
   });

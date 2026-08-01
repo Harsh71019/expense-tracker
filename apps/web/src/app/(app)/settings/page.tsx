@@ -1,4 +1,3 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { SettingsPanel } from "./settings-panel";
@@ -15,8 +14,8 @@ export default async function SettingsPage({
   const activeTab = settingsTabFromParam((await searchParams).tab);
 
   return (
-    <div className="flex w-full flex-col gap-6">
-      <header className="mb-1">
+    <div className="flex w-full flex-col gap-7">
+      <header className="border-b border-border pb-6">
         <p className="font-mono text-[10px] font-bold tracking-[0.2em] text-accent uppercase">
           TreasuryOps · Settings
         </p>
@@ -24,35 +23,28 @@ export default async function SettingsPage({
           Settings
         </h1>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-foreground-muted">
-          Manage your profile, personalize the interface, and open administrative tools.
+          Your profile, workspace preferences, and ledger tools—organized in one place.
         </p>
       </header>
 
-      <Link
-        href="/bills"
-        className="flex min-h-11 items-center justify-between rounded-2xl border border-border bg-surface-elevated p-5 transition-colors hover:border-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-      >
-        <span>
-          <span className="block font-semibold text-foreground">Credit card bills</span>
-          <span className="mt-1 block text-sm text-foreground-muted">
-            Card statements, reconciliation, and payments
-          </span>
-        </span>
-        <span className="text-accent" aria-hidden="true">
-          →
-        </span>
-      </Link>
+      <div className="grid items-start gap-6 lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-8">
+        <aside className="lg:sticky lg:top-20">
+          <SettingsTabList activeTab={activeTab} />
+          <p className="mt-4 hidden px-3 text-xs leading-relaxed text-foreground-muted lg:block">
+            Appearance choices are stored in this browser. Ledger tools apply to your TreasuryOps
+            account.
+          </p>
+        </aside>
 
-      <SettingsTabList activeTab={activeTab} />
-
-      <div
-        id={`settings-panel-${activeTab}`}
-        role="tabpanel"
-        aria-labelledby={`settings-tab-${activeTab}`}
-        tabIndex={0}
-        className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-4 focus-visible:ring-offset-surface"
-      >
-        {await SettingsPanel({ activeTab })}
+        <div
+          id={`settings-panel-${activeTab}`}
+          role="tabpanel"
+          aria-labelledby={`settings-tab-${activeTab}`}
+          tabIndex={0}
+          className="min-w-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-4 focus-visible:ring-offset-surface"
+        >
+          {await SettingsPanel({ activeTab })}
+        </div>
       </div>
     </div>
   );

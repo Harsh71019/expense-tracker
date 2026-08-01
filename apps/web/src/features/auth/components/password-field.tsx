@@ -53,13 +53,13 @@ export function PasswordField({
           required
           aria-describedby={ariaDescribedBy}
           aria-invalid={isInvalid}
-          className="w-full min-w-0 flex-1 bg-transparent px-3.5 py-2.5 text-sm text-foreground outline-none placeholder:text-foreground-muted/50"
+          className="min-h-11 w-full min-w-0 flex-1 bg-transparent px-3.5 py-2.5 text-base text-foreground outline-none placeholder:text-foreground-muted/50 sm:text-sm"
         />
         <button
           type="button"
           onClick={() => setIsRevealed((current) => !current)}
           aria-label={`${isRevealed ? "Hide" : "Show"} ${label.toLowerCase()}`}
-          className="shrink-0 rounded-md px-2 py-1 text-xs font-medium text-foreground-muted transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          className="min-h-11 shrink-0 rounded-lg px-3 py-2 text-xs font-medium text-foreground-muted transition-colors hover:bg-surface-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         >
           {isRevealed ? "Hide" : "Show"}
         </button>

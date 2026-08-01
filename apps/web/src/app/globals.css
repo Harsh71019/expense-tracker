@@ -211,6 +211,84 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+:root {
+  color-scheme: light;
+  --mobile-nav-height: 4.75rem;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+  }
+}
+
+html {
+  scroll-padding-top: 5rem;
+  -webkit-tap-highlight-color: color-mix(in srgb, var(--color-accent) 18%, transparent);
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  touch-action: manipulation;
+}
+
+[id] {
+  scroll-margin-top: 5rem;
+}
+
+.safe-area-bottom {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+}
+
+.mobile-bottom-nav {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
+}
+
+.app-main-mobile-padding {
+  padding-bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px) + 1.5rem);
+}
+
+.auth-safe-area {
+  padding-top: max(3rem, env(safe-area-inset-top, 0px));
+  padding-right: max(1.25rem, env(safe-area-inset-right, 0px));
+  padding-bottom: max(3rem, env(safe-area-inset-bottom, 0px));
+  padding-left: max(1.25rem, env(safe-area-inset-left, 0px));
+}
+
+@media (min-width: 40rem) {
+  .auth-safe-area {
+    padding-right: max(2.5rem, env(safe-area-inset-right, 0px));
+    padding-left: max(2.5rem, env(safe-area-inset-left, 0px));
+  }
+}
+
+@media (min-width: 64rem) {
+  .auth-safe-area {
+    padding-right: 4rem;
+    padding-left: 4rem;
+  }
+}
+
+@media (min-width: 80rem) {
+  .auth-safe-area {
+    padding-right: 6rem;
+    padding-left: 6rem;
+  }
+}
+
+@media (min-width: 48rem) {
+  .app-main-mobile-padding {
+    padding-bottom: 2rem;
+  }
+}
+
 /* Modern Web Guidance: Balanced line breaking for headings & pretty paragraph wrapping */
 h1,
 h2,

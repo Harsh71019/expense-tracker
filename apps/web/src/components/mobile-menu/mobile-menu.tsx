@@ -4,9 +4,15 @@ import { Menu, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
-import { AppNav, mainNavItems } from "../app-nav";
+import type { Theme } from "@/lib/theme";
 
-export function MobileMenu({ email }: Readonly<{ email: string }>): ReactNode {
+import { AppNav, mainNavItems } from "../app-nav";
+import { ThemeToggle } from "../ui/theme-toggle";
+
+export function MobileMenu({
+  email,
+  theme
+}: Readonly<{ email: string; theme: Theme | null }>): ReactNode {
   const [open, setOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -47,7 +53,7 @@ export function MobileMenu({ email }: Readonly<{ email: string }>): ReactNode {
         aria-expanded={open}
         aria-controls="mobile-navigation"
         onClick={() => setOpen(true)}
-        className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-border/60 bg-surface-muted/40 text-foreground transition-colors hover:border-border hover:bg-surface-muted md:hidden"
+        className="grid h-11 w-11 shrink-0 touch-manipulation place-items-center rounded-xl border border-border/60 bg-surface-muted/40 text-foreground transition-colors hover:border-border hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent md:hidden"
       >
         <Menu size={19} strokeWidth={2} aria-hidden="true" />
       </button>
@@ -85,9 +91,12 @@ export function MobileMenu({ email }: Readonly<{ email: string }>): ReactNode {
             <AppNav items={mainNavItems} orientation="sidebar" onNavigate={closeMenu} />
           </div>
 
-          <div className="shrink-0 border-t border-border bg-surface px-5 py-4">
+          <div className="safe-area-bottom shrink-0 border-t border-border bg-surface px-5 pt-4">
             <p className="truncate text-sm font-semibold text-foreground">{email}</p>
             <p className="mt-1 text-xs text-foreground-muted">Signed in</p>
+            <div className="mt-3">
+              <ThemeToggle current={theme} />
+            </div>
           </div>
         </div>
       ) : null}

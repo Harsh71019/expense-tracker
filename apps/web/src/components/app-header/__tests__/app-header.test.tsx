@@ -59,4 +59,11 @@ describe("AppHeader", () => {
     const routeLabel = screen.getByText("Settings");
     expect(routeLabel.parentElement?.querySelector('[aria-hidden="true"]')).toBeNull();
   });
+
+  it("uses the parent label for nested routes", () => {
+    mocks.pathname = "/transactions/txn-1";
+    render(<AppHeader email="harsh@example.com" theme={null} />);
+
+    expect(screen.getByText("Transactions")).toBeVisible();
+  });
 });

@@ -28,6 +28,9 @@ vi.mock("next/link", () => ({
 vi.mock("next/navigation", () => ({
   usePathname: () => "/"
 }));
+vi.mock("@/components/ui/theme-toggle", () => ({
+  ThemeToggle: () => <button type="button">Theme</button>
+}));
 
 describe("MobileMenu", () => {
   afterEach(() => {
@@ -36,7 +39,7 @@ describe("MobileMenu", () => {
 
   it("opens the full-screen navigation and closes after choosing a destination", async () => {
     const user = userEvent.setup();
-    render(<MobileMenu email="harsh@example.com" />);
+    render(<MobileMenu email="harsh@example.com" theme="light" />);
 
     await user.click(screen.getByRole("button", { name: "Open navigation" }));
 
@@ -51,7 +54,7 @@ describe("MobileMenu", () => {
 
   it("closes with Escape and returns focus to the menu button", async () => {
     const user = userEvent.setup();
-    render(<MobileMenu email="harsh@example.com" />);
+    render(<MobileMenu email="harsh@example.com" theme="light" />);
 
     const trigger = screen.getByRole("button", { name: "Open navigation" });
     await user.click(trigger);

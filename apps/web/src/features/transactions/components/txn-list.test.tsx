@@ -93,6 +93,7 @@ describe("TxnList", () => {
     mocks.isError = true;
     render(<TxnList filters={{ limit: 50 }} initialPage={page} />);
 
+    expect(screen.getByText("Description").parentElement).toHaveClass("hidden", "md:grid");
     await user.click(screen.getByRole("button", { name: /Refund/ }));
     const drawer = screen.getByRole("dialog", { name: "detail-drawer" });
     expect(drawer).toBeVisible();

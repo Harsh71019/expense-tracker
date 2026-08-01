@@ -54,7 +54,7 @@ export function TxnList({
             Every entry, append-only. Corrections happen by reversal, never by editing amounts.
           </p>
         </div>
-        <Button type="button" onClick={() => setCreateOpen(true)}>
+        <Button className="hidden sm:inline-flex" type="button" onClick={() => setCreateOpen(true)}>
           <span className="mr-1 text-base leading-none">+</span> New entry
         </Button>
       </header>
@@ -74,7 +74,7 @@ export function TxnList({
       ) : (
         <div className="overflow-hidden rounded-2xl border border-border bg-surface-elevated">
           <div
-            className={`${TXN_ROW_GRID} border-b border-border px-5 py-3.5 font-mono text-[10px] font-bold tracking-wider text-foreground-muted uppercase`}
+            className={`${TXN_ROW_GRID} hidden border-b border-border px-5 py-3.5 font-mono text-[10px] font-bold tracking-wider text-foreground-muted uppercase md:grid`}
           >
             <div>Description</div>
             <div>Category</div>

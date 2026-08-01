@@ -34,17 +34,17 @@ export function TransferRow({ legs, accounts, onOpen, onReverse, isReversing }: 
 
   return (
     <div
-      role="button"
-      tabIndex={0}
-      onClick={() => onOpen(first)}
-      onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " ") onOpen(first);
-      }}
-      className={`${TXN_ROW_GRID} group w-full cursor-pointer px-5 py-3.5 text-left transition-colors duration-150 hover:bg-surface-muted/50 ${
+      className={`${TXN_ROW_GRID} group relative w-full px-4 py-3.5 text-left transition-colors duration-150 hover:bg-surface-muted/50 sm:px-5 ${
         posted ? "" : "opacity-55"
       }`}
     >
-      <div className="flex min-w-0 items-center gap-3">
+      <button
+        type="button"
+        aria-label={`Open transfer: ${first.description}`}
+        onClick={() => onOpen(first)}
+        className="absolute inset-0 z-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent"
+      />
+      <div className="pointer-events-none relative z-10 col-start-1 row-start-1 flex min-w-0 items-center gap-3 md:col-auto md:row-auto">
         <span className="grid h-9.5 w-9.5 shrink-0 place-items-center rounded-[10px] border border-border bg-surface-muted text-base">
           ⤢
         </span>
@@ -62,22 +62,25 @@ export function TransferRow({ legs, accounts, onOpen, onReverse, isReversing }: 
           </p>
         </div>
       </div>
-      <div className="text-sm font-medium text-foreground-muted/50">—</div>
-      <div className="font-mono text-[13px] font-medium text-foreground-muted">
+      <div className="pointer-events-none relative z-10 hidden text-sm font-medium text-foreground-muted/50 md:block">
+        —
+      </div>
+      <div className="pointer-events-none relative z-10 col-start-2 row-start-2 text-right font-mono text-[11px] font-medium text-foreground-muted md:col-auto md:row-auto md:text-left md:text-[13px]">
         {dateFormatter.format(first.occurredAt)}
       </div>
-      <div className="flex items-center justify-end gap-2.5">
+      <div className="pointer-events-none relative z-10 col-start-2 row-start-1 flex items-center justify-end gap-1.5 md:col-auto md:row-auto md:gap-2.5">
         {posted ? (
           <button
             type="button"
-            onClick={(event) => {
-              event.stopPropagation();
-              onReverse(first.transferGroupId ?? "");
-            }}
+            onClick={() => onReverse(first.transferGroupId ?? "")}
             disabled={isReversing}
-            className="rounded-md border border-border bg-surface-elevated px-2 py-1 text-xs font-semibold text-foreground-muted opacity-100 transition-opacity duration-150 hover:text-foreground md:opacity-0 md:group-hover:opacity-100 disabled:pointer-events-none disabled:opacity-50"
+            aria-label={isReversing ? "Reversing transfer" : "Reverse transfer"}
+            className="pointer-events-auto grid h-11 w-11 place-items-center rounded-lg border border-border bg-surface-elevated px-2 text-sm font-semibold text-foreground-muted opacity-100 transition-opacity duration-150 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent md:h-auto md:w-auto md:py-1 md:text-xs md:opacity-0 md:group-hover:opacity-100 disabled:pointer-events-none disabled:opacity-50"
           >
-            {isReversing ? "Reversing…" : "Reverse"}
+            <span aria-hidden="true" className="md:hidden">
+              ↺
+            </span>
+            <span className="hidden md:inline">{isReversing ? "Reversing…" : "Reverse"}</span>
           </button>
         ) : null}
         <Money minor={first.amountMinor} size="md" className="justify-self-end" />

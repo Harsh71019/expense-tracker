@@ -38,7 +38,9 @@ describe("TxnRow", () => {
 
     expect(screen.getByText("−₹20.00")).toBeVisible();
     expect(screen.getByText("Food & Dining")).toBeVisible();
-    await user.click(screen.getByRole("button", { name: /Chai/ }));
+    const row = screen.getByRole("button", { name: /Chai/ });
+    expect(row).toHaveClass("grid-cols-[minmax(0,1fr)_auto]", "md:grid-cols-[2.4fr_1fr_1fr_1.1fr]");
+    await user.click(row);
     expect(onOpen).toHaveBeenCalledWith(transaction);
   });
 

@@ -77,7 +77,9 @@ describe("TransferRow", () => {
     );
 
     expect(screen.getByText("HDFC Bank → Cash Wallet")).toBeVisible();
-    await user.click(screen.getByText("ATM cash withdrawal transfer"));
+    await user.click(
+      screen.getByRole("button", { name: "Open transfer: ATM cash withdrawal transfer" })
+    );
     expect(onOpen).toHaveBeenCalledWith(from);
   });
 
@@ -95,7 +97,7 @@ describe("TransferRow", () => {
       />
     );
 
-    await user.click(screen.getByRole("button", { name: "Reverse" }));
+    await user.click(screen.getByRole("button", { name: "Reverse transfer" }));
     expect(onReverse).toHaveBeenCalledWith("grp-1");
     expect(onOpen).not.toHaveBeenCalled();
   });
@@ -113,6 +115,6 @@ describe("TransferRow", () => {
         isReversing={false}
       />
     );
-    expect(screen.queryByRole("button", { name: "Reverse" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Reverse transfer" })).not.toBeInTheDocument();
   });
 });

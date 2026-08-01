@@ -4,6 +4,7 @@ export * from "./badge";
 export * from "./breadcrumbs";
 export * from "./button";
 export * from "./coming-soon";
+export * from "./dialog";
 export * from "./empty-state";
 export * from "./input";
 export * from "./money";

@@ -133,6 +133,16 @@ describe("QuickAddForm", () => {
     expect(screen.getByText(/expected string to have >=1 characters/)).toBeVisible();
   });
 
+  it("uses phone-safe controls and keeps the primary action sticky above mobile navigation", () => {
+    render(<QuickAddForm />);
+
+    expect(screen.getByLabelText("Account")).toHaveClass("min-h-11", "text-base", "sm:text-sm");
+    expect(screen.getByRole("button", { name: "Expense" })).toHaveClass("min-h-11");
+    expect(screen.getByRole("button", { name: "Add to ledger" }).parentElement).toHaveClass(
+      "sticky"
+    );
+  });
+
   it("maps server field errors onto the form", async () => {
     const user = userEvent.setup();
     mocks.mutateAsync.mockRejectedValue(

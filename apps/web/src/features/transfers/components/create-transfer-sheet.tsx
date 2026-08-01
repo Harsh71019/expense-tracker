@@ -7,6 +7,7 @@ import type { ReactNode } from "react";
 import { toast } from "@/lib/toast";
 
 import { Button } from "@/components/ui/button";
+import { DialogSurface } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useAccounts } from "@/features/accounts";
 import { toDatetimeLocalValue } from "@/lib/datetime-local";
@@ -15,7 +16,7 @@ import { ValidationError } from "@/lib/errors";
 import { useCreateTransfer } from "../hooks/use-transfers";
 
 const selectClasses =
-  "w-full rounded-lg border border-border bg-surface-muted px-3.5 py-2.5 text-sm font-medium text-foreground transition-colors duration-150 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30";
+  "min-h-11 w-full rounded-lg border border-border bg-surface-muted px-3.5 py-2.5 text-base font-medium text-foreground transition-colors duration-150 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 sm:text-sm";
 
 function fieldErrorName(path: string): keyof CreateTransfer | null {
   if (
@@ -98,18 +99,13 @@ export function CreateTransferSheet({ onClose }: Readonly<{ onClose: () => void 
     form.watch("description").trim().length > 0;
 
   return (
-    <div
-      role="presentation"
-      className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-sm animate-fade-in"
-      onClick={onClose}
+    <DialogSurface
+      variant="drawer"
+      labelledBy="create-transfer-title"
+      onClose={onClose}
+      panelClassName="flex flex-col"
     >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="create-transfer-title"
-        className="h-dvh w-full max-w-md overflow-y-auto overscroll-contain border-l border-border bg-surface-elevated p-7 animate-drawer-in"
-        onClick={(event) => event.stopPropagation()}
-      >
+      <div className="flex min-h-full flex-col">
         <div className="flex items-start justify-between gap-4">
           <h2
             id="create-transfer-title"
@@ -120,8 +116,8 @@ export function CreateTransferSheet({ onClose }: Readonly<{ onClose: () => void 
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close"
-            className="grid h-8.5 w-8.5 shrink-0 place-items-center rounded-lg border border-border bg-surface-muted text-foreground-muted hover:text-foreground"
+            aria-label="Close transfer form"
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-border bg-surface-muted text-foreground-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
             ✕
           </button>
@@ -132,7 +128,7 @@ export function CreateTransferSheet({ onClose }: Readonly<{ onClose: () => void 
 
         <form
           onSubmit={form.handleSubmit((values) => void submit(values))}
-          className="mt-6 space-y-1"
+          className="mt-6 flex flex-1 flex-col"
         >
           <label
             htmlFor="create-transfer-from"
@@ -142,6 +138,8 @@ export function CreateTransferSheet({ onClose }: Readonly<{ onClose: () => void 
           </label>
           <select
             id="create-transfer-from"
+            name="fromAccountId"
+            autoComplete="off"
             className={`${selectClasses} mt-1.5`}
             value={fromAccountId}
             onChange={(event) => selectFrom(event.target.value)}
@@ -153,13 +151,18 @@ export function CreateTransferSheet({ onClose }: Readonly<{ onClose: () => void 
               </option>
             ))}
           </select>
+          {form.formState.errors.fromAccountId?.message === undefined ? null : (
+            <p role="alert" className="mt-1.5 text-xs font-medium text-expense">
+              {form.formState.errors.fromAccountId.message}
+            </p>
+          )}
 
           <div className="flex justify-center py-1.5">
             <button
               type="button"
               onClick={swap}
               aria-label="Swap from and to accounts"
-              className="grid h-9 w-9 place-items-center rounded-full border border-border bg-accent/10 text-base text-accent hover:bg-accent/15"
+              className="grid h-11 w-11 place-items-center rounded-full border border-border bg-accent/10 text-base text-accent hover:bg-accent/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             >
               ⇅
             </button>
@@ -173,6 +176,8 @@ export function CreateTransferSheet({ onClose }: Readonly<{ onClose: () => void 
           </label>
           <select
             id="create-transfer-to"
+            name="toAccountId"
+            autoComplete="off"
             className={`${selectClasses} mt-1.5`}
             value={toAccountId}
             onChange={(event) =>
@@ -186,6 +191,11 @@ export function CreateTransferSheet({ onClose }: Readonly<{ onClose: () => void 
               </option>
             ))}
           </select>
+          {form.formState.errors.toAccountId?.message === undefined ? null : (
+            <p role="alert" className="mt-1.5 text-xs font-medium text-expense">
+              {form.formState.errors.toAccountId.message}
+            </p>
+          )}
           {sameAccount ? (
             <p className="mt-1.5 text-xs font-medium text-expense">
               Source and destination must be different accounts.
@@ -198,12 +208,14 @@ export function CreateTransferSheet({ onClose }: Readonly<{ onClose: () => void 
           >
             Amount
           </label>
-          <div className="mt-1.5 flex items-center gap-1.5 rounded-xl border border-border bg-surface-muted px-3.5">
+          <div className="mt-1.5 flex items-center gap-1.5 rounded-xl border border-border bg-surface-muted px-3.5 transition-colors focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/30">
             <span aria-hidden="true" className="font-mono text-base text-foreground-muted">
               ₹
             </span>
             <input
               id="create-transfer-amount"
+              name="amount"
+              autoComplete="off"
               value={amountDraft}
               onChange={(event) => setAmountDraft(event.target.value.replace(/[^0-9.]/g, ""))}
               onBlur={() => {
@@ -234,7 +246,9 @@ export function CreateTransferSheet({ onClose }: Readonly<{ onClose: () => void 
           </label>
           <input
             id="create-transfer-date"
+            name="occurredAt"
             type="datetime-local"
+            autoComplete="off"
             className={`${selectClasses} mt-1.5`}
             value={toDatetimeLocalValue(form.watch("occurredAt"))}
             onChange={(event) =>
@@ -248,7 +262,8 @@ export function CreateTransferSheet({ onClose }: Readonly<{ onClose: () => void 
             <Input
               id="create-transfer-description"
               label="Description"
-              placeholder="e.g. Move to investments"
+              placeholder="Move to investments…"
+              autoComplete="off"
               maxLength={500}
               {...form.register("description")}
             />
@@ -259,16 +274,25 @@ export function CreateTransferSheet({ onClose }: Readonly<{ onClose: () => void 
             )}
           </div>
 
-          <div className="flex justify-end gap-2.5 pt-6">
-            <Button type="button" variant="secondary" onClick={onClose}>
+          <div className="safe-area-bottom sticky bottom-0 mt-6 flex gap-2.5 border-t border-border bg-surface-elevated/95 pt-4 backdrop-blur sm:justify-end">
+            <Button
+              className="flex-1 sm:flex-none"
+              type="button"
+              variant="secondary"
+              onClick={onClose}
+            >
               Cancel
             </Button>
-            <Button type="submit" disabled={!canSubmit || create.isPending}>
+            <Button
+              className="flex-1 sm:flex-none"
+              type="submit"
+              disabled={!canSubmit || create.isPending}
+            >
               {create.isPending ? "Posting…" : "Post transfer"}
             </Button>
           </div>
         </form>
       </div>
-    </div>
+    </DialogSurface>
   );
 }

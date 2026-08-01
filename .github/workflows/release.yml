@@ -1,0 +1,90 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    if: startsWith(github.event.release.tag_name, 'v')
+    strategy:
+      matrix:
+        include:
+          - image: treasury-ops-api
+            dockerfile: apps/api/Dockerfile
+            build-args: ""
+          - image: treasury-ops-web
+            dockerfile: apps/web/Dockerfile
+            build-args: |
+              NEXT_PUBLIC_API_URL=/api
+              INTERNAL_API_URL=http://api:4000/api
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=raw,value=latest
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: ${{ matrix.build-args }}
+
+  # The release already exists (this workflow fires on `published`, created via
+  # the GitHub UI or `gh release create`) -- append the image links and
+  # quickstart to whatever notes it already has, rather than creating a
+  # duplicate release or clobbering notes the author already wrote.
+  update-release-notes:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.event.release.tag_name }}
+          REPO: ${{ github.repository }}
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          existing_body="$(gh release view "$TAG" --json body -q .body)"
+          appendix="$(cat <<EOF
+          ## Images
+          - \`ghcr.io/$OWNER/treasury-ops-api:$TAG\`
+          - \`ghcr.io/$OWNER/treasury-ops-web:$TAG\`
+
+          ## Quickstart (no clone/build required)
+          \`\`\`bash
+          curl -O https://raw.githubusercontent.com/$REPO/$TAG/docker-compose.release.yml
+          curl -O https://raw.githubusercontent.com/$REPO/$TAG/nginx.conf
+          curl -o .env https://raw.githubusercontent.com/$REPO/$TAG/env.example
+          # fill in .env, then:
+          docker compose -f docker-compose.release.yml --env-file .env up -d
+          \`\`\`
+          EOF
+          )"
+          gh release edit "$TAG" --notes "$existing_body
+
+          $appendix"

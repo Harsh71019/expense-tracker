@@ -49,6 +49,13 @@ docker compose --env-file .env run --rm migrate
 echo "==> Restarting containers..."
 docker compose --env-file .env up -d
 
+# nginx resolves upstream container IPs once at startup and caches them --
+# recreating api/web (new container IPs on the docker network) without
+# restarting proxy leaves it pointing at addresses that no longer exist,
+# so every request 502s/times out even though api/web report healthy.
+echo "==> Restarting proxy to pick up new upstream container IPs..."
+docker compose --env-file .env restart proxy
+
 echo "==> Pruning old images..."
 docker image prune -f
 

@@ -93,8 +93,12 @@ describe("CategoryManager", () => {
     render(<CategoryManager initialCategories={mocks.categories} />);
 
     await user.click(screen.getByRole("button", { name: /New category/ }));
-    expect(screen.getByRole("dialog", { name: "New category" })).toBeVisible();
-    await user.click(screen.getByRole("button", { name: "Close" }));
+    const dialog = screen.getByRole("dialog", { name: "New category" });
+    expect(dialog).toBeVisible();
+    expect(dialog).toHaveClass("h-dvh");
+    const closeButton = screen.getByRole("button", { name: "Close category form" });
+    expect(closeButton).toHaveClass("h-11", "w-11");
+    await user.click(closeButton);
 
     await user.click(screen.getByRole("button", { name: "Archive Food & Dining" }));
     expect(screen.getByText("Archive Food & Dining?")).toBeVisible();

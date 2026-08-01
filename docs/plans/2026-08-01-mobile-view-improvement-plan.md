@@ -389,5 +389,5 @@ These checkpoints were approved on 1 August 2026. Implementation is proceeding o
 - [x] Add 320 px Mobile Chrome and Mobile Safari browser projects.
 - [x] Complete remaining money-capture and transfer route refinements.
 - [x] Adapt imports, bills, and recurring workflows for phones.
-- [ ] Continue folder-by-folder through accounts, categories, and category rules.
+- [x] Continue folder-by-folder through accounts, categories, and category rules.
 - [ ] Continue through dashboard, reports, budgets, goals, assets, settings, and final hardening.

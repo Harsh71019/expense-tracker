@@ -35,7 +35,9 @@ describe("RuleRow", () => {
     expect(screen.getByText('"swiggy"')).toBeVisible();
     expect(screen.getByText("Restaurants")).toBeVisible();
 
-    await user.click(screen.getByRole("button", { name: "Delete" }));
+    const deleteButton = screen.getByRole("button", { name: "Delete rule containing swiggy" });
+    expect(deleteButton).toHaveClass("min-h-11");
+    await user.click(deleteButton);
     expect(onDelete).toHaveBeenCalledWith(rule);
   });
 

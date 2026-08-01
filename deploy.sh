@@ -39,8 +39,18 @@ if [ "${PREV_TAG}" = "${TARGET_TAG}" ]; then
 fi
 echo "==> Deploying ${TARGET_TAG} (${NEW_SHA})"
 
-echo "==> Building images..."
-docker compose --env-file .env build
+if [ "${SKIP_BUILD:-}" = "1" ]; then
+  echo "==> Skipping build (SKIP_BUILD=1) -- expecting images already loaded, e.g. via ship.sh"
+  for image in treasury-ops-api:local treasury-ops-web:latest; do
+    if ! docker image inspect "${image}" > /dev/null 2>&1; then
+      echo "!!  SKIP_BUILD=1 but ${image} isn't loaded. Run ship.sh first, or drop SKIP_BUILD to build here."
+      exit 1
+    fi
+  done
+else
+  echo "==> Building images..."
+  docker compose --env-file .env build
+fi
 
 echo "==> Running database migrations (one-shot)..."
 # Runs drizzle-kit migrate and exits; failure aborts the deploy BEFORE anything restarts

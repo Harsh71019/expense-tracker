@@ -1,6 +1,6 @@
 # TreasuryOps Mobile View Improvement Plan
 
-- **Status:** Proposed — documentation only; implementation requires approval
+- **Status:** Approved — Phase 1 foundation and Phase 2 ledger slice in progress
 - **Planning branch:** `codex/mobile-view-improvement-plan`
 - **Prepared:** 1 August 2026
 - **Primary scope:** `apps/web`
@@ -24,17 +24,17 @@ The plan was produced from:
 
 ### Baseline findings
 
-| Priority | Finding | Current evidence |
-| --- | --- | --- |
-| P0 | The intended mobile bottom navigation exists in code and tests but is never mounted in the app shell. | `components/app-nav/app-nav.tsx` supports `orientation="bottom"`; no production caller uses it. `ui/sonner/sonner.tsx` already reserves 88 px above a presumed bottom bar. |
-| P0 | Mobile header controls are crowded and undersized. | At 390 px, menu is 36 × 36, privacy is about 38 × 30, New Entry about 42 × 36, and theme is about 38 × 38. |
-| P0 | The transaction ledger has a desktop-only four-column grid at every breakpoint. | `transactions/components/txn-row.tsx` exports `grid-cols-[2.4fr_1fr_1fr_1.1fr]` without a mobile alternative. |
-| P0 | Import review is wider than a phone and clips its columns. | `imports/components/review-step.tsx` combines fixed date, amount, and category widths with gaps and padding inside `overflow-hidden`. |
-| P0 | Modal behavior is inconsistent. | The mobile menu locks body scroll, handles Escape, and returns focus. The other dialogs/drawers declare `aria-modal` but do not share those mechanics. |
-| P1 | Most text inputs and selects use `text-sm` (14 px). | The shared `Input` and many feature-local controls can trigger Safari auto-zoom when focused. |
-| P1 | Many interactive targets are below 44 × 44. | Range tabs, presets, close buttons, filters, icon buttons, month navigation, account/category selectors, and row actions. |
-| P1 | Safe areas are handled only by the toaster. | No shell, bottom-nav, drawer footer, or auth-layout inset treatment exists. |
-| P1 | Mobile browser coverage is narrow. | Playwright has Pixel 7 / Mobile Chrome, but no 320–360 px project, Mobile Safari/WebKit project, or route-wide overflow assertions. |
+| Priority | Finding                                                                                               | Current evidence                                                                                                                                                           |
+| -------- | ----------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P0       | The intended mobile bottom navigation exists in code and tests but is never mounted in the app shell. | `components/app-nav/app-nav.tsx` supports `orientation="bottom"`; no production caller uses it. `ui/sonner/sonner.tsx` already reserves 88 px above a presumed bottom bar. |
+| P0       | Mobile header controls are crowded and undersized.                                                    | At 390 px, menu is 36 × 36, privacy is about 38 × 30, New Entry about 42 × 36, and theme is about 38 × 38.                                                                 |
+| P0       | The transaction ledger has a desktop-only four-column grid at every breakpoint.                       | `transactions/components/txn-row.tsx` exports `grid-cols-[2.4fr_1fr_1fr_1.1fr]` without a mobile alternative.                                                              |
+| P0       | Import review is wider than a phone and clips its columns.                                            | `imports/components/review-step.tsx` combines fixed date, amount, and category widths with gaps and padding inside `overflow-hidden`.                                      |
+| P0       | Modal behavior is inconsistent.                                                                       | The mobile menu locks body scroll, handles Escape, and returns focus. The other dialogs/drawers declare `aria-modal` but do not share those mechanics.                     |
+| P1       | Most text inputs and selects use `text-sm` (14 px).                                                   | The shared `Input` and many feature-local controls can trigger Safari auto-zoom when focused.                                                                              |
+| P1       | Many interactive targets are below 44 × 44.                                                           | Range tabs, presets, close buttons, filters, icon buttons, month navigation, account/category selectors, and row actions.                                                  |
+| P1       | Safe areas are handled only by the toaster.                                                           | No shell, bottom-nav, drawer footer, or auth-layout inset treatment exists.                                                                                                |
+| P1       | Mobile browser coverage is narrow.                                                                    | Playwright has Pixel 7 / Mobile Chrome, but no 320–360 px project, Mobile Safari/WebKit project, or route-wide overflow assertions.                                        |
 
 ## 3. Scope and Non-Goals
 
@@ -377,4 +377,16 @@ Approval can be given phase by phase. Before implementation starts, confirm:
 4. Overlay approach: shared in-repo primitives with no new dependency.
 5. Delivery order: foundation → money capture/ledger → dense workflows → analytics → settings/hardening.
 
-No application code should be changed until these checkpoints are approved.
+These checkpoints were approved on 1 August 2026. Implementation is proceeding on the planning branch in the commit boundaries above.
+
+## 10. Implementation Progress
+
+- [x] Push the reviewed planning document and continue on the same branch.
+- [x] Mount a safe-area-aware, one-thumb mobile navigation rail.
+- [x] Add shared dialog/drawer focus, Escape, scroll-lock, and focus-return behavior.
+- [x] Enforce the first shared 44 px touch targets and 16 px phone inputs.
+- [x] Adapt the transaction ledger, filters, create sheet, detail drawer, and reversal flow.
+- [x] Add 320 px Mobile Chrome and Mobile Safari browser projects.
+- [ ] Complete remaining money-capture and transfer route refinements.
+- [ ] Continue folder-by-folder through imports, bills, recurring, accounts, and categories.
+- [ ] Continue through dashboard, reports, budgets, goals, assets, settings, and final hardening.

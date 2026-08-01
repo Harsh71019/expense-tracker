@@ -26,6 +26,20 @@ test.describe("unauthenticated access", () => {
     await expect(page.getByRole("button", { name: "Sign in" })).toBeVisible();
   });
 
+  test("keeps auth forms inside narrow viewports without input zoom", async ({ page }) => {
+    await page.goto("/login");
+    const layout = await page.evaluate(() => ({
+      clientWidth: document.documentElement.clientWidth,
+      scrollWidth: document.documentElement.scrollWidth,
+      emailFontSize: Number.parseFloat(
+        getComputedStyle(document.querySelector("input") ?? document.body).fontSize
+      )
+    }));
+
+    expect(layout.scrollWidth).toBe(layout.clientWidth);
+    if (layout.clientWidth < 640) expect(layout.emailFontSize).toBeGreaterThanOrEqual(16);
+  });
+
   test("has no automatically detectable accessibility violations on sign-in", async ({ page }) => {
     await page.goto("/login");
     const scan = await new AxeBuilder({ page }).analyze();

@@ -21,6 +21,14 @@ export default defineConfig({
     {
       name: "Mobile Chrome",
       use: { ...devices["Pixel 7"] }
+    },
+    {
+      name: "Small Mobile Chrome",
+      use: { ...devices["Pixel 7"], viewport: { width: 320, height: 740 } }
+    },
+    {
+      name: "Mobile Safari",
+      use: { ...devices["iPhone 13"] }
     }
   ],
   // Set PLAYWRIGHT_BASE_URL to run the same suite against a full compose stack

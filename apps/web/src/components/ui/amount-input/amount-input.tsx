@@ -115,7 +115,9 @@ export function AmountInput({
       {message === undefined || message === null ? null : (
         <p
           id={`${id}-error`}
-          className="self-center rounded-lg border border-expense/25 bg-expense/10 px-3 py-1 font-mono text-[11px] font-semibold text-expense animate-fade-in"
+          role="alert"
+          aria-live="polite"
+          className="self-center rounded-lg border border-expense/25 bg-expense/10 px-3 py-1 font-mono text-[11px] font-semibold text-expense animate-fade-in motion-reduce:animate-none"
         >
           {message}
         </p>

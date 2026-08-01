@@ -36,6 +36,7 @@ export function AppNav({
               href={item.href}
               title={compact ? item.label : undefined}
               aria-label={compact ? item.label : undefined}
+              aria-current={active ? "page" : undefined}
               {...(onNavigate === undefined ? {} : { onClick: onNavigate })}
               className={`relative flex items-center rounded-lg border px-3 py-2.5 text-sm transition-colors duration-150 ${compact ? "h-10 w-10 justify-center px-0" : "gap-3"} ${
                 active
@@ -67,6 +68,7 @@ export function AppNav({
           <Link
             key={item.href}
             href={item.href}
+            aria-current={active ? "page" : undefined}
             className={`flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] font-medium tracking-wide transition-colors duration-150 ${
               active ? "text-accent font-semibold" : "text-foreground-muted hover:text-foreground"
             }`}

@@ -61,7 +61,7 @@ export function TxnList({
 
       <TxnFilters filters={filters} />
 
-      <p className="mb-3 font-mono text-xs font-medium text-foreground-muted">
+      <p className="mb-3 font-mono text-xs font-medium text-foreground-muted" aria-live="polite">
         {transactions.length} {transactions.length === 1 ? "transaction" : "transactions"} · sorted
         by date
       </p>
@@ -127,7 +127,9 @@ export function TxnList({
         </div>
       ) : null}
       {list.isError ? (
-        <p className="mt-4 text-center text-sm text-expense">Could not refresh the ledger.</p>
+        <p className="mt-4 text-center text-sm text-expense" role="alert" aria-live="assertive">
+          Could not refresh the ledger.
+        </p>
       ) : null}
 
       {createOpen ? <CreateTxnSheet onClose={() => setCreateOpen(false)} /> : null}

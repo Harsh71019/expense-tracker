@@ -45,6 +45,7 @@ export function Button({
 
   return (
     <button
+      type={props.type ?? "button"}
       className={classes}
       disabled={props.disabled || isLoading}
       aria-busy={isLoading ? true : undefined}

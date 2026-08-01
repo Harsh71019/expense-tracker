@@ -31,7 +31,8 @@ export default async function AppLayout({
 
           <main
             id="main-content"
-            className="app-main-mobile-padding w-full flex-1 p-4 sm:p-8 animate-fade-in"
+            tabIndex={-1}
+            className="app-main-mobile-padding w-full flex-1 p-4 sm:p-8 outline-none animate-fade-in"
           >
             {children}
           </main>

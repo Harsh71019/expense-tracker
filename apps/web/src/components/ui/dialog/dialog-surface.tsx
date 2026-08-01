@@ -82,6 +82,7 @@ function useDialogBehavior(onClose: () => void): RefObject<HTMLDivElement | null
 
 type DialogSurfaceProps = Readonly<{
   labelledBy: string;
+  describedBy?: string;
   onClose: () => void;
   children: ReactNode;
   variant?: "dialog" | "drawer";
@@ -91,6 +92,7 @@ type DialogSurfaceProps = Readonly<{
 
 export function DialogSurface({
   labelledBy,
+  describedBy,
   onClose,
   children,
   variant = "dialog",
@@ -108,7 +110,7 @@ export function DialogSurface({
     <div
       role="presentation"
       onMouseDown={closeFromBackdrop}
-      className={`fixed inset-0 z-50 bg-black/60 backdrop-blur-sm animate-fade-in ${
+      className={`fixed inset-0 z-50 bg-black/60 backdrop-blur-sm animate-fade-in motion-reduce:animate-none ${
         drawer
           ? "flex items-end justify-center sm:items-stretch sm:justify-end"
           : "grid items-start justify-items-center overflow-y-auto overscroll-contain p-4 sm:items-center sm:p-6"
@@ -119,11 +121,12 @@ export function DialogSurface({
         role={role}
         aria-modal="true"
         aria-labelledby={labelledBy}
+        {...(describedBy === undefined ? {} : { "aria-describedby": describedBy })}
         tabIndex={-1}
         className={`${
           drawer
-            ? "safe-area-bottom max-h-[92dvh] w-full overflow-y-auto overscroll-contain rounded-t-3xl border-t border-border bg-surface-elevated px-5 pt-2 outline-none animate-sheet-in sm:h-dvh sm:max-h-none sm:max-w-md sm:rounded-none sm:border-t-0 sm:border-l sm:pt-7 sm:animate-drawer-in sm:p-7"
-            : "max-h-[calc(100dvh-2rem)] w-full max-w-sm overflow-y-auto overscroll-contain rounded-2xl border border-border bg-surface-elevated p-5 shadow-glow-strong outline-none animate-scale-up sm:p-7"
+            ? "safe-area-bottom max-h-[92dvh] w-full overflow-y-auto overscroll-contain rounded-t-3xl border-t border-border bg-surface-elevated px-5 pt-2 outline-none animate-sheet-in motion-reduce:animate-none sm:h-dvh sm:max-h-none sm:max-w-md sm:rounded-none sm:border-t-0 sm:border-l sm:pt-7 sm:animate-drawer-in sm:motion-reduce:animate-none sm:p-7"
+            : "max-h-[calc(100dvh-2rem)] w-full max-w-sm overflow-y-auto overscroll-contain rounded-2xl border border-border bg-surface-elevated p-5 shadow-glow-strong outline-none animate-scale-up motion-reduce:animate-none sm:p-7"
         } ${panelClassName}`}
       >
         {drawer ? (

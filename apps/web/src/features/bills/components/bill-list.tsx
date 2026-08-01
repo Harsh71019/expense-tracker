@@ -34,8 +34,8 @@ export function BillList({
 
   return (
     <section className="space-y-7">
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div>
+      <header className="flex flex-col items-stretch gap-4 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
+        <div className="min-w-0">
           <p className="font-mono text-[10px] font-bold tracking-[0.2em] text-accent uppercase">
             Card control centre
           </p>
@@ -107,6 +107,7 @@ export function BillList({
           {query.hasNextPage ? (
             <div className="flex justify-center">
               <Button
+                className="w-full sm:w-auto"
                 type="button"
                 variant="secondary"
                 disabled={query.isFetchingNextPage}

@@ -12,7 +12,7 @@ import type { ReactNode } from "react";
 import { serializeBillFilters } from "../model/bill-filters";
 
 const selectClasses =
-  "rounded-lg border border-border bg-surface-elevated px-3 py-2 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30";
+  "min-h-11 w-full rounded-lg border border-border bg-surface-elevated px-3 py-2 text-base text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 sm:w-auto sm:text-sm";
 
 export function BillFilters({
   filters,
@@ -27,9 +27,11 @@ export function BillFilters({
   }
 
   return (
-    <div className="flex flex-wrap gap-2" aria-label="Bill filters">
+    <div className="grid w-full gap-2 sm:flex sm:w-auto sm:flex-wrap" aria-label="Bill filters">
       <select
         aria-label="Filter by card"
+        name="cardFilter"
+        autoComplete="off"
         className={selectClasses}
         value={filters.accountId ?? ""}
         onChange={(event) =>
@@ -45,6 +47,8 @@ export function BillFilters({
       </select>
       <select
         aria-label="Filter by statement status"
+        name="statementStatusFilter"
+        autoComplete="off"
         className={selectClasses}
         value={filters.reconciliationStatus ?? ""}
         onChange={(event) =>
@@ -62,6 +66,8 @@ export function BillFilters({
       </select>
       <select
         aria-label="Filter by payment status"
+        name="paymentStatusFilter"
+        autoComplete="off"
         className={selectClasses}
         value={filters.paymentStatus ?? ""}
         onChange={(event) =>

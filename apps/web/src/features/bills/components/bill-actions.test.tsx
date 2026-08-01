@@ -216,6 +216,11 @@ describe("bill actions", () => {
     const closeReconcile = vi.fn();
     mocks.reconcile.mockResolvedValue(detail.bill);
     const { unmount } = render(<ReconcileConfirmDialog detail={detail} onClose={closeReconcile} />);
+    expect(screen.getByRole("dialog", { name: "Mark statement reconciled?" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Close reconciliation" })).toHaveClass(
+      "h-11",
+      "w-11"
+    );
     await user.click(screen.getByRole("button", { name: "Confirm reconciliation" }));
     await waitFor(() => expect(closeReconcile).toHaveBeenCalledOnce());
     unmount();
@@ -225,6 +230,8 @@ describe("bill actions", () => {
       bill: { ...detail.bill, paymentStatus: "paid", paidMinor: 10_000, remainingMinor: 0 }
     });
     render(<PayBillSheet detail={detail} accounts={[card, bank]} onClose={closePayment} />);
+    expect(screen.getByRole("dialog", { name: "Pay credit card bill" })).toHaveClass("h-dvh");
+    expect(screen.getByLabelText("Pay from")).toHaveClass("min-h-11", "text-base");
     await user.click(screen.getByRole("button", { name: "Confirm payment" }));
     await waitFor(() =>
       expect(mocks.pay).toHaveBeenCalledWith({

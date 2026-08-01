@@ -92,8 +92,8 @@ export function ReviewStep({ batchId, categories, onCountsChange }: ReviewStepPr
 
   return (
     <>
-      <div className="mt-5.5 animate-fade-in rounded-2xl border border-border bg-surface-elevated px-6.5 py-5.5">
-        <div className="flex flex-wrap gap-8">
+      <div className="mt-5.5 animate-fade-in rounded-2xl border border-border bg-surface-elevated p-4 sm:px-6.5 sm:py-5.5">
+        <div className="grid grid-cols-2 gap-5 sm:flex sm:flex-wrap sm:gap-8">
           <div>
             <div className="font-mono text-3xl font-bold tracking-tight text-foreground">
               {total}
@@ -131,7 +131,7 @@ export function ReviewStep({ batchId, categories, onCountsChange }: ReviewStepPr
       </div>
 
       <div className="mt-3.5 overflow-hidden rounded-2xl border border-border bg-surface-elevated">
-        <div className="flex items-center gap-3.5 border-b border-border px-5 py-3 font-mono text-[10px] font-semibold tracking-wider text-foreground-muted uppercase">
+        <div className="hidden items-center gap-3.5 border-b border-border px-5 py-3 font-mono text-[10px] font-semibold tracking-wider text-foreground-muted uppercase md:flex">
           <div className="w-4" />
           <div className="w-24">Date</div>
           <div className="flex-1">Description</div>
@@ -157,22 +157,23 @@ export function ReviewStep({ batchId, categories, onCountsChange }: ReviewStepPr
           return (
             <div
               key={row.id}
-              className={`flex items-center gap-3.5 border-t border-border px-5 py-3.5 ${parsed === undefined ? "opacity-60" : ""} ${row.isDuplicate ? "bg-amber-500/5" : ""}`}
+              className={`grid grid-cols-[2.75rem_minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2 border-t border-border p-4 md:flex md:items-center md:gap-3.5 md:px-5 md:py-3.5 ${parsed === undefined ? "opacity-60" : ""} ${row.isDuplicate ? "bg-amber-500/5" : ""}`}
             >
-              <div className="flex w-4 justify-center">
+              <label className="col-start-1 row-span-3 grid h-11 w-11 cursor-pointer place-items-center rounded-lg hover:bg-surface-muted focus-within:ring-2 focus-within:ring-accent md:h-auto md:w-4">
+                <span className="sr-only">Include row {row.rowNumber}</span>
                 <input
                   type="checkbox"
                   checked={row.include}
                   disabled={parsed === undefined || update.isPending}
                   onChange={() => toggleInclude(row)}
                   aria-label={`Include row ${row.rowNumber}`}
-                  className="h-4.5 w-4.5 accent-accent"
+                  className="h-5 w-5 accent-accent md:h-4.5 md:w-4.5"
                 />
-              </div>
-              <div className="w-24 font-mono text-[13px] text-foreground-muted">
+              </label>
+              <div className="col-start-2 row-start-2 font-mono text-xs text-foreground-muted md:w-24 md:text-[13px]">
                 {parsed === undefined ? "—" : dateFormatter.format(parsed.occurredAt)}
               </div>
-              <div className="min-w-0 flex-1">
+              <div className="col-start-2 col-end-4 row-start-1 min-w-0 md:flex-1">
                 <div className="truncate text-sm font-medium text-foreground">
                   {parsed === undefined
                     ? Object.entries(row.raw)
@@ -198,14 +199,14 @@ export function ReviewStep({ batchId, categories, onCountsChange }: ReviewStepPr
                   </div>
                 ) : null}
               </div>
-              <div className="w-32 text-right">
+              <div className="col-start-3 row-start-2 text-right md:w-32">
                 {parsed === undefined ? (
                   <span className="font-mono text-sm text-foreground-muted/50">—</span>
                 ) : (
                   <Money minor={parsed.amountMinor} variant={parsed.type} signed size="sm" />
                 )}
               </div>
-              <div className="w-44">
+              <div className="col-start-2 col-end-4 row-start-3 md:w-44">
                 {parsed === undefined ? (
                   <span className="font-mono text-sm text-foreground-muted/50">—</span>
                 ) : (
@@ -215,7 +216,8 @@ export function ReviewStep({ batchId, categories, onCountsChange }: ReviewStepPr
                       disabled={update.isPending}
                       onChange={(event) => setCategory(row, event.target.value)}
                       aria-label={`Category for row ${row.rowNumber}`}
-                      className="w-full rounded-lg border border-border bg-surface-muted px-2.5 py-2 text-[12.5px] font-medium text-foreground"
+                      autoComplete="off"
+                      className="min-h-11 w-full rounded-lg border border-border bg-surface-muted px-2.5 py-2 text-base font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-accent md:text-[12.5px]"
                     >
                       <option value="">Uncategorized</option>
                       {categoryOptions.map((category) => (
@@ -242,7 +244,7 @@ export function ReviewStep({ batchId, categories, onCountsChange }: ReviewStepPr
               type="button"
               disabled={list.isFetchingNextPage}
               onClick={() => void list.fetchNextPage()}
-              className="rounded-lg border border-border bg-surface-muted px-4 py-2 text-sm font-medium text-foreground"
+              className="min-h-11 rounded-lg border border-border bg-surface-muted px-4 py-2 text-sm font-medium text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             >
               {list.isFetchingNextPage ? "Loading rows…" : "Load more"}
             </button>

@@ -104,7 +104,7 @@ export function GoalDetail({
               <button
                 type="button"
                 onClick={() => setConfirmOpen(true)}
-                className="rounded-lg border border-expense/30 px-4 py-2.5 text-sm font-semibold text-expense"
+                className="min-h-11 rounded-lg border border-expense/30 px-4 py-2.5 text-sm font-semibold text-expense focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-expense"
               >
                 Abandon
               </button>

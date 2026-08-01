@@ -63,7 +63,7 @@ export function CategoryCard({ parent, subcategories, onArchive }: CategoryCardP
           onClick={() => onArchive(parent)}
           title="Archive"
           aria-label={`Archive ${parent.name}`}
-          className="grid h-7 w-7 shrink-0 place-items-center rounded-lg border border-border bg-surface-muted text-xs text-foreground-muted transition-colors duration-150 hover:text-foreground"
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-border bg-surface-muted text-xs text-foreground-muted transition-colors duration-150 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         >
           ✕
         </button>
@@ -76,7 +76,7 @@ export function CategoryCard({ parent, subcategories, onArchive }: CategoryCardP
               type="button"
               onClick={() => onArchive(child)}
               title={`Created ${dateFormatter.format(child.createdAt)} · click to archive`}
-              className="inline-flex items-center gap-2 rounded-full border border-border bg-surface-muted py-1.5 pr-2.5 pl-1.5 text-[13px] font-semibold text-foreground transition-colors duration-150 hover:border-accent/40"
+              className="inline-flex min-h-11 items-center gap-2 rounded-full border border-border bg-surface-muted py-1.5 pr-2.5 pl-1.5 text-[13px] font-semibold text-foreground transition-colors duration-150 hover:border-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             >
               <span
                 style={swatchStyle(child.color)}

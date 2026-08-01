@@ -72,6 +72,8 @@ export function ApiKeyRow({ apiKey, onRevoke, onUpdate, isUpdating }: ApiKeyRowP
       <div className="flex flex-col gap-3.5 rounded-[13px] border border-border bg-surface-elevated px-4.5 py-3.5">
         <Input
           id={`api-key-name-${apiKey.id}`}
+          name="name"
+          autoComplete="off"
           label="Name"
           value={name}
           onChange={(event) => setName(event.target.value)}
@@ -81,9 +83,13 @@ export function ApiKeyRow({ apiKey, onRevoke, onUpdate, isUpdating }: ApiKeyRowP
             Scopes
           </legend>
           {SCOPE_OPTIONS.map((option) => (
-            <label key={option.id} className="flex items-center gap-2.5 text-sm text-foreground">
+            <label
+              key={option.id}
+              className="flex min-h-11 items-center gap-2.5 text-sm text-foreground"
+            >
               <input
                 type="checkbox"
+                className="h-5 w-5 accent-accent"
                 checked={scopeIds.has(option.id)}
                 onChange={() => toggleScope(option.id)}
                 aria-label={option.label}
@@ -97,9 +103,10 @@ export function ApiKeyRow({ apiKey, onRevoke, onUpdate, isUpdating }: ApiKeyRowP
             {error}
           </p>
         )}
-        <div className="flex justify-end gap-2.5">
+        <div className="flex flex-col-reverse gap-2.5 sm:flex-row sm:justify-end">
           <Button
             type="button"
+            className="w-full sm:w-auto"
             variant="secondary"
             onClick={() => {
               resetDraft();
@@ -108,7 +115,7 @@ export function ApiKeyRow({ apiKey, onRevoke, onUpdate, isUpdating }: ApiKeyRowP
           >
             Cancel
           </Button>
-          <Button type="button" onClick={save} disabled={isUpdating}>
+          <Button type="button" className="w-full sm:w-auto" onClick={save} disabled={isUpdating}>
             Save
           </Button>
         </div>
@@ -117,7 +124,7 @@ export function ApiKeyRow({ apiKey, onRevoke, onUpdate, isUpdating }: ApiKeyRowP
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-4 rounded-[13px] border border-border bg-surface-elevated px-4.5 py-3.5 animate-fade-in">
+    <div className="flex flex-col items-stretch gap-4 rounded-[13px] border border-border bg-surface-elevated px-4.5 py-3.5 animate-fade-in sm:flex-row sm:flex-wrap sm:items-center">
       <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3">
         <span className="font-mono text-[15px] text-foreground">{apiKey.name}</span>
         {apiKey.start === null ? null : (
@@ -137,7 +144,7 @@ export function ApiKeyRow({ apiKey, onRevoke, onUpdate, isUpdating }: ApiKeyRowP
           </span>
         )}
       </div>
-      <div className="flex shrink-0 items-center gap-3.5">
+      <div className="flex flex-wrap items-center justify-between gap-2 sm:shrink-0 sm:justify-start sm:gap-3.5">
         <span className="font-mono text-xs whitespace-nowrap text-foreground-muted">
           Added {dateFormatter.format(apiKey.createdAt)}
         </span>
@@ -149,14 +156,14 @@ export function ApiKeyRow({ apiKey, onRevoke, onUpdate, isUpdating }: ApiKeyRowP
                 resetDraft();
                 setEditing(true);
               }}
-              className="rounded-md px-1.5 py-1 text-sm font-medium text-foreground-muted transition-colors duration-150 hover:bg-surface-muted"
+              className="min-h-11 rounded-md px-3 py-1 text-sm font-medium text-foreground-muted transition-colors duration-150 hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             >
               Edit
             </button>
             <button
               type="button"
               onClick={() => onRevoke(apiKey)}
-              className="rounded-md px-1.5 py-1 text-sm font-medium text-expense transition-colors duration-150 hover:bg-expense/10"
+              className="min-h-11 rounded-md px-3 py-1 text-sm font-medium text-expense transition-colors duration-150 hover:bg-expense/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-expense"
             >
               Revoke
             </button>

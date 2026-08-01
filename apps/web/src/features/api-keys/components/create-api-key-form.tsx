@@ -55,6 +55,8 @@ export function CreateApiKeyForm({
     >
       <Input
         id="create-api-key-name"
+        name="name"
+        autoComplete="off"
         label="Name"
         value={name}
         onChange={(event) => setName(event.target.value)}
@@ -64,9 +66,13 @@ export function CreateApiKeyForm({
           Scopes
         </legend>
         {SCOPE_OPTIONS.map((option) => (
-          <label key={option.id} className="flex items-center gap-2.5 text-sm text-foreground">
+          <label
+            key={option.id}
+            className="flex min-h-11 items-center gap-2.5 text-sm text-foreground"
+          >
             <input
               type="checkbox"
+              className="h-5 w-5 accent-accent"
               checked={scopeIds.has(option.id)}
               onChange={() => toggleScope(option.id)}
               aria-label={option.label}
@@ -77,6 +83,7 @@ export function CreateApiKeyForm({
       </fieldset>
       <Input
         id="create-api-key-expiry"
+        name="expiresAt"
         label="Expires (optional)"
         type="date"
         value={expiresAt}
@@ -87,7 +94,7 @@ export function CreateApiKeyForm({
           {error}
         </p>
       )}
-      <Button type="submit" disabled={isPending}>
+      <Button type="submit" className="w-full sm:w-auto" disabled={isPending}>
         {isPending ? "Creating…" : "Create key"}
       </Button>
     </form>

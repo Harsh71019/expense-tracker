@@ -35,7 +35,7 @@ export function WarningFilters({
             type="button"
             aria-pressed={active}
             onClick={() => select(option.value)}
-            className={`rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors duration-150 ${
+            className={`min-h-11 rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
               active
                 ? "border-accent bg-accent-glow text-foreground"
                 : "border-border bg-surface-elevated text-foreground-muted hover:text-foreground"

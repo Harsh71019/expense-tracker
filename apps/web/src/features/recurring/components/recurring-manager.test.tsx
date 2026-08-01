@@ -83,7 +83,9 @@ describe("RecurringManager", () => {
     expect(screen.getByText(/Every month on day 1/)).toBeVisible();
     expect(screen.getByText("−₹2,500.00")).toBeVisible();
 
-    await userEvent.click(screen.getByRole("button", { name: "Pause" }));
+    const pauseButton = screen.getByRole("button", { name: "Pause" });
+    expect(pauseButton.parentElement).toHaveClass("grid-cols-2");
+    await userEvent.click(pauseButton);
     expect(mocks.update).toHaveBeenCalledWith({ ruleId: rule.id, patch: { isPaused: true } });
   });
 

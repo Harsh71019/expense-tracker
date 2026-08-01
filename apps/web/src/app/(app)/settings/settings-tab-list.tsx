@@ -40,7 +40,7 @@ export function SettingsTabList({ activeTab }: Readonly<{ activeTab: SettingsTab
       <div
         role="tablist"
         aria-label="Settings sections"
-        className="grid grid-cols-3 gap-1 rounded-2xl border border-border bg-surface-elevated p-1.5"
+        className="flex gap-1 overflow-x-auto rounded-2xl border border-border bg-surface-elevated p-1.5"
       >
         {SETTINGS_TABS.map((tab, index) => {
           const active = tab.id === activeTab;
@@ -57,7 +57,7 @@ export function SettingsTabList({ activeTab }: Readonly<{ activeTab: SettingsTab
               tabIndex={active ? 0 : -1}
               scroll={false}
               onKeyDown={(event) => moveFocus(event, index)}
-              className={`group flex min-w-0 items-center justify-center rounded-xl px-2 py-2.5 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface sm:justify-start sm:gap-2.5 sm:px-3.5 sm:text-left ${
+              className={`group flex min-h-11 min-w-[6.5rem] flex-1 items-center justify-center rounded-xl px-2 py-2.5 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface sm:min-w-0 sm:justify-start sm:gap-2.5 sm:px-3.5 sm:text-left ${
                 active
                   ? "bg-accent text-accent-foreground shadow-glow"
                   : "text-foreground-muted hover:bg-accent-glow hover:text-foreground"

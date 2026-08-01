@@ -9,6 +9,10 @@ describe("SettingsTabList", () => {
     render(<SettingsTabList activeTab="appearance" />);
 
     expect(screen.getByRole("tablist", { name: "Settings sections" })).toBeVisible();
+    expect(screen.getByRole("tablist", { name: "Settings sections" })).toHaveClass(
+      "overflow-x-auto"
+    );
+    expect(screen.getByRole("tab", { name: /Profile/ })).toHaveClass("min-h-11");
     expect(screen.getByRole("tab", { name: /Profile/ })).toHaveAttribute("href", "/settings");
     expect(screen.getByRole("tab", { name: /Appearance/ })).toHaveAttribute(
       "href",

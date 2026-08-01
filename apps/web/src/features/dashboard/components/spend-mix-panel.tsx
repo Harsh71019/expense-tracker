@@ -51,7 +51,7 @@ export function SpendMixPanel({ initialSpendMix, initialRange }: SpendMixPanelPr
 
   return (
     <div className="rounded-2xl border border-border bg-surface-elevated p-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-lg font-bold tracking-tight text-foreground">Spend mix</h2>
         <RangeTabs value={range} onChange={setRange} label="Spend mix range" />
       </div>

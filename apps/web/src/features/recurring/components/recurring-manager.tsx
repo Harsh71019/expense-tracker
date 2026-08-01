@@ -69,8 +69,8 @@ export function RecurringManager({ initialRules, accounts, categories }: Manager
         items={[{ label: "Settings", href: "/settings?tab=management" }, { label: "Recurring" }]}
       />
 
-      <header className="flex flex-wrap items-start justify-between gap-5">
-        <div>
+      <header className="flex flex-col items-stretch gap-5 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
+        <div className="min-w-0">
           <p className="font-mono text-[10px] font-bold tracking-[0.2em] text-accent uppercase">
             Ledger · Automation
           </p>
@@ -82,7 +82,12 @@ export function RecurringManager({ initialRules, accounts, categories }: Manager
             posts itself. Pause anytime.
           </p>
         </div>
-        <Button type="button" onClick={openCreate} disabled={accountItems.length === 0}>
+        <Button
+          className="w-full sm:w-auto"
+          type="button"
+          onClick={openCreate}
+          disabled={accountItems.length === 0}
+        >
           <span className="mr-1 text-base leading-none">+</span> New rule
         </Button>
       </header>
@@ -250,8 +255,8 @@ function RecurringRuleCard({
           </div>
         </div>
 
-        <div className="flex items-center justify-between gap-5 border-t border-border pt-4 md:flex-col md:items-end md:border-0 md:pt-0">
-          <div className="text-right">
+        <div className="flex flex-col items-stretch gap-3 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between sm:gap-5 md:flex-col md:items-end md:border-0 md:pt-0">
+          <div className="text-left sm:text-right">
             <Money
               minor={rule.template.amountMinor}
               variant={rule.template.type}
@@ -260,13 +265,13 @@ function RecurringRuleCard({
             />
             <p className="mt-0.5 text-xs text-foreground-muted">per {period}</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
             {isCompleted ? null : (
               <button
                 type="button"
                 onClick={onTogglePause}
                 disabled={isUpdating}
-                className="rounded-lg border border-border px-3 py-2 text-xs font-semibold text-foreground-muted hover:border-accent/40 hover:text-accent disabled:opacity-50"
+                className="min-h-11 rounded-lg border border-border px-3 py-2 text-xs font-semibold text-foreground-muted hover:border-accent/40 hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-50"
               >
                 {isUpdating ? "Saving…" : rule.isPaused ? "Resume" : "Pause"}
               </button>
@@ -274,7 +279,7 @@ function RecurringRuleCard({
             <button
               type="button"
               onClick={onEdit}
-              className="rounded-lg border border-border px-3 py-2 text-xs font-semibold text-foreground hover:border-accent/40 hover:text-accent"
+              className="min-h-11 rounded-lg border border-border px-3 py-2 text-xs font-semibold text-foreground hover:border-accent/40 hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             >
               Edit
             </button>

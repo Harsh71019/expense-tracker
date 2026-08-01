@@ -87,7 +87,7 @@ export function ApiKeyManager({
       <div
         role="tablist"
         aria-label="API keys sections"
-        className="inline-flex gap-1 rounded-xl border border-border bg-surface-elevated p-1"
+        className="flex w-full gap-1 rounded-xl border border-border bg-surface-elevated p-1 sm:inline-flex sm:w-auto"
       >
         {TABS.map((tab) => {
           const active = tab.id === activeTab;
@@ -101,7 +101,7 @@ export function ApiKeyManager({
               aria-controls={`api-keys-panel-${tab.id}`}
               tabIndex={active ? 0 : -1}
               onClick={() => setActiveTab(tab.id)}
-              className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors duration-150 ${
+              className={`min-h-11 flex-1 rounded-lg px-4 py-2 text-sm font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:flex-none ${
                 active
                   ? "bg-accent text-accent-foreground shadow-glow"
                   : "text-foreground-muted hover:bg-accent-glow hover:text-foreground"

@@ -11,7 +11,9 @@ describe("MaskedValue", () => {
 
     expect(screen.queryByText("ak_verysecret123")).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "View API key" }));
+    const viewButton = screen.getByRole("button", { name: "View API key" });
+    expect(viewButton).toHaveClass("min-h-11");
+    await user.click(viewButton);
     expect(screen.getByText("ak_verysecret123")).toBeVisible();
 
     await user.click(screen.getByRole("button", { name: "Hide API key" }));

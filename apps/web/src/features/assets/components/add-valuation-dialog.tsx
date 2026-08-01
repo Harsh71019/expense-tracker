@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 import { toast } from "@/lib/toast";
 
 import { Button } from "@/components/ui/button";
+import { DialogSurface } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 
 import { useCreateValuation } from "../hooks/use-asset-mutations";
@@ -47,59 +48,48 @@ export function AddValuationDialog({ asset, onClose }: AddValuationDialogProps):
   const canSubmit = magnitudeMinor > 0;
 
   return (
-    <div
-      role="presentation"
-      className="fixed inset-0 z-50 grid items-start justify-items-center overflow-y-auto overscroll-contain bg-black/60 p-4 backdrop-blur-sm animate-fade-in sm:items-center sm:p-6"
-      onClick={onClose}
-    >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="add-valuation-title"
-        className="max-h-[calc(100dvh-2rem)] w-full max-w-sm overflow-y-auto overscroll-contain rounded-2xl border border-border bg-surface-elevated p-6 shadow-glow-strong animate-scale-up sm:p-7"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <h2 id="add-valuation-title" className="text-lg font-bold text-foreground">
-          Add valuation
-        </h2>
-        <p className="mt-2 text-sm leading-relaxed text-foreground-muted">
-          A new point-in-time value for <strong className="text-foreground">{asset.name}</strong>.
-          Valuations are append-only — this doesn&apos;t overwrite the last one.
-        </p>
+    <DialogSurface labelledBy="add-valuation-title" onClose={onClose}>
+      <h2 id="add-valuation-title" className="text-lg font-bold text-foreground">
+        Add valuation
+      </h2>
+      <p className="mt-2 text-sm leading-relaxed text-foreground-muted">
+        A new point-in-time value for <strong className="text-foreground">{asset.name}</strong>.
+        Valuations are append-only — this doesn&apos;t overwrite the last one.
+      </p>
 
-        <div className="mt-5 space-y-5">
-          <SignedAmountField
-            id="valuation-amount"
-            label={`Value${allowNegative ? " (you owe)" : ""}`}
-            allowNegative={allowNegative}
-            negative={negative}
-            onToggleSign={() => setNegative((value) => !value)}
-            magnitudeMinor={magnitudeMinor}
-            onChange={setMagnitudeMinor}
-          />
+      <div className="mt-5 space-y-5">
+        <SignedAmountField
+          id="valuation-amount"
+          label={`Value${allowNegative ? " (you owe)" : ""}`}
+          allowNegative={allowNegative}
+          negative={negative}
+          onToggleSign={() => setNegative((value) => !value)}
+          magnitudeMinor={magnitudeMinor}
+          onChange={setMagnitudeMinor}
+        />
 
-          <Input
-            id="valuation-date"
-            label="Valued on"
-            type="date"
-            value={valuedAt}
-            onChange={(event) => setValuedAt(event.target.value)}
-          />
-        </div>
-
-        <div className="mt-6 flex justify-end gap-2">
-          <Button type="button" variant="secondary" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            disabled={!canSubmit || create.isPending}
-            onClick={() => void submit()}
-          >
-            {create.isPending ? "Adding…" : "Add valuation"}
-          </Button>
-        </div>
+        <Input
+          id="valuation-date"
+          label="Valued on"
+          type="date"
+          value={valuedAt}
+          onChange={(event) => setValuedAt(event.target.value)}
+        />
       </div>
-    </div>
+
+      <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <Button type="button" className="w-full sm:w-auto" variant="secondary" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button
+          type="button"
+          className="w-full sm:w-auto"
+          disabled={!canSubmit || create.isPending}
+          onClick={() => void submit()}
+        >
+          {create.isPending ? "Adding…" : "Add valuation"}
+        </Button>
+      </div>
+    </DialogSurface>
   );
 }

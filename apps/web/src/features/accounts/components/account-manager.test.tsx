@@ -81,7 +81,7 @@ describe("AccountManager", () => {
     await user.click(screen.getByRole("button", { name: "View details for HDFC" }));
     expect(screen.getByText(account.id)).toBeVisible();
 
-    await user.click(screen.getByRole("button", { name: "Close" }));
+    await user.click(screen.getByRole("button", { name: "Close account details" }));
     expect(screen.queryByText(account.id)).not.toBeInTheDocument();
   });
 
@@ -105,6 +105,7 @@ describe("AccountManager", () => {
 
     await user.click(screen.getByRole("button", { name: /Create account/ }));
     const dialog = screen.getByRole("dialog", { name: "New account" });
+    expect(dialog).toHaveClass("w-full");
     await user.type(within(dialog).getByLabelText("Account name"), "HDFC Card");
     await user.click(within(dialog).getByRole("button", { name: /Cards/ }));
     await user.type(within(dialog).getByLabelText("Statement day"), "25");

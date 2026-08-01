@@ -15,12 +15,12 @@ export function AccountsPanel({ accounts, onAddAccount }: AccountsPanelProps): R
 
   return (
     <div className="rounded-2xl border border-border bg-surface-elevated p-5.5">
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-base font-bold tracking-tight text-foreground">Accounts</h2>
         <button
           type="button"
           onClick={onAddAccount}
-          className="rounded-lg border border-border bg-accent-glow px-3 py-1.5 font-mono text-[11px] font-bold text-accent transition-colors duration-150 hover:border-accent/50"
+          className="min-h-11 rounded-lg border border-border bg-accent-glow px-3 py-1.5 font-mono text-[11px] font-bold text-accent transition-colors duration-150 hover:border-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         >
           + Add account
         </button>

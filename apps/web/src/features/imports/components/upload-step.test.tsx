@@ -112,4 +112,20 @@ describe("UploadStep", () => {
     await user.click(screen.getByRole("button", { name: "Remove file" }));
     expect(onFileChange).toHaveBeenCalledWith(undefined);
   });
+
+  it("uses phone-safe account and file controls", () => {
+    const csv = new File(["Date,Amount"], "statement.csv", { type: "text/csv" });
+    render(
+      <UploadStep
+        accounts={[account]}
+        accountId={account.id}
+        onAccountChange={vi.fn()}
+        file={csv}
+        onFileChange={vi.fn()}
+      />
+    );
+
+    expect(screen.getByLabelText(/Which account/)).toHaveClass("min-h-11", "text-base");
+    expect(screen.getByRole("button", { name: "Remove file" })).toHaveClass("h-11", "w-11");
+  });
 });

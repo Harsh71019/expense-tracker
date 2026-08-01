@@ -12,6 +12,7 @@ import type { FormEvent, ReactNode } from "react";
 
 import { AmountInput } from "@/components/ui/amount-input";
 import { Button } from "@/components/ui/button";
+import { DialogSurface } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/lib/toast";
 
@@ -21,7 +22,7 @@ import { dateInputToUtc, dateToInput, todayInIndia } from "../model/goal-form";
 const fieldLabel =
   "mb-1.5 block font-mono text-[9px] font-extrabold tracking-[0.22em] text-foreground-muted uppercase";
 const selectClasses =
-  "w-full rounded-lg border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30";
+  "min-h-11 w-full rounded-lg border border-border bg-surface px-3.5 py-2.5 text-base text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 sm:text-sm";
 
 type GoalEditorDrawerProps = Readonly<{
   accounts: readonly Account[];
@@ -101,136 +102,142 @@ export function GoalEditorDrawer({ accounts, goal, onClose }: GoalEditorDrawerPr
   }
 
   return (
-    <div
-      role="presentation"
-      className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-sm"
-      onClick={onClose}
+    <DialogSurface
+      labelledBy="goal-editor-title"
+      onClose={onClose}
+      variant="drawer"
+      panelClassName="max-w-[520px]"
     >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="goal-editor-title"
-        className="h-dvh w-full max-w-[520px] overflow-y-auto overscroll-contain border-l border-border bg-surface-elevated px-5 py-6 sm:px-8"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="font-mono text-[9px] font-bold tracking-[0.2em] text-accent uppercase">
-              Savings plan
-            </p>
-            <h2 id="goal-editor-title" className="mt-1.5 text-xl font-bold text-foreground">
-              {goal === undefined ? "New goal" : "Edit goal"}
-            </h2>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close"
-            className="grid h-9 w-9 place-items-center rounded-lg border border-border bg-surface-muted text-foreground-muted"
-          >
-            ✕
-          </button>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="font-mono text-[9px] font-bold tracking-[0.2em] text-accent uppercase">
+            Savings plan
+          </p>
+          <h2 id="goal-editor-title" className="mt-1.5 text-xl font-bold text-foreground">
+            {goal === undefined ? "New goal" : "Edit goal"}
+          </h2>
         </div>
-
-        <form onSubmit={(event) => void submit(event)} className="mt-7 space-y-5">
-          <Input
-            id="goal-name"
-            label="Goal name"
-            value={name}
-            maxLength={80}
-            placeholder="Emergency fund"
-            onChange={(event) => setName(event.target.value)}
-          />
-          <AmountInput
-            id="goal-target"
-            label="Target amount"
-            value={targetMinor}
-            onChange={setTargetMinor}
-          />
-          <Input
-            id="goal-target-date"
-            label="Target date (optional)"
-            type="date"
-            min={todayInIndia()}
-            value={targetDate}
-            onChange={(event) => setTargetDate(event.target.value)}
-          />
-
-          {goal === undefined ? (
-            <div>
-              <span className={fieldLabel}>Track progress from</span>
-              <div className="grid grid-cols-2 gap-2">
-                {(["linked_account", "tagged"] as const).map((mode) => (
-                  <button
-                    key={mode}
-                    type="button"
-                    aria-pressed={fundingMode === mode}
-                    onClick={() => setFundingMode(mode)}
-                    className={`rounded-lg border px-3 py-2.5 text-sm font-semibold ${
-                      fundingMode === mode
-                        ? "border-accent bg-accent-glow text-accent"
-                        : "border-border text-foreground-muted"
-                    }`}
-                  >
-                    {mode === "linked_account" ? "Account balance" : "Transaction tag"}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <p className="rounded-lg border border-border bg-surface-muted p-3 text-xs text-foreground-muted">
-              Progress source cannot be changed because it defines the goal’s history.
-            </p>
-          )}
-
-          {fundingMode === "linked_account" ? (
-            <label>
-              <span className={fieldLabel}>Linked account</span>
-              <select
-                className={selectClasses}
-                value={linkedAccountId}
-                disabled={goal !== undefined}
-                onChange={(event) => setLinkedAccountId(event.target.value)}
-              >
-                <option value="">Choose an account</option>
-                {availableAccounts.map((account) => (
-                  <option key={account.id} value={account.id}>
-                    {account.name}
-                    {account.isArchived ? " (archived)" : ""}
-                  </option>
-                ))}
-              </select>
-            </label>
-          ) : (
-            <Input
-              id="goal-tag"
-              label="Transaction tag"
-              value={tag}
-              maxLength={40}
-              disabled={goal !== undefined}
-              placeholder="goal:laptop"
-              onChange={(event) => setTag(event.target.value)}
-            />
-          )}
-
-          {error === undefined ? null : (
-            <p
-              role="alert"
-              className="rounded-lg border border-expense/25 bg-expense/10 p-3 text-sm text-expense"
-            >
-              {error}
-            </p>
-          )}
-          <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="secondary" disabled={isPending} onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isPending}>
-              {isPending ? "Saving…" : goal === undefined ? "Create goal" : "Save changes"}
-            </Button>
-          </div>
-        </form>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close goal form"
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-border bg-surface-muted text-foreground-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        >
+          ✕
+        </button>
       </div>
-    </div>
+
+      <form onSubmit={(event) => void submit(event)} className="mt-7 space-y-5">
+        <Input
+          id="goal-name"
+          label="Goal name"
+          value={name}
+          maxLength={80}
+          name="name"
+          autoComplete="off"
+          placeholder="Emergency fund…"
+          onChange={(event) => setName(event.target.value)}
+        />
+        <AmountInput
+          id="goal-target"
+          label="Target amount"
+          value={targetMinor}
+          onChange={setTargetMinor}
+        />
+        <Input
+          id="goal-target-date"
+          label="Target date (optional)"
+          type="date"
+          min={todayInIndia()}
+          value={targetDate}
+          onChange={(event) => setTargetDate(event.target.value)}
+        />
+
+        {goal === undefined ? (
+          <div>
+            <span className={fieldLabel}>Track progress from</span>
+            <div className="grid grid-cols-2 gap-2">
+              {(["linked_account", "tagged"] as const).map((mode) => (
+                <button
+                  key={mode}
+                  type="button"
+                  aria-pressed={fundingMode === mode}
+                  onClick={() => setFundingMode(mode)}
+                  className={`min-h-11 rounded-lg border px-3 py-2.5 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                    fundingMode === mode
+                      ? "border-accent bg-accent-glow text-accent"
+                      : "border-border text-foreground-muted"
+                  }`}
+                >
+                  {mode === "linked_account" ? "Account balance" : "Transaction tag"}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <p className="rounded-lg border border-border bg-surface-muted p-3 text-xs text-foreground-muted">
+            Progress source cannot be changed because it defines the goal’s history.
+          </p>
+        )}
+
+        {fundingMode === "linked_account" ? (
+          <label>
+            <span className={fieldLabel}>Linked account</span>
+            <select
+              className={selectClasses}
+              aria-label="Linked account"
+              name="linkedAccountId"
+              autoComplete="off"
+              value={linkedAccountId}
+              disabled={goal !== undefined}
+              onChange={(event) => setLinkedAccountId(event.target.value)}
+            >
+              <option value="">Choose an account</option>
+              {availableAccounts.map((account) => (
+                <option key={account.id} value={account.id}>
+                  {account.name}
+                  {account.isArchived ? " (archived)" : ""}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : (
+          <Input
+            id="goal-tag"
+            name="tag"
+            autoComplete="off"
+            label="Transaction tag"
+            value={tag}
+            maxLength={40}
+            disabled={goal !== undefined}
+            placeholder="goal:laptop…"
+            onChange={(event) => setTag(event.target.value)}
+          />
+        )}
+
+        {error === undefined ? null : (
+          <p
+            role="alert"
+            className="rounded-lg border border-expense/25 bg-expense/10 p-3 text-sm text-expense"
+          >
+            {error}
+          </p>
+        )}
+        <div className="safe-area-bottom sticky bottom-0 -mx-5 flex flex-col-reverse gap-2 border-t border-border bg-surface-elevated px-5 pt-4 pb-4 sm:static sm:mx-0 sm:flex-row sm:justify-end sm:border-0 sm:bg-transparent sm:px-0 sm:pt-2 sm:pb-0">
+          <Button
+            type="button"
+            className="w-full sm:w-auto"
+            variant="secondary"
+            disabled={isPending}
+            onClick={onClose}
+          >
+            Cancel
+          </Button>
+          <Button type="submit" className="w-full sm:w-auto" disabled={isPending}>
+            {isPending ? "Saving…" : goal === undefined ? "Create goal" : "Save changes"}
+          </Button>
+        </div>
+      </form>
+    </DialogSurface>
   );
 }

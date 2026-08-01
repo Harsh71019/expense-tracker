@@ -4,6 +4,7 @@ import type { BillDetail } from "@treasury-ops/shared";
 import type { ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
+import { DialogSurface } from "@/components/ui/dialog";
 import { toast } from "@/lib/toast";
 
 import { useReconcileBill } from "../hooks/use-bill-reconciliation";
@@ -25,45 +26,38 @@ export function ReconcileConfirmDialog({
   }
 
   return (
-    <div
-      role="presentation"
-      className="fixed inset-0 z-50 grid items-start justify-items-center overflow-y-auto overscroll-contain bg-black/60 p-4 backdrop-blur-sm sm:items-center sm:p-5"
-      onClick={onClose}
-    >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="reconcile-title"
-        className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto overscroll-contain rounded-2xl border border-border bg-surface-elevated p-6 shadow-glow-strong"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <div className="flex items-start justify-between gap-3">
-          <h2 id="reconcile-title" className="text-lg font-bold text-foreground">
-            Mark statement reconciled?
-          </h2>
-          <button
-            type="button"
-            aria-label="Close reconciliation"
-            onClick={onClose}
-            className="text-foreground-muted hover:text-foreground"
-          >
-            ✕
-          </button>
-        </div>
-        <p className="mt-3 text-sm leading-relaxed text-foreground-muted">
-          {detail.reconciliation.stats.matched} rows matched and{" "}
-          {detail.reconciliation.stats.acknowledged} discrepancies acknowledged. This locks the
-          statement review and unlocks payment.
-        </p>
-        <div className="mt-5 flex justify-end gap-2">
-          <Button type="button" variant="secondary" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button type="button" disabled={reconcile.isPending} onClick={() => void confirm()}>
-            {reconcile.isPending ? "Reconciling…" : "Confirm reconciliation"}
-          </Button>
-        </div>
+    <DialogSurface labelledBy="reconcile-title" onClose={onClose} panelClassName="max-w-md">
+      <div className="flex items-start justify-between gap-3">
+        <h2 id="reconcile-title" className="text-lg font-bold text-foreground">
+          Mark statement reconciled?
+        </h2>
+        <button
+          type="button"
+          aria-label="Close reconciliation"
+          onClick={onClose}
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-foreground-muted hover:bg-surface-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        >
+          ✕
+        </button>
       </div>
-    </div>
+      <p className="mt-3 text-sm leading-relaxed text-foreground-muted">
+        {detail.reconciliation.stats.matched} rows matched and{" "}
+        {detail.reconciliation.stats.acknowledged} discrepancies acknowledged. This locks the
+        statement review and unlocks payment.
+      </p>
+      <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <Button className="w-full sm:w-auto" type="button" variant="secondary" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button
+          className="w-full sm:w-auto"
+          type="button"
+          disabled={reconcile.isPending}
+          onClick={() => void confirm()}
+        >
+          {reconcile.isPending ? "Reconciling…" : "Confirm reconciliation"}
+        </Button>
+      </div>
+    </DialogSurface>
   );
 }

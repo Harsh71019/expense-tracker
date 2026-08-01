@@ -59,6 +59,7 @@ describe("ApiKeyManager", () => {
     const user = userEvent.setup();
     render(<ApiKeyManager initialApiKeys={[]} />);
     expect(screen.getByRole("tab", { name: "All keys" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: "All keys" })).toHaveClass("min-h-11");
     expect(screen.getByText("No API keys yet")).toBeVisible();
 
     await user.click(screen.getByRole("tab", { name: "Add key" }));

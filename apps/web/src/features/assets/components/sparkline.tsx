@@ -10,16 +10,23 @@ type SparklineProps = Readonly<{
   color: string;
   width: number;
   height: number;
+  className?: string;
 }>;
 
-export function Sparkline({ values, color, width, height }: SparklineProps): ReactNode {
+export function Sparkline({
+  values,
+  color,
+  width,
+  height,
+  className = ""
+}: SparklineProps): ReactNode {
   const gradientId = useId();
   const points = sparklinePoints(values, width, height);
   const last = points.at(-1);
   if (last === undefined) return null;
 
   return (
-    <svg width={width} height={height} className="block" aria-hidden="true">
+    <svg width={width} height={height} className={`block ${className}`} aria-hidden="true">
       <defs>
         <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={color} stopOpacity={0.28} />

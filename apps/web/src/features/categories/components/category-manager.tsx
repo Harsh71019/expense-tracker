@@ -53,8 +53,8 @@ export function CategoryManager({
         items={[{ label: "Settings", href: "/settings?tab=management" }, { label: "Categories" }]}
       />
 
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div>
+      <header className="flex flex-col items-stretch gap-4 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
+        <div className="min-w-0">
           <p className="font-mono text-[11px] font-bold tracking-[2px] text-accent">LEDGER</p>
           <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
             Categories
@@ -64,7 +64,7 @@ export function CategoryManager({
             can nest one level under a parent.
           </p>
         </div>
-        <Button type="button" onClick={() => setCreateOpen(true)}>
+        <Button className="w-full sm:w-auto" type="button" onClick={() => setCreateOpen(true)}>
           <span className="mr-1 text-base leading-none">+</span> New category
         </Button>
       </header>
@@ -78,7 +78,7 @@ export function CategoryManager({
               type="button"
               aria-pressed={active}
               onClick={() => setKind(value)}
-              className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-semibold transition-colors duration-150 ${
+              className={`inline-flex min-h-11 items-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                 active
                   ? "border-accent bg-accent-glow text-accent"
                   : "border-transparent text-foreground-muted hover:bg-surface-muted/60"

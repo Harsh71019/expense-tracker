@@ -8,6 +8,7 @@ describe("RangeTabs", () => {
   it("marks the current range as pressed", () => {
     render(<RangeTabs value="6M" onChange={vi.fn()} label="Cash flow range" />);
 
+    expect(screen.getByRole("button", { name: "6M" })).toHaveClass("min-h-11");
     expect(screen.getByRole("button", { name: "6M" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("button", { name: "1M" })).toHaveAttribute("aria-pressed", "false");
   });

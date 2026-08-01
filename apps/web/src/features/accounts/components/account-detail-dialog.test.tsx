@@ -44,7 +44,9 @@ describe("AccountDetailDialog", () => {
     expect(writeText).toHaveBeenCalledWith(account.id);
     expect(mocks.toastSuccess).toHaveBeenCalledWith("Account ID copied");
 
-    await user.click(screen.getByRole("button", { name: "Close" }));
+    const closeButton = screen.getByRole("button", { name: "Close account details" });
+    expect(closeButton).toHaveClass("h-11", "w-11");
+    await user.click(closeButton);
     expect(onClose).toHaveBeenCalled();
   });
 

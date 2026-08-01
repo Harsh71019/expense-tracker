@@ -23,9 +23,9 @@ export function ReconciliationTable({ detail }: Readonly<{ detail: BillDetail }>
   const readOnly = detail.bill.reconciliationStatus === "reconciled";
 
   return (
-    <section className="rounded-2xl border border-border bg-surface-elevated p-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
+    <section className="rounded-2xl border border-border bg-surface-elevated p-4 sm:p-6">
+      <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
           <h2 className="text-lg font-bold text-foreground">Statement review</h2>
           <p className="mt-1 text-sm text-foreground-muted">
             {detail.reconciliation.stats.matched} matched · {detail.reconciliation.unresolved}{" "}
@@ -34,9 +34,11 @@ export function ReconciliationTable({ detail }: Readonly<{ detail: BillDetail }>
         </div>
         <select
           aria-label="Filter statement rows"
+          name="statementRowFilter"
+          autoComplete="off"
           value={filter}
           onChange={(event) => setFilter(filterValue(event.target.value))}
-          className="rounded-lg border border-border bg-surface-muted px-3 py-2 text-sm text-foreground"
+          className="min-h-11 w-full rounded-lg border border-border bg-surface-muted px-3 py-2 text-base text-foreground focus:outline-none focus:ring-2 focus:ring-accent sm:w-auto sm:text-sm"
         >
           <option value="all">All rows</option>
           <option value="matched">Matched</option>
@@ -70,6 +72,7 @@ export function ReconciliationTable({ detail }: Readonly<{ detail: BillDetail }>
       {rows.hasNextPage ? (
         <div className="mt-4 flex justify-center">
           <Button
+            className="w-full sm:w-auto"
             type="button"
             variant="secondary"
             disabled={rows.isFetchingNextPage}

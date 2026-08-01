@@ -155,7 +155,7 @@ export function RegisterForm(): ReactNode {
         Already have an account?{" "}
         <Link
           href={loginHref}
-          className="font-semibold text-accent hover:text-accent-strong hover:underline"
+          className="inline-flex min-h-11 items-center font-semibold text-accent hover:text-accent-strong hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         >
           Sign in
         </Link>

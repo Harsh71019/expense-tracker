@@ -56,8 +56,8 @@ export function ReconciliationRow({
   return (
     <article className="rounded-xl border border-border bg-surface-muted p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="text-sm font-semibold text-foreground">
+        <div className="min-w-0">
+          <p className="break-words text-sm font-semibold text-foreground">
             {row.parsed?.description ?? `Unparsed row ${row.rowNumber}`}
           </p>
           <p className="mt-1 text-xs text-foreground-muted">
@@ -84,13 +84,15 @@ export function ReconciliationRow({
       )}
 
       {readOnly || row.matchStatus === "matched" ? null : (
-        <div className="mt-4 flex flex-wrap items-end gap-2 border-t border-border pt-3">
+        <div className="mt-4 flex flex-col items-stretch gap-2 border-t border-border pt-3 sm:flex-row sm:flex-wrap sm:items-end">
           {eligible.length === 0 ? null : (
             <label className="min-w-0 flex-1 text-xs font-semibold text-foreground-muted">
               Ledger candidate
               <select
                 aria-label={`Ledger candidate for row ${row.rowNumber}`}
-                className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground"
+                name={`candidate-${row.rowNumber}`}
+                autoComplete="off"
+                className="mt-1 min-h-11 w-full rounded-lg border border-border bg-surface px-3 py-2 text-base text-foreground focus:outline-none focus:ring-2 focus:ring-accent sm:text-sm"
                 value={selectedId}
                 onChange={(event) => setSelectedId(event.target.value)}
               >
@@ -104,6 +106,7 @@ export function ReconciliationRow({
           )}
           {eligible.length === 0 ? null : (
             <Button
+              className="w-full sm:w-auto"
               type="button"
               variant="secondary"
               disabled={update.isPending}
@@ -113,6 +116,7 @@ export function ReconciliationRow({
             </Button>
           )}
           <Button
+            className="w-full sm:w-auto"
             type="button"
             variant="secondary"
             disabled={update.isPending}

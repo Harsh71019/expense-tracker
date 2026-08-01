@@ -387,6 +387,7 @@ These checkpoints were approved on 1 August 2026. Implementation is proceeding o
 - [x] Enforce the first shared 44 px touch targets and 16 px phone inputs.
 - [x] Adapt the transaction ledger, filters, create sheet, detail drawer, and reversal flow.
 - [x] Add 320 px Mobile Chrome and Mobile Safari browser projects.
-- [ ] Complete remaining money-capture and transfer route refinements.
-- [ ] Continue folder-by-folder through imports, bills, recurring, accounts, and categories.
-- [ ] Continue through dashboard, reports, budgets, goals, assets, settings, and final hardening.
+- [x] Complete remaining money-capture and transfer route refinements.
+- [x] Adapt imports, bills, and recurring workflows for phones.
+- [x] Continue folder-by-folder through accounts, categories, and category rules.
+- [x] Continue through dashboard, reports, budgets, goals, assets, settings, and final hardening.

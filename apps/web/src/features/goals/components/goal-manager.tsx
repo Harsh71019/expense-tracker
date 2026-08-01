@@ -122,7 +122,7 @@ export function GoalManager({
 
   return (
     <section className="space-y-7">
-      <header className="flex flex-wrap items-start justify-between gap-4">
+      <header className="flex flex-col items-stretch gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="font-mono text-[11px] font-bold tracking-[0.2em] text-accent uppercase">
             Plan · Build · Reach
@@ -134,7 +134,7 @@ export function GoalManager({
             Turn an account balance or tagged ledger entries into a visible savings target.
           </p>
         </div>
-        <Button type="button" onClick={() => setCreateOpen(true)}>
+        <Button type="button" className="w-full sm:w-auto" onClick={() => setCreateOpen(true)}>
           <span className="mr-1 text-base leading-none">+</span> New goal
         </Button>
       </header>
@@ -177,7 +177,7 @@ export function GoalManager({
             type="button"
             aria-expanded={achievedOpen}
             onClick={() => setAchievedOpen((open) => !open)}
-            className="flex w-full items-center justify-between rounded-lg py-2 text-left"
+            className="flex min-h-11 w-full items-center justify-between rounded-lg py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
             <span className="text-base font-bold text-foreground">
               Achieved{" "}

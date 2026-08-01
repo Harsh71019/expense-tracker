@@ -27,7 +27,7 @@ export function MonthSelector({
         type="button"
         onClick={onPrev}
         aria-label="Previous month"
-        className="grid h-10 w-10 shrink-0 place-items-center rounded-[10px] border border-border bg-surface-elevated text-lg text-foreground"
+        className="grid h-11 w-11 shrink-0 place-items-center rounded-[10px] border border-border bg-surface-elevated text-lg text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
       >
         ‹
       </button>
@@ -40,7 +40,7 @@ export function MonthSelector({
               type="button"
               aria-pressed={active}
               onClick={() => onSelect(month)}
-              className={`shrink-0 rounded-[10px] border px-3.5 py-2.5 font-mono text-[13px] font-semibold whitespace-nowrap ${
+              className={`min-h-11 shrink-0 rounded-[10px] border px-3.5 py-2.5 font-mono text-[13px] font-semibold whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                 active
                   ? "border-accent bg-accent-glow text-accent"
                   : "border-border bg-surface-elevated text-foreground-muted"
@@ -56,7 +56,7 @@ export function MonthSelector({
         onClick={onNext}
         disabled={!canGoNext}
         aria-label="Next month"
-        className="grid h-10 w-10 shrink-0 place-items-center rounded-[10px] border border-border bg-surface-elevated text-lg text-foreground disabled:pointer-events-none disabled:opacity-40"
+        className="grid h-11 w-11 shrink-0 place-items-center rounded-[10px] border border-border bg-surface-elevated text-lg text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:pointer-events-none disabled:opacity-40"
       >
         ›
       </button>

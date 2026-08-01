@@ -85,6 +85,7 @@ type DialogSurfaceProps = Readonly<{
   onClose: () => void;
   children: ReactNode;
   variant?: "dialog" | "drawer";
+  role?: "dialog" | "alertdialog";
   panelClassName?: string;
 }>;
 
@@ -93,6 +94,7 @@ export function DialogSurface({
   onClose,
   children,
   variant = "dialog",
+  role = "dialog",
   panelClassName = ""
 }: DialogSurfaceProps): ReactNode {
   const dialogRef = useDialogBehavior(onClose);
@@ -114,7 +116,7 @@ export function DialogSurface({
     >
       <div
         ref={dialogRef}
-        role="dialog"
+        role={role}
         aria-modal="true"
         aria-labelledby={labelledBy}
         tabIndex={-1}

@@ -65,7 +65,7 @@ export function ReportPage({ initialMonth, initialRollup }: ReportPageProps): Re
         </div>
         <Link
           href="/budgets"
-          className="rounded-lg border border-border bg-surface-elevated px-4 py-2.5 text-sm font-semibold text-foreground hover:border-accent/50 hover:text-accent"
+          className="inline-flex min-h-11 items-center rounded-lg border border-border bg-surface-elevated px-4 py-2.5 text-sm font-semibold text-foreground hover:border-accent/50 hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         >
           Monthly budgets
         </Link>
@@ -73,7 +73,7 @@ export function ReportPage({ initialMonth, initialRollup }: ReportPageProps): Re
 
       <Link
         href="/spending-warnings"
-        className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-border bg-surface-elevated px-4 py-3.5 transition-colors duration-150 hover:border-accent/40 md:hidden"
+        className="mt-4 flex min-h-11 items-center justify-between gap-3 rounded-xl border border-border bg-surface-elevated px-4 py-3.5 transition-colors duration-150 hover:border-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent md:hidden"
       >
         <span>
           <span className="block text-sm font-semibold text-foreground">Spending patterns</span>

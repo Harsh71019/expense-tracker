@@ -65,7 +65,9 @@ describe("AssetHistoryDrawer", () => {
     await user.click(screen.getByText("Sovereign gold coins"));
     expect(onClose).not.toHaveBeenCalled();
 
-    await user.click(screen.getByRole("button", { name: "Close" }));
+    const closeButton = screen.getByRole("button", { name: "Close valuation history" });
+    expect(closeButton).toHaveClass("h-11", "w-11");
+    await user.click(closeButton);
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 

@@ -19,6 +19,9 @@ describe("GoalEditorDrawer", () => {
     const user = userEvent.setup();
     render(<GoalEditorDrawer accounts={[]} onClose={vi.fn()} />);
 
+    expect(screen.getByRole("dialog", { name: "New goal" })).toHaveClass("h-dvh");
+    expect(screen.getByRole("button", { name: "Close goal form" })).toHaveClass("h-11", "w-11");
+
     await user.type(screen.getByLabelText("Goal name"), "Laptop");
     const amount = screen.getByLabelText("Target amount");
     await user.clear(amount);

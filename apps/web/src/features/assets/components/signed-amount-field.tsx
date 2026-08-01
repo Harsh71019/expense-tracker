@@ -60,7 +60,7 @@ export function SignedAmountField({
             type="button"
             onClick={onToggleSign}
             aria-label={negative ? "Switch to positive" : "Switch to negative"}
-            className={`grid h-8.5 w-9.5 shrink-0 place-items-center rounded-lg border border-border bg-surface font-mono text-base font-semibold ${
+            className={`grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-border bg-surface font-mono text-base font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
               negative ? "text-expense" : "text-accent"
             }`}
           >
@@ -70,12 +70,14 @@ export function SignedAmountField({
         <span className="font-mono text-lg text-foreground-muted">₹</span>
         <input
           id={id}
+          name={id}
+          autoComplete="off"
           value={draft}
           inputMode="decimal"
           onChange={(event) => setDraft(event.target.value)}
           onBlur={commit}
-          placeholder="0.00"
-          className="flex-1 bg-transparent py-3 font-mono text-lg font-semibold text-foreground outline-none"
+          placeholder="0.00…"
+          className="min-w-0 flex-1 bg-transparent py-3 font-mono text-lg font-semibold text-foreground outline-none"
         />
       </div>
       {error === undefined ? null : <p className="mt-1.5 text-xs text-expense">{error}</p>}

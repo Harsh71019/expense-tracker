@@ -103,16 +103,17 @@ export function WarningCard({
         {formatWarningTimestamp(warning.lastDetectedAt)}
       </p>
 
-      <footer className="mt-4 flex flex-wrap items-center gap-3">
+      <footer className="mt-4 flex flex-col items-stretch gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
         <Link
           href={investigationHref(warning)}
-          className="text-sm font-semibold text-accent hover:underline"
+          className="inline-flex min-h-11 items-center justify-center rounded-lg px-3 text-sm font-semibold text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:justify-start"
         >
           {investigationLinkLabel(warning.kind)}
         </Link>
         <Button
           type="button"
           variant="secondary"
+          className="w-full sm:w-auto"
           disabled={dismiss.isPending}
           onClick={handleDismiss}
         >
@@ -123,7 +124,11 @@ export function WarningCard({
       {dismiss.isError ? (
         <p className="mt-3 rounded-lg border border-expense/25 bg-expense/10 px-3 py-2 font-mono text-[11px] text-expense">
           {dismiss.error.message || "Could not dismiss this warning."}{" "}
-          <button type="button" className="font-semibold underline" onClick={handleDismiss}>
+          <button
+            type="button"
+            className="min-h-11 font-semibold underline"
+            onClick={handleDismiss}
+          >
             Try again
           </button>
         </p>

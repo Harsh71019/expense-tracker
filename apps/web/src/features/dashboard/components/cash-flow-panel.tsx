@@ -25,7 +25,7 @@ export function CashFlowPanel({ initialCashflow, initialRange }: CashFlowPanelPr
           <h2 className="text-lg font-bold tracking-tight text-foreground">Cash flow</h2>
           <p className="mt-1 text-sm text-foreground-muted">Income vs. spending over time</p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4">
           <span className="flex items-center gap-1.5 text-xs text-foreground-muted">
             <span className="h-2.5 w-2.5 rounded-sm bg-income" aria-hidden="true" />
             Income

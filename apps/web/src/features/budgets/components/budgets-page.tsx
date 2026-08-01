@@ -106,7 +106,7 @@ export function BudgetsPage({ initialPage, categories }: BudgetsPageProps): Reac
 
   return (
     <section className="space-y-7">
-      <header className="flex flex-wrap items-start justify-between gap-4">
+      <header className="flex flex-col items-stretch gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="font-mono text-[11px] font-bold tracking-[0.2em] text-accent uppercase">
             Planning
@@ -126,6 +126,7 @@ export function BudgetsPage({ initialPage, categories }: BudgetsPageProps): Reac
         </div>
         <Button
           type="button"
+          className="w-full sm:w-auto"
           disabled={expenseCategories.length === 0}
           onClick={() => openEditor()}
         >
@@ -210,12 +211,12 @@ export function BudgetsPage({ initialPage, categories }: BudgetsPageProps): Reac
           ) : null}
 
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5">
-            <label className="inline-flex items-center gap-2 text-sm font-medium text-foreground">
+            <label className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-foreground">
               <input
                 type="checkbox"
                 checked={includeArchived}
                 onChange={(event) => setIncludeArchived(event.target.checked)}
-                className="h-4 w-4 accent-accent"
+                className="h-5 w-5 accent-accent"
               />
               Show inactive budgets
             </label>

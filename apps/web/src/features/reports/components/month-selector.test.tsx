@@ -19,6 +19,7 @@ describe("MonthSelector", () => {
       />
     );
 
+    expect(screen.getByRole("button", { name: "May 26" })).toHaveClass("min-h-11");
     expect(screen.getByRole("button", { name: "May 26" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("button", { name: "Apr 26" })).toHaveAttribute("aria-pressed", "false");
   });

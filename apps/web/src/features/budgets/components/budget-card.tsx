@@ -122,7 +122,7 @@ export function BudgetCard({ progress, month, onEdit, onArchive }: BudgetCardPro
             type="button"
             disabled={progress.category.isArchived}
             onClick={() => onEdit(progress)}
-            className="rounded-lg border border-border px-3 py-2 text-xs font-semibold text-foreground hover:border-accent/50 disabled:opacity-40"
+            className="min-h-11 rounded-lg border border-border px-3 py-2 text-xs font-semibold text-foreground hover:border-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-40"
           >
             {progress.budget.isArchived ? "Restore" : "Edit"}
           </button>
@@ -130,7 +130,7 @@ export function BudgetCard({ progress, month, onEdit, onArchive }: BudgetCardPro
             <button
               type="button"
               onClick={() => onArchive(progress)}
-              className="rounded-lg px-3 py-2 text-xs font-semibold text-foreground-muted hover:bg-surface-muted hover:text-expense"
+              className="min-h-11 rounded-lg px-3 py-2 text-xs font-semibold text-foreground-muted hover:bg-surface-muted hover:text-expense focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-expense"
             >
               Archive
             </button>

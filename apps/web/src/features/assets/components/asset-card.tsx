@@ -101,7 +101,7 @@ export function AssetCard({
           onClick={() => onClose(asset)}
           title="Close asset"
           aria-label={`Close ${asset.name}`}
-          className="grid h-7 w-7 shrink-0 place-items-center rounded-lg border border-border bg-surface-muted text-xs text-foreground-muted hover:text-foreground"
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-border bg-surface-muted text-xs text-foreground-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         >
           ✕
         </button>
@@ -131,18 +131,18 @@ export function AssetCard({
         </div>
       </div>
 
-      <div className="mt-5 flex items-center gap-2 border-t border-border pt-4">
+      <div className="mt-5 flex flex-col gap-2 border-t border-border pt-4 sm:flex-row sm:items-center">
         <button
           type="button"
           onClick={() => onAddValuation(asset)}
-          className="rounded-[9px] border border-border bg-accent-glow px-3.5 py-2 text-[12.5px] font-semibold text-accent"
+          className="min-h-11 w-full rounded-[9px] border border-border bg-accent-glow px-3.5 py-2 text-[12.5px] font-semibold text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:w-auto"
         >
           + Add valuation
         </button>
         <button
           type="button"
           onClick={() => onHistory(asset)}
-          className="rounded-[9px] px-1.5 py-2 text-[12.5px] font-medium text-foreground-muted"
+          className="min-h-11 w-full rounded-[9px] px-1.5 py-2 text-[12.5px] font-medium text-foreground-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:w-auto"
         >
           {items.length} valuation{items.length === 1 ? "" : "s"}
         </button>

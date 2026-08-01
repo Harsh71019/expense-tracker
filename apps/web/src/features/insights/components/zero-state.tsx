@@ -11,7 +11,7 @@ type ZeroStateProps = Readonly<{
 
 export function ZeroState({ onOpenCreate }: ZeroStateProps): ReactNode {
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-border bg-surface-elevated p-10 text-center sm:p-16">
+    <div className="relative overflow-hidden rounded-2xl border border-border bg-surface-elevated p-6 text-center sm:p-16">
       <span
         className="pointer-events-none absolute inset-x-0 -top-24 mx-auto h-64 w-64 rounded-full bg-accent-glow blur-3xl"
         aria-hidden="true"
@@ -36,7 +36,7 @@ export function ZeroState({ onOpenCreate }: ZeroStateProps): ReactNode {
                 key={value}
                 type="button"
                 onClick={() => onOpenCreate(value)}
-                className="flex items-center gap-3 rounded-xl border border-border bg-surface px-4 py-3.5 text-left transition-colors duration-150 hover:border-accent/50"
+                className="flex min-h-11 items-center gap-3 rounded-xl border border-border bg-surface px-4 py-3.5 text-left transition-colors duration-150 hover:border-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               >
                 <span className="text-lg leading-none">{meta.icon}</span>
                 <span className="text-sm font-semibold text-foreground">

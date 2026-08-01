@@ -14,7 +14,7 @@ type RangeTabsProps = Readonly<{
 export function RangeTabs({ value, onChange, label }: RangeTabsProps): ReactNode {
   return (
     <div
-      className="inline-flex gap-0.5 rounded-lg border border-border bg-surface-muted p-0.5"
+      className="inline-flex w-full gap-0.5 rounded-lg border border-border bg-surface-muted p-0.5 sm:w-auto"
       role="group"
       aria-label={label}
     >
@@ -24,7 +24,7 @@ export function RangeTabs({ value, onChange, label }: RangeTabsProps): ReactNode
           type="button"
           aria-pressed={value === range}
           onClick={() => onChange(range)}
-          className={`rounded-md px-2.5 py-1 font-mono text-[11px] font-semibold transition-colors duration-150 ${
+          className={`min-h-11 flex-1 rounded-md px-2.5 py-1 font-mono text-[11px] font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:flex-none ${
             value === range
               ? "bg-surface-elevated text-accent shadow-sm"
               : "text-foreground-muted hover:text-foreground"

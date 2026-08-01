@@ -66,7 +66,7 @@ export function GoalCard({
                   aria-label={`Actions for ${goal.name}`}
                   aria-expanded={menuOpen}
                   onClick={() => setMenuOpen((open) => !open)}
-                  className="grid h-8 w-8 place-items-center rounded-lg text-lg text-foreground-muted hover:bg-surface-muted hover:text-foreground"
+                  className="grid h-11 w-11 place-items-center rounded-lg text-lg text-foreground-muted hover:bg-surface-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                 >
                   ⋯
                 </button>
@@ -74,7 +74,7 @@ export function GoalCard({
                   <button
                     type="button"
                     onClick={() => onAbandon(goal)}
-                    className="absolute right-0 top-9 z-10 whitespace-nowrap rounded-lg border border-border bg-surface px-3 py-2 text-xs font-semibold text-expense shadow-xl"
+                    className="absolute right-0 top-12 z-10 min-h-11 whitespace-nowrap rounded-lg border border-border bg-surface px-3 py-2 text-xs font-semibold text-expense shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-expense"
                   >
                     Abandon goal
                   </button>
@@ -104,7 +104,7 @@ export function GoalCard({
             disabled={!canMoveUp}
             onClick={onMoveUp}
             aria-label={`Move ${goal.name} up`}
-            className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-foreground-muted hover:bg-surface-muted hover:text-foreground disabled:opacity-30"
+            className="min-h-11 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-foreground-muted hover:bg-surface-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-30"
           >
             ↑ Move up
           </button>
@@ -113,7 +113,7 @@ export function GoalCard({
             disabled={!canMoveDown}
             onClick={onMoveDown}
             aria-label={`Move ${goal.name} down`}
-            className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-foreground-muted hover:bg-surface-muted hover:text-foreground disabled:opacity-30"
+            className="min-h-11 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-foreground-muted hover:bg-surface-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-30"
           >
             ↓ Move down
           </button>

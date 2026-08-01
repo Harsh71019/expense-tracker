@@ -95,7 +95,7 @@ describe("CategoryManager", () => {
     await user.click(screen.getByRole("button", { name: /New category/ }));
     const dialog = screen.getByRole("dialog", { name: "New category" });
     expect(dialog).toBeVisible();
-    expect(dialog).toHaveClass("h-dvh");
+    expect(dialog).toHaveClass("max-h-[92dvh]", "sm:h-dvh");
     const closeButton = screen.getByRole("button", { name: "Close category form" });
     expect(closeButton).toHaveClass("h-11", "w-11");
     await user.click(closeButton);

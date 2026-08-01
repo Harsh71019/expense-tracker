@@ -6,6 +6,7 @@ import { Toaster as Sonner } from "sonner";
 type ToasterProps = ComponentProps<typeof Sonner>;
 
 interface ThemedToastStyle extends CSSProperties {
+  "--width": string;
   "--normal-bg": string;
   "--normal-bg-hover": string;
   "--normal-border": string;
@@ -26,6 +27,7 @@ interface ThemedToastStyle extends CSSProperties {
 }
 
 const themedToastStyle: ThemedToastStyle = {
+  "--width": "min(356px, calc(100vw - 24px))",
   "--normal-bg": "var(--color-surface-elevated)",
   "--normal-bg-hover": "var(--color-surface-muted)",
   "--normal-border": "color-mix(in srgb, var(--color-accent) 28%, var(--color-border))",

@@ -55,12 +55,20 @@ export function DashboardHome({
         <ZeroState onOpenCreate={openCreate} />
       ) : (
         <div className="grid items-start gap-5 lg:grid-cols-[1.4fr_1fr]">
-          <div className="flex flex-col gap-5">
-            <BalanceCard accounts={accounts} />
-            <AccountsPanel accounts={accounts} onAddAccount={() => openCreate("bank")} />
-            <RecentActivityPanel items={recentActivity} />
+          <div className="contents lg:flex lg:flex-col lg:gap-5">
+            <div className="order-1 lg:order-none">
+              <BalanceCard accounts={accounts} />
+            </div>
+            <div className="order-3 lg:order-none">
+              <AccountsPanel accounts={accounts} onAddAccount={() => openCreate("bank")} />
+            </div>
+            <div className="order-4 lg:order-none">
+              <RecentActivityPanel items={recentActivity} />
+            </div>
           </div>
-          <QuickAddPanel accounts={active} />
+          <div className="order-2 lg:order-none">
+            <QuickAddPanel accounts={active} />
+          </div>
         </div>
       )}
 

@@ -63,6 +63,9 @@ describe("DashboardHome", () => {
     expect(screen.getByRole("heading", { name: "Accounts" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Recent activity" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Quick add" })).toBeVisible();
+    expect(
+      screen.getByRole("heading", { name: "Quick add" }).parentElement?.parentElement
+    ).toHaveClass("order-2", "lg:order-none");
   });
 
   it("opens the create-account modal defaulted to bank from the accounts panel", async () => {

@@ -340,9 +340,37 @@ body,
     background-color: var(--scrollbar-thumb);
     border-radius: 9999px;
   }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-foreground-muted);
+  }
   ::-webkit-scrollbar-track {
     background-color: var(--scrollbar-track);
   }
+}
+
+/* Glassmorphism & Depth Utilities */
+.glass-card {
+  background-color: color-mix(in srgb, var(--color-surface-elevated) 85%, transparent);
+  backdrop-filter: blur(12px);
+  border: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
+}
+
+.glass-card-hover {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-card-hover:hover {
+  border-color: color-mix(in srgb, var(--color-accent) 40%, transparent);
+  box-shadow: var(--shadow-glow);
+  transform: translateY(-1px);
+}
+
+/* Interactive Active Scaling Utility */
+.active-press {
+  transition: transform 0.1s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.active-press:active {
+  transform: scale(0.97);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -352,3 +380,4 @@ body,
     transition-duration: 0.01ms !important;
   }
 }
+

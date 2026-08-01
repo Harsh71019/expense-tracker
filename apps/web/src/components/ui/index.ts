@@ -11,3 +11,5 @@ export * from "./money";
 export * from "./skeleton";
 export * from "./sonner";
 export * from "./theme-toggle";
+export * from "./command-palette";
+export * from "./keyboard-shortcuts-dialog";

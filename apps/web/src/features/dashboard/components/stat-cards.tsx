@@ -74,9 +74,9 @@ export function StatCards({ stats }: Readonly<{ stats: DashboardStats }>): React
         return (
           <div
             key={stat.label}
-            className="group rounded-2xl border border-border bg-surface-elevated p-5 transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-md"
+            className="group rounded-2xl border border-border/80 bg-surface-elevated/90 p-5 backdrop-blur-md transition-all duration-200 hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-glow"
           >
-            <p className="font-mono text-[10px] font-semibold tracking-[1.2px] text-foreground-muted group-hover:text-accent transition-colors">
+            <p className="font-mono text-[10px] font-semibold tracking-[1.2px] text-foreground-muted transition-colors group-hover:text-accent">
               {stat.label}
             </p>
             <p className="mt-2.5 font-mono text-[26px] font-bold tracking-tight text-foreground">
@@ -84,7 +84,11 @@ export function StatCards({ stats }: Readonly<{ stats: DashboardStats }>): React
             </p>
             <div className="mt-2.5 flex items-center justify-between gap-2">
               <span
-                className={`font-mono text-xs font-semibold ${good ? "text-income" : "text-expense"}`}
+                className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 font-mono text-xs font-semibold ${
+                  good
+                    ? "border border-income/20 bg-income/10 text-income"
+                    : "border border-expense/20 bg-expense/10 text-expense"
+                }`}
               >
                 {deltaLabel(stat.deltaPct)}
               </span>

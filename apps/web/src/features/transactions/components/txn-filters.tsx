@@ -216,6 +216,77 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
           </button>
         ) : null}
       </div>
+
+      {/* Active Filter Badges */}
+      {isFiltered && (
+        <div className="flex w-full flex-wrap items-center gap-1.5 border-t border-border/50 pt-2.5">
+          <span className="font-mono text-[10px] font-semibold text-foreground-muted uppercase">
+            Active:
+          </span>
+          {filters.q !== undefined && filters.q !== "" && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-accent/30 bg-accent-glow px-2.5 py-0.5 font-mono text-xs font-medium text-accent">
+              <span>Search: &quot;{filters.q}&quot;</span>
+              <button
+                type="button"
+                onClick={() => setQuery("")}
+                className="hover:text-foreground focus-visible:outline-none"
+                aria-label="Remove search filter"
+              >
+                ×
+              </button>
+            </span>
+          )}
+          {filters.accountId !== undefined && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-accent/30 bg-accent-glow px-2.5 py-0.5 font-mono text-xs font-medium text-accent">
+              <span>
+                Account:{" "}
+                {(accounts.data ?? []).find((a) => a.id === filters.accountId)?.name ?? "Selected"}
+              </span>
+              <button
+                type="button"
+                onClick={() => navigate({ accountId: undefined })}
+                className="hover:text-foreground focus-visible:outline-none"
+                aria-label="Remove account filter"
+              >
+                ×
+              </button>
+            </span>
+          )}
+          {filters.categoryId !== undefined && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-accent/30 bg-accent-glow px-2.5 py-0.5 font-mono text-xs font-medium text-accent">
+              <span>
+                Category:{" "}
+                {(categories.data ?? []).find((c) => c.id === filters.categoryId)?.name ??
+                  "Selected"}
+              </span>
+              <button
+                type="button"
+                onClick={() => navigate({ categoryId: undefined })}
+                className="hover:text-foreground focus-visible:outline-none"
+                aria-label="Remove category filter"
+              >
+                ×
+              </button>
+            </span>
+          )}
+          {(filters.from !== undefined || filters.to !== undefined) && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-accent/30 bg-accent-glow px-2.5 py-0.5 font-mono text-xs font-medium text-accent">
+              <span>
+                Date: {toDateInputValue(filters.from) || "Any"} →{" "}
+                {toDateInputValue(filters.to) || "Any"}
+              </span>
+              <button
+                type="button"
+                onClick={() => navigate({ from: undefined, to: undefined })}
+                className="hover:text-foreground focus-visible:outline-none"
+                aria-label="Remove date filter"
+              >
+                ×
+              </button>
+            </span>
+          )}
+        </div>
+      )}
     </div>
   );
 }

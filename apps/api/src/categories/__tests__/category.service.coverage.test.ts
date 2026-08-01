@@ -2,6 +2,9 @@ import type { Category } from "@treasury-ops/shared";
 import { describe, expect, it, vi } from "vitest";
 
 import { CategoryParentKindMismatchError } from "../../common/errors/category-parent-kind-mismatch.error.js";
+import { CategoryHierarchyConflictError } from "../../common/errors/category-hierarchy-conflict.error.js";
+import { CategoryInUseError } from "../../common/errors/category-in-use.error.js";
+import { CategoryNameConflictError } from "../../common/errors/category-name-conflict.error.js";
 import { EntityNotFoundError } from "../../common/errors/entity-not-found.error.js";
 import { CategoryMutationService } from "../category-mutation.service.js";
 import { CategoryService } from "../category.service.js";
@@ -69,13 +72,90 @@ describe("CategoryService", () => {
   it("rejects missing archive and group-update targets", async () => {
     // @ts-expect-error - focused repository double.
     const service = new CategoryService({
-      archive: vi.fn().mockResolvedValue(false),
+      list: vi.fn().mockResolvedValue([]),
       updateGroup: vi.fn().mockResolvedValue(null)
     });
 
     await expect(service.archive("u1", CATEGORY_ID)).rejects.toBeInstanceOf(EntityNotFoundError);
     await expect(service.updateGroup("u1", CATEGORY_ID, { group: null })).rejects.toBeInstanceOf(
       EntityNotFoundError
+    );
+  });
+
+  it("archives an entire active subtree", async () => {
+    const child = { ...CATEGORY, id: PARENT_ID, name: "Dining", parentId: CATEGORY_ID };
+    const categories = {
+      list: vi.fn().mockResolvedValue([CATEGORY, child]),
+      archive: vi.fn().mockResolvedValue(2)
+    };
+    // @ts-expect-error - focused repository double.
+    const service = new CategoryService(categories);
+
+    await service.archive("u1", CATEGORY_ID);
+    expect(categories.archive).toHaveBeenCalledWith("u1", [CATEGORY_ID, PARENT_ID], undefined);
+  });
+
+  it("updates and reparents while rejecting sibling collisions and cycles", async () => {
+    const parent = { ...CATEGORY, id: PARENT_ID, name: "Home" };
+    const sibling = {
+      ...CATEGORY,
+      id: "323e4567-e89b-42d3-a456-426614174000",
+      name: "Dining",
+      parentId: PARENT_ID
+    };
+    const categories = {
+      list: vi.fn().mockResolvedValue([CATEGORY, parent, sibling]),
+      update: vi.fn().mockResolvedValue({ ...CATEGORY, parentId: PARENT_ID })
+    };
+    // @ts-expect-error - focused repository double.
+    const service = new CategoryService(categories);
+
+    await expect(
+      service.reparentCategory("u1", CATEGORY_ID, {
+        name: "Food",
+        parentId: PARENT_ID,
+        icon: null,
+        color: null
+      })
+    ).resolves.toMatchObject({ parentId: PARENT_ID });
+    await expect(
+      service.update("u1", CATEGORY_ID, {
+        name: "Dining",
+        parentId: PARENT_ID,
+        icon: null,
+        color: null
+      })
+    ).rejects.toBeInstanceOf(CategoryNameConflictError);
+
+    categories.list.mockResolvedValue([CATEGORY, { ...parent, parentId: CATEGORY_ID }]);
+    await expect(
+      service.reparentCategory("u1", CATEGORY_ID, {
+        name: "Food",
+        parentId: PARENT_ID,
+        icon: null,
+        color: null
+      })
+    ).rejects.toBeInstanceOf(CategoryHierarchyConflictError);
+  });
+
+  it("restores uniquely named categories and blocks unsafe permanent deletion", async () => {
+    const archived = { ...CATEGORY, isArchived: true };
+    const categories = {
+      list: vi.fn().mockResolvedValue([archived]),
+      unarchive: vi.fn().mockResolvedValue(CATEGORY),
+      findById: vi.fn().mockResolvedValue(archived),
+      hasDependents: vi.fn().mockResolvedValue(false),
+      permanentlyDelete: vi.fn().mockResolvedValue(true)
+    };
+    // @ts-expect-error - focused repository double.
+    const service = new CategoryService(categories);
+
+    await expect(service.unarchive("u1", CATEGORY_ID)).resolves.toBe(CATEGORY);
+    await expect(service.permanentlyDelete("u1", CATEGORY_ID)).resolves.toBeUndefined();
+
+    categories.hasDependents.mockResolvedValue(true);
+    await expect(service.permanentlyDelete("u1", CATEGORY_ID)).rejects.toBeInstanceOf(
+      CategoryInUseError
     );
   });
 });
@@ -95,8 +175,10 @@ describe("CategoryMutationService", () => {
         ) => ({ result: await work(tx), replayed: false })
       )
     };
+    // @ts-expect-error - focused repository double shared by both services.
+    const categoryService = new CategoryService(categories);
     // @ts-expect-error - focused collaborators implement the exercised operations.
-    return { service: new CategoryMutationService(categories, idempotency), tx };
+    return { service: new CategoryMutationService(categories, idempotency, categoryService), tx };
   }
 
   it("creates root and validated child categories", async () => {
@@ -138,7 +220,8 @@ describe("CategoryMutationService", () => {
 
   it("archives and updates groups while rejecting missing targets", async () => {
     const success = mutationService({
-      archive: vi.fn().mockResolvedValue(true),
+      list: vi.fn().mockResolvedValue([CATEGORY]),
+      archive: vi.fn().mockResolvedValue(1),
       updateGroup: vi.fn().mockResolvedValue(CATEGORY)
     });
     await expect(success.service.archive("u1", CATEGORY_ID, "key")).resolves.toMatchObject({
@@ -149,7 +232,7 @@ describe("CategoryMutationService", () => {
     ).resolves.toMatchObject({ result: CATEGORY });
 
     const missing = mutationService({
-      archive: vi.fn().mockResolvedValue(false),
+      list: vi.fn().mockResolvedValue([]),
       updateGroup: vi.fn().mockResolvedValue(null)
     });
     await expect(missing.service.archive("u1", CATEGORY_ID, "key")).rejects.toBeInstanceOf(
@@ -158,5 +241,29 @@ describe("CategoryMutationService", () => {
     await expect(
       missing.service.updateGroup("u1", CATEGORY_ID, { group: null }, "key")
     ).rejects.toBeInstanceOf(EntityNotFoundError);
+  });
+
+  it("updates, restores, and permanently deletes through idempotent callbacks", async () => {
+    const archived = { ...CATEGORY, isArchived: true };
+    const categories = {
+      list: vi.fn().mockResolvedValueOnce([CATEGORY]).mockResolvedValueOnce([archived]),
+      update: vi.fn().mockResolvedValue(CATEGORY),
+      unarchive: vi.fn().mockResolvedValue(CATEGORY),
+      findById: vi.fn().mockResolvedValue(archived),
+      hasDependents: vi.fn().mockResolvedValue(false),
+      permanentlyDelete: vi.fn().mockResolvedValue(true)
+    };
+    const context = mutationService(categories);
+    const patch = { name: "Food", parentId: null, icon: null, color: null };
+
+    await expect(context.service.update("u1", CATEGORY_ID, patch, "key-1")).resolves.toMatchObject({
+      result: CATEGORY
+    });
+    await expect(context.service.unarchive("u1", CATEGORY_ID, "key-2")).resolves.toMatchObject({
+      result: CATEGORY
+    });
+    await expect(
+      context.service.permanentlyDelete("u1", CATEGORY_ID, "key-3")
+    ).resolves.toMatchObject({ result: null });
   });
 });

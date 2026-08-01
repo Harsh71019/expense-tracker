@@ -45,7 +45,7 @@ describe("ArchiveCategoryDialog", () => {
       />
     );
 
-    expect(screen.getByText(/This is a parent with subcategories/)).toBeVisible();
+    expect(screen.getByText(/active subcategories will be archived/)).toBeVisible();
   });
 
   it("cancels via the Cancel button and the backdrop, but not the card itself", async () => {
@@ -61,7 +61,7 @@ describe("ArchiveCategoryDialog", () => {
       />
     );
 
-    await user.click(screen.getByText(/can't be undone/));
+    await user.click(screen.getByText(/restore archived categories/));
     expect(onCancel).not.toHaveBeenCalled();
 
     await user.click(screen.getByRole("button", { name: "Cancel" }));

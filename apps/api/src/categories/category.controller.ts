@@ -1,7 +1,22 @@
-import { Body, Controller, Get, Headers, HttpCode, Param, Patch, Post, Res } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Headers,
+  HttpCode,
+  Param,
+  Patch,
+  Post,
+  Put,
+  Query,
+  Res
+} from "@nestjs/common";
 import {
   CategoryIdSchema,
   CreateCategorySchema,
+  ListCategoriesQuerySchema,
+  UpdateCategorySchema,
   UpdateCategoryGroupSchema,
   type Category
 } from "@treasury-ops/shared";
@@ -39,8 +54,32 @@ export class CategoryController {
   }
   @Get()
   @RequireScopes({ categories: ["read"] })
-  list(@CurrentUser() user: AuthenticatedUser): Promise<Category[]> {
-    return this.categories.list(user.id);
+  list(@CurrentUser() user: AuthenticatedUser, @Query() query: unknown = {}): Promise<Category[]> {
+    const parsed = ListCategoriesQuerySchema.parse(query);
+    return this.categories.list(user.id, parsed.includeArchived);
+  }
+
+  @Put(":categoryId")
+  async update(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("categoryId") categoryId: string,
+    @Body() body: unknown,
+    @Headers("idempotency-key") key?: string,
+    @Res({ passthrough: true }) response?: Response
+  ): Promise<Category> {
+    const parsedId = CategoryIdSchema.parse(categoryId);
+    const input = UpdateCategorySchema.parse(body);
+    if (this.mutations === undefined) return this.categories.update(user.id, parsedId, input);
+    const result = await this.mutations.update(
+      user.id,
+      parsedId,
+      input,
+      IdempotencyKeySchema.parse(key)
+    );
+    if (result.replayed && response !== undefined) {
+      response.status(200).setHeader("Idempotency-Replayed", "true");
+    }
+    return result.result;
   }
   @Patch(":categoryId/archive")
   @HttpCode(204)
@@ -53,6 +92,48 @@ export class CategoryController {
     const parsedId = CategoryIdSchema.parse(categoryId);
     if (this.mutations === undefined) return this.categories.archive(user.id, parsedId);
     const result = await this.mutations.archive(user.id, parsedId, IdempotencyKeySchema.parse(key));
+    if (result.replayed && response !== undefined) {
+      response.setHeader("Idempotency-Replayed", "true");
+    }
+  }
+
+  @Patch(":categoryId/unarchive")
+  async unarchive(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("categoryId") categoryId: string,
+    @Headers("idempotency-key") key?: string,
+    @Res({ passthrough: true }) response?: Response
+  ): Promise<Category> {
+    const parsedId = CategoryIdSchema.parse(categoryId);
+    if (this.mutations === undefined) return this.categories.unarchive(user.id, parsedId);
+    const result = await this.mutations.unarchive(
+      user.id,
+      parsedId,
+      IdempotencyKeySchema.parse(key)
+    );
+    if (result.replayed && response !== undefined) {
+      response.status(200).setHeader("Idempotency-Replayed", "true");
+    }
+    return result.result;
+  }
+
+  @Delete(":categoryId/permanent")
+  @HttpCode(204)
+  async permanentlyDelete(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("categoryId") categoryId: string,
+    @Headers("idempotency-key") key?: string,
+    @Res({ passthrough: true }) response?: Response
+  ): Promise<void> {
+    const parsedId = CategoryIdSchema.parse(categoryId);
+    if (this.mutations === undefined) {
+      return this.categories.permanentlyDelete(user.id, parsedId);
+    }
+    const result = await this.mutations.permanentlyDelete(
+      user.id,
+      parsedId,
+      IdempotencyKeySchema.parse(key)
+    );
     if (result.replayed && response !== undefined) {
       response.setHeader("Idempotency-Replayed", "true");
     }

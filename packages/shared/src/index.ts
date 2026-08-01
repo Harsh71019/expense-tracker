@@ -136,11 +136,15 @@ export type {
   UpsertBudget
 } from "./budget.js";
 export {
+  CategoryColorSchema,
   CategoryGroupSchema,
   CategoryIdSchema,
+  CategoryIconSchema,
   CategoryKindSchema,
   CategorySchema,
   CreateCategorySchema,
+  ListCategoriesQuerySchema,
+  UpdateCategorySchema,
   UpdateCategoryGroupSchema
 } from "./category.js";
 export type {
@@ -149,6 +153,8 @@ export type {
   CategoryId,
   CategoryKind,
   CreateCategory,
+  ListCategoriesQuery,
+  UpdateCategory,
   UpdateCategoryGroup
 } from "./category.js";
 export {

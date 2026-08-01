@@ -6,13 +6,19 @@ import { getServerApiClient } from "@/lib/api/server";
 
 const CategoriesSchema = z.array(CategorySchema);
 
-export const getCategories = cache(async (): Promise<Category[]> => {
+const getCategoriesCached = cache(async (includeArchived: boolean): Promise<Category[]> => {
   try {
     const client = await getServerApiClient();
-    const result = await client.GET("/v1/categories");
+    const result = await client.GET("/v1/categories", {
+      params: { query: { includeArchived: includeArchived ? "true" : "false" } }
+    });
     const parsed = CategoriesSchema.safeParse(result.data);
     return parsed.success ? parsed.data : [];
   } catch {
     return [];
   }
 });
+
+export function getCategories(includeArchived = false): Promise<Category[]> {
+  return getCategoriesCached(includeArchived);
+}

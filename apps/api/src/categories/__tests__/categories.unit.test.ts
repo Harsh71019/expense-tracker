@@ -48,13 +48,15 @@ describe("CategoryService Unit Tests", () => {
 
   it("archive marks category archived", async () => {
     const mockRepo = {
-      archive: vi.fn(async () => true)
+      list: vi.fn(async () => [sampleCategory]),
+      archive: vi.fn(async () => 1)
     };
 
     // @ts-expect-error mock repo
     const service = new CategoryService(mockRepo);
 
     await expect(service.archive("u1", "cat_1")).resolves.toBeUndefined();
+    expect(mockRepo.archive).toHaveBeenCalledWith("u1", ["cat_1"], undefined);
   });
 
   it("updateGroup patches category group", async () => {

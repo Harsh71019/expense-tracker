@@ -152,6 +152,13 @@ apps/web/
 
 ### 4.2 TanStack Query conventions
 
+The category management route hydrates the generated client with `includeArchived=true` and keeps
+active and archived views under one category query family. Its drawer is shared by create, edit,
+re-parent, and quick-rename flows; visual choices are an expanded Lucide key registry plus preset
+and validated custom hex colours. A 409 `category.name_conflict` during restore opens the quick
+rename flow, while other hierarchy conflicts remain visible as their own actionable errors.
+Permanent deletion is available only from the archived view and always uses a confirmation dialog.
+
 ```ts
 // lib/query/keys.ts — the ONLY place query keys are written
 export const qk = {

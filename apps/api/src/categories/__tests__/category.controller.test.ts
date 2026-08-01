@@ -46,7 +46,7 @@ describe("CategoryController", () => {
     const result = await controller.list(user);
 
     expect(result).toEqual([]);
-    expect(mockService.list).toHaveBeenCalledWith("user-1");
+    expect(mockService.list).toHaveBeenCalledWith("user-1", false);
   });
 
   it("calls archive on the category service", async () => {

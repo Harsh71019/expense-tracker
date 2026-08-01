@@ -1,7 +1,12 @@
 "use client";
 
 import { useMutation, useQueryClient, type UseMutationResult } from "@tanstack/react-query";
-import { CategorySchema, type Category, type CreateCategory } from "@treasury-ops/shared";
+import {
+  CategorySchema,
+  type Category,
+  type CreateCategory,
+  type UpdateCategory
+} from "@treasury-ops/shared";
 import { useState } from "react";
 
 import { apiClient } from "@/lib/api/client";
@@ -73,4 +78,98 @@ export function useArchiveCategory(): UseMutationResult<void, Error, string> {
       ]);
     }
   });
+}
+
+type UpdateCategoryVariables = Readonly<{
+  categoryId: string;
+  patch: UpdateCategory;
+}>;
+
+export function useUpdateCategory(): UseMutationResult<Category, Error, UpdateCategoryVariables> {
+  const client = useQueryClient();
+  const [key, setKey] = useState(generateRequestId);
+  return useMutation({
+    mutationFn: async ({ categoryId, patch }): Promise<Category> => {
+      try {
+        const result = await apiClient.PUT("/v1/categories/{categoryId}", {
+          body: patch,
+          params: { path: { categoryId }, header: { "Idempotency-Key": key } }
+        });
+        if (result.error !== undefined) throw toAppError(result.error, result.response.status);
+        const parsed = CategorySchema.safeParse(result.data);
+        if (!parsed.success) throw toAppError(undefined, result.response.status);
+        return parsed.data;
+      } catch (error: unknown) {
+        if (error instanceof Error) throw error;
+        throw toNetworkError(error);
+      }
+    },
+    onSuccess: () => {
+      setKey(generateRequestId());
+    },
+    onSettled: async () => {
+      await invalidateCategoryConsumers(client);
+    }
+  });
+}
+
+export function useUnarchiveCategory(): UseMutationResult<Category, Error, string> {
+  const client = useQueryClient();
+  const [key, setKey] = useState(generateRequestId);
+  return useMutation({
+    mutationFn: async (categoryId): Promise<Category> => {
+      try {
+        const result = await apiClient.PATCH("/v1/categories/{categoryId}/unarchive", {
+          params: { path: { categoryId }, header: { "Idempotency-Key": key } }
+        });
+        if (result.error !== undefined) throw toAppError(result.error, result.response.status);
+        const parsed = CategorySchema.safeParse(result.data);
+        if (!parsed.success) throw toAppError(undefined, result.response.status);
+        return parsed.data;
+      } catch (error: unknown) {
+        if (error instanceof Error) throw error;
+        throw toNetworkError(error);
+      }
+    },
+    onSuccess: () => {
+      setKey(generateRequestId());
+    },
+    onSettled: async () => {
+      await invalidateCategoryConsumers(client);
+    }
+  });
+}
+
+export function usePermanentlyDeleteCategory(): UseMutationResult<void, Error, string> {
+  const client = useQueryClient();
+  const [key, setKey] = useState(generateRequestId);
+  return useMutation({
+    mutationFn: async (categoryId): Promise<void> => {
+      try {
+        const result = await apiClient.DELETE("/v1/categories/{categoryId}/permanent", {
+          params: { path: { categoryId }, header: { "Idempotency-Key": key } }
+        });
+        if (result.error !== undefined) throw toAppError(result.error, result.response.status);
+      } catch (error: unknown) {
+        if (error instanceof Error) throw error;
+        throw toNetworkError(error);
+      }
+    },
+    onSuccess: () => {
+      setKey(generateRequestId());
+    },
+    onSettled: async () => {
+      await invalidateCategoryConsumers(client);
+    }
+  });
+}
+
+type QueryClient = ReturnType<typeof useQueryClient>;
+
+async function invalidateCategoryConsumers(client: QueryClient): Promise<void> {
+  await Promise.all([
+    client.invalidateQueries({ queryKey: qk.categories() }),
+    client.invalidateQueries({ queryKey: qk.transactionLists() }),
+    client.invalidateQueries({ queryKey: qk.categoryRules() })
+  ]);
 }

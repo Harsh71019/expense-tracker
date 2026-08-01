@@ -46,6 +46,9 @@ export interface MockIdempotency {
   accountArchive: Set<string>;
   categories: Map<string, CategoryDto>;
   categoryArchive: Set<string>;
+  categoryUpdate: Map<string, CategoryDto>;
+  categoryUnarchive: Map<string, CategoryDto>;
+  categoryDelete: Set<string>;
   categoryRules: Map<string, CategoryRuleDto>;
   categoryRuleDelete: Set<string>;
   transactions: Map<string, TransactionDto>;
@@ -1840,6 +1843,9 @@ export function createMockStore(): MockStore {
       accountArchive: new Set(),
       categories: new Map(),
       categoryArchive: new Set(),
+      categoryUpdate: new Map(),
+      categoryUnarchive: new Map(),
+      categoryDelete: new Set(),
       categoryRules: new Map(),
       categoryRuleDelete: new Set(),
       transactions: new Map(),

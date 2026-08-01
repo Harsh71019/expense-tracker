@@ -9,6 +9,14 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      # 192.168.0.226 is a private LAN address -- GitHub's hosted runners have
+      # no route to it at all. Join the tailnet for this job so the runner can
+      # reach it the same way our phones/n8n do.
+      - name: Connect to Tailscale
+        uses: tailscale/github-action@v3
+        with:
+          authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
+
       - name: Deploy tag to Proxmox
         env:
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}

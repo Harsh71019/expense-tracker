@@ -298,10 +298,10 @@ export function AccentPreferenceForm({
               aria-label="Hex, RGB, or HSL"
               aria-describedby="custom-accent-help custom-accent-status"
               aria-invalid={isError}
-              placeholder="#1d4ed8"
+              placeholder="#1d4ed8…"
               autoComplete="off"
               spellCheck={false}
-              className="h-12 w-full rounded-lg border border-border bg-surface-muted px-3.5 font-mono text-sm text-foreground transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
+              className="h-12 w-full rounded-lg border border-border bg-surface-muted px-3.5 font-mono text-base text-foreground transition-colors focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 sm:text-sm"
             />
           </label>
         </div>

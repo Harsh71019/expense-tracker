@@ -390,4 +390,4 @@ These checkpoints were approved on 1 August 2026. Implementation is proceeding o
 - [x] Complete remaining money-capture and transfer route refinements.
 - [x] Adapt imports, bills, and recurring workflows for phones.
 - [x] Continue folder-by-folder through accounts, categories, and category rules.
-- [ ] Continue through dashboard, reports, budgets, goals, assets, settings, and final hardening.
+- [x] Continue through dashboard, reports, budgets, goals, assets, settings, and final hardening.

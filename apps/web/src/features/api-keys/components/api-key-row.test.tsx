@@ -25,7 +25,9 @@ describe("ApiKeyRow", () => {
     expect(screen.getByText("n8n")).toBeVisible();
     expect(screen.getByText("Create transactions")).toBeVisible();
 
-    await user.click(screen.getByRole("button", { name: "Revoke" }));
+    const revokeButton = screen.getByRole("button", { name: "Revoke" });
+    expect(revokeButton).toHaveClass("min-h-11");
+    await user.click(revokeButton);
     expect(onRevoke).toHaveBeenCalledWith(key);
   });
 

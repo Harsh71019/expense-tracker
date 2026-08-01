@@ -63,6 +63,6 @@ describe("SignOutButton", () => {
   it("uses an icon-sized sign-out control in compact mode", () => {
     render(<SignOutButton compact />);
 
-    expect(screen.getByRole("button", { name: "Sign out" })).toHaveClass("h-10", "w-10");
+    expect(screen.getByRole("button", { name: "Sign out" })).toHaveClass("h-11", "w-11");
   });
 });

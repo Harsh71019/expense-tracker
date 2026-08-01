@@ -12,7 +12,7 @@ export function EmptyState({
   icon?: ReactNode;
 }>): ReactNode {
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-border bg-surface-muted/60 p-7 transition-all duration-200 hover:border-border/80">
+    <div className="relative overflow-hidden rounded-2xl border border-border bg-surface-muted/60 p-7 transition-colors duration-200 hover:border-border/80">
       <span className="absolute inset-y-0 left-0 w-[3px] bg-accent/60" aria-hidden="true" />
       {icon !== undefined ? (
         <div className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-xl border border-accent/20 bg-accent-glow text-accent shadow-xs">

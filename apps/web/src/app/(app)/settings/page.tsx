@@ -30,7 +30,7 @@ export default async function SettingsPage({
 
       <Link
         href="/bills"
-        className="flex items-center justify-between rounded-2xl border border-border bg-surface-elevated p-5 transition-colors hover:border-accent/50"
+        className="flex min-h-11 items-center justify-between rounded-2xl border border-border bg-surface-elevated p-5 transition-colors hover:border-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
       >
         <span>
           <span className="block font-semibold text-foreground">Credit card bills</span>

@@ -255,8 +255,8 @@ function RecurringRuleCard({
           </div>
         </div>
 
-        <div className="flex items-center justify-between gap-5 border-t border-border pt-4 md:flex-col md:items-end md:border-0 md:pt-0">
-          <div className="text-right">
+        <div className="flex flex-col items-stretch gap-3 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between sm:gap-5 md:flex-col md:items-end md:border-0 md:pt-0">
+          <div className="text-left sm:text-right">
             <Money
               minor={rule.template.amountMinor}
               variant={rule.template.type}
@@ -265,7 +265,7 @@ function RecurringRuleCard({
             />
             <p className="mt-0.5 text-xs text-foreground-muted">per {period}</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
             {isCompleted ? null : (
               <button
                 type="button"

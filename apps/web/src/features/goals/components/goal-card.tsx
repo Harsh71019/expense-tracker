@@ -46,8 +46,10 @@ export function GoalCard({
 
   return (
     <article className="relative rounded-[18px] border border-border bg-surface-elevated p-5.5 animate-fade-in">
-      <div className="flex items-start gap-4">
-        <GoalProgressRing progressMinor={goal.progressMinor} targetMinor={goal.targetMinor} />
+      <div className="flex flex-col gap-4 min-[360px]:flex-row min-[360px]:items-start">
+        <div className="self-center min-[360px]:self-auto">
+          <GoalProgressRing progressMinor={goal.progressMinor} targetMinor={goal.targetMinor} />
+        </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
@@ -90,7 +92,7 @@ export function GoalCard({
           </div>
 
           <span
-            className={`mt-3 inline-flex rounded-md border px-2 py-1 font-mono text-[9px] font-bold tracking-wide uppercase ${toneClasses[verdict.tone]}`}
+            className={`mt-3 inline-flex max-w-full rounded-md border px-2 py-1 font-mono text-[9px] leading-relaxed font-bold tracking-wide uppercase ${toneClasses[verdict.tone]}`}
           >
             {verdict.label}
           </span>

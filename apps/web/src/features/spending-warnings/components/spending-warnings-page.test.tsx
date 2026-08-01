@@ -94,11 +94,15 @@ describe("SpendingWarningsPage", () => {
       pages: [pageWith([], { status: "learning", eligibleKinds: [], baselineExpenseCount: 3 })],
       pageParams: [null]
     };
-    render(<SpendingWarningsPage filters={{ filter: "all" }} initialPage={null} />);
+    const { container } = render(
+      <SpendingWarningsPage filters={{ filter: "all" }} initialPage={null} />
+    );
 
     expect(screen.getByRole("heading", { name: "Spending patterns" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Learning your patterns" })).toBeVisible();
     expect(screen.queryByText("No unusual spending patterns right now")).not.toBeInTheDocument();
+    expect(container.querySelector("section")).toHaveClass("w-full");
+    expect(container.querySelector("section")).not.toHaveClass("max-w-3xl");
   });
 
   it("shows the ready, no-warnings state", () => {

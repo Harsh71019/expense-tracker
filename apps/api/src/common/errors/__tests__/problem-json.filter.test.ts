@@ -1,4 +1,5 @@
 import {
+  ForbiddenException,
   NotFoundException,
   ServiceUnavailableException,
   UnauthorizedException
@@ -47,7 +48,11 @@ describe("ProblemJsonFilter", () => {
 
     expect(response.status).toHaveBeenCalledWith(422);
     const body = response.send.mock.calls[0]?.[0];
-    expect(body).toMatchObject({ code: "common.validation_failed", reqId: "req-1" });
+    expect(body).toMatchObject({
+      code: "common.validation_failed",
+      message: "1 field(s) failed validation.",
+      reqId: "req-1"
+    });
     expect(body.errors).toEqual([
       { path: "amountMinor", code: expect.any(String), message: expect.any(String) }
     ]);
@@ -64,6 +69,7 @@ describe("ProblemJsonFilter", () => {
     expect(response.status).toHaveBeenCalledWith(404);
     expect(response.send.mock.calls[0]?.[0]).toMatchObject({
       code: "common.not_found",
+      message: "Account not found.",
       retryable: false,
       reqId: "req-2"
     });
@@ -117,7 +123,25 @@ describe("ProblemJsonFilter", () => {
     filter.catch(new NotFoundException("Category not found"), host);
 
     expect(response.status).toHaveBeenCalledWith(404);
-    expect(response.send.mock.calls[0]?.[0]).toMatchObject({ code: "common.not_found" });
+    expect(response.send.mock.calls[0]?.[0]).toMatchObject({
+      code: "common.not_found",
+      message: "Category not found"
+    });
+  });
+
+  it("maps a 403 HttpException to a clear permission response", () => {
+    // @ts-expect-error - mock Logger for unit testing
+    const filter = new ProblemJsonFilter(logger);
+    const { host, response } = mockHost("req-9");
+
+    // @ts-expect-error - mock ArgumentsHost for unit testing
+    filter.catch(new ForbiddenException(), host);
+
+    expect(response.status).toHaveBeenCalledWith(403);
+    expect(response.send.mock.calls[0]?.[0]).toMatchObject({
+      code: "auth.insufficient_scope",
+      message: "You do not have permission to perform this action."
+    });
   });
 
   it("marks 503 HttpExceptions as retryable dependency_unavailable", () => {
@@ -146,7 +170,11 @@ describe("ProblemJsonFilter", () => {
 
     expect(response.status).toHaveBeenCalledWith(500);
     const body = response.send.mock.calls[0]?.[0];
-    expect(body).toMatchObject({ code: "common.internal", retryable: false });
+    expect(body).toMatchObject({
+      code: "common.internal",
+      message: "An unexpected error occurred. Reference: req-7.",
+      retryable: false
+    });
     expect(body.detail).toContain("req-7");
     expect(logger.error).toHaveBeenCalledOnce();
   });

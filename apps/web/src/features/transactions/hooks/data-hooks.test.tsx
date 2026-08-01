@@ -33,6 +33,7 @@ const problem = {
   title: "Conflict",
   status: 409,
   detail: "Already reversed",
+  message: "Already reversed",
   instance: "/api/v1/transactions/3fa85f64-5717-4562-b3fc-2c963f66bef0/reverse",
   code: "txn.already_reversed",
   reqId: "request-1",
@@ -86,7 +87,7 @@ describe("transaction data hooks", () => {
   it("surfaces API errors while loading another page", async () => {
     mocks.GET.mockResolvedValue({
       data: undefined,
-      error: { ...problem, detail: "Cursor expired" },
+      error: { ...problem, detail: "Cursor expired", message: "Cursor expired" },
       response: problemResponse
     });
     const hook = renderHook(() => useTxnList({ limit: 10 }, initialPage), { wrapper });
@@ -128,7 +129,7 @@ describe("transaction data hooks", () => {
     const hook = renderHook(() => useReverseTxn(), { wrapper });
 
     await expect(hook.result.current.mutateAsync(transaction.id)).rejects.toThrow(
-      "The network request failed."
+      "We could not reach TreasuryOps. Check your connection and try again."
     );
   });
 });

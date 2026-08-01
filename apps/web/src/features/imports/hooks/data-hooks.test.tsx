@@ -26,6 +26,7 @@ const problem = {
   title: "Validation failed",
   status: 422,
   detail: "Check import",
+  message: "Check import",
   instance: "/api/v1/imports",
   code: "common.validation_failed",
   reqId: "request-1",
@@ -144,7 +145,7 @@ describe("import data hooks", () => {
       update.result.current.mutateAsync({ batchId: batch.id, stagedRowId: row.id, include: false })
     ).rejects.toThrow("The request could not be completed.");
     await expect(commit.result.current.mutateAsync(batch.id)).rejects.toThrow(
-      "The network request failed."
+      "We could not reach TreasuryOps. Check your connection and try again."
     );
     const fetchMock = vi
       .spyOn(globalThis, "fetch")

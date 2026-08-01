@@ -118,6 +118,9 @@
           "detail": {
             "type": "string"
           },
+          "message": {
+            "type": "string"
+          },
           "instance": {
             "type": "string"
           },
@@ -191,6 +194,7 @@
           "title",
           "status",
           "detail",
+          "message",
           "instance",
           "code",
           "reqId",

@@ -11,6 +11,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Money } from "@/components/ui/money";
 import { useAccounts } from "@/features/accounts";
 import { glyphFor, IconGlyph, tint, useCategories } from "@/features/categories";
+import { userErrorMessage } from "@/lib/errors";
 
 import { useRecurringRules, useUpdateRecurringRule } from "../hooks/use-recurring-rules";
 import { describeSchedule, parseSchedule } from "../model/schedule";
@@ -58,8 +59,13 @@ export function RecurringManager({ initialRules, accounts, categories }: Manager
     try {
       await updateRule.mutateAsync({ ruleId: rule.id, patch: { isPaused: !rule.isPaused } });
       toast.success(rule.isPaused ? "Recurring rule resumed" : "Recurring rule paused");
-    } catch {
-      toast.error(rule.isPaused ? "Could not resume this rule" : "Could not pause this rule");
+    } catch (error: unknown) {
+      toast.error(
+        userErrorMessage(
+          error,
+          rule.isPaused ? "Could not resume this rule." : "Could not pause this rule."
+        )
+      );
     }
   }
 

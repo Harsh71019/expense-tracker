@@ -73,9 +73,11 @@ describe("CategoryRuleManager", () => {
   });
 
   it("shows the zero state when there are no rules", () => {
-    render(<CategoryRuleManager initialRules={[]} />);
+    const { container } = render(<CategoryRuleManager initialRules={[]} />);
     expect(screen.getByText("No rules yet")).toBeVisible();
     expect(screen.getByText("0 rules")).toBeVisible();
+    expect(container.querySelector("section")).toHaveClass("w-full");
+    expect(container.querySelector("section")).not.toHaveClass("max-w-[940px]");
   });
 
   it("lists existing rules and deletes one without confirmation", async () => {

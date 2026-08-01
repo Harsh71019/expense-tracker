@@ -52,12 +52,19 @@ describe("AppHeader", () => {
     expect(screen.queryByText("🙈")).toBeNull();
   });
 
-  it("shows Settings without a decorative gear", () => {
+  it("shows the Settings icon", () => {
     mocks.pathname = "/settings";
     render(<AppHeader email="harsh@example.com" theme={null} />);
 
     const routeLabel = screen.getByText("Settings");
-    expect(routeLabel.parentElement?.querySelector('[aria-hidden="true"]')).toBeNull();
+    expect(routeLabel.parentElement?.querySelector('[aria-hidden="true"]')).toHaveTextContent("⚙");
+  });
+
+  it("labels the recurring transactions route", () => {
+    mocks.pathname = "/recurring";
+    render(<AppHeader email="harsh@example.com" theme={null} />);
+
+    expect(screen.getByText("Recurring transactions")).toBeVisible();
   });
 
   it("uses the parent label for nested routes", () => {

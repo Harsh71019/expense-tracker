@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import { AppError, AuthError, ConflictError, NetworkError, ValidationError } from "../errors";
+import {
+  AppError,
+  AuthError,
+  ConflictError,
+  NetworkError,
+  PermissionError,
+  ValidationError,
+  userErrorMessage
+} from "../errors";
 import { toAppError, toNetworkError } from "./problem";
 
 const problem = (
@@ -11,6 +19,7 @@ const problem = (
   title: "Problem",
   status: 422,
   detail: "Request failed",
+  message: "Request failed",
   instance: "/api/v1/transactions",
   code,
   reqId: "request-1",
@@ -22,6 +31,7 @@ const problem = (
 describe("API problem mapping", () => {
   it("maps typed problem responses to the application taxonomy", () => {
     expect(toAppError(problem("auth.unauthenticated"), 401)).toBeInstanceOf(AuthError);
+    expect(toAppError(problem("auth.unauthenticated"), 403)).toBeInstanceOf(PermissionError);
     expect(toAppError(problem("txn.already_reversed"), 409)).toBeInstanceOf(ConflictError);
     expect(toAppError(problem("common.internal"), 500)).toBeInstanceOf(NetworkError);
     expect(toAppError(problem("common.internal"), 400)).toBeInstanceOf(AppError);
@@ -34,7 +44,21 @@ describe("API problem mapping", () => {
       expect(validation.fields).toEqual([expect.objectContaining({ path: "amountMinor" })]);
     }
     expect(toAppError({ invalid: true }, 422).message).toBe("The request could not be completed.");
-    expect(toNetworkError(new TypeError("offline"))).toMatchObject({ message: "offline" });
-    expect(toNetworkError(null)).toMatchObject({ message: "The network request failed." });
+    expect(toNetworkError(new TypeError("Failed to fetch"))).toMatchObject({
+      message: "We could not reach TreasuryOps. Check your connection and try again."
+    });
+    expect(toNetworkError(null)).toBeInstanceOf(NetworkError);
+  });
+
+  it("presents common failures without exposing transport messages", () => {
+    expect(userErrorMessage(toAppError(problem("auth.unauthenticated"), 401), "Fallback")).toBe(
+      "Your session has expired. Sign in again to continue."
+    );
+    expect(userErrorMessage(toAppError(problem("auth.unauthenticated"), 403), "Fallback")).toBe(
+      "You do not have permission to complete this action."
+    );
+    expect(userErrorMessage(toNetworkError(new TypeError("Failed to fetch")), "Fallback")).toBe(
+      "We could not reach TreasuryOps. Check your connection and try again."
+    );
   });
 });

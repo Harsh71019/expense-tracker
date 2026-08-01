@@ -14,6 +14,7 @@ type ProblemDetails = Readonly<{
   title: string;
   status: number;
   detail: string;
+  message: string;
   instance: string;
   code: string;
   reqId: string;
@@ -52,11 +53,13 @@ function toProblemDetails(exception: unknown, instance: string, reqId: string): 
   const timestamp = new Date().toISOString();
 
   if (exception instanceof ZodError) {
+    const message = `${exception.issues.length} field(s) failed validation.`;
     return {
       type: "https://treasury-ops.app/problems/common.validation_failed",
       title: "Validation failed",
       status: HttpStatus.UNPROCESSABLE_ENTITY,
-      detail: `${exception.issues.length} field(s) failed validation.`,
+      detail: message,
+      message,
       instance,
       code: "common.validation_failed",
       reqId,
@@ -76,6 +79,7 @@ function toProblemDetails(exception: unknown, instance: string, reqId: string): 
       title: exception.name,
       status: exception.status,
       detail: exception.message,
+      message: exception.message,
       instance,
       code: exception.code,
       reqId,
@@ -87,11 +91,13 @@ function toProblemDetails(exception: unknown, instance: string, reqId: string): 
 
   if (exception instanceof HttpException) {
     const status = exception.getStatus();
+    const message = messageForHttpException(exception, status);
     return {
       type: "about:blank",
       title: exception.name,
       status,
-      detail: exception.message,
+      detail: message,
+      message,
       instance,
       code: codeForStatus(status),
       reqId,
@@ -101,11 +107,13 @@ function toProblemDetails(exception: unknown, instance: string, reqId: string): 
     };
   }
 
+  const message = `An unexpected error occurred. Reference: ${reqId}.`;
   return {
     type: "about:blank",
     title: "Internal Server Error",
     status: HttpStatus.INTERNAL_SERVER_ERROR,
-    detail: `An unexpected error occurred. Reference: ${reqId}.`,
+    detail: message,
+    message,
     instance,
     code: "common.internal",
     reqId,
@@ -115,10 +123,41 @@ function toProblemDetails(exception: unknown, instance: string, reqId: string): 
   };
 }
 
+function messageForHttpException(exception: HttpException, status: number): string {
+  switch (status) {
+    case HttpStatus.BAD_REQUEST:
+      return "The request is invalid.";
+    case HttpStatus.UNAUTHORIZED:
+      return "Authentication required.";
+    case HttpStatus.FORBIDDEN:
+      return "You do not have permission to perform this action.";
+    case HttpStatus.NOT_FOUND:
+      return exception.message === "Not Found"
+        ? "The requested resource was not found."
+        : exception.message;
+    case HttpStatus.CONFLICT:
+      return "The request conflicts with the current state.";
+    case HttpStatus.TOO_MANY_REQUESTS:
+      return "Too many requests. Wait a moment and try again.";
+    case HttpStatus.UNPROCESSABLE_ENTITY:
+      return "Some request values are invalid.";
+    case HttpStatus.SERVICE_UNAVAILABLE:
+      return "A required service is temporarily unavailable.";
+    default:
+      return status >= 500
+        ? "An unexpected error occurred."
+        : "The request could not be completed.";
+  }
+}
+
 function codeForStatus(status: number): ErrorCode {
   switch (status) {
     case HttpStatus.UNAUTHORIZED:
       return "auth.unauthenticated";
+    case HttpStatus.FORBIDDEN:
+      return "auth.insufficient_scope";
+    case HttpStatus.TOO_MANY_REQUESTS:
+      return "auth.rate_limited";
     case HttpStatus.NOT_FOUND:
       return "common.not_found";
     case HttpStatus.SERVICE_UNAVAILABLE:

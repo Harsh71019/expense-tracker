@@ -11,6 +11,7 @@ export function mockProblem(status: number, code: ErrorCode, detail: string): Pr
     title: code,
     status,
     detail,
+    message: detail,
     instance: "urn:treasury-ops:mock",
     code,
     reqId: `mock-${Math.random().toString(36).slice(2, 10)}`,

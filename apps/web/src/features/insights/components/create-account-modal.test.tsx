@@ -78,7 +78,7 @@ describe("CreateAccountModal", () => {
     await user.type(screen.getByLabelText("Account name"), "Cash");
     await user.click(screen.getByRole("button", { name: "Create account" }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("Account name is already in use");
+    expect(await screen.findByRole("alert")).toHaveTextContent("Could not create this account.");
   });
 
   it("closes without submitting when cancelled or the backdrop is clicked", async () => {

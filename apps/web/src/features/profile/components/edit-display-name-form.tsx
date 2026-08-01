@@ -6,7 +6,7 @@ import type { FormEvent, ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ValidationError } from "@/lib/errors";
+import { userErrorMessage, ValidationError } from "@/lib/errors";
 import { toast } from "@/lib/toast";
 
 import { useProfile, useUpdateProfile } from "../hooks/use-profile";
@@ -39,7 +39,7 @@ export function EditDisplayNameForm({ initialProfile }: EditDisplayNameFormProps
       if (thrown instanceof ValidationError) {
         setError(thrown.fields[0]?.message ?? thrown.message);
       } else {
-        toast.error("Could not update profile");
+        toast.error(userErrorMessage(thrown, "Could not update your profile."));
       }
     }
   }

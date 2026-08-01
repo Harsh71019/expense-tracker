@@ -5705,6 +5705,7 @@ export interface components {
       title: string;
       status: number;
       detail: string;
+      message: string;
       instance: string;
       /** @enum {string} */
       code:

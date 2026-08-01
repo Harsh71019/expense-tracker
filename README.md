@@ -32,7 +32,7 @@ See `BACKEND.md` for the full target architecture, `AGENTS.md` for the non-negot
 - **Notifications** — outbox pattern, BullMQ delivery worker, circuit breaker on outbound calls, periodic sweep
 - **Balance verification** — weekly consistency-check cron comparing ledger vs. computed balances
 - **CSV export**
-- **Standardized API errors** — RFC 7807 problem+json, typed `DomainError` codes throughout, per-field validation errors
+- **Standardized API errors** — RFC 7807 problem+json with stable `code` and user-facing `message` fields, request references, typed `DomainError` codes, and per-field validation errors
 - **Health checks** — `/healthz` (liveness), `/readyz` (Postgres/Redis ping)
 - **OpenAPI spec + generated client** — `pnpm gen:client` generates `apps/api/openapi.json` (via `@asteasolutions/zod-to-openapi`) and a typed `apps/web/src/lib/api/generated/schema.d.ts` from it
 

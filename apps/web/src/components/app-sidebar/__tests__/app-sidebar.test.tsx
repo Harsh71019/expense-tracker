@@ -72,4 +72,20 @@ describe("AppSidebar", () => {
     expect(screen.getByRole("link", { name: "Budgets" })).toHaveAttribute("href", "/budgets");
     expect(screen.getByRole("link", { name: "Reports" })).toHaveAttribute("href", "/reports");
   });
+
+  it("shows recurring transactions and keeps Settings available when compact", async () => {
+    const user = userEvent.setup();
+    render(<AppSidebar email="harsh@example.com" theme="light" />);
+
+    expect(screen.getByRole("link", { name: "Recurring transactions" })).toHaveAttribute(
+      "href",
+      "/recurring"
+    );
+    expect(screen.getByRole("link", { name: "Settings" })).toHaveAttribute("href", "/settings");
+
+    await user.click(screen.getByRole("button", { name: "Collapse sidebar" }));
+
+    expect(screen.getByRole("link", { name: "Recurring transactions" })).toBeVisible();
+    expect(screen.getByRole("link", { name: "Settings" })).toBeVisible();
+  });
 });

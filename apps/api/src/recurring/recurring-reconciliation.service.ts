@@ -8,10 +8,12 @@ import {
 } from "@treasury-ops/shared";
 import { Logger } from "nestjs-pino";
 
+import { AccountRepository } from "../accounts/account.repository.js";
 import { AuditRepository } from "../audit/audit.repository.js";
 import { DATABASE_CONNECTION } from "../common/db/db.module.js";
 import type { DrizzleDb } from "../common/db/db.module.js";
 import { withTxn } from "../common/db/db-txn.js";
+import type { DbTx } from "../common/db/db-txn.js";
 import { EntityNotFoundError } from "../common/errors/entity-not-found.error.js";
 import { InvalidReconciliationResolutionError } from "../common/errors/invalid-reconciliation-resolution.error.js";
 import { ReconciliationAlreadyResolvedError } from "../common/errors/reconciliation-already-resolved.error.js";
@@ -21,7 +23,8 @@ import {
 } from "../common/idempotency/idempotency-postgres.service.js";
 import { LogEvent } from "../common/logging/events.js";
 import { NotificationOutboxRepository } from "../notifications/notification-outbox.repository.js";
-import { TransactionService } from "../transactions/transaction.service.js";
+import { reverseTransactionInTx } from "../transactions/reverse-transaction-in-tx.js";
+import { TransactionRepository } from "../transactions/transaction.repository.js";
 import type { TransactionCreatedHook } from "../transactions/transaction-created-hook.js";
 import {
   RECONCILIATION_WINDOW_DAYS,
@@ -35,13 +38,23 @@ type ReconciliationLogger = Pick<Logger, "log" | "error">;
 export class RecurringReconciliationService implements TransactionCreatedHook {
   constructor(
     @Inject(DATABASE_CONNECTION) private readonly db: DrizzleDb,
-    private readonly transactions: TransactionService,
+    private readonly transactions: TransactionRepository,
+    private readonly accounts: AccountRepository,
     private readonly reconciliations: RecurringReconciliationRepository,
     private readonly notifications: NotificationOutboxRepository,
     private readonly audit: AuditRepository,
     private readonly idempotency: IdempotencyPostgresService,
     @Inject(Logger) private readonly logger: ReconciliationLogger
   ) {}
+
+  private reverseInTx(userId: string, transactionId: string, tx: DbTx) {
+    return reverseTransactionInTx(
+      { transactions: this.transactions, accounts: this.accounts, audit: this.audit },
+      userId,
+      transactionId,
+      tx
+    );
+  }
 
   async onTransactionCreated(userId: string, incoming: Transaction): Promise<void> {
     await this.reconcileIncoming(userId, incoming);
@@ -68,7 +81,7 @@ export class RecurringReconciliationService implements TransactionCreatedHook {
 
     if (match.outcome === "auto_matched") {
       await withTxn(this.db, async (tx) => {
-        await this.transactions.reverseInTx(userId, match.recurringTransactionId, tx);
+        await this.reverseInTx(userId, match.recurringTransactionId, tx);
         await this.reconciliations.create(
           userId,
           {
@@ -158,7 +171,7 @@ export class RecurringReconciliationService implements TransactionCreatedHook {
 
         const target = resolveTargetTransactionId(row, input);
         if (input.resolution === "confirmed_duplicate" && target !== undefined) {
-          await this.transactions.reverseInTx(userId, target, tx);
+          await this.reverseInTx(userId, target, tx);
         }
         const resolved = await this.reconciliations.resolve(userId, id, input.resolution, tx);
         if (resolved === null) throw new EntityNotFoundError("Recurring reconciliation");

@@ -21,7 +21,6 @@ import type { DbTx } from "../common/db/db-txn.js";
 import { isUniqueViolation } from "../common/db/postgres-error.js";
 import { CategoryKindMismatchError } from "../common/errors/category-kind-mismatch.error.js";
 import { EntityNotFoundError } from "../common/errors/entity-not-found.error.js";
-import { TransactionNotReversibleError } from "../common/errors/transaction-not-reversible.error.js";
 import { TransferMetadataRequiresGroupError } from "../common/errors/transfer-metadata-requires-group.error.js";
 import { LogEvent } from "../common/logging/events.js";
 import { TransactionRepository } from "./transaction.repository.js";
@@ -29,6 +28,7 @@ import {
   TRANSACTION_CREATED_HOOK,
   type TransactionCreatedHook
 } from "./transaction-created-hook.js";
+import { reverseTransactionInTx } from "./reverse-transaction-in-tx.js";
 
 export type CreateTransactionResult = Readonly<{ transaction: Transaction; replayed: boolean }>;
 type TransactionLogger = Pick<Logger, "log" | "warn" | "error">;
@@ -211,31 +211,17 @@ export class TransactionService {
   }
 
   /**
-   * The `withTxn`-bound core of `reverse()`, split out so other flows (the
-   * recurring reconciliation service) can reverse a transaction and write
-   * their own bookkeeping row in the same Postgres transaction, instead of
-   * two separate commits that could get out of sync if the process crashes
-   * in between (AGENTS.md: every money write is one transaction).
+   * The `withTxn`-bound core of `reverse()` -- delegates to the shared
+   * `reverseTransactionInTx` (see that file for why this is a plain function
+   * rather than something the recurring reconciliation service calls
+   * through this class).
    */
-  async reverseInTx(userId: string, transactionId: TransactionId, tx: DbTx): Promise<Transaction> {
-    const original = await this.transactions.findPostedById(userId, transactionId, tx);
-    if (original === null) {
-      const existing = await this.transactions.findById(userId, transactionId, tx);
-      if (existing === null) throw new EntityNotFoundError("Transaction");
-      throw new TransactionNotReversibleError();
-    }
-
-    const reversal = await this.transactions.createReversal(userId, original, tx);
-    if (!(await this.transactions.markReversed(userId, original.id, reversal.id, tx))) {
-      throw new TransactionNotReversibleError();
-    }
-
-    const deltaMinor = original.type === "expense" ? original.amountMinor : -original.amountMinor;
-    assertBalanceDeltaApplied(
-      await this.accounts.applyReversalBalanceDelta(userId, original.accountId, deltaMinor, tx)
+  reverseInTx(userId: string, transactionId: TransactionId, tx: DbTx): Promise<Transaction> {
+    return reverseTransactionInTx(
+      { transactions: this.transactions, accounts: this.accounts, audit: this.audit },
+      userId,
+      transactionId,
+      tx
     );
-
-    await this.audit.record(userId, "transaction.reverse", reversal.id, tx);
-    return reversal;
   }
 }

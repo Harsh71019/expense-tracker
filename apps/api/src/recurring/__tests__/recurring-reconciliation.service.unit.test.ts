@@ -3,7 +3,16 @@ import { describe, expect, it, vi } from "vitest";
 import { InvalidReconciliationResolutionError } from "../../common/errors/invalid-reconciliation-resolution.error.js";
 import { ReconciliationAlreadyResolvedError } from "../../common/errors/reconciliation-already-resolved.error.js";
 import { EntityNotFoundError } from "../../common/errors/entity-not-found.error.js";
-import { RecurringReconciliationService } from "../recurring-reconciliation.service.js";
+
+const reverseTransactionInTx = vi.fn(async (...args: unknown[]) => {
+  void args;
+  return undefined;
+});
+vi.mock("../../transactions/reverse-transaction-in-tx.js", () => ({
+  reverseTransactionInTx: (...args: unknown[]) => reverseTransactionInTx(...args)
+}));
+
+const { RecurringReconciliationService } = await import("../recurring-reconciliation.service.js");
 
 const ACCOUNT_ID = "3fa85f64-5717-4562-b3fc-2c963f66beef";
 const RULE_ID = "11111111-1111-4111-8111-111111111111";
@@ -30,17 +39,15 @@ const incomingTransaction = {
 
 function buildService(overrides: {
   candidates?: unknown[];
-  transactions?: Record<string, unknown>;
   reconciliations?: Record<string, unknown>;
   notifications?: Record<string, unknown>;
 }) {
+  reverseTransactionInTx.mockClear();
   const db = {
     transaction: vi.fn((operation: (tx: string) => Promise<unknown>) => operation("tx1"))
   };
-  const transactions = {
-    reverseInTx: vi.fn(async () => undefined),
-    ...overrides.transactions
-  };
+  const transactions = {};
+  const accounts = {};
   const reconciliations = {
     findUnreconciledRecurringCandidates: vi.fn(async () => overrides.candidates ?? []),
     create: vi.fn(async () => undefined),
@@ -75,25 +82,26 @@ function buildService(overrides: {
     // @ts-expect-error mock db for unit testing
     db,
     transactions,
+    accounts,
     reconciliations,
     notifications,
     audit,
     idempotency,
     logger
   );
-  return { service, transactions, reconciliations, notifications, audit, idempotency };
+  return { service, reconciliations, notifications, audit, idempotency };
 }
 
 describe("RecurringReconciliationService.reconcileIncoming", () => {
   it("does nothing when there are no candidates", async () => {
-    const { service, reconciliations, transactions } = buildService({ candidates: [] });
+    const { service, reconciliations } = buildService({ candidates: [] });
     await service.reconcileIncoming("user-a", incomingTransaction);
     expect(reconciliations.create).not.toHaveBeenCalled();
-    expect(transactions.reverseInTx).not.toHaveBeenCalled();
+    expect(reverseTransactionInTx).not.toHaveBeenCalled();
   });
 
   it("auto-reverses the recurring transaction on a clean unique match, without a notification", async () => {
-    const { service, reconciliations, transactions, notifications } = buildService({
+    const { service, reconciliations, notifications } = buildService({
       candidates: [
         {
           transactionId: RECURRING_TXN_ID,
@@ -108,7 +116,12 @@ describe("RecurringReconciliationService.reconcileIncoming", () => {
 
     await service.reconcileIncoming("user-a", incomingTransaction);
 
-    expect(transactions.reverseInTx).toHaveBeenCalledWith("user-a", RECURRING_TXN_ID, "tx1");
+    expect(reverseTransactionInTx).toHaveBeenCalledWith(
+      expect.anything(),
+      "user-a",
+      RECURRING_TXN_ID,
+      "tx1"
+    );
     expect(reconciliations.create).toHaveBeenCalledWith(
       "user-a",
       expect.objectContaining({ status: "auto_matched", recurringTransactionId: RECURRING_TXN_ID }),
@@ -118,7 +131,7 @@ describe("RecurringReconciliationService.reconcileIncoming", () => {
   });
 
   it("flags ambiguous candidates without reversing anything, and enqueues a notification", async () => {
-    const { service, reconciliations, transactions, notifications } = buildService({
+    const { service, reconciliations, notifications } = buildService({
       candidates: [
         {
           transactionId: RECURRING_TXN_ID,
@@ -141,7 +154,7 @@ describe("RecurringReconciliationService.reconcileIncoming", () => {
 
     await service.reconcileIncoming("user-a", incomingTransaction);
 
-    expect(transactions.reverseInTx).not.toHaveBeenCalled();
+    expect(reverseTransactionInTx).not.toHaveBeenCalled();
     expect(reconciliations.create).toHaveBeenCalledWith(
       "user-a",
       expect.objectContaining({ status: "ambiguous" }),
@@ -156,7 +169,7 @@ describe("RecurringReconciliationService.reconcileIncoming", () => {
   });
 
   it("flags an amount mismatch without reversing anything, and enqueues a notification", async () => {
-    const { service, reconciliations, transactions, notifications } = buildService({
+    const { service, reconciliations, notifications } = buildService({
       candidates: [
         {
           transactionId: RECURRING_TXN_ID,
@@ -171,7 +184,7 @@ describe("RecurringReconciliationService.reconcileIncoming", () => {
 
     await service.reconcileIncoming("user-a", incomingTransaction);
 
-    expect(transactions.reverseInTx).not.toHaveBeenCalled();
+    expect(reverseTransactionInTx).not.toHaveBeenCalled();
     expect(reconciliations.create).toHaveBeenCalledWith(
       "user-a",
       expect.objectContaining({ status: "amount_mismatch" }),
@@ -235,7 +248,7 @@ describe("RecurringReconciliationService.resolve", () => {
   });
 
   it("reverses the chosen candidate when confirming a duplicate on an ambiguous row", async () => {
-    const { service, transactions, reconciliations } = buildService({
+    const { service, reconciliations } = buildService({
       reconciliations: { findById: vi.fn(async () => ambiguousRow) }
     });
     await service.resolve(
@@ -247,7 +260,12 @@ describe("RecurringReconciliationService.resolve", () => {
       },
       "key-1"
     );
-    expect(transactions.reverseInTx).toHaveBeenCalledWith("user-a", OTHER_RECURRING_TXN_ID, "tx1");
+    expect(reverseTransactionInTx).toHaveBeenCalledWith(
+      expect.anything(),
+      "user-a",
+      OTHER_RECURRING_TXN_ID,
+      "tx1"
+    );
     expect(reconciliations.resolve).toHaveBeenCalledWith(
       "user-a",
       ambiguousRow.id,
@@ -257,19 +275,24 @@ describe("RecurringReconciliationService.resolve", () => {
   });
 
   it("defaults to the sole candidate when confirming a duplicate on an amount_mismatch row", async () => {
-    const { service, transactions } = buildService({
+    const { service } = buildService({
       reconciliations: { findById: vi.fn(async () => mismatchRow) }
     });
     await service.resolve("user-a", mismatchRow.id, { resolution: "confirmed_duplicate" }, "key-1");
-    expect(transactions.reverseInTx).toHaveBeenCalledWith("user-a", RECURRING_TXN_ID, "tx1");
+    expect(reverseTransactionInTx).toHaveBeenCalledWith(
+      expect.anything(),
+      "user-a",
+      RECURRING_TXN_ID,
+      "tx1"
+    );
   });
 
   it("does not reverse anything when confirming the transactions are distinct", async () => {
-    const { service, transactions, reconciliations } = buildService({
+    const { service, reconciliations } = buildService({
       reconciliations: { findById: vi.fn(async () => ambiguousRow) }
     });
     await service.resolve("user-a", ambiguousRow.id, { resolution: "confirmed_distinct" }, "key-1");
-    expect(transactions.reverseInTx).not.toHaveBeenCalled();
+    expect(reverseTransactionInTx).not.toHaveBeenCalled();
     expect(reconciliations.resolve).toHaveBeenCalledWith(
       "user-a",
       ambiguousRow.id,

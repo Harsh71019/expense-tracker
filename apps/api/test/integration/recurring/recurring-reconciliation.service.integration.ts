@@ -22,7 +22,6 @@ import { RecurringReconciliationRepository } from "../../../src/recurring/recurr
 import { RecurringReconciliationService } from "../../../src/recurring/recurring-reconciliation.service.js";
 import { RecurringRuleRepository } from "../../../src/recurring/recurring-rule.repository.js";
 import { RecurringRuleService } from "../../../src/recurring/recurring-rule.service.js";
-import type { TransactionCreatedHook } from "../../../src/transactions/transaction-created-hook.js";
 import { TransactionRepository } from "../../../src/transactions/transaction.repository.js";
 import { TransactionService } from "../../../src/transactions/transaction.service.js";
 import { createTestDb, insertTestUser } from "../support/postgres-test-db.js";
@@ -64,18 +63,25 @@ describe("RecurringReconciliationService (integration)", () => {
     );
     transactionRepository = new TransactionRepository(testDb.db);
 
-    // TransactionService needs RecurringReconciliationService as its
-    // TRANSACTION_CREATED_HOOK, and RecurringReconciliationService needs
-    // TransactionService (to reverse a matched recurring txn) -- exactly the
-    // cycle real Nest DI resolves via lazy instance wrappers. Constructing
-    // both by hand (this repo's usual integration-test style, no Nest
-    // container) can't do that directly, so this indirection cell breaks the
-    // cycle: TransactionService gets a hook that forwards to whatever
-    // `hook.current` is set to once reconciliationService exists below. This
-    // exercises the *real* create() -> hook -> reconcileIncoming path,
-    // including the `source === "api"` gate inside create() itself, rather
-    // than each test calling reconcileIncoming by hand.
-    const hook: { current?: TransactionCreatedHook } = {};
+    // RecurringReconciliationService depends on TransactionRepository/
+    // AccountRepository directly (not TransactionService) specifically so
+    // this isn't circular -- see reverse-transaction-in-tx.ts. That lets it
+    // be constructed first and passed straight in as TransactionService's
+    // TRANSACTION_CREATED_HOOK below, exercising the *real* create() -> hook
+    // -> reconcileIncoming path (including the `source === "api"` gate
+    // inside create() itself) rather than each test calling
+    // reconcileIncoming by hand.
+    reconciliations = new RecurringReconciliationRepository(testDb.db);
+    reconciliationService = new RecurringReconciliationService(
+      testDb.db,
+      transactionRepository,
+      accounts,
+      reconciliations,
+      new NotificationOutboxRepository(testDb.db),
+      new AuditRepository(testDb.db),
+      new IdempotencyPostgresService(testDb.db, new IdempotencyPostgresRepository(testDb.db)),
+      NOOP_LOGGER
+    );
     transactionsService = new TransactionService(
       testDb.db,
       accounts,
@@ -83,22 +89,8 @@ describe("RecurringReconciliationService (integration)", () => {
       transactionRepository,
       new AuditRepository(testDb.db),
       NOOP_LOGGER,
-      {
-        onTransactionCreated: (userId, txn) =>
-          hook.current?.onTransactionCreated(userId, txn) ?? Promise.resolve()
-      }
+      reconciliationService
     );
-    reconciliations = new RecurringReconciliationRepository(testDb.db);
-    reconciliationService = new RecurringReconciliationService(
-      testDb.db,
-      transactionsService,
-      reconciliations,
-      new NotificationOutboxRepository(testDb.db),
-      new AuditRepository(testDb.db),
-      new IdempotencyPostgresService(testDb.db, new IdempotencyPostgresRepository(testDb.db)),
-      NOOP_LOGGER
-    );
-    hook.current = reconciliationService;
 
     const account = await withTxn(testDb.db, (tx) =>
       accounts.create(

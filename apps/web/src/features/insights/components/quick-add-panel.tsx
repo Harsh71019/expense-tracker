@@ -67,7 +67,7 @@ export function QuickAddPanel({ accounts }: QuickAddPanelProps): ReactNode {
               type="button"
               aria-pressed={type === value}
               onClick={() => setType(value)}
-              className={`rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors duration-150 ${
+              className={`min-h-11 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                 type === value
                   ? value === "income"
                     ? "border border-accent bg-accent-glow text-accent"
@@ -90,7 +90,9 @@ export function QuickAddPanel({ accounts }: QuickAddPanelProps): ReactNode {
         <label className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
           Account
           <select
-            className="w-full rounded-lg border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground transition-colors duration-150 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
+            name="accountId"
+            autoComplete="off"
+            className="min-h-11 w-full rounded-lg border border-border bg-surface px-3.5 py-2.5 text-base text-foreground transition-colors duration-150 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 sm:text-sm"
             value={accountId}
             onChange={(event) => setAccountId(event.target.value)}
           >
@@ -104,8 +106,10 @@ export function QuickAddPanel({ accounts }: QuickAddPanelProps): ReactNode {
 
         <Input
           id="quick-add-description"
+          name="description"
+          autoComplete="off"
           label="Description"
-          placeholder="e.g. Coffee"
+          placeholder="e.g. Coffee…"
           value={description}
           onChange={(event) => setDescription(event.target.value)}
           maxLength={500}

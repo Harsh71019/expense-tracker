@@ -37,6 +37,9 @@ describe("BudgetForm", () => {
 
     render(<BudgetForm categories={[category]} budgets={[]} onClose={onClose} onSaved={onSaved} />);
 
+    expect(screen.getByRole("dialog", { name: "Add budget" })).toHaveClass("h-dvh");
+    expect(screen.getByRole("button", { name: "Close budget form" })).toHaveClass("h-11", "w-11");
+
     await user.selectOptions(
       screen.getByRole("combobox", { name: "Expense category" }),
       category.id

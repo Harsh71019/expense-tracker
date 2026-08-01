@@ -11,12 +11,13 @@ import type { FormEvent, ReactNode } from "react";
 
 import { AmountInput } from "@/components/ui/amount-input";
 import { Button } from "@/components/ui/button";
+import { DialogSurface } from "@/components/ui/dialog";
 import { Money } from "@/components/ui/money";
 
 import { useUpsertBudget } from "../hooks/use-budget-mutations";
 
 const selectClasses =
-  "w-full rounded-lg border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30";
+  "min-h-11 w-full rounded-lg border border-border bg-surface px-3.5 py-2.5 text-base text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 sm:text-sm";
 
 type BudgetFormProps = Readonly<{
   categories: readonly Category[];
@@ -80,94 +81,99 @@ export function BudgetForm({
   }
 
   return (
-    <div
-      role="presentation"
-      className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-sm"
-      onClick={onClose}
+    <DialogSurface
+      labelledBy="budget-editor-title"
+      onClose={onClose}
+      variant="drawer"
+      panelClassName="max-w-[520px]"
     >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="budget-editor-title"
-        className="h-dvh w-full max-w-[520px] overflow-y-auto overscroll-contain border-l border-border bg-surface-elevated px-5 py-6 sm:px-8"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="font-mono text-[9px] font-bold tracking-[0.2em] text-accent uppercase">
-              Monthly planning
-            </p>
-            <h2 id="budget-editor-title" className="mt-1.5 text-xl font-bold text-foreground">
-              {isEdit ? "Edit budget" : "Add budget"}
-            </h2>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close"
-            className="grid h-9 w-9 place-items-center rounded-lg border border-border bg-surface-muted text-foreground-muted"
-          >
-            ✕
-          </button>
-        </div>
-
-        <form onSubmit={(event) => void submit(event)} className="mt-7 space-y-5">
-          <label className="block">
-            <span className="mb-1.5 block font-mono text-[9px] font-extrabold tracking-[0.22em] text-foreground-muted uppercase">
-              Expense category
-            </span>
-            <select
-              aria-label="Expense category"
-              className={selectClasses}
-              value={categoryId}
-              disabled={initialProgress !== undefined}
-              onChange={(event) => selectCategory(event.target.value)}
-            >
-              <option value="">Choose a category</option>
-              {categories.map((category) => {
-                const hasBudget = budgets.some((progress) => progress.category.id === category.id);
-                return (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                    {hasBudget ? " (edit existing)" : ""}
-                  </option>
-                );
-              })}
-            </select>
-          </label>
-
-          {selectedExisting === undefined ? null : (
-            <p className="rounded-lg border border-border bg-surface-muted p-3 text-sm text-foreground-muted">
-              Current posted spend:{" "}
-              <Money minor={selectedExisting.spentMinor} size="sm" className="text-foreground" />.
-              Saving immediately recalculates utilization.
-            </p>
-          )}
-
-          <AmountInput
-            id="budget-limit"
-            label="Monthly limit"
-            value={limitMinor}
-            onChange={setLimitMinor}
-            inputRef={inputRef}
-            {...(error === undefined ? {} : { error })}
-          />
-
-          <p className="rounded-lg border border-border bg-surface-muted p-3 text-xs leading-relaxed text-foreground-muted">
-            Posted expenses assigned directly to this category count from the first day of the
-            current month. Transfers and reversed transactions do not count.
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="font-mono text-[9px] font-bold tracking-[0.2em] text-accent uppercase">
+            Monthly planning
           </p>
-
-          <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="secondary" disabled={upsert.isPending} onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={upsert.isPending || categories.length === 0}>
-              {upsert.isPending ? "Saving…" : isEdit ? "Save changes" : "Add budget"}
-            </Button>
-          </div>
-        </form>
+          <h2 id="budget-editor-title" className="mt-1.5 text-xl font-bold text-foreground">
+            {isEdit ? "Edit budget" : "Add budget"}
+          </h2>
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close budget form"
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-border bg-surface-muted text-foreground-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        >
+          ✕
+        </button>
       </div>
-    </div>
+
+      <form onSubmit={(event) => void submit(event)} className="mt-7 space-y-5">
+        <label className="block">
+          <span className="mb-1.5 block font-mono text-[9px] font-extrabold tracking-[0.22em] text-foreground-muted uppercase">
+            Expense category
+          </span>
+          <select
+            aria-label="Expense category"
+            name="categoryId"
+            autoComplete="off"
+            className={selectClasses}
+            value={categoryId}
+            disabled={initialProgress !== undefined}
+            onChange={(event) => selectCategory(event.target.value)}
+          >
+            <option value="">Choose a category</option>
+            {categories.map((category) => {
+              const hasBudget = budgets.some((progress) => progress.category.id === category.id);
+              return (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                  {hasBudget ? " (edit existing)" : ""}
+                </option>
+              );
+            })}
+          </select>
+        </label>
+
+        {selectedExisting === undefined ? null : (
+          <p className="rounded-lg border border-border bg-surface-muted p-3 text-sm text-foreground-muted">
+            Current posted spend:{" "}
+            <Money minor={selectedExisting.spentMinor} size="sm" className="text-foreground" />.
+            Saving immediately recalculates utilization.
+          </p>
+        )}
+
+        <AmountInput
+          id="budget-limit"
+          label="Monthly limit"
+          value={limitMinor}
+          onChange={setLimitMinor}
+          inputRef={inputRef}
+          {...(error === undefined ? {} : { error })}
+        />
+
+        <p className="rounded-lg border border-border bg-surface-muted p-3 text-xs leading-relaxed text-foreground-muted">
+          Posted expenses assigned directly to this category count from the first day of the current
+          month. Transfers and reversed transactions do not count.
+        </p>
+
+        <div className="safe-area-bottom sticky bottom-0 -mx-5 flex flex-col-reverse gap-2 border-t border-border bg-surface-elevated px-5 pt-4 pb-4 sm:static sm:mx-0 sm:flex-row sm:justify-end sm:border-0 sm:bg-transparent sm:px-0 sm:pt-2 sm:pb-0">
+          <Button
+            type="button"
+            className="w-full sm:w-auto"
+            variant="secondary"
+            disabled={upsert.isPending}
+            onClick={onClose}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            className="w-full sm:w-auto"
+            disabled={upsert.isPending || categories.length === 0}
+          >
+            {upsert.isPending ? "Saving…" : isEdit ? "Save changes" : "Add budget"}
+          </Button>
+        </div>
+      </form>
+    </DialogSurface>
   );
 }

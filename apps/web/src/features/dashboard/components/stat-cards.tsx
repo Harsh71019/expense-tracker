@@ -74,7 +74,7 @@ export function StatCards({ stats }: Readonly<{ stats: DashboardStats }>): React
         return (
           <div
             key={stat.label}
-            className="group rounded-2xl border border-border bg-surface-elevated p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-md"
+            className="group rounded-2xl border border-border bg-surface-elevated p-5 transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-md"
           >
             <p className="font-mono text-[10px] font-semibold tracking-[1.2px] text-foreground-muted group-hover:text-accent transition-colors">
               {stat.label}

@@ -640,6 +640,8 @@ All routes behind `AuthGuard`; validation via `zod` schemas shared with the fron
 ```
 POST   /transactions                    create (Idempotency-Key required)
 GET    /transactions?from&to&accountId&categoryId&q&cursor   cursor-paginated
+GET    /transactions/insights        current IST-month activity, largest posted expense,
+                                     top spending category, and logical lifetime count
 GET    /transactions/:id                tenancy-scoped detail
 PATCH  /transactions/:id                non-monetary fields only (Idempotency-Key required; transfer legs rejected)
 POST   /transactions/:id/reverse        compensating entry

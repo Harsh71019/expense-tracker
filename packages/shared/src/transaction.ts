@@ -1,7 +1,8 @@
 import { z } from "zod";
 
 import { AccountIdSchema } from "./account.js";
-import { CategoryIdSchema } from "./category.js";
+import { CategoryColorSchema, CategoryIconSchema, CategoryIdSchema } from "./category.js";
+import { MonthSchema } from "./report.js";
 import { PageInfoSchema } from "./pagination.js";
 
 const MinorAmountSchema = z.number().int().min(1).max(Number.MAX_SAFE_INTEGER);
@@ -67,6 +68,36 @@ export const TransactionPageSchema = z.object({
   pageInfo: PageInfoSchema
 });
 
+export const TransactionActivityDaySchema = z.object({
+  date: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])-([0-2]\d|3[01])$/),
+  transactionCount: z.number().int().min(0)
+});
+
+export const HighestMonthlyExpenseSchema = z.object({
+  id: TransactionIdSchema,
+  description: z.string().trim().min(1).max(500),
+  amountMinor: MinorAmountSchema,
+  occurredAt: z.coerce.date()
+});
+
+export const TopSpendingCategorySchema = z.object({
+  categoryId: CategoryIdSchema.optional(),
+  name: z.string().trim().min(1).max(80),
+  color: CategoryColorSchema.optional(),
+  icon: CategoryIconSchema.optional(),
+  amountMinor: z.number().int().min(1).max(Number.MAX_SAFE_INTEGER),
+  transactionCount: z.number().int().min(1)
+});
+
+export const TransactionInsightsSchema = z.object({
+  month: MonthSchema,
+  monthlyTransactionCount: z.number().int().min(0),
+  dailyActivity: z.array(TransactionActivityDaySchema),
+  highestExpense: HighestMonthlyExpenseSchema.nullable(),
+  topSpendingCategory: TopSpendingCategorySchema.nullable(),
+  lifetimeTransactionCount: z.number().int().min(0)
+});
+
 export const CreateTransferSchema = z
   .object({
     fromAccountId: AccountIdSchema,
@@ -99,6 +130,10 @@ export type TransactionId = z.infer<typeof TransactionIdSchema>;
 export type TransactionType = z.infer<typeof TransactionTypeSchema>;
 export type ListTransactionsQuery = z.infer<typeof ListTransactionsQuerySchema>;
 export type TransactionPage = z.infer<typeof TransactionPageSchema>;
+export type TransactionActivityDay = z.infer<typeof TransactionActivityDaySchema>;
+export type HighestMonthlyExpense = z.infer<typeof HighestMonthlyExpenseSchema>;
+export type TopSpendingCategory = z.infer<typeof TopSpendingCategorySchema>;
+export type TransactionInsights = z.infer<typeof TransactionInsightsSchema>;
 export type CreateTransfer = z.infer<typeof CreateTransferSchema>;
 export type Transfer = z.infer<typeof TransferSchema>;
 export type TransferReversal = z.infer<typeof TransferReversalSchema>;

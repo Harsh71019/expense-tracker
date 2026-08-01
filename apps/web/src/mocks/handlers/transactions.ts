@@ -5,6 +5,31 @@ import type { TransactionDto } from "../data/store";
 import { mockProblem } from "../data/problem";
 import type { MockHttp, MockStore } from "./types";
 
+const istDateFormatter = new Intl.DateTimeFormat("en-US", {
+  timeZone: "Asia/Kolkata",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit"
+});
+
+function istDate(value: string): string {
+  const parts = istDateFormatter.formatToParts(new Date(value));
+  const part = (type: "year" | "month" | "day"): string =>
+    parts.find((candidate) => candidate.type === type)?.value ?? "";
+  return `${part("year")}-${part("month")}-${part("day")}`;
+}
+
+function monthDayKeys(month: string): string[] {
+  const [yearPart, monthPart] = month.split("-");
+  const year = Number(yearPart);
+  const monthIndex = Number(monthPart) - 1;
+  const dayCount = new Date(Date.UTC(year, monthIndex + 1, 0)).getUTCDate();
+  return Array.from(
+    { length: dayCount },
+    (_, index) => `${month}-${String(index + 1).padStart(2, "0")}`
+  );
+}
+
 function matchesFilters(
   transaction: TransactionDto,
   filters: {
@@ -39,6 +64,96 @@ function matchesFilters(
 
 export function transactionHandlers(http: MockHttp, store: MockStore): HttpHandler[] {
   return [
+    http.get("/v1/transactions/insights", ({ response }) => {
+      const month = istDate(new Date().toISOString()).slice(0, 7);
+      const monthly = store.transactions.filter(
+        (transaction) =>
+          transaction.occurredAt !== null && istDate(transaction.occurredAt).startsWith(month)
+      );
+      const monthlyLogicalIds = new Set(
+        monthly.map((transaction) => transaction.transferGroupId ?? transaction.id)
+      );
+      const lifetimeLogicalIds = new Set(
+        store.transactions.map((transaction) => transaction.transferGroupId ?? transaction.id)
+      );
+      const activity = new Map<string, Set<string>>();
+      for (const transaction of monthly) {
+        if (transaction.occurredAt === null) continue;
+        const date = istDate(transaction.occurredAt);
+        const ids = activity.get(date) ?? new Set<string>();
+        ids.add(transaction.transferGroupId ?? transaction.id);
+        activity.set(date, ids);
+      }
+
+      const postedExpenses = monthly.filter(
+        (transaction) =>
+          transaction.status === "posted" &&
+          transaction.type === "expense" &&
+          transaction.transferGroupId === undefined
+      );
+      let highest = postedExpenses[0];
+      const categoryTotals = new Map<
+        string,
+        { amountMinor: number; transactionCount: number; categoryId?: string }
+      >();
+      for (const transaction of postedExpenses) {
+        if (highest === undefined || transaction.amountMinor > highest.amountMinor) {
+          highest = transaction;
+        }
+        const key = transaction.categoryId ?? "uncategorized";
+        const total = categoryTotals.get(key) ?? {
+          amountMinor: 0,
+          transactionCount: 0,
+          ...(transaction.categoryId === undefined ? {} : { categoryId: transaction.categoryId })
+        };
+        total.amountMinor += transaction.amountMinor;
+        total.transactionCount += 1;
+        categoryTotals.set(key, total);
+      }
+      let topCategory: (typeof categoryTotals extends Map<string, infer T> ? T : never) | undefined;
+      for (const total of categoryTotals.values()) {
+        if (topCategory === undefined || total.amountMinor > topCategory.amountMinor) {
+          topCategory = total;
+        }
+      }
+      const category =
+        topCategory?.categoryId === undefined
+          ? undefined
+          : store.categories.find((candidate) => candidate.id === topCategory.categoryId);
+
+      return response(200).json({
+        month,
+        monthlyTransactionCount: monthlyLogicalIds.size,
+        dailyActivity: monthDayKeys(month).map((date) => ({
+          date,
+          transactionCount: activity.get(date)?.size ?? 0
+        })),
+        highestExpense:
+          highest === undefined || highest.occurredAt === null
+            ? null
+            : {
+                id: highest.id,
+                description: highest.description,
+                amountMinor: highest.amountMinor,
+                occurredAt: highest.occurredAt
+              },
+        topSpendingCategory:
+          topCategory === undefined
+            ? null
+            : {
+                ...(topCategory.categoryId === undefined
+                  ? {}
+                  : { categoryId: topCategory.categoryId }),
+                name: category?.name ?? "Uncategorized",
+                ...(category?.color === undefined ? {} : { color: category.color }),
+                ...(category?.icon === undefined ? {} : { icon: category.icon }),
+                amountMinor: topCategory.amountMinor,
+                transactionCount: topCategory.transactionCount
+              },
+        lifetimeTransactionCount: lifetimeLogicalIds.size
+      });
+    }),
+
     http.get("/v1/transactions", ({ query, response }) => {
       const limitRaw = query.get("limit");
       const limit = limitRaw === null ? 50 : Number(limitRaw);

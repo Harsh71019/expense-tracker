@@ -1,3 +1,5 @@
+import type { Month } from "@treasury-ops/shared";
+
 const IST_TIME_ZONE = "Asia/Kolkata";
 
 const calendarDateFormatter = new Intl.DateTimeFormat("en-US", {
@@ -36,6 +38,27 @@ export function toISTMonth(date: Date): string {
 // constant is safe to hardcode rather than deriving it per-call.
 const IST_OFFSET_MS = (5 * 60 + 30) * 60 * 1000;
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
+/** Half-open UTC bounds for an Asia/Kolkata calendar month. */
+export function istMonthBounds(month: Month): Readonly<{ start: Date; end: Date }> {
+  const [yearPart, monthPart] = month.split("-");
+  const year = Number(yearPart);
+  const monthIndex = Number(monthPart) - 1;
+  return {
+    start: new Date(Date.UTC(year, monthIndex, 1) - IST_OFFSET_MS),
+    end: new Date(Date.UTC(year, monthIndex + 1, 1) - IST_OFFSET_MS)
+  };
+}
+
+/** Every Asia/Kolkata calendar-day key in a month, oldest first. */
+export function listISTMonthDayKeys(month: Month): string[] {
+  const { start, end } = istMonthBounds(month);
+  const keys: string[] = [];
+  for (let cursor = start.getTime(); cursor < end.getTime(); cursor += ONE_DAY_MS) {
+    keys.push(toISTCalendarDate(new Date(cursor)));
+  }
+  return keys;
+}
 
 function parseCalendarDateParts(calendarDate: string): {
   year: number;

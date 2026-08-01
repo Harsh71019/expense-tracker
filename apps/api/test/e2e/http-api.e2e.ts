@@ -4,6 +4,7 @@ import {
   CreateApiKeyResponseSchema,
   ImportBatchSchema,
   ProblemDetailsSchema,
+  TransactionInsightsSchema,
   TransactionSchema
 } from "@treasury-ops/shared";
 import { GenericContainer } from "testcontainers";
@@ -153,6 +154,14 @@ describe("production HTTP composition", () => {
     expect(reversalReplay.status).toBe(200);
     expect(reversalReplay.headers.get("idempotency-replayed")).toBe("true");
     expect((await parseResponse(reversalReplay, TransactionSchema)).id).toBe(reversed.id);
+
+    const insightsResponse = await fetch(`${baseUrl}/api/v1/transactions/insights`, {
+      headers: { cookie: sessionA }
+    });
+    expect(insightsResponse.status).toBe(200);
+    expect(
+      (await parseResponse(insightsResponse, TransactionInsightsSchema)).lifetimeTransactionCount
+    ).toBeGreaterThanOrEqual(2);
   });
 
   it("enforces API-key scopes and tenant ownership through the HTTP guard", async () => {

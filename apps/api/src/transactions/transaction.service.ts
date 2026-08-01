@@ -4,6 +4,7 @@ import {
   type ListTransactionsQuery,
   type Transaction,
   type TransactionId,
+  type TransactionInsights,
   type TransactionPage,
   type UpdateTransaction
 } from "@treasury-ops/shared";
@@ -23,6 +24,7 @@ import { EntityNotFoundError } from "../common/errors/entity-not-found.error.js"
 import { TransactionNotReversibleError } from "../common/errors/transaction-not-reversible.error.js";
 import { TransferMetadataRequiresGroupError } from "../common/errors/transfer-metadata-requires-group.error.js";
 import { LogEvent } from "../common/logging/events.js";
+import { toISTMonth } from "../common/time/ist.js";
 import { TransactionRepository } from "./transaction.repository.js";
 
 export type CreateTransactionResult = Readonly<{ transaction: Transaction; replayed: boolean }>;
@@ -90,6 +92,10 @@ export class TransactionService {
 
   list(userId: string, query: ListTransactionsQuery): Promise<TransactionPage> {
     return this.transactions.findMany(userId, query);
+  }
+
+  getInsights(userId: string): Promise<TransactionInsights> {
+    return this.transactions.getInsights(userId, toISTMonth(new Date()));
   }
 
   async get(userId: string, transactionId: TransactionId): Promise<Transaction> {

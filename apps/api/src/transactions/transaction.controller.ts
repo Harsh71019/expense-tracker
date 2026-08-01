@@ -16,6 +16,7 @@ import {
   TransactionIdSchema,
   UpdateTransactionSchema,
   type Transaction,
+  type TransactionInsights,
   type TransactionPage
 } from "@treasury-ops/shared";
 import type { Response } from "express";
@@ -39,6 +40,11 @@ export class TransactionController {
   @Get()
   list(@CurrentUser() user: AuthenticatedUser, @Query() query: unknown): Promise<TransactionPage> {
     return this.transactions.list(user.id, ListTransactionsQuerySchema.parse(query));
+  }
+
+  @Get("insights")
+  insights(@CurrentUser() user: AuthenticatedUser): Promise<TransactionInsights> {
+    return this.transactions.getInsights(user.id);
   }
 
   @Get(":transactionId")

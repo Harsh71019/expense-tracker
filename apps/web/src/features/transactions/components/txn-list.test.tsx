@@ -25,6 +25,9 @@ vi.mock("@/features/categories", async (importOriginal) => {
 vi.mock("@/features/transfers/hooks/use-transfers", () => ({
   useReverseTransfer: () => ({ mutate: vi.fn(), isPending: false })
 }));
+vi.mock("./transaction-insights-cards", () => ({
+  TransactionInsightsCards: () => <div>insights</div>
+}));
 
 const transaction = {
   id: "3fa85f64-5717-4562-b3fc-2c963f66beef",
@@ -91,7 +94,7 @@ describe("TxnList", () => {
     mocks.empty = false;
     mocks.hasNextPage = true;
     mocks.isError = true;
-    render(<TxnList filters={{ limit: 50 }} initialPage={page} />);
+    render(<TxnList filters={{ limit: 50 }} initialPage={page} initialInsights={null} />);
 
     expect(screen.getByText("Description").parentElement).toHaveClass("hidden", "md:grid");
     await user.click(screen.getByRole("button", { name: /Refund/ }));
@@ -108,7 +111,7 @@ describe("TxnList", () => {
     const user = userEvent.setup();
     mocks.empty = false;
     mocks.isError = false;
-    render(<TxnList filters={{ limit: 50 }} initialPage={page} />);
+    render(<TxnList filters={{ limit: 50 }} initialPage={page} initialInsights={null} />);
 
     await user.click(screen.getByRole("button", { name: /New entry/ }));
     expect(screen.getByRole("dialog", { name: "create-sheet" })).toBeVisible();
@@ -118,7 +121,7 @@ describe("TxnList", () => {
     mocks.empty = true;
     mocks.hasNextPage = false;
     mocks.isError = false;
-    render(<TxnList filters={{ limit: 50 }} initialPage={page} />);
+    render(<TxnList filters={{ limit: 50 }} initialPage={page} initialInsights={null} />);
     expect(screen.getByRole("heading", { name: "No transactions match" })).toBeVisible();
   });
 
@@ -127,7 +130,7 @@ describe("TxnList", () => {
     mocks.hasNextPage = true;
     mocks.isError = false;
     mocks.fetching = true;
-    render(<TxnList filters={{ limit: 50 }} initialPage={page} />);
+    render(<TxnList filters={{ limit: 50 }} initialPage={page} initialInsights={null} />);
     expect(screen.getByRole("button", { name: "Loading entries…" })).toBeDisabled();
   });
 });

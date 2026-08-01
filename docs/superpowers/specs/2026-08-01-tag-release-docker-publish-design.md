@@ -17,15 +17,26 @@ New workflow file `.github/workflows/release.yml`, separate from the existing
 
 ```yaml
 on:
-  push:
-    tags: ["v*.*.*"]
+  release:
+    types: [published]
 ```
 
-Matches the tag convention `deploy.sh` already assumes (`git tag --list 'v*'`).
+Fires on a **published GitHub Release**, not a raw tag push. GitHub's
+"Draft a new release" UI creates the tag and the release together in one
+step, which is far less friction than pushing a tag from the CLI first. Tag
+names still follow the `v*.*.*` convention `deploy.sh` already assumes
+(`git tag --list 'v*'`); the `build-and-push` job guards with
+`if: startsWith(github.event.release.tag_name, 'v')` so a release cut from a
+non-version tag is a no-op rather than an error.
+
+`actions/checkout` explicitly pins `ref: ${{ github.event.release.tag_name }}`
+on every step that needs source — for the `release` event, an unpinned
+checkout defaults to the latest commit on the default branch, not
+necessarily the commit the release's tag points at.
 
 The workflow trusts the tag: it does **not** re-run lint/typecheck/tests. A
-tag is only ever cut from a commit that already passed `ci.yml` via its PR
-into `main`; re-running the full suite (including testcontainers-backed
+release is only ever cut from a commit that already passed `ci.yml` via its
+PR into `main`; re-running the full suite (including testcontainers-backed
 integration tests) here would just duplicate that gate.
 
 ## Jobs
@@ -57,34 +68,25 @@ so only these two images need building — `worker`/`migrate` just override
   (matches the Proxmox LXC host; no multi-arch buildx complexity for a
   single-target home-lab deploy).
 
-### `release` (needs: `build-and-push`)
+### `update-release-notes` (needs: `build-and-push`)
 
-Only runs if both images pushed successfully.
+Only runs if both images pushed successfully. The release already exists
+(the trigger *is* its publish event) and may already carry notes the author
+wrote by hand or generated via the GitHub UI — this job fetches the current
+body and appends the image links + quickstart rather than overwriting it or
+creating a second release:
 
 ```bash
-gh release create "${{ github.ref_name }}" \
-  --generate-notes \
-  --notes "... auto-generated changelog ...
+existing_body="$(gh release view "$TAG" --json body -q .body)"
+appendix="... image lines + quickstart block ..."
+gh release edit "$TAG" --notes "$existing_body
 
-  ## Images
-  - \`ghcr.io/harsh71019/treasury-ops-api:${{ github.ref_name }}\`
-  - \`ghcr.io/harsh71019/treasury-ops-web:${{ github.ref_name }}\`
-
-  ## Quickstart (no clone/build required)
-  \`\`\`
-  curl -O https://raw.githubusercontent.com/Harsh71019/expense-tracker/${{ github.ref_name }}/docker-compose.release.yml
-  curl -O https://raw.githubusercontent.com/Harsh71019/expense-tracker/${{ github.ref_name }}/nginx.conf
-  curl -o .env https://raw.githubusercontent.com/Harsh71019/expense-tracker/${{ github.ref_name }}/env.example
-  # fill in .env, then:
-  docker compose -f docker-compose.release.yml --env-file .env up -d
-  \`\`\`"
+$appendix"
 ```
 
-`--generate-notes` produces the commit changelog since the previous tag
-(matches the "changelog generated" convention in `docs/backend/BACKEND.md`
-§18); the image lines and quickstart command are appended so the release
-page is a complete, self-sufficient pointer to what shipped and how to run
-it.
+The image lines and quickstart command are appended so the release page is
+a complete, self-sufficient pointer to what shipped and how to run it,
+without clobbering whatever the author already wrote when publishing.
 
 ## `docker-compose.release.yml` (new file, committed alongside `docker-compose.yml`)
 

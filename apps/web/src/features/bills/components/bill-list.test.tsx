@@ -58,7 +58,7 @@ describe("BillList", () => {
   it("shows authoritative bill amounts and statement action", () => {
     render(<BillList initialPage={page} filters={{ limit: 50 }} accounts={[card]} />);
     expect(screen.getByRole("heading", { name: "Credit card bills" })).toBeVisible();
-    expect(screen.getAllByText("HDFC Card")).toHaveLength(2);
+    expect(screen.getByText("HDFC Card")).toBeVisible();
     expect(screen.getByText("Statement required")).toBeVisible();
     expect(screen.getByRole("progressbar", { name: "25% of bill paid" })).toHaveAttribute(
       "aria-valuenow",
@@ -87,7 +87,8 @@ describe("BillList", () => {
   it("serializes filters into the route", async () => {
     const user = userEvent.setup();
     render(<BillList initialPage={page} filters={{ limit: 50 }} accounts={[card]} />);
-    await user.selectOptions(screen.getByLabelText("Filter by payment status"), "partial");
+    await user.click(screen.getByRole("combobox", { name: "Filter by payment status" }));
+    await user.click(screen.getByRole("option", { name: "Part-paid" }));
     expect(mocks.push).toHaveBeenCalledWith("/bills?paymentStatus=partial");
   });
 });

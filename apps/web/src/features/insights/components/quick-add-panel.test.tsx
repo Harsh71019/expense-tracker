@@ -84,7 +84,8 @@ describe("QuickAddPanel", () => {
       />
     );
 
-    await user.selectOptions(screen.getByLabelText("Account"), "Cash Wallet");
+    await user.click(screen.getByRole("combobox", { name: "Account" }));
+    await user.click(screen.getByRole("option", { name: "Cash Wallet" }));
     await user.clear(screen.getByLabelText("Amount"));
     await user.type(screen.getByLabelText("Amount"), "45");
     await user.tab();

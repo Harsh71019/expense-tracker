@@ -5,6 +5,7 @@ import { useState } from "react";
 import type { ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
 
 import { useBillStatementRows } from "../hooks/use-bill-statement";
 import { ExtraLedgerList } from "./extra-ledger-list";
@@ -32,19 +33,18 @@ export function ReconciliationTable({ detail }: Readonly<{ detail: BillDetail }>
             unresolved · {detail.reconciliation.stats.acknowledged} acknowledged
           </p>
         </div>
-        <select
+        <Select
           aria-label="Filter statement rows"
           name="statementRowFilter"
-          autoComplete="off"
+          options={[
+            { value: "all", label: "All rows" },
+            { value: "matched", label: "Matched" },
+            { value: "missing_from_ledger", label: "Missing" },
+            { value: "ambiguous", label: "Ambiguous" }
+          ]}
           value={filter}
-          onChange={(event) => setFilter(filterValue(event.target.value))}
-          className="min-h-11 w-full rounded-lg border border-border bg-surface-muted px-3 py-2 text-base text-foreground focus:outline-none focus:ring-2 focus:ring-accent sm:w-auto sm:text-sm"
-        >
-          <option value="all">All rows</option>
-          <option value="matched">Matched</option>
-          <option value="missing_from_ledger">Missing</option>
-          <option value="ambiguous">Ambiguous</option>
-        </select>
+          onChange={(val) => setFilter(filterValue(val))}
+        />
       </div>
 
       {rows.isPending ? (

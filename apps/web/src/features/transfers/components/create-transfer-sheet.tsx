@@ -9,6 +9,7 @@ import { toast } from "@/lib/toast";
 import { Button } from "@/components/ui/button";
 import { DialogSurface } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { useAccounts } from "@/features/accounts";
 import { toDatetimeLocalValue } from "@/lib/datetime-local";
 import { userErrorMessage, ValidationError } from "@/lib/errors";
@@ -133,27 +134,21 @@ export function CreateTransferSheet({ onClose }: Readonly<{ onClose: () => void 
           onSubmit={form.handleSubmit((values) => void submit(values))}
           className="mt-6 flex flex-1 flex-col"
         >
-          <label
-            htmlFor="create-transfer-from"
-            className="mt-4 block font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase"
-          >
-            From account
-          </label>
-          <select
-            id="create-transfer-from"
-            name="fromAccountId"
-            autoComplete="off"
-            className={`${selectClasses} mt-1.5`}
-            value={fromAccountId}
-            onChange={(event) => selectFrom(event.target.value)}
-          >
-            <option value="">Choose account</option>
-            {activeAccounts.map((account) => (
-              <option key={account.id} value={account.id}>
-                {account.name}
-              </option>
-            ))}
-          </select>
+          <div className="mt-4 flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+            <span>From account</span>
+            <Select
+              id="create-transfer-from"
+              aria-label="From account"
+              name="fromAccountId"
+              options={[
+                { value: "", label: "Choose account" },
+                ...activeAccounts.map((account) => ({ value: account.id, label: account.name }))
+              ]}
+              placeholder="Choose account"
+              value={fromAccountId}
+              onChange={selectFrom}
+            />
+          </div>
           {form.formState.errors.fromAccountId?.message === undefined ? null : (
             <p role="alert" className="mt-1.5 text-xs font-medium text-expense">
               {form.formState.errors.fromAccountId.message}
@@ -171,29 +166,21 @@ export function CreateTransferSheet({ onClose }: Readonly<{ onClose: () => void 
             </button>
           </div>
 
-          <label
-            htmlFor="create-transfer-to"
-            className="block font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase"
-          >
-            To account
-          </label>
-          <select
-            id="create-transfer-to"
-            name="toAccountId"
-            autoComplete="off"
-            className={`${selectClasses} mt-1.5`}
-            value={toAccountId}
-            onChange={(event) =>
-              form.setValue("toAccountId", event.target.value, { shouldValidate: true })
-            }
-          >
-            <option value="">Choose account</option>
-            {toOptions.map((account) => (
-              <option key={account.id} value={account.id}>
-                {account.name}
-              </option>
-            ))}
-          </select>
+          <div className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+            <span>To account</span>
+            <Select
+              id="create-transfer-to"
+              aria-label="To account"
+              name="toAccountId"
+              options={[
+                { value: "", label: "Choose account" },
+                ...toOptions.map((account) => ({ value: account.id, label: account.name }))
+              ]}
+              placeholder="Choose account"
+              value={toAccountId}
+              onChange={(val) => form.setValue("toAccountId", val, { shouldValidate: true })}
+            />
+          </div>
           {form.formState.errors.toAccountId?.message === undefined ? null : (
             <p role="alert" className="mt-1.5 text-xs font-medium text-expense">
               {form.formState.errors.toAccountId.message}

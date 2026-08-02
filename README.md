@@ -13,7 +13,7 @@ apps/api/drizzle/  drizzle-kit migrations (ordered, additive-only)
 infra/redis/        local Redis compose service
 ```
 
-See `BACKEND.md` for the full target architecture, `AGENTS.md` for the non-negotiable engineering rules (money-handling invariants, TypeScript strictness, testing gates), and `IMPLEMENTATION-PLAN.md` for the phased build-out.
+See `docs/backend/BACKEND.md` for the full target architecture, `AGENTS.md` for the non-negotiable engineering rules (money-handling invariants, TypeScript strictness, testing gates), and `docs/IMPLEMENTATION-PLAN.md` for the phased build-out. `CLAUDE.md`, `apps/api/CLAUDE.md`, and `apps/web/CLAUDE.md` have orientation for AI coding agents working in each package.
 
 ## Features
 
@@ -32,6 +32,12 @@ See `BACKEND.md` for the full target architecture, `AGENTS.md` for the non-negot
 - **Notifications** — outbox pattern, BullMQ delivery worker, circuit breaker on outbound calls, periodic sweep
 - **Balance verification** — weekly consistency-check cron comparing ledger vs. computed balances
 - **CSV export**
+- **Budgets** — per-category monthly budget targets with spend tracking
+- **Goals** — savings/funding goals with ordered funding sources
+- **Credit card bills** — statement cycles, reconciliation, overpayment/underpayment handling
+- **Spending pattern warnings** — detects and surfaces anomalous spend against recent history
+- **API keys** — scoped, user-issued keys (`RequireScopes` guard) as an alternative to session auth
+- **Dashboard** — aggregate summary endpoint backing the frontend's home view
 - **Standardized API errors** — RFC 7807 problem+json with stable `code` and user-facing `message` fields, request references, typed `DomainError` codes, and per-field validation errors
 - **Health checks** — `/healthz` (liveness), `/readyz` (Postgres/Redis ping)
 - **OpenAPI spec + generated client** — `pnpm gen:client` generates `apps/api/openapi.json` (via `@asteasolutions/zod-to-openapi`) and a typed `apps/web/src/lib/api/generated/schema.d.ts` from it
@@ -40,7 +46,7 @@ Every money write is atomic (single PostgreSQL transaction: insert + balance upd
 
 **Frontend (`apps/web`) — wired up to the backend:**
 
-Real routes under `app/(app)/` (dashboard, `transactions`, `transactions/[transactionId]`, `add`, `accounts`, `categories`, `category-rules`, `assets`, `assets/[assetId]`, `transfers`, `imports`, `export`, `reports`, `recurring`, `settings`, `more`), each fetching real data through generated-client server loaders or typed client hooks under the matching `features/*/`.
+Real routes under `app/(app)/` — dashboard (`/`), `transactions` (+ `[transactionId]`), `add`, `accounts`, `categories`, `category-rules`, `assets` (+ `[assetId]`), `transfers`, `imports`, `export`, `reports`, `recurring`, `budgets`, `goals`, `bills`, `insights`, `spending-warnings`, `settings`, `more` — each fetching real data through generated-client server loaders or typed client hooks under the matching `features/*/` (which also covers `api-keys`, `net-worth`, and `profile`, surfaced inside `settings`/`more` rather than as their own top-level routes).
 
 ## Installing and running
 

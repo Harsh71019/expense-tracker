@@ -4,6 +4,8 @@ import { MAX_IMPORT_FILE_SIZE_BYTES, type Account } from "@treasury-ops/shared";
 import { useState } from "react";
 import type { ChangeEvent, DragEvent, ReactNode } from "react";
 
+import { Select, type SelectOption } from "@/components/ui";
+
 type FileError = Readonly<{ title: string; body: string }>;
 
 function formatSize(bytes: number): string {
@@ -66,29 +68,28 @@ export function UploadStep({
     pick(event.dataTransfer.files[0]);
   }
 
+  const accountOptions: readonly SelectOption[] = [
+    { value: "", label: "Select an account" },
+    ...accounts.map((account) => ({
+      value: account.id,
+      label: account.name
+    }))
+  ];
+
   return (
     <div className="mt-5.5 animate-fade-in rounded-[18px] border border-border bg-surface-elevated p-4 sm:p-6.5">
-      <label
-        htmlFor="import-account"
-        className="mt-0 mb-2 block text-xs font-semibold text-foreground"
-      >
+      <div className="mt-0 mb-2 block text-xs font-semibold text-foreground">
         Which account is this statement for?
-      </label>
-      <select
+      </div>
+      <Select
         id="import-account"
+        aria-label="Which account is this statement for?"
         name="accountId"
-        autoComplete="off"
+        options={accountOptions}
         value={accountId}
-        onChange={(event) => onAccountChange(event.target.value)}
-        className="min-h-11 w-full rounded-[11px] border border-border bg-surface-muted px-3.5 py-3 text-base font-medium text-foreground transition-colors duration-150 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 sm:text-[15px]"
-      >
-        <option value="">Select an account</option>
-        {accounts.map((account) => (
-          <option key={account.id} value={account.id}>
-            {account.name}
-          </option>
-        ))}
-      </select>
+        placeholder="Select an account"
+        onChange={onAccountChange}
+      />
 
       <label
         htmlFor="import-file"

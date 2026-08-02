@@ -8,13 +8,11 @@ import { AmountInput } from "@/components/ui/amount-input";
 import { Button } from "@/components/ui/button";
 import { DialogSurface } from "@/components/ui/dialog";
 import { Money, SignedMoney } from "@/components/ui/money";
+import { Select } from "@/components/ui/select";
 import { toast } from "@/lib/toast";
 
 import { usePayBill } from "../hooks/use-pay-bill";
 import { eligiblePaymentAccounts } from "../model/bill-presentation";
-
-const selectClasses =
-  "min-h-11 w-full rounded-lg border border-border bg-surface-muted px-3.5 py-2.5 text-base font-medium text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 sm:text-sm";
 
 export function PayBillSheet({
   detail,
@@ -84,23 +82,20 @@ export function PayBillSheet({
           {...(error === undefined ? {} : { error })}
         />
 
-        <label className="block text-xs font-semibold text-foreground">
-          Pay from
-          <select
+        <div className="flex flex-col gap-1.5 text-xs font-semibold text-foreground">
+          <span>Pay from</span>
+          <Select
             name="fromAccountId"
-            autoComplete="off"
-            className={`${selectClasses} mt-2`}
+            aria-label="Pay from"
+            options={[
+              { value: "", label: "Choose an account" },
+              ...sources.map((account) => ({ value: account.id, label: account.name }))
+            ]}
+            placeholder="Choose an account"
             value={sourceId}
-            onChange={(event) => setSourceId(event.target.value)}
-          >
-            <option value="">Choose an account</option>
-            {sources.map((account) => (
-              <option key={account.id} value={account.id}>
-                {account.name}
-              </option>
-            ))}
-          </select>
-        </label>
+            onChange={setSourceId}
+          />
+        </div>
 
         {source === undefined ? (
           <p className="rounded-xl border border-border bg-surface-muted p-3 text-sm text-foreground-muted">

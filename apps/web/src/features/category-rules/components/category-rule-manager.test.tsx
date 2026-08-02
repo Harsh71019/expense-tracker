@@ -100,7 +100,8 @@ describe("CategoryRuleManager", () => {
     render(<CategoryRuleManager initialRules={[]} />);
 
     await user.type(screen.getByLabelText("New rule pattern"), "netflix");
-    await user.selectOptions(screen.getByLabelText("Category to assign"), groceries.id);
+    await user.click(screen.getByRole("combobox", { name: "Category to assign" }));
+    await user.click(screen.getByRole("option", { name: /Groceries/ }));
     await user.click(screen.getByRole("button", { name: "Add rule" }));
 
     expect(mocks.createMutateAsync).toHaveBeenCalledWith({
@@ -114,7 +115,8 @@ describe("CategoryRuleManager", () => {
     const user = userEvent.setup();
     render(<CategoryRuleManager initialRules={[]} />);
 
-    await user.selectOptions(screen.getByLabelText("Category to assign"), groceries.id);
+    await user.click(screen.getByRole("combobox", { name: "Category to assign" }));
+    await user.click(screen.getByRole("option", { name: /Groceries/ }));
     await user.click(screen.getByRole("button", { name: "Add rule" }));
 
     expect(mocks.toastError).toHaveBeenCalled();

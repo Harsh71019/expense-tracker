@@ -9,8 +9,7 @@ import {
 import { useEffect, useEffectEvent, useState } from "react";
 import type { ReactNode } from "react";
 
-const selectClasses =
-  "min-h-11 w-full rounded-[11px] border border-border bg-surface-muted px-3.5 py-3 text-base font-medium text-foreground transition-colors duration-150 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 sm:text-[15px]";
+import { Select } from "@/components/ui/select";
 const inputClasses =
   "min-h-11 w-full rounded-[11px] border border-border bg-surface-muted px-3.5 py-3 font-mono text-base text-foreground transition-colors duration-150 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 sm:text-[15px]";
 const labelClasses = "mb-2 mt-5 block text-xs font-semibold text-foreground";
@@ -137,29 +136,21 @@ export function ColumnMappingForm({
           />
         </div>
         <div>
-          <label htmlFor="map-date-format" className={labelClasses}>
-            Date format
-          </label>
-          <select
+          <span className={labelClasses}>Date format</span>
+          <Select
             id="map-date-format"
             name="dateFormat"
-            autoComplete="off"
+            options={[
+              { value: "", label: "Select a format", disabled: true },
+              ...DateFormatSchema.options.map((format) => ({ value: format, label: format }))
+            ]}
+            placeholder="Select a format"
             value={effectiveDraft.dateFormat}
-            onChange={(event) => {
-              const value = DateFormatSchema.safeParse(event.target.value);
+            onChange={(val) => {
+              const value = DateFormatSchema.safeParse(val);
               if (value.success) update({ ...effectiveDraft, dateFormat: value.data });
             }}
-            className={selectClasses}
-          >
-            <option value="" disabled>
-              Select a format
-            </option>
-            {DateFormatSchema.options.map((format) => (
-              <option key={format} value={format}>
-                {format}
-              </option>
-            ))}
-          </select>
+          />
         </div>
       </div>
 

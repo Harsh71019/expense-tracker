@@ -7,6 +7,7 @@ import type { FormEvent, ReactNode } from "react";
 import { AmountInput } from "@/components/ui/amount-input";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { useCreateTxn } from "@/features/quick-add";
 import { userErrorMessage } from "@/lib/errors";
 import { generateRequestId } from "@/lib/request-id";
@@ -88,22 +89,19 @@ export function QuickAddPanel({ accounts }: QuickAddPanelProps): ReactNode {
           onChange={setAmountMinor}
         />
 
-        <label className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
-          Account
-          <select
+        <div className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+          <span>Account</span>
+          <Select
             name="accountId"
-            autoComplete="off"
-            className="min-h-11 w-full rounded-lg border border-border bg-surface px-3.5 py-2.5 text-base text-foreground transition-colors duration-150 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 sm:text-sm"
+            aria-label="Account"
+            options={accounts.map((account) => ({
+              value: account.id,
+              label: account.name
+            }))}
             value={accountId}
-            onChange={(event) => setAccountId(event.target.value)}
-          >
-            {accounts.map((account) => (
-              <option key={account.id} value={account.id}>
-                {account.name}
-              </option>
-            ))}
-          </select>
-        </label>
+            onChange={setAccountId}
+          />
+        </div>
 
         <Input
           id="quick-add-description"

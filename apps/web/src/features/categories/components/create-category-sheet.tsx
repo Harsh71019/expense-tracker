@@ -13,15 +13,13 @@ import { toast } from "@/lib/toast";
 import { Button } from "@/components/ui/button";
 import { DialogSurface } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { ConflictError, ValidationError } from "@/lib/errors";
 
 import { useCreateCategory, useUpdateCategory } from "../hooks/use-category-mutations";
 import { IconGlyph } from "./icon-glyph";
 import { ICON_CHOICES } from "../model/icon-registry";
 import { COLOR_CHOICES } from "../model/palette";
-
-const selectClasses =
-  "min-h-11 w-full rounded-lg border border-border bg-surface-muted px-3.5 py-2.5 text-base font-medium text-foreground transition-colors duration-150 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 sm:text-sm";
 
 type CategoryFormField = "name" | "kind" | "parentId" | "icon" | "color";
 
@@ -214,31 +212,30 @@ export function CreateCategorySheet({
           )}
         </div>
 
-        <label className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
-          Parent category{" "}
-          <span className="font-sans text-[11px] font-normal normal-case tracking-normal text-foreground-muted">
-            optional · {kind} only
+        <div className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+          <span>
+            Parent category{" "}
+            <span className="font-sans text-[11px] font-normal normal-case tracking-normal text-foreground-muted">
+              optional · {kind} only
+            </span>
           </span>
-          <select
+          <Select
+            aria-label="Parent category"
             name="parentId"
-            autoComplete="off"
-            className={selectClasses}
+            options={[
+              { value: "", label: "None (top-level)" },
+              ...parentOptions.map((option) => ({ value: option.id, label: option.name }))
+            ]}
+            placeholder="None (top-level)"
             value={parentId}
-            onChange={(event) => setParentId(event.target.value)}
-          >
-            <option value="">None (top-level)</option>
-            {parentOptions.map((option) => (
-              <option key={option.id} value={option.id}>
-                {option.name}
-              </option>
-            ))}
-          </select>
+            onChange={setParentId}
+          />
           {errors.parentId === undefined ? null : (
             <span className="font-sans text-[11px] font-medium normal-case tracking-normal text-expense">
               {errors.parentId}
             </span>
           )}
-        </label>
+        </div>
 
         {editing && (category.parentId ?? "") !== parentId ? (
           <p className="rounded-xl border border-accent/25 bg-accent-glow px-3.5 py-3 text-xs leading-relaxed text-foreground-muted">

@@ -367,6 +367,20 @@ export type {
   UpdateTransaction
 } from "./transaction.js";
 export {
+  NormalizedTransactionTextSchema,
+  TransactionTextDirectionHintSchema,
+  TransactionTextPaymentRailSchema,
+  TransactionTextReferenceKindSchema,
+  TransactionTextReferenceTokenSchema
+} from "./transaction-text.js";
+export type {
+  NormalizedTransactionText,
+  TransactionTextDirectionHint,
+  TransactionTextPaymentRail,
+  TransactionTextReferenceKind,
+  TransactionTextReferenceToken
+} from "./transaction-text.js";
+export {
   DEFAULT_USER_PROFILE,
   UserProfileSchema,
   UserProfileUpdateSchema

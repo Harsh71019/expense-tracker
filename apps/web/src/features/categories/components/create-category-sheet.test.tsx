@@ -76,7 +76,8 @@ describe("CreateCategorySheet", () => {
     );
 
     await user.type(screen.getByLabelText("Name"), "Groceries: Meat");
-    await user.selectOptions(screen.getByRole("combobox"), groceries.id);
+    await user.click(screen.getByRole("combobox", { name: "Parent category" }));
+    await user.click(screen.getByRole("option", { name: "Groceries" }));
     await user.click(screen.getByRole("button", { name: "utensils" }));
     await user.click(screen.getByRole("button", { name: "#f97316" }));
     await user.click(screen.getByRole("button", { name: "Create category" }));
@@ -101,10 +102,13 @@ describe("CreateCategorySheet", () => {
       />
     );
 
+    await user.click(screen.getByRole("combobox", { name: "Parent category" }));
     expect(screen.getByRole("option", { name: "Groceries" })).toBeVisible();
     expect(screen.queryByRole("option", { name: "Salary" })).not.toBeInTheDocument();
 
+    await user.keyboard("{Escape}");
     await user.click(screen.getByRole("button", { name: "Income" }));
+    await user.click(screen.getByRole("combobox", { name: "Parent category" }));
     expect(screen.getByRole("option", { name: "Salary" })).toBeVisible();
     expect(screen.queryByRole("option", { name: "Groceries" })).not.toBeInTheDocument();
   });

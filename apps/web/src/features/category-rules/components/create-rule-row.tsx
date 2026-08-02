@@ -3,8 +3,7 @@
 import type { Category } from "@treasury-ops/shared";
 import type { KeyboardEvent, ReactNode } from "react";
 
-const selectClasses =
-  "min-h-11 w-full rounded-lg border border-border bg-surface-muted px-3 py-2.5 text-base font-medium text-foreground transition-colors duration-150 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 sm:w-auto sm:text-sm";
+import { Select, type SelectOption } from "@/components/ui";
 
 type CreateRuleRowProps = Readonly<{
   categories: readonly Category[];
@@ -29,6 +28,14 @@ export function CreateRuleRow({
     if (event.key === "Enter") onSubmit();
   }
 
+  const categoryOptions: readonly SelectOption[] = [
+    { value: "", label: "Select a category" },
+    ...categories.map((category) => ({
+      value: category.id,
+      label: `${category.name} · ${category.kind}`
+    }))
+  ];
+
   return (
     <div className="flex flex-col items-stretch gap-2.5 rounded-[13px] border border-dashed border-border bg-surface-elevated px-4 py-3.5 sm:flex-row sm:flex-wrap sm:items-center">
       <span className="font-mono text-[13px] font-semibold tracking-wide text-foreground-muted uppercase">
@@ -48,21 +55,14 @@ export function CreateRuleRow({
       <span className="hidden font-mono text-base text-accent sm:inline" aria-hidden="true">
         →
       </span>
-      <select
+      <Select
         name="ruleCategoryId"
-        autoComplete="off"
-        value={categoryId}
-        onChange={(event) => onCategoryChange(event.target.value)}
         aria-label="Category to assign"
-        className={selectClasses}
-      >
-        <option value="">Select a category</option>
-        {categories.map((category) => (
-          <option key={category.id} value={category.id}>
-            {category.name} · {category.kind}
-          </option>
-        ))}
-      </select>
+        options={categoryOptions}
+        value={categoryId}
+        placeholder="Select a category"
+        onChange={onCategoryChange}
+      />
       <button
         type="button"
         onClick={onSubmit}

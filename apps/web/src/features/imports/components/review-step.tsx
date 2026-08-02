@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 
 import { Money } from "@/components/ui/money";
+import { Select } from "@/components/ui/select";
 import { qk } from "@/lib/query/keys";
 import { toast } from "@/lib/toast";
 
@@ -211,21 +212,20 @@ export function ReviewStep({ batchId, categories, onCountsChange }: ReviewStepPr
                   <span className="font-mono text-sm text-foreground-muted/50">—</span>
                 ) : (
                   <>
-                    <select
+                    <Select
                       value={row.suggestedCategoryId ?? ""}
                       disabled={update.isPending}
-                      onChange={(event) => setCategory(row, event.target.value)}
+                      onChange={(val) => setCategory(row, val)}
                       aria-label={`Category for row ${row.rowNumber}`}
-                      autoComplete="off"
-                      className="min-h-11 w-full rounded-lg border border-border bg-surface-muted px-2.5 py-2 text-base font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-accent md:text-[12.5px]"
-                    >
-                      <option value="">Uncategorized</option>
-                      {categoryOptions.map((category) => (
-                        <option key={category.id} value={category.id}>
-                          {category.name}
-                        </option>
-                      ))}
-                    </select>
+                      options={[
+                        { value: "", label: "Uncategorized" },
+                        ...categoryOptions.map((category) => ({
+                          value: category.id,
+                          label: category.name
+                        }))
+                      ]}
+                      placeholder="Uncategorized"
+                    />
                     {suggested ? (
                       <p className="mt-1 text-[10px] font-medium text-accent">
                         ✦ suggested by rule

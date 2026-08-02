@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Read `AGENTS.md` in full before making changes.** It contains non-negotiable rules for this repo (TypeScript strictness, money-handling invariants, architecture boundaries, testing gates, security rules). This file only adds commands and orientation; `AGENTS.md` is the source of truth for _how_ to write code here, and its rules override any default behavior.
 
-`BACKEND.md` is the target architecture design doc (full data model, API surface, cron jobs, deployment topology) — useful for understanding where a feature is headed, but treat it as a plan, not a description of what's implemented today (see "Current state" below).
+`docs/backend/BACKEND.md` is the target architecture design doc (full data model, API surface, cron jobs, deployment topology) — useful for understanding where a feature is headed, but treat it as a plan, not a description of what's implemented today (see "Current state" below). `apps/api/CLAUDE.md` and `apps/web/CLAUDE.md` have package-specific orientation (module layout, testing conventions) and take precedence over this file for anything specific to their package.
 
 ## What this project is
 
@@ -34,7 +34,8 @@ pnpm lint                    # eslint across all workspaces, zero warnings allow
 pnpm typecheck                # tsc --noEmit across all workspaces, zero errors
 pnpm test                    # vitest unit tests across all workspaces
 pnpm test:integration        # apps/api only — vitest against vitest.integration.config.ts
-pnpm build                   # builds @treasury-ops/api then @treasury-ops/web
+pnpm test:e2e                # apps/api only — vitest against vitest.e2e.config.ts, full HTTP app + Postgres + Redis containers
+pnpm build                   # builds @treasury-ops/shared, then @treasury-ops/api and @treasury-ops/web
 pnpm format / format:check   # prettier
 pnpm migrate                 # drizzle-kit migrate, via apps/api
 pnpm verify:migrations       # scripts/verify-migrations.ts
@@ -54,25 +55,18 @@ pnpm --filter @treasury-ops/web lint / typecheck / dev / build
 Notes:
 
 - `pnpm test:integration` spins up a real **Postgres instance via testcontainers** (one container per test file, migrated fresh) because transactions must be exercised for real — see `vitest.integration.config.ts` and `apps/api/test/integration/support/postgres-test-db.ts`.
-- CI runs, in order: `lint` → `typecheck` → `test` → `test:integration` → `verify:migrations` → `build` → Trivy filesystem scan. Match this locally before pushing.
-- `AGENTS.md` references `pnpm test:e2e` and `pnpm gen:client` as part of the definition of done — these are not yet wired up as root scripts. If a task needs them, add the script rather than assuming it exists silently.
+- CI runs, in order: `lint` → `typecheck` → `test` → `test:integration` → `test:e2e` → `verify:migrations` → `build` → Trivy filesystem scan. Match this locally before pushing.
 - Env vars are validated at boot via zod (`apps/api/src/common/config/env.ts`); see `env.example` for the full list and comments on LAN/TLS cookie behavior. A missing/invalid var fails startup immediately, not at first use.
 
 ## Current implementation state vs. design doc
 
-`BACKEND.md` describes the full target system (transactions, imports, budgets, recurring rules, reports, cron jobs, notifications). **As of now the codebase is at the foundation stage** — only this exists under `apps/api/src`:
+`docs/backend/BACKEND.md` describes the full target system. The codebase has moved well past the foundation stage — treat both `docs/backend/BACKEND.md` and this section as directional, and trust what's actually under `src/` over either.
 
-- `auth/` — Better Auth integration, `AuthGuard`, `@CurrentUser()` decorator
-- `common/config/` — zod-validated runtime env (`RuntimeEnvSchema`), `RuntimeConfigModule`/`Service`
-- `common/redis/` — Redis module/service (BullMQ backing)
-- `common/errors/` — domain error base class + RFC 7807 problem+json exception filter
-- `common/db/` — Drizzle wiring (`db.module.ts`), the `withTxn` helper (`db-txn.ts`) described in `AGENTS.md` §3; `common/time/` holds the `Asia/Kolkata` date utilities from `AGENTS.md` §4
-- `health/` — `/healthz` liveness endpoint
-- `worker.ts` / `worker-health.ts` — separate BullMQ worker process entrypoint
+- `apps/api/src` has a full set of domain modules (`accounts`, `api-keys`, `assets`, `audit`, `balances`, `bills`, `budgets`, `categories`, `category-rules`, `dashboard`, `export`, `goals`, `imports`, `notifications`, `openapi`, `recurring`, `reports`, `spending-warnings`, `transactions`, `user-profiles`) on top of the original foundation (`auth/`, `common/`, `health/`, `worker.ts`). See `apps/api/CLAUDE.md` for the layering conventions (controller → service → repository) and module-by-module orientation.
+- `packages/shared/src` has a zod schema + type per domain (`account.ts`, `transaction.ts`, `budget.ts`, `goal.ts`, `import.ts`, etc.) alongside `money.ts` — this is the single source of truth for DTOs on both sides of the API per `AGENTS.md` §2.
+- `apps/web` has a full feature-sliced structure under `src/features/*` (accounts, transactions, transfers, categories, category rules, assets/net worth, imports, export, quick-add, reports, budgets, goals, bills, recurring, spending-warnings, profile, api-keys) wired to a generated typed API client (`pnpm gen:client`, now a working root script). See `apps/web/CLAUDE.md` for the client/server data-flow split and other frontend-specific conventions.
 
-`packages/shared/src` currently only has `money.ts` (paise-based money utilities) and `index.ts`. None of the domain modules (`accounts`, `transactions`, `imports`, `recurring`, `budgets`, `reports`, `scheduler`, `notifications`) described in `BACKEND.md` §8 exist yet. When building one of these, follow the module layout and layering rules in `BACKEND.md` §8 and `AGENTS.md` §4 (controller → service → repository, `userId` required on every repository method) rather than improvising a different shape.
-
-`apps/web` is similarly minimal: `app/layout.tsx`, `app/page.tsx`, `app/login/page.tsx`, and `src/auth-client.ts` (Better Auth client SDK wiring). No data-fetching or typed API client exists yet — when adding one, it must be generated from the OpenAPI spec (`pnpm gen:client`, once wired up) per `AGENTS.md` §6, not hand-written `fetch` calls.
+When building or extending a domain module, follow the module layout and layering rules in `docs/backend/BACKEND.md` §8 and `AGENTS.md` §4 (controller → service → repository, `userId` required on every repository method) and match the shape of an existing sibling module rather than improvising a new one.
 
 ## The essentials (see AGENTS.md for full detail)
 

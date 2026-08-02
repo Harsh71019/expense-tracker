@@ -162,8 +162,8 @@ describe("ReviewStep", () => {
       wrapper
     });
 
-    expect(screen.getByText("✦ suggested by rule")).toBeVisible();
-    await user.selectOptions(screen.getByLabelText("Category for row 1"), "");
+    await user.click(screen.getByRole("combobox", { name: "Category for row 1" }));
+    await user.click(screen.getByRole("option", { name: "Uncategorized" }));
     expect(mocks.updateMutate).toHaveBeenCalledWith(
       {
         batchId: "b1",

@@ -3,14 +3,16 @@
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 
+import { Select, type SelectOption } from "@/components/ui";
+
 import {
   serializeSpendingWarningFilters,
   type SpendingWarningFilters,
   type WarningFilterValue
 } from "../model/filters";
 
-const OPTIONS: ReadonlyArray<{ value: WarningFilterValue; label: string }> = [
-  { value: "all", label: "All" },
+const OPTIONS: readonly SelectOption[] = [
+  { value: "all", label: "All patterns" },
   { value: "spikes", label: "Spending spikes" },
   { value: "large_expenses", label: "Large expenses" }
 ];
@@ -20,31 +22,44 @@ export function WarningFilters({
 }: Readonly<{ filters: SpendingWarningFilters }>): ReactNode {
   const router = useRouter();
 
-  function select(value: WarningFilterValue): void {
-    const query = serializeSpendingWarningFilters({ filter: value });
+  function select(value: string): void {
+    const filterVal: WarningFilterValue =
+      value === "spikes" || value === "large_expenses" ? value : "all";
+    const query = serializeSpendingWarningFilters({ filter: filterVal });
     router.push(query === "" ? "/spending-warnings" : `/spending-warnings?${query}`);
   }
 
+  const isFiltered = filters.filter !== "all";
+
   return (
-    <div role="group" aria-label="Filter spending patterns" className="mb-4 flex flex-wrap gap-2">
-      {OPTIONS.map((option) => {
-        const active = filters.filter === option.value;
-        return (
-          <button
-            key={option.value}
-            type="button"
-            aria-pressed={active}
-            onClick={() => select(option.value)}
-            className={`min-h-11 rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-              active
-                ? "border-accent bg-accent-glow text-foreground"
-                : "border-border bg-surface-elevated text-foreground-muted hover:text-foreground"
-            }`}
-          >
-            {option.label}
-          </button>
-        );
-      })}
+    <div
+      role="group"
+      aria-label="Filter spending patterns"
+      className={`mb-4 flex flex-wrap items-center gap-2.5 rounded-2xl border p-3 transition-colors duration-150 ${
+        isFiltered
+          ? "border-accent/40 bg-surface-elevated shadow-sm"
+          : "border-border bg-surface-elevated"
+      }`}
+    >
+      <Select
+        aria-label="Filter pattern type"
+        name="patternFilter"
+        options={OPTIONS}
+        value={filters.filter}
+        onChange={select}
+      />
+
+      {isFiltered ? (
+        <button
+          type="button"
+          onClick={() => select("all")}
+          aria-label="Clear"
+          title="Clear filters"
+          className="flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-border/80 bg-surface-muted/60 px-3 py-2 text-xs font-semibold text-foreground-muted transition-colors hover:border-expense/40 hover:bg-expense/10 hover:text-expense focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        >
+          <span>Clear</span>
+        </button>
+      ) : null}
     </div>
   );
 }

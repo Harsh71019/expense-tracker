@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { getTransactionInsights } from "./get-transaction-insights";
 
 const mocks = vi.hoisted(() => ({ GET: vi.fn(), getServerApiClient: vi.fn(), api: vi.fn() }));
+vi.mock("react", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("react")>();
+  return { ...actual, cache: (fn: unknown) => fn };
+});
 vi.mock("@/lib/api/server", () => ({ getServerApiClient: mocks.getServerApiClient }));
 vi.mock("@/lib/debug", () => ({ debug: { api: mocks.api } }));
 
@@ -15,7 +20,6 @@ const response = {
 
 describe("getTransactionInsights", () => {
   beforeEach(() => {
-    vi.resetModules();
     mocks.GET.mockReset();
     mocks.getServerApiClient.mockReset();
     mocks.api.mockReset();
@@ -24,7 +28,6 @@ describe("getTransactionInsights", () => {
 
   it("loads and validates transaction insights", async () => {
     mocks.GET.mockResolvedValue({ data: response });
-    const { getTransactionInsights } = await import("./get-transaction-insights");
 
     await expect(getTransactionInsights()).resolves.toMatchObject({
       month: "2026-08",
@@ -35,7 +38,6 @@ describe("getTransactionInsights", () => {
 
   it("returns null when the endpoint response is invalid", async () => {
     mocks.GET.mockResolvedValue({ data: { month: "invalid" } });
-    const { getTransactionInsights } = await import("./get-transaction-insights");
 
     await expect(getTransactionInsights()).resolves.toBeNull();
     expect(mocks.api).toHaveBeenCalled();

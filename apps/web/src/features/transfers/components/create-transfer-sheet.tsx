@@ -8,16 +8,15 @@ import { toast } from "@/lib/toast";
 
 import { Button } from "@/components/ui/button";
 import { DialogSurface } from "@/components/ui/dialog";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { useAccounts } from "@/features/accounts";
 import { toDatetimeLocalValue } from "@/lib/datetime-local";
 import { userErrorMessage, ValidationError } from "@/lib/errors";
 import { generateRequestId } from "@/lib/request-id";
 
 import { useCreateTransfer } from "../hooks/use-transfers";
-
-const selectClasses =
-  "min-h-11 w-full rounded-lg border border-border bg-surface-muted px-3.5 py-2.5 text-base font-medium text-foreground transition-colors duration-150 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 sm:text-sm";
 
 function fieldErrorName(path: string): keyof CreateTransfer | null {
   if (
@@ -133,27 +132,21 @@ export function CreateTransferSheet({ onClose }: Readonly<{ onClose: () => void 
           onSubmit={form.handleSubmit((values) => void submit(values))}
           className="mt-6 flex flex-1 flex-col"
         >
-          <label
-            htmlFor="create-transfer-from"
-            className="mt-4 block font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase"
-          >
-            From account
-          </label>
-          <select
-            id="create-transfer-from"
-            name="fromAccountId"
-            autoComplete="off"
-            className={`${selectClasses} mt-1.5`}
-            value={fromAccountId}
-            onChange={(event) => selectFrom(event.target.value)}
-          >
-            <option value="">Choose account</option>
-            {activeAccounts.map((account) => (
-              <option key={account.id} value={account.id}>
-                {account.name}
-              </option>
-            ))}
-          </select>
+          <div className="mt-4 flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+            <span>From account</span>
+            <Select
+              id="create-transfer-from"
+              aria-label="From account"
+              name="fromAccountId"
+              options={[
+                { value: "", label: "Choose account" },
+                ...activeAccounts.map((account) => ({ value: account.id, label: account.name }))
+              ]}
+              placeholder="Choose account"
+              value={fromAccountId}
+              onChange={selectFrom}
+            />
+          </div>
           {form.formState.errors.fromAccountId?.message === undefined ? null : (
             <p role="alert" className="mt-1.5 text-xs font-medium text-expense">
               {form.formState.errors.fromAccountId.message}
@@ -171,29 +164,21 @@ export function CreateTransferSheet({ onClose }: Readonly<{ onClose: () => void 
             </button>
           </div>
 
-          <label
-            htmlFor="create-transfer-to"
-            className="block font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase"
-          >
-            To account
-          </label>
-          <select
-            id="create-transfer-to"
-            name="toAccountId"
-            autoComplete="off"
-            className={`${selectClasses} mt-1.5`}
-            value={toAccountId}
-            onChange={(event) =>
-              form.setValue("toAccountId", event.target.value, { shouldValidate: true })
-            }
-          >
-            <option value="">Choose account</option>
-            {toOptions.map((account) => (
-              <option key={account.id} value={account.id}>
-                {account.name}
-              </option>
-            ))}
-          </select>
+          <div className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+            <span>To account</span>
+            <Select
+              id="create-transfer-to"
+              aria-label="To account"
+              name="toAccountId"
+              options={[
+                { value: "", label: "Choose account" },
+                ...toOptions.map((account) => ({ value: account.id, label: account.name }))
+              ]}
+              placeholder="Choose account"
+              value={toAccountId}
+              onChange={(val) => form.setValue("toAccountId", val, { shouldValidate: true })}
+            />
+          </div>
           {form.formState.errors.toAccountId?.message === undefined ? null : (
             <p role="alert" className="mt-1.5 text-xs font-medium text-expense">
               {form.formState.errors.toAccountId.message}
@@ -241,25 +226,22 @@ export function CreateTransferSheet({ onClose }: Readonly<{ onClose: () => void 
             </p>
           )}
 
-          <label
-            htmlFor="create-transfer-date"
-            className="mt-5 block font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase"
-          >
-            Date & time
-          </label>
-          <input
-            id="create-transfer-date"
-            name="occurredAt"
-            type="datetime-local"
-            autoComplete="off"
-            className={`${selectClasses} mt-1.5`}
-            value={toDatetimeLocalValue(form.watch("occurredAt"))}
-            onChange={(event) =>
-              form.setValue("occurredAt", new Date(event.target.value), {
-                shouldValidate: true
-              })
-            }
-          />
+          <div className="mt-5 flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+            <span>Date & time</span>
+            <DatePicker
+              id="create-transfer-date"
+              name="occurredAt"
+              aria-label="Date & time"
+              placeholder="Date & time"
+              includeTime
+              value={toDatetimeLocalValue(form.watch("occurredAt"))}
+              onChange={(val) =>
+                form.setValue("occurredAt", val ? new Date(val) : new Date(), {
+                  shouldValidate: true
+                })
+              }
+            />
+          </div>
 
           <div className="mt-5">
             <Input

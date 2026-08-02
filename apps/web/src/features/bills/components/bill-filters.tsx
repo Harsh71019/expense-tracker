@@ -9,10 +9,22 @@ import type {
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 
+import { Select, type SelectOption } from "@/components/ui";
+
 import { serializeBillFilters } from "../model/bill-filters";
 
-const selectClasses =
-  "min-h-11 w-full rounded-lg border border-border bg-surface-elevated px-3 py-2 text-base text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 sm:w-auto sm:text-sm";
+const RECONCILIATION_OPTIONS: readonly SelectOption[] = [
+  { value: "", label: "All statement states" },
+  { value: "awaiting_statement", label: "Awaiting statement" },
+  { value: "reconciled", label: "Reconciled" }
+];
+
+const PAYMENT_OPTIONS: readonly SelectOption[] = [
+  { value: "", label: "All payment states" },
+  { value: "unpaid", label: "Unpaid" },
+  { value: "partial", label: "Part-paid" },
+  { value: "paid", label: "Paid" }
+];
 
 export function BillFilters({
   filters,
@@ -26,62 +38,126 @@ export function BillFilters({
     router.push(query.length === 0 ? "/bills" : `/bills?${query}`);
   }
 
+  const cardOptions: readonly SelectOption[] = [
+    { value: "", label: "All cards" },
+    ...cards.map((card) => ({
+      value: card.id,
+      label: card.name
+    }))
+  ];
+
+  const activeFilterCount = [
+    filters.accountId,
+    filters.reconciliationStatus,
+    filters.paymentStatus
+  ].filter((val) => val !== undefined).length;
+
+  const isFiltered = activeFilterCount > 0;
+
+  function clear(): void {
+    router.push("/bills");
+  }
+
   return (
-    <div className="grid w-full gap-2 sm:flex sm:w-auto sm:flex-wrap" aria-label="Bill filters">
-      <select
+    <div
+      aria-label="Bill filters"
+      className={`mb-4 flex flex-wrap items-center gap-2.5 rounded-2xl border p-3 transition-colors duration-150 ${
+        isFiltered
+          ? "border-accent/40 bg-surface-elevated shadow-sm"
+          : "border-border bg-surface-elevated"
+      }`}
+    >
+      <Select
         aria-label="Filter by card"
         name="cardFilter"
-        autoComplete="off"
-        className={selectClasses}
+        options={cardOptions}
         value={filters.accountId ?? ""}
-        onChange={(event) =>
-          navigate({ accountId: event.target.value === "" ? undefined : event.target.value })
-        }
-      >
-        <option value="">All cards</option>
-        {cards.map((card) => (
-          <option key={card.id} value={card.id}>
-            {card.name}
-          </option>
-        ))}
-      </select>
-      <select
+        onChange={(val) => navigate({ accountId: val === "" ? undefined : val })}
+      />
+      <Select
         aria-label="Filter by statement status"
         name="statementStatusFilter"
-        autoComplete="off"
-        className={selectClasses}
+        options={RECONCILIATION_OPTIONS}
         value={filters.reconciliationStatus ?? ""}
-        onChange={(event) =>
+        onChange={(val) =>
           navigate({
-            reconciliationStatus:
-              event.target.value === ""
-                ? undefined
-                : BillReconciliationStatusValue(event.target.value)
+            reconciliationStatus: val === "" ? undefined : BillReconciliationStatusValue(val)
           })
         }
-      >
-        <option value="">All statement states</option>
-        <option value="awaiting_statement">Awaiting statement</option>
-        <option value="reconciled">Reconciled</option>
-      </select>
-      <select
+      />
+      <Select
         aria-label="Filter by payment status"
         name="paymentStatusFilter"
-        autoComplete="off"
-        className={selectClasses}
+        options={PAYMENT_OPTIONS}
         value={filters.paymentStatus ?? ""}
-        onChange={(event) =>
+        onChange={(val) =>
           navigate({
-            paymentStatus:
-              event.target.value === "" ? undefined : BillPaymentStatusValue(event.target.value)
+            paymentStatus: val === "" ? undefined : BillPaymentStatusValue(val)
           })
         }
-      >
-        <option value="">All payment states</option>
-        <option value="unpaid">Unpaid</option>
-        <option value="partial">Part-paid</option>
-        <option value="paid">Paid</option>
-      </select>
+      />
+
+      {isFiltered ? (
+        <button
+          type="button"
+          onClick={clear}
+          aria-label="Clear"
+          title="Clear all filters"
+          className="flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-border/80 bg-surface-muted/60 px-3 py-2 text-xs font-semibold text-foreground-muted transition-colors hover:border-expense/40 hover:bg-expense/10 hover:text-expense focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        >
+          <span>Clear</span>
+          <span className="rounded-full bg-accent/20 px-1.5 py-0.5 font-mono text-[10px] text-accent">
+            {activeFilterCount}
+          </span>
+        </button>
+      ) : null}
+
+      {isFiltered ? (
+        <div className="flex w-full flex-wrap items-center gap-1.5 border-t border-border/50 pt-2.5">
+          <span className="font-mono text-[10px] font-semibold text-foreground-muted uppercase">
+            Active:
+          </span>
+          {filters.accountId !== undefined ? (
+            <span className="inline-flex items-center gap-1 rounded-full border border-accent/30 bg-accent-glow px-2.5 py-0.5 font-mono text-xs font-medium text-accent">
+              <span>Card: {cards.find((c) => c.id === filters.accountId)?.name ?? "Selected"}</span>
+              <button
+                type="button"
+                onClick={() => navigate({ accountId: undefined })}
+                className="hover:text-foreground focus-visible:outline-none"
+                aria-label="Remove card filter"
+              >
+                ×
+              </button>
+            </span>
+          ) : null}
+          {filters.reconciliationStatus !== undefined ? (
+            <span className="inline-flex items-center gap-1 rounded-full border border-accent/30 bg-accent-glow px-2.5 py-0.5 font-mono text-xs font-medium text-accent">
+              <span>Statement: {filters.reconciliationStatus.replace("_", " ")}</span>
+              <button
+                type="button"
+                onClick={() => navigate({ reconciliationStatus: undefined })}
+                className="hover:text-foreground focus-visible:outline-none"
+                aria-label="Remove statement status filter"
+              >
+                ×
+              </button>
+            </span>
+          ) : null}
+          {filters.paymentStatus !== undefined ? (
+            <span className="inline-flex items-center gap-1 rounded-full border border-accent/30 bg-accent-glow px-2.5 py-0.5 font-mono text-xs font-medium text-accent">
+              <span>Payment: {filters.paymentStatus}</span>
+              <button
+                type="button"
+                onClick={() => navigate({ paymentStatus: undefined })}
+                className="hover:text-foreground focus-visible:outline-none"
+                aria-label="Remove payment status filter"
+              >
+                ×
+              </button>
+            </span>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }

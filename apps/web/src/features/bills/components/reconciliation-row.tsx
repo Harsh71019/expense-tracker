@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Money } from "@/components/ui/money";
+import { Select } from "@/components/ui/select";
 import { toast } from "@/lib/toast";
 
 import { useUpdateBillStatementRow } from "../hooks/use-bill-reconciliation";
@@ -86,23 +87,19 @@ export function ReconciliationRow({
       {readOnly || row.matchStatus === "matched" ? null : (
         <div className="mt-4 flex flex-col items-stretch gap-2 border-t border-border pt-3 sm:flex-row sm:flex-wrap sm:items-end">
           {eligible.length === 0 ? null : (
-            <label className="min-w-0 flex-1 text-xs font-semibold text-foreground-muted">
-              Ledger candidate
-              <select
+            <div className="min-w-0 flex-1 text-xs font-semibold text-foreground-muted">
+              <span>Ledger candidate</span>
+              <Select
                 aria-label={`Ledger candidate for row ${row.rowNumber}`}
                 name={`candidate-${row.rowNumber}`}
-                autoComplete="off"
-                className="mt-1 min-h-11 w-full rounded-lg border border-border bg-surface px-3 py-2 text-base text-foreground focus:outline-none focus:ring-2 focus:ring-accent sm:text-sm"
+                options={eligible.map((candidate) => ({
+                  value: candidate.id,
+                  label: `${candidate.description} · ${formatBillDate(candidate.occurredAt)}`
+                }))}
                 value={selectedId}
-                onChange={(event) => setSelectedId(event.target.value)}
-              >
-                {eligible.map((candidate) => (
-                  <option key={candidate.id} value={candidate.id}>
-                    {candidate.description} · {formatBillDate(candidate.occurredAt)}
-                  </option>
-                ))}
-              </select>
-            </label>
+                onChange={setSelectedId}
+              />
+            </div>
           )}
           {eligible.length === 0 ? null : (
             <Button

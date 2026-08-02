@@ -7,7 +7,9 @@ import type { ReactNode } from "react";
 
 import { AmountInput } from "@/components/ui/amount-input";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { toDatetimeLocalValue } from "@/lib/datetime-local";
 import { userErrorMessage, ValidationError } from "@/lib/errors";
 import { generateRequestId } from "@/lib/request-id";
@@ -96,8 +98,6 @@ export function QuickAddForm(): ReactNode {
     return <AccountSetup />;
   }
 
-  const inputClasses =
-    "min-h-11 w-full rounded-lg border border-border bg-surface px-3.5 py-2.5 text-base text-foreground transition-colors duration-150 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 sm:text-sm";
   return (
     <section>
       <div className="mb-6">
@@ -149,35 +149,46 @@ export function QuickAddForm(): ReactNode {
             : { error: form.formState.errors.amountMinor.message })}
         />
         <div className="grid gap-5 sm:grid-cols-2">
-          <label className="flex flex-col gap-1.5 font-mono text-[10px] font-bold tracking-wider text-foreground-muted uppercase">
-            Account
-            <select autoComplete="off" className={inputClasses} {...form.register("accountId")}>
-              <option value="">Choose account</option>
-              {(accounts.data ?? [])
-                .filter((account) => !account.isArchived)
-                .map((account) => (
-                  <option key={account.id} value={account.id}>
-                    {account.name}
-                  </option>
-                ))}
-            </select>
+          <div className="flex flex-col gap-1.5 font-mono text-[10px] font-bold tracking-wider text-foreground-muted uppercase">
+            <span>Account</span>
+            <Select
+              aria-label="Account"
+              name="accountId"
+              options={[
+                { value: "", label: "Choose account" },
+                ...(accounts.data ?? [])
+                  .filter((account) => !account.isArchived)
+                  .map((account) => ({ value: account.id, label: account.name }))
+              ]}
+              placeholder="Choose account"
+              value={form.watch("accountId") ?? ""}
+              onChange={(val) => form.setValue("accountId", val, { shouldValidate: true })}
+            />
             {form.formState.errors.accountId?.message === undefined ? null : (
               <span className="text-expense font-mono text-[10px] normal-case mt-1.5 rounded-lg border border-expense/25 bg-expense/10 px-2.5 py-0.5 self-start">
                 {form.formState.errors.accountId.message}
               </span>
             )}
-          </label>
-          <label className="flex flex-col gap-1.5 font-mono text-[10px] font-bold tracking-wider text-foreground-muted uppercase">
-            Category
-            <select autoComplete="off" className={inputClasses} {...form.register("categoryId")}>
-              <option value="">No category</option>
-              {matchingCategories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
-          </label>
+          </div>
+          <div className="flex flex-col gap-1.5 font-mono text-[10px] font-bold tracking-wider text-foreground-muted uppercase">
+            <span>Category</span>
+            <Select
+              aria-label="Category"
+              name="categoryId"
+              options={[
+                { value: "", label: "No category" },
+                ...matchingCategories.map((category) => ({
+                  value: category.id,
+                  label: category.name
+                }))
+              ]}
+              placeholder="No category"
+              value={form.watch("categoryId") ?? ""}
+              onChange={(val) =>
+                form.setValue("categoryId", val === "" ? undefined : val, { shouldValidate: true })
+              }
+            />
+          </div>
         </div>
         <div className="flex flex-col">
           <Input
@@ -211,19 +222,21 @@ export function QuickAddForm(): ReactNode {
             )
           }
         />
-        <label className="flex flex-col gap-1.5 font-mono text-[10px] font-bold tracking-wider text-foreground-muted uppercase">
-          When
-          <input
+        <div className="flex flex-col gap-1.5 font-mono text-[10px] font-bold tracking-wider text-foreground-muted uppercase">
+          <span>When</span>
+          <DatePicker
             name="occurredAt"
-            type="datetime-local"
-            autoComplete="off"
-            className={inputClasses}
+            aria-label="When"
+            placeholder="When"
+            includeTime
             value={toDatetimeLocalValue(form.watch("occurredAt"))}
-            onChange={(event) =>
-              form.setValue("occurredAt", new Date(event.target.value), { shouldValidate: true })
+            onChange={(val) =>
+              form.setValue("occurredAt", val ? new Date(val) : new Date(), {
+                shouldValidate: true
+              })
             }
           />
-        </label>
+        </div>
         {create.isError && !(create.error instanceof ValidationError) ? (
           <p
             role="alert"

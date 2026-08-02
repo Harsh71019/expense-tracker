@@ -8,17 +8,16 @@ const mocks = vi.hoisted(() => ({ push: vi.fn() }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: mocks.push }) }));
 
 describe("WarningFilters", () => {
-  it("marks the active filter and navigates without a query param for all", async () => {
+  it("marks the active filter and navigates without a query param for clear", async () => {
     const user = userEvent.setup();
     render(<WarningFilters filters={{ filter: "spikes" }} />);
 
-    expect(screen.getByRole("button", { name: "Spending spikes" })).toHaveAttribute(
-      "aria-pressed",
-      "true"
+    expect(screen.getByRole("combobox", { name: "Filter pattern type" })).toHaveTextContent(
+      "Spending spikes"
     );
-    expect(screen.getByRole("button", { name: "All" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: "Clear" })).toBeVisible();
 
-    await user.click(screen.getByRole("button", { name: "All" }));
+    await user.click(screen.getByRole("button", { name: "Clear" }));
     expect(mocks.push).toHaveBeenCalledWith("/spending-warnings");
   });
 
@@ -26,7 +25,8 @@ describe("WarningFilters", () => {
     const user = userEvent.setup();
     render(<WarningFilters filters={{ filter: "all" }} />);
 
-    await user.click(screen.getByRole("button", { name: "Large expenses" }));
+    await user.click(screen.getByRole("combobox", { name: "Filter pattern type" }));
+    await user.click(screen.getByRole("option", { name: "Large expenses" }));
     expect(mocks.push).toHaveBeenCalledWith("/spending-warnings?filter=large_expenses");
   });
 });

@@ -14,8 +14,10 @@ import { toast } from "@/lib/toast";
 
 import { AmountInput } from "@/components/ui/amount-input";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import { DialogSurface } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { userErrorMessage } from "@/lib/errors";
 
 import { useCreateRecurringRule, useUpdateRecurringRule } from "../hooks/use-recurring-rules";
@@ -33,8 +35,6 @@ import {
   type Weekday
 } from "../model/schedule";
 
-const selectClasses =
-  "min-h-11 w-full rounded-lg border border-border bg-surface-muted px-3.5 py-2.5 text-base font-medium text-foreground transition-colors duration-150 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 disabled:opacity-60 sm:text-sm";
 const numberClasses =
   "min-h-11 w-full rounded-lg border border-border bg-surface-muted px-3.5 py-2.5 font-mono text-base font-semibold text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 sm:text-sm";
 const fieldLabelClasses =
@@ -254,42 +254,40 @@ export function RecurringRuleDrawer({
           />
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <label>
-              <span className={fieldLabelClasses}>Account</span>
-              <select
+            <div className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+              <span>Account</span>
+              <Select
                 name="accountId"
-                autoComplete="off"
-                className={selectClasses}
+                aria-label="Account"
+                options={[
+                  { value: "", label: "Choose an account" },
+                  ...availableAccounts.map((account) => ({
+                    value: account.id,
+                    label: `${account.name}${account.isArchived ? " (archived)" : ""}`
+                  }))
+                ]}
+                placeholder="Choose an account"
                 value={accountId}
-                onChange={(event) => setAccountId(event.target.value)}
-              >
-                <option value="">Choose an account</option>
-                {availableAccounts.map((account) => (
-                  <option key={account.id} value={account.id}>
-                    {account.name}
-                    {account.isArchived ? " (archived)" : ""}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              <span className={fieldLabelClasses}>Category</span>
-              <select
+                onChange={setAccountId}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+              <span>Category</span>
+              <Select
                 name="categoryId"
-                autoComplete="off"
-                className={selectClasses}
+                aria-label="Category"
+                options={[
+                  { value: "", label: "Uncategorised" },
+                  ...availableCategories.map((category) => ({
+                    value: category.id,
+                    label: `${category.name}${category.isArchived ? " (archived)" : ""}`
+                  }))
+                ]}
+                placeholder="Uncategorised"
                 value={categoryId}
-                onChange={(event) => setCategoryId(event.target.value)}
-              >
-                <option value="">Uncategorised</option>
-                {availableCategories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                    {category.isArchived ? " (archived)" : ""}
-                  </option>
-                ))}
-              </select>
-            </label>
+                onChange={setCategoryId}
+              />
+            </div>
           </div>
 
           <Input
@@ -319,23 +317,22 @@ export function RecurringRuleDrawer({
             </p>
           ) : null}
 
-          <label>
-            <span className={fieldLabelClasses}>Starts on</span>
-            <input
+          <div className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+            <span>Starts on</span>
+            <DatePicker
               name="startDate"
-              type="date"
-              autoComplete="off"
+              aria-label="Starts on"
+              placeholder="Starts on"
+              disabled={rule !== undefined}
               value={schedule.startDate}
-              readOnly={rule !== undefined}
-              onChange={(event) => patchSchedule({ startDate: event.target.value })}
-              className={`${numberClasses} read-only:cursor-not-allowed read-only:opacity-60`}
+              onChange={(val) => patchSchedule({ startDate: val })}
             />
             {rule === undefined ? null : (
               <span className="mt-1.5 block text-xs text-foreground-muted">
                 The API keeps the original start date fixed after creation.
               </span>
             )}
-          </label>
+          </div>
 
           <div>
             <span className={fieldLabelClasses}>Repeats</span>
@@ -435,22 +432,19 @@ export function RecurringRuleDrawer({
           ) : null}
 
           {schedule.frequency === "yearly" ? (
-            <label>
-              <span className={fieldLabelClasses}>In month</span>
-              <select
+            <div className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+              <span>In month</span>
+              <Select
                 name="yearMonth"
-                autoComplete="off"
-                className={selectClasses}
-                value={schedule.yearMonth}
-                onChange={(event) => patchSchedule({ yearMonth: Number(event.target.value) })}
-              >
-                {monthLabels.map((month, index) => (
-                  <option key={month} value={index + 1}>
-                    {month}
-                  </option>
-                ))}
-              </select>
-            </label>
+                aria-label="In month"
+                options={monthLabels.map((month, index) => ({
+                  value: String(index + 1),
+                  label: month
+                }))}
+                value={String(schedule.yearMonth)}
+                onChange={(val) => patchSchedule({ yearMonth: Number(val) })}
+              />
+            </div>
           ) : null}
 
           <div>
@@ -538,18 +532,17 @@ function EndingField({
 }>): ReactNode {
   if (ending === "until") {
     return (
-      <label>
-        <span className={fieldLabelClasses}>Last date</span>
-        <input
+      <div className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+        <span>Last date</span>
+        <DatePicker
           name="untilDate"
-          type="date"
-          autoComplete="off"
-          min={schedule.startDate}
+          aria-label="Last date"
+          placeholder="Last date"
+          minDate={schedule.startDate}
           value={schedule.untilDate}
-          onChange={(event) => onChange({ untilDate: event.target.value })}
-          className={numberClasses}
+          onChange={(val) => onChange({ untilDate: val })}
         />
-      </label>
+      </div>
     );
   }
   if (ending === "count") {

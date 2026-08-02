@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 
-import { Select } from "@/components/ui";
+import { DatePicker, Select } from "@/components/ui";
 import { useAccounts } from "@/features/accounts";
 import { useCategories } from "@/features/categories";
 
@@ -182,29 +182,22 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
           value={filters.categoryId ?? ""}
           onChange={(value) => navigate({ categoryId: value === "" ? undefined : value })}
         />
-        <div className="grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1.5 rounded-lg border border-border bg-surface-muted px-2.5 sm:flex sm:w-auto">
-          <input
-            type="date"
-            name="transactionFrom"
-            autoComplete="off"
-            aria-label="From date"
-            value={toDateInputValue(filters.from)}
-            onChange={(event) => navigate({ from: parseDate(event.target.value) })}
-            className="min-h-11 min-w-0 bg-transparent py-2.5 font-mono text-base text-foreground outline-none sm:text-xs"
-          />
-          <span className="text-xs text-foreground-muted" aria-hidden="true">
-            →
-          </span>
-          <input
-            type="date"
-            name="transactionTo"
-            autoComplete="off"
-            aria-label="To date"
-            value={toDateInputValue(filters.to)}
-            onChange={(event) => navigate({ to: parseDate(event.target.value) })}
-            className="min-h-11 min-w-0 bg-transparent py-2.5 font-mono text-base text-foreground outline-none sm:text-xs"
-          />
-        </div>
+        <DatePicker
+          name="transactionFrom"
+          aria-label="From date"
+          placeholder="From date"
+          clearable
+          value={toDateInputValue(filters.from)}
+          onChange={(val) => navigate({ from: parseDate(val) })}
+        />
+        <DatePicker
+          name="transactionTo"
+          aria-label="To date"
+          placeholder="To date"
+          clearable
+          value={toDateInputValue(filters.to)}
+          onChange={(val) => navigate({ to: parseDate(val) })}
+        />
         {isFiltered ? (
           <button
             type="button"

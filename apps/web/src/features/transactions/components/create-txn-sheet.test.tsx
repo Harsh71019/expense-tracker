@@ -45,7 +45,7 @@ describe("CreateTxnSheet", () => {
       "overflow-y-auto",
       "overscroll-contain"
     );
-    expect(screen.getByLabelText("Date & time").closest("div")).toHaveClass(
+    expect(screen.getByLabelText("Date & time").closest(".sm\\:flex-row")).toHaveClass(
       "flex-col",
       "sm:flex-row"
     );
@@ -71,16 +71,12 @@ describe("CreateTxnSheet", () => {
     const onClose = vi.fn();
     render(<CreateTxnSheet onClose={onClose} />);
 
-    await user.selectOptions(
-      screen.getByRole("combobox", { name: /Account/ }),
-      mocks.accounts[0]?.id ?? ""
-    );
+    await user.click(screen.getByRole("combobox", { name: "Account" }));
+    await user.click(screen.getByRole("option", { name: mocks.accounts[0]?.name ?? "" }));
     await user.type(screen.getByLabelText("Amount"), "150");
     await user.tab();
-    await user.selectOptions(
-      screen.getByRole("combobox", { name: /Category/ }),
-      mocks.categories[0]?.id ?? ""
-    );
+    await user.click(screen.getByRole("combobox", { name: "Category" }));
+    await user.click(screen.getByRole("option", { name: mocks.categories[0]?.name ?? "" }));
     await user.type(screen.getByLabelText("Description"), "Vegetables");
     await user.click(screen.getByRole("button", { name: "Post entry" }));
 
@@ -101,10 +97,13 @@ describe("CreateTxnSheet", () => {
     const user = userEvent.setup();
     render(<CreateTxnSheet onClose={vi.fn()} />);
 
+    await user.click(screen.getByRole("combobox", { name: "Category" }));
     expect(screen.getByRole("option", { name: "Groceries" })).toBeVisible();
     expect(screen.queryByRole("option", { name: "Salary" })).not.toBeInTheDocument();
 
+    await user.keyboard("{Escape}");
     await user.click(screen.getByRole("button", { name: "Income" }));
+    await user.click(screen.getByRole("combobox", { name: "Category" }));
     expect(screen.getByRole("option", { name: "Salary" })).toBeVisible();
     expect(screen.queryByRole("option", { name: "Groceries" })).not.toBeInTheDocument();
   });

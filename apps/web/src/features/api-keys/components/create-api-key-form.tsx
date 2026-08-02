@@ -5,6 +5,7 @@ import { useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 
 import { scopeIdsToPermissions, SCOPE_OPTIONS } from "../model/scopes";
@@ -81,14 +82,18 @@ export function CreateApiKeyForm({
           </label>
         ))}
       </fieldset>
-      <Input
-        id="create-api-key-expiry"
-        name="expiresAt"
-        label="Expires (optional)"
-        type="date"
-        value={expiresAt}
-        onChange={(event) => setExpiresAt(event.target.value)}
-      />
+      <div className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+        <span>Expires (optional)</span>
+        <DatePicker
+          id="create-api-key-expiry"
+          name="expiresAt"
+          aria-label="Expires (optional)"
+          placeholder="Expires (optional)"
+          clearable
+          value={expiresAt}
+          onChange={setExpiresAt}
+        />
+      </div>
       {error === undefined ? null : (
         <p role="alert" className="text-sm text-expense">
           {error}

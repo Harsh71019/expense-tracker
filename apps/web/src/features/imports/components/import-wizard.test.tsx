@@ -182,7 +182,8 @@ describe("ImportWizard", () => {
     const input = document.querySelector("input[type=file]");
     if (!(input instanceof HTMLInputElement)) throw new Error("Expected a file input.");
     await user.upload(input, csv);
-    await user.selectOptions(screen.getByLabelText(/Which account/), account.id);
+    await user.click(screen.getByRole("combobox", { name: /Which account/ }));
+    await user.click(screen.getByRole("option", { name: account.name }));
     await user.click(screen.getByRole("button", { name: "Map columns →" }));
 
     expect(screen.getByText("Start from a bank preset:")).toBeVisible();

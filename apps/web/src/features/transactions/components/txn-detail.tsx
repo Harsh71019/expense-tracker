@@ -9,6 +9,7 @@ import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Money } from "@/components/ui/money";
+import { Select } from "@/components/ui/select";
 import { useAccounts } from "@/features/accounts";
 import { useCategories } from "@/features/categories";
 import { useReverseTransfer } from "@/features/transfers/hooks/use-transfers";
@@ -178,21 +179,23 @@ export function TxnDetail({ initialTransaction }: { initialTransaction: Transact
                 value={description}
                 onChange={(event) => setDescription(event.target.value)}
               />
-              <label className="flex flex-col gap-1.5 text-xs font-semibold">
-                Category
-                <select
-                  className="rounded-lg border border-border bg-surface px-3.5 py-2.5"
+              <div className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+                <span>Category</span>
+                <Select
+                  name="categoryId"
+                  aria-label="Category"
+                  options={[
+                    { value: "", label: "No category" },
+                    ...(categories.data ?? []).map((category) => ({
+                      value: category.id,
+                      label: `${category.name} · ${category.kind}`
+                    }))
+                  ]}
+                  placeholder="No category"
                   value={categoryId}
-                  onChange={(event) => setCategoryId(event.target.value)}
-                >
-                  <option value="">No category</option>
-                  {(categories.data ?? []).map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.name} · {category.kind}
-                    </option>
-                  ))}
-                </select>
-              </label>
+                  onChange={setCategoryId}
+                />
+              </div>
               <Input
                 id="txn-tags"
                 label="Tags (comma separated)"

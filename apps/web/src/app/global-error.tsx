@@ -12,7 +12,7 @@ export default function GlobalError({
 
   useEffect(() => {
     const eventId = Sentry.captureException(error, { tags: { boundary: "global" } });
-    setReqId(eventId.slice(0, 6));
+    setReqId(typeof eventId === "string" ? eventId.slice(0, 6) : null);
   }, [error]);
 
   return (

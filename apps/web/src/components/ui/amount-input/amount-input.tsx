@@ -13,17 +13,74 @@ type AmountInputProps = Readonly<{
   inputRef?: Ref<HTMLInputElement>;
 }>;
 
-function evaluateMathExpression(raw: string): string {
+export function evaluateMathExpression(raw: string): string {
   const sanitized = raw.trim();
   if (/^[0-9.]*$/.test(sanitized)) return sanitized;
   if (!/^[0-9.\s+\-*/()]+$/.test(sanitized)) return raw;
+
   try {
-    const fn = new Function(`"use strict"; return (${sanitized});`);
-    const evaluated: unknown = fn();
+    const matchedTokens = sanitized.match(/([0-9.]+|[+\-*/()])/g);
+    if (matchedTokens === null) return raw;
+    const tokens = matchedTokens;
+
+    let index = 0;
+
+    function parseExpression(): number {
+      let val = parseTerm();
+      while (index < tokens.length) {
+        const op = tokens[index];
+        if (op === "+" || op === "-") {
+          index++;
+          const nextTerm = parseTerm();
+          val = op === "+" ? val + nextTerm : val - nextTerm;
+        } else {
+          break;
+        }
+      }
+      return val;
+    }
+
+    function parseTerm(): number {
+      let val = parseFactor();
+      while (index < tokens.length) {
+        const op = tokens[index];
+        if (op === "*" || op === "/") {
+          index++;
+          const nextFactor = parseFactor();
+          val = op === "*" ? val * nextFactor : val / nextFactor;
+        } else {
+          break;
+        }
+      }
+      return val;
+    }
+
+    function parseFactor(): number {
+      const token = tokens[index];
+      if (token === undefined) throw new Error("Unexpected end of expression");
+      if (token === "(") {
+        index++;
+        const val = parseExpression();
+        if (tokens[index] === ")") index++;
+        return val;
+      }
+      if (token === "+" || token === "-") {
+        index++;
+        const factor = parseFactor();
+        return token === "-" ? -factor : factor;
+      }
+      index++;
+      const num = Number(token);
+      if (Number.isNaN(num)) throw new Error("Invalid number");
+      return num;
+    }
+
+    const evaluated = parseExpression();
     if (
+      index === tokens.length &&
       typeof evaluated === "number" &&
-      !isNaN(evaluated) &&
-      isFinite(evaluated) &&
+      !Number.isNaN(evaluated) &&
+      Number.isFinite(evaluated) &&
       evaluated >= 0
     ) {
       return evaluated.toFixed(2);

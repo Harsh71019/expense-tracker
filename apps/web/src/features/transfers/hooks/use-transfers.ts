@@ -16,14 +16,17 @@ import { qk } from "@/lib/query/keys";
 import { generateRequestId } from "@/lib/request-id";
 import { toast } from "@/lib/toast";
 
+type CreateTransferInput = CreateTransfer & Readonly<{ idempotencyKey?: string }>;
+
 export function useCreateTransfer(): ReturnType<
-  typeof useMutation<Transfer, Error, CreateTransfer>
+  typeof useMutation<Transfer, Error, CreateTransferInput>
 > {
   const client = useQueryClient();
   const [key, setKey] = useState(generateRequestId);
   return useMutation({
     mutationFn: async (body): Promise<Transfer> => {
       try {
+        const idempotencyKey = body.idempotencyKey ?? key;
         const result = await apiClient.POST("/v1/transfers", {
           body: {
             fromAccountId: body.fromAccountId,
@@ -33,7 +36,7 @@ export function useCreateTransfer(): ReturnType<
             description: body.description,
             ...(body.tags === undefined ? {} : { tags: body.tags })
           },
-          params: { header: { "Idempotency-Key": key } }
+          params: { header: { "Idempotency-Key": idempotencyKey } }
         });
         if (result.error !== undefined) throw toAppError(result.error, result.response.status);
         const parsed = TransferSchema.safeParse(result.data);

@@ -97,7 +97,7 @@ export function CashFlowChart({ buckets }: CashFlowChartProps): ReactNode {
         if (point === undefined) return null;
         return (
           <text
-            key={bucket.label}
+            key={`cashflow-label-${bucket.label}-${index}`}
             x={point[0]}
             y={height - 8}
             fill="var(--color-foreground-muted)"

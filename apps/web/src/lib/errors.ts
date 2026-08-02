@@ -1,3 +1,5 @@
+import type { ProblemFieldError } from "@treasury-ops/shared";
+
 export type AppErrorContext = Readonly<{
   reqId?: string;
   method?: string;
@@ -78,4 +80,3 @@ export function userErrorMessage(error: unknown, fallback: string): string {
   }
   return fallback;
 }
-import type { ProblemFieldError } from "@treasury-ops/shared";

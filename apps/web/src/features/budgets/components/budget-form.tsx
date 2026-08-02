@@ -9,7 +9,7 @@ import {
 import { useRef, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 
-import { AmountInput } from "@/components/ui/amount-input";
+import { AmountInput, evaluateMathExpression } from "@/components/ui/amount-input";
 import { Button } from "@/components/ui/button";
 import { DialogSurface } from "@/components/ui/dialog";
 import { Money } from "@/components/ui/money";
@@ -58,7 +58,7 @@ export function BudgetForm({
 
     let submittedMinor: number;
     try {
-      submittedMinor = parseMinor(inputRef.current?.value ?? "");
+      submittedMinor = parseMinor(evaluateMathExpression(inputRef.current?.value ?? ""));
     } catch (caught: unknown) {
       setError(caught instanceof Error ? caught.message : "Enter a valid monthly limit.");
       return;

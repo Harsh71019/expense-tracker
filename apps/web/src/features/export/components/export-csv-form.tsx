@@ -87,11 +87,21 @@ export function ExportCsvForm(): ReactNode {
             Date range
           </legend>
           <label className="flex min-h-11 items-center gap-3 rounded-lg border border-border px-4 text-sm">
-            <input type="radio" checked={mode === "all"} onChange={() => setMode("all")} />
+            <input
+              type="radio"
+              name="date-range-mode"
+              checked={mode === "all"}
+              onChange={() => setMode("all")}
+            />
             All posted transactions
           </label>
           <label className="flex min-h-11 items-center gap-3 rounded-lg border border-border px-4 text-sm">
-            <input type="radio" checked={mode === "range"} onChange={() => setMode("range")} />
+            <input
+              type="radio"
+              name="date-range-mode"
+              checked={mode === "range"}
+              onChange={() => setMode("range")}
+            />
             Choose a range
           </label>
         </fieldset>

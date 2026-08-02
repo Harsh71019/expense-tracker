@@ -31,7 +31,8 @@ export const ErrorCodes = [
   "bill.already_reconciled",
   "recurring.no_occurrences",
   "recurring.reconciliation_already_resolved",
-  "recurring.invalid_reconciliation_resolution"
+  "recurring.invalid_reconciliation_resolution",
+  "pending_transaction.already_resolved"
 ] as const;
 
 export type ErrorCode = (typeof ErrorCodes)[number];

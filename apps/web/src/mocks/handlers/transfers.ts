@@ -42,6 +42,8 @@ export function transferHandlers(http: MockHttp, store: MockStore): HttpHandler[
         tags: body.tags ?? [],
         source: "manual",
         status: "posted",
+        paymentRail: "unknown",
+        counterpartyHandle: null,
         transferGroupId,
         createdAt: now,
         updatedAt: now
@@ -58,6 +60,8 @@ export function transferHandlers(http: MockHttp, store: MockStore): HttpHandler[
         tags: body.tags ?? [],
         source: "manual",
         status: "posted",
+        paymentRail: "unknown",
+        counterpartyHandle: null,
         transferGroupId,
         createdAt: now,
         updatedAt: now

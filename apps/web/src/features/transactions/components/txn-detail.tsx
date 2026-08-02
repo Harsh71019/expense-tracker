@@ -17,6 +17,7 @@ import { toast } from "@/lib/toast";
 
 import { useReverseTxn } from "../hooks/use-reverse-txn";
 import { useTxn, useUpdateTxn } from "../hooks/use-txn";
+import { PaymentRailBadge, paymentRailLabel } from "./payment-rail-badge";
 
 const dateTime = new Intl.DateTimeFormat("en-IN", {
   dateStyle: "medium",
@@ -97,6 +98,7 @@ export function TxnDetail({ initialTransaction }: { initialTransaction: Transact
             </Badge>
             <Badge variant="pending">{transaction.source}</Badge>
             {isTransfer ? <Badge variant="success">transfer</Badge> : null}
+            <PaymentRailBadge rail={transaction.paymentRail} />
           </div>
         </div>
         <Money minor={transaction.amountMinor} variant={transaction.type} signed size="lg" />
@@ -107,6 +109,13 @@ export function TxnDetail({ initialTransaction }: { initialTransaction: Transact
           <Fact label="Account" value={accountName} />
           <Fact label="Category" value={categoryName} />
           <Fact label="Type" value={transaction.type} />
+          <Fact
+            label="Payment rail"
+            value={paymentRailLabel(transaction.paymentRail) ?? "Unknown"}
+          />
+          {transaction.counterpartyHandle === null ? null : (
+            <Fact label="UPI handle" value={transaction.counterpartyHandle} />
+          )}
           <Fact label="Occurred" value={dateTime.format(transaction.occurredAt)} />
           <Fact label="Created" value={dateTime.format(transaction.createdAt)} />
           <Fact label="Updated" value={dateTime.format(transaction.updatedAt)} />

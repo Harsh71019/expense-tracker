@@ -37,6 +37,7 @@ export const qk = {
   categoryRules: () => ["category-rules"] as const,
   recurringRules: () => ["recurring-rules"] as const,
   recurringReconciliations: () => ["recurring-reconciliations"] as const,
+  pendingTransactions: () => ["pending-transactions"] as const,
   assets: () => ["assets"] as const,
   assetValuations: (assetId: string) => ["asset-valuations", assetId] as const,
   netWorth: () => ["net-worth"] as const,

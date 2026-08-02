@@ -18,3 +18,4 @@ export * from "./bill-statement.js";
 export * from "./spending-warning.js";
 export * from "./goal.js";
 export * from "./scheduled-run.js";
+export * from "./pending-transaction.js";

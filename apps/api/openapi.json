@@ -159,7 +159,8 @@
               "bill.already_reconciled",
               "recurring.no_occurrences",
               "recurring.reconciliation_already_resolved",
-              "recurring.invalid_reconciliation_resolution"
+              "recurring.invalid_reconciliation_resolution",
+              "pending_transaction.already_resolved"
             ]
           },
           "reqId": {
@@ -709,6 +710,14 @@
                   "type": "string",
                   "format": "uuid"
                 },
+                "paymentRail": {
+                  "type": "string",
+                  "enum": ["upi", "neft", "rtgs", "imps", "nach", "card", "unknown"]
+                },
+                "counterpartyHandle": {
+                  "type": ["string", "null"],
+                  "minLength": 1
+                },
                 "createdAt": {
                   "type": ["string", "null"],
                   "format": "date-time"
@@ -729,6 +738,8 @@
                 "currency",
                 "source",
                 "status",
+                "paymentRail",
+                "counterpartyHandle",
                 "createdAt",
                 "updatedAt"
               ]
@@ -935,6 +946,14 @@
             "type": "string",
             "format": "uuid"
           },
+          "paymentRail": {
+            "type": "string",
+            "enum": ["upi", "neft", "rtgs", "imps", "nach", "card", "unknown"]
+          },
+          "counterpartyHandle": {
+            "type": ["string", "null"],
+            "minLength": 1
+          },
           "createdAt": {
             "type": ["string", "null"],
             "format": "date-time"
@@ -955,6 +974,8 @@
           "currency",
           "source",
           "status",
+          "paymentRail",
+          "counterpartyHandle",
           "createdAt",
           "updatedAt"
         ]
@@ -1049,6 +1070,14 @@
                 "type": "string",
                 "format": "uuid"
               },
+              "paymentRail": {
+                "type": "string",
+                "enum": ["upi", "neft", "rtgs", "imps", "nach", "card", "unknown"]
+              },
+              "counterpartyHandle": {
+                "type": ["string", "null"],
+                "minLength": 1
+              },
               "createdAt": {
                 "type": ["string", "null"],
                 "format": "date-time"
@@ -1069,6 +1098,8 @@
               "currency",
               "source",
               "status",
+              "paymentRail",
+              "counterpartyHandle",
               "createdAt",
               "updatedAt"
             ]
@@ -1156,6 +1187,14 @@
                 "type": "string",
                 "format": "uuid"
               },
+              "paymentRail": {
+                "type": "string",
+                "enum": ["upi", "neft", "rtgs", "imps", "nach", "card", "unknown"]
+              },
+              "counterpartyHandle": {
+                "type": ["string", "null"],
+                "minLength": 1
+              },
               "createdAt": {
                 "type": ["string", "null"],
                 "format": "date-time"
@@ -1176,6 +1215,8 @@
               "currency",
               "source",
               "status",
+              "paymentRail",
+              "counterpartyHandle",
               "createdAt",
               "updatedAt"
             ]
@@ -1276,6 +1317,14 @@
                     "type": "string",
                     "format": "uuid"
                   },
+                  "paymentRail": {
+                    "type": "string",
+                    "enum": ["upi", "neft", "rtgs", "imps", "nach", "card", "unknown"]
+                  },
+                  "counterpartyHandle": {
+                    "type": ["string", "null"],
+                    "minLength": 1
+                  },
                   "createdAt": {
                     "type": ["string", "null"],
                     "format": "date-time"
@@ -1296,6 +1345,8 @@
                   "currency",
                   "source",
                   "status",
+                  "paymentRail",
+                  "counterpartyHandle",
                   "createdAt",
                   "updatedAt"
                 ]
@@ -1383,6 +1434,14 @@
                     "type": "string",
                     "format": "uuid"
                   },
+                  "paymentRail": {
+                    "type": "string",
+                    "enum": ["upi", "neft", "rtgs", "imps", "nach", "card", "unknown"]
+                  },
+                  "counterpartyHandle": {
+                    "type": ["string", "null"],
+                    "minLength": 1
+                  },
                   "createdAt": {
                     "type": ["string", "null"],
                     "format": "date-time"
@@ -1403,6 +1462,8 @@
                   "currency",
                   "source",
                   "status",
+                  "paymentRail",
+                  "counterpartyHandle",
                   "createdAt",
                   "updatedAt"
                 ]
@@ -1976,6 +2037,14 @@
                 "type": "string",
                 "format": "uuid"
               },
+              "paymentRail": {
+                "type": "string",
+                "enum": ["upi", "neft", "rtgs", "imps", "nach", "card", "unknown"]
+              },
+              "counterpartyHandle": {
+                "type": ["string", "null"],
+                "minLength": 1
+              },
               "createdAt": {
                 "type": ["string", "null"],
                 "format": "date-time"
@@ -1996,6 +2065,8 @@
               "currency",
               "source",
               "status",
+              "paymentRail",
+              "counterpartyHandle",
               "createdAt",
               "updatedAt"
             ]
@@ -2085,6 +2156,14 @@
                   "type": "string",
                   "format": "uuid"
                 },
+                "paymentRail": {
+                  "type": "string",
+                  "enum": ["upi", "neft", "rtgs", "imps", "nach", "card", "unknown"]
+                },
+                "counterpartyHandle": {
+                  "type": ["string", "null"],
+                  "minLength": 1
+                },
                 "createdAt": {
                   "type": ["string", "null"],
                   "format": "date-time"
@@ -2105,6 +2184,8 @@
                 "currency",
                 "source",
                 "status",
+                "paymentRail",
+                "counterpartyHandle",
                 "createdAt",
                 "updatedAt"
               ]
@@ -3731,6 +3812,14 @@
                       "type": "string",
                       "format": "uuid"
                     },
+                    "paymentRail": {
+                      "type": "string",
+                      "enum": ["upi", "neft", "rtgs", "imps", "nach", "card", "unknown"]
+                    },
+                    "counterpartyHandle": {
+                      "type": ["string", "null"],
+                      "minLength": 1
+                    },
                     "createdAt": {
                       "type": ["string", "null"],
                       "format": "date-time"
@@ -3751,6 +3840,8 @@
                     "currency",
                     "source",
                     "status",
+                    "paymentRail",
+                    "counterpartyHandle",
                     "createdAt",
                     "updatedAt"
                   ]
@@ -4321,6 +4412,14 @@
                     "type": "string",
                     "format": "uuid"
                   },
+                  "paymentRail": {
+                    "type": "string",
+                    "enum": ["upi", "neft", "rtgs", "imps", "nach", "card", "unknown"]
+                  },
+                  "counterpartyHandle": {
+                    "type": ["string", "null"],
+                    "minLength": 1
+                  },
                   "createdAt": {
                     "type": ["string", "null"],
                     "format": "date-time"
@@ -4341,6 +4440,8 @@
                   "currency",
                   "source",
                   "status",
+                  "paymentRail",
+                  "counterpartyHandle",
                   "createdAt",
                   "updatedAt"
                 ]
@@ -4428,6 +4529,14 @@
                     "type": "string",
                     "format": "uuid"
                   },
+                  "paymentRail": {
+                    "type": "string",
+                    "enum": ["upi", "neft", "rtgs", "imps", "nach", "card", "unknown"]
+                  },
+                  "counterpartyHandle": {
+                    "type": ["string", "null"],
+                    "minLength": 1
+                  },
                   "createdAt": {
                     "type": ["string", "null"],
                     "format": "date-time"
@@ -4448,6 +4557,8 @@
                   "currency",
                   "source",
                   "status",
+                  "paymentRail",
+                  "counterpartyHandle",
                   "createdAt",
                   "updatedAt"
                 ]
@@ -4457,6 +4568,63 @@
           }
         },
         "required": ["bill", "transfer"]
+      },
+      "PendingTransaction": {
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["expense", "income"]
+          },
+          "occurredAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "userId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "confirmed", "dismissed"]
+          },
+          "resultingTransactionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "accountId",
+          "type",
+          "occurredAt",
+          "description",
+          "id",
+          "userId",
+          "status",
+          "createdAt",
+          "updatedAt"
+        ]
       }
     },
     "parameters": {}
@@ -11669,6 +11837,404 @@
           },
           "409": {
             "description": "Bill is unreconciled, paid, or would be overpaid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/pending-transactions": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "Idempotency-Key",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "accountId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": ["expense", "income"]
+                  },
+                  "occurredAt": {
+                    "type": ["string", "null"],
+                    "format": "date-time"
+                  },
+                  "description": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 500
+                  }
+                },
+                "required": ["accountId", "type", "occurredAt", "description"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Idempotent replay of the created pending transaction",
+            "headers": {
+              "Idempotency-Replayed": {
+                "schema": {
+                  "type": "string",
+                  "enum": ["true"]
+                },
+                "required": true
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PendingTransaction"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created pending transaction",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PendingTransaction"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Account not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency key was already used for different request intent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["pending", "confirmed", "dismissed"],
+              "default": "pending"
+            },
+            "required": false,
+            "name": "status",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pending transactions page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PendingTransaction"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/pending-transactions/{id}/confirm": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "Idempotency-Key",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "amountMinor": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": ["amountMinor"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Pending transaction confirmed into a real transaction",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PendingTransaction"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Pending transaction not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Pending transaction was already dismissed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/pending-transactions/{id}/dismiss": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "Idempotency-Key",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Pending transaction dismissed, or idempotent replay",
+            "headers": {
+              "Idempotency-Replayed": {
+                "schema": {
+                  "type": "string",
+                  "enum": ["true"]
+                },
+                "required": false
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Pending transaction not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency key was already used for different request intent",
             "content": {
               "application/json": {
                 "schema": {

@@ -73,7 +73,8 @@ export class RecurringReconciliationService implements TransactionCreatedHook {
         accountId: incoming.accountId,
         type: incoming.type,
         amountMinor: incoming.amountMinor,
-        occurredAt: incoming.occurredAt
+        occurredAt: incoming.occurredAt,
+        description: incoming.description
       },
       candidates
     );

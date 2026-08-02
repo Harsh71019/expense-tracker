@@ -56,14 +56,14 @@ describe("EditDisplayNameForm", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("disables Save until the name changes from the current value", async () => {
+  it("disables Save Changes until the name changes from the current value", async () => {
     const user = userEvent.setup();
     render(<EditDisplayNameForm initialProfile={profile} />);
 
-    expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Save Changes" })).toBeDisabled();
     await user.clear(screen.getByLabelText("Display name"));
     await user.type(screen.getByLabelText("Display name"), "New Name");
-    expect(screen.getByRole("button", { name: "Save" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Save Changes" })).toBeEnabled();
   });
 
   it("submits the new name and shows a success toast", async () => {
@@ -73,7 +73,7 @@ describe("EditDisplayNameForm", () => {
 
     await user.clear(screen.getByLabelText("Display name"));
     await user.type(screen.getByLabelText("Display name"), "New Name");
-    await user.click(screen.getByRole("button", { name: "Save" }));
+    await user.click(screen.getByRole("button", { name: "Save Changes" }));
 
     expect(mocks.mutateAsync).toHaveBeenCalledWith({ displayName: "New Name" });
     expect(mocks.toastSuccess).toHaveBeenCalledWith("Profile updated");
@@ -85,7 +85,7 @@ describe("EditDisplayNameForm", () => {
 
     await user.clear(screen.getByLabelText("Display name"));
     await user.type(screen.getByLabelText("Display name"), " ");
-    await user.click(screen.getByRole("button", { name: "Save" }));
+    await user.click(screen.getByRole("button", { name: "Save Changes" }));
 
     expect(mocks.mutateAsync).not.toHaveBeenCalled();
   });
@@ -101,7 +101,7 @@ describe("EditDisplayNameForm", () => {
 
     await user.clear(screen.getByLabelText("Display name"));
     await user.type(screen.getByLabelText("Display name"), "New Name");
-    await user.click(screen.getByRole("button", { name: "Save" }));
+    await user.click(screen.getByRole("button", { name: "Save Changes" }));
 
     expect(await screen.findByText("Too long")).toBeInTheDocument();
     expect(mocks.toastError).not.toHaveBeenCalled();
@@ -114,7 +114,7 @@ describe("EditDisplayNameForm", () => {
 
     await user.clear(screen.getByLabelText("Display name"));
     await user.type(screen.getByLabelText("Display name"), "New Name");
-    await user.click(screen.getByRole("button", { name: "Save" }));
+    await user.click(screen.getByRole("button", { name: "Save Changes" }));
 
     expect(mocks.toastError).toHaveBeenCalledWith("Could not update your profile.");
   });

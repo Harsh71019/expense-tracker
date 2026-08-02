@@ -12,7 +12,11 @@ import { and, eq, gte, inArray, lte } from "drizzle-orm";
 
 import { DATABASE_CONNECTION } from "../common/db/db.module.js";
 import type { DrizzleDb } from "../common/db/db.module.js";
-import { recurringReconciliations, transactions } from "../common/db/schema/index.js";
+import {
+  recurringReconciliations,
+  recurringRules,
+  transactions
+} from "../common/db/schema/index.js";
 import { stripNulls } from "../common/db/strip-nulls.js";
 import type { DbTx } from "../common/db/db-txn.js";
 import type { RecurringCandidate } from "./recurring-reconciliation-matcher.js";
@@ -54,9 +58,11 @@ export class RecurringReconciliationRepository {
         accountId: transactions.accountId,
         type: transactions.type,
         amountMinor: transactions.amountMinor,
-        occurredAt: transactions.occurredAt
+        occurredAt: transactions.occurredAt,
+        templateDescription: recurringRules.templateDescription
       })
       .from(transactions)
+      .innerJoin(recurringRules, eq(recurringRules.id, transactions.recurringRuleId))
       .where(
         and(
           eq(transactions.userId, userId),
@@ -80,7 +86,8 @@ export class RecurringReconciliationRepository {
           accountId: row.accountId,
           type: row.type,
           amountMinor: row.amountMinor,
-          occurredAt: row.occurredAt
+          occurredAt: row.occurredAt,
+          templateDescription: row.templateDescription
         };
       });
   }

@@ -15,6 +15,8 @@ const base = {
   tags: [],
   currency: "INR" as const,
   source: "manual" as const,
+  paymentRail: "unknown" as const,
+  counterpartyHandle: null,
   createdAt: new Date(),
   updatedAt: new Date()
 };
@@ -86,5 +88,21 @@ describe("TxnRow", () => {
       <TxnRow transaction={{ ...base, status: "posted" }} category={category} onOpen={vi.fn()} />
     );
     expect(screen.queryByText("Manual")).toBeNull();
+  });
+
+  it("shows a known payment rail and stays quiet for unknown rail", () => {
+    const { rerender } = render(
+      <TxnRow
+        transaction={{ ...base, status: "posted", paymentRail: "upi" }}
+        category={category}
+        onOpen={vi.fn()}
+      />
+    );
+    expect(screen.getByText("UPI")).toBeVisible();
+
+    rerender(
+      <TxnRow transaction={{ ...base, status: "posted" }} category={category} onOpen={vi.fn()} />
+    );
+    expect(screen.queryByText("UPI")).not.toBeInTheDocument();
   });
 });

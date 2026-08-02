@@ -18,6 +18,7 @@ function candidate(overrides: Partial<RecurringCandidate> = {}): RecurringCandid
     type: "expense",
     amountMinor: 200_000,
     occurredAt: new Date("2026-08-01T00:00:00.000Z"),
+    templateDescription: "Recurring charge",
     ...overrides
   };
 }
@@ -29,7 +30,8 @@ describe("matchIncomingTransaction", () => {
         accountId: ACCOUNT_ID,
         type: "expense",
         amountMinor: 200_000,
-        occurredAt: new Date("2026-08-01T00:00:00.000Z")
+        occurredAt: new Date("2026-08-01T00:00:00.000Z"),
+        description: "Bank debit"
       },
       [candidate()]
     );
@@ -46,7 +48,8 @@ describe("matchIncomingTransaction", () => {
         accountId: ACCOUNT_ID,
         type: "expense",
         amountMinor: 200_000,
-        occurredAt: new Date("2026-08-03T00:00:00.000Z")
+        occurredAt: new Date("2026-08-03T00:00:00.000Z"),
+        description: "Bank debit"
       },
       [candidate({ occurredAt: new Date("2026-08-01T00:00:00.000Z") })]
     );
@@ -59,7 +62,8 @@ describe("matchIncomingTransaction", () => {
         accountId: ACCOUNT_ID,
         type: "expense",
         amountMinor: 200_000,
-        occurredAt: new Date("2026-08-01T00:00:00.000Z")
+        occurredAt: new Date("2026-08-01T00:00:00.000Z"),
+        description: "Bank debit"
       },
       [
         candidate({ transactionId: "33333333-3333-4333-8333-333333333333", ruleId: RULE_ID }),
@@ -81,7 +85,8 @@ describe("matchIncomingTransaction", () => {
         accountId: ACCOUNT_ID,
         type: "expense",
         amountMinor: 250_000,
-        occurredAt: new Date("2026-08-01T00:00:00.000Z")
+        occurredAt: new Date("2026-08-01T00:00:00.000Z"),
+        description: "Bank debit"
       },
       [candidate({ amountMinor: 200_000 })]
     );
@@ -97,7 +102,8 @@ describe("matchIncomingTransaction", () => {
         accountId: ACCOUNT_ID,
         type: "expense",
         amountMinor: 200_000,
-        occurredAt: new Date("2026-08-01T00:00:00.000Z")
+        occurredAt: new Date("2026-08-01T00:00:00.000Z"),
+        description: "Bank debit"
       },
       [candidate({ accountId: OTHER_ACCOUNT_ID })]
     );
@@ -110,7 +116,8 @@ describe("matchIncomingTransaction", () => {
         accountId: ACCOUNT_ID,
         type: "income",
         amountMinor: 200_000,
-        occurredAt: new Date("2026-08-01T00:00:00.000Z")
+        occurredAt: new Date("2026-08-01T00:00:00.000Z"),
+        description: "Bank debit"
       },
       [candidate({ type: "expense" })]
     );
@@ -123,7 +130,8 @@ describe("matchIncomingTransaction", () => {
         accountId: ACCOUNT_ID,
         type: "expense",
         amountMinor: 200_000,
-        occurredAt: new Date("2026-08-10T00:00:00.000Z")
+        occurredAt: new Date("2026-08-10T00:00:00.000Z"),
+        description: "Bank debit"
       },
       [candidate({ occurredAt: new Date("2026-08-01T00:00:00.000Z") })]
     );
@@ -136,10 +144,74 @@ describe("matchIncomingTransaction", () => {
         accountId: ACCOUNT_ID,
         type: "expense",
         amountMinor: 200_000,
-        occurredAt: new Date("2026-08-01T00:00:00.000Z")
+        occurredAt: new Date("2026-08-01T00:00:00.000Z"),
+        description: "Bank debit"
       },
       []
     );
     expect(result).toEqual({ outcome: "no_match" });
+  });
+
+  it("auto-matches via a shared mandate reference token even when the amount changed", () => {
+    const result = matchIncomingTransaction(
+      {
+        accountId: ACCOUNT_ID,
+        type: "expense",
+        amountMinor: 249_900,
+        occurredAt: new Date("2026-08-01T00:00:00.000Z"),
+        description: "CARD/EMANDATE/Anthropic/mandate:YIcCmzpAfi"
+      },
+      [candidate({ amountMinor: 199_900, templateDescription: "Anthropic (mandate:YIcCmzpAfi)" })]
+    );
+    expect(result).toEqual({
+      outcome: "auto_matched",
+      recurringTransactionId: "33333333-3333-4333-8333-333333333333",
+      recurringRuleId: RULE_ID
+    });
+  });
+
+  it("flags two candidates sharing the same mandate reference token as ambiguous", () => {
+    const result = matchIncomingTransaction(
+      {
+        accountId: ACCOUNT_ID,
+        type: "expense",
+        amountMinor: 249_900,
+        occurredAt: new Date("2026-08-01T00:00:00.000Z"),
+        description: "CARD/EMANDATE/Anthropic/mandate:YIcCmzpAfi"
+      },
+      [
+        candidate({
+          transactionId: "33333333-3333-4333-8333-333333333333",
+          ruleId: RULE_ID,
+          templateDescription: "Anthropic (mandate:YIcCmzpAfi)"
+        }),
+        candidate({
+          transactionId: "44444444-4444-4444-8444-444444444444",
+          ruleId: OTHER_RULE_ID,
+          templateDescription: "Duplicate rule (mandate:YIcCmzpAfi)"
+        })
+      ]
+    );
+    expect(result).toEqual({
+      outcome: "ambiguous",
+      candidateTransactionIds: [
+        "33333333-3333-4333-8333-333333333333",
+        "44444444-4444-4444-8444-444444444444"
+      ]
+    });
+  });
+
+  it("falls back to amount/window matching when descriptions share no reference token", () => {
+    const result = matchIncomingTransaction(
+      {
+        accountId: ACCOUNT_ID,
+        type: "expense",
+        amountMinor: 200_000,
+        occurredAt: new Date("2026-08-01T00:00:00.000Z"),
+        description: "CARD/EMANDATE/Anthropic/mandate:YIcCmzpAfi"
+      },
+      [candidate({ amountMinor: 200_000, templateDescription: "Netflix (mandate:XYp7DcGXwW)" })]
+    );
+    expect(result.outcome).toBe("auto_matched");
   });
 });

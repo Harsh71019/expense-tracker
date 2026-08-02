@@ -2142,6 +2142,8 @@ function seedTransactions(store: MockStore): void {
       tags: [...template.tags],
       source: "manual",
       status: "posted",
+      paymentRail: "unknown",
+      counterpartyHandle: null,
       createdAt: occurredAt,
       updatedAt: occurredAt
     };
@@ -2276,6 +2278,8 @@ function seedTransfers(store: MockStore): void {
       tags: [...template.tags],
       source: "manual",
       status: "posted",
+      paymentRail: "unknown",
+      counterpartyHandle: null,
       transferGroupId,
       createdAt: occurredAt,
       updatedAt: occurredAt
@@ -2292,6 +2296,8 @@ function seedTransfers(store: MockStore): void {
       tags: [...template.tags],
       source: "manual",
       status: "posted",
+      paymentRail: "unknown",
+      counterpartyHandle: null,
       transferGroupId,
       createdAt: occurredAt,
       updatedAt: occurredAt

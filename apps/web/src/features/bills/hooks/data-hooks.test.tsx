@@ -130,6 +130,8 @@ const payment = BillPaymentResultSchema.parse({
       currency: "INR",
       source: "manual",
       status: "posted",
+      paymentRail: "unknown",
+      counterpartyHandle: null,
       transferGroupId: "3fa85f64-5717-4562-b3fc-2c963f66be07",
       createdAt: timestamp,
       updatedAt: timestamp
@@ -146,6 +148,8 @@ const payment = BillPaymentResultSchema.parse({
       currency: "INR",
       source: "manual",
       status: "posted",
+      paymentRail: "unknown",
+      counterpartyHandle: null,
       transferGroupId: "3fa85f64-5717-4562-b3fc-2c963f66be07",
       billId,
       createdAt: timestamp,

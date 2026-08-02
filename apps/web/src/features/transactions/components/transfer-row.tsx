@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 import { Money } from "@/components/ui/money";
 
 import { TXN_ROW_GRID } from "./txn-row";
+import { PaymentRailBadge } from "./payment-rail-badge";
 
 type Props = Readonly<{
   legs: Transaction[];
@@ -31,6 +32,9 @@ export function TransferRow({ legs, accounts, onOpen, onReverse, isReversing }: 
       ? "Account unavailable"
       : (accounts.find((account) => account.id === id)?.name ?? "Archived account");
   const posted = legs.some((leg) => leg.status === "posted");
+  const paymentRail = legs.every((leg) => leg.paymentRail === first.paymentRail)
+    ? first.paymentRail
+    : "unknown";
 
   return (
     <div
@@ -56,6 +60,7 @@ export function TransferRow({ legs, accounts, onOpen, onReverse, isReversing }: 
             <span className="shrink-0 rounded-md bg-income/10 px-1.5 py-0.5 font-mono text-[9px] font-bold tracking-wider text-income uppercase">
               ⤢ Transfer
             </span>
+            <PaymentRailBadge rail={paymentRail} />
           </div>
           <p className="mt-0.5 truncate text-xs text-foreground-muted">
             {accountName(expense?.accountId)} → {accountName(income?.accountId)}

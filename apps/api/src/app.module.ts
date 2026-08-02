@@ -36,6 +36,7 @@ import { GoalsModule } from "./goals/goals.module.js";
 import { ImportsModule } from "./imports/imports.module.js";
 import { NotificationsModule } from "./notifications/notifications.module.js";
 import { OpenApiModule } from "./openapi/openapi.module.js";
+import { PendingTransactionsModule } from "./pending-transactions/pending-transactions.module.js";
 import { RecurringModule } from "./recurring/recurring.module.js";
 import { TransactionReconciliationHookModule } from "./recurring/transaction-reconciliation-hook.module.js";
 import { ReportsModule } from "./reports/reports.module.js";
@@ -88,6 +89,7 @@ function isUnthrottledPath(context: ExecutionContext): boolean {
     ReportsModule,
     SpendingWarningsModule,
     GoalsModule,
+    PendingTransactionsModule,
     BudgetsModule,
     DashboardModule,
     OpenApiModule,

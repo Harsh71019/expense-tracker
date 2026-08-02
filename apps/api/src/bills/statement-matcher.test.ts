@@ -23,6 +23,8 @@ function transaction(
     currency: "INR",
     source: "manual",
     status: "posted",
+    paymentRail: "unknown",
+    counterpartyHandle: null,
     createdAt: occurredAt,
     updatedAt: occurredAt
   });

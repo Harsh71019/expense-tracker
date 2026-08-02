@@ -43,6 +43,8 @@ function transaction(overrides: Partial<Transaction>): Transaction {
     tags: [],
     source: "api",
     status: "posted",
+    paymentRail: "unknown",
+    counterpartyHandle: null,
     createdAt: timestamp,
     updatedAt: timestamp,
     ...overrides

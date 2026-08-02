@@ -221,6 +221,8 @@ export function transactionHandlers(http: MockHttp, store: MockStore): HttpHandl
         tags: body.tags ?? [],
         source: "manual",
         status: "posted",
+        paymentRail: "unknown",
+        counterpartyHandle: null,
         idempotencyKey: key,
         createdAt: now,
         updatedAt: now

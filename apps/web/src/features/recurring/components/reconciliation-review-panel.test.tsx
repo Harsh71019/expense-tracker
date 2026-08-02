@@ -56,6 +56,8 @@ function fixture(id: string, description: string): RecurringReconciliationReview
       tags: [],
       source: "api",
       status: "posted",
+      paymentRail: "unknown",
+      counterpartyHandle: null,
       createdAt: timestamp,
       updatedAt: timestamp
     },

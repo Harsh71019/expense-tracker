@@ -23,6 +23,8 @@ const TRANSACTION: Transaction = {
   amountMinor: 5_000,
   currency: "INR",
   source: "manual",
+  paymentRail: "unknown",
+  counterpartyHandle: null,
   occurredAt: NOW,
   description: "Coffee",
   tags: ["food"],

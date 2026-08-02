@@ -4,6 +4,7 @@ import { AccountIdSchema } from "./account.js";
 import { CategoryColorSchema, CategoryIconSchema, CategoryIdSchema } from "./category.js";
 import { MonthSchema } from "./report.js";
 import { PageInfoSchema } from "./pagination.js";
+import { TransactionTextPaymentRailSchema } from "./transaction-text.js";
 
 const MinorAmountSchema = z.number().int().min(1).max(Number.MAX_SAFE_INTEGER);
 
@@ -40,6 +41,8 @@ export const TransactionSchema = CreateTransactionSchema.extend({
   transferGroupId: TransferGroupIdSchema.optional(),
   billId: CreditCardBillReferenceIdSchema.optional(),
   recurringRuleId: RecurringRuleReferenceIdSchema.optional(),
+  paymentRail: TransactionTextPaymentRailSchema,
+  counterpartyHandle: z.string().min(1).nullable(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date()
 });

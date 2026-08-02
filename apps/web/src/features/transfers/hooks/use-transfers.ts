@@ -50,7 +50,7 @@ export function useCreateTransfer(): ReturnType<
     onSettled: async () => {
       await Promise.all([
         client.invalidateQueries({ queryKey: qk.accounts() }),
-        client.invalidateQueries({ queryKey: qk.transactionLists() }),
+        client.invalidateQueries({ queryKey: qk.transactions() }),
         client.invalidateQueries({ queryKey: qk.netWorth() }),
         client.invalidateQueries({ queryKey: qk.goals() })
       ]);
@@ -86,7 +86,7 @@ export function useReverseTransfer(): ReturnType<
     onSettled: async () => {
       await Promise.all([
         client.invalidateQueries({ queryKey: qk.accounts() }),
-        client.invalidateQueries({ queryKey: qk.transactionLists() }),
+        client.invalidateQueries({ queryKey: qk.transactions() }),
         client.invalidateQueries({ queryKey: qk.netWorth() }),
         client.invalidateQueries({ queryKey: qk.goals() })
       ]);

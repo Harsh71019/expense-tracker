@@ -1700,6 +1700,68 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/v1/transactions/insights": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Current IST-month transaction insights */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["TransactionInsights"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/v1/transactions/{transactionId}": {
     parameters: {
       query?: never;
@@ -6107,6 +6169,32 @@ export interface components {
         hasMore: boolean;
         limit: number;
       };
+    };
+    TransactionInsights: {
+      month: string;
+      monthlyTransactionCount: number;
+      dailyActivity: {
+        date: string;
+        transactionCount: number;
+      }[];
+      highestExpense: {
+        /** Format: uuid */
+        id: string;
+        description: string;
+        amountMinor: number;
+        /** Format: date-time */
+        occurredAt: string | null;
+      } | null;
+      topSpendingCategory: {
+        /** Format: uuid */
+        categoryId?: string;
+        name: string;
+        color?: string;
+        icon?: string;
+        amountMinor: number;
+        transactionCount: number;
+      } | null;
+      lifetimeTransactionCount: number;
     };
     Transaction: {
       /** Format: uuid */

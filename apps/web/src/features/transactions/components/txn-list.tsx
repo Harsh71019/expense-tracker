@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import {
   type ListTransactionsQuery,
   type Transaction,
+  type TransactionInsights,
   type TransactionPage
 } from "@treasury-ops/shared";
 import { useState } from "react";
@@ -16,14 +17,20 @@ import { TxnDetailDrawer } from "./txn-detail-drawer";
 import { TxnFilters } from "./txn-filters";
 import { TXN_ROW_GRID, TxnRow } from "./txn-row";
 import { TransferRow } from "./transfer-row";
+import { TransactionInsightsCards } from "./transaction-insights-cards";
 import { useAccounts } from "@/features/accounts";
 import { useCategories } from "@/features/categories";
 import { useReverseTransfer } from "@/features/transfers/hooks/use-transfers";
 
 export function TxnList({
   filters,
-  initialPage
-}: Readonly<{ filters: ListTransactionsQuery; initialPage: TransactionPage }>): ReactNode {
+  initialPage,
+  initialInsights
+}: Readonly<{
+  filters: ListTransactionsQuery;
+  initialPage: TransactionPage;
+  initialInsights: TransactionInsights | null;
+}>): ReactNode {
   const list = useTxnList(filters, initialPage);
   const reverseTransfer = useReverseTransfer();
   const accounts = useAccounts();
@@ -58,6 +65,8 @@ export function TxnList({
           <span className="mr-1 text-base leading-none">+</span> New entry
         </Button>
       </header>
+
+      <TransactionInsightsCards initialInsights={initialInsights} />
 
       <TxnFilters filters={filters} />
 

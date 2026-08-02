@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 import { useReverseTxn } from "./use-reverse-txn";
+import { useTransactionInsights } from "./use-transaction-insights";
 import { useTxnList } from "./use-txn-list";
 
 const mocks = vi.hoisted(() => ({ GET: vi.fn(), POST: vi.fn() }));
@@ -82,6 +83,25 @@ describe("transaction data hooks", () => {
         })
       }
     });
+  });
+
+  it("loads and parses transaction insights", async () => {
+    mocks.GET.mockResolvedValue({
+      data: {
+        month: "2026-08",
+        monthlyTransactionCount: 1,
+        dailyActivity: [{ date: "2026-08-01", transactionCount: 1 }],
+        highestExpense: null,
+        topSpendingCategory: null,
+        lifetimeTransactionCount: 9
+      },
+      error: undefined,
+      response
+    });
+    const hook = renderHook(() => useTransactionInsights(null), { wrapper });
+
+    await waitFor(() => expect(hook.result.current.data?.lifetimeTransactionCount).toBe(9));
+    expect(mocks.GET).toHaveBeenCalledWith("/v1/transactions/insights");
   });
 
   it("surfaces API errors while loading another page", async () => {

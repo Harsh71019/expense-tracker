@@ -123,4 +123,18 @@ describe("TransactionService Unit Tests", () => {
       ).rejects.toThrow(CategoryKindMismatchError);
     });
   });
+
+  it("requests insights for the current IST month", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-07-31T19:00:00.000Z"));
+    const mockTx = {
+      getInsights: vi.fn(async () => ({ month: "2026-08" }))
+    };
+    const service = createService({ mockTx });
+
+    await service.getInsights("u1");
+
+    expect(mockTx.getInsights).toHaveBeenCalledWith("u1", "2026-08");
+    vi.useRealTimers();
+  });
 });

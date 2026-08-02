@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import {
   addDaysUtc,
   istCalendarDateStartUtc,
+  istMonthBounds,
+  listISTMonthDayKeys,
   toISTCalendarDate,
   toISTMonth,
   toISTWeekStart
@@ -36,6 +38,22 @@ describe("toISTMonth", () => {
   it("rolls a late-UTC-evening instant on the last day of the month into the next month", () => {
     // 2026-06-30T19:00:00Z + 5:30 = 2026-07-01T00:30 IST
     expect(toISTMonth(new Date("2026-06-30T19:00:00.000Z"))).toBe("2026-07");
+  });
+});
+
+describe("IST month helpers", () => {
+  it("returns exact half-open UTC bounds for an IST month", () => {
+    expect(istMonthBounds("2026-08")).toEqual({
+      start: new Date("2026-07-31T18:30:00.000Z"),
+      end: new Date("2026-08-31T18:30:00.000Z")
+    });
+  });
+
+  it("lists every day in leap and non-leap months", () => {
+    const leapDays = listISTMonthDayKeys("2024-02");
+    expect(leapDays).toHaveLength(29);
+    expect(leapDays[0]).toBe("2024-02-01");
+    expect(leapDays.at(-1)).toBe("2024-02-29");
   });
 });
 

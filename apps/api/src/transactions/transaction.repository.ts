@@ -1,12 +1,16 @@
 import { Inject, Injectable } from "@nestjs/common";
 import {
+  TransactionInsightsSchema,
   TransactionSchema,
+  parseSafeIntegerMinor,
   type CreditCardBillId,
   type CreateTransaction,
   type ImportBatchId,
   type ListTransactionsQuery,
+  type Month,
   type ParsedRow,
   type Transaction,
+  type TransactionInsights,
   type TransactionPage,
   type TransactionSource,
   type UpdateTransaction
@@ -17,11 +21,13 @@ import { z } from "zod";
 import { InvalidCursorError } from "../common/errors/invalid-cursor.error.js";
 import { DATABASE_CONNECTION } from "../common/db/db.module.js";
 import type { DrizzleDb } from "../common/db/db.module.js";
-import { transactions } from "../common/db/schema/index.js";
+import { categories, transactions } from "../common/db/schema/index.js";
 import { stripNulls } from "../common/db/strip-nulls.js";
 import type { DbTx } from "../common/db/db-txn.js";
+import { istMonthBounds, listISTMonthDayKeys } from "../common/time/ist.js";
 
 const CursorPayloadSchema = z.object({ occurredAt: z.string().datetime(), id: z.string().uuid() });
+const IST_TIME_ZONE = "Asia/Kolkata";
 
 @Injectable()
 export class TransactionRepository {
@@ -99,6 +105,124 @@ export class TransactionRepository {
       hasMore && last !== undefined ? encodeCursor(last.occurredAt, last.id) : null;
 
     return { items, pageInfo: { nextCursor, hasMore, limit: query.limit } };
+  }
+
+  /**
+   * A compact, live read model for the transaction page. Counts represent
+   * logical ledger entries: the two legs of one transfer share a group id
+   * and count once, while reversals remain separate append-only activity.
+   * Spending rankings exclude transfers and non-posted rows so moving money
+   * between owned accounts cannot become a user's "largest expense".
+   */
+  async getInsights(userId: string, month: Month): Promise<TransactionInsights> {
+    const { start, end } = istMonthBounds(month);
+    const monthlyWhere = and(
+      eq(transactions.userId, userId),
+      gte(transactions.occurredAt, start),
+      lt(transactions.occurredAt, end)
+    );
+    const postedExpenseWhere = and(
+      monthlyWhere,
+      eq(transactions.status, "posted"),
+      eq(transactions.type, "expense"),
+      isNull(transactions.transferGroupId)
+    );
+    const logicalTransactionId = sql<string>`coalesce(${transactions.transferGroupId}::text, ${transactions.id}::text)`;
+    const istDay = sql<string>`to_char(${transactions.occurredAt} AT TIME ZONE ${IST_TIME_ZONE}, 'YYYY-MM-DD')`;
+    const spentTotal = sql<string>`sum(${transactions.amountMinor})::bigint`;
+
+    const [monthlyRows, dailyRows, highestRows, topCategoryRows, lifetimeRows] = await Promise.all([
+      this.db
+        .select({
+          transactionCount: sql<string>`count(distinct ${logicalTransactionId})::bigint`
+        })
+        .from(transactions)
+        .where(monthlyWhere),
+      this.db
+        .select({
+          date: istDay,
+          transactionCount: sql<string>`count(distinct ${logicalTransactionId})::bigint`
+        })
+        .from(transactions)
+        .where(monthlyWhere)
+        .groupBy(sql`1`)
+        .orderBy(sql`1`),
+      this.db
+        .select({
+          id: transactions.id,
+          description: transactions.description,
+          amountMinor: transactions.amountMinor,
+          occurredAt: transactions.occurredAt
+        })
+        .from(transactions)
+        .where(postedExpenseWhere)
+        .orderBy(
+          desc(transactions.amountMinor),
+          desc(transactions.occurredAt),
+          desc(transactions.id)
+        )
+        .limit(1),
+      this.db
+        .select({
+          categoryId: transactions.categoryId,
+          name: categories.name,
+          color: categories.color,
+          icon: categories.icon,
+          amountMinor: spentTotal,
+          transactionCount: sql<string>`count(*)::bigint`
+        })
+        .from(transactions)
+        .leftJoin(
+          categories,
+          and(eq(categories.id, transactions.categoryId), eq(categories.userId, userId))
+        )
+        .where(postedExpenseWhere)
+        .groupBy(transactions.categoryId, categories.name, categories.color, categories.icon)
+        .orderBy(desc(spentTotal), transactions.categoryId)
+        .limit(1),
+      this.db
+        .select({
+          transactionCount: sql<string>`count(distinct ${logicalTransactionId})::bigint`
+        })
+        .from(transactions)
+        .where(eq(transactions.userId, userId))
+    ]);
+
+    const dailyByDate = new Map(
+      dailyRows.map((row) => [row.date, parseSafeIntegerMinor(row.transactionCount)])
+    );
+    const highest = highestRows[0];
+    const topCategory = topCategoryRows[0];
+
+    return TransactionInsightsSchema.parse({
+      month,
+      monthlyTransactionCount: parseSafeIntegerMinor(monthlyRows[0]?.transactionCount ?? 0),
+      dailyActivity: listISTMonthDayKeys(month).map((date) => ({
+        date,
+        transactionCount: dailyByDate.get(date) ?? 0
+      })),
+      highestExpense:
+        highest === undefined
+          ? null
+          : {
+              id: highest.id,
+              description: highest.description,
+              amountMinor: highest.amountMinor,
+              occurredAt: highest.occurredAt
+            },
+      topSpendingCategory:
+        topCategory === undefined
+          ? null
+          : {
+              ...(topCategory.categoryId === null ? {} : { categoryId: topCategory.categoryId }),
+              name: topCategory.name ?? "Uncategorized",
+              ...(topCategory.color === null ? {} : { color: topCategory.color }),
+              ...(topCategory.icon === null ? {} : { icon: topCategory.icon }),
+              amountMinor: parseSafeIntegerMinor(topCategory.amountMinor),
+              transactionCount: parseSafeIntegerMinor(topCategory.transactionCount)
+            },
+      lifetimeTransactionCount: parseSafeIntegerMinor(lifetimeRows[0]?.transactionCount ?? 0)
+    });
   }
 
   /**

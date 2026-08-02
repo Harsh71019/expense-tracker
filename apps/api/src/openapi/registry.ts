@@ -63,6 +63,7 @@ import {
   TopSpendingItemSchema,
   TopSpendingQuerySchema,
   TransactionIdSchema,
+  TransactionInsightsSchema,
   TransactionPageSchema,
   TransactionSchema,
   UpdateCategoryGroupSchema,
@@ -131,6 +132,7 @@ const Category = CategorySchema.meta({ id: "Category" });
 const CategoryRule = CategoryRuleSchema.meta({ id: "CategoryRule" });
 const Transaction = TransactionSchema.meta({ id: "Transaction" });
 const TransactionPage = TransactionPageSchema.meta({ id: "TransactionPage" });
+const TransactionInsights = TransactionInsightsSchema.meta({ id: "TransactionInsights" });
 const ProblemDetails = ProblemDetailsSchema.meta({ id: "ProblemDetails" });
 const Transfer = TransferSchema.meta({ id: "Transfer" });
 const TransferReversal = TransferReversalSchema.meta({ id: "TransferReversal" });
@@ -483,6 +485,15 @@ registry.registerPath({
   request: { query: ListTransactionsQuerySchema },
   responses: {
     200: { description: "Transaction page", ...json(TransactionPage) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "get",
+  path: "/v1/transactions/insights",
+  security: secured,
+  responses: {
+    200: { description: "Current IST-month transaction insights", ...json(TransactionInsights) },
     ...problemResponses
   }
 });

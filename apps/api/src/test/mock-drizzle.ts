@@ -16,6 +16,7 @@ export function createMockDrizzleDb(defaultReturnRows: unknown[] = []): MockDriz
     "selectDistinct",
     "from",
     "innerJoin",
+    "leftJoin",
     "where",
     "orderBy",
     "groupBy",

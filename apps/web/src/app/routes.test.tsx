@@ -164,6 +164,12 @@ vi.mock("@/features/transactions/server/get-txn-page", () => ({
     pageInfo: { nextCursor: null, hasMore: false, limit: 50 }
   })
 }));
+vi.mock("@/features/pending-transactions/components/pending-transactions-panel", () => ({
+  PendingTransactionsPanel: () => null
+}));
+vi.mock("@/features/pending-transactions/server/get-pending-transactions", () => ({
+  getPendingTransactions: async () => []
+}));
 vi.mock("@/features/spending-warnings", () => ({
   SpendingWarningsPage: () => <h1>Spending patterns</h1>,
   getSpendingWarnings: async () => null,

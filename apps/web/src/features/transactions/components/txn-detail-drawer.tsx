@@ -14,6 +14,7 @@ import { toast } from "@/lib/toast";
 import { useReverseTxn } from "../hooks/use-reverse-txn";
 import { useTxn, useUpdateTxn } from "../hooks/use-txn";
 import { ReverseConfirmDialog } from "./reverse-confirm-dialog";
+import { paymentRailLabel } from "./payment-rail-badge";
 
 const dateFormatter = new Intl.DateTimeFormat("en-IN", {
   dateStyle: "medium",
@@ -55,6 +56,7 @@ export function TxnDetailDrawer({
   const account = accounts.data?.find((item) => item.id === transaction.accountId);
   const category = categories.data?.find((item) => item.id === transaction.categoryId);
   const activeCategories = (categories.data ?? []).filter((item) => !item.isArchived);
+  const railLabel = paymentRailLabel(transaction.paymentRail);
 
   async function saveChanges(): Promise<void> {
     const patch = {
@@ -153,6 +155,24 @@ export function TxnDetailDrawer({
           <dd className="text-right text-sm font-semibold text-foreground capitalize">
             {transaction.status}
           </dd>
+          {railLabel === null ? null : (
+            <>
+              <dt className="font-mono text-[10px] font-bold tracking-wider text-foreground-muted uppercase">
+                Payment rail
+              </dt>
+              <dd className="text-right text-sm font-semibold text-foreground">{railLabel}</dd>
+            </>
+          )}
+          {transaction.counterpartyHandle === null ? null : (
+            <>
+              <dt className="font-mono text-[10px] font-bold tracking-wider text-foreground-muted uppercase">
+                UPI handle
+              </dt>
+              <dd className="break-all text-right text-sm font-semibold text-foreground">
+                {transaction.counterpartyHandle}
+              </dd>
+            </>
+          )}
         </dl>
 
         <Link

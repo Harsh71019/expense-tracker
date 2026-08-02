@@ -33,6 +33,8 @@ const incomingTransaction = {
   tags: [],
   source: "api" as const,
   status: "posted" as const,
+  paymentRail: "unknown" as const,
+  counterpartyHandle: null,
   createdAt: new Date(),
   updatedAt: new Date()
 };

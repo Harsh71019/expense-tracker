@@ -14,6 +14,8 @@ describe("TransactionMutationService Unit Tests", () => {
     amountMinor: 5000,
     currency: "INR" as const,
     source: "manual" as const,
+    paymentRail: "unknown" as const,
+    counterpartyHandle: null,
     occurredAt: new Date("2026-01-01"),
     description: "Coffee",
     tags: [],

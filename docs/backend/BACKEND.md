@@ -140,6 +140,21 @@ spending-warning references; linked historical data is never cascaded.
 }
 ```
 
+The transaction API read model also includes derived, non-persisted payment context:
+
+```ts
+{
+  paymentRail: 'upi' | 'card' | 'neft' | 'rtgs' | 'imps' | 'nach' | 'unknown',
+  counterpartyHandle: string | null
+}
+```
+
+`TransactionRepository` computes these fields from `description` through the versioned private
+narration normalizer before parsing the response with `TransactionSchema`. Create/update requests
+do not accept the fields, no transaction column stores them, and absent or conflicting evidence
+returns `unknown`/`null`. This same mapping covers normal transactions, reversals, imports, and both
+legs of a transfer.
+
 **Indexes**
 
 ```js

@@ -20,6 +20,8 @@ const FROM_LEG: Transaction = {
   amountMinor: 10_000,
   currency: "INR",
   source: "manual",
+  paymentRail: "unknown",
+  counterpartyHandle: null,
   occurredAt: NOW,
   description: "Transfer",
   tags: [],

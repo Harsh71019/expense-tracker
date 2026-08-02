@@ -6,6 +6,8 @@ import type { ReactNode } from "react";
 import { Money } from "@/components/ui/money";
 import { IconGlyph } from "@/features/categories";
 
+import { PaymentRailBadge } from "./payment-rail-badge";
+
 export const TXN_ROW_GRID =
   "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 md:grid-cols-[2.4fr_1fr_1fr_1.1fr] md:gap-4";
 
@@ -59,6 +61,7 @@ export function TxnRow({ transaction, category, onOpen }: TxnRowProps): ReactNod
                 {SOURCE_LABEL[transaction.source]}
               </span>
             )}
+            <PaymentRailBadge rail={transaction.paymentRail} />
           </div>
           {isReversed || isReversal ? (
             <p className="mt-0.5 text-xs font-medium text-amber-500">

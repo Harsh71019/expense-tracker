@@ -25,6 +25,7 @@ import { categories, transactions } from "../common/db/schema/index.js";
 import { stripNulls } from "../common/db/strip-nulls.js";
 import type { DbTx } from "../common/db/db-txn.js";
 import { istMonthBounds, listISTMonthDayKeys } from "../common/time/ist.js";
+import { normalizeTransactionText } from "../common/transaction-text/normalize-transaction-text.js";
 
 const CursorPayloadSchema = z.object({ occurredAt: z.string().datetime(), id: z.string().uuid() });
 const IST_TIME_ZONE = "Asia/Kolkata";
@@ -67,7 +68,7 @@ export class TransactionRepository {
       })
       .returning();
     if (row === undefined) throw new Error("Transaction insert did not return a row.");
-    return TransactionSchema.parse(stripNulls(row));
+    return toTransaction(row);
   }
 
   async findMany(userId: string, query: ListTransactionsQuery): Promise<TransactionPage> {
@@ -98,7 +99,7 @@ export class TransactionRepository {
       .limit(query.limit + 1);
 
     const page = rows.slice(0, query.limit);
-    const items = page.map((row) => TransactionSchema.parse(stripNulls(row)));
+    const items = page.map(toTransaction);
     const last = items.at(-1);
     const hasMore = rows.length > query.limit;
     const nextCursor =
@@ -293,7 +294,7 @@ export class TransactionRepository {
         )
       )
       .orderBy(transactions.occurredAt, transactions.id);
-    return rows.map((row) => TransactionSchema.parse(stripNulls(row)));
+    return rows.map(toTransaction);
   }
 
   async sumPostedBillPayments(
@@ -323,7 +324,7 @@ export class TransactionRepository {
       .select()
       .from(transactions)
       .where(and(eq(transactions.userId, userId), eq(transactions.idempotencyKey, idempotencyKey)));
-    return row === undefined ? null : TransactionSchema.parse(stripNulls(row));
+    return row === undefined ? null : toTransaction(row);
   }
 
   async findPostedById(
@@ -341,7 +342,7 @@ export class TransactionRepository {
           eq(transactions.status, "posted")
         )
       );
-    return row === undefined ? null : TransactionSchema.parse(stripNulls(row));
+    return row === undefined ? null : toTransaction(row);
   }
 
   async findById(userId: string, transactionId: string, tx?: DbTx): Promise<Transaction | null> {
@@ -350,7 +351,7 @@ export class TransactionRepository {
       .select()
       .from(transactions)
       .where(and(eq(transactions.id, transactionId), eq(transactions.userId, userId)));
-    return row === undefined ? null : TransactionSchema.parse(stripNulls(row));
+    return row === undefined ? null : toTransaction(row);
   }
 
   async updateNonMonetaryFields(
@@ -369,7 +370,7 @@ export class TransactionRepository {
       .set(set)
       .where(and(eq(transactions.id, transactionId), eq(transactions.userId, userId)))
       .returning();
-    return row === undefined ? null : TransactionSchema.parse(stripNulls(row));
+    return row === undefined ? null : toTransaction(row);
   }
 
   async findByReversalOf(userId: string, transactionId: string): Promise<Transaction | null> {
@@ -377,7 +378,7 @@ export class TransactionRepository {
       .select()
       .from(transactions)
       .where(and(eq(transactions.userId, userId), eq(transactions.reversalOf, transactionId)));
-    return row === undefined ? null : TransactionSchema.parse(stripNulls(row));
+    return row === undefined ? null : toTransaction(row);
   }
 
   async createReversal(
@@ -408,7 +409,7 @@ export class TransactionRepository {
       })
       .returning();
     if (row === undefined) throw new Error("Reversal insert did not return a row.");
-    return TransactionSchema.parse(stripNulls(row));
+    return toTransaction(row);
   }
 
   async insertImportedRows(
@@ -455,7 +456,7 @@ export class TransactionRepository {
           eq(transactions.status, "posted")
         )
       );
-    return rows.map((row) => TransactionSchema.parse(stripNulls(row)));
+    return rows.map(toTransaction);
   }
 
   /**
@@ -509,7 +510,7 @@ export class TransactionRepository {
         );
     }
 
-    return inserted.map((row) => TransactionSchema.parse(stripNulls(row)));
+    return inserted.map(toTransaction);
   }
 
   async findPostedLegsByTransferGroupId(
@@ -527,7 +528,7 @@ export class TransactionRepository {
           eq(transactions.status, "posted")
         )
       );
-    return rows.map((row) => TransactionSchema.parse(stripNulls(row)));
+    return rows.map(toTransaction);
   }
 
   async findLegsByTransferGroupId(userId: string, transferGroupId: string): Promise<Transaction[]> {
@@ -537,7 +538,7 @@ export class TransactionRepository {
       .where(
         and(eq(transactions.userId, userId), eq(transactions.transferGroupId, transferGroupId))
       );
-    return rows.map((row) => TransactionSchema.parse(stripNulls(row)));
+    return rows.map(toTransaction);
   }
 
   async markReversed(
@@ -559,6 +560,17 @@ export class TransactionRepository {
       .returning({ id: transactions.id });
     return rows.length === 1;
   }
+}
+
+type TransactionRow = typeof transactions.$inferSelect;
+
+function toTransaction(row: TransactionRow): Transaction {
+  const normalized = normalizeTransactionText(row.description);
+  return TransactionSchema.parse({
+    ...stripNulls(row),
+    paymentRail: normalized.paymentRail,
+    counterpartyHandle: normalized.counterpartyHandle
+  });
 }
 
 function encodeCursor(occurredAt: Date, id: string): string {

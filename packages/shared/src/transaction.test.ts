@@ -1,11 +1,68 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  CreateTransactionSchema,
   CreateTransferSchema,
   ListTransactionsQuerySchema,
+  TransactionSchema,
   TransactionInsightsSchema,
   UpdateTransactionSchema
 } from "./transaction.js";
+
+const TRANSACTION_ID = "3fa85f64-5717-4562-b3fc-2c963f66beef";
+const ACCOUNT_ID = "3fa85f64-5717-4562-b3fc-2c963f66beff";
+
+describe("TransactionSchema", () => {
+  const transaction = {
+    id: TRANSACTION_ID,
+    userId: "user-1",
+    accountId: ACCOUNT_ID,
+    type: "expense",
+    amountMinor: 10_000,
+    occurredAt: "2026-08-02T09:00:00.000Z",
+    description: "RTGS/DR/UTR:HDFC0000000001/ACME RENTALS",
+    tags: [],
+    currency: "INR",
+    source: "api",
+    status: "posted",
+    paymentRail: "rtgs",
+    counterpartyHandle: null,
+    createdAt: "2026-08-02T09:00:00.000Z",
+    updatedAt: "2026-08-02T09:00:00.000Z"
+  };
+
+  it("accepts required derived payment context on transaction responses", () => {
+    expect(TransactionSchema.parse(transaction)).toMatchObject({
+      paymentRail: "rtgs",
+      counterpartyHandle: null
+    });
+  });
+
+  it("rejects transaction responses without derived payment context", () => {
+    const missing = { ...transaction, paymentRail: undefined, counterpartyHandle: undefined };
+    expect(() => TransactionSchema.parse(missing)).toThrow();
+  });
+
+  it("keeps create requests backward compatible and ignores response-only fields", () => {
+    expect(
+      CreateTransactionSchema.parse({
+        accountId: ACCOUNT_ID,
+        type: "expense",
+        amountMinor: 10_000,
+        occurredAt: "2026-08-02T09:00:00.000Z",
+        description: "Rent",
+        paymentRail: "rtgs"
+      })
+    ).toEqual({
+      accountId: ACCOUNT_ID,
+      type: "expense",
+      amountMinor: 10_000,
+      occurredAt: new Date("2026-08-02T09:00:00.000Z"),
+      description: "Rent",
+      tags: []
+    });
+  });
+});
 
 describe("CreateTransferSchema", () => {
   it("accepts a transfer between two distinct accounts", () => {

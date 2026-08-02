@@ -51,6 +51,8 @@ const from = {
   tags: ["investing"],
   source: "manual" as const,
   status: "posted" as const,
+  paymentRail: "unknown" as const,
+  counterpartyHandle: null,
   createdAt: new Date(),
   updatedAt: new Date()
 };

@@ -51,6 +51,8 @@ const from = {
   tags: [],
   source: "manual" as const,
   status: "posted" as const,
+  paymentRail: "upi" as const,
+  counterpartyHandle: null,
   createdAt: new Date(),
   updatedAt: new Date()
 };
@@ -77,6 +79,7 @@ describe("TransferRow", () => {
     );
 
     expect(screen.getByText("HDFC Bank → Cash Wallet")).toBeVisible();
+    expect(screen.getByText("UPI")).toBeVisible();
     await user.click(
       screen.getByRole("button", { name: "Open transfer: ATM cash withdrawal transfer" })
     );
@@ -116,5 +119,20 @@ describe("TransferRow", () => {
       />
     );
     expect(screen.queryByRole("button", { name: "Reverse transfer" })).not.toBeInTheDocument();
+  });
+
+  it("hides payment rail when transfer legs disagree", () => {
+    render(
+      <TransferRow
+        legs={[from, { ...to, paymentRail: "neft" }]}
+        accounts={accounts}
+        onOpen={vi.fn()}
+        onReverse={vi.fn()}
+        isReversing={false}
+      />
+    );
+
+    expect(screen.queryByText("UPI")).not.toBeInTheDocument();
+    expect(screen.queryByText("NEFT")).not.toBeInTheDocument();
   });
 });

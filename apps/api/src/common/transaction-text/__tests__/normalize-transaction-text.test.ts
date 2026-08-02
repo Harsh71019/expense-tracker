@@ -69,6 +69,17 @@ describe("normalizeTransactionText", () => {
       });
     });
 
+    it("detects RTGS and extracts a labeled UTR conservatively", () => {
+      const result = normalizeTransactionText("RTGS/DR/UTR:HDFC0000000001/ACME RENTALS");
+      expect(result).toMatchObject({
+        counterpartyKey: "acme rentals",
+        paymentRail: "rtgs",
+        counterpartyHandle: null,
+        directionHint: "debit",
+        referenceTokens: [{ kind: "utr", value: "hdfc0000000001" }]
+      });
+    });
+
     it("preserves the NACH payee while separating the mandate reference", () => {
       const result = normalizeTransactionText("NACH/DR/MANDATE ABC123/NETFLIX INDIA");
       expect(result).toMatchObject({
@@ -114,6 +125,10 @@ describe("normalizeTransactionText", () => {
     expect(normalizeTransactionText("UPI NEFT DR CR TRANSFER")).toMatchObject({
       paymentRail: "unknown",
       directionHint: "unknown"
+    });
+    expect(normalizeTransactionText("RTGS NEFT DR TRANSFER")).toMatchObject({
+      paymentRail: "unknown",
+      directionHint: "debit"
     });
   });
 

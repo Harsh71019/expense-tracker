@@ -111,7 +111,7 @@ describe("production HTTP composition", () => {
       type: "expense",
       amountMinor: 12_345,
       occurredAt: "2026-07-28T06:30:00.000Z",
-      description: "E2E expense",
+      description: "UPI/DR/TEST MERCHANT/test.merchant@okhdfcbank",
       tags: ["e2e"]
     };
 
@@ -126,6 +126,10 @@ describe("production HTTP composition", () => {
     });
     expect(createdResponse.status).toBe(201);
     const created = await parseResponse(createdResponse, TransactionSchema);
+    expect(created).toMatchObject({
+      paymentRail: "upi",
+      counterpartyHandle: "test.merchant@okhdfcbank"
+    });
     expect(createdResponse.headers.get("location")).toBe(`/api/v1/transactions/${created.id}`);
 
     const replayResponse = await fetch(`${baseUrl}/api/v1/transactions`, {
@@ -147,6 +151,7 @@ describe("production HTTP composition", () => {
     });
     expect(reversedResponse.status).toBe(200);
     const reversed = await parseResponse(reversedResponse, TransactionSchema);
+    expect(reversed.paymentRail).toBe("upi");
 
     const reversalReplay = await fetch(`${baseUrl}/api/v1/transactions/${created.id}/reverse`, {
       method: "POST",

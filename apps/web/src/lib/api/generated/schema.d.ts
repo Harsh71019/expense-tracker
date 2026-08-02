@@ -6485,6 +6485,9 @@ export interface components {
         billId?: string;
         /** Format: uuid */
         recurringRuleId?: string;
+        /** @enum {string} */
+        paymentRail: "upi" | "neft" | "rtgs" | "imps" | "nach" | "card" | "unknown";
+        counterpartyHandle: string | null;
         /** Format: date-time */
         createdAt: string | null;
         /** Format: date-time */
@@ -6556,6 +6559,9 @@ export interface components {
       billId?: string;
       /** Format: uuid */
       recurringRuleId?: string;
+      /** @enum {string} */
+      paymentRail: "upi" | "neft" | "rtgs" | "imps" | "nach" | "card" | "unknown";
+      counterpartyHandle: string | null;
       /** Format: date-time */
       createdAt: string | null;
       /** Format: date-time */
@@ -6598,6 +6604,9 @@ export interface components {
         billId?: string;
         /** Format: uuid */
         recurringRuleId?: string;
+        /** @enum {string} */
+        paymentRail: "upi" | "neft" | "rtgs" | "imps" | "nach" | "card" | "unknown";
+        counterpartyHandle: string | null;
         /** Format: date-time */
         createdAt: string | null;
         /** Format: date-time */
@@ -6637,6 +6646,9 @@ export interface components {
         billId?: string;
         /** Format: uuid */
         recurringRuleId?: string;
+        /** @enum {string} */
+        paymentRail: "upi" | "neft" | "rtgs" | "imps" | "nach" | "card" | "unknown";
+        counterpartyHandle: string | null;
         /** Format: date-time */
         createdAt: string | null;
         /** Format: date-time */
@@ -6681,6 +6693,9 @@ export interface components {
           billId?: string;
           /** Format: uuid */
           recurringRuleId?: string;
+          /** @enum {string} */
+          paymentRail: "upi" | "neft" | "rtgs" | "imps" | "nach" | "card" | "unknown";
+          counterpartyHandle: string | null;
           /** Format: date-time */
           createdAt: string | null;
           /** Format: date-time */
@@ -6720,6 +6735,9 @@ export interface components {
           billId?: string;
           /** Format: uuid */
           recurringRuleId?: string;
+          /** @enum {string} */
+          paymentRail: "upi" | "neft" | "rtgs" | "imps" | "nach" | "card" | "unknown";
+          counterpartyHandle: string | null;
           /** Format: date-time */
           createdAt: string | null;
           /** Format: date-time */
@@ -6926,6 +6944,9 @@ export interface components {
         billId?: string;
         /** Format: uuid */
         recurringRuleId?: string;
+        /** @enum {string} */
+        paymentRail: "upi" | "neft" | "rtgs" | "imps" | "nach" | "card" | "unknown";
+        counterpartyHandle: string | null;
         /** Format: date-time */
         createdAt: string | null;
         /** Format: date-time */
@@ -6965,6 +6986,9 @@ export interface components {
         billId?: string;
         /** Format: uuid */
         recurringRuleId?: string;
+        /** @enum {string} */
+        paymentRail: "upi" | "neft" | "rtgs" | "imps" | "nach" | "card" | "unknown";
+        counterpartyHandle: string | null;
         /** Format: date-time */
         createdAt: string | null;
         /** Format: date-time */
@@ -7468,6 +7492,9 @@ export interface components {
           billId?: string;
           /** Format: uuid */
           recurringRuleId?: string;
+          /** @enum {string} */
+          paymentRail: "upi" | "neft" | "rtgs" | "imps" | "nach" | "card" | "unknown";
+          counterpartyHandle: string | null;
           /** Format: date-time */
           createdAt: string | null;
           /** Format: date-time */
@@ -7661,6 +7688,9 @@ export interface components {
           billId?: string;
           /** Format: uuid */
           recurringRuleId?: string;
+          /** @enum {string} */
+          paymentRail: "upi" | "neft" | "rtgs" | "imps" | "nach" | "card" | "unknown";
+          counterpartyHandle: string | null;
           /** Format: date-time */
           createdAt: string | null;
           /** Format: date-time */
@@ -7700,6 +7730,9 @@ export interface components {
           billId?: string;
           /** Format: uuid */
           recurringRuleId?: string;
+          /** @enum {string} */
+          paymentRail: "upi" | "neft" | "rtgs" | "imps" | "nach" | "card" | "unknown";
+          counterpartyHandle: string | null;
           /** Format: date-time */
           createdAt: string | null;
           /** Format: date-time */

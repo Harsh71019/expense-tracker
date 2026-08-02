@@ -31,6 +31,8 @@ const POSTED: Transaction = {
   currency: "INR",
   source: "recurring",
   status: "posted",
+  paymentRail: "unknown",
+  counterpartyHandle: null,
   occurredAt: NOW,
   description: "Rent",
   tags: [],

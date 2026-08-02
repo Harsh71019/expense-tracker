@@ -710,6 +710,14 @@
                   "type": "string",
                   "format": "uuid"
                 },
+                "paymentRail": {
+                  "type": "string",
+                  "enum": ["upi", "neft", "rtgs", "imps", "nach", "card", "unknown"]
+                },
+                "counterpartyHandle": {
+                  "type": ["string", "null"],
+                  "minLength": 1
+                },
                 "createdAt": {
                   "type": ["string", "null"],
                   "format": "date-time"
@@ -730,6 +738,8 @@
                 "currency",
                 "source",
                 "status",
+                "paymentRail",
+                "counterpartyHandle",
                 "createdAt",
                 "updatedAt"
               ]
@@ -936,6 +946,14 @@
             "type": "string",
             "format": "uuid"
           },
+          "paymentRail": {
+            "type": "string",
+            "enum": ["upi", "neft", "rtgs", "imps", "nach", "card", "unknown"]
+          },
+          "counterpartyHandle": {
+            "type": ["string", "null"],
+            "minLength": 1
+          },
           "createdAt": {
             "type": ["string", "null"],
             "format": "date-time"
@@ -956,6 +974,8 @@
           "currency",
           "source",
           "status",
+          "paymentRail",
+          "counterpartyHandle",
           "createdAt",
           "updatedAt"
         ]
@@ -1050,6 +1070,14 @@
                 "type": "string",
                 "format": "uuid"
               },
+              "paymentRail": {
+                "type": "string",
+                "enum": ["upi", "neft", "rtgs", "imps", "nach", "card", "unknown"]
+              },
+              "counterpartyHandle": {
+                "type": ["string", "null"],
+                "minLength": 1
+              },
               "createdAt": {
                 "type": ["string", "null"],
                 "format": "date-time"
@@ -1070,6 +1098,8 @@
               "currency",
               "source",
               "status",
+              "paymentRail",
+              "counterpartyHandle",
               "createdAt",
               "updatedAt"
             ]
@@ -1157,6 +1187,14 @@
                 "type": "string",
                 "format": "uuid"
               },
+              "paymentRail": {
+                "type": "string",
+                "enum": ["upi", "neft", "rtgs", "imps", "nach", "card", "unknown"]
+              },
+              "counterpartyHandle": {
+                "type": ["string", "null"],
+                "minLength": 1
+              },
               "createdAt": {
                 "type": ["string", "null"],
                 "format": "date-time"
@@ -1177,6 +1215,8 @@
               "currency",
               "source",
               "status",
+              "paymentRail",
+              "counterpartyHandle",
               "createdAt",
               "updatedAt"
             ]
@@ -1277,6 +1317,14 @@
                     "type": "string",
                     "format": "uuid"
                   },
+                  "paymentRail": {
+                    "type": "string",
+                    "enum": ["upi", "neft", "rtgs", "imps", "nach", "card", "unknown"]
+                  },
+                  "counterpartyHandle": {
+                    "type": ["string", "null"],
+                    "minLength": 1
+                  },
                   "createdAt": {
                     "type": ["string", "null"],
                     "format": "date-time"
@@ -1297,6 +1345,8 @@
                   "currency",
                   "source",
                   "status",
+                  "paymentRail",
+                  "counterpartyHandle",
                   "createdAt",
                   "updatedAt"
                 ]
@@ -1384,6 +1434,14 @@
                     "type": "string",
                     "format": "uuid"
                   },
+                  "paymentRail": {
+                    "type": "string",
+                    "enum": ["upi", "neft", "rtgs", "imps", "nach", "card", "unknown"]
+                  },
+                  "counterpartyHandle": {
+                    "type": ["string", "null"],
+                    "minLength": 1
+                  },
                   "createdAt": {
                     "type": ["string", "null"],
                     "format": "date-time"
@@ -1404,6 +1462,8 @@
                   "currency",
                   "source",
                   "status",
+                  "paymentRail",
+                  "counterpartyHandle",
                   "createdAt",
                   "updatedAt"
                 ]
@@ -1977,6 +2037,14 @@
                 "type": "string",
                 "format": "uuid"
               },
+              "paymentRail": {
+                "type": "string",
+                "enum": ["upi", "neft", "rtgs", "imps", "nach", "card", "unknown"]
+              },
+              "counterpartyHandle": {
+                "type": ["string", "null"],
+                "minLength": 1
+              },
               "createdAt": {
                 "type": ["string", "null"],
                 "format": "date-time"
@@ -1997,6 +2065,8 @@
               "currency",
               "source",
               "status",
+              "paymentRail",
+              "counterpartyHandle",
               "createdAt",
               "updatedAt"
             ]
@@ -2086,6 +2156,14 @@
                   "type": "string",
                   "format": "uuid"
                 },
+                "paymentRail": {
+                  "type": "string",
+                  "enum": ["upi", "neft", "rtgs", "imps", "nach", "card", "unknown"]
+                },
+                "counterpartyHandle": {
+                  "type": ["string", "null"],
+                  "minLength": 1
+                },
                 "createdAt": {
                   "type": ["string", "null"],
                   "format": "date-time"
@@ -2106,6 +2184,8 @@
                 "currency",
                 "source",
                 "status",
+                "paymentRail",
+                "counterpartyHandle",
                 "createdAt",
                 "updatedAt"
               ]
@@ -3732,6 +3812,14 @@
                       "type": "string",
                       "format": "uuid"
                     },
+                    "paymentRail": {
+                      "type": "string",
+                      "enum": ["upi", "neft", "rtgs", "imps", "nach", "card", "unknown"]
+                    },
+                    "counterpartyHandle": {
+                      "type": ["string", "null"],
+                      "minLength": 1
+                    },
                     "createdAt": {
                       "type": ["string", "null"],
                       "format": "date-time"
@@ -3752,6 +3840,8 @@
                     "currency",
                     "source",
                     "status",
+                    "paymentRail",
+                    "counterpartyHandle",
                     "createdAt",
                     "updatedAt"
                   ]
@@ -4322,6 +4412,14 @@
                     "type": "string",
                     "format": "uuid"
                   },
+                  "paymentRail": {
+                    "type": "string",
+                    "enum": ["upi", "neft", "rtgs", "imps", "nach", "card", "unknown"]
+                  },
+                  "counterpartyHandle": {
+                    "type": ["string", "null"],
+                    "minLength": 1
+                  },
                   "createdAt": {
                     "type": ["string", "null"],
                     "format": "date-time"
@@ -4342,6 +4440,8 @@
                   "currency",
                   "source",
                   "status",
+                  "paymentRail",
+                  "counterpartyHandle",
                   "createdAt",
                   "updatedAt"
                 ]
@@ -4429,6 +4529,14 @@
                     "type": "string",
                     "format": "uuid"
                   },
+                  "paymentRail": {
+                    "type": "string",
+                    "enum": ["upi", "neft", "rtgs", "imps", "nach", "card", "unknown"]
+                  },
+                  "counterpartyHandle": {
+                    "type": ["string", "null"],
+                    "minLength": 1
+                  },
                   "createdAt": {
                     "type": ["string", "null"],
                     "format": "date-time"
@@ -4449,6 +4557,8 @@
                   "currency",
                   "source",
                   "status",
+                  "paymentRail",
+                  "counterpartyHandle",
                   "createdAt",
                   "updatedAt"
                 ]

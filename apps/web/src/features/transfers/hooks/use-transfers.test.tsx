@@ -30,6 +30,8 @@ const transaction: Transaction = {
   currency: "INR",
   source: "manual",
   status: "reversal",
+  paymentRail: "unknown",
+  counterpartyHandle: null,
   createdAt: timestamp,
   updatedAt: timestamp
 };

@@ -3,6 +3,7 @@ import { z } from "zod";
 export const TransactionTextPaymentRailSchema = z.enum([
   "upi",
   "neft",
+  "rtgs",
   "imps",
   "nach",
   "card",

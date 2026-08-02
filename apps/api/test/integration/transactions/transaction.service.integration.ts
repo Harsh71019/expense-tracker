@@ -20,6 +20,7 @@ import { CategoryKindMismatchError } from "../../../src/common/errors/category-k
 import { TransactionNotReversibleError } from "../../../src/common/errors/transaction-not-reversible.error.js";
 import { createTestDb, insertTestUser } from "../support/postgres-test-db.js";
 import type { TestDb } from "../support/postgres-test-db.js";
+import { assertLedgerInvariants } from "../support/assert-ledger-invariants.js";
 
 const FAKE_ID = "3fa85f64-5717-4562-b3fc-2c963f66beef";
 
@@ -491,5 +492,36 @@ describe("TransactionService", () => {
         "15151515-aaaa-4151-8151-151515151515"
       )
     ).rejects.toThrow("Transfer leg metadata cannot be edited independently.");
+  });
+
+  it("derives payment context consistently across create, get, and list responses", async () => {
+    const created = await transactions.create(
+      "user-a",
+      {
+        accountId,
+        type: "expense",
+        amountMinor: 425,
+        occurredAt: new Date("2026-07-14T15:00:00.000Z"),
+        description: "UPI/DR/BLINKIT/RRN:630934540626/blinkit.payu@hdfcbank",
+        tags: []
+      },
+      "16161616-aaaa-4161-8161-161616161616"
+    );
+
+    expect(created.transaction).toMatchObject({
+      paymentRail: "upi",
+      counterpartyHandle: "blinkit.payu@hdfcbank"
+    });
+    await expect(transactions.get("user-a", created.transaction.id)).resolves.toMatchObject({
+      paymentRail: "upi",
+      counterpartyHandle: "blinkit.payu@hdfcbank"
+    });
+
+    const page = await transactions.list("user-a", { limit: 200 });
+    expect(page.items.find((item) => item.id === created.transaction.id)).toMatchObject({
+      paymentRail: "upi",
+      counterpartyHandle: "blinkit.payu@hdfcbank"
+    });
+    await assertLedgerInvariants(testDb.db);
   });
 });

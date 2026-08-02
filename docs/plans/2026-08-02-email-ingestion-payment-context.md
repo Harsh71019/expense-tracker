@@ -446,3 +446,72 @@ This endpoint uses cursor pagination, validates tenant ownership, and returns re
 **Decision:** A reconciliation satisfies one occurrence. The recurring rule remains active and advances to its next occurrence.
 
 **Reason:** Completing the rule after one successful monthly charge would incorrectly stop future expectations and forecasts.
+
+## Addendum — 2026-08-02: codebase verification and concrete design
+
+This section grounds the above plan against the actual code (`apps/api`, `packages/shared`) as of this date, corrects one stale assumption, and answers two follow-up questions: (1) can `POST /api/v1/transactions` accept the richer per-template evidence these emails carry without breaking existing clients, and (2) does reconciling e-mandate emails against recurring rules make sense.
+
+### Correction: the narration normalizer does not exist yet
+
+Stage B above assumes "the merged private narration normalizer" is already available. It is not — there is no `NormalizedTransactionText`, `paymentRail`, or `counterpartyKey` anywhere in `apps/api/src` or `packages/shared/src` today. `apps/api/src/imports/dedupe-hash.ts` does something adjacent but narrower: `normalizeDescription()` lowercases and strips long digit runs (UPI/bank reference numbers) purely for CSV-import dedupe hashing, and only the CSV-import write path (`transaction.repository.ts`'s bulk `createMany` for imports) ever populates the `dedupeHash` column — the single-row `create()` path used by manual entry, the recurring materializer, and API-key (n8n) transactions never computes or stores one. So Stage B as written has no foundation to "adopt" yet; either build the normalizer first or skip straight to explicit evidence capture (Stage C) for the fields n8n already parses deterministically per-template, which is what's proposed below.
+
+### Sample email inventory (this batch)
+
+| Template | Fields available in the email that are currently discarded |
+|---|---|
+| HDFC UPI debit | VPA (`8169461230@axl`), payee label (`HARSHKUMAR VINODBHAI PATEL` / `Blinkit` / `MMRDA`), UPI transaction reference no. (12-digit, e.g. `630934540626`) |
+| HDFC credit card direct debit | merchant string (`HONEYCOMB TELNET PRIVA`), timestamp to the second — **no reference number in this template at all** |
+| HDFC e-mandate registered | merchant, current/max transaction amount, frequency, start/end date, **SI Hub ID** (e.g. `YXc23glB3l`) — this is a rule definition, not a transaction |
+| HDFC e-mandate upcoming | merchant, amount, debit date, SI Hub ID — a forecast, no money has moved |
+| HDFC e-mandate paid | merchant, amount, date, SI Hub ID — the actual settlement |
+
+Two things worth flagging while reading these:
+
+1. **The Anthropic e-mandate-paid emails are in `USD`, not `INR`** (`Amount: USD 23.60`). The current n8n `hdfc_emandate_paid` regex hardcodes `Amount:\s?INR\s?...`, so this template silently fails to match and the row falls through to `unmatched`/skip — these charges are not being logged at all today, independent of anything in this doc. Separately, even if matched, the USD figure printed in the email is **not** what gets debited from the INR account (HDFC applies FX conversion + markup), so this template cannot safely produce `amountMinor` from its own body; there's no fix for this inside the parser alone — it needs either a follow-up "forex markup posted" email/statement line as the amount source, or this template stays a manual-entry case.
+2. The credit-card-direct-debit template carries no reference number at all, so not every transaction type can carry every evidence field — the design has to make all evidence fields optional per-instance, not just optional per-request.
+
+### Question 1: can the API accept this without breaking prod?
+
+Yes, and cleanly, for concrete reasons found in the code rather than in the abstract:
+
+- `CreateTransactionSchema` (`packages/shared/src/transaction.ts:15`) is a plain zod object with no `.strict()`/discriminated-union coupling to the new fields. Adding a new **optional** top-level key is additive — any existing caller (n8n's current payload, or anything else hitting this endpoint) that omits it keeps validating exactly as today; zod does not require or reject unknown-to-it-being-absent optional fields.
+- The `transactions` table (`apps/api/src/common/db/schema/transaction.ts`) already has five nullable/optional FK-style columns following this exact pattern (`categoryId`, `billId`, `recurringRuleId`, `transferGroupId`, `reversalOf`), each with a partial index (`.where(sql\`... IS NOT NULL\`)`). A new evidence table follows the same idiom the schema already uses, rather than introducing a new one.
+- `source` is derived server-side from `request.authMethod` in `transaction.controller.ts:68` and is never accepted from the request body — any new field must follow that precedent (evidence is *what the source observed*, never something that can override `type`, `userId`, or `source` itself).
+- Migrations here are additive-only by repo convention (root `CLAUDE.md`); a `CREATE TABLE` migration (next file would be `0019_*.sql`, following `0018_flaky_morgan_stark.sql`) touches zero existing rows.
+- `pnpm gen:openapi`/`gen:client` regenerate from the same zod schemas consumed by request validation, so an optional field flows through to the generated web client typed as optional automatically — no hand-written OpenAPI diff to maintain, and CI's spec-diff gate treats a new optional request field and a new optional response field as non-breaking additions, not removals/narrowings.
+
+Concretely, this means: **don't add columns to `transactions` itself.** Add an additive 1:1 table, written in the same `withTxn` block `transaction.service.ts`'s `createAndReplay` already opens (one more insert alongside the existing `accounts.applyBalanceDelta` + `transactions.create` + `audit.record` calls, at `transaction.service.ts:83-104`):
+
+```
+transaction_payment_evidence
+  id                 uuid pk
+  user_id            text not null, references user.id      -- userId-first, per AGENTS.md §4
+  transaction_id     uuid not null, references transactions.id, unique index (1:1)
+  payment_rail       enum: upi | card | neft | imps | nach | unknown
+  counterparty_handle   text nullable   -- VPA
+  counterparty_name     text nullable   -- payee label from the email
+  reference_kind         enum nullable: rrn | si_hub_id | other
+  reference_value          text nullable  -- UPI ref no. / SI Hub ID
+  parser_source, parser_template, parser_version   -- per original Stage-C proposal above
+  created_at
+```
+
+Shared-schema side: a new optional `paymentContext` object on `CreateTransactionSchema`, matching the original Stage-C shape in this doc (`rail`, `counterpartyHandle?`, `reference?`, `mandateReference?`, `parser`). Repository/service change is additive: `TransactionRepository.create()` gains one more optional parameter, `TransactionService.createAndReplay` inserts the evidence row when present, nothing changes for callers that don't send it.
+
+### Question 2: does reconciling e-mandate emails against recurring rules make sense?
+
+Yes — and it closes a real, already-acknowledged gap rather than adding a nice-to-have. Verified in `apps/api/src/recurring/recurring-reconciliation-matcher.ts`: `matchIncomingTransaction` today has exactly two tiers, both blind to counterparty — same `accountId` + `type` + occurrence within `RECONCILIATION_WINDOW_DAYS` (3 days), then split on exact-amount vs not. This is precisely why a subscription price change or two same-priced subscriptions on one account currently produce `amount_mismatch`/`ambiguous` review rows instead of clean auto-matches (`recurring-reconciliation.service.ts:81-136` — the `RecurringReconciliationRepository.findUnreconciledRecurringCandidates` query, confirmed at `recurring-reconciliation.repository.ts:41`, only ever selects `id, recurringRuleId, accountId, type, amountMinor, occurredAt` — no reference field exists to match on today).
+
+The e-mandate emails hand us the exact fix: the SI Hub ID is a stable per-mandate identifier shared by the *registration* email, every *upcoming* reminder, and every *paid* confirmation for the same subscription. Concretely:
+
+1. Add a nullable `mandateReference` column directly on `recurring_rules` (`apps/api/src/common/db/schema/recurring.ts`) — it's a rule-level identifier, not a per-transaction fact, so it belongs on the rule, not in `transaction_payment_evidence`. Exposed as an optional field on `CreateRecurringRuleSchema`/`UpdateRecurringRuleSchema` (`packages/shared/src/recurring.ts`), same additive-optional treatment as above.
+2. When the "e-mandate registered" email arrives (the OpenAILLC example — merchant, current/max amount, frequency, start/end date, SI Hub ID), it's effectively the recurring rule definition itself, not a transaction. This is the natural point to either create the `RecurringRule` (via `POST /api/v1/recurring-rules`, if that route accepts API-key auth the same way transactions does) or, if the rule was created by hand first, backfill `mandateReference` onto it — flagged here as a phase-2 idea, not required for the core ask.
+3. When the "paid" email arrives, n8n includes the same SI Hub ID as `paymentContext.mandateReference` on the `POST /api/v1/transactions` call.
+4. `findUnreconciledRecurringCandidates` gains `mandateReference` to its selected columns (joining the rule), and `matchIncomingTransaction` gets a **tier-0 check ahead of the existing two tiers**: if the incoming transaction's evidence `mandateReference` exactly equals an unreconciled candidate's rule `mandateReference`, auto-match regardless of amount — this is a strictly stronger signal than amount+date and is exactly the case ADR-4's "price change" scenario needs (today a subscription price increase is indistinguishable from "wrong candidate" without this).
+5. "Upcoming e-mandate" emails stay skipped for transaction purposes (correct today, no money has moved) — they're only useful as a one-off signal to capture/confirm a rule's `mandateReference` if it wasn't captured at registration time.
+
+This does not change ADR-4: matching by mandate reference still only resolves one occurrence and leaves the rule active for its next run.
+
+### Net answer
+
+Both changes are safe, additive, and backward compatible: new optional request field, new table, new nullable rule column, new matcher tier that only *adds* a match path ahead of the existing ones — no existing request shape, response shape, row, or matcher outcome for current data changes. The one blocking dependency worth calling out is that Stage B (narration normalizer) doesn't exist yet, so the payment-evidence work above should be sequenced as its own stage rather than "built on top of" something that hasn't landed.

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 
+import { Select } from "@/components/ui";
 import { useAccounts } from "@/features/accounts";
 import { useCategories } from "@/features/categories";
 
@@ -19,9 +20,6 @@ function toDateInputValue(value: Date | undefined): string {
 function parseDate(value: string): Date | undefined {
   return value === "" ? undefined : new Date(`${value}T00:00:00.000Z`);
 }
-
-const selectClasses =
-  "min-h-11 w-full rounded-lg border border-border bg-surface-muted px-3 py-2.5 text-base font-medium text-foreground outline-none transition-colors duration-150 focus:border-accent focus:ring-2 focus:ring-accent/30 sm:w-auto sm:text-sm";
 
 export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuery }>): ReactNode {
   const router = useRouter();
@@ -93,6 +91,30 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isFiltered, router]);
 
+  const accountOptions = [
+    { value: "", label: "All accounts" },
+    ...(filters.accountId !== undefined &&
+    !(accounts.data ?? []).some((account) => account.id === filters.accountId)
+      ? [{ value: filters.accountId, label: "Archived or unavailable" }]
+      : []),
+    ...(accounts.data ?? []).map((account) => ({
+      value: account.id,
+      label: account.name
+    }))
+  ];
+
+  const categoryOptions = [
+    { value: "", label: "All categories" },
+    ...(filters.categoryId !== undefined &&
+    !(categories.data ?? []).some((category) => category.id === filters.categoryId)
+      ? [{ value: filters.categoryId, label: "Archived or unavailable" }]
+      : []),
+    ...(categories.data ?? []).map((category) => ({
+      value: category.id,
+      label: category.name
+    }))
+  ];
+
   return (
     <div
       className={`mb-4 flex flex-wrap items-center gap-2.5 rounded-2xl border p-3 transition-colors duration-150 ${
@@ -146,48 +168,20 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
         id="transaction-filter-controls"
         className={`${filtersOpen ? "grid" : "hidden"} w-full grid-cols-1 gap-2.5 border-t border-border pt-3 sm:contents`}
       >
-        <select
+        <Select
           aria-label="Filter by account"
           name="transactionAccount"
-          autoComplete="off"
-          className={selectClasses}
+          options={accountOptions}
           value={filters.accountId ?? ""}
-          onChange={(event) =>
-            navigate({ accountId: event.target.value === "" ? undefined : event.target.value })
-          }
-        >
-          <option value="">All accounts</option>
-          {filters.accountId !== undefined &&
-          !(accounts.data ?? []).some((account) => account.id === filters.accountId) ? (
-            <option value={filters.accountId}>Archived or unavailable</option>
-          ) : null}
-          {(accounts.data ?? []).map((account) => (
-            <option key={account.id} value={account.id}>
-              {account.name}
-            </option>
-          ))}
-        </select>
-        <select
+          onChange={(value) => navigate({ accountId: value === "" ? undefined : value })}
+        />
+        <Select
           aria-label="Filter by category"
           name="transactionCategory"
-          autoComplete="off"
-          className={selectClasses}
+          options={categoryOptions}
           value={filters.categoryId ?? ""}
-          onChange={(event) =>
-            navigate({ categoryId: event.target.value === "" ? undefined : event.target.value })
-          }
-        >
-          <option value="">All categories</option>
-          {filters.categoryId !== undefined &&
-          !(categories.data ?? []).some((category) => category.id === filters.categoryId) ? (
-            <option value={filters.categoryId}>Archived or unavailable</option>
-          ) : null}
-          {(categories.data ?? []).map((category) => (
-            <option key={category.id} value={category.id}>
-              {category.name}
-            </option>
-          ))}
-        </select>
+          onChange={(value) => navigate({ categoryId: value === "" ? undefined : value })}
+        />
         <div className="grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1.5 rounded-lg border border-border bg-surface-muted px-2.5 sm:flex sm:w-auto">
           <input
             type="date"

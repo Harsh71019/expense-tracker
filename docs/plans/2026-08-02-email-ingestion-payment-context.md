@@ -464,17 +464,17 @@ What PR #121 actually delivers, confirmed by reading the merged source: `normali
 - `directionHint`, `isFeeHint`, `isRefundHint` — debit/credit/fee/refund cues
 - `normalizerVersion` — so callers can tell which parsing rules produced a given derivation
 
-This changes the shape of the recommendation below: since Stage B is real and callable today, much of what Stage C's evidence table would store can instead be *derived on demand* from `description` at match/read time, provided n8n writes a description that contains the right tokens. No schema change is required for that path — only a documented description convention on the n8n side. Stage C (persisted `paymentContext`) is still worth keeping as a fallback for evidence the normalizer can't reliably parse from free text (e.g. distinguishing "this VPA is my landlord" from "this VPA is a phone recharge" requires more than token extraction), but it's no longer the only option, and shouldn't be built first.
+This changes the shape of the recommendation below: since Stage B is real and callable today, much of what Stage C's evidence table would store can instead be _derived on demand_ from `description` at match/read time, provided n8n writes a description that contains the right tokens. No schema change is required for that path — only a documented description convention on the n8n side. Stage C (persisted `paymentContext`) is still worth keeping as a fallback for evidence the normalizer can't reliably parse from free text (e.g. distinguishing "this VPA is my landlord" from "this VPA is a phone recharge" requires more than token extraction), but it's no longer the only option, and shouldn't be built first.
 
 ### Sample email inventory (this batch)
 
-| Template | Fields available in the email that are currently discarded |
-|---|---|
-| HDFC UPI debit | VPA (`8169461230@axl`), payee label (`HARSHKUMAR VINODBHAI PATEL` / `Blinkit` / `MMRDA`), UPI transaction reference no. (12-digit, e.g. `630934540626`) |
-| HDFC credit card direct debit | merchant string (`HONEYCOMB TELNET PRIVA`), timestamp to the second — **no reference number in this template at all** |
-| HDFC e-mandate registered | merchant, current/max transaction amount, frequency, start/end date, **SI Hub ID** (e.g. `YXc23glB3l`) — this is a rule definition, not a transaction |
-| HDFC e-mandate upcoming | merchant, amount, debit date, SI Hub ID — a forecast, no money has moved |
-| HDFC e-mandate paid | merchant, amount, date, SI Hub ID — the actual settlement |
+| Template                      | Fields available in the email that are currently discarded                                                                                              |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| HDFC UPI debit                | VPA (`8169461230@axl`), payee label (`HARSHKUMAR VINODBHAI PATEL` / `Blinkit` / `MMRDA`), UPI transaction reference no. (12-digit, e.g. `630934540626`) |
+| HDFC credit card direct debit | merchant string (`HONEYCOMB TELNET PRIVA`), timestamp to the second — **no reference number in this template at all**                                   |
+| HDFC e-mandate registered     | merchant, current/max transaction amount, frequency, start/end date, **SI Hub ID** (e.g. `YXc23glB3l`) — this is a rule definition, not a transaction   |
+| HDFC e-mandate upcoming       | merchant, amount, debit date, SI Hub ID — a forecast, no money has moved                                                                                |
+| HDFC e-mandate paid           | merchant, amount, date, SI Hub ID — the actual settlement                                                                                               |
 
 Two things worth flagging while reading these:
 
@@ -487,7 +487,7 @@ Yes, and cleanly, for concrete reasons found in the code rather than in the abst
 
 - `CreateTransactionSchema` (`packages/shared/src/transaction.ts:15`) is a plain zod object with no `.strict()`/discriminated-union coupling to the new fields. Adding a new **optional** top-level key is additive — any existing caller (n8n's current payload, or anything else hitting this endpoint) that omits it keeps validating exactly as today; zod does not require or reject unknown-to-it-being-absent optional fields.
 - The `transactions` table (`apps/api/src/common/db/schema/transaction.ts`) already has five nullable/optional FK-style columns following this exact pattern (`categoryId`, `billId`, `recurringRuleId`, `transferGroupId`, `reversalOf`), each with a partial index (`.where(sql\`... IS NOT NULL\`)`). A new evidence table follows the same idiom the schema already uses, rather than introducing a new one.
-- `source` is derived server-side from `request.authMethod` in `transaction.controller.ts:68` and is never accepted from the request body — any new field must follow that precedent (evidence is *what the source observed*, never something that can override `type`, `userId`, or `source` itself).
+- `source` is derived server-side from `request.authMethod` in `transaction.controller.ts:68` and is never accepted from the request body — any new field must follow that precedent (evidence is _what the source observed_, never something that can override `type`, `userId`, or `source` itself).
 - Migrations here are additive-only by repo convention (root `CLAUDE.md`); a `CREATE TABLE` migration (next file would be `0019_*.sql`, following `0018_flaky_morgan_stark.sql`) touches zero existing rows.
 - `pnpm gen:openapi`/`gen:client` regenerate from the same zod schemas consumed by request validation, so an optional field flows through to the generated web client typed as optional automatically — no hand-written OpenAPI diff to maintain, and CI's spec-diff gate treats a new optional request field and a new optional response field as non-breaking additions, not removals/narrowings.
 
@@ -513,7 +513,7 @@ Shared-schema side: a new optional `paymentContext` object on `CreateTransaction
 
 Yes — and it closes a real, already-acknowledged gap rather than adding a nice-to-have. Verified in `apps/api/src/recurring/recurring-reconciliation-matcher.ts`: `matchIncomingTransaction` today has exactly two tiers, both blind to counterparty — same `accountId` + `type` + occurrence within `RECONCILIATION_WINDOW_DAYS` (3 days), then split on exact-amount vs not. This is precisely why a subscription price change or two same-priced subscriptions on one account currently produce `amount_mismatch`/`ambiguous` review rows instead of clean auto-matches (`recurring-reconciliation.service.ts:81-136` — the `RecurringReconciliationRepository.findUnreconciledRecurringCandidates` query, confirmed at `recurring-reconciliation.repository.ts:41`, only ever selects `id, recurringRuleId, accountId, type, amountMinor, occurredAt` — no reference field exists to match on today).
 
-The e-mandate emails hand us the exact fix: the SI Hub ID is a stable per-mandate identifier shared by the *registration* email, every *upcoming* reminder, and every *paid* confirmation for the same subscription.
+The e-mandate emails hand us the exact fix: the SI Hub ID is a stable per-mandate identifier shared by the _registration_ email, every _upcoming_ reminder, and every _paid_ confirmation for the same subscription.
 
 **Cheapest version, using what's already merged — no schema change:** since `normalizeTransactionText` already extracts a `mandate:`/`umrn:`-labeled token as a `referenceToken`, this works with zero migrations if both sides of the match embed the SI Hub ID as text in a description, by convention:
 
@@ -529,7 +529,7 @@ Either version leaves ADR-4 untouched: matching by mandate reference still only 
 
 ### Question 3: USD/foreign-currency e-mandates — let the user confirm the real amount
 
-The Anthropic e-mandate-paid template's `Amount: USD 23.60` is real evidence that *a* payment happened, a rough date, and a merchant — but not the actual INR debit, because HDFC's forex conversion + markup isn't disclosed in this email. There is no parser fix for this: the true number simply isn't in the source text. Two options, not mutually exclusive:
+The Anthropic e-mandate-paid template's `Amount: USD 23.60` is real evidence that _a_ payment happened, a rough date, and a merchant — but not the actual INR debit, because HDFC's forex conversion + markup isn't disclosed in this email. There is no parser fix for this: the true number simply isn't in the source text. Two options, not mutually exclusive:
 
 - **Zero-code fallback (do this regardless):** give this case its own explicit skip reason in n8n's `classify()` — e.g. `foreign_currency_needs_manual_entry` — instead of letting it fall through to the generic `unmatched` bucket where it's indistinguishable from "the bank changed its email format." Route this reason to a distinct ntfy notification ("Anthropic charged $23.60 — log the INR amount from your statement") so it's at least visible instead of silently dropped, which is what happens today.
 - **The actual feature being asked for — a confirm-before-posting queue:** don't let n8n guess or post a placeholder amount (the ledger has no concept of "transaction with an unknown amount" and shouldn't grow one — every posted transaction must have a real, final `amountMinor`, since it immediately drives a balance delta per `AGENTS.md`). Instead, add a small **pending-transaction** concept that mirrors a pattern already proven in this codebase — CSV imports already do "stage now, let the user edit/confirm, then commit to the real ledger" via `import_batches`/staged rows (`apps/api/src/imports/`). This case is narrower (no file, no column mapping), so it doesn't need that whole machinery, just the same shape at a smaller scale:
@@ -542,3 +542,13 @@ The Anthropic e-mandate-paid template's `Amount: USD 23.60` is real evidence tha
 ### Net answer
 
 All three pieces are additive and backward compatible: the mandate-matching tier-0 check can ship today with a one-line query change and zero migrations (using the already-merged normalizer); Stage C's persisted evidence table remains an optional upgrade if free-text matching proves fragile; and the foreign-currency confirm flow is a new, small, isolated table + two endpoints that never touches the existing `transactions` write path except through the same `TransactionService.create` every other source already goes through. No existing request shape, response shape, row, or matcher outcome for current data changes.
+
+## Implemented — 2026-08-02
+
+Both the mandate-matching tier-0 check (Question 2) and the pending-transactions confirm flow (Question 3) landed on this branch, as the "cheapest version" and "actual feature" designs above respectively:
+
+- **Mandate-matching tier-0**: `recurring-reconciliation-matcher.ts`'s `matchIncomingTransaction` now checks `normalizeTransactionText()` reference-token overlap between the incoming description and each candidate's `templateDescription` before falling back to the existing amount/window tiers, exactly as designed — no migration. `recurring-reconciliation.repository.ts`'s `findUnreconciledRecurringCandidates` gained an `innerJoin` on `recurringRules` to select `templateDescription`. Covered by new cases in `recurring-reconciliation-matcher.test.ts` and a new integration test asserting auto-match despite an amount change.
+- **Pending-transactions confirm flow**: new `apps/api/src/pending-transactions/` module (repository/service/mutation-service/controller/module), `pending_transactions` table (migration `0019_short_kree.sql`, additive-only), shared schemas in `packages/shared/src/pending-transaction.ts`. `POST /v1/pending-transactions` reuses the existing `transactions: ["write"]` scope rather than minting a new one (same n8n key, no ledger effect); `GET /`, `POST /:id/confirm`, `POST /:id/dismiss` are session-only by omitting `@RequireScopes` (confirmed via `auth.guard.ts` that this hard-rejects Bearer callers rather than silently allowing them). `confirm` deliberately bypasses the generic `IdempotencyPostgresService` wrapper and calls `TransactionService.create()` directly with the request's `Idempotency-Key` — the same pattern `TransactionController.create` already uses — since wrapping it in a second outer transaction would open an unrelated, non-nested Postgres transaction around the ledger write rather than composing with it. Minimal web UI added at `apps/web/src/features/pending-transactions/`, mirroring the existing recurring-reconciliation review panel, mounted on the transactions page.
+- Not implemented: the zero-code n8n `classify()` skip-reason fallback, and Stage C's persisted `transaction_payment_evidence` table — both remain as designed above, not needed yet.
+
+n8n's own `classify()` regex changes (capturing VPA/UPI-ref/SI-Hub-ID, embedding the `mandate:` token convention, and the new foreign-currency skip reason) are a deliberate follow-up, done outside this repo.

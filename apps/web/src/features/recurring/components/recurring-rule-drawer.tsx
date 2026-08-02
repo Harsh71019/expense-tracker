@@ -41,13 +41,13 @@ const fieldLabelClasses =
   "mb-1.5 block font-mono text-[9px] font-extrabold tracking-[0.22em] text-foreground-muted uppercase";
 
 const weekdayLabels: Record<Weekday, string> = {
-  MO: "M",
-  TU: "T",
-  WE: "W",
-  TH: "T",
-  FR: "F",
-  SA: "S",
-  SU: "S"
+  MO: "Mon",
+  TU: "Tue",
+  WE: "Wed",
+  TH: "Thu",
+  FR: "Fri",
+  SA: "Sat",
+  SU: "Sun"
 };
 
 const monthLabels = [
@@ -369,7 +369,13 @@ export function RecurringRuleDrawer({
                 min={1}
                 max={365}
                 value={schedule.interval}
-                onChange={(event) => patchSchedule({ interval: event.target.valueAsNumber })}
+                onChange={(event) =>
+                  patchSchedule({
+                    interval: Number.isNaN(event.target.valueAsNumber)
+                      ? 1
+                      : event.target.valueAsNumber
+                  })
+                }
                 className={`${numberClasses} max-w-24`}
               />
               <span className="text-sm text-foreground-muted">
@@ -558,7 +564,11 @@ function EndingField({
           min={1}
           max={9999}
           value={schedule.count}
-          onChange={(event) => onChange({ count: event.target.valueAsNumber })}
+          onChange={(event) =>
+            onChange({
+              count: Number.isNaN(event.target.valueAsNumber) ? 1 : event.target.valueAsNumber
+            })
+          }
           className={numberClasses}
         />
       </label>

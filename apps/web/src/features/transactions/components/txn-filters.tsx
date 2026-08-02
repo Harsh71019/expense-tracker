@@ -71,10 +71,20 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
     router.push("/transactions");
   }
 
-  // Keyboard shortcut: Press Escape to clear active filters
+  // Keyboard shortcut: Press Escape to clear active filters when not in a modal or input
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent): void {
-      if (event.key === "Escape" && isFiltered) {
+      if (event.key === "Escape" && isFiltered && !event.defaultPrevented) {
+        const activeTag = document.activeElement?.tagName.toLowerCase();
+        const activeDialog = document.activeElement?.closest('[role="dialog"], [role="menu"]');
+        if (
+          activeTag === "input" ||
+          activeTag === "select" ||
+          activeTag === "textarea" ||
+          activeDialog !== null
+        ) {
+          return;
+        }
         setQuery("");
         router.push("/transactions");
       }

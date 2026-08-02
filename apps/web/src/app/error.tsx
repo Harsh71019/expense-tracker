@@ -12,7 +12,7 @@ export default function RouteError({
 
   useEffect(() => {
     const eventId = Sentry.captureException(error, { tags: { boundary: "route-segment" } });
-    setReqId(eventId.slice(0, 6));
+    setReqId(typeof eventId === "string" ? eventId.slice(0, 6) : null);
   }, [error]);
 
   return (

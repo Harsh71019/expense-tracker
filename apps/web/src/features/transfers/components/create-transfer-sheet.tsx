@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { useAccounts } from "@/features/accounts";
 import { toDatetimeLocalValue } from "@/lib/datetime-local";
 import { userErrorMessage, ValidationError } from "@/lib/errors";
+import { generateRequestId } from "@/lib/request-id";
 
 import { useCreateTransfer } from "../hooks/use-transfers";
 
@@ -33,6 +34,7 @@ function fieldErrorName(path: string): keyof CreateTransfer | null {
 }
 
 export function CreateTransferSheet({ onClose }: Readonly<{ onClose: () => void }>): ReactNode {
+  const [idempotencyKey, setIdempotencyKey] = useState(generateRequestId);
   const accounts = useAccounts();
   const create = useCreateTransfer();
   const [amountDraft, setAmountDraft] = useState("");
@@ -76,8 +78,9 @@ export function CreateTransferSheet({ onClose }: Readonly<{ onClose: () => void 
       return;
     }
     try {
-      await create.mutateAsync(parsed.data);
+      await create.mutateAsync({ ...parsed.data, idempotencyKey });
       toast.success("Transfer posted to the ledger");
+      setIdempotencyKey(generateRequestId());
       onClose();
     } catch (error: unknown) {
       if (error instanceof ValidationError) {

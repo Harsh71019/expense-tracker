@@ -6,17 +6,21 @@ import { AccountRepository } from "../../../src/accounts/account.repository.js";
 import { AuditRepository } from "../../../src/audit/audit.repository.js";
 import { CategoryRepository } from "../../../src/categories/category.repository.js";
 import { CategoryRuleRepository } from "../../../src/category-rules/category-rule.repository.js";
+import { CategorySuggestionRepository } from "../../../src/category-rules/category-suggestion.repository.js";
+import { CategorySuggestionService } from "../../../src/category-rules/category-suggestion.service.js";
 import { accounts as accountsTable, auditLog } from "../../../src/common/db/schema/index.js";
 import { transactions as transactionsTable } from "../../../src/common/db/schema/index.js";
 import { withTxn } from "../../../src/common/db/db-txn.js";
 import { CategoryKindMismatchError } from "../../../src/common/errors/category-kind-mismatch.error.js";
 import { EntityNotFoundError } from "../../../src/common/errors/entity-not-found.error.js";
 import { ImportBatchNotReadyError } from "../../../src/common/errors/import-batch-not-ready.error.js";
+import { MetricsService } from "../../../src/common/observability/metrics.service.js";
 import { ImportBatchRepository } from "../../../src/imports/import-batch.repository.js";
 import { ImportsService } from "../../../src/imports/imports.service.js";
 import { StagedRowRepository } from "../../../src/imports/staged-row.repository.js";
 import type { NewStagedRow } from "../../../src/imports/staged-row.repository.js";
 import { TransactionRepository } from "../../../src/transactions/transaction.repository.js";
+import { focusedTestDouble } from "../../../src/test/mock-drizzle.js";
 import { createTestDb, insertTestUser } from "../support/postgres-test-db.js";
 import type { TestDb } from "../support/postgres-test-db.js";
 
@@ -88,7 +92,8 @@ describe("ImportsService commit/revert", () => {
       accounts,
       categories,
       audit,
-      categoryRules
+      new CategorySuggestionService(categoryRules, new CategorySuggestionRepository(testDb.db)),
+      focusedTestDouble<MetricsService>({ recordCategorySuggestions: () => undefined })
     );
   }, 30_000);
 

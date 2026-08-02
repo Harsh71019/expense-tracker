@@ -65,7 +65,8 @@ type ServiceOverrides = Readonly<{
   accounts?: unknown;
   categories?: unknown;
   audit?: unknown;
-  categoryRules?: unknown;
+  categorySuggestions?: unknown;
+  metrics?: unknown;
 }>;
 
 function createService(overrides: ServiceOverrides = {}) {
@@ -82,7 +83,14 @@ function createService(overrides: ServiceOverrides = {}) {
     accounts: overrides.accounts ?? {},
     categories: overrides.categories ?? {},
     audit: overrides.audit ?? { record: vi.fn().mockResolvedValue(undefined) },
-    categoryRules: overrides.categoryRules ?? {}
+    categorySuggestions: overrides.categorySuggestions ?? {
+      suggestMany: vi
+        .fn()
+        .mockImplementation(async (_userId: string, targets: readonly unknown[]) =>
+          targets.map(() => undefined)
+        )
+    },
+    metrics: overrides.metrics ?? { recordCategorySuggestions: vi.fn() }
   };
   const service = new ImportsService(
     focusedTestDouble(collaborators.db),
@@ -92,7 +100,8 @@ function createService(overrides: ServiceOverrides = {}) {
     focusedTestDouble(collaborators.accounts),
     focusedTestDouble(collaborators.categories),
     focusedTestDouble(collaborators.audit),
-    focusedTestDouble(collaborators.categoryRules)
+    focusedTestDouble(collaborators.categorySuggestions),
+    focusedTestDouble(collaborators.metrics)
   );
   return { service, tx, ...collaborators };
 }
@@ -229,27 +238,30 @@ describe("ImportsService create and parse", () => {
           async (_userId: string, hashes: readonly string[]) => new Set([hashes[0]])
         )
     };
-    const categoryRules = {
-      list: vi.fn().mockResolvedValue([
-        {
-          id: "rule-1",
-          userId: "u1",
-          pattern: "coffee",
-          categoryId: CATEGORY_ID,
-          createdAt: NOW,
-          updatedAt: NOW
-        }
-      ])
+    const categorySuggestions = {
+      suggestMany: vi
+        .fn()
+        .mockImplementation(async (_userId: string, targets: readonly unknown[]) =>
+          targets.map(() => ({
+            categoryId: CATEGORY_ID,
+            confidenceBps: 10_000,
+            method: "explicit_rule",
+            evidenceCount: 1,
+            algorithmVersion: 1
+          }))
+        )
     };
     const categories = {
       list: vi.fn().mockResolvedValue([{ id: CATEGORY_ID, kind: "expense", isArchived: false }])
     };
+    const metrics = { recordCategorySuggestions: vi.fn() };
     const { service } = createService({
       batches,
       stagedRows,
       transactions,
-      categoryRules,
-      categories
+      categorySuggestions,
+      categories,
+      metrics
     });
     const csv = [
       "Date,Amount,Description",
@@ -281,6 +293,7 @@ describe("ImportsService create and parse", () => {
       "staged",
       expect.objectContaining({ total: 3, staged: 3, duplicates: 2, committed: 0 })
     );
+    expect(metrics.recordCategorySuggestions).toHaveBeenCalledWith("suggested", 2);
   });
 
   it("chunks more than 200 staged rows and omits an absent category suggestion", async () => {
@@ -290,7 +303,13 @@ describe("ImportsService create and parse", () => {
       insertMany: vi.fn().mockResolvedValue(undefined)
     };
     const transactions = { findExistingDedupeHashes: vi.fn().mockResolvedValue(new Set()) };
-    const categoryRules = { list: vi.fn().mockResolvedValue([]) };
+    const categorySuggestions = {
+      suggestMany: vi
+        .fn()
+        .mockImplementation(async (_userId: string, targets: readonly unknown[]) =>
+          targets.map(() => undefined)
+        )
+    };
     const categories = { list: vi.fn().mockResolvedValue([]) };
     const lines = Array.from(
       { length: 201 },
@@ -301,7 +320,7 @@ describe("ImportsService create and parse", () => {
       batches,
       stagedRows,
       transactions,
-      categoryRules,
+      categorySuggestions,
       categories
     });
 
@@ -495,6 +514,61 @@ describe("ImportsService commit and revert", () => {
 
     await expect(service.commitBatch("u1", BATCH_ID)).resolves.toBe(committed);
     expect(batches.markCommitted).toHaveBeenCalledWith("u1", BATCH_ID);
+  });
+
+  it("records accepted, corrected, and dismissed feedback without narration labels", async () => {
+    const committed = { ...BATCH, status: "committed" as const };
+    const batches = {
+      findById: vi.fn().mockResolvedValueOnce(BATCH).mockResolvedValueOnce(committed),
+      markCommitted: vi.fn().mockResolvedValue(undefined)
+    };
+    const suggestion = {
+      categoryId: CATEGORY_ID,
+      confidenceBps: 9_000,
+      method: "exact_counterparty" as const,
+      evidenceCount: 3,
+      algorithmVersion: 1
+    };
+    const accepted = { ...ROW, categorySuggestion: suggestion };
+    const corrected = {
+      ...ROW,
+      id: "623e4567-e89b-42d3-a456-426614174000",
+      dedupeHash: "dedupe-2",
+      suggestedCategoryId: "723e4567-e89b-42d3-a456-426614174000",
+      categorySuggestion: suggestion
+    };
+    const dismissed = {
+      ...ROW,
+      id: "823e4567-e89b-42d3-a456-426614174000",
+      dedupeHash: "dedupe-3",
+      suggestedCategoryId: undefined,
+      categorySuggestion: suggestion
+    };
+    const metrics = { recordCategorySuggestions: vi.fn() };
+    const { service } = createService({
+      batches,
+      stagedRows: {
+        findIncludableForBatch: vi.fn().mockResolvedValue([accepted, corrected, dismissed])
+      },
+      transactions: {
+        findExistingDedupeHashes: vi
+          .fn()
+          .mockResolvedValue(new Set(["dedupe-1", "dedupe-2", "dedupe-3"]))
+      },
+      categories: { list: vi.fn().mockResolvedValue([]) },
+      metrics
+    });
+
+    await service.commitBatch("u1", BATCH_ID);
+
+    expect(metrics.recordCategorySuggestions.mock.calls).toEqual([
+      ["accepted_unchanged", 1],
+      ["corrected", 1],
+      ["dismissed", 1]
+    ]);
+    expect(metrics.recordCategorySuggestions.mock.calls.flat()).not.toContain(
+      ROW.parsed?.description
+    );
   });
 
   it("rejects invalid includable rows and invalid category assignments", async () => {

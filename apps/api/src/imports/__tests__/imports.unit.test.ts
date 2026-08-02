@@ -51,7 +51,8 @@ describe("ImportsService Unit Tests", () => {
     mockTransactions?: unknown;
     mockAccounts?: unknown;
     mockCategories?: unknown;
-    mockRules?: unknown;
+    mockSuggestions?: unknown;
+    mockMetrics?: unknown;
     mockAudit?: unknown;
   }) => {
     const db = opts.mockDb ?? {
@@ -62,11 +63,12 @@ describe("ImportsService Unit Tests", () => {
     const transactions = opts.mockTransactions ?? {};
     const accounts = opts.mockAccounts ?? {};
     const categories = opts.mockCategories ?? {};
-    const rules = opts.mockRules ?? {};
+    const suggestions = opts.mockSuggestions ?? {};
+    const metrics = opts.mockMetrics ?? { recordCategorySuggestions: vi.fn() };
     const audit = opts.mockAudit ?? {};
 
     return new ImportsService(
-      // @ts-expect-error mock service args
+      // @ts-expect-error focused mocks intentionally implement only methods used by each test
       db,
       batches,
       stagedRows,
@@ -74,7 +76,8 @@ describe("ImportsService Unit Tests", () => {
       accounts,
       categories,
       audit,
-      rules
+      suggestions,
+      metrics
     );
   };
 

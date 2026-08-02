@@ -9,6 +9,8 @@ export type QueueMetricSnapshot = Readonly<{
 }>;
 
 type TransactionOutcome = "committed" | "failed";
+export type CategorySuggestionMetricOutcome =
+  "suggested" | "accepted_unchanged" | "corrected" | "dismissed";
 
 const BALANCE_DRIFT_METRIC_KEY = "treasury-ops:metrics:balance-verification";
 const BalanceVerificationMetricSchema = z.object({
@@ -30,6 +32,12 @@ export class MetricsService {
   };
   private transactionDurationMsSum = 0;
   private transactionDurationCount = 0;
+  private readonly categorySuggestionOutcomes: Record<CategorySuggestionMetricOutcome, number> = {
+    suggested: 0,
+    accepted_unchanged: 0,
+    corrected: 0,
+    dismissed: 0
+  };
 
   constructor(private readonly redis: RedisService) {}
 
@@ -48,6 +56,13 @@ export class MetricsService {
     this.transactionOutcomes[outcome] += 1;
     this.transactionDurationMsSum += durationMs;
     this.transactionDurationCount += 1;
+  }
+
+  recordCategorySuggestions(outcome: CategorySuggestionMetricOutcome, count: number): void {
+    if (!Number.isSafeInteger(count) || count < 0) {
+      throw new RangeError("Category suggestion metric count must be a non-negative integer.");
+    }
+    this.categorySuggestionOutcomes[outcome] += count;
   }
 
   async recordBalanceVerification(
@@ -106,6 +121,12 @@ export class MetricsService {
       "# TYPE treasuryops_db_transaction_duration_ms summary",
       `treasuryops_db_transaction_duration_ms_sum ${finiteMetric(this.transactionDurationMsSum)}`,
       `treasuryops_db_transaction_duration_ms_count ${this.transactionDurationCount}`,
+      "# HELP treasuryops_category_suggestions_total Category suggestions and narration-free review outcomes.",
+      "# TYPE treasuryops_category_suggestions_total counter",
+      `treasuryops_category_suggestions_total{outcome="suggested"} ${this.categorySuggestionOutcomes.suggested}`,
+      `treasuryops_category_suggestions_total{outcome="accepted_unchanged"} ${this.categorySuggestionOutcomes.accepted_unchanged}`,
+      `treasuryops_category_suggestions_total{outcome="corrected"} ${this.categorySuggestionOutcomes.corrected}`,
+      `treasuryops_category_suggestions_total{outcome="dismissed"} ${this.categorySuggestionOutcomes.dismissed}`,
       "# HELP treasuryops_queue_jobs Current BullMQ jobs by queue and state.",
       "# TYPE treasuryops_queue_jobs gauge"
     );

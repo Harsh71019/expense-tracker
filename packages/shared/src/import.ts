@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { AccountIdSchema } from "./account.js";
 import { CategoryIdSchema } from "./category.js";
+import { CategorySuggestionSchema } from "./category-suggestion.js";
 import { PageInfoSchema } from "./pagination.js";
 import { TransactionTypeSchema } from "./transaction.js";
 
@@ -103,6 +104,7 @@ export const StagedRowSchema = z.object({
   parsed: ParsedRowSchema.optional(),
   dedupeHash: z.string().optional(),
   suggestedCategoryId: CategoryIdSchema.optional(),
+  categorySuggestion: CategorySuggestionSchema.optional(),
   problems: z.array(z.string()),
   isDuplicate: z.boolean(),
   include: z.boolean()

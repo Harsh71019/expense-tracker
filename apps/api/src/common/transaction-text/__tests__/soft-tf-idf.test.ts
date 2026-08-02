@@ -4,6 +4,7 @@ import {
   SOFT_TF_IDF_MAX_CORPUS_DOCUMENTS,
   SOFT_TF_IDF_MAX_TOKEN_CODE_POINTS,
   SOFT_TF_IDF_MAX_TOKENS_PER_DOCUMENT,
+  prepareSoftTfIdfCorpus,
   softTfIdfSimilarityBps
 } from "../soft-tf-idf.js";
 
@@ -33,6 +34,13 @@ describe("bounded fixed-point Soft TF-IDF", () => {
     const commonOnly = softTfIdfSimilarityBps(query, ["common"], corpus);
     const rareOnly = softTfIdfSimilarityBps(query, ["rare"], corpus);
     expect(rareOnly).toBeGreaterThan(commonOnly);
+  });
+
+  it("reuses prepared private-corpus document frequencies", () => {
+    const prepared = prepareSoftTfIdfCorpus(corpus);
+    expect(softTfIdfSimilarityBps(["common", "rare"], ["rare"], prepared)).toBe(
+      softTfIdfSimilarityBps(["common", "rare"], ["rare"], corpus)
+    );
   });
 
   it("counts repeated terms while retaining an inclusive basis-point bound", () => {

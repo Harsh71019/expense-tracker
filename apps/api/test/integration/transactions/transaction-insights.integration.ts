@@ -27,7 +27,7 @@ describe("TransactionRepository.getInsights", () => {
       categories,
       repository,
       new AuditRepository(testDb.db),
-      { log: () => undefined, warn: () => undefined }
+      { log: () => undefined, warn: () => undefined, error: () => undefined }
     );
 
     const accountA = await withTxn(testDb.db, (tx) =>

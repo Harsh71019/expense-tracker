@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 import { toast } from "@/lib/toast";
 
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import { DialogSurface } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { ValidationError } from "@/lib/errors";
@@ -145,21 +146,27 @@ export function CreateAssetDrawer({ onClose }: Readonly<{ onClose: () => void }>
         />
 
         <div className="grid gap-3.5 sm:grid-cols-2">
-          <Input
-            id="asset-opened"
-            label="Opened"
-            type="date"
-            value={openedAt}
-            onChange={(event) => setOpenedAt(event.target.value)}
-          />
-          {kind === "fixed_deposit" ? (
-            <Input
-              id="asset-maturity"
-              label="Maturity"
-              type="date"
-              value={maturityAt}
-              onChange={(event) => setMaturityAt(event.target.value)}
+          <div className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+            <span>Opened</span>
+            <DatePicker
+              id="asset-opened"
+              aria-label="Opened"
+              placeholder="Opened"
+              value={openedAt}
+              onChange={setOpenedAt}
             />
+          </div>
+          {kind === "fixed_deposit" ? (
+            <div className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+              <span>Maturity</span>
+              <DatePicker
+                id="asset-maturity"
+                aria-label="Maturity"
+                placeholder="Maturity"
+                value={maturityAt}
+                onChange={setMaturityAt}
+              />
+            </div>
           ) : null}
         </div>
 

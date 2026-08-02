@@ -6,8 +6,8 @@ import type { ReactNode } from "react";
 import { toast } from "@/lib/toast";
 
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import { DialogSurface } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 
 import { useCreateValuation } from "../hooks/use-asset-mutations";
 import { calendarDateInIndia } from "../model/asset-form";
@@ -68,13 +68,16 @@ export function AddValuationDialog({ asset, onClose }: AddValuationDialogProps):
           onChange={setMagnitudeMinor}
         />
 
-        <Input
-          id="valuation-date"
-          label="Valued on"
-          type="date"
-          value={valuedAt}
-          onChange={(event) => setValuedAt(event.target.value)}
-        />
+        <div className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+          <span>Valued on</span>
+          <DatePicker
+            id="valuation-date"
+            aria-label="Valued on"
+            placeholder="Valued on"
+            value={valuedAt}
+            onChange={setValuedAt}
+          />
+        </div>
       </div>
 
       <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">

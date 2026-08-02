@@ -13,6 +13,7 @@ import type { FormEvent, ReactNode } from "react";
 import { AmountInput } from "@/components/ui/amount-input";
 import { Button } from "@/components/ui/button";
 import { DialogSurface } from "@/components/ui/dialog";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { toast } from "@/lib/toast";
@@ -143,14 +144,18 @@ export function GoalEditorDrawer({ accounts, goal, onClose }: GoalEditorDrawerPr
           value={targetMinor}
           onChange={setTargetMinor}
         />
-        <Input
-          id="goal-target-date"
-          label="Target date (optional)"
-          type="date"
-          min={todayInIndia()}
-          value={targetDate}
-          onChange={(event) => setTargetDate(event.target.value)}
-        />
+        <div className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+          <span>Target date (optional)</span>
+          <DatePicker
+            id="goal-target-date"
+            aria-label="Target date (optional)"
+            placeholder="Target date (optional)"
+            clearable
+            minDate={todayInIndia()}
+            value={targetDate}
+            onChange={setTargetDate}
+          />
+        </div>
 
         {goal === undefined ? (
           <div>

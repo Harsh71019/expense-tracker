@@ -8,6 +8,7 @@ import { toast } from "@/lib/toast";
 
 import { Button } from "@/components/ui/button";
 import { DialogSurface } from "@/components/ui/dialog";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { useAccounts } from "@/features/accounts";
@@ -16,9 +17,6 @@ import { useCreateTxn } from "@/features/quick-add";
 import { toDatetimeLocalValue } from "@/lib/datetime-local";
 import { userErrorMessage, ValidationError } from "@/lib/errors";
 import { generateRequestId } from "@/lib/request-id";
-
-const selectClasses =
-  "min-h-11 w-full rounded-lg border border-border bg-surface-muted px-3.5 py-2.5 text-base font-medium text-foreground transition-colors duration-150 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 sm:text-sm";
 
 function fieldErrorName(path: string): keyof CreateTransaction | null {
   if (
@@ -194,21 +192,21 @@ export function CreateTxnSheet({ onClose }: Readonly<{ onClose: () => void }>): 
         </div>
 
         <div className="flex flex-col gap-3 sm:flex-row">
-          <label className="flex min-w-0 flex-1 flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
-            Date &amp; time
-            <input
-              type="datetime-local"
+          <div className="flex min-w-0 flex-1 flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+            <span>Date &amp; time</span>
+            <DatePicker
               name="occurredAt"
-              autoComplete="off"
-              className={selectClasses}
+              aria-label="Date & time"
+              placeholder="Date & time"
+              includeTime
               value={toDatetimeLocalValue(form.watch("occurredAt"))}
-              onChange={(event) =>
-                form.setValue("occurredAt", new Date(event.target.value), {
+              onChange={(val) =>
+                form.setValue("occurredAt", val ? new Date(val) : new Date(), {
                   shouldValidate: true
                 })
               }
             />
-          </label>
+          </div>
           <div className="flex min-w-0 flex-1 flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
             <span>Category</span>
             <Select

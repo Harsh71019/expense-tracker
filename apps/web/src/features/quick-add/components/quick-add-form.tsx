@@ -7,6 +7,7 @@ import type { ReactNode } from "react";
 
 import { AmountInput } from "@/components/ui/amount-input";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { toDatetimeLocalValue } from "@/lib/datetime-local";
@@ -97,8 +98,6 @@ export function QuickAddForm(): ReactNode {
     return <AccountSetup />;
   }
 
-  const inputClasses =
-    "min-h-11 w-full rounded-lg border border-border bg-surface px-3.5 py-2.5 text-base text-foreground transition-colors duration-150 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 sm:text-sm";
   return (
     <section>
       <div className="mb-6">
@@ -223,19 +222,21 @@ export function QuickAddForm(): ReactNode {
             )
           }
         />
-        <label className="flex flex-col gap-1.5 font-mono text-[10px] font-bold tracking-wider text-foreground-muted uppercase">
-          When
-          <input
+        <div className="flex flex-col gap-1.5 font-mono text-[10px] font-bold tracking-wider text-foreground-muted uppercase">
+          <span>When</span>
+          <DatePicker
             name="occurredAt"
-            type="datetime-local"
-            autoComplete="off"
-            className={inputClasses}
+            aria-label="When"
+            placeholder="When"
+            includeTime
             value={toDatetimeLocalValue(form.watch("occurredAt"))}
-            onChange={(event) =>
-              form.setValue("occurredAt", new Date(event.target.value), { shouldValidate: true })
+            onChange={(val) =>
+              form.setValue("occurredAt", val ? new Date(val) : new Date(), {
+                shouldValidate: true
+              })
             }
           />
-        </label>
+        </div>
         {create.isError && !(create.error instanceof ValidationError) ? (
           <p
             role="alert"

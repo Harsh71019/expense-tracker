@@ -6,7 +6,7 @@ import type { FormEvent, ReactNode } from "react";
 
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import { toast } from "@/lib/toast";
 
 import { useExportCsv } from "../hooks/use-export-csv";
@@ -107,20 +107,26 @@ export function ExportCsvForm(): ReactNode {
         </fieldset>
         {mode === "range" ? (
           <div className="grid gap-4 sm:grid-cols-2">
-            <Input
-              id="export-from"
-              label="From (Asia/Kolkata)"
-              type="date"
-              value={from}
-              onChange={(event) => setFrom(event.target.value)}
-            />
-            <Input
-              id="export-to"
-              label="To (Asia/Kolkata)"
-              type="date"
-              value={to}
-              onChange={(event) => setTo(event.target.value)}
-            />
+            <div className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+              <span>From (Asia/Kolkata)</span>
+              <DatePicker
+                id="export-from"
+                aria-label="From (Asia/Kolkata)"
+                placeholder="From date"
+                value={from}
+                onChange={setFrom}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+              <span>To (Asia/Kolkata)</span>
+              <DatePicker
+                id="export-to"
+                aria-label="To (Asia/Kolkata)"
+                placeholder="To date"
+                value={to}
+                onChange={setTo}
+              />
+            </div>
           </div>
         ) : null}
         {error === undefined ? null : (

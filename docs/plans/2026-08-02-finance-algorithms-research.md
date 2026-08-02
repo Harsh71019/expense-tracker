@@ -2,7 +2,7 @@
 
 **Status:** research and implementation roadmap  
 **Date:** 2026-08-02  
-**Branch:** `codex/finance-algorithms-research`  
+**Branch:** `docs/finance-01-algorithms-research`<br>
 **Scope:** algorithms that can make this personal expense tracker more accurate, predictive, and useful without weakening its append-only ledger or integer-paise rules
 
 ## Decision summary

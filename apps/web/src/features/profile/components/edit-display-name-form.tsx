@@ -47,11 +47,12 @@ export function EditDisplayNameForm({ initialProfile }: EditDisplayNameFormProps
   const unchanged = displayName === profile.displayName;
 
   return (
-    <section className="rounded-2xl border border-border bg-surface-elevated p-5 sm:p-6">
+    <section className="glass-card rounded-2xl p-5 shadow-sm sm:p-6">
       <header>
-        <h2 className="text-lg font-bold tracking-tight text-foreground">Display name</h2>
-        <p className="mt-1 text-sm leading-relaxed text-foreground-muted">
-          Shown across TreasuryOps wherever your name appears.
+        <h2 className="text-lg font-bold tracking-tight text-foreground">Display Name</h2>
+        <p className="mt-1 text-xs leading-relaxed text-foreground-muted sm:text-sm pretty-text">
+          Shown across TreasuryOps transactions, audit logs, and reports wherever your identity is
+          displayed.
         </p>
       </header>
 
@@ -75,7 +76,7 @@ export function EditDisplayNameForm({ initialProfile }: EditDisplayNameFormProps
           )}
         </div>
         <Button type="submit" disabled={update.isPending || unchanged || displayName.trim() === ""}>
-          {update.isPending ? "Saving…" : "Save"}
+          {update.isPending ? "Saving…" : "Save Changes"}
         </Button>
       </form>
     </section>

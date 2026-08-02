@@ -38,15 +38,18 @@ export function SettingsTabList({ activeTab }: Readonly<{ activeTab: SettingsTab
   return (
     <nav
       aria-label="Settings sections"
-      className="rounded-2xl border border-border bg-surface-elevated p-1.5 lg:p-2"
+      className="glass-card rounded-2xl p-2 shadow-sm backdrop-blur-md"
     >
-      <p className="hidden px-2.5 pt-1 pb-2 font-mono text-[10px] font-bold tracking-[0.16em] text-foreground-muted uppercase lg:block">
-        Settings menu
-      </p>
+      <div className="hidden items-center justify-between px-3 pt-1.5 pb-2.5 lg:flex">
+        <p className="font-mono text-[10px] font-bold tracking-[0.18em] text-foreground-muted uppercase">
+          Settings Menu
+        </p>
+        <span className="h-1.5 w-1.5 rounded-full bg-accent/60" aria-hidden="true" />
+      </div>
       <div
         role="tablist"
         aria-label="Settings sections"
-        className="flex gap-1 overflow-x-auto lg:flex-col lg:overflow-visible"
+        className="flex gap-1.5 overflow-x-auto custom-scrollbar lg:flex-col lg:overflow-visible"
       >
         {SETTINGS_TABS.map((tab, index) => {
           const active = tab.id === activeTab;
@@ -63,32 +66,40 @@ export function SettingsTabList({ activeTab }: Readonly<{ activeTab: SettingsTab
               tabIndex={active ? 0 : -1}
               scroll={false}
               onKeyDown={(event) => moveFocus(event, index)}
-              className={`group flex min-h-12 min-w-[6.5rem] flex-1 items-center justify-center gap-2 rounded-xl border px-2 py-2.5 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface sm:min-w-0 lg:justify-start lg:px-3 lg:text-left ${
+              className={`group relative flex min-h-12 min-w-[7rem] flex-1 items-center justify-center gap-3 rounded-xl border px-3 py-2.5 text-center transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface sm:min-w-0 lg:justify-start lg:px-3.5 lg:text-left ${
                 active
-                  ? "border-accent/40 bg-accent-glow text-accent shadow-sm"
-                  : "border-transparent text-foreground-muted hover:border-border hover:bg-surface-muted hover:text-foreground"
+                  ? "border-accent/40 bg-accent-glow/50 text-accent shadow-glow font-semibold"
+                  : "border-transparent text-foreground-muted hover:border-border/80 hover:bg-surface-muted/60 hover:text-foreground"
               }`}
             >
               <span
                 aria-hidden="true"
-                className={`hidden h-8 w-8 shrink-0 place-items-center rounded-lg text-sm sm:grid ${
+                className={`hidden h-9 w-9 shrink-0 place-items-center rounded-xl text-base font-bold transition-all duration-200 sm:grid ${
                   active
-                    ? "bg-surface-elevated text-current"
-                    : "bg-surface-muted text-accent group-hover:bg-surface"
+                    ? "bg-surface-elevated text-accent shadow-sm scale-105"
+                    : "bg-surface-muted/80 text-foreground-muted group-hover:bg-surface-elevated group-hover:text-foreground"
                 }`}
               >
                 {tab.icon}
               </span>
-              <span className="min-w-0">
-                <span className="block truncate text-xs font-semibold sm:text-sm">{tab.label}</span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-xs font-semibold sm:text-sm tracking-tight">
+                  {tab.label}
+                </span>
                 <span
-                  className={`mt-0.5 hidden truncate text-[10px] lg:block ${
-                    active ? "text-accent/80" : "text-foreground-muted"
+                  className={`mt-0.5 hidden truncate text-[11px] lg:block ${
+                    active ? "text-accent/90 font-medium" : "text-foreground-muted"
                   }`}
                 >
                   {tab.description}
                 </span>
               </span>
+              {active ? (
+                <span
+                  className="hidden h-2 w-2 rounded-full bg-accent lg:block shadow-glow"
+                  aria-hidden="true"
+                />
+              ) : null}
             </Link>
           );
         })}

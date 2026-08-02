@@ -183,12 +183,12 @@ describe("route shells", () => {
     expect(screen.getByText("harsh@example.com")).toBeVisible();
 
     const settings = render(await SettingsPage({ searchParams: Promise.resolve({}) }));
-    const settingsHeading = screen.getByRole("heading", { name: "Settings" });
+    const settingsHeading = screen.getByRole("heading", { name: "Settings & Workspace" });
     expect(settingsHeading).toBeVisible();
     expect(settings.container.firstElementChild).toHaveClass("w-full");
     expect(settings.container.firstElementChild).not.toHaveClass("max-w-[920px]");
-    expect(screen.getByText("Signed in as")).toBeVisible();
-    expect(screen.getAllByText("harsh@example.com")).toHaveLength(2);
+    expect(screen.getAllByText("Signed in as")).toHaveLength(2);
+    expect(screen.getAllByText("harsh@example.com")).toHaveLength(3);
   });
 
   it("renders the dashboard's financial overview panels", async () => {
@@ -325,7 +325,7 @@ describe("route shells", () => {
 
     expect(screen.getByRole("tab", { name: /Profile/ })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByRole("tabpanel")).toHaveAccessibleName("Profile");
-    expect(screen.getByText("Signed in as")).toBeVisible();
+    expect(screen.getAllByText("Signed in as")).toHaveLength(2);
   });
 
   it("renders the current balance for active accounts", async () => {

@@ -1,6 +1,11 @@
 "use client";
 
-import type { Account, Category, RecurringRule } from "@treasury-ops/shared";
+import type {
+  Account,
+  Category,
+  RecurringReconciliationReviewItem,
+  RecurringRule
+} from "@treasury-ops/shared";
 import { useState } from "react";
 import type { ReactNode } from "react";
 import { toast } from "@/lib/toast";
@@ -15,6 +20,7 @@ import { userErrorMessage } from "@/lib/errors";
 
 import { useRecurringRules, useUpdateRecurringRule } from "../hooks/use-recurring-rules";
 import { describeSchedule, parseSchedule } from "../model/schedule";
+import { ReconciliationReviewPanel } from "./reconciliation-review-panel";
 import { RecurringRuleDrawer } from "./recurring-rule-drawer";
 
 const dateFormatter = new Intl.DateTimeFormat("en-IN", {
@@ -28,9 +34,15 @@ type ManagerProps = Readonly<{
   initialRules: RecurringRule[];
   accounts: Account[];
   categories: Category[];
+  initialReconciliations: RecurringReconciliationReviewItem[];
 }>;
 
-export function RecurringManager({ initialRules, accounts, categories }: ManagerProps): ReactNode {
+export function RecurringManager({
+  initialRules,
+  accounts,
+  categories,
+  initialReconciliations
+}: ManagerProps): ReactNode {
   const rules = useRecurringRules(initialRules);
   const accountQuery = useAccounts(accounts.length === 0 ? undefined : accounts);
   const categoryQuery = useCategories(categories.length === 0 ? undefined : categories);
@@ -97,6 +109,8 @@ export function RecurringManager({ initialRules, accounts, categories }: Manager
           <span className="mr-1 text-base leading-none">+</span> New rule
         </Button>
       </header>
+
+      <ReconciliationReviewPanel initialReconciliations={initialReconciliations} />
 
       {items.length === 0 ? null : (
         <div className="flex flex-wrap items-center gap-x-8 gap-y-3 rounded-2xl border border-border bg-surface-muted px-5 py-4">

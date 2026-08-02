@@ -305,6 +305,24 @@ export type {
   UpdateRecurringRule
 } from "./recurring.js";
 export {
+  ListRecurringReconciliationsQuerySchema,
+  RecurringReconciliationIdSchema,
+  RecurringReconciliationResolutionSchema,
+  RecurringReconciliationReviewItemSchema,
+  RecurringReconciliationSchema,
+  RecurringReconciliationStatusSchema,
+  ResolveRecurringReconciliationSchema
+} from "./recurring-reconciliation.js";
+export type {
+  ListRecurringReconciliationsQuery,
+  RecurringReconciliation,
+  RecurringReconciliationId,
+  RecurringReconciliationResolution,
+  RecurringReconciliationReviewItem,
+  RecurringReconciliationStatus,
+  ResolveRecurringReconciliation
+} from "./recurring-reconciliation.js";
+export {
   AccountRollupSchema,
   CategoryRollupSchema,
   MonthlyRollupSchema,

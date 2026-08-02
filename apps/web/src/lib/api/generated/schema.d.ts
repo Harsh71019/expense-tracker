@@ -3087,6 +3087,164 @@ export interface paths {
     };
     trace?: never;
   };
+  "/v1/recurring/reconciliations": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: {
+          status?: "pending";
+        };
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Pending recurring reconciliations awaiting review */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["RecurringReconciliationReviewItem"][];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/recurring/reconciliations/{id}/resolve": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path: {
+          id: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
+            /** @enum {string} */
+            resolution: "confirmed_duplicate" | "confirmed_distinct";
+            /** Format: uuid */
+            chosenRecurringTransactionId?: string;
+          };
+        };
+      };
+      responses: {
+        /** @description Resolved reconciliation, or idempotent replay */
+        200: {
+          headers: {
+            "Idempotency-Replayed"?: "true";
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["RecurringReconciliation"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Recurring reconciliation not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Already resolved, or idempotency key reused for a different request */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/v1/spending-warnings": {
     parameters: {
       query?: never;
@@ -5739,7 +5897,9 @@ export interface components {
         | "bill.statement_not_ready"
         | "bill.unresolved_statement"
         | "bill.already_reconciled"
-        | "recurring.no_occurrences";
+        | "recurring.no_occurrences"
+        | "recurring.reconciliation_already_resolved"
+        | "recurring.invalid_reconciliation_resolution";
       reqId: string;
       /** Format: date-time */
       timestamp: string | null;
@@ -5935,6 +6095,8 @@ export interface components {
         transferGroupId?: string;
         /** Format: uuid */
         billId?: string;
+        /** Format: uuid */
+        recurringRuleId?: string;
         /** Format: date-time */
         createdAt: string | null;
         /** Format: date-time */
@@ -5978,6 +6140,8 @@ export interface components {
       transferGroupId?: string;
       /** Format: uuid */
       billId?: string;
+      /** Format: uuid */
+      recurringRuleId?: string;
       /** Format: date-time */
       createdAt: string | null;
       /** Format: date-time */
@@ -6018,6 +6182,8 @@ export interface components {
         transferGroupId?: string;
         /** Format: uuid */
         billId?: string;
+        /** Format: uuid */
+        recurringRuleId?: string;
         /** Format: date-time */
         createdAt: string | null;
         /** Format: date-time */
@@ -6055,6 +6221,8 @@ export interface components {
         transferGroupId?: string;
         /** Format: uuid */
         billId?: string;
+        /** Format: uuid */
+        recurringRuleId?: string;
         /** Format: date-time */
         createdAt: string | null;
         /** Format: date-time */
@@ -6097,6 +6265,8 @@ export interface components {
           transferGroupId?: string;
           /** Format: uuid */
           billId?: string;
+          /** Format: uuid */
+          recurringRuleId?: string;
           /** Format: date-time */
           createdAt: string | null;
           /** Format: date-time */
@@ -6134,6 +6304,8 @@ export interface components {
           transferGroupId?: string;
           /** Format: uuid */
           billId?: string;
+          /** Format: uuid */
+          recurringRuleId?: string;
           /** Format: date-time */
           createdAt: string | null;
           /** Format: date-time */
@@ -6280,6 +6452,128 @@ export interface components {
       /** Format: date-time */
       lastRunAt?: string | null;
       isPaused: boolean;
+      /** Format: date-time */
+      createdAt: string | null;
+      /** Format: date-time */
+      updatedAt: string | null;
+    };
+    RecurringReconciliationReviewItem: {
+      /** Format: uuid */
+      id: string;
+      userId: string;
+      /** Format: uuid */
+      incomingTransactionId: string;
+      /** Format: uuid */
+      recurringRuleId?: string;
+      /** Format: uuid */
+      recurringTransactionId?: string;
+      candidateRecurringTransactionIds: string[];
+      /** @enum {string} */
+      status: "auto_matched" | "ambiguous" | "amount_mismatch";
+      /** @enum {string} */
+      resolution?: "confirmed_duplicate" | "confirmed_distinct";
+      /** Format: date-time */
+      resolvedAt?: string | null;
+      /** Format: date-time */
+      createdAt: string | null;
+      /** Format: date-time */
+      updatedAt: string | null;
+      incomingTransaction: {
+        /** Format: uuid */
+        accountId: string;
+        /** Format: uuid */
+        categoryId?: string;
+        /** @enum {string} */
+        type: "expense" | "income";
+        amountMinor: number;
+        /** Format: date-time */
+        occurredAt: string | null;
+        description: string;
+        /** @default [] */
+        tags: string[];
+        /** Format: uuid */
+        id: string;
+        userId: string;
+        /** @enum {string} */
+        currency: "INR";
+        /** @enum {string} */
+        source: "manual" | "csv_import" | "recurring" | "api";
+        /** @enum {string} */
+        status: "posted" | "reversed" | "reversal";
+        /** Format: uuid */
+        idempotencyKey?: string;
+        /** Format: uuid */
+        reversalOf?: string;
+        /** Format: uuid */
+        reversedBy?: string;
+        /** Format: uuid */
+        transferGroupId?: string;
+        /** Format: uuid */
+        billId?: string;
+        /** Format: uuid */
+        recurringRuleId?: string;
+        /** Format: date-time */
+        createdAt: string | null;
+        /** Format: date-time */
+        updatedAt: string | null;
+      };
+      candidateTransactions: {
+        /** Format: uuid */
+        accountId: string;
+        /** Format: uuid */
+        categoryId?: string;
+        /** @enum {string} */
+        type: "expense" | "income";
+        amountMinor: number;
+        /** Format: date-time */
+        occurredAt: string | null;
+        description: string;
+        /** @default [] */
+        tags: string[];
+        /** Format: uuid */
+        id: string;
+        userId: string;
+        /** @enum {string} */
+        currency: "INR";
+        /** @enum {string} */
+        source: "manual" | "csv_import" | "recurring" | "api";
+        /** @enum {string} */
+        status: "posted" | "reversed" | "reversal";
+        /** Format: uuid */
+        idempotencyKey?: string;
+        /** Format: uuid */
+        reversalOf?: string;
+        /** Format: uuid */
+        reversedBy?: string;
+        /** Format: uuid */
+        transferGroupId?: string;
+        /** Format: uuid */
+        billId?: string;
+        /** Format: uuid */
+        recurringRuleId?: string;
+        /** Format: date-time */
+        createdAt: string | null;
+        /** Format: date-time */
+        updatedAt: string | null;
+      }[];
+    };
+    RecurringReconciliation: {
+      /** Format: uuid */
+      id: string;
+      userId: string;
+      /** Format: uuid */
+      incomingTransactionId: string;
+      /** Format: uuid */
+      recurringRuleId?: string;
+      /** Format: uuid */
+      recurringTransactionId?: string;
+      candidateRecurringTransactionIds: string[];
+      /** @enum {string} */
+      status: "auto_matched" | "ambiguous" | "amount_mismatch";
+      /** @enum {string} */
+      resolution?: "confirmed_duplicate" | "confirmed_distinct";
+      /** Format: date-time */
+      resolvedAt?: string | null;
       /** Format: date-time */
       createdAt: string | null;
       /** Format: date-time */
@@ -6758,6 +7052,8 @@ export interface components {
           transferGroupId?: string;
           /** Format: uuid */
           billId?: string;
+          /** Format: uuid */
+          recurringRuleId?: string;
           /** Format: date-time */
           createdAt: string | null;
           /** Format: date-time */
@@ -6949,6 +7245,8 @@ export interface components {
           transferGroupId?: string;
           /** Format: uuid */
           billId?: string;
+          /** Format: uuid */
+          recurringRuleId?: string;
           /** Format: date-time */
           createdAt: string | null;
           /** Format: date-time */
@@ -6986,6 +7284,8 @@ export interface components {
           transferGroupId?: string;
           /** Format: uuid */
           billId?: string;
+          /** Format: uuid */
+          recurringRuleId?: string;
           /** Format: date-time */
           createdAt: string | null;
           /** Format: date-time */

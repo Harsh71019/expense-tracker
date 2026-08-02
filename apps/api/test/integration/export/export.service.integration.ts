@@ -31,7 +31,7 @@ describe("ExportService", () => {
       categoryRepository,
       transactionRepository,
       new AuditRepository(testDb.db),
-      { log: () => undefined, warn: () => undefined }
+      { log: () => undefined, warn: () => undefined, error: () => undefined }
     );
     exportService = new ExportService(transactionRepository, accountRepository, categoryRepository);
 

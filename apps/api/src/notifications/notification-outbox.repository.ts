@@ -17,7 +17,8 @@ export const NotificationTypeSchema = z.enum([
   "budget_alert",
   "monthly_report",
   "balance_drift",
-  "goal_achieved"
+  "goal_achieved",
+  "recurring_reconciliation_pending"
 ]);
 export type NotificationType = z.infer<typeof NotificationTypeSchema>;
 

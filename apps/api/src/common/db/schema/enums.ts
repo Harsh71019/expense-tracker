@@ -52,7 +52,8 @@ export const notificationTypeEnum = pgEnum("notification_type", [
   "budget_alert",
   "monthly_report",
   "balance_drift",
-  "goal_achieved"
+  "goal_achieved",
+  "recurring_reconciliation_pending"
 ]);
 export const notificationStatusEnum = pgEnum("notification_status", [
   "pending",
@@ -100,3 +101,12 @@ export const spendingWarningAnalysisStateStatusEnum = pgEnum("spending_warning_a
 ]);
 export const goalFundingModeEnum = pgEnum("goal_funding_mode", ["linked_account", "tagged"]);
 export const goalStatusEnum = pgEnum("goal_status", ["active", "achieved", "abandoned"]);
+export const recurringReconciliationStatusEnum = pgEnum("recurring_reconciliation_status", [
+  "auto_matched",
+  "ambiguous",
+  "amount_mismatch"
+]);
+export const recurringReconciliationResolutionEnum = pgEnum("recurring_reconciliation_resolution", [
+  "confirmed_duplicate",
+  "confirmed_distinct"
+]);

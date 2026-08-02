@@ -1,10 +1,11 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable, Optional } from "@nestjs/common";
 import {
   type CreateTransaction,
   type ListTransactionsQuery,
   type Transaction,
   type TransactionId,
   type TransactionPage,
+  type TransactionSource,
   type UpdateTransaction
 } from "@treasury-ops/shared";
 import { Logger } from "nestjs-pino";
@@ -20,13 +21,17 @@ import type { DbTx } from "../common/db/db-txn.js";
 import { isUniqueViolation } from "../common/db/postgres-error.js";
 import { CategoryKindMismatchError } from "../common/errors/category-kind-mismatch.error.js";
 import { EntityNotFoundError } from "../common/errors/entity-not-found.error.js";
-import { TransactionNotReversibleError } from "../common/errors/transaction-not-reversible.error.js";
 import { TransferMetadataRequiresGroupError } from "../common/errors/transfer-metadata-requires-group.error.js";
 import { LogEvent } from "../common/logging/events.js";
 import { TransactionRepository } from "./transaction.repository.js";
+import {
+  TRANSACTION_CREATED_HOOK,
+  type TransactionCreatedHook
+} from "./transaction-created-hook.js";
+import { reverseTransactionInTx } from "./reverse-transaction-in-tx.js";
 
 export type CreateTransactionResult = Readonly<{ transaction: Transaction; replayed: boolean }>;
-type TransactionLogger = Pick<Logger, "log" | "warn">;
+type TransactionLogger = Pick<Logger, "log" | "warn" | "error">;
 
 @Injectable()
 export class TransactionService {
@@ -36,13 +41,41 @@ export class TransactionService {
     private readonly categories: CategoryRepository,
     private readonly transactions: TransactionRepository,
     private readonly audit: AuditRepository,
-    @Inject(Logger) private readonly logger: TransactionLogger
+    @Inject(Logger) private readonly logger: TransactionLogger,
+    @Optional()
+    @Inject(TRANSACTION_CREATED_HOOK)
+    private readonly createdHook?: TransactionCreatedHook
   ) {}
 
   async create(
     userId: string,
     input: CreateTransaction,
-    idempotencyKey: string | undefined
+    idempotencyKey: string | undefined,
+    source: TransactionSource = "manual"
+  ): Promise<CreateTransactionResult> {
+    const result = await this.createAndReplay(userId, input, idempotencyKey, source);
+    if (!result.replayed && source === "api") {
+      await this.createdHook
+        ?.onTransactionCreated(userId, result.transaction)
+        .catch((error: unknown) => {
+          this.logger.error(
+            {
+              event: LogEvent.RecurringReconciliationHookFailed,
+              txnId: result.transaction.id,
+              err: error
+            },
+            "post-create reconciliation hook failed"
+          );
+        });
+    }
+    return result;
+  }
+
+  private async createAndReplay(
+    userId: string,
+    input: CreateTransaction,
+    idempotencyKey: string | undefined,
+    source: TransactionSource
   ): Promise<CreateTransactionResult> {
     try {
       const transaction = await withTxn(this.db, async (tx) => {
@@ -57,7 +90,14 @@ export class TransactionService {
           await this.accounts.applyBalanceDelta(userId, input.accountId, deltaMinor, tx)
         );
 
-        const created = await this.transactions.create(userId, input, idempotencyKey, tx);
+        const created = await this.transactions.create(
+          userId,
+          input,
+          idempotencyKey,
+          tx,
+          undefined,
+          source
+        );
         await this.audit.record(userId, "transaction.create", created.id, tx);
         return created;
       });
@@ -147,28 +187,9 @@ export class TransactionService {
 
   async reverse(userId: string, transactionId: TransactionId): Promise<CreateTransactionResult> {
     try {
-      const transaction = await withTxn(this.db, async (tx) => {
-        const original = await this.transactions.findPostedById(userId, transactionId, tx);
-        if (original === null) {
-          const existing = await this.transactions.findById(userId, transactionId, tx);
-          if (existing === null) throw new EntityNotFoundError("Transaction");
-          throw new TransactionNotReversibleError();
-        }
-
-        const reversal = await this.transactions.createReversal(userId, original, tx);
-        if (!(await this.transactions.markReversed(userId, original.id, reversal.id, tx))) {
-          throw new TransactionNotReversibleError();
-        }
-
-        const deltaMinor =
-          original.type === "expense" ? original.amountMinor : -original.amountMinor;
-        assertBalanceDeltaApplied(
-          await this.accounts.applyReversalBalanceDelta(userId, original.accountId, deltaMinor, tx)
-        );
-
-        await this.audit.record(userId, "transaction.reverse", reversal.id, tx);
-        return reversal;
-      });
+      const transaction = await withTxn(this.db, (tx) =>
+        this.reverseInTx(userId, transactionId, tx)
+      );
       this.logger.log(
         {
           event: LogEvent.TransactionReversed,
@@ -187,5 +208,20 @@ export class TransactionService {
       );
       return { transaction: reversal, replayed: true };
     }
+  }
+
+  /**
+   * The `withTxn`-bound core of `reverse()` -- delegates to the shared
+   * `reverseTransactionInTx` (see that file for why this is a plain function
+   * rather than something the recurring reconciliation service calls
+   * through this class).
+   */
+  reverseInTx(userId: string, transactionId: TransactionId, tx: DbTx): Promise<Transaction> {
+    return reverseTransactionInTx(
+      { transactions: this.transactions, accounts: this.accounts, audit: this.audit },
+      userId,
+      transactionId,
+      tx
+    );
   }
 }

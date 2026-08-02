@@ -102,9 +102,14 @@ import {
   ListGoalsQuerySchema,
   ListBillsQuerySchema,
   ListBillStatementRowsQuerySchema,
+  ListRecurringReconciliationsQuerySchema,
+  RecurringReconciliationReviewItemSchema,
   ReorderGoalsSchema,
+  RecurringReconciliationIdSchema,
+  RecurringReconciliationSchema,
   RecurringRuleIdSchema,
   RecurringRuleSchema,
+  ResolveRecurringReconciliationSchema,
   PayCreditCardBillSchema,
   UpdateApiKeySchema,
   UpdateBillStatementRowSchema,
@@ -140,6 +145,12 @@ const StagedRowPage = StagedRowPageSchema.meta({ id: "StagedRowPage" });
 const UserProfile = UserProfileSchema.meta({ id: "UserProfile" });
 const MonthlyRollup = MonthlyRollupSchema.meta({ id: "MonthlyRollup" });
 const RecurringRule = RecurringRuleSchema.meta({ id: "RecurringRule" });
+const RecurringReconciliation = RecurringReconciliationSchema.meta({
+  id: "RecurringReconciliation"
+});
+const RecurringReconciliationReviewItem = RecurringReconciliationReviewItemSchema.meta({
+  id: "RecurringReconciliationReviewItem"
+});
 const SpendingWarningPage = SpendingWarningPageSchema.meta({ id: "SpendingWarningPage" });
 const DismissSpendingWarningResponse = DismissSpendingWarningResponseSchema.meta({
   id: "DismissSpendingWarningResponse"
@@ -177,6 +188,7 @@ const importBatchAndRowId = z.object({
 });
 const month = z.object({ month: MonthSchema });
 const recurringRuleId = z.object({ ruleId: RecurringRuleIdSchema });
+const recurringReconciliationId = z.object({ id: RecurringReconciliationIdSchema });
 const spendingWarningId = z.object({ warningId: SpendingWarningIdSchema });
 const goalId = z.object({ goalId: GoalIdSchema });
 const billId = z.object({ billId: CreditCardBillIdSchema });
@@ -755,6 +767,43 @@ registry.registerPath({
     },
     404: { description: "Recurring rule, account, or category not found", ...json(ProblemDetails) },
     ...idempotencyConflictResponse,
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/v1/recurring/reconciliations",
+  security: secured,
+  request: { query: ListRecurringReconciliationsQuerySchema },
+  responses: {
+    200: {
+      description: "Pending recurring reconciliations awaiting review",
+      ...json(z.array(RecurringReconciliationReviewItem))
+    },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "post",
+  path: "/v1/recurring/reconciliations/{id}/resolve",
+  security: secured,
+  request: {
+    params: recurringReconciliationId,
+    body: json(ResolveRecurringReconciliationSchema),
+    headers: idempotencyKeyHeaders
+  },
+  responses: {
+    200: {
+      description: "Resolved reconciliation, or idempotent replay",
+      headers: optionalReplayHeaders,
+      ...json(RecurringReconciliation)
+    },
+    404: { description: "Recurring reconciliation not found", ...json(ProblemDetails) },
+    409: {
+      description: "Already resolved, or idempotency key reused for a different request",
+      ...json(ProblemDetails)
+    },
     ...problemResponses
   }
 });

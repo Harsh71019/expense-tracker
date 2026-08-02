@@ -104,7 +104,9 @@ export class RecurringMaterializeService {
         undefined,
         tx,
         undefined,
-        "recurring"
+        "recurring",
+        undefined,
+        rule.id
       );
       await this.audit.record(rule.userId, "recurring.materialize", posted.id, tx);
 

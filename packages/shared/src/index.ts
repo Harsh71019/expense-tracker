@@ -15,6 +15,50 @@ export type {
   CreditCardConfigInput
 } from "./account.js";
 export {
+  AlgorithmAbstentionReasonSchema,
+  AlgorithmComplexitySchema,
+  AlgorithmDegradedModeSchema,
+  AlgorithmMetricDeltaSchema,
+  AlgorithmMetricUnitSchema,
+  AlgorithmResourceContractSchema,
+  AlgorithmResourceUsageSchema,
+  AlgorithmRolloutModeSchema,
+  AlgorithmRunContextSchema,
+  AlgorithmRunOutcomeSchema,
+  AlgorithmSufficiencySchema,
+  AlgorithmVersionComparisonSchema,
+  AlgorithmVersionSchema,
+  BinaryDecisionMetricsSchema,
+  BudgetDecisionMetricsSchema,
+  CategoryDecisionMetricsSchema,
+  ForecastDecisionMetricsSchema,
+  RecurrenceDecisionMetricsSchema,
+  ShortfallDecisionMetricsSchema,
+  WarningDecisionMetricsSchema
+} from "./algorithm-evaluation.js";
+export type {
+  AlgorithmAbstentionReason,
+  AlgorithmComplexity,
+  AlgorithmDegradedMode,
+  AlgorithmMetricDelta,
+  AlgorithmMetricUnit,
+  AlgorithmResourceContract,
+  AlgorithmResourceUsage,
+  AlgorithmRolloutMode,
+  AlgorithmRunContext,
+  AlgorithmRunOutcome,
+  AlgorithmSufficiency,
+  AlgorithmVersion,
+  AlgorithmVersionComparison,
+  BinaryDecisionMetrics,
+  BudgetDecisionMetrics,
+  CategoryDecisionMetrics,
+  ForecastDecisionMetrics,
+  RecurrenceDecisionMetrics,
+  ShortfallDecisionMetrics,
+  WarningDecisionMetrics
+} from "./algorithm-evaluation.js";
+export {
   AcknowledgeExtraTransactionSchema,
   BillDetailSchema,
   BillPageSchema,
@@ -366,6 +410,20 @@ export type {
   TransferReversal,
   UpdateTransaction
 } from "./transaction.js";
+export {
+  NormalizedTransactionTextSchema,
+  TransactionTextDirectionHintSchema,
+  TransactionTextPaymentRailSchema,
+  TransactionTextReferenceKindSchema,
+  TransactionTextReferenceTokenSchema
+} from "./transaction-text.js";
+export type {
+  NormalizedTransactionText,
+  TransactionTextDirectionHint,
+  TransactionTextPaymentRail,
+  TransactionTextReferenceKind,
+  TransactionTextReferenceToken
+} from "./transaction-text.js";
 export {
   DEFAULT_USER_PROFILE,
   UserProfileSchema,

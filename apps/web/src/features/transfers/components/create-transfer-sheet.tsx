@@ -8,6 +8,7 @@ import { toast } from "@/lib/toast";
 
 import { Button } from "@/components/ui/button";
 import { DialogSurface } from "@/components/ui/dialog";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { useAccounts } from "@/features/accounts";
@@ -16,9 +17,6 @@ import { userErrorMessage, ValidationError } from "@/lib/errors";
 import { generateRequestId } from "@/lib/request-id";
 
 import { useCreateTransfer } from "../hooks/use-transfers";
-
-const selectClasses =
-  "min-h-11 w-full rounded-lg border border-border bg-surface-muted px-3.5 py-2.5 text-base font-medium text-foreground transition-colors duration-150 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 sm:text-sm";
 
 function fieldErrorName(path: string): keyof CreateTransfer | null {
   if (
@@ -228,25 +226,22 @@ export function CreateTransferSheet({ onClose }: Readonly<{ onClose: () => void 
             </p>
           )}
 
-          <label
-            htmlFor="create-transfer-date"
-            className="mt-5 block font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase"
-          >
-            Date & time
-          </label>
-          <input
-            id="create-transfer-date"
-            name="occurredAt"
-            type="datetime-local"
-            autoComplete="off"
-            className={`${selectClasses} mt-1.5`}
-            value={toDatetimeLocalValue(form.watch("occurredAt"))}
-            onChange={(event) =>
-              form.setValue("occurredAt", new Date(event.target.value), {
-                shouldValidate: true
-              })
-            }
-          />
+          <div className="mt-5 flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+            <span>Date & time</span>
+            <DatePicker
+              id="create-transfer-date"
+              name="occurredAt"
+              aria-label="Date & time"
+              placeholder="Date & time"
+              includeTime
+              value={toDatetimeLocalValue(form.watch("occurredAt"))}
+              onChange={(val) =>
+                form.setValue("occurredAt", val ? new Date(val) : new Date(), {
+                  shouldValidate: true
+                })
+              }
+            />
+          </div>
 
           <div className="mt-5">
             <Input

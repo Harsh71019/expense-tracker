@@ -14,6 +14,7 @@ import { toast } from "@/lib/toast";
 
 import { AmountInput } from "@/components/ui/amount-input";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import { DialogSurface } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -316,23 +317,22 @@ export function RecurringRuleDrawer({
             </p>
           ) : null}
 
-          <label>
-            <span className={fieldLabelClasses}>Starts on</span>
-            <input
+          <div className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+            <span>Starts on</span>
+            <DatePicker
               name="startDate"
-              type="date"
-              autoComplete="off"
+              aria-label="Starts on"
+              placeholder="Starts on"
+              disabled={rule !== undefined}
               value={schedule.startDate}
-              readOnly={rule !== undefined}
-              onChange={(event) => patchSchedule({ startDate: event.target.value })}
-              className={`${numberClasses} read-only:cursor-not-allowed read-only:opacity-60`}
+              onChange={(val) => patchSchedule({ startDate: val })}
             />
             {rule === undefined ? null : (
               <span className="mt-1.5 block text-xs text-foreground-muted">
                 The API keeps the original start date fixed after creation.
               </span>
             )}
-          </label>
+          </div>
 
           <div>
             <span className={fieldLabelClasses}>Repeats</span>
@@ -532,18 +532,17 @@ function EndingField({
 }>): ReactNode {
   if (ending === "until") {
     return (
-      <label>
-        <span className={fieldLabelClasses}>Last date</span>
-        <input
+      <div className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+        <span>Last date</span>
+        <DatePicker
           name="untilDate"
-          type="date"
-          autoComplete="off"
-          min={schedule.startDate}
+          aria-label="Last date"
+          placeholder="Last date"
+          minDate={schedule.startDate}
           value={schedule.untilDate}
-          onChange={(event) => onChange({ untilDate: event.target.value })}
-          className={numberClasses}
+          onChange={(val) => onChange({ untilDate: val })}
         />
-      </label>
+      </div>
     );
   }
   if (ending === "count") {

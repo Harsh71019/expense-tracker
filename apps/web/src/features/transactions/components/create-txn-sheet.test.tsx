@@ -45,7 +45,7 @@ describe("CreateTxnSheet", () => {
       "overflow-y-auto",
       "overscroll-contain"
     );
-    expect(screen.getByLabelText("Date & time").closest("div")).toHaveClass(
+    expect(screen.getByLabelText("Date & time").closest(".sm\\:flex-row")).toHaveClass(
       "flex-col",
       "sm:flex-row"
     );

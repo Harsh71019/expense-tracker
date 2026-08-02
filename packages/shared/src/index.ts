@@ -288,6 +288,24 @@ export type { MinorAmount } from "./money.js";
 export { PageInfoSchema } from "./pagination.js";
 export type { PageInfo } from "./pagination.js";
 export {
+  ConfirmPendingTransactionSchema,
+  CreatePendingTransactionSchema,
+  ListPendingTransactionsQuerySchema,
+  PendingTransactionIdSchema,
+  PendingTransactionSchema,
+  PendingTransactionStatusSchema,
+  StoredPendingTransactionSchema
+} from "./pending-transaction.js";
+export type {
+  ConfirmPendingTransaction,
+  CreatePendingTransaction,
+  ListPendingTransactionsQuery,
+  PendingTransaction,
+  PendingTransactionId,
+  PendingTransactionStatus,
+  StoredPendingTransaction
+} from "./pending-transaction.js";
+export {
   computeFirstOccurrence,
   computeNextOccurrence,
   CreateRecurringRuleSchema,

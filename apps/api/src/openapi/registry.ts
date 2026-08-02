@@ -121,7 +121,12 @@ import {
   SpendingWarningPageSchema,
   UpdateGoalSchema,
   ListBudgetsQuerySchema,
-  UpsertBudgetSchema
+  UpsertBudgetSchema,
+  ConfirmPendingTransactionSchema,
+  CreatePendingTransactionSchema,
+  ListPendingTransactionsQuerySchema,
+  PendingTransactionIdSchema,
+  PendingTransactionSchema
 } from "@treasury-ops/shared";
 import { z } from "zod";
 
@@ -161,6 +166,7 @@ const Budget = BudgetSchema.meta({ id: "Budget" });
 const BudgetPage = BudgetPageSchema.meta({ id: "BudgetPage" });
 const Goal = GoalSchema.meta({ id: "Goal" });
 const GoalPlan = GoalPlanSchema.meta({ id: "GoalPlan" });
+const PendingTransaction = PendingTransactionSchema.meta({ id: "PendingTransaction" });
 const DashboardSummary = DashboardSummarySchema.meta({ id: "DashboardSummary" });
 const RecentActivityItem = RecentActivityItemSchema.meta({ id: "RecentActivityItem" });
 const DashboardStats = DashboardStatsSchema.meta({ id: "DashboardStats" });
@@ -199,6 +205,7 @@ const billAndRowId = z.object({
   rowId: BillStatementRowIdSchema
 });
 const budgetId = z.object({ budgetId: BudgetIdSchema });
+const pendingTransactionId = z.object({ id: PendingTransactionIdSchema });
 const json = (schema: z.ZodType): { content: { "application/json": { schema: z.ZodType } } } => ({
   content: { "application/json": { schema } }
 });
@@ -1328,6 +1335,68 @@ registry.registerPath({
       description: "Bill is unreconciled, paid, or would be overpaid",
       ...json(ProblemDetails)
     },
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/v1/pending-transactions",
+  security: securedByKeyOrCookie,
+  request: { body: json(CreatePendingTransactionSchema), headers: idempotencyKeyHeaders },
+  responses: {
+    200: {
+      description: "Idempotent replay of the created pending transaction",
+      headers: replayedHeaders,
+      ...json(PendingTransaction)
+    },
+    201: { description: "Created pending transaction", ...json(PendingTransaction) },
+    404: { description: "Account not found", ...json(ProblemDetails) },
+    ...idempotencyConflictResponse,
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "get",
+  path: "/v1/pending-transactions",
+  security: secured,
+  request: { query: ListPendingTransactionsQuerySchema },
+  responses: {
+    200: { description: "Pending transactions page", ...json(z.array(PendingTransaction)) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "post",
+  path: "/v1/pending-transactions/{id}/confirm",
+  security: secured,
+  request: {
+    params: pendingTransactionId,
+    body: json(ConfirmPendingTransactionSchema),
+    headers: idempotencyKeyHeaders
+  },
+  responses: {
+    200: {
+      description: "Pending transaction confirmed into a real transaction",
+      ...json(PendingTransaction)
+    },
+    404: { description: "Pending transaction not found", ...json(ProblemDetails) },
+    409: { description: "Pending transaction was already dismissed", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "post",
+  path: "/v1/pending-transactions/{id}/dismiss",
+  security: secured,
+  request: { params: pendingTransactionId, headers: idempotencyKeyHeaders },
+  responses: {
+    204: {
+      description: "Pending transaction dismissed, or idempotent replay",
+      headers: optionalReplayHeaders
+    },
+    404: { description: "Pending transaction not found", ...json(ProblemDetails) },
+    ...idempotencyConflictResponse,
     ...problemResponses
   }
 });

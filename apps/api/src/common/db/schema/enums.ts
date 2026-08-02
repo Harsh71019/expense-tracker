@@ -110,3 +110,8 @@ export const recurringReconciliationResolutionEnum = pgEnum("recurring_reconcili
   "confirmed_duplicate",
   "confirmed_distinct"
 ]);
+export const pendingTransactionStatusEnum = pgEnum("pending_transaction_status", [
+  "pending",
+  "confirmed",
+  "dismissed"
+]);

@@ -3,6 +3,7 @@ import {
   AccountSchema,
   CreateApiKeyResponseSchema,
   ImportBatchSchema,
+  PendingTransactionSchema,
   ProblemDetailsSchema,
   TransactionInsightsSchema,
   TransactionSchema
@@ -202,6 +203,66 @@ describe("production HTTP composition", () => {
       code: "auth.insufficient_scope",
       status: 403
     });
+  });
+
+  it("lets a transactions:write API key create pending transactions, but never confirm them", async () => {
+    const account = await createAccount(baseUrl, sessionA, "Pending transactions account");
+    const keyResponse = await fetch(`${baseUrl}/api/v1/api-keys`, {
+      method: "POST",
+      headers: { ...JSON_HEADERS, cookie: sessionA },
+      body: JSON.stringify({
+        name: "n8n e2e",
+        permissions: { transactions: ["write"] }
+      })
+    });
+    expect(keyResponse.status).toBe(201);
+    const apiKey = await parseResponse(keyResponse, CreateApiKeyResponseSchema);
+
+    const created = await fetch(`${baseUrl}/api/v1/pending-transactions`, {
+      method: "POST",
+      headers: {
+        ...JSON_HEADERS,
+        authorization: `Bearer ${apiKey.key}`,
+        "idempotency-key": crypto.randomUUID()
+      },
+      body: JSON.stringify({
+        accountId: account.id,
+        type: "expense",
+        occurredAt: new Date().toISOString(),
+        description: "Anthropic — USD 23.60, INR amount pending"
+      })
+    });
+    expect(created.status).toBe(201);
+    const pendingTransaction = await parseResponse(created, PendingTransactionSchema);
+
+    const deniedConfirm = await fetch(
+      `${baseUrl}/api/v1/pending-transactions/${pendingTransaction.id}/confirm`,
+      {
+        method: "POST",
+        headers: {
+          ...JSON_HEADERS,
+          authorization: `Bearer ${apiKey.key}`,
+          "idempotency-key": crypto.randomUUID()
+        },
+        body: JSON.stringify({ amountMinor: 199_900 })
+      }
+    );
+    expect(deniedConfirm.status).toBe(403);
+    expect(await parseResponse(deniedConfirm, ProblemDetailsSchema)).toMatchObject({
+      code: "auth.insufficient_scope",
+      status: 403
+    });
+
+    const confirmed = await fetch(
+      `${baseUrl}/api/v1/pending-transactions/${pendingTransaction.id}/confirm`,
+      {
+        method: "POST",
+        headers: { ...JSON_HEADERS, cookie: sessionA, "idempotency-key": crypto.randomUUID() },
+        body: JSON.stringify({ amountMinor: 199_900 })
+      }
+    );
+    expect(confirmed.status).toBe(200);
+    expect((await parseResponse(confirmed, PendingTransactionSchema)).status).toBe("confirmed");
   });
 
   it("accepts multipart CSV upload and durably records the parse workflow", async () => {

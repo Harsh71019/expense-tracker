@@ -14,6 +14,10 @@ describe("MetricsService", () => {
     service.recordTransactionRetry();
     service.recordTransaction("committed", 20);
     service.recordTransaction("failed", 30);
+    service.recordCategorySuggestions("suggested", 4);
+    service.recordCategorySuggestions("accepted_unchanged", 2);
+    service.recordCategorySuggestions("corrected", 1);
+    service.recordCategorySuggestions("dismissed", 1);
 
     const output = service.render(
       [{ queue: "imports", counts: { waiting: 2, failed: 1 } }],
@@ -28,6 +32,12 @@ describe("MetricsService", () => {
     expect(output).toContain("treasuryops_db_transaction_retries_total 1");
     expect(output).toContain('treasuryops_db_transactions_total{outcome="committed"} 1');
     expect(output).toContain('treasuryops_db_transactions_total{outcome="failed"} 1');
+    expect(output).toContain('treasuryops_category_suggestions_total{outcome="suggested"} 4');
+    expect(output).toContain(
+      'treasuryops_category_suggestions_total{outcome="accepted_unchanged"} 2'
+    );
+    expect(output).toContain('treasuryops_category_suggestions_total{outcome="corrected"} 1');
+    expect(output).toContain('treasuryops_category_suggestions_total{outcome="dismissed"} 1');
     expect(output).toContain('treasuryops_queue_jobs{queue="imports",state="failed"} 1');
     expect(output).toContain("treasuryops_worker_heartbeat_age_seconds 15");
     expect(output).toContain("treasuryops_balance_drift_accounts 3");
@@ -68,5 +78,13 @@ describe("MetricsService", () => {
     expect(output).toContain("treasuryops_worker_heartbeat_age_seconds -1");
     expect(output).toContain("treasuryops_balance_drift_accounts -1");
     expect(output).toContain("treasuryops_balance_verification_age_seconds -1");
+  });
+
+  it("rejects invalid category suggestion counter increments", () => {
+    const service = new MetricsService(
+      focusedTestDouble<RedisService>({ get: vi.fn(), set: vi.fn() })
+    );
+    expect(() => service.recordCategorySuggestions("suggested", -1)).toThrow(RangeError);
+    expect(() => service.recordCategorySuggestions("suggested", 0.5)).toThrow(RangeError);
   });
 });

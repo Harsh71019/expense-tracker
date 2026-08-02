@@ -15,6 +15,11 @@ export type SoftTfIdfOptions = Readonly<{
   tokenSimilarityThresholdBps?: number;
 }>;
 
+export type PreparedSoftTfIdfCorpus = Readonly<{
+  documentCount: number;
+  documentFrequency: ReadonlyMap<string, number>;
+}>;
+
 type WeightedToken = Readonly<{
   token: string;
   weight: bigint;
@@ -74,6 +79,16 @@ function documentFrequencies(corpus: readonly (readonly string[])[]): ReadonlyMa
     }
   }
   return frequencies;
+}
+
+/** Precomputes private-corpus document frequencies once for repeated comparisons. */
+export function prepareSoftTfIdfCorpus(
+  corpus: readonly (readonly string[])[]
+): PreparedSoftTfIdfCorpus {
+  return {
+    documentCount: corpus.length,
+    documentFrequency: documentFrequencies(corpus)
+  };
 }
 
 function weightedTokens(
@@ -142,7 +157,7 @@ function squaredNorm(tokens: readonly WeightedToken[]): bigint {
 export function softTfIdfSimilarityBps(
   leftTokens: readonly string[],
   rightTokens: readonly string[],
-  corpus: readonly (readonly string[])[],
+  corpus: readonly (readonly string[])[] | PreparedSoftTfIdfCorpus,
   options: SoftTfIdfOptions = {}
 ): number {
   const thresholdBps =
@@ -153,12 +168,20 @@ export function softTfIdfSimilarityBps(
 
   const left = normalizeTokens(leftTokens, "left document");
   const right = normalizeTokens(rightTokens, "right document");
-  const documentFrequency = documentFrequencies(corpus);
+  const preparedCorpus = isPreparedCorpus(corpus) ? corpus : prepareSoftTfIdfCorpus(corpus);
   if (left.length === 0 && right.length === 0) return BASIS_POINTS_SCALE;
   if (left.length === 0 || right.length === 0) return 0;
 
-  const weightedLeft = weightedTokens(left, corpus.length, documentFrequency);
-  const weightedRight = weightedTokens(right, corpus.length, documentFrequency);
+  const weightedLeft = weightedTokens(
+    left,
+    preparedCorpus.documentCount,
+    preparedCorpus.documentFrequency
+  );
+  const weightedRight = weightedTokens(
+    right,
+    preparedCorpus.documentCount,
+    preparedCorpus.documentFrequency
+  );
   const usedLeft = new Set<string>();
   const usedRight = new Set<string>();
   let numerator = 0n;
@@ -176,4 +199,10 @@ export function softTfIdfSimilarityBps(
     "Soft TF-IDF score"
   );
   return Math.min(BASIS_POINTS_SCALE, score);
+}
+
+function isPreparedCorpus(
+  corpus: readonly (readonly string[])[] | PreparedSoftTfIdfCorpus
+): corpus is PreparedSoftTfIdfCorpus {
+  return !Array.isArray(corpus);
 }

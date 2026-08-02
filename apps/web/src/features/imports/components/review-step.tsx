@@ -154,7 +154,11 @@ export function ReviewStep({ batchId, categories, onCountsChange }: ReviewStepPr
         {rows.map((row) => {
           const parsed = row.parsed;
           const categoryOptions = categories.filter((category) => category.kind === parsed?.type);
-          const suggested = row.suggestedCategoryId !== undefined && !editedRowIds.has(row.id);
+          const suggestion = row.categorySuggestion;
+          const showingSuggestion =
+            suggestion !== undefined &&
+            suggestion.categoryId === row.suggestedCategoryId &&
+            !editedRowIds.has(row.id);
           return (
             <div
               key={row.id}
@@ -226,9 +230,13 @@ export function ReviewStep({ batchId, categories, onCountsChange }: ReviewStepPr
                       ]}
                       placeholder="Uncategorized"
                     />
-                    {suggested ? (
+                    {showingSuggestion ? (
                       <p className="mt-1 text-[10px] font-medium text-accent">
-                        ✦ suggested by rule
+                        ✦ {suggestionLabel(suggestion.method)} ·{" "}
+                        {formatConfidenceBps(suggestion.confidenceBps)} confidence ·{" "}
+                        {suggestion.evidenceCount}{" "}
+                        {suggestion.evidenceCount === 1 ? "example" : "examples"} · v
+                        {suggestion.algorithmVersion}
                       </p>
                     ) : null}
                   </>
@@ -253,4 +261,25 @@ export function ReviewStep({ batchId, categories, onCountsChange }: ReviewStepPr
       </div>
     </>
   );
+}
+
+function suggestionLabel(method: NonNullable<StagedRow["categorySuggestion"]>["method"]): string {
+  switch (method) {
+    case "explicit_rule":
+      return "explicit rule";
+    case "exact_counterparty":
+      return "exact private history";
+    case "jaro_winkler":
+      return "similar private counterparty";
+    case "soft_tf_idf":
+      return "similar private tokens";
+    case "jaccard":
+      return "shared private tokens";
+  }
+}
+
+function formatConfidenceBps(confidenceBps: number): string {
+  const whole = Math.floor(confidenceBps / 100);
+  const fraction = confidenceBps % 100;
+  return fraction === 0 ? `${whole}%` : `${whole}.${String(fraction).padStart(2, "0")}%`;
 }

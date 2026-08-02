@@ -207,6 +207,8 @@ export {
   CreateCategoryRuleSchema
 } from "./category-rule.js";
 export type { CategoryRule, CategoryRuleId, CreateCategoryRule } from "./category-rule.js";
+export { CategorySuggestionMethodSchema, CategorySuggestionSchema } from "./category-suggestion.js";
+export type { CategorySuggestion, CategorySuggestionMethod } from "./category-suggestion.js";
 export {
   CashflowBucketSchema,
   CashflowQuerySchema,

@@ -13,7 +13,9 @@ import type { FormEvent, ReactNode } from "react";
 import { AmountInput } from "@/components/ui/amount-input";
 import { Button } from "@/components/ui/button";
 import { DialogSurface } from "@/components/ui/dialog";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { toast } from "@/lib/toast";
 
 import { useCreateGoal, useUpdateGoal } from "../hooks/use-goals";
@@ -21,8 +23,6 @@ import { dateInputToUtc, dateToInput, todayInIndia } from "../model/goal-form";
 
 const fieldLabel =
   "mb-1.5 block font-mono text-[9px] font-extrabold tracking-[0.22em] text-foreground-muted uppercase";
-const selectClasses =
-  "min-h-11 w-full rounded-lg border border-border bg-surface px-3.5 py-2.5 text-base text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 sm:text-sm";
 
 type GoalEditorDrawerProps = Readonly<{
   accounts: readonly Account[];
@@ -144,14 +144,18 @@ export function GoalEditorDrawer({ accounts, goal, onClose }: GoalEditorDrawerPr
           value={targetMinor}
           onChange={setTargetMinor}
         />
-        <Input
-          id="goal-target-date"
-          label="Target date (optional)"
-          type="date"
-          min={todayInIndia()}
-          value={targetDate}
-          onChange={(event) => setTargetDate(event.target.value)}
-        />
+        <div className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+          <span>Target date (optional)</span>
+          <DatePicker
+            id="goal-target-date"
+            aria-label="Target date (optional)"
+            placeholder="Target date (optional)"
+            clearable
+            minDate={todayInIndia()}
+            value={targetDate}
+            onChange={setTargetDate}
+          />
+        </div>
 
         {goal === undefined ? (
           <div>
@@ -181,26 +185,24 @@ export function GoalEditorDrawer({ accounts, goal, onClose }: GoalEditorDrawerPr
         )}
 
         {fundingMode === "linked_account" ? (
-          <label>
-            <span className={fieldLabel}>Linked account</span>
-            <select
-              className={selectClasses}
+          <div className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.22em] text-foreground-muted uppercase">
+            <span>Linked account</span>
+            <Select
               aria-label="Linked account"
               name="linkedAccountId"
-              autoComplete="off"
+              options={[
+                { value: "", label: "Choose an account" },
+                ...availableAccounts.map((account) => ({
+                  value: account.id,
+                  label: `${account.name}${account.isArchived ? " (archived)" : ""}`
+                }))
+              ]}
+              placeholder="Choose an account"
               value={linkedAccountId}
               disabled={goal !== undefined}
-              onChange={(event) => setLinkedAccountId(event.target.value)}
-            >
-              <option value="">Choose an account</option>
-              {availableAccounts.map((account) => (
-                <option key={account.id} value={account.id}>
-                  {account.name}
-                  {account.isArchived ? " (archived)" : ""}
-                </option>
-              ))}
-            </select>
-          </label>
+              onChange={setLinkedAccountId}
+            />
+          </div>
         ) : (
           <Input
             id="goal-tag"

@@ -37,7 +37,8 @@ describe("UploadStep", () => {
         onFileChange={vi.fn()}
       />
     );
-    await user.selectOptions(screen.getByLabelText(/Which account/), account.id);
+    await user.click(screen.getByRole("combobox", { name: /Which account/ }));
+    await user.click(screen.getByRole("option", { name: "HDFC Savings" }));
     expect(onAccountChange).toHaveBeenCalledWith(account.id);
   });
 
@@ -125,7 +126,10 @@ describe("UploadStep", () => {
       />
     );
 
-    expect(screen.getByLabelText(/Which account/)).toHaveClass("min-h-11", "text-base");
+    expect(screen.getByRole("combobox", { name: /Which account/ })).toHaveClass(
+      "min-h-11",
+      "text-base"
+    );
     expect(screen.getByRole("button", { name: "Remove file" })).toHaveClass("h-11", "w-11");
   });
 });

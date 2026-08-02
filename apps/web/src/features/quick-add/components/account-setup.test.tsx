@@ -41,7 +41,8 @@ describe("AccountSetup", () => {
     render(<AccountSetup />);
 
     await user.type(screen.getByLabelText("Account name"), "HDFC");
-    await user.selectOptions(screen.getByLabelText("Account type"), "bank");
+    await user.click(screen.getByRole("combobox", { name: "Account type" }));
+    await user.click(screen.getByRole("option", { name: "Bank account" }));
     await user.click(screen.getByRole("button", { name: "Create account" }));
 
     expect(mocks.mutateAsync).toHaveBeenCalledWith({

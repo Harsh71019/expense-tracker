@@ -13,11 +13,9 @@ import { AmountInput, evaluateMathExpression } from "@/components/ui/amount-inpu
 import { Button } from "@/components/ui/button";
 import { DialogSurface } from "@/components/ui/dialog";
 import { Money } from "@/components/ui/money";
+import { Select } from "@/components/ui/select";
 
 import { useUpsertBudget } from "../hooks/use-budget-mutations";
-
-const selectClasses =
-  "min-h-11 w-full rounded-lg border border-border bg-surface px-3.5 py-2.5 text-base text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 sm:text-sm";
 
 type BudgetFormProps = Readonly<{
   categories: readonly Category[];
@@ -107,31 +105,27 @@ export function BudgetForm({
       </div>
 
       <form onSubmit={(event) => void submit(event)} className="mt-7 space-y-5">
-        <label className="block">
-          <span className="mb-1.5 block font-mono text-[9px] font-extrabold tracking-[0.22em] text-foreground-muted uppercase">
-            Expense category
-          </span>
-          <select
+        <div className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.22em] text-foreground-muted uppercase">
+          <span>Expense category</span>
+          <Select
             aria-label="Expense category"
             name="categoryId"
-            autoComplete="off"
-            className={selectClasses}
+            options={[
+              { value: "", label: "Choose a category" },
+              ...categories.map((category) => {
+                const hasBudget = budgets.some((progress) => progress.category.id === category.id);
+                return {
+                  value: category.id,
+                  label: `${category.name}${hasBudget ? " (edit existing)" : ""}`
+                };
+              })
+            ]}
+            placeholder="Choose a category"
             value={categoryId}
             disabled={initialProgress !== undefined}
-            onChange={(event) => selectCategory(event.target.value)}
-          >
-            <option value="">Choose a category</option>
-            {categories.map((category) => {
-              const hasBudget = budgets.some((progress) => progress.category.id === category.id);
-              return (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                  {hasBudget ? " (edit existing)" : ""}
-                </option>
-              );
-            })}
-          </select>
-        </label>
+            onChange={selectCategory}
+          />
+        </div>
 
         {selectedExisting === undefined ? null : (
           <p className="rounded-lg border border-border bg-surface-muted p-3 text-sm text-foreground-muted">

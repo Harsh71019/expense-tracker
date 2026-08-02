@@ -119,6 +119,7 @@ describe("BillDetail", () => {
     await user.click(screen.getByRole("button", { name: "Pay remaining bill" }));
     expect(screen.getByRole("dialog", { name: "Pay credit card bill" })).toBeVisible();
     expect(screen.getByText("Destination: HDFC Card")).toBeVisible();
+    await user.click(screen.getByRole("combobox", { name: "Pay from" }));
     expect(screen.getByRole("option", { name: "HDFC Bank" })).toBeVisible();
   });
 });

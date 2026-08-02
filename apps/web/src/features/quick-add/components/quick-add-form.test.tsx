@@ -58,11 +58,10 @@ describe("QuickAddForm", () => {
     mocks.mutateAsync.mockResolvedValue({});
     render(<QuickAddForm />);
 
-    await user.selectOptions(
-      screen.getByRole("combobox", { name: /Account/ }),
-      mocks.accounts[0]?.id ?? ""
-    );
-    await user.selectOptions(screen.getByLabelText("Category"), mocks.categories[0]?.id ?? "");
+    await user.click(screen.getByRole("combobox", { name: "Account" }));
+    await user.click(screen.getByRole("option", { name: mocks.accounts[0]?.name ?? "" }));
+    await user.click(screen.getByRole("combobox", { name: "Category" }));
+    await user.click(screen.getByRole("option", { name: mocks.categories[0]?.name ?? "" }));
     await user.clear(screen.getByLabelText("Amount"));
     await user.type(screen.getByLabelText("Amount"), "20");
     await user.tab();
@@ -111,9 +110,12 @@ describe("QuickAddForm", () => {
 
     expect(screen.getByRole("button", { name: "Posting safely…" })).toBeDisabled();
     expect(screen.getByText("Could not save. Your entry is still ready to retry.")).toBeVisible();
+    await user.click(screen.getByRole("combobox", { name: "Category" }));
     expect(screen.getByRole("option", { name: "Tea" })).toBeVisible();
     expect(screen.queryByRole("option", { name: "Salary" })).not.toBeInTheDocument();
+    await user.keyboard("{Escape}");
     await user.click(screen.getByRole("button", { name: "Income" }));
+    await user.click(screen.getByRole("combobox", { name: "Category" }));
     expect(screen.getByRole("option", { name: "Salary" })).toBeVisible();
   });
 
@@ -136,7 +138,11 @@ describe("QuickAddForm", () => {
   it("uses phone-safe controls and keeps the primary action sticky above mobile navigation", () => {
     render(<QuickAddForm />);
 
-    expect(screen.getByLabelText("Account")).toHaveClass("min-h-11", "text-base", "sm:text-sm");
+    expect(screen.getByRole("combobox", { name: "Account" })).toHaveClass(
+      "min-h-11",
+      "text-base",
+      "sm:text-sm"
+    );
     expect(screen.getByRole("button", { name: "Expense" })).toHaveClass("min-h-11");
     expect(screen.getByRole("button", { name: "Add to ledger" }).parentElement).toHaveClass(
       "sticky"
@@ -152,8 +158,10 @@ describe("QuickAddForm", () => {
     );
     render(<QuickAddForm />);
 
-    await user.selectOptions(screen.getByLabelText("Account"), mocks.accounts[0]?.id ?? "");
-    await user.selectOptions(screen.getByLabelText("Category"), mocks.categories[0]?.id ?? "");
+    await user.click(screen.getByRole("combobox", { name: "Account" }));
+    await user.click(screen.getByRole("option", { name: mocks.accounts[0]?.name ?? "" }));
+    await user.click(screen.getByRole("combobox", { name: "Category" }));
+    await user.click(screen.getByRole("option", { name: mocks.categories[0]?.name ?? "" }));
     await user.clear(screen.getByLabelText("Amount"));
     await user.type(screen.getByLabelText("Amount"), "20");
     await user.tab();

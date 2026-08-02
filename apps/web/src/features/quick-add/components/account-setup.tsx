@@ -6,6 +6,7 @@ import type { FormEvent, ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { userErrorMessage } from "@/lib/errors";
 import { toast } from "@/lib/toast";
 
@@ -63,25 +64,21 @@ export function AccountSetup(): ReactNode {
           onChange={(event) => setName(event.target.value)}
           autoFocus
         />
-        <label className="flex flex-col gap-1.5 font-mono text-[10px] font-bold tracking-wider text-foreground-muted uppercase">
-          Account type
-          <select
-            className="w-full rounded-lg border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground transition-colors duration-150 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
+        <div className="flex flex-col gap-1.5 font-mono text-[10px] font-bold tracking-wider text-foreground-muted uppercase">
+          <span>Account type</span>
+          <Select
+            name="type"
+            aria-label="Account type"
+            options={accountTypes}
             value={type}
-            onChange={(event) => {
-              const parsedType = AccountTypeSchema.safeParse(event.target.value);
+            onChange={(val) => {
+              const parsedType = AccountTypeSchema.safeParse(val);
               if (parsedType.success) {
                 setType(parsedType.data);
               }
             }}
-          >
-            {accountTypes.map((accountType) => (
-              <option key={accountType.value} value={accountType.value}>
-                {accountType.label}
-              </option>
-            ))}
-          </select>
-        </label>
+          />
+        </div>
         {error === null ? null : (
           <p
             role="alert"

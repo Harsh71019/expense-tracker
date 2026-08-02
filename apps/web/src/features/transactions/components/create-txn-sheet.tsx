@@ -8,16 +8,15 @@ import { toast } from "@/lib/toast";
 
 import { Button } from "@/components/ui/button";
 import { DialogSurface } from "@/components/ui/dialog";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { useAccounts } from "@/features/accounts";
 import { useCategories } from "@/features/categories";
 import { useCreateTxn } from "@/features/quick-add";
 import { toDatetimeLocalValue } from "@/lib/datetime-local";
 import { userErrorMessage, ValidationError } from "@/lib/errors";
 import { generateRequestId } from "@/lib/request-id";
-
-const selectClasses =
-  "min-h-11 w-full rounded-lg border border-border bg-surface-muted px-3.5 py-2.5 text-base font-medium text-foreground transition-colors duration-150 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 sm:text-sm";
 
 function fieldErrorName(path: string): keyof CreateTransaction | null {
   if (
@@ -172,50 +171,61 @@ export function CreateTxnSheet({ onClose }: Readonly<{ onClose: () => void }>): 
           )}
         </div>
 
-        <label className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
-          Account
-          <select autoComplete="off" className={selectClasses} {...form.register("accountId")}>
-            <option value="">Choose account</option>
-            {activeAccounts.map((account) => (
-              <option key={account.id} value={account.id}>
-                {account.name}
-              </option>
-            ))}
-          </select>
+        <div className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+          <span>Account</span>
+          <Select
+            aria-label="Account"
+            name="accountId"
+            options={[
+              { value: "", label: "Choose account" },
+              ...activeAccounts.map((account) => ({ value: account.id, label: account.name }))
+            ]}
+            placeholder="Choose account"
+            value={form.watch("accountId") ?? ""}
+            onChange={(val) => form.setValue("accountId", val, { shouldValidate: true })}
+          />
           {form.formState.errors.accountId?.message === undefined ? null : (
             <span className="rounded-lg border border-expense/25 bg-expense/10 px-2.5 py-0.5 self-start font-mono text-[10px] normal-case text-expense">
               {form.formState.errors.accountId.message}
             </span>
           )}
-        </label>
+        </div>
 
         <div className="flex flex-col gap-3 sm:flex-row">
-          <label className="flex min-w-0 flex-1 flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
-            Date & time
-            <input
-              type="datetime-local"
+          <div className="flex min-w-0 flex-1 flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+            <span>Date &amp; time</span>
+            <DatePicker
               name="occurredAt"
-              autoComplete="off"
-              className={selectClasses}
+              aria-label="Date & time"
+              placeholder="Date & time"
+              includeTime
               value={toDatetimeLocalValue(form.watch("occurredAt"))}
-              onChange={(event) =>
-                form.setValue("occurredAt", new Date(event.target.value), {
+              onChange={(val) =>
+                form.setValue("occurredAt", val ? new Date(val) : new Date(), {
                   shouldValidate: true
                 })
               }
             />
-          </label>
-          <label className="flex min-w-0 flex-1 flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
-            Category
-            <select autoComplete="off" className={selectClasses} {...form.register("categoryId")}>
-              <option value="">Uncategorized</option>
-              {matchingCategories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
-          </label>
+          </div>
+          <div className="flex min-w-0 flex-1 flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+            <span>Category</span>
+            <Select
+              aria-label="Category"
+              name="categoryId"
+              options={[
+                { value: "", label: "Uncategorized" },
+                ...matchingCategories.map((category) => ({
+                  value: category.id,
+                  label: category.name
+                }))
+              ]}
+              placeholder="Uncategorized"
+              value={form.watch("categoryId") ?? ""}
+              onChange={(val) =>
+                form.setValue("categoryId", val === "" ? undefined : val, { shouldValidate: true })
+              }
+            />
+          </div>
         </div>
 
         <div className="flex flex-col">

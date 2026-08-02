@@ -36,7 +36,8 @@ describe("CreateRuleRow", () => {
     await user.type(screen.getByLabelText("New rule pattern"), "!");
     expect(onPatternChange).toHaveBeenCalled();
 
-    await user.selectOptions(screen.getByLabelText("Category to assign"), groceries.id);
+    await user.click(screen.getByRole("combobox", { name: "Category to assign" }));
+    await user.click(screen.getByRole("option", { name: /Groceries/ }));
     expect(onCategoryChange).toHaveBeenCalledWith(groceries.id);
 
     await user.click(screen.getByRole("button", { name: "Add rule" }));

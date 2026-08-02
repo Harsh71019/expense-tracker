@@ -43,10 +43,8 @@ describe("BudgetForm", () => {
     );
     expect(screen.getByRole("button", { name: "Close budget form" })).toHaveClass("h-11", "w-11");
 
-    await user.selectOptions(
-      screen.getByRole("combobox", { name: "Expense category" }),
-      category.id
-    );
+    await user.click(screen.getByRole("combobox", { name: "Expense category" }));
+    await user.click(screen.getByRole("option", { name: "Groceries" }));
     const amount = screen.getByLabelText("Monthly limit");
     await user.clear(amount);
     await user.type(amount, "2500.50");
@@ -64,10 +62,8 @@ describe("BudgetForm", () => {
     const user = userEvent.setup();
     render(<BudgetForm categories={[category]} budgets={[]} onClose={vi.fn()} onSaved={vi.fn()} />);
 
-    await user.selectOptions(
-      screen.getByRole("combobox", { name: "Expense category" }),
-      category.id
-    );
+    await user.click(screen.getByRole("combobox", { name: "Expense category" }));
+    await user.click(screen.getByRole("option", { name: "Groceries" }));
     const amount = screen.getByLabelText("Monthly limit");
     await user.clear(amount);
     await user.type(amount, "0");

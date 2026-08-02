@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -31,8 +31,10 @@ describe("CreateTransferSheet", () => {
 
     expect(screen.getByRole("button", { name: "Post transfer" })).toBeDisabled();
 
-    await user.selectOptions(screen.getByLabelText("From account"), mocks.accounts[0]?.id ?? "");
-    await user.selectOptions(screen.getByLabelText("To account"), mocks.accounts[1]?.id ?? "");
+    await user.click(screen.getByRole("combobox", { name: "From account" }));
+    await user.click(screen.getByRole("option", { name: mocks.accounts[0]?.name ?? "" }));
+    await user.click(screen.getByRole("combobox", { name: "To account" }));
+    await user.click(screen.getByRole("option", { name: mocks.accounts[1]?.name ?? "" }));
     await user.type(screen.getByLabelText("Amount"), "5000");
     await user.tab();
     expect(screen.getByRole("button", { name: "Post transfer" })).toBeDisabled();
@@ -45,22 +47,28 @@ describe("CreateTransferSheet", () => {
     const user = userEvent.setup();
     render(<CreateTransferSheet onClose={vi.fn()} />);
 
-    await user.selectOptions(screen.getByLabelText("From account"), mocks.accounts[0]?.id ?? "");
-    expect(
-      within(screen.getByLabelText("To account")).queryByRole("option", { name: "HDFC Savings" })
-    ).not.toBeInTheDocument();
+    await user.click(screen.getByRole("combobox", { name: "From account" }));
+    await user.click(screen.getByRole("option", { name: mocks.accounts[0]?.name ?? "" }));
+    await user.click(screen.getByRole("combobox", { name: "To account" }));
+    expect(screen.queryByRole("option", { name: "HDFC Savings" })).not.toBeInTheDocument();
   });
 
   it("swaps the from and to accounts", async () => {
     const user = userEvent.setup();
     render(<CreateTransferSheet onClose={vi.fn()} />);
 
-    await user.selectOptions(screen.getByLabelText("From account"), mocks.accounts[0]?.id ?? "");
-    await user.selectOptions(screen.getByLabelText("To account"), mocks.accounts[1]?.id ?? "");
+    await user.click(screen.getByRole("combobox", { name: "From account" }));
+    await user.click(screen.getByRole("option", { name: mocks.accounts[0]?.name ?? "" }));
+    await user.click(screen.getByRole("combobox", { name: "To account" }));
+    await user.click(screen.getByRole("option", { name: mocks.accounts[1]?.name ?? "" }));
     await user.click(screen.getByRole("button", { name: "Swap from and to accounts" }));
 
-    expect(screen.getByLabelText("From account")).toHaveValue(mocks.accounts[1]?.id);
-    expect(screen.getByLabelText("To account")).toHaveValue(mocks.accounts[0]?.id);
+    expect(screen.getByRole("combobox", { name: "From account" })).toHaveTextContent(
+      mocks.accounts[1]?.name ?? ""
+    );
+    expect(screen.getByRole("combobox", { name: "To account" })).toHaveTextContent(
+      mocks.accounts[0]?.name ?? ""
+    );
   });
 
   it("posts a transfer with the entered fields", async () => {
@@ -69,8 +77,10 @@ describe("CreateTransferSheet", () => {
     const onClose = vi.fn();
     render(<CreateTransferSheet onClose={onClose} />);
 
-    await user.selectOptions(screen.getByLabelText("From account"), mocks.accounts[0]?.id ?? "");
-    await user.selectOptions(screen.getByLabelText("To account"), mocks.accounts[1]?.id ?? "");
+    await user.click(screen.getByRole("combobox", { name: "From account" }));
+    await user.click(screen.getByRole("option", { name: mocks.accounts[0]?.name ?? "" }));
+    await user.click(screen.getByRole("combobox", { name: "To account" }));
+    await user.click(screen.getByRole("option", { name: mocks.accounts[1]?.name ?? "" }));
     await user.type(screen.getByLabelText("Amount"), "5000");
     await user.tab();
     await user.type(screen.getByLabelText("Description"), "Move to investments");

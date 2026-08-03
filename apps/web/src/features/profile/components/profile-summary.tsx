@@ -24,35 +24,33 @@ export function ProfileSummary({
   return (
     <section
       aria-label="Profile summary"
-      className="glass-card flex items-center gap-4 rounded-2xl p-5 shadow-sm sm:gap-5 sm:p-6"
+      className="glass-card flex items-center gap-3.5 rounded-2xl p-4 shadow-xs sm:gap-4 sm:p-5"
     >
       <div className="relative shrink-0">
-        <span className="grid h-14 w-14 place-items-center rounded-2xl bg-accent font-mono text-lg font-extrabold text-accent-foreground shadow-glow ring-2 ring-accent/30 sm:h-16 sm:w-16 sm:text-xl">
+        <span className="grid h-12 w-12 place-items-center rounded-xl bg-accent font-mono text-base font-extrabold text-accent-foreground shadow-glow ring-2 ring-accent/30 sm:h-14 sm:w-14 sm:text-lg">
           {initials(profile?.displayName ?? "", email)}
         </span>
         <span
-          className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full border-2 border-surface-elevated bg-income shadow-glow"
+          className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-surface-elevated bg-income shadow-glow"
           title="Active Account"
         />
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
-          <h2 className="truncate text-lg font-bold tracking-tight text-foreground sm:text-xl">
+          <h2 className="truncate text-base font-bold tracking-tight text-foreground sm:text-lg">
             {displayName}
           </h2>
-          <span className="inline-flex items-center rounded-full border border-income/30 bg-income/10 px-2 py-0.5 font-mono text-[10px] font-bold text-income">
+          <span className="inline-flex items-center rounded-md border border-income/30 bg-income/10 px-2 py-0.5 font-mono text-[10px] font-bold text-income">
             Verified
           </span>
         </div>
-        <p className="mt-0.5 truncate text-sm font-medium text-foreground-muted">{email}</p>
+        <p className="mt-0.5 truncate text-xs font-medium text-foreground-muted">{email}</p>
         {profile === null ? (
-          <p className="mt-2 text-xs text-foreground-muted">
-            Your profile details could not be loaded. Other settings remain available.
-          </p>
+          <p className="mt-1 text-xs text-foreground-muted">Profile details unavailable.</p>
         ) : (
-          <div className="mt-2.5 flex flex-wrap items-center gap-2">
-            <span className="font-mono text-[11px] font-medium text-foreground-muted bg-surface-muted/80 px-2.5 py-0.5 rounded-md border border-border/60">
-              English (India) · Asia/Kolkata (IST)
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <span className="font-mono text-[10px] font-semibold text-foreground-muted bg-surface-muted/80 px-2 py-0.5 rounded-md border border-border/60">
+              Asia/Kolkata (IST)
             </span>
           </div>
         )}

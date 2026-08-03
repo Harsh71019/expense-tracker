@@ -187,8 +187,25 @@ export function CategoryManager({
         </div>
       )}
 
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap items-center gap-2">
+      <div
+        className={`mb-5 flex flex-wrap items-center gap-3.5 rounded-2xl border p-3.5 backdrop-blur transition-all duration-200 ${
+          searchQuery.trim() !== "" || view === "archived"
+            ? "border-accent/40 bg-surface-elevated/90 shadow-sm"
+            : "border-border/80 bg-surface-elevated/90"
+        }`}
+      >
+        <div className="relative flex-1 min-w-[200px] sm:w-64 sm:flex-none">
+          <Input
+            id="search-categories"
+            label="Search categories"
+            placeholder="Search categories…"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="h-10 text-xs"
+          />
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 flex-1 min-w-[240px]">
           {(["expense", "income"] as const).map((value) => {
             const active = kind === value;
             return (
@@ -216,40 +233,61 @@ export function CategoryManager({
           })}
         </div>
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="relative flex-1 sm:w-56 sm:flex-none">
-            <Input
-              id="search-categories"
-              label="Search categories"
-              placeholder="Search categories…"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-10 text-xs"
-            />
-          </div>
-
-          <div className="flex w-full gap-1 rounded-xl border border-border bg-surface-muted p-1 sm:w-fit">
-            {(["active", "archived"] as const).map((value) => {
-              const active = view === value;
-              const count = value === "active" ? inKind.length : archivedInKind.length;
-              return (
-                <button
-                  key={value}
-                  type="button"
-                  aria-pressed={active}
-                  onClick={() => setView(value)}
-                  className={`min-h-9 flex-1 rounded-lg px-3.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:flex-none ${
-                    active
-                      ? "bg-surface-elevated text-foreground shadow-xs"
-                      : "text-foreground-muted hover:text-foreground"
-                  }`}
-                >
-                  {value === "active" ? "Active" : "Archived"} · {count}
-                </button>
-              );
-            })}
-          </div>
+        <div className="flex gap-1 rounded-xl border border-border bg-surface-muted p-1">
+          {(["active", "archived"] as const).map((value) => {
+            const active = view === value;
+            const count = value === "active" ? inKind.length : archivedInKind.length;
+            return (
+              <button
+                key={value}
+                type="button"
+                aria-pressed={active}
+                onClick={() => setView(value)}
+                className={`min-h-9 rounded-lg px-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                  active
+                    ? "bg-surface-elevated text-foreground shadow-xs"
+                    : "text-foreground-muted hover:text-foreground"
+                }`}
+              >
+                {value === "active" ? "Active" : "Archived"} · {count}
+              </button>
+            );
+          })}
         </div>
+
+        {(searchQuery.trim() !== "" || view === "archived") && (
+          <div className="flex w-full flex-wrap items-center gap-1.5 border-t border-border/60 pt-2.5">
+            <span className="font-mono text-[10px] font-semibold text-foreground-muted uppercase">
+              Active:
+            </span>
+            {searchQuery.trim() !== "" && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-accent/30 bg-accent-glow px-2.5 py-0.5 font-mono text-xs font-medium text-accent">
+                <span>Search: &quot;{searchQuery}&quot;</span>
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="hover:text-foreground focus-visible:outline-none"
+                  aria-label="Remove search filter"
+                >
+                  ×
+                </button>
+              </span>
+            )}
+            {view === "archived" && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-accent/30 bg-accent-glow px-2.5 py-0.5 font-mono text-xs font-medium text-accent">
+                <span>Showing archived</span>
+                <button
+                  type="button"
+                  onClick={() => setView("active")}
+                  className="hover:text-foreground focus-visible:outline-none"
+                  aria-label="Remove archived filter"
+                >
+                  ×
+                </button>
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {view === "archived" ? (

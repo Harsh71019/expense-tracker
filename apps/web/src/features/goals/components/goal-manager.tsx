@@ -70,6 +70,7 @@ export function GoalManager({
   const [createOpen, setCreateOpen] = useState(false);
   const [achievedOpen, setAchievedOpen] = useState(false);
   const [abandonTarget, setAbandonTarget] = useState<Goal>();
+  const [searchQuery, setSearchQuery] = useState("");
   const [order, setOrder] = useState(() => initialActive.map((goal) => goal.id));
 
   const active = activeQuery.data ?? initialActive;
@@ -86,9 +87,15 @@ export function GoalManager({
   }, [active]);
 
   const activeById = new Map(active.map((goal) => [goal.id, goal]));
-  const orderedActive = order
+  let orderedActive = order
     .map((id) => activeById.get(id))
     .filter((goal): goal is Goal => goal !== undefined);
+
+  if (searchQuery.trim() !== "") {
+    const q = searchQuery.toLowerCase().trim();
+    orderedActive = orderedActive.filter((goal) => goal.name.toLowerCase().includes(q));
+  }
+
   const accountById = new Map(accounts.map((account) => [account.id, account.name]));
 
   async function move(index: number, delta: -1 | 1): Promise<void> {
@@ -138,6 +145,41 @@ export function GoalManager({
           <span className="mr-1 text-base leading-none">+</span> New goal
         </Button>
       </header>
+
+      {active.length > 0 && (
+        <div
+          className={`mb-5 flex flex-wrap items-center gap-3.5 rounded-2xl border p-3.5 backdrop-blur transition-all duration-200 ${
+            searchQuery.trim() !== ""
+              ? "border-accent/40 bg-surface-elevated/90 shadow-sm"
+              : "border-border/80 bg-surface-elevated/90"
+          }`}
+        >
+          <div className="flex min-w-0 flex-1 items-center gap-2.5 rounded-xl border border-border/80 bg-surface-muted/60 px-3.5 transition-colors focus-within:border-accent/60 focus-within:bg-surface-muted focus-within:ring-2 focus-within:ring-accent/20">
+            <span className="text-foreground-muted/70 text-sm font-semibold" aria-hidden="true">
+              ⌕
+            </span>
+            <input
+              value={searchQuery}
+              name="goalSearch"
+              autoComplete="off"
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Search goals by target name…"
+              aria-label="Search goals"
+              className="min-h-10 w-full bg-transparent py-2 text-base text-foreground outline-none placeholder:text-foreground-muted/60 sm:text-sm"
+            />
+            {searchQuery !== "" && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                aria-label="Clear search input"
+                className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-xs text-foreground-muted hover:bg-surface-elevated hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {orderedActive.length === 0 ? (
         <EmptyState

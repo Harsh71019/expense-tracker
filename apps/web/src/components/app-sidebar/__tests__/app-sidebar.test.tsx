@@ -88,4 +88,59 @@ describe("AppSidebar", () => {
     expect(screen.getByRole("link", { name: "Recurring transactions" })).toBeVisible();
     expect(screen.getByRole("link", { name: "Settings" })).toBeVisible();
   });
+
+  it("renders Edit sidebar button and toggles edit mode", async () => {
+    const user = userEvent.setup();
+    render(<AppSidebar email="harsh@example.com" theme="light" />);
+
+    const editBtn = screen.getByRole("button", { name: "Edit sidebar" });
+    expect(editBtn).toBeVisible();
+
+    await user.click(editBtn);
+
+    expect(screen.getByRole("list", { name: "Reorder navigation items" })).toBeVisible();
+    const doneBtn = screen.getByRole("button", { name: "Done editing sidebar" });
+    expect(doneBtn).toBeVisible();
+
+    await user.click(doneBtn);
+    expect(screen.queryByRole("list", { name: "Reorder navigation items" })).toBeNull();
+    expect(screen.getByRole("navigation", { name: "Main navigation" })).toBeVisible();
+  });
+
+  it("hides items configured as invisible in localStorage", () => {
+    const prefs = {
+      version: 1,
+      items: [
+        { href: "/", visible: true },
+        { href: "/accounts", visible: false },
+        { href: "/transactions", visible: true }
+      ]
+    };
+    window.localStorage.setItem("treasury-ops-nav-prefs", JSON.stringify(prefs));
+
+    render(<AppSidebar email="harsh@example.com" theme="light" />);
+
+    expect(screen.getByRole("link", { name: "Dashboard" })).toBeVisible();
+    expect(screen.queryByRole("link", { name: "Accounts" })).toBeNull();
+  });
+
+  it("exposes all items including hidden ones in edit mode", async () => {
+    const user = userEvent.setup();
+    const prefs = {
+      version: 1,
+      items: [
+        { href: "/", visible: true },
+        { href: "/accounts", visible: false }
+      ]
+    };
+    window.localStorage.setItem("treasury-ops-nav-prefs", JSON.stringify(prefs));
+
+    render(<AppSidebar email="harsh@example.com" theme="light" />);
+
+    expect(screen.queryByRole("link", { name: "Accounts" })).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "Edit sidebar" }));
+
+    expect(screen.getByRole("button", { name: "Show Accounts" })).toBeVisible();
+  });
 });

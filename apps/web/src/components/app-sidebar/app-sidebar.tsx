@@ -6,8 +6,9 @@ import type { ReactNode } from "react";
 
 import { type Theme } from "@/lib/theme";
 
-import { AppNav, mainNavItems } from "../app-nav";
+import { AppNav, useNavPreferences } from "../app-nav";
 import { ThemeToggle } from "../ui/theme-toggle";
+import { SidebarEditPanel } from "./sidebar-edit-panel";
 
 const SIDEBAR_COMPACT_KEY = "treasury-ops-sidebar-compact";
 
@@ -21,6 +22,10 @@ export function AppSidebar({
   theme
 }: Readonly<{ email: string; theme: Theme | null }>): ReactNode {
   const [compact, setCompact] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+
+  const { orderedVisibleItems, allOrderedItems, reorder, toggleVisible, reset } =
+    useNavPreferences();
 
   useEffect(() => {
     setCompact(window.localStorage.getItem(SIDEBAR_COMPACT_KEY) === "true");
@@ -69,11 +74,39 @@ export function AppSidebar({
             </div>
           )}
         </div>
-        <AppNav items={mainNavItems} orientation="sidebar" compact={compact} />
+        {editMode ? (
+          <SidebarEditPanel
+            items={allOrderedItems}
+            compact={compact}
+            onReorder={reorder}
+            onToggle={toggleVisible}
+            onReset={reset}
+          />
+        ) : (
+          <AppNav items={orderedVisibleItems} orientation="sidebar" compact={compact} />
+        )}
       </div>
 
       <div className="flex flex-col gap-2">
-        <ThemeToggle current={theme} compact={compact} />
+        <div className={`flex gap-2 ${compact ? "flex-col" : ""}`}>
+          <ThemeToggle current={theme} compact={compact} />
+          <button
+            type="button"
+            id="sidebar-edit-toggle"
+            onClick={() => setEditMode((m) => !m)}
+            aria-label={editMode ? "Done editing sidebar" : "Edit sidebar"}
+            aria-pressed={editMode}
+            title={compact ? (editMode ? "Done" : "Edit sidebar") : undefined}
+            className={`flex items-center justify-center gap-2 rounded-xl border px-2.5 py-2 text-sm transition-colors duration-150 ${
+              editMode
+                ? "border-accent bg-accent-glow text-accent"
+                : "border-border text-foreground-muted hover:border-accent/40 hover:text-foreground"
+            } ${compact ? "h-10 w-10" : "flex-1"}`}
+          >
+            <span aria-hidden="true">{editMode ? "✓" : "✎"}</span>
+            {!compact && <span>{editMode ? "Done" : "Edit"}</span>}
+          </button>
+        </div>
 
         <Link
           href="/settings"

@@ -83,7 +83,7 @@ export function RecurringManager({
   }
 
   return (
-    <section className="mx-auto max-w-[1080px] space-y-7">
+    <section className="space-y-7">
       <header className="flex flex-col items-stretch gap-5 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
         <div className="min-w-0">
           <p className="font-mono text-[10px] font-bold tracking-[0.2em] text-accent uppercase">

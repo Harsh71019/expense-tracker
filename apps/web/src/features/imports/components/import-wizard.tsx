@@ -5,7 +5,6 @@ import { useState } from "react";
 import type { ReactNode } from "react";
 import { toast } from "@/lib/toast";
 
-import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { Button } from "@/components/ui/button";
 import { useAccounts } from "@/features/accounts";
 import { useCategories } from "@/features/categories";
@@ -134,15 +133,6 @@ export function ImportWizard({
 
   return (
     <section>
-      <div className="mb-5">
-        <Breadcrumbs
-          items={[
-            { label: "Settings", href: "/settings?tab=management" },
-            { label: view === "wizard" ? "New import" : "Imports" }
-          ]}
-        />
-      </div>
-
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="font-mono text-[11px] font-bold tracking-[2px] text-accent">

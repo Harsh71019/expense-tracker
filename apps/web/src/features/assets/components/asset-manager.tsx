@@ -5,7 +5,6 @@ import { useState } from "react";
 import type { ReactNode } from "react";
 import { toast } from "@/lib/toast";
 
-import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useNetWorth } from "@/features/net-worth/hooks/use-net-worth";
@@ -57,10 +56,6 @@ export function AssetManager({ initialAssets, initialNetWorth }: AssetManagerPro
 
   return (
     <section className="space-y-7">
-      <Breadcrumbs
-        items={[{ label: "Settings", href: "/settings?tab=management" }, { label: "Assets" }]}
-      />
-
       <header className="flex flex-col items-stretch gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="font-mono text-[11px] font-bold tracking-[2px] text-accent">

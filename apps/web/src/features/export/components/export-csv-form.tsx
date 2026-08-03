@@ -4,7 +4,6 @@ import { ExportCsvQuerySchema } from "@treasury-ops/shared";
 import { useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 
-import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { toast } from "@/lib/toast";
@@ -66,10 +65,6 @@ export function ExportCsvForm(): ReactNode {
 
   return (
     <section className="space-y-6">
-      <Breadcrumbs
-        items={[{ label: "Settings", href: "/settings?tab=management" }, { label: "Export" }]}
-      />
-
       <header>
         <h1 className="text-xl font-semibold tracking-tight">Export transactions</h1>
         <p className="mt-1.5 text-sm text-foreground-muted">

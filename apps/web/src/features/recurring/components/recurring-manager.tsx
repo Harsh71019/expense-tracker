@@ -11,7 +11,6 @@ import { useState } from "react";
 import type { ReactNode } from "react";
 import { toast } from "@/lib/toast";
 
-import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Money } from "@/components/ui/money";
@@ -85,10 +84,6 @@ export function RecurringManager({
 
   return (
     <section className="mx-auto max-w-[1080px] space-y-7">
-      <Breadcrumbs
-        items={[{ label: "Settings", href: "/settings?tab=management" }, { label: "Recurring" }]}
-      />
-
       <header className="flex flex-col items-stretch gap-5 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
         <div className="min-w-0">
           <p className="font-mono text-[10px] font-bold tracking-[0.2em] text-accent uppercase">

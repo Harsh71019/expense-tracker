@@ -84,7 +84,7 @@ export function RecurringManager({
   }
 
   return (
-    <section className="mx-auto max-w-[1080px] space-y-7">
+    <section className="space-y-7">
       <Breadcrumbs
         items={[{ label: "Settings", href: "/settings?tab=management" }, { label: "Recurring" }]}
       />

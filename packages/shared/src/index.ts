@@ -217,6 +217,8 @@ export {
   DashboardStatsQuerySchema,
   DashboardStatsSchema,
   DashboardSummarySchema,
+  DailySpendingBucketSchema,
+  MonthlySpendingSchema,
   RecentActivityItemSchema,
   RecentActivityQuerySchema,
   RecurringForecastQuerySchema,
@@ -225,7 +227,8 @@ export {
   SpendMixQuerySchema,
   SpendMixSchema,
   TopSpendingItemSchema,
-  TopSpendingQuerySchema
+  TopSpendingQuerySchema,
+  WeeklySpendingBucketSchema
 } from "./dashboard.js";
 export type {
   CashflowBucket,
@@ -237,6 +240,8 @@ export type {
   DashboardStats,
   DashboardStatsQuery,
   DashboardSummary,
+  DailySpendingBucket,
+  MonthlySpending,
   RecentActivityItem,
   RecentActivityQuery,
   RecurringForecast,
@@ -245,7 +250,8 @@ export type {
   SpendMix,
   SpendMixQuery,
   TopSpendingItem,
-  TopSpendingQuery
+  TopSpendingQuery,
+  WeeklySpendingBucket
 } from "./dashboard.js";
 export { ErrorCodes } from "./errors/codes.js";
 export type { ErrorCode } from "./errors/codes.js";

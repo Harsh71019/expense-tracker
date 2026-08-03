@@ -10,6 +10,7 @@ import {
   type DashboardInvestments,
   type DashboardStats,
   type DashboardSummary,
+  type MonthlySpending,
   type RecentActivityItem,
   type RecurringForecast,
   type SpendMix,
@@ -54,6 +55,11 @@ export class DashboardController {
   ): Promise<CashflowResponse> {
     const { range } = CashflowQuerySchema.parse(query);
     return this.dashboard.getCashflow(user.id, range);
+  }
+
+  @Get("monthly-spending")
+  getMonthlySpending(@CurrentUser() user: AuthenticatedUser): Promise<MonthlySpending> {
+    return this.dashboard.getMonthlySpending(user.id);
   }
 
   @Get("top-spending")

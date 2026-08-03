@@ -3,6 +3,7 @@ import type {
   CashflowResponse,
   DashboardInvestments,
   DashboardStats,
+  MonthlySpending,
   RecurringForecast,
   SpendMix,
   TopSpendingItem
@@ -13,6 +14,7 @@ import { DashboardOverview } from "./dashboard-overview";
 
 const mocks = vi.hoisted(() => ({
   useStats: vi.fn(),
+  useMonthlySpending: vi.fn(),
   useInvestments: vi.fn(),
   useCashflow: vi.fn(),
   useSpendMix: vi.fn(),
@@ -20,6 +22,9 @@ const mocks = vi.hoisted(() => ({
   useRecurringForecast: vi.fn()
 }));
 vi.mock("../hooks/use-stats", () => ({ useStats: mocks.useStats }));
+vi.mock("../hooks/use-monthly-spending", () => ({
+  useMonthlySpending: mocks.useMonthlySpending
+}));
 vi.mock("../hooks/use-investments", () => ({ useInvestments: mocks.useInvestments }));
 vi.mock("../hooks/use-cashflow", () => ({ useCashflow: mocks.useCashflow }));
 vi.mock("../hooks/use-spend-mix", () => ({ useSpendMix: mocks.useSpendMix }));
@@ -39,6 +44,19 @@ const stats: DashboardStats = {
   netWorth: { valueMinor: 10_000, deltaPct: 1, trend: [9900, 9950, 10000] }
 };
 const cashflow: CashflowResponse = { range: "6M", buckets: [] };
+const monthlySpending: MonthlySpending = {
+  period: "2026-07",
+  asOf: new Date("2026-07-15T06:00:00.000Z"),
+  totalMinor: 6_000,
+  daily: [{ date: new Date("2026-06-30T18:30:00.000Z"), amountMinor: 6_000 }],
+  weekly: [
+    {
+      startAt: new Date("2026-06-30T18:30:00.000Z"),
+      endAt: new Date("2026-07-06T18:30:00.000Z"),
+      amountMinor: 6_000
+    }
+  ]
+};
 const spendMix: SpendMix = {
   range: "1M",
   totalMinor: 0,
@@ -58,6 +76,7 @@ const investments: DashboardInvestments = { items: [] };
 
 function setup(overrideStats: DashboardStats | null = stats): void {
   mocks.useStats.mockReturnValue({ data: overrideStats });
+  mocks.useMonthlySpending.mockReturnValue({ data: monthlySpending });
   mocks.useInvestments.mockReturnValue({ data: investments });
   mocks.useCashflow.mockReturnValue({ data: undefined });
   mocks.useSpendMix.mockReturnValue({ data: undefined });
@@ -71,6 +90,7 @@ describe("DashboardOverview", () => {
     render(
       <DashboardOverview
         initialStats={stats}
+        initialMonthlySpending={monthlySpending}
         initialCashflow={cashflow}
         initialSpendMix={spendMix}
         initialTopSpending={topSpending}
@@ -82,6 +102,7 @@ describe("DashboardOverview", () => {
 
     expect(screen.getByRole("heading", { name: "Financial overview" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Cash flow" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "This month's spending rhythm" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Spend mix" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Top spending" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Recurring commitments" })).toBeVisible();
@@ -95,6 +116,7 @@ describe("DashboardOverview", () => {
     render(
       <DashboardOverview
         initialStats={null}
+        initialMonthlySpending={monthlySpending}
         initialCashflow={cashflow}
         initialSpendMix={spendMix}
         initialTopSpending={topSpending}

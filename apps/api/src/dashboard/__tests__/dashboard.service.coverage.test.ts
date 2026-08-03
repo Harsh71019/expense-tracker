@@ -181,6 +181,36 @@ describe("DashboardService cashflow and categories", () => {
     expect(result.buckets.reduce((sum, bucket) => sum + bucket.expenseMinor, 0)).toBe(100);
   });
 
+  it("returns every day in the current month and elapsed weekly spending buckets", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(NOW);
+    const dashboard = {
+      cashflowDaily: vi.fn().mockResolvedValue(
+        new Map([
+          ["2026-07-01", { incomeMinor: 0, expenseMinor: 1_000 }],
+          ["2026-07-08", { incomeMinor: 0, expenseMinor: 2_000 }],
+          ["2026-07-15", { incomeMinor: 500, expenseMinor: 3_000 }]
+        ])
+      )
+    };
+    const context = createService({ dashboard });
+
+    const result = await context.service.getMonthlySpending("u1");
+
+    expect(result.period).toBe("2026-07");
+    expect(result.asOf).toEqual(NOW);
+    expect(result.daily).toHaveLength(31);
+    expect(result.weekly).toHaveLength(3);
+    expect(result.totalMinor).toBe(6_000);
+    expect(result.daily.at(-1)?.amountMinor).toBe(0);
+    expect(result.weekly.map((week) => week.amountMinor)).toEqual([1_000, 2_000, 3_000]);
+    expect(dashboard.cashflowDaily).toHaveBeenCalledWith(
+      "u1",
+      new Date("2026-06-30T18:30:00.000Z"),
+      new Date("2026-07-15T18:29:59.999Z")
+    );
+  });
+
   it("maps long-range month rollups and zero-fills missing months", async () => {
     vi.useFakeTimers();
     vi.setSystemTime(NOW);

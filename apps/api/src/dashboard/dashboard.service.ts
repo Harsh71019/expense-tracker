@@ -8,19 +8,28 @@ import {
   type DashboardRange,
   type DashboardStats,
   type DashboardSummary,
+  type DailySpendingBucket,
   type Month,
+  type MonthlySpending,
   type RecentActivityItem,
   type RecurringForecast,
   type RecurringForecastUpcomingItem,
   type SpendMix,
-  type TopSpendingItem
+  type TopSpendingItem,
+  type WeeklySpendingBucket,
+  sumMinorAmounts
 } from "@treasury-ops/shared";
 
 import { AccountRepository } from "../accounts/account.repository.js";
 import { AssetRepository } from "../assets/asset.repository.js";
 import { ValuationRepository } from "../assets/valuation.repository.js";
 import { CategoryRepository } from "../categories/category.repository.js";
-import { toISTMonth } from "../common/time/ist.js";
+import {
+  istMonthBounds,
+  listISTMonthDayKeys,
+  toISTCalendarDate,
+  toISTMonth
+} from "../common/time/ist.js";
 import { MonthlyRollupService } from "../reports/monthly-rollup.service.js";
 import { RecurringRuleRepository } from "../recurring/recurring-rule.repository.js";
 import { TransactionRepository } from "../transactions/transaction.repository.js";
@@ -189,6 +198,39 @@ export class DashboardService {
       expenseMinor: monthRollups[i]?.totalExpenseMinor ?? 0
     }));
     return { range, buckets };
+  }
+
+  async getMonthlySpending(userId: string): Promise<MonthlySpending> {
+    const asOf = new Date();
+    const period = toISTMonth(asOf);
+    const { start } = istMonthBounds(period);
+    const dailyTotals = await this.dashboard.cashflowDaily(userId, start, endOfISTDay(asOf));
+    const asOfDay = toISTCalendarDate(asOf);
+    const daily: DailySpendingBucket[] = listISTMonthDayKeys(period).map((day, index) => ({
+      date: new Date(start.getTime() + index * ONE_DAY_MS),
+      amountMinor: day <= asOfDay ? (dailyTotals.get(day)?.expenseMinor ?? 0) : 0
+    }));
+    const elapsedDays = daily.filter((bucket) => toISTCalendarDate(bucket.date) <= asOfDay);
+    const weekly: WeeklySpendingBucket[] = chunk(elapsedDays, 7).map((days) => {
+      const first = days[0];
+      const last = days.at(-1);
+      if (first === undefined || last === undefined) {
+        throw new Error("Monthly spending week chunk was unexpectedly empty.");
+      }
+      return {
+        startAt: first.date,
+        endAt: last.date,
+        amountMinor: sumMinorAmounts(days.map((day) => day.amountMinor))
+      };
+    });
+
+    return {
+      period,
+      asOf,
+      totalMinor: sumMinorAmounts(elapsedDays.map((day) => day.amountMinor)),
+      daily,
+      weekly
+    };
   }
 
   async getTopSpending(

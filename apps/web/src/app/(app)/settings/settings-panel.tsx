@@ -1,4 +1,3 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { AccentPicker } from "@/components/ui/accent-picker";
@@ -10,6 +9,7 @@ import { getStoredAccent } from "@/lib/accent-server";
 import { getSession } from "@/lib/api/session";
 import { getStoredTheme } from "@/lib/theme-server";
 
+import { ManagementToolsGrid } from "./management-tools-grid";
 import type { SettingsTab } from "./settings-tabs";
 
 const managementGroups = [
@@ -222,71 +222,7 @@ function ManagementSettingsPanel(): ReactNode {
         description="Double-entry ledger configuration, automated rules, and data operations—categorized by task."
       />
 
-      <div className="grid gap-6 xl:grid-cols-2">
-        {managementGroups.map((group) => (
-          <section
-            key={group.id}
-            aria-labelledby={`settings-group-${group.id}`}
-            className={`glass-card rounded-2xl p-5 shadow-sm transition-all duration-200 ${
-              group.id === "ledger" ? "xl:col-span-2" : ""
-            }`}
-          >
-            <header className="flex flex-col gap-1 pb-4 border-b border-border/60">
-              <div className="flex items-center justify-between">
-                <h3
-                  id={`settings-group-${group.id}`}
-                  className="text-lg font-bold tracking-tight text-foreground"
-                >
-                  {group.label}
-                </h3>
-                <span className="font-mono text-[10px] font-bold text-accent uppercase bg-accent-glow/50 border border-accent/20 px-2 py-0.5 rounded-full">
-                  {group.countTag}
-                </span>
-              </div>
-              <p className="text-xs leading-relaxed text-foreground-muted pretty-text">
-                {group.description}
-              </p>
-            </header>
-
-            <div
-              className={`mt-4 grid gap-3 ${
-                group.id === "ledger"
-                  ? "sm:grid-cols-2 xl:grid-cols-3"
-                  : "grid-cols-1 sm:grid-cols-2"
-              }`}
-            >
-              {group.items.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="group relative flex min-h-18 items-center gap-3.5 rounded-xl border border-border/70 bg-surface-elevated/70 p-3.5 transition-all duration-200 hover:-translate-y-0.5 hover:border-accent/40 hover:bg-accent-glow/20 hover:shadow-glow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface motion-reduce:hover:translate-y-0"
-                >
-                  <span
-                    className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-accent-glow/60 font-mono text-lg font-bold text-accent transition-transform duration-200 group-hover:scale-110"
-                    aria-hidden="true"
-                  >
-                    {item.icon}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-bold tracking-tight text-foreground group-hover:text-accent transition-colors">
-                      {item.label}
-                    </span>
-                    <span className="mt-0.5 block text-xs leading-snug text-foreground-muted pretty-text">
-                      {item.description}
-                    </span>
-                  </span>
-                  <span
-                    className="font-mono text-sm text-foreground-muted transition-all duration-200 group-hover:translate-x-1 group-hover:text-accent motion-reduce:group-hover:translate-x-0"
-                    aria-hidden="true"
-                  >
-                    →
-                  </span>
-                </Link>
-              ))}
-            </div>
-          </section>
-        ))}
-      </div>
+      <ManagementToolsGrid groups={managementGroups} />
     </div>
   );
 }

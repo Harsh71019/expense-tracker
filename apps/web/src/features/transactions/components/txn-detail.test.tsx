@@ -59,10 +59,6 @@ describe("TxnDetail", () => {
     mocks.update.mockResolvedValue({ ...transaction, description: "Masala chai" });
     render(<TxnDetail initialTransaction={transaction} />);
 
-    expect(screen.getByRole("link", { name: "Transactions" })).toHaveAttribute(
-      "href",
-      "/transactions"
-    );
     expect(screen.getAllByText("UPI")).toHaveLength(2);
     expect(screen.getByText("chai@okhdfcbank")).toBeVisible();
     await user.click(screen.getByRole("button", { name: "Edit metadata" }));

@@ -146,4 +146,23 @@ describe("AccountManager", () => {
     );
     expect(mocks.toastSuccess).toHaveBeenCalledWith("Billing cycle updated");
   });
+
+  it("filters accounts by search query", async () => {
+    const user = userEvent.setup();
+    const secondAccount: Account = {
+      ...account,
+      id: "second-acc-id",
+      name: "ICICI Salary"
+    };
+    render(<AccountManager initialAccounts={[account, secondAccount]} />);
+
+    expect(screen.getByText("HDFC")).toBeInTheDocument();
+    expect(screen.getByText("ICICI Salary")).toBeInTheDocument();
+
+    const searchInput = screen.getByPlaceholderText("Search accounts…");
+    await user.type(searchInput, "ICICI");
+
+    expect(screen.queryByText("HDFC")).not.toBeInTheDocument();
+    expect(screen.getByText("ICICI Salary")).toBeInTheDocument();
+  });
 });

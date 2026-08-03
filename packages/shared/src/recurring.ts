@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { AccountIdSchema } from "./account.js";
 import { CategoryIdSchema } from "./category.js";
-import { TransactionTypeSchema } from "./transaction.js";
+import { TopSpendingCategorySchema, TransactionTypeSchema } from "./transaction.js";
 
 type RRuleConstructor = typeof import("rrule").RRule;
 
@@ -124,11 +124,29 @@ export const RecurringRuleSchema = z.object({
   updatedAt: z.coerce.date()
 });
 
+/**
+ * A live read model for the recurring page. Forecast amounts cover the next
+ * 30 rolling days so rules with different frequencies can be compared on the
+ * same time horizon.
+ */
+export const RecurringStatsSchema = z.object({
+  forecastDays: z.literal(30),
+  totalRules: z.number().int().min(0),
+  activeRules: z.number().int().min(0),
+  pausedRules: z.number().int().min(0),
+  upcomingTransactionCount: z.number().int().min(0),
+  upcomingExpenseMinor: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER),
+  upcomingIncomeMinor: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER),
+  upcomingNetMinor: z.number().int().min(-Number.MAX_SAFE_INTEGER).max(Number.MAX_SAFE_INTEGER),
+  topSpendingCategory: TopSpendingCategorySchema.nullable()
+});
+
 export type RecurringRuleId = z.infer<typeof RecurringRuleIdSchema>;
 export type RecurringRuleTemplate = z.infer<typeof RecurringRuleTemplateSchema>;
 export type CreateRecurringRule = z.infer<typeof CreateRecurringRuleSchema>;
 export type UpdateRecurringRule = z.infer<typeof UpdateRecurringRuleSchema>;
 export type RecurringRule = z.infer<typeof RecurringRuleSchema>;
+export type RecurringStats = z.infer<typeof RecurringStatsSchema>;
 
 function isParseableRRule(value: string): boolean {
   try {

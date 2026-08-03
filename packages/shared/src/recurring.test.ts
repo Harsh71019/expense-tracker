@@ -4,6 +4,7 @@ import {
   computeFirstOccurrence,
   computeNextOccurrence,
   CreateRecurringRuleSchema,
+  RecurringStatsSchema,
   RRuleStringSchema,
   UpdateRecurringRuleSchema
 } from "./recurring.js";
@@ -71,6 +72,28 @@ describe("UpdateRecurringRuleSchema", () => {
 
   it("accepts an isPaused-only patch", () => {
     expect(UpdateRecurringRuleSchema.parse({ isPaused: true })).toEqual({ isPaused: true });
+  });
+});
+
+describe("RecurringStatsSchema", () => {
+  it("accepts a next-30-days recurring summary", () => {
+    expect(
+      RecurringStatsSchema.parse({
+        forecastDays: 30,
+        totalRules: 3,
+        activeRules: 2,
+        pausedRules: 1,
+        upcomingTransactionCount: 4,
+        upcomingExpenseMinor: 300_000,
+        upcomingIncomeMinor: 800_000,
+        upcomingNetMinor: 500_000,
+        topSpendingCategory: {
+          name: "Housing",
+          amountMinor: 250_000,
+          transactionCount: 1
+        }
+      })
+    ).toMatchObject({ totalRules: 3, forecastDays: 30 });
   });
 });
 

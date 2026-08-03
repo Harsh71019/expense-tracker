@@ -1904,6 +1904,90 @@
           "updatedAt"
         ]
       },
+      "RecurringStats": {
+        "type": "object",
+        "properties": {
+          "forecastDays": {
+            "type": "number",
+            "enum": [30]
+          },
+          "totalRules": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "activeRules": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "pausedRules": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "upcomingTransactionCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "upcomingExpenseMinor": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "upcomingIncomeMinor": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "upcomingNetMinor": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "topSpendingCategory": {
+            "type": ["object", "null"],
+            "properties": {
+              "categoryId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80
+              },
+              "color": {
+                "type": "string",
+                "pattern": "^#[a-f\\d]{6}$/i"
+              },
+              "icon": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64
+              },
+              "amountMinor": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              "transactionCount": {
+                "type": "integer",
+                "minimum": 1
+              }
+            },
+            "required": ["name", "amountMinor", "transactionCount"]
+          }
+        },
+        "required": [
+          "forecastDays",
+          "totalRules",
+          "activeRules",
+          "pausedRules",
+          "upcomingTransactionCount",
+          "upcomingExpenseMinor",
+          "upcomingIncomeMinor",
+          "upcomingNetMinor",
+          "topSpendingCategory"
+        ]
+      },
       "RecurringReconciliationReviewItem": {
         "type": "object",
         "properties": {
@@ -8265,6 +8349,57 @@
           },
           "409": {
             "description": "Idempotency key was already used for different request intent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/recurring/stats": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Recurring rule and next-30-days forecast statistics",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecurringStats"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
             "content": {
               "application/json": {
                 "schema": {

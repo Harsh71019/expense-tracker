@@ -3,7 +3,8 @@ import {
   CreateRecurringRuleSchema,
   RecurringRuleIdSchema,
   UpdateRecurringRuleSchema,
-  type RecurringRule
+  type RecurringRule,
+  type RecurringStats
 } from "@treasury-ops/shared";
 import type { Response } from "express";
 import { z } from "zod";
@@ -12,6 +13,7 @@ import type { AuthenticatedUser } from "../auth/auth.guard.js";
 import { CurrentUser } from "../auth/current-user.decorator.js";
 import { RecurringRuleService } from "./recurring-rule.service.js";
 import { RecurringRuleMutationService } from "./recurring-rule-mutation.service.js";
+import { RecurringStatsService } from "./recurring-stats.service.js";
 
 const IdempotencyKeySchema = z.string().uuid();
 
@@ -19,7 +21,8 @@ const IdempotencyKeySchema = z.string().uuid();
 export class RecurringRuleController {
   constructor(
     private readonly rules: RecurringRuleService,
-    private readonly mutations: RecurringRuleMutationService
+    private readonly mutations: RecurringRuleMutationService,
+    private readonly stats: RecurringStatsService
   ) {}
 
   @Post()
@@ -43,6 +46,11 @@ export class RecurringRuleController {
   @Get()
   list(@CurrentUser() user: AuthenticatedUser): Promise<RecurringRule[]> {
     return this.rules.list(user.id);
+  }
+
+  @Get("stats")
+  getStats(@CurrentUser() user: AuthenticatedUser): Promise<RecurringStats> {
+    return this.stats.getStats(user.id);
   }
 
   @Patch(":ruleId")

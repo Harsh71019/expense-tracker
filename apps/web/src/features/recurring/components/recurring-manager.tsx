@@ -4,7 +4,8 @@ import type {
   Account,
   Category,
   RecurringReconciliationReviewItem,
-  RecurringRule
+  RecurringRule,
+  RecurringStats
 } from "@treasury-ops/shared";
 import { useState } from "react";
 import type { ReactNode } from "react";
@@ -22,6 +23,7 @@ import { useRecurringRules, useUpdateRecurringRule } from "../hooks/use-recurrin
 import { describeSchedule, parseSchedule } from "../model/schedule";
 import { ReconciliationReviewPanel } from "./reconciliation-review-panel";
 import { RecurringRuleDrawer } from "./recurring-rule-drawer";
+import { RecurringStatsCards } from "./recurring-stats-cards";
 
 const dateFormatter = new Intl.DateTimeFormat("en-IN", {
   day: "numeric",
@@ -35,13 +37,15 @@ type ManagerProps = Readonly<{
   accounts: Account[];
   categories: Category[];
   initialReconciliations: RecurringReconciliationReviewItem[];
+  initialStats: RecurringStats | null;
 }>;
 
 export function RecurringManager({
   initialRules,
   accounts,
   categories,
-  initialReconciliations
+  initialReconciliations,
+  initialStats
 }: ManagerProps): ReactNode {
   const rules = useRecurringRules(initialRules);
   const accountQuery = useAccounts(accounts.length === 0 ? undefined : accounts);
@@ -52,8 +56,6 @@ export function RecurringManager({
   const items = rules.data ?? initialRules;
   const accountItems = accountQuery.data ?? accounts;
   const categoryItems = categoryQuery.data ?? categories;
-  const activeCount = items.filter((rule) => !rule.isPaused).length;
-  const pausedCount = items.length - activeCount;
   const accountMap = new Map(accountItems.map((account) => [account.id, account]));
   const categoryMap = new Map(categoryItems.map((category) => [category.id, category]));
 
@@ -110,29 +112,9 @@ export function RecurringManager({
         </Button>
       </header>
 
-      <ReconciliationReviewPanel initialReconciliations={initialReconciliations} />
+      <RecurringStatsCards initialStats={initialStats} />
 
-      {items.length === 0 ? null : (
-        <div className="flex flex-wrap items-center gap-x-8 gap-y-3 rounded-2xl border border-border bg-surface-muted px-5 py-4">
-          <div>
-            <span className="font-mono text-[10px] font-bold tracking-wider text-foreground-muted uppercase">
-              Total rules
-            </span>
-            <p className="mt-0.5 text-xl font-bold text-foreground">{items.length}</p>
-          </div>
-          <div className="h-8 w-px bg-border" aria-hidden="true" />
-          <p className="flex items-center gap-2 text-sm text-foreground-muted">
-            <span className="h-2 w-2 rounded-full bg-income" aria-hidden="true" />
-            <span className="font-semibold text-foreground">{activeCount}</span> active
-          </p>
-          {pausedCount === 0 ? null : (
-            <p className="flex items-center gap-2 text-sm text-foreground-muted">
-              <span className="h-2 w-2 rounded-full bg-foreground-muted" aria-hidden="true" />
-              <span className="font-semibold text-foreground">{pausedCount}</span> paused
-            </p>
-          )}
-        </div>
-      )}
+      <ReconciliationReviewPanel initialReconciliations={initialReconciliations} />
 
       {accountItems.length === 0 ? (
         <div className="rounded-xl border border-accent/25 bg-accent-glow px-4 py-3 text-sm text-foreground-muted">

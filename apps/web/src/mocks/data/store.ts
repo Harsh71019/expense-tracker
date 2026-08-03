@@ -18,6 +18,7 @@ export type UserProfileDto = components["schemas"]["UserProfile"];
 export type TransferDto = components["schemas"]["Transfer"];
 export type TransferReversalDto = components["schemas"]["TransferReversal"];
 export type RecurringRuleDto = components["schemas"]["RecurringRule"];
+export type RecurringStatsDto = components["schemas"]["RecurringStats"];
 export type GoalDto = components["schemas"]["Goal"];
 export type BillDto = components["schemas"]["CreditCardBill"];
 export type BillStatementUploadDto = components["schemas"]["BillStatementUpload"];

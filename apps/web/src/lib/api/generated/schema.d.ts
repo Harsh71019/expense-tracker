@@ -3046,6 +3046,68 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/v1/recurring/stats": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Recurring rule and next-30-days forecast statistics */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["RecurringStats"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/v1/recurring/{ruleId}": {
     parameters: {
       query?: never;
@@ -6888,6 +6950,26 @@ export interface components {
       createdAt: string | null;
       /** Format: date-time */
       updatedAt: string | null;
+    };
+    RecurringStats: {
+      /** @enum {number} */
+      forecastDays: 30;
+      totalRules: number;
+      activeRules: number;
+      pausedRules: number;
+      upcomingTransactionCount: number;
+      upcomingExpenseMinor: number;
+      upcomingIncomeMinor: number;
+      upcomingNetMinor: number;
+      topSpendingCategory: {
+        /** Format: uuid */
+        categoryId?: string;
+        name: string;
+        color?: string;
+        icon?: string;
+        amountMinor: number;
+        transactionCount: number;
+      } | null;
     };
     RecurringReconciliationReviewItem: {
       /** Format: uuid */

@@ -33,21 +33,18 @@ export default async function SettingsPage({
         </div>
       </header>
 
-      {/* Main Settings Split Grid */}
-      <div className="grid items-start gap-5 lg:grid-cols-[15rem_minmax(0,1fr)]">
-        <aside className="lg:sticky lg:top-20">
-          <SettingsTabList activeTab={activeTab} />
-        </aside>
+      {/* Horizontal Tabs */}
+      <SettingsTabList activeTab={activeTab} />
 
-        <div
-          id={`settings-panel-${activeTab}`}
-          role="tabpanel"
-          aria-labelledby={`settings-tab-${activeTab}`}
-          tabIndex={0}
-          className="min-w-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
-        >
-          {await SettingsPanel({ activeTab })}
-        </div>
+      {/* Main Settings Panel - Full Width */}
+      <div
+        id={`settings-panel-${activeTab}`}
+        role="tabpanel"
+        aria-labelledby={`settings-tab-${activeTab}`}
+        tabIndex={0}
+        className="min-w-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+      >
+        {await SettingsPanel({ activeTab })}
       </div>
     </div>
   );

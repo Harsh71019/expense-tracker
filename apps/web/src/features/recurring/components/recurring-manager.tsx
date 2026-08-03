@@ -41,10 +41,10 @@ type ManagerProps = Readonly<{
 
 export function RecurringManager({
   initialRules,
-  accounts,
-  categories,
-  initialReconciliations,
-  initialStats
+  accounts = [],
+  categories = [],
+  initialReconciliations = [],
+  initialStats = null
 }: ManagerProps): ReactNode {
   const rules = useRecurringRules(initialRules);
   const accountQuery = useAccounts(accounts.length === 0 ? undefined : accounts);
@@ -52,11 +52,27 @@ export function RecurringManager({
   const updateRule = useUpdateRecurringRule();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editing, setEditing] = useState<RecurringRule>();
-  const items = rules.data ?? initialRules;
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "paused">("all");
+
+  const rawItems = rules.data ?? initialRules;
   const accountItems = accountQuery.data ?? accounts;
   const categoryItems = categoryQuery.data ?? categories;
+
   const accountMap = new Map(accountItems.map((account) => [account.id, account]));
   const categoryMap = new Map(categoryItems.map((category) => [category.id, category]));
+
+  let items = rawItems;
+  if (searchQuery.trim() !== "") {
+    const q = searchQuery.toLowerCase().trim();
+    items = items.filter((rule) => rule.template.description.toLowerCase().includes(q));
+  }
+
+  if (statusFilter !== "all") {
+    items = items.filter((rule) => (statusFilter === "active" ? !rule.isPaused : rule.isPaused));
+  }
+
+  const isFiltered = searchQuery.trim() !== "" || statusFilter !== "all";
 
   function openCreate(): void {
     setEditing(undefined);
@@ -70,7 +86,10 @@ export function RecurringManager({
 
   async function togglePause(rule: RecurringRule): Promise<void> {
     try {
-      await updateRule.mutateAsync({ ruleId: rule.id, patch: { isPaused: !rule.isPaused } });
+      await updateRule.mutateAsync({
+        ruleId: rule.id,
+        patch: { isPaused: !rule.isPaused }
+      });
       toast.success(rule.isPaused ? "Recurring rule resumed" : "Recurring rule paused");
     } catch (error: unknown) {
       toast.error(
@@ -111,6 +130,74 @@ export function RecurringManager({
 
       <ReconciliationReviewPanel initialReconciliations={initialReconciliations} />
 
+      {rawItems.length > 0 && (
+        <div
+          className={`flex flex-wrap items-center gap-3 rounded-2xl border p-3.5 backdrop-blur transition-all duration-200 ${
+            isFiltered
+              ? "border-accent/40 bg-surface-elevated/90 shadow-sm"
+              : "border-border/80 bg-surface-elevated/90"
+          }`}
+        >
+          <div className="flex min-w-0 flex-1 basis-full items-center gap-2.5 rounded-xl border border-border/80 bg-surface-muted/60 px-3.5 transition-colors focus-within:border-accent/60 focus-within:bg-surface-muted focus-within:ring-2 focus-within:ring-accent/20 sm:min-w-56 sm:basis-auto">
+            <span className="text-foreground-muted/70 text-sm font-semibold" aria-hidden="true">
+              ⌕
+            </span>
+            <input
+              value={searchQuery}
+              name="recurringSearch"
+              autoComplete="off"
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Search recurring rules…"
+              aria-label="Search recurring rules"
+              className="min-h-10 w-full bg-transparent py-2 text-base text-foreground outline-none placeholder:text-foreground-muted/60 sm:text-sm"
+            />
+            {searchQuery !== "" && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                aria-label="Clear search input"
+                className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-xs text-foreground-muted hover:bg-surface-elevated hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
+          <div className="flex gap-1 rounded-xl border border-border bg-surface-muted p-1">
+            {(["all", "active", "paused"] as const).map((status) => {
+              const active = statusFilter === status;
+              return (
+                <button
+                  key={status}
+                  type="button"
+                  onClick={() => setStatusFilter(status)}
+                  className={`min-h-9 rounded-lg px-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                    active
+                      ? "bg-surface-elevated text-foreground shadow-xs"
+                      : "text-foreground-muted hover:text-foreground"
+                  }`}
+                >
+                  {status === "all" ? "All" : status === "active" ? "Active" : "Paused"}
+                </button>
+              );
+            })}
+          </div>
+
+          {isFiltered ? (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchQuery("");
+                setStatusFilter("all");
+              }}
+              className="flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-border/80 bg-surface-muted/60 px-3.5 py-2 text-xs font-semibold text-foreground-muted transition-colors hover:border-expense/40 hover:bg-expense/10 hover:text-expense focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            >
+              <span>Clear</span>
+            </button>
+          ) : null}
+        </div>
+      )}
+
       {accountItems.length === 0 ? (
         <div className="rounded-xl border border-accent/25 bg-accent-glow px-4 py-3 text-sm text-foreground-muted">
           Create an account before adding a recurring transaction. Every occurrence needs an account
@@ -129,8 +216,12 @@ export function RecurringManager({
 
       {items.length === 0 ? (
         <EmptyState
-          title="No recurring rules yet"
-          description="Automate predictable money movements like rent, salary, and subscriptions. You can pause any rule without losing its history."
+          title={isFiltered ? "No matching rules" : "No recurring rules yet"}
+          description={
+            isFiltered
+              ? "No recurring rules match your search query or status filter."
+              : "Automate predictable money movements like rent, salary, and subscriptions. You can pause any rule without losing its history."
+          }
           action={
             <Button type="button" onClick={openCreate} disabled={accountItems.length === 0}>
               <span className="mr-1 text-base leading-none">+</span> Create recurring rule

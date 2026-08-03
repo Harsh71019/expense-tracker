@@ -127,6 +127,7 @@ vi.mock("@/features/budgets/server/get-budgets", () => ({
 vi.mock("@/features/recurring", () => ({
   getRecurringRules: async () => [],
   getRecurringReconciliations: async () => [],
+  getRecurringStats: async () => null,
   RecurringManager: () => <h1>Recurring</h1>
 }));
 vi.mock("@/features/goals", () => ({

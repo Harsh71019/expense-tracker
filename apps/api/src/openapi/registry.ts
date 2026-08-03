@@ -110,6 +110,7 @@ import {
   RecurringReconciliationSchema,
   RecurringRuleIdSchema,
   RecurringRuleSchema,
+  RecurringStatsSchema,
   ResolveRecurringReconciliationSchema,
   PayCreditCardBillSchema,
   UpdateApiKeySchema,
@@ -152,6 +153,7 @@ const StagedRowPage = StagedRowPageSchema.meta({ id: "StagedRowPage" });
 const UserProfile = UserProfileSchema.meta({ id: "UserProfile" });
 const MonthlyRollup = MonthlyRollupSchema.meta({ id: "MonthlyRollup" });
 const RecurringRule = RecurringRuleSchema.meta({ id: "RecurringRule" });
+const RecurringStats = RecurringStatsSchema.meta({ id: "RecurringStats" });
 const RecurringReconciliation = RecurringReconciliationSchema.meta({
   id: "RecurringReconciliation"
 });
@@ -748,6 +750,18 @@ registry.registerPath({
   security: secured,
   responses: {
     200: { description: "Recurring rules", ...json(z.array(RecurringRule)) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "get",
+  path: "/v1/recurring/stats",
+  security: secured,
+  responses: {
+    200: {
+      description: "Recurring rule and next-30-days forecast statistics",
+      ...json(RecurringStats)
+    },
     ...problemResponses
   }
 });

@@ -681,6 +681,8 @@ GET    /assets/:id/valuations | POST /assets/:id/valuations
 GET    /net-worth
 GET    /profile                         read-only app profile
 GET    /recurring | POST /recurring | PATCH /recurring/:id
+GET    /recurring/stats                 rule counts + next-30-days transaction, cash-flow,
+                                        and highest-spend-category forecast
 GET    /budgets | PUT /budgets/:categoryId | PATCH /budgets/:budgetId/archive
 
 GET    /reports/monthly/:month          reads monthly_rollups

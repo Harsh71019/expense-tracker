@@ -355,6 +355,7 @@ export {
   CreateRecurringRuleSchema,
   RecurringRuleIdSchema,
   RecurringRuleSchema,
+  RecurringStatsSchema,
   RecurringRuleTemplateSchema,
   RRuleStringSchema,
   UpdateRecurringRuleSchema
@@ -363,6 +364,7 @@ export type {
   CreateRecurringRule,
   RecurringRule,
   RecurringRuleId,
+  RecurringStats,
   RecurringRuleTemplate,
   UpdateRecurringRule
 } from "./recurring.js";

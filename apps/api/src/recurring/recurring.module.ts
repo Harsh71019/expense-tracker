@@ -11,6 +11,7 @@ import { RecurringRuleController } from "./recurring-rule.controller.js";
 import { RecurringRuleRepository } from "./recurring-rule.repository.js";
 import { RecurringRuleService } from "./recurring-rule.service.js";
 import { RecurringRuleMutationService } from "./recurring-rule-mutation.service.js";
+import { RecurringStatsService } from "./recurring-stats.service.js";
 
 @Module({
   imports: [AccountsModule, CategoriesModule, TransactionsModule],
@@ -19,6 +20,7 @@ import { RecurringRuleMutationService } from "./recurring-rule-mutation.service.
     RecurringRuleRepository,
     RecurringRuleService,
     RecurringRuleMutationService,
+    RecurringStatsService,
     RecurringMaterializeService,
     RecurringReconciliationRepository,
     RecurringReconciliationService

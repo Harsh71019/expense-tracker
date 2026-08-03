@@ -180,4 +180,20 @@ describe("CategoryManager", () => {
     expect(mocks.unarchiveMutateAsync).toHaveBeenCalledTimes(2);
     expect(mocks.toastSuccess).toHaveBeenCalledWith("Category renamed and unarchived");
   });
+
+  it("filters categories in real time based on search query", async () => {
+    const user = userEvent.setup();
+    mocks.categories = [
+      category({ id: "cat-1", name: "Food & Dining" }),
+      category({ id: "cat-2", name: "Transportation" })
+    ];
+    render(<CategoryManager initialCategories={mocks.categories} />);
+
+    expect(screen.getByText("Food & Dining")).toBeVisible();
+    expect(screen.getByText("Transportation")).toBeVisible();
+
+    await user.type(screen.getByLabelText("Search categories"), "Food");
+    expect(screen.getByText("Food & Dining")).toBeVisible();
+    expect(screen.queryByText("Transportation")).not.toBeInTheDocument();
+  });
 });

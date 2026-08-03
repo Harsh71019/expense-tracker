@@ -42,11 +42,11 @@ export function CategoryCard({
 }: CategoryCardProps): ReactNode {
   const [menuOpen, setMenuOpen] = useState(false);
   return (
-    <div className="relative overflow-visible rounded-[22px] border border-border bg-surface-elevated p-5.5 shadow-sm animate-fade-in focus-within:z-30">
+    <div className="relative overflow-visible rounded-[22px] border border-border/80 bg-surface-elevated p-5.5 shadow-xs transition-all duration-200 hover:border-accent/40 hover:shadow-md animate-fade-in focus-within:z-30">
       <div className="flex items-start gap-4">
         <div
           style={swatchStyle(parent.color)}
-          className={`grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-[17px] text-2xl font-semibold ${
+          className={`grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-[17px] text-2xl font-semibold transition-transform duration-200 hover:scale-105 ${
             parent.color === undefined
               ? "bg-accent text-accent-foreground shadow-glow"
               : "text-white"
@@ -74,7 +74,7 @@ export function CategoryCard({
             aria-label={`Actions for ${parent.name}`}
             aria-expanded={menuOpen}
             onClick={() => setMenuOpen((open) => !open)}
-            className="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-border bg-surface-muted text-lg text-foreground-muted transition-colors duration-150 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-border/70 bg-surface-muted/60 text-lg text-foreground-muted transition-colors duration-150 hover:bg-surface-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
             ⋯
           </button>
@@ -89,7 +89,7 @@ export function CategoryCard({
         </div>
       </div>
       {subcategories.length === 0 ? null : (
-        <div className="mt-4.5 space-y-2 border-t border-border pt-4.5">
+        <div className="mt-4.5 space-y-2 border-t border-border/70 pt-4.5">
           {subcategories.map((child) => (
             <CategoryTreeItem
               key={child.id}

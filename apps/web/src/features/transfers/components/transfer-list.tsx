@@ -1,6 +1,5 @@
 "use client";
 
-import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import type { Transaction, TransactionPage } from "@treasury-ops/shared";
@@ -46,12 +45,6 @@ export function TransferList({
 
   return (
     <section className="animate-fade-in">
-      <div className="mb-5">
-        <Breadcrumbs
-          items={[{ label: "Settings", href: "/settings?tab=management" }, { label: "Transfers" }]}
-        />
-      </div>
-
       <header className="mb-7 flex flex-col items-stretch gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <p className="font-mono text-[11px] font-bold tracking-[0.2em] text-accent uppercase">

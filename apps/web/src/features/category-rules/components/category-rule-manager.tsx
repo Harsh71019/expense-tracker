@@ -5,7 +5,6 @@ import { useState } from "react";
 import type { ReactNode } from "react";
 import { toast } from "@/lib/toast";
 
-import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useCategories } from "@/features/categories";
 import { userErrorMessage } from "@/lib/errors";
@@ -59,13 +58,6 @@ export function CategoryRuleManager({
 
   return (
     <section className="w-full space-y-6">
-      <Breadcrumbs
-        items={[
-          { label: "Settings", href: "/settings?tab=management" },
-          { label: "Category rules" }
-        ]}
-      />
-
       <header>
         <p className="font-mono text-[11px] font-bold tracking-[2px] text-accent">
           LEDGER · AUTOMATION

@@ -126,12 +126,13 @@ async function ProfileSettingsPanel(): Promise<ReactNode> {
     <div className="space-y-4 animate-fade-in">
       <SettingsSectionHeader eyebrow="Identity" title="Profile & Session" />
 
-      <ProfileSummary profile={profile} email={email} />
-
-      <EditDisplayNameForm initialProfile={profile} />
+      <div className="grid gap-4 md:grid-cols-2">
+        <ProfileSummary profile={profile} email={email} />
+        <EditDisplayNameForm initialProfile={profile} />
+      </div>
 
       {/* Account Session Security Card */}
-      <section className="glass-card flex flex-col gap-3 rounded-2xl p-4 shadow-xs sm:flex-row sm:items-center sm:justify-between sm:px-5 sm:py-4">
+      <section className="glass-card flex flex-col gap-3 rounded-2xl p-4 shadow-xs sm:flex-row sm:items-center sm:justify-between sm:px-5">
         <div className="min-w-0 space-y-0.5">
           <div className="flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-income shadow-glow" aria-hidden="true" />
@@ -156,47 +157,49 @@ async function AppearanceSettingsPanel(): Promise<ReactNode> {
     <div className="space-y-4 animate-fade-in">
       <SettingsSectionHeader eyebrow="Workspace" title="Workspace Appearance" />
 
-      <section className="glass-card space-y-5 rounded-2xl p-4 shadow-xs sm:p-5">
-        <div className="rounded-xl border border-border/80 bg-surface-muted/40 p-3.5 sm:p-4">
-          <ThemePreferenceForm current={theme} />
-        </div>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <section className="glass-card space-y-4 rounded-2xl p-4 shadow-xs">
+          <div className="rounded-xl border border-border/80 bg-surface-muted/40 p-3.5">
+            <ThemePreferenceForm current={theme} />
+          </div>
 
-        <div>
-          <AccentPicker current={accent} />
-        </div>
+          <div>
+            <AccentPicker current={accent} />
+          </div>
+        </section>
 
         {/* Live Color System Tokens */}
-        <div className="rounded-xl border border-border/80 bg-surface-elevated/70 p-3.5">
+        <section className="glass-card rounded-2xl p-4 shadow-xs">
           <div className="flex items-center justify-between pb-2.5 border-b border-border/60">
             <p className="font-mono text-[10px] font-bold tracking-wider text-foreground-muted uppercase">
-              🎨 Workspace Tokens
+              🎨 Workspace System Tokens
             </p>
             <span className="font-mono text-[10px] font-semibold text-accent">
-              Semantics Preserved
+              Active Theme Tokens
             </span>
           </div>
-          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
-            <div className="flex flex-col gap-0.5 rounded-lg border border-accent/30 bg-accent-glow/30 p-2 text-center">
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <div className="flex flex-col gap-0.5 rounded-lg border border-accent/30 bg-accent-glow/30 p-2.5 text-center">
               <span className="font-mono text-[9px] font-bold text-accent uppercase">Accent</span>
               <span className="text-xs font-semibold text-foreground">Interactive</span>
             </div>
-            <div className="flex flex-col gap-0.5 rounded-lg border border-income/30 bg-income/10 p-2 text-center">
+            <div className="flex flex-col gap-0.5 rounded-lg border border-income/30 bg-income/10 p-2.5 text-center">
               <span className="font-mono text-[9px] font-bold text-income uppercase">Income</span>
               <span className="text-xs font-semibold text-income">+ Positive</span>
             </div>
-            <div className="flex flex-col gap-0.5 rounded-lg border border-expense/30 bg-expense/10 p-2 text-center">
+            <div className="flex flex-col gap-0.5 rounded-lg border border-expense/30 bg-expense/10 p-2.5 text-center">
               <span className="font-mono text-[9px] font-bold text-expense uppercase">Expense</span>
               <span className="text-xs font-semibold text-expense">- Outflow</span>
             </div>
-            <div className="flex flex-col gap-0.5 rounded-lg border border-border bg-surface-muted p-2 text-center">
+            <div className="flex flex-col gap-0.5 rounded-lg border border-border bg-surface-muted p-2.5 text-center">
               <span className="font-mono text-[9px] font-bold text-foreground-muted uppercase">
                 Muted
               </span>
               <span className="text-xs font-semibold text-foreground-muted">Secondary</span>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
     </div>
   );
 }

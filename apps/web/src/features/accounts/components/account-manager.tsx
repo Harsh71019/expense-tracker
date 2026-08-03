@@ -310,8 +310,25 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
       )}
 
       {items.length === 0 ? null : (
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-wrap items-center gap-1.5">
+        <div
+          className={`mb-5 flex flex-wrap items-center gap-3.5 rounded-2xl border p-3.5 backdrop-blur transition-all duration-200 ${
+            searchQuery.trim() !== "" || filter !== "all" || showArchived
+              ? "border-accent/40 bg-surface-elevated/90 shadow-sm"
+              : "border-border/80 bg-surface-elevated/90"
+          }`}
+        >
+          <div className="relative flex-1 min-w-[200px] sm:w-64 sm:flex-none">
+            <Input
+              id="search-accounts"
+              label="Search accounts"
+              placeholder="Search accounts…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="h-10 text-xs"
+            />
+          </div>
+
+          <div className="flex flex-wrap items-center gap-1.5 flex-1 min-w-[280px]">
             <button
               type="button"
               onClick={() => setFilter("all")}
@@ -342,29 +359,66 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
             })}
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="relative flex-1 sm:w-56 sm:flex-none">
-              <Input
-                id="search-accounts"
-                label="Search accounts"
-                placeholder="Search accounts…"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-10 text-xs"
+          {hasArchived ? (
+            <label className="flex items-center gap-2 text-xs font-medium text-foreground-muted select-none cursor-pointer hover:text-foreground">
+              <input
+                type="checkbox"
+                checked={showArchived}
+                onChange={(event) => setShowArchived(event.target.checked)}
+                className="h-4 w-4 rounded accent-accent"
               />
+              Show archived
+            </label>
+          ) : null}
+
+          {(searchQuery.trim() !== "" || filter !== "all" || showArchived) && (
+            <div className="flex w-full flex-wrap items-center gap-1.5 border-t border-border/60 pt-2.5">
+              <span className="font-mono text-[10px] font-semibold text-foreground-muted uppercase">
+                Active:
+              </span>
+              {searchQuery.trim() !== "" && (
+                <span className="inline-flex items-center gap-1 rounded-full border border-accent/30 bg-accent-glow px-2.5 py-0.5 font-mono text-xs font-medium text-accent">
+                  <span>Search: &quot;{searchQuery}&quot;</span>
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery("")}
+                    className="hover:text-foreground focus-visible:outline-none"
+                    aria-label="Remove search filter"
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
+              {filter !== "all" && (
+                <span className="inline-flex items-center gap-1 rounded-full border border-accent/30 bg-accent-glow px-2.5 py-0.5 font-mono text-xs font-medium text-accent">
+                  <span>
+                    Type: {accountTypes.find((t) => t.value === filter)?.filterLabel ?? filter}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setFilter("all")}
+                    className="hover:text-foreground focus-visible:outline-none"
+                    aria-label="Remove type filter"
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
+              {showArchived && (
+                <span className="inline-flex items-center gap-1 rounded-full border border-accent/30 bg-accent-glow px-2.5 py-0.5 font-mono text-xs font-medium text-accent">
+                  <span>Showing archived</span>
+                  <button
+                    type="button"
+                    onClick={() => setShowArchived(false)}
+                    className="hover:text-foreground focus-visible:outline-none"
+                    aria-label="Remove archived filter"
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
             </div>
-            {hasArchived ? (
-              <label className="flex items-center gap-2 text-xs font-medium text-foreground-muted select-none cursor-pointer hover:text-foreground">
-                <input
-                  type="checkbox"
-                  checked={showArchived}
-                  onChange={(event) => setShowArchived(event.target.checked)}
-                  className="h-4 w-4 rounded accent-accent"
-                />
-                Show archived
-              </label>
-            ) : null}
-          </div>
+          )}
         </div>
       )}
 

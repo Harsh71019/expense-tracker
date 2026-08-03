@@ -35,10 +35,10 @@ export function WarningFilters({
     <div
       role="group"
       aria-label="Filter spending patterns"
-      className={`mb-4 flex flex-wrap items-center gap-2.5 rounded-2xl border p-3 transition-colors duration-150 ${
+      className={`mb-5 flex flex-wrap items-center gap-3.5 rounded-2xl border p-3.5 backdrop-blur transition-all duration-200 ${
         isFiltered
-          ? "border-accent/40 bg-surface-elevated shadow-sm"
-          : "border-border bg-surface-elevated"
+          ? "border-accent/40 bg-surface-elevated/90 shadow-sm"
+          : "border-border/80 bg-surface-elevated/90"
       }`}
     >
       <Select

@@ -27,9 +27,19 @@ export function CategoryRuleManager({
   const deleteRule = useDeleteCategoryRule();
   const [pattern, setPattern] = useState("");
   const [categoryId, setCategoryId] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const items = rules.data ?? initialRules;
+  const rawItems = rules.data ?? initialRules;
   const categoryItems = categories.data ?? [];
+
+  let items = rawItems;
+  if (searchQuery.trim() !== "") {
+    const q = searchQuery.toLowerCase().trim();
+    items = items.filter((rule) => {
+      const categoryName = categoryItems.find((cat) => cat.id === rule.categoryId)?.name ?? "";
+      return rule.pattern.toLowerCase().includes(q) || categoryName.toLowerCase().includes(q);
+    });
+  }
 
   async function submit(): Promise<void> {
     const parsed = CreateCategoryRuleSchema.safeParse({ pattern, categoryId });
@@ -81,7 +91,42 @@ export function CategoryRuleManager({
         </span>
       </div>
 
-      <RuleTester rules={items} categories={categoryItems} />
+      <RuleTester rules={rawItems} categories={categoryItems} />
+
+      {rawItems.length > 0 && (
+        <div
+          className={`mb-4 flex flex-wrap items-center gap-3.5 rounded-2xl border p-3.5 backdrop-blur transition-all duration-200 ${
+            searchQuery.trim() !== ""
+              ? "border-accent/40 bg-surface-elevated/90 shadow-sm"
+              : "border-border/80 bg-surface-elevated/90"
+          }`}
+        >
+          <div className="flex min-w-0 flex-1 items-center gap-2.5 rounded-xl border border-border/80 bg-surface-muted/60 px-3.5 transition-colors focus-within:border-accent/60 focus-within:bg-surface-muted focus-within:ring-2 focus-within:ring-accent/20">
+            <span className="text-foreground-muted/70 text-sm font-semibold" aria-hidden="true">
+              ⌕
+            </span>
+            <input
+              value={searchQuery}
+              name="ruleSearch"
+              autoComplete="off"
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Search category rules by pattern or category name…"
+              aria-label="Search category rules"
+              className="min-h-10 w-full bg-transparent py-2 text-base text-foreground outline-none placeholder:text-foreground-muted/60 sm:text-sm"
+            />
+            {searchQuery !== "" && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                aria-label="Clear search input"
+                className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-xs text-foreground-muted hover:bg-surface-elevated hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="flex items-baseline justify-between pt-1">
         <h2 className="text-[17px] font-bold text-foreground">

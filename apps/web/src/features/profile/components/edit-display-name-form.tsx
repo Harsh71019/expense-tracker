@@ -47,16 +47,14 @@ export function EditDisplayNameForm({ initialProfile }: EditDisplayNameFormProps
   const unchanged = displayName === profile.displayName;
 
   return (
-    <section className="glass-card rounded-2xl p-5 shadow-sm sm:p-6">
-      <header>
-        <h2 className="text-lg font-bold tracking-tight text-foreground">Display Name</h2>
-        <p className="mt-1 text-xs leading-relaxed text-foreground-muted sm:text-sm pretty-text">
-          Shown across TreasuryOps transactions, audit logs, and reports wherever your identity is
-          displayed.
-        </p>
+    <section className="glass-card rounded-2xl p-4 shadow-xs sm:p-5">
+      <header className="flex items-center justify-between pb-2">
+        <h2 className="text-sm font-bold tracking-tight text-foreground sm:text-base">
+          Display Name
+        </h2>
       </header>
 
-      <form onSubmit={submit} className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
+      <form onSubmit={submit} className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-end">
         <div className="flex-1">
           <Input
             id="display-name"
@@ -64,6 +62,7 @@ export function EditDisplayNameForm({ initialProfile }: EditDisplayNameFormProps
             value={displayName}
             onChange={(event) => setDisplayName(event.target.value)}
             maxLength={100}
+            className="h-10 text-xs"
           />
           {error === null ? null : (
             <span

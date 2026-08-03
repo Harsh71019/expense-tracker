@@ -22,15 +22,47 @@ const typeLabels: Record<AccountType, string> = {
   investment: "Investment"
 };
 
+function fallbackCopyTextToClipboard(text: string): boolean {
+  if (typeof document === "undefined") return false;
+  try {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = "fixed";
+    textArea.style.left = "-999999px";
+    textArea.style.top = "-999999px";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    const successful = document.execCommand("copy");
+    document.body.removeChild(textArea);
+    return successful;
+  } catch {
+    return false;
+  }
+}
+
 export function AccountDetailDialog({
   account,
   onClose
 }: Readonly<{ account: Account; onClose: () => void }>): ReactNode {
   async function copyId(): Promise<void> {
-    try {
-      await navigator.clipboard.writeText(account.id);
+    if (
+      typeof navigator !== "undefined" &&
+      navigator.clipboard !== undefined &&
+      typeof navigator.clipboard.writeText === "function"
+    ) {
+      try {
+        await navigator.clipboard.writeText(account.id);
+        toast.success("Account ID copied");
+        return;
+      } catch {
+        // If navigator.clipboard fails (e.g., non-HTTPS HTTP environment or permission denial), try fallback
+      }
+    }
+
+    if (fallbackCopyTextToClipboard(account.id)) {
       toast.success("Account ID copied");
-    } catch {
+    } else {
       toast.error("Could not copy this ID");
     }
   }

@@ -10,7 +10,6 @@ import { useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 
 import { AmountInput } from "@/components/ui/amount-input";
-import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { Button } from "@/components/ui/button";
 import { DialogSurface } from "@/components/ui/dialog";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -26,14 +25,55 @@ import { useCreateAccount } from "../hooks/use-create-account";
 import { useUpdateCreditCardConfig } from "../hooks/use-update-credit-card-config";
 import { AccountDetailDialog } from "./account-detail-dialog";
 
-type TypeMeta = { value: AccountType; label: string; filterLabel: string; icon: string };
+type TypeMeta = {
+  value: AccountType;
+  label: string;
+  filterLabel: string;
+  icon: string;
+  badgeStyle: string;
+};
 
 const accountTypes: readonly TypeMeta[] = [
-  { value: "bank", label: "Bank", filterLabel: "Bank", icon: "🏦" },
-  { value: "credit_card", label: "Credit card", filterLabel: "Cards", icon: "💳" },
-  { value: "cash", label: "Cash", filterLabel: "Cash", icon: "💵" },
-  { value: "wallet", label: "Wallet", filterLabel: "Wallets", icon: "👛" },
-  { value: "investment", label: "Investment", filterLabel: "Investments", icon: "📈" }
+  {
+    value: "bank",
+    label: "Bank",
+    filterLabel: "Bank",
+    icon: "🏦",
+    badgeStyle:
+      "bg-gradient-to-br from-blue-500/15 to-cyan-500/15 text-cyan-600 dark:text-cyan-400 border border-cyan-500/25"
+  },
+  {
+    value: "credit_card",
+    label: "Credit card",
+    filterLabel: "Cards",
+    icon: "💳",
+    badgeStyle:
+      "bg-gradient-to-br from-amber-500/15 to-orange-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25"
+  },
+  {
+    value: "cash",
+    label: "Cash",
+    filterLabel: "Cash",
+    icon: "💵",
+    badgeStyle:
+      "bg-gradient-to-br from-emerald-500/15 to-teal-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25"
+  },
+  {
+    value: "wallet",
+    label: "Wallet",
+    filterLabel: "Wallets",
+    icon: "👛",
+    badgeStyle:
+      "bg-gradient-to-br from-purple-500/15 to-indigo-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/25"
+  },
+  {
+    value: "investment",
+    label: "Investment",
+    filterLabel: "Investments",
+    icon: "📈",
+    badgeStyle:
+      "bg-gradient-to-br from-fuchsia-500/15 to-pink-500/15 text-fuchsia-600 dark:text-fuchsia-400 border border-fuchsia-500/25"
+  }
 ];
 
 function typeMeta(type: AccountType): TypeMeta {
@@ -46,10 +86,10 @@ type Filter = "all" | AccountType;
 
 const pillClasses = (active: boolean): string =>
   [
-    "min-h-11 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
+    "inline-flex items-center gap-1.5 min-h-10 rounded-xl px-3.5 py-2 text-xs font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent select-none",
     active
-      ? "border border-accent bg-accent-glow text-accent"
-      : "border border-transparent text-foreground-muted hover:text-foreground"
+      ? "border border-accent bg-accent-glow text-accent shadow-sm"
+      : "border border-border/70 bg-surface-elevated/50 text-foreground-muted hover:border-accent/40 hover:text-foreground"
   ].join(" ");
 
 export function AccountManager({ initialAccounts }: { initialAccounts: Account[] }): ReactNode {
@@ -59,6 +99,7 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
   const updateCardConfig = useUpdateCreditCardConfig();
   const [createOpen, setCreateOpen] = useState(false);
   const [filter, setFilter] = useState<Filter>("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [showArchived, setShowArchived] = useState(false);
   const [name, setName] = useState("");
   const [type, setType] = useState<AccountType>("bank");
@@ -183,24 +224,32 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
     .reduce((sum, account) => sum + account.balanceMinor, 0);
   const netWorth = active.reduce((sum, account) => sum + account.balanceMinor, 0);
 
+  const typeCounts = active.reduce<Record<AccountType, number>>(
+    (acc, accItem) => {
+      acc[accItem.type] = (acc[accItem.type] ?? 0) + 1;
+      return acc;
+    },
+    { bank: 0, credit_card: 0, cash: 0, wallet: 0, investment: 0 }
+  );
+
   let visible = showArchived ? items : active;
   if (filter !== "all") visible = visible.filter((account) => account.type === filter);
+  if (searchQuery.trim() !== "") {
+    const q = searchQuery.toLowerCase().trim();
+    visible = visible.filter((account) => account.name.toLowerCase().includes(q));
+  }
 
   return (
     <section className="space-y-8">
-      <Breadcrumbs
-        items={[{ label: "Settings", href: "/settings?tab=management" }, { label: "Accounts" }]}
-      />
-
       <header className="flex flex-col items-stretch gap-4 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
         <div className="min-w-0">
           <p className="font-mono text-[10px] font-bold tracking-[0.2em] text-accent uppercase">
             Expense tracker
           </p>
-          <h1 className="mt-2 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+          <h1 className="mt-1.5 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
             Accounts
           </h1>
-          <p className="mt-2 max-w-md text-sm text-foreground-muted">
+          <p className="mt-1.5 max-w-md text-sm text-foreground-muted">
             The containers your money lives in. Balances update automatically as transactions post.
           </p>
         </div>
@@ -210,38 +259,50 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
       </header>
 
       {items.length === 0 ? null : (
-        <div className="flex flex-wrap items-center gap-10 rounded-2xl border border-border bg-surface-elevated p-6 sm:p-7">
-          <div className="min-w-[200px]">
-            <p className="font-mono text-[10px] font-bold tracking-[0.15em] text-foreground-muted uppercase">
-              Net worth
-            </p>
-            <div className="mt-1.5">
-              <SignedMoney minor={netWorth} size="hero" />
-            </div>
-            <p className="mt-2 text-sm text-foreground-muted">
-              across {active.length} active {active.length === 1 ? "account" : "accounts"}
-            </p>
-          </div>
-          <div className="hidden h-14 w-px self-stretch bg-border sm:block" aria-hidden="true" />
-          <div className="flex flex-wrap gap-10">
-            <div>
-              <p className="font-mono text-[10px] font-bold tracking-[0.15em] text-foreground-muted uppercase">
-                Assets
-              </p>
-              <div className="mt-1.5">
-                <Money minor={assetsTotal} size="lg" />
+        <div className="relative overflow-hidden rounded-2xl border border-border bg-surface-elevated/80 backdrop-blur p-6 sm:p-7 shadow-xs">
+          <div className="absolute -top-24 -right-24 h-48 w-48 rounded-full bg-accent-glow opacity-60 blur-3xl pointer-events-none" />
+          <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <p className="font-mono text-[10px] font-bold tracking-[0.15em] text-foreground-muted uppercase">
+                  Net Worth Overview
+                </p>
+                <span className="inline-flex items-center rounded-full bg-accent-glow px-2 py-0.5 font-mono text-[10px] font-semibold text-accent">
+                  {active.length} {active.length === 1 ? "active account" : "active accounts"}
+                </span>
+              </div>
+              <div className="pt-1">
+                <SignedMoney minor={netWorth} size="hero" />
               </div>
             </div>
-            <div>
-              <p className="font-mono text-[10px] font-bold tracking-[0.15em] text-foreground-muted uppercase">
-                Liabilities
-              </p>
-              <div className="mt-1.5">
-                <Money
-                  minor={Math.abs(liabilitiesTotal)}
-                  variant={liabilitiesTotal < 0 ? "expense" : "neutral"}
-                  size="lg"
-                />
+
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex-1 sm:flex-none min-w-[140px] rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-mono text-[10px] font-bold tracking-wider text-emerald-600 dark:text-emerald-400 uppercase">
+                    Assets
+                  </span>
+                  <span className="text-xs text-emerald-500">↗</span>
+                </div>
+                <div className="mt-1">
+                  <Money minor={assetsTotal} size="lg" />
+                </div>
+              </div>
+
+              <div className="flex-1 sm:flex-none min-w-[140px] rounded-xl border border-rose-500/20 bg-rose-500/5 p-3.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-mono text-[10px] font-bold tracking-wider text-rose-600 dark:text-rose-400 uppercase">
+                    Liabilities
+                  </span>
+                  <span className="text-xs text-rose-500">↘</span>
+                </div>
+                <div className="mt-1">
+                  <Money
+                    minor={Math.abs(liabilitiesTotal)}
+                    variant={liabilitiesTotal < 0 ? "expense" : "neutral"}
+                    size="lg"
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -249,36 +310,61 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
       )}
 
       {items.length === 0 ? null : (
-        <div className="flex flex-wrap items-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => setFilter("all")}
-            className={pillClasses(filter === "all")}
-          >
-            All
-          </button>
-          {accountTypes.map((meta) => (
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap items-center gap-1.5">
             <button
-              key={meta.value}
               type="button"
-              onClick={() => setFilter(meta.value)}
-              className={pillClasses(filter === meta.value)}
+              onClick={() => setFilter("all")}
+              className={pillClasses(filter === "all")}
             >
-              {meta.filterLabel}
+              <span>All</span>
+              <span className="rounded-md bg-surface-muted px-1.5 py-0.5 font-mono text-[10px] text-foreground-muted">
+                {active.length}
+              </span>
             </button>
-          ))}
-          <div className="flex-1" />
-          {hasArchived ? (
-            <label className="flex min-h-11 items-center gap-2 rounded-lg px-1 text-sm text-foreground-muted select-none">
-              <input
-                type="checkbox"
-                checked={showArchived}
-                onChange={(event) => setShowArchived(event.target.checked)}
-                className="h-5 w-5 accent-accent"
+            {accountTypes.map((meta) => {
+              const count = typeCounts[meta.value];
+              return (
+                <button
+                  key={meta.value}
+                  type="button"
+                  onClick={() => setFilter(meta.value)}
+                  className={pillClasses(filter === meta.value)}
+                >
+                  <span>{meta.filterLabel}</span>
+                  {count > 0 ? (
+                    <span className="rounded-md bg-surface-muted px-1.5 py-0.5 font-mono text-[10px] text-foreground-muted">
+                      {count}
+                    </span>
+                  ) : null}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="relative flex-1 sm:w-56 sm:flex-none">
+              <Input
+                id="search-accounts"
+                label="Search accounts"
+                placeholder="Search accounts…"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="h-10 text-xs"
               />
-              Show archived
-            </label>
-          ) : null}
+            </div>
+            {hasArchived ? (
+              <label className="flex items-center gap-2 text-xs font-medium text-foreground-muted select-none cursor-pointer hover:text-foreground">
+                <input
+                  type="checkbox"
+                  checked={showArchived}
+                  onChange={(event) => setShowArchived(event.target.checked)}
+                  className="h-4 w-4 rounded accent-accent"
+                />
+                Show archived
+              </label>
+            ) : null}
+          </div>
         </div>
       )}
 
@@ -293,15 +379,18 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
           }
         />
       ) : visible.length === 0 ? (
-        <EmptyState title="No matching accounts" description="Try a different filter." />
+        <EmptyState
+          title="No matching accounts"
+          description="Try a different filter or search term."
+        />
       ) : (
-        <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(280px,1fr))]">
+        <div className="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {visible.map((account) => {
             const meta = typeMeta(account.type);
             return (
               <article
                 key={account.id}
-                className={`relative rounded-2xl border border-border bg-surface-elevated p-5 transition-colors duration-150 hover:border-accent/40 ${
+                className={`group relative flex flex-col justify-between rounded-2xl border border-border/80 bg-surface-elevated p-5 shadow-xs transition-all duration-200 hover:border-accent/40 hover:shadow-md ${
                   account.isArchived ? "opacity-60" : ""
                 }`}
               >
@@ -311,54 +400,63 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
                   onClick={() => setDetailAccount(account)}
                   className="absolute inset-0 z-0 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
                 />
-                <div className="pointer-events-none relative z-10 flex items-center justify-between gap-3">
-                  <div className="flex min-w-0 items-center gap-3">
-                    <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-border bg-surface-muted text-xl">
-                      {meta.icon}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="truncate text-base font-semibold text-foreground">
-                        {account.name}
-                      </p>
-                      <p className="mt-0.5 font-mono text-[10px] tracking-wider text-foreground-muted uppercase">
-                        {meta.label}
-                      </p>
+
+                <div className="pointer-events-none relative z-10 space-y-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span
+                        className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl text-xl ${meta.badgeStyle}`}
+                      >
+                        {meta.icon}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="truncate text-base font-bold text-foreground tracking-tight">
+                          {account.name}
+                        </p>
+                        <p className="mt-0.5 font-mono text-[10px] font-semibold tracking-wider text-foreground-muted uppercase">
+                          {meta.label}
+                        </p>
+                      </div>
+                    </div>
+                    {account.isArchived ? (
+                      <span className="shrink-0 rounded-md border border-border bg-surface-muted px-2 py-0.5 font-mono text-[9px] font-bold tracking-wider text-foreground-muted">
+                        ARCHIVED
+                      </span>
+                    ) : null}
+                  </div>
+
+                  <div className="rounded-xl border border-border/60 bg-surface-muted/50 p-3.5">
+                    <p className="font-mono text-[9px] font-extrabold tracking-[0.15em] text-foreground-muted uppercase">
+                      Current Balance
+                    </p>
+                    <div className="mt-1">
+                      <SignedMoney minor={account.balanceMinor} size="lg" />
                     </div>
                   </div>
-                  {account.isArchived ? (
-                    <span className="shrink-0 rounded-md border border-border bg-surface-muted px-1.5 py-0.5 font-mono text-[9px] font-bold tracking-wider text-foreground-muted">
-                      ARCHIVED
-                    </span>
-                  ) : null}
                 </div>
 
-                <p className="pointer-events-none relative z-10 mt-5 font-mono text-[10px] font-bold tracking-[0.15em] text-foreground-muted uppercase">
-                  Balance
-                </p>
-                <div className="pointer-events-none relative z-10 mt-1">
-                  <SignedMoney minor={account.balanceMinor} size="lg" />
-                </div>
-
-                <div className="pointer-events-none relative z-10 mt-4 flex items-center justify-between border-t border-border pt-3.5">
-                  <div>
-                    <span className="font-mono text-[11px] text-foreground-muted">
+                <div className="pointer-events-none relative z-10 mt-4 border-t border-border/60 pt-3.5 flex flex-col gap-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                    <span className="font-mono text-[10px] text-foreground-muted">
                       Opening <SignedMoney minor={account.openingBalanceMinor} size="sm" />
                     </span>
-                    {account.type === "credit_card" ? (
-                      <p className="mt-2 text-xs text-foreground-muted">
-                        {account.creditCardConfig === undefined
-                          ? "Billing cycle not configured"
-                          : `Statement day ${account.creditCardConfig.statementDay} · due day ${account.creditCardConfig.dueDay}`}
-                      </p>
-                    ) : null}
                     {account.type === "credit_card" && account.creditCardConfig !== undefined ? (
-                      <p className="mt-1 text-xs text-foreground-muted">
-                        Next statement {formatBillDate(account.creditCardConfig.nextStatementAt)}
-                      </p>
+                      <span className="inline-flex items-center rounded-md bg-accent-glow/50 px-2 py-0.5 font-mono text-[10px] text-accent">
+                        Next stmt: {formatBillDate(account.creditCardConfig.nextStatementAt)}
+                      </span>
                     ) : null}
                   </div>
+
+                  {account.type === "credit_card" ? (
+                    <p className="text-xs text-foreground-muted">
+                      {account.creditCardConfig === undefined
+                        ? "Billing cycle not configured"
+                        : `Statement day ${account.creditCardConfig.statementDay} · due day ${account.creditCardConfig.dueDay}`}
+                    </p>
+                  ) : null}
+
                   {account.isArchived ? null : (
-                    <div className="pointer-events-auto flex flex-col items-end gap-2">
+                    <div className="pointer-events-auto flex items-center justify-end gap-2 pt-1">
                       {account.type === "credit_card" ? (
                         <button
                           type="button"
@@ -366,7 +464,7 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
                             event.stopPropagation();
                             openCardConfig(account);
                           }}
-                          className="min-h-11 rounded-lg px-2 text-xs font-semibold text-accent hover:bg-accent-glow hover:text-accent-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                          className="min-h-9 rounded-lg px-2.5 text-xs font-semibold text-accent hover:bg-accent-glow hover:text-accent-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                         >
                           {account.creditCardConfig === undefined
                             ? "Set billing cycle"
@@ -379,7 +477,7 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
                           event.stopPropagation();
                           setConfirming(account);
                         }}
-                        className="min-h-11 rounded-lg px-2 text-xs font-medium text-foreground-muted hover:bg-surface-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                        className="min-h-9 rounded-lg px-2.5 text-xs font-medium text-foreground-muted hover:bg-surface-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                       >
                         Archive
                       </button>

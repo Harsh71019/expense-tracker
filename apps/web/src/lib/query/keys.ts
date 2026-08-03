@@ -55,6 +55,7 @@ export const qk = {
   dashboard: () => dashboardRoot,
   recentActivity: (limit: number) => [...dashboardRoot, "recent-activity", limit] as const,
   dashboardStats: (period?: string) => [...dashboardRoot, "stats", period ?? "current"] as const,
+  monthlySpending: () => [...dashboardRoot, "monthly-spending"] as const,
   cashflow: (range: DashboardRange) => [...dashboardRoot, "cashflow", range] as const,
   spendMix: (range: DashboardRange) => [...dashboardRoot, "spend-mix", range] as const,
   topSpending: (range: DashboardRange, limit: number) =>

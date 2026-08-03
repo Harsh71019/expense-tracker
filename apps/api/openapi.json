@@ -3204,6 +3204,62 @@
         },
         "required": ["range", "buckets"]
       },
+      "MonthlySpending": {
+        "type": "object",
+        "properties": {
+          "period": {
+            "type": "string",
+            "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+          },
+          "asOf": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "totalMinor": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "daily": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "date": {
+                  "type": ["string", "null"],
+                  "format": "date-time"
+                },
+                "amountMinor": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "required": ["date", "amountMinor"]
+            }
+          },
+          "weekly": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "startAt": {
+                  "type": ["string", "null"],
+                  "format": "date-time"
+                },
+                "endAt": {
+                  "type": ["string", "null"],
+                  "format": "date-time"
+                },
+                "amountMinor": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "required": ["startAt", "endAt", "amountMinor"]
+            }
+          }
+        },
+        "required": ["period", "asOf", "totalMinor", "daily", "weekly"]
+      },
       "TopSpendingItem": {
         "type": "object",
         "properties": {
@@ -10660,6 +10716,57 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CashflowResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/dashboard/monthly-spending": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current IST calendar-month spending with daily and elapsed weekly buckets",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonthlySpending"
                 }
               }
             }

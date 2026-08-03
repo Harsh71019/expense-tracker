@@ -69,6 +69,25 @@ export const CashflowResponseSchema = z.object({
   buckets: z.array(CashflowBucketSchema)
 });
 
+export const DailySpendingBucketSchema = z.object({
+  date: z.coerce.date(),
+  amountMinor: z.number().int().min(0)
+});
+
+export const WeeklySpendingBucketSchema = z.object({
+  startAt: z.coerce.date(),
+  endAt: z.coerce.date(),
+  amountMinor: z.number().int().min(0)
+});
+
+export const MonthlySpendingSchema = z.object({
+  period: MonthSchema,
+  asOf: z.coerce.date(),
+  totalMinor: z.number().int().min(0),
+  daily: z.array(DailySpendingBucketSchema),
+  weekly: z.array(WeeklySpendingBucketSchema)
+});
+
 export const TopSpendingQuerySchema = z.object({
   range: DashboardRangeSchema,
   limit: z.coerce.number().int().min(1).max(20).default(5)
@@ -139,6 +158,9 @@ export type DashboardStats = z.infer<typeof DashboardStatsSchema>;
 export type CashflowQuery = z.infer<typeof CashflowQuerySchema>;
 export type CashflowBucket = z.infer<typeof CashflowBucketSchema>;
 export type CashflowResponse = z.infer<typeof CashflowResponseSchema>;
+export type DailySpendingBucket = z.infer<typeof DailySpendingBucketSchema>;
+export type WeeklySpendingBucket = z.infer<typeof WeeklySpendingBucketSchema>;
+export type MonthlySpending = z.infer<typeof MonthlySpendingSchema>;
 export type TopSpendingQuery = z.infer<typeof TopSpendingQuerySchema>;
 export type TopSpendingItem = z.infer<typeof TopSpendingItemSchema>;
 export type SpendMixQuery = z.infer<typeof SpendMixQuerySchema>;

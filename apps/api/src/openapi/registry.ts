@@ -105,6 +105,11 @@ import {
   ListBillsQuerySchema,
   ListBillStatementRowsQuerySchema,
   ListRecurringReconciliationsQuerySchema,
+  ListRecurringOccurrencesQuerySchema,
+  LinkRecurringOccurrencePaymentSchema,
+  RecurringOccurrenceIdSchema,
+  RecurringOccurrencePageSchema,
+  RecurringOccurrenceSchema,
   RecurringReconciliationReviewItemSchema,
   ReorderGoalsSchema,
   RecurringReconciliationIdSchema,
@@ -162,6 +167,10 @@ const RecurringReconciliation = RecurringReconciliationSchema.meta({
 const RecurringReconciliationReviewItem = RecurringReconciliationReviewItemSchema.meta({
   id: "RecurringReconciliationReviewItem"
 });
+const RecurringOccurrence = RecurringOccurrenceSchema.meta({ id: "RecurringOccurrence" });
+const RecurringOccurrencePage = RecurringOccurrencePageSchema.meta({
+  id: "RecurringOccurrencePage"
+});
 const SpendingWarningPage = SpendingWarningPageSchema.meta({ id: "SpendingWarningPage" });
 const DismissSpendingWarningResponse = DismissSpendingWarningResponseSchema.meta({
   id: "DismissSpendingWarningResponse"
@@ -201,6 +210,10 @@ const importBatchAndRowId = z.object({
 });
 const month = z.object({ month: MonthSchema });
 const recurringRuleId = z.object({ ruleId: RecurringRuleIdSchema });
+const recurringRuleAndOccurrenceId = z.object({
+  ruleId: RecurringRuleIdSchema,
+  occurrenceId: RecurringOccurrenceIdSchema
+});
 const recurringReconciliationId = z.object({ id: RecurringReconciliationIdSchema });
 const spendingWarningId = z.object({ warningId: SpendingWarningIdSchema });
 const goalId = z.object({ goalId: GoalIdSchema });
@@ -802,6 +815,59 @@ registry.registerPath({
     },
     404: { description: "Recurring rule, account, or category not found", ...json(ProblemDetails) },
     ...idempotencyConflictResponse,
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/v1/recurring/occurrences/outstanding",
+  security: secured,
+  responses: {
+    200: {
+      description: "Outstanding (expected/missed) occurrences across all manual-post rules",
+      ...json(z.array(RecurringOccurrence))
+    },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "get",
+  path: "/v1/recurring/{ruleId}/occurrences",
+  security: secured,
+  request: { params: recurringRuleId, query: ListRecurringOccurrencesQuerySchema },
+  responses: {
+    200: {
+      description: "Occurrence history for a manual-post recurring rule",
+      ...json(RecurringOccurrencePage)
+    },
+    404: { description: "Recurring rule not found", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "post",
+  path: "/v1/recurring/{ruleId}/occurrences/{occurrenceId}/link-payment",
+  security: secured,
+  request: {
+    params: recurringRuleAndOccurrenceId,
+    body: json(LinkRecurringOccurrencePaymentSchema),
+    headers: idempotencyKeyHeaders
+  },
+  responses: {
+    200: {
+      description: "Confirmed occurrence, or idempotent replay",
+      headers: optionalReplayHeaders,
+      ...json(RecurringOccurrence)
+    },
+    404: {
+      description: "Recurring rule, occurrence, or transaction not found",
+      ...json(ProblemDetails)
+    },
+    409: {
+      description: "Transaction is not an eligible source, or the occurrence is already confirmed",
+      ...json(ProblemDetails)
+    },
     ...problemResponses
   }
 });

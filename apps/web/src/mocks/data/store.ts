@@ -2089,6 +2089,7 @@ function seedRecurringRules(store: MockStore): void {
       nextRunAt: daysAgo(-8),
       lastRunAt: daysAgo(22),
       isPaused: template.isPaused,
+      autoPost: true,
       createdAt,
       updatedAt: createdAt
     });

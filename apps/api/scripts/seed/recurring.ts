@@ -39,7 +39,8 @@ export async function seedRecurring(
       tags: ["salary", "recurring"]
     },
     rrule: "FREQ=MONTHLY;BYMONTHDAY=1",
-    startAt: twoMonthsAgo
+    startAt: twoMonthsAgo,
+    autoPost: true
   });
 
   const rent = await services.recurring.create(userId, {
@@ -52,7 +53,8 @@ export async function seedRecurring(
       tags: ["rent", "recurring"]
     },
     rrule: "FREQ=MONTHLY;BYMONTHDAY=5",
-    startAt: twoMonthsAgo
+    startAt: twoMonthsAgo,
+    autoPost: true
   });
 
   const subscription = await services.recurring.create(userId, {
@@ -64,7 +66,8 @@ export async function seedRecurring(
       tags: ["subscription", "recurring"]
     },
     rrule: "FREQ=MONTHLY;BYMONTHDAY=15",
-    startAt: oneMonthAgo
+    startAt: oneMonthAgo,
+    autoPost: true
   });
   const subscriptionPaused = await services.recurring.update(userId, subscription.id, {
     isPaused: true

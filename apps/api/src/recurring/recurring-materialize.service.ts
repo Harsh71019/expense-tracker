@@ -18,6 +18,7 @@ import {
 import { toISTCalendarDate } from "../common/time/ist.js";
 import { parseExplicitDate } from "../common/time/parse-date.js";
 import { TransactionRepository } from "../transactions/transaction.repository.js";
+import { RecurringOccurrenceRepository } from "./recurring-occurrence.repository.js";
 import { RecurringRuleRepository } from "./recurring-rule.repository.js";
 
 type MaterializeLogger = Pick<Logger, "log" | "error">;
@@ -46,6 +47,7 @@ export class RecurringMaterializeService {
     private readonly rules: RecurringRuleRepository,
     private readonly accounts: AccountRepository,
     private readonly transactions: TransactionRepository,
+    private readonly occurrences: RecurringOccurrenceRepository,
     private readonly audit: AuditRepository,
     @Inject(Logger) private readonly logger: MaterializeLogger,
     @Optional() private readonly scheduler?: ScheduledRunCoordinator
@@ -73,7 +75,7 @@ export class RecurringMaterializeService {
   private async materializeOne(rule: RecurringRule): Promise<void> {
     const next = computeNextOccurrence(rule.rrule, rule.startAt, rule.nextRunAt);
 
-    const posted = await withTxn(this.db, async (tx) => {
+    const result = await withTxn(this.db, async (tx) => {
       const claimed = await this.rules.claimRun(
         rule.userId,
         rule.id,
@@ -83,6 +85,17 @@ export class RecurringMaterializeService {
         tx
       );
       if (!claimed) return null; // already materialized by a concurrent/retried run
+
+      if (!rule.autoPost) {
+        const occurrence = await this.occurrences.createExpected(
+          rule.userId,
+          rule.id,
+          rule.nextRunAt,
+          tx
+        );
+        await this.audit.record(rule.userId, "recurring.occurrence.expected", occurrence.id, tx);
+        return { kind: "occurrence" as const, occurrenceId: occurrence.id };
+      }
 
       const deltaMinor =
         rule.template.type === "income" ? rule.template.amountMinor : -rule.template.amountMinor;
@@ -110,13 +123,25 @@ export class RecurringMaterializeService {
       );
       await this.audit.record(rule.userId, "recurring.materialize", posted.id, tx);
 
-      return posted;
+      return { kind: "transaction" as const, txnId: posted.id };
     });
 
-    if (posted === null) return;
+    if (result === null) return;
+
+    if (result.kind === "occurrence") {
+      this.logger.log(
+        {
+          event: LogEvent.RecurringOccurrenceExpected,
+          ruleId: rule.id,
+          occurrenceId: result.occurrenceId
+        },
+        "recurring occurrence expected (manual post)"
+      );
+      return;
+    }
 
     this.logger.log(
-      { event: LogEvent.RecurringMaterialized, ruleId: rule.id, txnId: posted.id },
+      { event: LogEvent.RecurringMaterialized, ruleId: rule.id, txnId: result.txnId },
       "recurring rule materialized"
     );
   }

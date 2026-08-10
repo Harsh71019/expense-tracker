@@ -12,6 +12,7 @@ import {
   transactions as transactionsTable
 } from "../../../src/common/db/schema/index.js";
 import { RecurringMaterializeService } from "../../../src/recurring/recurring-materialize.service.js";
+import { RecurringOccurrenceRepository } from "../../../src/recurring/recurring-occurrence.repository.js";
 import { RecurringRuleRepository } from "../../../src/recurring/recurring-rule.repository.js";
 import { RecurringRuleService } from "../../../src/recurring/recurring-rule.service.js";
 import { TransactionRepository } from "../../../src/transactions/transaction.repository.js";
@@ -69,6 +70,7 @@ describe("RecurringMaterializeService", () => {
       rules,
       accounts_,
       new TransactionRepository(testDb.db),
+      new RecurringOccurrenceRepository(testDb.db),
       new AuditRepository(testDb.db),
       NOOP_LOGGER
     );
@@ -84,7 +86,8 @@ describe("RecurringMaterializeService", () => {
         tags: []
       },
       rrule: "FREQ=MONTHLY;BYMONTHDAY=1",
-      startAt: new Date("2020-01-01T00:00:00.000Z")
+      startAt: new Date("2020-01-01T00:00:00.000Z"),
+      autoPost: true
     });
 
     await newMaterializer("api").materialize();
@@ -113,7 +116,8 @@ describe("RecurringMaterializeService", () => {
         tags: ["housing"]
       },
       rrule: "FREQ=MONTHLY;BYMONTHDAY=1",
-      startAt: new Date("2020-02-01T00:00:00.000Z")
+      startAt: new Date("2020-02-01T00:00:00.000Z"),
+      autoPost: true
     });
 
     const balanceBefore = await accountBalance();
@@ -167,7 +171,8 @@ describe("RecurringMaterializeService", () => {
         tags: []
       },
       rrule: "FREQ=YEARLY;BYMONTH=1;BYMONTHDAY=1",
-      startAt
+      startAt,
+      autoPost: true
     });
 
     process.env.SERVICE_ROLE = "worker";
@@ -202,7 +207,8 @@ describe("RecurringMaterializeService", () => {
         tags: []
       },
       rrule: "FREQ=MONTHLY;BYMONTHDAY=1;COUNT=1",
-      startAt: new Date("2020-06-01T00:00:00.000Z")
+      startAt: new Date("2020-06-01T00:00:00.000Z"),
+      autoPost: true
     });
 
     await newMaterializer("worker").materialize();
@@ -233,7 +239,8 @@ describe("RecurringMaterializeService", () => {
         tags: []
       },
       rrule: "FREQ=MONTHLY;BYMONTHDAY=1;COUNT=1",
-      startAt: new Date("2020-07-01T00:00:00.000Z")
+      startAt: new Date("2020-07-01T00:00:00.000Z"),
+      autoPost: true
     });
 
     process.env.SERVICE_ROLE = "worker";

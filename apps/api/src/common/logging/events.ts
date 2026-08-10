@@ -17,6 +17,8 @@ export const LogEvent = {
   NotificationSweepEnqueued: "notification.sweep_enqueued",
   RecurringMaterialized: "recurring.materialized",
   RecurringMaterializeFailed: "recurring.materialize_failed",
+  RecurringOccurrenceExpected: "recurring.occurrence_expected",
+  RecurringOccurrenceAutoConfirmed: "recurring.occurrence_auto_confirmed",
   RecurringReconciliationHookFailed: "recurring.reconciliation_hook_failed",
   RecurringReconciliationAutoMatched: "recurring.reconciliation_auto_matched",
   RecurringReconciliationFlagged: "recurring.reconciliation_flagged",

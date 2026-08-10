@@ -18,6 +18,7 @@ import { IdempotencyPostgresRepository } from "../../../src/common/idempotency/i
 import { IdempotencyPostgresService } from "../../../src/common/idempotency/idempotency-postgres.service.js";
 import { NotificationOutboxRepository } from "../../../src/notifications/notification-outbox.repository.js";
 import { RecurringMaterializeService } from "../../../src/recurring/recurring-materialize.service.js";
+import { RecurringOccurrenceRepository } from "../../../src/recurring/recurring-occurrence.repository.js";
 import { RecurringReconciliationRepository } from "../../../src/recurring/recurring-reconciliation.repository.js";
 import { RecurringReconciliationService } from "../../../src/recurring/recurring-reconciliation.service.js";
 import { RecurringRuleRepository } from "../../../src/recurring/recurring-rule.repository.js";
@@ -38,6 +39,7 @@ describe("RecurringReconciliationService (integration)", () => {
   let transactionRepository: TransactionRepository;
   let transactionsService: TransactionService;
   let reconciliations: RecurringReconciliationRepository;
+  let occurrences: RecurringOccurrenceRepository;
   let reconciliationService: RecurringReconciliationService;
   let accountId: string;
   let ruleCounter = 0;
@@ -72,11 +74,13 @@ describe("RecurringReconciliationService (integration)", () => {
     // inside create() itself) rather than each test calling
     // reconcileIncoming by hand.
     reconciliations = new RecurringReconciliationRepository(testDb.db);
+    occurrences = new RecurringOccurrenceRepository(testDb.db);
     reconciliationService = new RecurringReconciliationService(
       testDb.db,
       transactionRepository,
       accounts,
       reconciliations,
+      occurrences,
       new NotificationOutboxRepository(testDb.db),
       new AuditRepository(testDb.db),
       new IdempotencyPostgresService(testDb.db, new IdempotencyPostgresRepository(testDb.db)),
@@ -120,7 +124,8 @@ describe("RecurringReconciliationService (integration)", () => {
     await ruleService.create(USER_ID, {
       template: { accountId, type: "expense", amountMinor, description, tags: [] },
       rrule: "FREQ=MONTHLY;BYMONTHDAY=1",
-      startAt: new Date("2020-01-01T00:00:00.000Z")
+      startAt: new Date("2020-01-01T00:00:00.000Z"),
+      autoPost: true
     });
     const materializer = new RecurringMaterializeService(
       testDb.db,
@@ -128,6 +133,7 @@ describe("RecurringReconciliationService (integration)", () => {
       rules,
       accounts,
       transactionRepository,
+      occurrences,
       new AuditRepository(testDb.db),
       NOOP_LOGGER
     );

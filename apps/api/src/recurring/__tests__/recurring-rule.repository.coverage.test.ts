@@ -41,7 +41,8 @@ describe("RecurringRuleRepository edge coverage", () => {
             tags: []
           },
           rrule: ROW.rrule,
-          startAt: NOW
+          startAt: NOW,
+          autoPost: true
         },
         NOW,
         // @ts-expect-error - fluent transaction double.
@@ -62,7 +63,8 @@ describe("RecurringRuleRepository edge coverage", () => {
             tags: []
           },
           rrule: ROW.rrule,
-          startAt: NOW
+          startAt: NOW,
+          autoPost: true
         },
         NOW,
         // @ts-expect-error - fluent transaction double.

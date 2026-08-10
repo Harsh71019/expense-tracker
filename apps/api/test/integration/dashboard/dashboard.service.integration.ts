@@ -160,7 +160,8 @@ describe("DashboardService", () => {
             tags: []
           },
           rrule: "FREQ=DAILY;COUNT=1",
-          startAt: rentDueAt
+          startAt: rentDueAt,
+          autoPost: true
         },
         rentDueAt,
         tx
@@ -180,7 +181,8 @@ describe("DashboardService", () => {
             tags: []
           },
           rrule: "FREQ=DAILY;COUNT=1",
-          startAt: bonusDueAt
+          startAt: bonusDueAt,
+          autoPost: true
         },
         bonusDueAt,
         tx

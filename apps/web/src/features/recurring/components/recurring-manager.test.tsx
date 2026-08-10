@@ -81,6 +81,7 @@ const rule: RecurringRule = {
   startAt: timestamp,
   nextRunAt: new Date("2026-08-01T00:00:00.000Z"),
   isPaused: false,
+  autoPost: true,
   createdAt: timestamp,
   updatedAt: timestamp
 };

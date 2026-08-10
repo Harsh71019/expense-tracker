@@ -61,7 +61,8 @@ describe("RecurringRuleService Unit Tests", () => {
         tags: ["housing"]
       },
       rrule: "FREQ=MONTHLY;BYMONTHDAY=1",
-      startAt: new Date("2026-01-01")
+      startAt: new Date("2026-01-01"),
+      autoPost: true
     });
 
     expect(res.id).toBe(sampleRule.id);
@@ -81,7 +82,8 @@ describe("RecurringRuleService Unit Tests", () => {
           tags: ["housing"]
         },
         rrule: "FREQ=MONTHLY;BYMONTHDAY=1",
-        startAt: new Date("2026-01-01")
+        startAt: new Date("2026-01-01"),
+        autoPost: true
       })
     ).rejects.toThrow(EntityNotFoundError);
   });

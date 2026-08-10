@@ -105,6 +105,7 @@ export function RecurringRuleDrawer({
   const [categoryId, setCategoryId] = useState(rule?.template.categoryId ?? "");
   const [description, setDescription] = useState(rule?.template.description ?? "");
   const [schedule, setSchedule] = useState<ScheduleDraft>(() => initialSchedule(rule));
+  const [autoPost, setAutoPost] = useState(rule?.autoPost ?? true);
   const [error, setError] = useState<string>();
 
   const availableAccounts = accounts.filter(
@@ -168,7 +169,8 @@ export function RecurringRuleDrawer({
         const parsed = CreateRecurringRuleSchema.safeParse({
           template,
           rrule: scheduleResult.rrule,
-          startAt: dateInputToUtc(schedule.startDate)
+          startAt: dateInputToUtc(schedule.startDate),
+          autoPost
         });
         if (!parsed.success) {
           setError(parsed.error.issues[0]?.message ?? "Check the rule details.");
@@ -179,7 +181,8 @@ export function RecurringRuleDrawer({
       } else {
         const parsed = UpdateRecurringRuleSchema.safeParse({
           template,
-          rrule: scheduleResult.rrule
+          rrule: scheduleResult.rrule,
+          autoPost
         });
         if (!parsed.success) {
           setError(parsed.error.issues[0]?.message ?? "Check the rule details.");
@@ -300,6 +303,41 @@ export function RecurringRuleDrawer({
             placeholder="Monthly rent…"
             maxLength={500}
           />
+
+          <div>
+            <span className={fieldLabelClasses}>Posting</span>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                aria-pressed={autoPost}
+                onClick={() => setAutoPost(true)}
+                className={`min-h-11 rounded-lg border px-3 py-2.5 text-left text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                  autoPost
+                    ? "border-accent bg-accent-glow text-accent"
+                    : "border-border text-foreground-muted hover:text-foreground"
+                }`}
+              >
+                Post automatically
+              </button>
+              <button
+                type="button"
+                aria-pressed={!autoPost}
+                onClick={() => setAutoPost(false)}
+                className={`min-h-11 rounded-lg border px-3 py-2.5 text-left text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                  !autoPost
+                    ? "border-accent bg-accent-glow text-accent"
+                    : "border-border text-foreground-muted hover:text-foreground"
+                }`}
+              >
+                I&rsquo;ll log it myself
+              </button>
+            </div>
+            <p className="mt-1.5 text-xs text-foreground-muted">
+              {autoPost
+                ? "Each occurrence posts a transaction automatically on its scheduled date."
+                : "No transaction is posted for you. Each occurrence just gets tracked as expected — link an existing transaction to it (or a matching one gets linked automatically) from the transaction's detail panel. Use this if something else, like an email-ingestion pipeline, already posts these transactions."}
+            </p>
+          </div>
         </section>
 
         <section className="space-y-5 border-t border-border pt-6">

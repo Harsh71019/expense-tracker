@@ -62,7 +62,8 @@ export function useCreateRecurringRule(): ReturnType<
               tags: input.template.tags
             },
             rrule: input.rrule,
-            startAt: input.startAt.toISOString()
+            startAt: input.startAt.toISOString(),
+            autoPost: input.autoPost
           },
           params: { header: { "Idempotency-Key": key } }
         });
@@ -115,7 +116,8 @@ export function useUpdateRecurringRule(): ReturnType<
                   }
                 }),
             ...(patch.rrule === undefined ? {} : { rrule: patch.rrule }),
-            ...(patch.isPaused === undefined ? {} : { isPaused: patch.isPaused })
+            ...(patch.isPaused === undefined ? {} : { isPaused: patch.isPaused }),
+            ...(patch.autoPost === undefined ? {} : { autoPost: patch.autoPost })
           },
           params: { path: { ruleId }, header: { "Idempotency-Key": key } }
         });

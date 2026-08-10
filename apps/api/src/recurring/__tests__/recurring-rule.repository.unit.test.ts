@@ -37,7 +37,8 @@ describe("RecurringRuleRepository Unit Tests", () => {
           tags: ["housing"]
         },
         rrule: "FREQ=MONTHLY;BYMONTHDAY=1",
-        startAt: new Date("2026-01-01")
+        startAt: new Date("2026-01-01"),
+        autoPost: true
       },
       new Date("2026-01-01"),
       // @ts-expect-error mock tx

@@ -33,6 +33,8 @@ export const ErrorCodes = [
   "recurring.no_occurrences",
   "recurring.reconciliation_already_resolved",
   "recurring.invalid_reconciliation_resolution",
+  "recurring.invalid_occurrence_source",
+  "recurring.occurrence_already_confirmed",
   "pending_transaction.already_resolved"
 ] as const;
 

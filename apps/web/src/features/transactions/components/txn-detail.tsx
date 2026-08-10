@@ -12,6 +12,10 @@ import { Select } from "@/components/ui/select";
 import { useAccounts } from "@/features/accounts";
 import { isLinkableBillPaymentSource, LinkBillPaymentDialog } from "@/features/bills";
 import { useCategories } from "@/features/categories";
+import {
+  isLinkableRecurringOccurrenceSource,
+  LinkRecurringOccurrenceDialog
+} from "@/features/recurring/components/link-recurring-occurrence-dialog";
 import { useReverseTransfer } from "@/features/transfers/hooks/use-transfers";
 import { toast } from "@/lib/toast";
 
@@ -38,6 +42,7 @@ export function TxnDetail({ initialTransaction }: { initialTransaction: Transact
   const [categoryId, setCategoryId] = useState(transaction.categoryId ?? "");
   const [tags, setTags] = useState(transaction.tags.join(", "));
   const [error, setError] = useState<string>();
+  const [linkingRecurring, setLinkingRecurring] = useState(false);
   const [linkingBillPayment, setLinkingBillPayment] = useState(false);
   const accountName =
     accounts.data?.find((item) => item.id === transaction.accountId)?.name ?? "Archived account";
@@ -217,6 +222,11 @@ export function TxnDetail({ initialTransaction }: { initialTransaction: Transact
                 {reverse.isPending ? "Recording reversal…" : "Reverse transaction"}
               </Button>
             ) : null}
+            {isLinkableRecurringOccurrenceSource(transaction) ? (
+              <Button type="button" variant="secondary" onClick={() => setLinkingRecurring(true)}>
+                Mark as recurring payment
+              </Button>
+            ) : null}
             {isLinkableBillPaymentSource(transaction, accounts.data ?? []) ? (
               <Button type="button" variant="secondary" onClick={() => setLinkingBillPayment(true)}>
                 Mark as credit card bill payment
@@ -225,6 +235,12 @@ export function TxnDetail({ initialTransaction }: { initialTransaction: Transact
           </div>
         </section>
       )}
+      {linkingRecurring ? (
+        <LinkRecurringOccurrenceDialog
+          transaction={transaction}
+          onClose={() => setLinkingRecurring(false)}
+        />
+      ) : null}
       {linkingBillPayment ? (
         <LinkBillPaymentDialog
           transaction={transaction}

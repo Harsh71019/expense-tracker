@@ -393,6 +393,22 @@ export type {
   ResolveRecurringReconciliation
 } from "./recurring-reconciliation.js";
 export {
+  LinkRecurringOccurrencePaymentSchema,
+  ListRecurringOccurrencesQuerySchema,
+  RecurringOccurrenceIdSchema,
+  RecurringOccurrencePageSchema,
+  RecurringOccurrenceSchema,
+  RecurringOccurrenceStatusSchema
+} from "./recurring-occurrence.js";
+export type {
+  LinkRecurringOccurrencePayment,
+  ListRecurringOccurrencesQuery,
+  RecurringOccurrence,
+  RecurringOccurrenceId,
+  RecurringOccurrencePage,
+  RecurringOccurrenceStatus
+} from "./recurring-occurrence.js";
+export {
   AccountRollupSchema,
   CategoryRollupSchema,
   MonthlyRollupSchema,

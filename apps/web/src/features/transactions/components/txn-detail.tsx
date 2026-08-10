@@ -11,6 +11,10 @@ import { Money } from "@/components/ui/money";
 import { Select } from "@/components/ui/select";
 import { useAccounts } from "@/features/accounts";
 import { useCategories } from "@/features/categories";
+import {
+  isLinkableRecurringOccurrenceSource,
+  LinkRecurringOccurrenceDialog
+} from "@/features/recurring/components/link-recurring-occurrence-dialog";
 import { useReverseTransfer } from "@/features/transfers/hooks/use-transfers";
 import { toast } from "@/lib/toast";
 
@@ -37,6 +41,7 @@ export function TxnDetail({ initialTransaction }: { initialTransaction: Transact
   const [categoryId, setCategoryId] = useState(transaction.categoryId ?? "");
   const [tags, setTags] = useState(transaction.tags.join(", "));
   const [error, setError] = useState<string>();
+  const [linkingRecurring, setLinkingRecurring] = useState(false);
   const accountName =
     accounts.data?.find((item) => item.id === transaction.accountId)?.name ?? "Archived account";
   const categoryName =
@@ -204,18 +209,31 @@ export function TxnDetail({ initialTransaction }: { initialTransaction: Transact
               </Button>
             </form>
           ) : null}
-          {transaction.status === "posted" ? (
-            <Button
-              type="button"
-              variant="secondary"
-              disabled={reverse.isPending}
-              onClick={() => reverse.mutate(transaction.id)}
-            >
-              {reverse.isPending ? "Recording reversal…" : "Reverse transaction"}
-            </Button>
-          ) : null}
+          <div className="flex flex-wrap gap-2">
+            {transaction.status === "posted" ? (
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={reverse.isPending}
+                onClick={() => reverse.mutate(transaction.id)}
+              >
+                {reverse.isPending ? "Recording reversal…" : "Reverse transaction"}
+              </Button>
+            ) : null}
+            {isLinkableRecurringOccurrenceSource(transaction) ? (
+              <Button type="button" variant="secondary" onClick={() => setLinkingRecurring(true)}>
+                Mark as recurring payment
+              </Button>
+            ) : null}
+          </div>
         </section>
       )}
+      {linkingRecurring ? (
+        <LinkRecurringOccurrenceDialog
+          transaction={transaction}
+          onClose={() => setLinkingRecurring(false)}
+        />
+      ) : null}
       <p className="text-xs text-foreground-muted">
         Money corrections create compensating entries. Ledger amounts are never edited or deleted.
       </p>

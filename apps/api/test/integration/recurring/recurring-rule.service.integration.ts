@@ -56,7 +56,8 @@ describe("RecurringRuleService", () => {
         tags: ["housing"]
       },
       rrule: "FREQ=MONTHLY;BYMONTHDAY=1",
-      startAt: new Date("2026-08-01T00:00:00.000Z")
+      startAt: new Date("2026-08-01T00:00:00.000Z"),
+      autoPost: true
     });
 
     expect(created.nextRunAt.toISOString()).toBe("2026-08-01T00:00:00.000Z");
@@ -75,7 +76,8 @@ describe("RecurringRuleService", () => {
           tags: []
         },
         rrule: "FREQ=MONTHLY;BYMONTHDAY=1",
-        startAt: new Date("2026-08-01T00:00:00.000Z")
+        startAt: new Date("2026-08-01T00:00:00.000Z"),
+        autoPost: true
       })
     ).rejects.toThrow(EntityNotFoundError);
   });
@@ -92,7 +94,8 @@ describe("RecurringRuleService", () => {
           tags: []
         },
         rrule: "FREQ=MONTHLY;BYMONTHDAY=1",
-        startAt: new Date("2026-08-01T00:00:00.000Z")
+        startAt: new Date("2026-08-01T00:00:00.000Z"),
+        autoPost: true
       })
     ).rejects.toThrow(CategoryKindMismatchError);
   });
@@ -108,7 +111,8 @@ describe("RecurringRuleService", () => {
           tags: []
         },
         rrule: "FREQ=MONTHLY;BYMONTHDAY=1;UNTIL=20260101T000000Z",
-        startAt: new Date("2026-08-01T00:00:00.000Z")
+        startAt: new Date("2026-08-01T00:00:00.000Z"),
+        autoPost: true
       })
     ).rejects.toThrow(InvalidRecurringRuleError);
   });
@@ -132,7 +136,8 @@ describe("RecurringRuleService", () => {
         tags: ["subscription"]
       },
       rrule: "FREQ=MONTHLY;BYMONTHDAY=15",
-      startAt: new Date("2026-08-15T00:00:00.000Z")
+      startAt: new Date("2026-08-15T00:00:00.000Z"),
+      autoPost: true
     });
 
     const updated = await service.update("user-a", created.id, {
@@ -154,7 +159,8 @@ describe("RecurringRuleService", () => {
         tags: []
       },
       rrule: "FREQ=MONTHLY;BYMONTHDAY=1",
-      startAt: new Date("2026-08-01T00:00:00.000Z")
+      startAt: new Date("2026-08-01T00:00:00.000Z"),
+      autoPost: true
     });
 
     const updated = await service.update("user-a", created.id, {
@@ -176,7 +182,8 @@ describe("RecurringRuleService", () => {
         tags: []
       },
       rrule: "FREQ=MONTHLY;BYMONTHDAY=1",
-      startAt: new Date("2026-08-01T00:00:00.000Z")
+      startAt: new Date("2026-08-01T00:00:00.000Z"),
+      autoPost: true
     });
 
     await expect(
@@ -200,7 +207,8 @@ describe("RecurringRuleService", () => {
         tags: []
       },
       rrule: "FREQ=MONTHLY;BYMONTHDAY=5",
-      startAt: new Date("2026-08-05T00:00:00.000Z")
+      startAt: new Date("2026-08-05T00:00:00.000Z"),
+      autoPost: true
     });
 
     await expect(service.update("someone-else", created.id, { isPaused: true })).rejects.toThrow(

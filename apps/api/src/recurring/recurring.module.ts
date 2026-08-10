@@ -4,6 +4,9 @@ import { AccountsModule } from "../accounts/accounts.module.js";
 import { CategoriesModule } from "../categories/categories.module.js";
 import { TransactionsModule } from "../transactions/transactions.module.js";
 import { RecurringMaterializeService } from "./recurring-materialize.service.js";
+import { RecurringOccurrenceController } from "./recurring-occurrence.controller.js";
+import { RecurringOccurrenceRepository } from "./recurring-occurrence.repository.js";
+import { RecurringOccurrenceService } from "./recurring-occurrence.service.js";
 import { RecurringReconciliationController } from "./recurring-reconciliation.controller.js";
 import { RecurringReconciliationRepository } from "./recurring-reconciliation.repository.js";
 import { RecurringReconciliationService } from "./recurring-reconciliation.service.js";
@@ -15,16 +18,22 @@ import { RecurringStatsService } from "./recurring-stats.service.js";
 
 @Module({
   imports: [AccountsModule, CategoriesModule, TransactionsModule],
-  controllers: [RecurringRuleController, RecurringReconciliationController],
+  controllers: [
+    RecurringRuleController,
+    RecurringReconciliationController,
+    RecurringOccurrenceController
+  ],
   providers: [
     RecurringRuleRepository,
     RecurringRuleService,
     RecurringRuleMutationService,
     RecurringStatsService,
+    RecurringOccurrenceRepository,
+    RecurringOccurrenceService,
     RecurringMaterializeService,
     RecurringReconciliationRepository,
     RecurringReconciliationService
   ],
-  exports: [RecurringRuleRepository, RecurringReconciliationService]
+  exports: [RecurringRuleRepository, RecurringReconciliationService, RecurringOccurrenceService]
 })
 export class RecurringModule {}

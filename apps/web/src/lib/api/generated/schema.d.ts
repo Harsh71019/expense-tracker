@@ -2970,6 +2970,8 @@ export interface paths {
             rrule: string;
             /** Format: date-time */
             startAt: string | null;
+            /** @default true */
+            autoPost?: boolean;
           };
         };
       };
@@ -3148,6 +3150,7 @@ export interface paths {
             };
             rrule?: string;
             isPaused?: boolean;
+            autoPost?: boolean;
           };
         };
       };
@@ -3209,6 +3212,237 @@ export interface paths {
         };
       };
     };
+    trace?: never;
+  };
+  "/v1/recurring/occurrences/outstanding": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Outstanding (expected/missed) occurrences across all manual-post rules */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["RecurringOccurrence"][];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/recurring/{ruleId}/occurrences": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: {
+          cursor?: string;
+          limit?: number;
+        };
+        header?: never;
+        path: {
+          ruleId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Occurrence history for a manual-post recurring rule */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["RecurringOccurrencePage"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Recurring rule not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/recurring/{ruleId}/occurrences/{occurrenceId}/link-payment": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path: {
+          ruleId: string;
+          occurrenceId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
+            /** Format: uuid */
+            transactionId: string;
+          };
+        };
+      };
+      responses: {
+        /** @description Confirmed occurrence, or idempotent replay */
+        200: {
+          headers: {
+            "Idempotency-Replayed"?: "true";
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["RecurringOccurrence"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Recurring rule, occurrence, or transaction not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Transaction is not an eligible source, or the occurrence is already confirmed */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
     trace?: never;
   };
   "/v1/recurring/reconciliations": {
@@ -6411,6 +6645,8 @@ export interface components {
         | "recurring.no_occurrences"
         | "recurring.reconciliation_already_resolved"
         | "recurring.invalid_reconciliation_resolution"
+        | "recurring.invalid_occurrence_source"
+        | "recurring.occurrence_already_confirmed"
         | "pending_transaction.already_resolved";
       reqId: string;
       /** Format: date-time */
@@ -7008,6 +7244,8 @@ export interface components {
       /** Format: date-time */
       lastRunAt?: string | null;
       isPaused: boolean;
+      /** @default true */
+      autoPost: boolean;
       /** Format: date-time */
       createdAt: string | null;
       /** Format: date-time */
@@ -7032,6 +7270,47 @@ export interface components {
         amountMinor: number;
         transactionCount: number;
       } | null;
+    };
+    RecurringOccurrence: {
+      /** Format: uuid */
+      id: string;
+      userId: string;
+      /** Format: uuid */
+      recurringRuleId: string;
+      /** Format: date-time */
+      occurredAt: string | null;
+      /** @enum {string} */
+      status: "expected" | "confirmed" | "missed";
+      /** Format: uuid */
+      confirmedTransactionId?: string;
+      /** Format: date-time */
+      createdAt: string | null;
+      /** Format: date-time */
+      updatedAt: string | null;
+    };
+    RecurringOccurrencePage: {
+      items: {
+        /** Format: uuid */
+        id: string;
+        userId: string;
+        /** Format: uuid */
+        recurringRuleId: string;
+        /** Format: date-time */
+        occurredAt: string | null;
+        /** @enum {string} */
+        status: "expected" | "confirmed" | "missed";
+        /** Format: uuid */
+        confirmedTransactionId?: string;
+        /** Format: date-time */
+        createdAt: string | null;
+        /** Format: date-time */
+        updatedAt: string | null;
+      }[];
+      pageInfo: {
+        nextCursor: string | null;
+        hasMore: boolean;
+        limit: number;
+      };
     };
     RecurringReconciliationReviewItem: {
       /** Format: uuid */

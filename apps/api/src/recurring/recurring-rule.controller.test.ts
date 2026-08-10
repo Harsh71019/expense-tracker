@@ -87,7 +87,7 @@ describe("RecurringRuleController", () => {
 
     expect(mutations.create).toHaveBeenCalledWith(
       user.id,
-      { template: rule.template, rrule: rule.rrule, startAt: timestamp },
+      { template: rule.template, rrule: rule.rrule, startAt: timestamp, autoPost: true },
       key
     );
     expect(mutations.update).toHaveBeenCalledWith(user.id, rule.id, { isPaused: true }, key);

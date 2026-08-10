@@ -41,6 +41,7 @@ export function recurringHandlers(http: MockHttp, store: MockStore): HttpHandler
         startAt: body.startAt,
         nextRunAt: body.startAt,
         isPaused: false,
+        autoPost: body.autoPost ?? true,
         createdAt: now,
         updatedAt: now
       };
@@ -72,6 +73,7 @@ export function recurringHandlers(http: MockHttp, store: MockStore): HttpHandler
       }
       if (body.rrule !== undefined) rule.rrule = body.rrule;
       if (body.isPaused !== undefined) rule.isPaused = body.isPaused;
+      if (body.autoPost !== undefined) rule.autoPost = body.autoPost;
       rule.updatedAt = new Date().toISOString();
       store.idempotency.recurringRules.set(key, rule);
       return response(200).json(rule);

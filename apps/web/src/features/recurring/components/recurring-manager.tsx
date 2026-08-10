@@ -20,6 +20,7 @@ import { userErrorMessage } from "@/lib/errors";
 
 import { useRecurringRules, useUpdateRecurringRule } from "../hooks/use-recurring-rules";
 import { describeSchedule, parseSchedule } from "../model/schedule";
+import { OccurrenceTickRow } from "./occurrence-tick-row";
 import { ReconciliationReviewPanel } from "./reconciliation-review-panel";
 import { RecurringRuleDrawer } from "./recurring-rule-drawer";
 import { RecurringStatsCards } from "./recurring-stats-cards";
@@ -322,6 +323,14 @@ function RecurringRuleCard({
                   {isCompleted ? "Completed" : "Paused"}
                 </span>
               ) : null}
+              {rule.autoPost ? null : (
+                <span
+                  title="No transaction is posted for you — link one from its detail panel, or it gets matched automatically."
+                  className="rounded-md border border-accent/30 bg-accent-glow px-2 py-0.5 font-mono text-[9px] font-bold tracking-wider text-accent uppercase"
+                >
+                  Manual
+                </span>
+              )}
             </div>
             <p className="mt-1.5 text-sm text-foreground-muted">
               {scheduleLabel} <span aria-hidden="true">·</span> {account?.name ?? "Unknown account"}
@@ -340,6 +349,7 @@ function RecurringRuleCard({
                   : `Last posted ${dateFormatter.format(rule.lastRunAt)}`}
               </span>
             </div>
+            {rule.autoPost ? null : <OccurrenceTickRow ruleId={rule.id} />}
           </div>
         </div>
 

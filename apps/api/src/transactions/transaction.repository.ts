@@ -373,6 +373,27 @@ export class TransactionRepository {
     return row === undefined ? null : toTransaction(row);
   }
 
+  async attachToRecurringRule(
+    userId: string,
+    transactionId: string,
+    recurringRuleId: string,
+    tx: DbTx
+  ): Promise<Transaction | null> {
+    const [row] = await tx
+      .update(transactions)
+      .set({ recurringRuleId, updatedAt: new Date() })
+      .where(
+        and(
+          eq(transactions.id, transactionId),
+          eq(transactions.userId, userId),
+          eq(transactions.status, "posted"),
+          isNull(transactions.recurringRuleId)
+        )
+      )
+      .returning();
+    return row === undefined ? null : toTransaction(row);
+  }
+
   async findByReversalOf(userId: string, transactionId: string): Promise<Transaction | null> {
     const [row] = await this.db
       .select()

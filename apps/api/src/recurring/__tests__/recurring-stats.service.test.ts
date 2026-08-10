@@ -34,6 +34,7 @@ function rule(
     startAt: input.nextRunAt,
     nextRunAt: input.nextRunAt,
     isPaused: input.isPaused ?? false,
+    autoPost: true,
     createdAt: NOW,
     updatedAt: NOW
   };

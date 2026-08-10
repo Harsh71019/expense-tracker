@@ -31,6 +31,7 @@ import {
   RECONCILIATION_WINDOW_DAYS,
   matchIncomingTransaction
 } from "./recurring-reconciliation-matcher.js";
+import { RecurringOccurrenceRepository } from "./recurring-occurrence.repository.js";
 import { RecurringReconciliationRepository } from "./recurring-reconciliation.repository.js";
 
 type ReconciliationLogger = Pick<Logger, "log" | "error">;
@@ -42,6 +43,7 @@ export class RecurringReconciliationService implements TransactionCreatedHook {
     private readonly transactions: TransactionRepository,
     private readonly accounts: AccountRepository,
     private readonly reconciliations: RecurringReconciliationRepository,
+    private readonly occurrences: RecurringOccurrenceRepository,
     private readonly notifications: NotificationOutboxRepository,
     private readonly audit: AuditRepository,
     private readonly idempotency: IdempotencyPostgresService,
@@ -79,7 +81,10 @@ export class RecurringReconciliationService implements TransactionCreatedHook {
       candidates
     );
 
-    if (match.outcome === "no_match") return;
+    if (match.outcome === "no_match") {
+      await this.tryConfirmExpectedOccurrence(userId, incoming);
+      return;
+    }
 
     if (match.outcome === "auto_matched") {
       await withTxn(this.db, async (tx) => {
@@ -142,6 +147,70 @@ export class RecurringReconciliationService implements TransactionCreatedHook {
         status: match.outcome
       },
       "recurring transaction flagged for reconciliation"
+    );
+  }
+
+  /**
+   * The counterpart to the placeholder-reconciliation path above, for
+   * manual-post recurring rules: those never materialize a `source:
+   * "recurring"` transaction to reconcile against, so
+   * findUnreconciledRecurringCandidates above always returns nothing for
+   * them. Instead this matches the incoming transaction against still-
+   * `expected` RecurringOccurrence rows (RecurringMaterializeService creates
+   * one per due manual-post occurrence instead of a ledger transaction).
+   * Reuses matchIncomingTransaction unchanged — see
+   * RecurringOccurrenceRepository.findPendingCandidatesForMatching's comment
+   * for why its `transactionId` field holds an occurrence id here, not a
+   * transaction id. Only a clean `auto_matched` result acts; `ambiguous`/
+   * `amount_mismatch` deliberately fall through and leave the occurrence
+   * `expected` for the user to link by hand from the transaction detail
+   * panel, rather than growing a second review-queue table for this path.
+   */
+  private async tryConfirmExpectedOccurrence(userId: string, incoming: Transaction): Promise<void> {
+    const candidates = await this.occurrences.findPendingCandidatesForMatching(
+      userId,
+      incoming.accountId,
+      incoming.occurredAt,
+      RECONCILIATION_WINDOW_DAYS
+    );
+    const match = matchIncomingTransaction(
+      {
+        accountId: incoming.accountId,
+        type: incoming.type,
+        amountMinor: incoming.amountMinor,
+        occurredAt: incoming.occurredAt,
+        description: incoming.description
+      },
+      candidates
+    );
+    if (match.outcome !== "auto_matched") return;
+    const occurrenceId = match.recurringTransactionId;
+
+    const confirmed = await withTxn(this.db, async (tx) => {
+      const attached = await this.transactions.attachToRecurringRule(
+        userId,
+        incoming.id,
+        match.recurringRuleId,
+        tx
+      );
+      if (attached === null) return null;
+      const occurrence = await this.occurrences.confirm(userId, occurrenceId, incoming.id, tx);
+      if (occurrence === null) return null;
+      await this.audit.record(userId, "recurring.occurrence.auto_confirmed", occurrenceId, tx, {
+        ruleId: match.recurringRuleId,
+        transactionId: incoming.id
+      });
+      return occurrence;
+    });
+    if (confirmed === null) return;
+
+    this.logger.log(
+      {
+        event: LogEvent.RecurringOccurrenceAutoConfirmed,
+        incomingTransactionId: incoming.id,
+        occurrenceId
+      },
+      "recurring occurrence auto-confirmed"
     );
   }
 

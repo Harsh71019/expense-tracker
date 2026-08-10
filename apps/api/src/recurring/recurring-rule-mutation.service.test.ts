@@ -19,7 +19,8 @@ describe("RecurringRuleMutationService", () => {
         tags: []
       },
       rrule: "FREQ=MONTHLY;BYMONTHDAY=1",
-      startAt: new Date("2026-07-19T00:00:00.000Z")
+      startAt: new Date("2026-07-19T00:00:00.000Z"),
+      autoPost: true
     };
 
     await service.create("user-1", input, "key-1");

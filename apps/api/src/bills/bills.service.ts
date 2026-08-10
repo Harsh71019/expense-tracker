@@ -11,15 +11,18 @@ import {
   type CreditCardBill,
   type CreditCardBillId,
   type CreditCardConfigInput,
+  type LinkBillPayment,
   type ListBillsQuery,
   type PayCreditCardBill
 } from "@treasury-ops/shared";
 
 import { AccountRepository } from "../accounts/account.repository.js";
+import { assertBalanceDeltaApplied } from "../accounts/balance-delta.js";
 import { AuditRepository } from "../audit/audit.repository.js";
 import { EntityNotFoundError } from "../common/errors/entity-not-found.error.js";
 import { BillNotReconciledError } from "../common/errors/bill-not-reconciled.error.js";
 import { BillOverpaymentError } from "../common/errors/bill-overpayment.error.js";
+import { InvalidBillPaymentSourceError } from "../common/errors/invalid-bill-payment-source.error.js";
 import { InvalidCreditCardAccountError } from "../common/errors/invalid-credit-card-account.error.js";
 import {
   IdempotencyPostgresService,
@@ -174,6 +177,94 @@ export class BillsService {
             transferGroupId: transfer.transferGroupId,
             fromTransaction: transfer.fromTransaction,
             toTransaction: transfer.toTransaction
+          }
+        };
+      }
+    );
+  }
+
+  linkPayment(
+    userId: string,
+    billId: CreditCardBillId,
+    input: LinkBillPayment,
+    key: string
+  ): Promise<IdempotentResult<BillPaymentResult>> {
+    return this.idempotency.execute(
+      userId,
+      "credit-card.bill.link-payment",
+      key,
+      { billId, input },
+      BillPaymentResultSchema,
+      async (tx) => {
+        const bill = await this.bills.findByIdForUpdate(userId, billId, tx);
+        if (bill === null) throw new EntityNotFoundError("Bill");
+        if (bill.remainingMinor <= 0) throw new BillOverpaymentError();
+
+        const source = await this.transactions.findById(userId, input.transactionId, tx);
+        if (
+          source === null ||
+          source.type !== "expense" ||
+          source.status !== "posted" ||
+          source.transferGroupId !== undefined ||
+          source.billId !== undefined ||
+          source.accountId === bill.accountId
+        ) {
+          throw new InvalidBillPaymentSourceError();
+        }
+        const sourceAccount = await this.accounts.findActiveById(userId, source.accountId, tx);
+        if (sourceAccount === null || sourceAccount.type === "credit_card") {
+          throw new InvalidBillPaymentSourceError();
+        }
+
+        const amountMinor = input.amountMinor ?? Math.min(source.amountMinor, bill.remainingMinor);
+        if (
+          amountMinor <= 0 ||
+          amountMinor > bill.remainingMinor ||
+          amountMinor > source.amountMinor
+        ) {
+          throw new BillOverpaymentError();
+        }
+
+        const transferGroupId = crypto.randomUUID();
+        const attached = await this.transactions.attachToTransferGroup(
+          userId,
+          source.id,
+          transferGroupId,
+          tx
+        );
+        if (attached === null) throw new InvalidBillPaymentSourceError();
+
+        assertBalanceDeltaApplied(
+          await this.accounts.applyBalanceDelta(userId, bill.accountId, amountMinor, tx)
+        );
+        const creditLeg = await this.transactions.create(
+          userId,
+          {
+            accountId: bill.accountId,
+            type: "income",
+            amountMinor,
+            occurredAt: source.occurredAt,
+            description: `Credit card bill payment (linked to "${source.description}")`,
+            tags: ["credit-card-bill"]
+          },
+          undefined,
+          tx,
+          transferGroupId,
+          "manual",
+          bill.id
+        );
+        await this.audit.record(userId, "credit-card.bill.link-payment", bill.id, tx, {
+          transferGroupId,
+          sourceTransactionId: source.id
+        });
+        const updated = await this.bills.findById(userId, bill.id, tx);
+        if (updated === null) throw new EntityNotFoundError("Bill");
+        return {
+          bill: updated,
+          transfer: {
+            transferGroupId,
+            fromTransaction: attached,
+            toTransaction: creditLeg
           }
         };
       }

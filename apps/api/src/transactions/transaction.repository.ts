@@ -394,6 +394,27 @@ export class TransactionRepository {
     return row === undefined ? null : toTransaction(row);
   }
 
+  async attachToTransferGroup(
+    userId: string,
+    transactionId: string,
+    transferGroupId: string,
+    tx: DbTx
+  ): Promise<Transaction | null> {
+    const [row] = await tx
+      .update(transactions)
+      .set({ transferGroupId, updatedAt: new Date() })
+      .where(
+        and(
+          eq(transactions.id, transactionId),
+          eq(transactions.userId, userId),
+          eq(transactions.status, "posted"),
+          isNull(transactions.transferGroupId)
+        )
+      )
+      .returning();
+    return row === undefined ? null : toTransaction(row);
+  }
+
   async findByReversalOf(userId: string, transactionId: string): Promise<Transaction | null> {
     const [row] = await this.db
       .select()

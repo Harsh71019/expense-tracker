@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Money } from "@/components/ui/money";
 import { Select } from "@/components/ui/select";
 import { useAccounts } from "@/features/accounts";
+import { isLinkableBillPaymentSource, LinkBillPaymentDialog } from "@/features/bills";
 import { useCategories } from "@/features/categories";
 import {
   isLinkableRecurringOccurrenceSource,
@@ -42,6 +43,7 @@ export function TxnDetail({ initialTransaction }: { initialTransaction: Transact
   const [tags, setTags] = useState(transaction.tags.join(", "));
   const [error, setError] = useState<string>();
   const [linkingRecurring, setLinkingRecurring] = useState(false);
+  const [linkingBillPayment, setLinkingBillPayment] = useState(false);
   const accountName =
     accounts.data?.find((item) => item.id === transaction.accountId)?.name ?? "Archived account";
   const categoryName =
@@ -225,6 +227,11 @@ export function TxnDetail({ initialTransaction }: { initialTransaction: Transact
                 Mark as recurring payment
               </Button>
             ) : null}
+            {isLinkableBillPaymentSource(transaction, accounts.data ?? []) ? (
+              <Button type="button" variant="secondary" onClick={() => setLinkingBillPayment(true)}>
+                Mark as credit card bill payment
+              </Button>
+            ) : null}
           </div>
         </section>
       )}
@@ -232,6 +239,12 @@ export function TxnDetail({ initialTransaction }: { initialTransaction: Transact
         <LinkRecurringOccurrenceDialog
           transaction={transaction}
           onClose={() => setLinkingRecurring(false)}
+        />
+      ) : null}
+      {linkingBillPayment ? (
+        <LinkBillPaymentDialog
+          transaction={transaction}
+          onClose={() => setLinkingBillPayment(false)}
         />
       ) : null}
       <p className="text-xs text-foreground-muted">

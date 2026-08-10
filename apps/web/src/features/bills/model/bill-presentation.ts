@@ -66,6 +66,13 @@ export function eligiblePaymentAccounts(
   );
 }
 
+export function eligibleBillsForLinking(
+  bills: readonly CreditCardBill[],
+  sourceAccountId: string
+): CreditCardBill[] {
+  return bills.filter((bill) => bill.remainingMinor > 0 && bill.accountId !== sourceAccountId);
+}
+
 export const actionLabel: Readonly<Record<BillAction, string>> = {
   upload: "Upload statement",
   processing: "Processing statement",

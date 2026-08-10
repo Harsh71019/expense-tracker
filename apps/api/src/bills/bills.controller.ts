@@ -18,6 +18,7 @@ import {
   BillStatementRowIdSchema,
   CreditCardBillIdSchema,
   CreditCardConfigInputSchema,
+  LinkBillPaymentSchema,
   ListBillsQuerySchema,
   ListBillStatementRowsQuerySchema,
   PayCreditCardBillSchema,
@@ -203,6 +204,24 @@ export class BillsController {
       user.id,
       CreditCardBillIdSchema.parse(billId),
       PayCreditCardBillSchema.parse(body),
+      IdempotencyKeySchema.parse(key)
+    );
+    setReplayHeader(response, result.replayed);
+    return result.result;
+  }
+
+  @Post(":billId/link-payment")
+  async linkPayment(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("billId") billId: string,
+    @Body() body: unknown,
+    @Headers("idempotency-key") key: string | undefined,
+    @Res({ passthrough: true }) response: Response
+  ): Promise<BillPaymentResult> {
+    const result = await this.bills.linkPayment(
+      user.id,
+      CreditCardBillIdSchema.parse(billId),
+      LinkBillPaymentSchema.parse(body),
       IdempotencyKeySchema.parse(key)
     );
     setReplayHeader(response, result.replayed);

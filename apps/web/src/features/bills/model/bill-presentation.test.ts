@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   billProgress,
   dueLabel,
+  eligibleBillsForLinking,
   eligiblePaymentAccounts,
   nextBillAction
 } from "./bill-presentation";
@@ -71,5 +72,24 @@ describe("bill presentation", () => {
     expect(
       eligiblePaymentAccounts([card, bank, otherCard], card.id).map((item) => item.id)
     ).toEqual([bank.id]);
+  });
+
+  it("only offers open bills that aren't on the source transaction's own account for linking", () => {
+    const paidOff: CreditCardBill = {
+      ...bill,
+      id: "3fa85f64-5717-4562-b3fc-2c963f66be05",
+      remainingMinor: 0,
+      paymentStatus: "paid"
+    };
+    const ownAccountBill: CreditCardBill = {
+      ...bill,
+      id: "3fa85f64-5717-4562-b3fc-2c963f66be06",
+      accountId: "3fa85f64-5717-4562-b3fc-2c963f66be07"
+    };
+    expect(
+      eligibleBillsForLinking([bill, paidOff, ownAccountBill], ownAccountBill.accountId).map(
+        (item) => item.id
+      )
+    ).toEqual([bill.id]);
   });
 });

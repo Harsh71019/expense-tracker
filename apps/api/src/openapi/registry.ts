@@ -113,6 +113,7 @@ import {
   RecurringRuleSchema,
   RecurringStatsSchema,
   ResolveRecurringReconciliationSchema,
+  LinkBillPaymentSchema,
   PayCreditCardBillSchema,
   UpdateApiKeySchema,
   UpdateBillStatementRowSchema,
@@ -1361,6 +1362,29 @@ registry.registerPath({
     404: { description: "Bill or payment account not found", ...json(ProblemDetails) },
     409: {
       description: "Bill is unreconciled, paid, or would be overpaid",
+      ...json(ProblemDetails)
+    },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "post",
+  path: "/v1/bills/{billId}/link-payment",
+  security: secured,
+  request: {
+    params: billId,
+    headers: idempotencyKeyHeaders,
+    body: json(LinkBillPaymentSchema)
+  },
+  responses: {
+    200: {
+      description: "Bill payment linked to an existing transaction, or idempotent replay",
+      headers: optionalReplayHeaders,
+      ...json(BillPaymentResult)
+    },
+    404: { description: "Bill or transaction not found", ...json(ProblemDetails) },
+    409: {
+      description: "Transaction is not an eligible payment source, or the bill would be overpaid",
       ...json(ProblemDetails)
     },
     ...problemResponses

@@ -14,6 +14,7 @@ import { BillOverpaymentError } from "../../../src/common/errors/bill-overpaymen
 import { BillNotReconciledError } from "../../../src/common/errors/bill-not-reconciled.error.js";
 import { BillStatementUnresolvedError } from "../../../src/common/errors/bill-statement-unresolved.error.js";
 import { EntityNotFoundError } from "../../../src/common/errors/entity-not-found.error.js";
+import { InvalidBillPaymentSourceError } from "../../../src/common/errors/invalid-bill-payment-source.error.js";
 import { InvalidCreditCardAccountError } from "../../../src/common/errors/invalid-credit-card-account.error.js";
 import { IdempotencyPostgresRepository } from "../../../src/common/idempotency/idempotency-postgres.repository.js";
 import { IdempotencyPostgresService } from "../../../src/common/idempotency/idempotency-postgres.service.js";
@@ -332,6 +333,189 @@ describe("credit-card bill lifecycle", () => {
       remainingMinor: 3_000,
       paymentStatus: "partial"
     });
+  });
+
+  it("links an existing (e.g. n8n-posted) expense as a bill payment without a reconciliation gate", async () => {
+    const [bill] = (await bills.findMany(USER_ID, { limit: 50 })).items;
+    if (bill === undefined) throw new Error("Expected generated bill");
+    expect(bill.remainingMinor).toBe(3_000);
+    expect(bill.reconciliationStatus).toBe("reconciled");
+
+    // Simulate an n8n-ingested plain expense on the bank account: one leg, no transferGroupId,
+    // no billId — exactly what POST /v1/transactions produces for a bank-alert-derived payment.
+    const sourceTxn = await withTxn(testDb.db, async (tx) => {
+      if (!(await accounts.applyBalanceDelta(USER_ID, bankId, -3_000, tx))) {
+        throw new EntityNotFoundError("Account");
+      }
+      return transactions.create(
+        USER_ID,
+        {
+          accountId: bankId,
+          type: "expense",
+          amountMinor: 3_000,
+          occurredAt: new Date("2026-08-12T10:00:00.000Z"),
+          description: "UPI/DR/000000000000/CREDIT CARD BILL",
+          tags: []
+        },
+        undefined,
+        tx
+      );
+    });
+
+    const key = "66666666-aaaa-4666-8666-666666666666";
+    const attempts = await Promise.all(
+      Array.from({ length: 5 }, () =>
+        billService.linkPayment(USER_ID, bill.id, { transactionId: sourceTxn.id }, key)
+      )
+    );
+    expect(attempts.filter((result) => !result.replayed)).toHaveLength(1);
+    expect(new Set(attempts.map((result) => result.result.transfer.transferGroupId)).size).toBe(1);
+    expect(attempts[0]?.result.transfer.fromTransaction.id).toBe(sourceTxn.id);
+    expect(attempts[0]?.result.transfer.toTransaction.billId).toBe(bill.id);
+    expect(attempts[0]?.result.bill).toMatchObject({
+      paidMinor: 8_000,
+      remainingMinor: 0,
+      paymentStatus: "paid"
+    });
+
+    const linked = await transactions.findById(USER_ID, sourceTxn.id);
+    expect(linked?.transferGroupId).toBe(attempts[0]?.result.transfer.transferGroupId);
+    expect(linked?.amountMinor).toBe(3_000);
+    expect(linked?.type).toBe("expense");
+    expect(linked?.accountId).toBe(bankId);
+
+    // The bill is now fully paid, so a second attempt is rejected as an overpayment before the
+    // service even re-examines the (already-linked) source transaction.
+    await expect(
+      billService.linkPayment(
+        USER_ID,
+        bill.id,
+        { transactionId: sourceTxn.id },
+        "77777777-aaaa-4777-8777-777777777777"
+      )
+    ).rejects.toThrow(BillOverpaymentError);
+  });
+
+  it("rejects ineligible source transactions for linking", async () => {
+    const secondCard = await withTxn(testDb.db, (tx) =>
+      accounts.create(
+        USER_ID,
+        {
+          name: "ICICI Card",
+          type: "credit_card",
+          openingBalanceMinor: 0,
+          creditCardConfig: { statementDay: 25, dueDay: 15 }
+        },
+        tx,
+        new Date("2026-07-25T00:00:00.000Z")
+      )
+    );
+    const bill = await withTxn(testDb.db, (tx) =>
+      bills.create(
+        USER_ID,
+        {
+          accountId: secondCard.id,
+          cycleStart: new Date("2026-06-26T00:00:00.000Z"),
+          cycleEnd: new Date("2026-07-25T00:00:00.000Z"),
+          dueDate: new Date("2026-08-15T00:00:00.000Z"),
+          amountDueMinor: 5_000
+        },
+        tx
+      )
+    );
+
+    async function makeExpense(accountId: string, amountMinor: number): Promise<string> {
+      return withTxn(testDb.db, async (tx) => {
+        if (!(await accounts.applyBalanceDelta(USER_ID, accountId, -amountMinor, tx))) {
+          throw new EntityNotFoundError("Account");
+        }
+        const txn = await transactions.create(
+          USER_ID,
+          {
+            accountId,
+            type: "expense",
+            amountMinor,
+            occurredAt: new Date("2026-08-01T00:00:00.000Z"),
+            description: "Candidate payment",
+            tags: []
+          },
+          undefined,
+          tx
+        );
+        return txn.id;
+      });
+    }
+
+    const onOwnCard = await makeExpense(secondCard.id, 1_000);
+    await expect(
+      billService.linkPayment(
+        USER_ID,
+        bill.id,
+        { transactionId: onOwnCard },
+        "88888888-aaaa-4888-8888-888888888888"
+      )
+    ).rejects.toThrow(InvalidBillPaymentSourceError);
+
+    const fromAnotherCreditCard = await makeExpense(cardId, 1_000);
+    await expect(
+      billService.linkPayment(
+        USER_ID,
+        bill.id,
+        { transactionId: fromAnotherCreditCard },
+        "99999999-aaaa-4999-8999-999999999999"
+      )
+    ).rejects.toThrow(InvalidBillPaymentSourceError);
+
+    const overpaying = await makeExpense(bankId, 9_000);
+    await expect(
+      billService.linkPayment(
+        USER_ID,
+        bill.id,
+        { transactionId: overpaying, amountMinor: 6_000 },
+        "10001000-aaaa-4100-8100-100010001000"
+      )
+    ).rejects.toThrow(BillOverpaymentError);
+
+    await expect(
+      billService.linkPayment(
+        OTHER_USER_ID,
+        bill.id,
+        { transactionId: overpaying },
+        "20002000-aaaa-4200-8200-200020002000"
+      )
+    ).rejects.toThrow(EntityNotFoundError);
+
+    // A bill with plenty of headroom left, so a second link attempt on an already-linked
+    // transaction is rejected for being already linked, not for overpaying a spent-down bill.
+    const roomyBill = await withTxn(testDb.db, (tx) =>
+      bills.create(
+        USER_ID,
+        {
+          accountId: secondCard.id,
+          cycleStart: new Date("2026-07-26T00:00:00.000Z"),
+          cycleEnd: new Date("2026-08-25T00:00:00.000Z"),
+          dueDate: new Date("2026-09-15T00:00:00.000Z"),
+          amountDueMinor: 20_000
+        },
+        tx
+      )
+    );
+    const reusable = await makeExpense(bankId, 1_000);
+    const firstLink = await billService.linkPayment(
+      USER_ID,
+      roomyBill.id,
+      { transactionId: reusable },
+      "30003000-aaaa-4300-8300-300030003000"
+    );
+    expect(firstLink.result.bill.remainingMinor).toBe(19_000);
+    await expect(
+      billService.linkPayment(
+        USER_ID,
+        roomyBill.id,
+        { transactionId: reusable },
+        "40004000-aaaa-4400-8400-400040004000"
+      )
+    ).rejects.toThrow(InvalidBillPaymentSourceError);
   });
 
   it("does not expose another user's bill", async () => {

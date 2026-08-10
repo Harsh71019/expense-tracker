@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Money } from "@/components/ui/money";
 import { Select } from "@/components/ui/select";
 import { useAccounts } from "@/features/accounts";
+import { isLinkableBillPaymentSource, LinkBillPaymentDialog } from "@/features/bills";
 import { useCategories } from "@/features/categories";
 import { useReverseTransfer } from "@/features/transfers/hooks/use-transfers";
 import { toast } from "@/lib/toast";
@@ -37,6 +38,7 @@ export function TxnDetail({ initialTransaction }: { initialTransaction: Transact
   const [categoryId, setCategoryId] = useState(transaction.categoryId ?? "");
   const [tags, setTags] = useState(transaction.tags.join(", "));
   const [error, setError] = useState<string>();
+  const [linkingBillPayment, setLinkingBillPayment] = useState(false);
   const accountName =
     accounts.data?.find((item) => item.id === transaction.accountId)?.name ?? "Archived account";
   const categoryName =
@@ -204,18 +206,31 @@ export function TxnDetail({ initialTransaction }: { initialTransaction: Transact
               </Button>
             </form>
           ) : null}
-          {transaction.status === "posted" ? (
-            <Button
-              type="button"
-              variant="secondary"
-              disabled={reverse.isPending}
-              onClick={() => reverse.mutate(transaction.id)}
-            >
-              {reverse.isPending ? "Recording reversal…" : "Reverse transaction"}
-            </Button>
-          ) : null}
+          <div className="flex flex-wrap gap-2">
+            {transaction.status === "posted" ? (
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={reverse.isPending}
+                onClick={() => reverse.mutate(transaction.id)}
+              >
+                {reverse.isPending ? "Recording reversal…" : "Reverse transaction"}
+              </Button>
+            ) : null}
+            {isLinkableBillPaymentSource(transaction, accounts.data ?? []) ? (
+              <Button type="button" variant="secondary" onClick={() => setLinkingBillPayment(true)}>
+                Mark as credit card bill payment
+              </Button>
+            ) : null}
+          </div>
         </section>
       )}
+      {linkingBillPayment ? (
+        <LinkBillPaymentDialog
+          transaction={transaction}
+          onClose={() => setLinkingBillPayment(false)}
+        />
+      ) : null}
       <p className="text-xs text-foreground-muted">
         Money corrections create compensating entries. Ledger amounts are never edited or deleted.
       </p>

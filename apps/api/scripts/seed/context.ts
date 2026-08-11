@@ -14,11 +14,14 @@ import { BalanceVerifyService } from "../../src/balances/balance-verify.service.
 import { CategoryRepository } from "../../src/categories/category.repository.js";
 import { CategoryRuleRepository } from "../../src/category-rules/category-rule.repository.js";
 import { CategoryRuleService } from "../../src/category-rules/category-rule.service.js";
+import { CategorySuggestionRepository } from "../../src/category-rules/category-suggestion.repository.js";
+import { CategorySuggestionService } from "../../src/category-rules/category-suggestion.service.js";
 import * as authSchema from "../../src/common/db/auth-schema.js";
 import type { DrizzleDb } from "../../src/common/db/db.module.js";
 import * as schema from "../../src/common/db/schema/index.js";
 import { RuntimeConfigService } from "../../src/common/config/runtime-config.service.js";
 import { RedisService } from "../../src/common/redis/redis.service.js";
+import { MetricsService } from "../../src/common/observability/metrics.service.js";
 import { ImportBatchRepository } from "../../src/imports/import-batch.repository.js";
 import { ImportsService } from "../../src/imports/imports.service.js";
 import { StagedRowRepository } from "../../src/imports/staged-row.repository.js";
@@ -111,6 +114,10 @@ export async function createSeedContext(): Promise<SeedContext> {
   const accounts = new AccountRepository(db);
   const categories = new CategoryRepository(db);
   const categoryRulesRepo = new CategoryRuleRepository(db);
+  const categorySuggestions = new CategorySuggestionService(
+    categoryRulesRepo,
+    new CategorySuggestionRepository(db)
+  );
   const transactionsRepo = new TransactionRepository(db);
   const audit = new AuditRepository(db);
   const assetsRepo = new AssetRepository(db);
@@ -147,7 +154,8 @@ export async function createSeedContext(): Promise<SeedContext> {
     accounts,
     categories,
     audit,
-    categoryRulesRepo
+    categorySuggestions,
+    new MetricsService(redis)
   );
 
   const notificationsQueue = new NotificationsQueue(config);

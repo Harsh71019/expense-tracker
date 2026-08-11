@@ -27,8 +27,7 @@ import { AccountRepository } from "../accounts/account.repository.js";
 import { assertBalanceDeltaApplied } from "../accounts/balance-delta.js";
 import { AuditRepository } from "../audit/audit.repository.js";
 import { CategoryRepository } from "../categories/category.repository.js";
-import { CategoryRuleRepository } from "../category-rules/category-rule.repository.js";
-import { suggestCategory } from "../category-rules/suggest-category.js";
+import { CategorySuggestionService } from "../category-rules/category-suggestion.service.js";
 import { parseCsvRow } from "../common/csv/parse-csv-row.js";
 import { DATABASE_CONNECTION } from "../common/db/db.module.js";
 import type { DrizzleDb } from "../common/db/db.module.js";
@@ -39,6 +38,7 @@ import { ImportAlreadyCommittedError } from "../common/errors/import-already-com
 import { ImportBatchNotReadyError } from "../common/errors/import-batch-not-ready.error.js";
 import { InvalidImportFileError } from "../common/errors/invalid-import-file.error.js";
 import { LoggingContextService } from "../common/logging/logging-context.service.js";
+import { MetricsService } from "../common/observability/metrics.service.js";
 import { TransactionRepository } from "../transactions/transaction.repository.js";
 import { computeDedupeHash } from "./dedupe-hash.js";
 import { ImportBatchRepository } from "./import-batch.repository.js";
@@ -64,7 +64,8 @@ export class ImportsService {
     private readonly accounts: AccountRepository,
     private readonly categories: CategoryRepository,
     private readonly audit: AuditRepository,
-    private readonly categoryRules: CategoryRuleRepository,
+    private readonly categorySuggestions: CategorySuggestionService,
+    private readonly metrics: MetricsService,
     private readonly context: LoggingContextService = new LoggingContextService()
   ) {}
 
@@ -233,16 +234,26 @@ export class ImportsService {
       userId,
       candidateHashes
     );
-    const [rules, activeCategories] = await Promise.all([
-      this.categoryRules.list(userId),
-      this.categories.list(userId)
-    ]);
-    const categoryKinds = new Map(
-      activeCategories.map((category) => [category.id, category.kind] as const)
+    const activeCategories = await this.categories.list(userId);
+    const suggestions = await this.categorySuggestions.suggestMany(
+      userId,
+      rows.flatMap((row) =>
+        row.parsed === undefined
+          ? []
+          : [
+              {
+                description: row.parsed.description,
+                occurredAt: row.parsed.occurredAt,
+                type: row.parsed.type
+              }
+            ]
+      ),
+      activeCategories
     );
 
     const seenInFile = new Set<string>();
     let duplicates = 0;
+    let suggestionIndex = 0;
     const stagedRows: NewStagedRow[] = rows.map((row) => {
       if (row.dedupeHash === undefined) {
         return {
@@ -257,17 +268,20 @@ export class ImportsService {
       const isDuplicate = seenInFile.has(row.dedupeHash) || existingHashes.has(row.dedupeHash);
       seenInFile.add(row.dedupeHash);
       if (isDuplicate) duplicates += 1;
-      const suggestedCategoryId = suggestCategory(
-        row.parsed.description,
-        rules.filter((rule) => categoryKinds.get(rule.categoryId) === row.parsed.type)
-      );
+      const categorySuggestion = suggestions[suggestionIndex];
+      suggestionIndex += 1;
 
       return {
         rowNumber: row.rowNumber,
         raw: row.raw,
         parsed: row.parsed,
         dedupeHash: row.dedupeHash,
-        ...(suggestedCategoryId === undefined ? {} : { suggestedCategoryId }),
+        ...(categorySuggestion === undefined
+          ? {}
+          : {
+              suggestedCategoryId: categorySuggestion.categoryId,
+              categorySuggestion
+            }),
         problems: row.problems,
         isDuplicate,
         include: !isDuplicate
@@ -295,6 +309,7 @@ export class ImportsService {
       await assertWorkflowLease(heartbeat);
       await this.batches.completeWorkflow(userId, batchId, "parse", claimToken, "staged", stats);
     }
+    this.metrics.recordCategorySuggestions("suggested", suggestions.filter(Boolean).length);
   }
 
   list(userId: string): Promise<ImportBatch[]> {
@@ -474,6 +489,7 @@ export class ImportsService {
       await assertWorkflowLease(heartbeat);
       await this.batches.completeWorkflow(userId, batchId, "commit", claimToken, "committed");
     }
+    this.recordCategorySuggestionFeedback(includable);
     const committed = await this.batches.findById(userId, batchId);
     if (committed === null) throw new EntityNotFoundError("Import batch");
     return committed;
@@ -564,6 +580,20 @@ export class ImportsService {
     throw new ImportBatchNotReadyError(
       `The batch does not contain a recoverable ${operation} workflow.`
     );
+  }
+
+  private recordCategorySuggestionFeedback(rows: readonly StagedRow[]): void {
+    for (const row of rows) {
+      const suggestion = row.categorySuggestion;
+      if (suggestion === undefined) continue;
+      if (row.suggestedCategoryId === undefined) {
+        this.metrics.recordCategorySuggestions("dismissed", 1);
+      } else if (row.suggestedCategoryId === suggestion.categoryId) {
+        this.metrics.recordCategorySuggestions("accepted_unchanged", 1);
+      } else {
+        this.metrics.recordCategorySuggestions("corrected", 1);
+      }
+    }
   }
 }
 

@@ -155,12 +155,27 @@ describe("ReviewStep", () => {
     expect(screen.getByText("Could not parse amount", { exact: false })).toBeVisible();
   });
 
-  it("updates the suggested category and clears the rule-suggested note once edited", async () => {
+  it("shows versioned suggestion evidence and clears it once edited", async () => {
     const user = userEvent.setup();
-    mocks.rows = [row({ suggestedCategoryId: groceries.id })];
+    mocks.rows = [
+      row({
+        suggestedCategoryId: groceries.id,
+        categorySuggestion: {
+          categoryId: groceries.id,
+          confidenceBps: 8_000,
+          method: "exact_counterparty",
+          evidenceCount: 4,
+          algorithmVersion: 1
+        }
+      })
+    ];
     render(<ReviewStep batchId="b1" categories={[groceries]} onCountsChange={vi.fn()} />, {
       wrapper
     });
+
+    expect(
+      screen.getByText(/exact private history · 80% confidence · 4 examples · v1/)
+    ).toBeVisible();
 
     await user.click(screen.getByRole("combobox", { name: "Category for row 1" }));
     await user.click(screen.getByRole("option", { name: "Uncategorized" }));
@@ -178,7 +193,7 @@ describe("ReviewStep", () => {
     expect(mocks.toastSuccess).toHaveBeenCalledWith("Row category updated", {
       id: `import-row-${mocks.rows[0]?.id}`
     });
-    expect(screen.queryByText("✦ suggested by rule")).not.toBeInTheDocument();
+    expect(screen.queryByText(/exact private history/)).not.toBeInTheDocument();
   });
 
   it("reports a staged-row update failure", async () => {

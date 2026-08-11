@@ -6839,6 +6839,16 @@ export interface components {
         dedupeHash?: string;
         /** Format: uuid */
         suggestedCategoryId?: string;
+        categorySuggestion?: {
+          /** Format: uuid */
+          categoryId: string;
+          confidenceBps: number;
+          /** @enum {string} */
+          method:
+            "explicit_rule" | "exact_counterparty" | "jaro_winkler" | "soft_tf_idf" | "jaccard";
+          evidenceCount: number;
+          algorithmVersion: number;
+        };
         problems: string[];
         isDuplicate: boolean;
         include: boolean;
@@ -6869,6 +6879,15 @@ export interface components {
       dedupeHash?: string;
       /** Format: uuid */
       suggestedCategoryId?: string;
+      categorySuggestion?: {
+        /** Format: uuid */
+        categoryId: string;
+        confidenceBps: number;
+        /** @enum {string} */
+        method: "explicit_rule" | "exact_counterparty" | "jaro_winkler" | "soft_tf_idf" | "jaccard";
+        evidenceCount: number;
+        algorithmVersion: number;
+      };
       problems: string[];
       isDuplicate: boolean;
       include: boolean;

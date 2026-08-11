@@ -200,7 +200,14 @@ legs of a transfer.
   rowNumber: number,
   raw: Record<string, string>,
   parsed?: { occurredAt: Date, amountMinor: number, type: string, description: string },
-  suggestedCategoryId?: ObjectId,   // rule-based now; embeddings later (see §8)
+  suggestedCategoryId?: ObjectId,   // editable selection applied only on explicit commit
+  categorySuggestion?: {
+    categoryId: ObjectId,
+    confidenceBps: number,
+    method: 'explicit_rule' | 'exact_counterparty' | 'jaro_winkler' | 'soft_tf_idf' | 'jaccard',
+    evidenceCount: number,
+    algorithmVersion: number
+  },
   problems: string[],               // ["unparseable date", ...]
   isDuplicate: boolean,
   include: boolean                  // user can untick rows in preview
@@ -561,6 +568,25 @@ Commit/revert request races use one conditional state transition, so repeated co
 join the same workflow instead of creating duplicate jobs. Terminal parse failures clear the stored
 file; successful parsing does the same.
 
+### Personal-history category suggestions
+
+Import parsing asks `CategorySuggestionService` for recommendations; it never changes an existing
+transaction category. The cascade is versioned and stops at the first calibrated stage: longest
+explicit user rule, exact counterparty memory, Jaro-Winkler counterparty match, Soft TF-IDF token
+match, then Jaccard token overlap. Low-confidence and ambiguous inputs remain uncategorized.
+
+History reads are private and bounded to 500 strictly older rows within a 3,660-day lookback for
+the same `userId` and transaction type. Only posted, categorized, non-reversed entries are
+eligible. Archived or wrong-kind categories are removed before ranking. Raw descriptions are
+normalized in memory and never added to logs, notification payloads, or metric labels.
+
+The staged row stores immutable recommendation provenance separately from the editable selected
+category. Committing the reviewed batch is the explicit acceptance boundary; no suggestion posts
+money or mutates a category by itself. Prometheus exposes only aggregate `suggested`,
+`accepted_unchanged`, `corrected`, and `dismissed` counters. Chronological evaluation compares the
+rule/exact/Jaccard baseline with the approximate policy using only older labeled transactions and
+requires both precision and coverage to improve before promotion.
+
 **Details that matter for Indian bank CSVs:**
 
 - **Column mapping is saved per account** (`import_batches.mapping`), so HDFC's `Txn Date / Narration / Withdrawal Amt / Deposit Amt` is a one-time setup. Support both single-signed-amount and separate debit/credit column conventions. Batch creation uses the database statement timestamp (not a JavaScript millisecond timestamp), so two rapid uploads still have a deterministic latest mapping.
@@ -727,7 +753,8 @@ Conventions: controllers do HTTP only; services own business rules and transacti
 
 **Future GenAI hooks (deliberate seams, not scope creep):**
 
-- `suggestedCategoryId` in staging is rule-based today (`description contains "SWIGGY" → Food`); the seam is designed so an embedding-based classifier (or a small LLM call) can replace the rule engine later — that's your RAG-adjacent portfolio extension.
+- Category recommendations deliberately remain local, deterministic, explainable, and based only
+  on the owner's private history. Cross-user models and LLM category mutation are out of scope.
 - A `/reports/ask` endpoint ("how much did I spend on commute vs last quarter?") over the rollups is a clean LangChain/LangGraph.js showcase on real personal data.
 
 ---

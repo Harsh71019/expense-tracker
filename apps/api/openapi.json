@@ -436,6 +436,45 @@
                   "type": "string",
                   "format": "uuid"
                 },
+                "categorySuggestion": {
+                  "type": "object",
+                  "properties": {
+                    "categoryId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "confidenceBps": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 10000
+                    },
+                    "method": {
+                      "type": "string",
+                      "enum": [
+                        "explicit_rule",
+                        "exact_counterparty",
+                        "jaro_winkler",
+                        "soft_tf_idf",
+                        "jaccard"
+                      ]
+                    },
+                    "evidenceCount": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0
+                    },
+                    "algorithmVersion": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0
+                    }
+                  },
+                  "required": [
+                    "categoryId",
+                    "confidenceBps",
+                    "method",
+                    "evidenceCount",
+                    "algorithmVersion"
+                  ]
+                },
                 "problems": {
                   "type": "array",
                   "items": {
@@ -527,6 +566,45 @@
           "suggestedCategoryId": {
             "type": "string",
             "format": "uuid"
+          },
+          "categorySuggestion": {
+            "type": "object",
+            "properties": {
+              "categoryId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "confidenceBps": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 10000
+              },
+              "method": {
+                "type": "string",
+                "enum": [
+                  "explicit_rule",
+                  "exact_counterparty",
+                  "jaro_winkler",
+                  "soft_tf_idf",
+                  "jaccard"
+                ]
+              },
+              "evidenceCount": {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              },
+              "algorithmVersion": {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              }
+            },
+            "required": [
+              "categoryId",
+              "confidenceBps",
+              "method",
+              "evidenceCount",
+              "algorithmVersion"
+            ]
           },
           "problems": {
             "type": "array",

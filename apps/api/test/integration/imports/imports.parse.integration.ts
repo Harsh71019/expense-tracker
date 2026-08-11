@@ -5,17 +5,27 @@ import { Redis } from "ioredis";
 
 import { AccountRepository } from "../../../src/accounts/account.repository.js";
 import { AuditRepository } from "../../../src/audit/audit.repository.js";
+import { BalanceVerifyRepository } from "../../../src/balances/balance-verify.repository.js";
 import { CategoryRuleRepository } from "../../../src/category-rules/category-rule.repository.js";
+import { CategorySuggestionRepository } from "../../../src/category-rules/category-suggestion.repository.js";
+import { CategorySuggestionService } from "../../../src/category-rules/category-suggestion.service.js";
 import { CategoryRepository } from "../../../src/categories/category.repository.js";
 import { RuntimeConfigService } from "../../../src/common/config/runtime-config.service.js";
+import { MetricsService } from "../../../src/common/observability/metrics.service.js";
 import { withTxn } from "../../../src/common/db/db-txn.js";
 import { stagedRows as stagedRowsTable } from "../../../src/common/db/schema/index.js";
+import {
+  accounts as accountsTable,
+  transactions as transactionsTable
+} from "../../../src/common/db/schema/index.js";
 import { ImportBatchRepository } from "../../../src/imports/import-batch.repository.js";
 import { StagedRowRepository } from "../../../src/imports/staged-row.repository.js";
 import { ImportsQueue } from "../../../src/imports/imports.queue.js";
 import { ImportsService } from "../../../src/imports/imports.service.js";
 import { startImportsWorker } from "../../../src/imports/imports.processor.js";
 import { TransactionRepository } from "../../../src/transactions/transaction.repository.js";
+import { TransactionService } from "../../../src/transactions/transaction.service.js";
+import { focusedTestDouble } from "../../../src/test/mock-drizzle.js";
 import { createTestDb, insertTestUser } from "../support/postgres-test-db.js";
 import type { TestDb } from "../support/postgres-test-db.js";
 
@@ -101,7 +111,8 @@ describe("Imports parse pipeline (real BullMQ worker against real Redis)", () =>
       accounts,
       new CategoryRepository(testDb.db),
       audit,
-      categoryRules
+      new CategorySuggestionService(categoryRules, new CategorySuggestionRepository(testDb.db)),
+      focusedTestDouble<MetricsService>({ recordCategorySuggestions: () => undefined })
     );
     const logger = { log: () => undefined, error: () => undefined };
 
@@ -197,7 +208,8 @@ describe("Imports parse pipeline (real BullMQ worker against real Redis)", () =>
       accounts,
       new CategoryRepository(testDb.db),
       audit,
-      categoryRules
+      new CategorySuggestionService(categoryRules, new CategorySuggestionRepository(testDb.db)),
+      focusedTestDouble<MetricsService>({ recordCategorySuggestions: () => undefined })
     );
 
     const batch = await batches.create(
@@ -231,7 +243,8 @@ describe("Imports parse pipeline (real BullMQ worker against real Redis)", () =>
       accounts,
       new CategoryRepository(testDb.db),
       audit,
-      categoryRules
+      new CategorySuggestionService(categoryRules, new CategorySuggestionRepository(testDb.db)),
+      focusedTestDouble<MetricsService>({ recordCategorySuggestions: () => undefined })
     );
 
     const categories = new CategoryRepository(testDb.db);
@@ -254,7 +267,102 @@ describe("Imports parse pipeline (real BullMQ worker against real Redis)", () =>
     expect(page.items[0]).toMatchObject({ suggestedCategoryId: foodCategoryId });
     expect(page.items[1]?.suggestedCategoryId).toBeUndefined();
   });
+
+  it("suggests exact private history without leaking that history to another tenant", async () => {
+    const categories = new CategoryRepository(testDb.db);
+    const foodCategoryId = (
+      await categories.create("user-suggest", { name: "Private history food", kind: "expense" })
+    ).id;
+    const transactions = new TransactionService(
+      testDb.db,
+      new AccountRepository(testDb.db),
+      categories,
+      new TransactionRepository(testDb.db),
+      new AuditRepository(testDb.db),
+      { log: () => undefined, warn: () => undefined, error: () => undefined }
+    );
+    for (const [index, reference] of ["111111111111", "222222222222", "333333333333"].entries()) {
+      await transactions.create(
+        "user-suggest",
+        {
+          accountId: accountIdSuggest,
+          categoryId: foodCategoryId,
+          type: "expense",
+          amountMinor: 10_000 + index,
+          occurredAt: new Date(Date.UTC(2026, 5, index + 1)),
+          description: `UPI/${reference}/SWIGGY/order ${index + 1}`,
+          tags: []
+        },
+        undefined
+      );
+    }
+
+    const privateBatch = await batches.create(
+      "user-suggest",
+      accountIdSuggest,
+      "private-history.csv",
+      "sha256:private-history",
+      MAPPING
+    );
+    const targetCsv = [
+      "Txn Date,Narration,Amount",
+      "04/07/2026,UPI/444444444444/SWIGGY/order 4,-100.00"
+    ].join("\n");
+    await service.parseFile(privateBatch.id, "user-suggest", accountIdSuggest, MAPPING, targetCsv);
+    const privateRows = await new StagedRowRepository(testDb.db).findByBatchId(
+      "user-suggest",
+      privateBatch.id,
+      undefined,
+      10
+    );
+    expect(privateRows.items[0]).toMatchObject({
+      suggestedCategoryId: foodCategoryId,
+      categorySuggestion: {
+        categoryId: foodCategoryId,
+        confidenceBps: 10_000,
+        method: "exact_counterparty",
+        evidenceCount: 3,
+        algorithmVersion: 1
+      }
+    });
+
+    const otherBatch = await batches.create(
+      "user-a",
+      accountIdA,
+      "other-tenant.csv",
+      "sha256:other-tenant",
+      MAPPING
+    );
+    await service.parseFile(otherBatch.id, "user-a", accountIdA, MAPPING, targetCsv);
+    const otherRows = await new StagedRowRepository(testDb.db).findByBatchId(
+      "user-a",
+      otherBatch.id,
+      undefined,
+      10
+    );
+    expect(otherRows.items[0]?.categorySuggestion).toBeUndefined();
+    expect(otherRows.items[0]?.suggestedCategoryId).toBeUndefined();
+
+    await assertInvariants(testDb);
+  });
 });
+
+async function assertInvariants(testDb: TestDb): Promise<void> {
+  const [accounts, transactions, deltas] = await Promise.all([
+    testDb.db.select().from(accountsTable),
+    testDb.db.select().from(transactionsTable),
+    new BalanceVerifyRepository(testDb.db).sumDeltasByAccount()
+  ]);
+  for (const account of accounts) {
+    expect(account.openingBalanceMinor + (deltas.get(account.id) ?? 0)).toBe(account.balanceMinor);
+  }
+  for (const transaction of transactions) {
+    if (transaction.status === "posted") {
+      expect(transaction.reversalOf).toBeNull();
+      expect(transaction.reversedBy).toBeNull();
+    }
+  }
+}
 
 async function waitForStatus(
   repository: ImportBatchRepository,

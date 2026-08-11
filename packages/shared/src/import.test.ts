@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { COLUMN_MAPPING_PRESETS, ColumnMappingSchema } from "./import.js";
+import { COLUMN_MAPPING_PRESETS, ColumnMappingSchema, StagedRowSchema } from "./import.js";
 
 describe("COLUMN_MAPPING_PRESETS", () => {
   it("every preset is a valid ColumnMapping", () => {
@@ -36,5 +36,28 @@ describe("ColumnMappingSchema", () => {
         debit: "Withdrawal"
       })
     ).toThrow();
+  });
+});
+
+describe("StagedRowSchema category suggestions", () => {
+  it("keeps editable selection separate from immutable suggestion provenance", () => {
+    const row = StagedRowSchema.parse({
+      id: "123e4567-e89b-42d3-a456-426614174010",
+      batchId: "123e4567-e89b-42d3-a456-426614174011",
+      rowNumber: 1,
+      raw: {},
+      suggestedCategoryId: "123e4567-e89b-42d3-a456-426614174002",
+      categorySuggestion: {
+        categoryId: "123e4567-e89b-42d3-a456-426614174001",
+        confidenceBps: 8_500,
+        method: "jaro_winkler",
+        evidenceCount: 3,
+        algorithmVersion: 1
+      },
+      problems: [],
+      isDuplicate: false,
+      include: true
+    });
+    expect(row.suggestedCategoryId).not.toBe(row.categorySuggestion?.categoryId);
   });
 });

@@ -59,6 +59,11 @@ export class StagedRowRepository {
         parsedDescription: row.parsed?.description ?? null,
         dedupeHash: row.dedupeHash ?? null,
         suggestedCategoryId: row.suggestedCategoryId ?? null,
+        suggestionCategoryId: row.categorySuggestion?.categoryId ?? null,
+        suggestionConfidenceBps: row.categorySuggestion?.confidenceBps ?? null,
+        suggestionMethod: row.categorySuggestion?.method ?? null,
+        suggestionEvidenceCount: row.categorySuggestion?.evidenceCount ?? null,
+        suggestionAlgorithmVersion: row.categorySuggestion?.algorithmVersion ?? null,
         problems: [...row.problems],
         isDuplicate: row.isDuplicate,
         include: row.include,
@@ -190,6 +195,20 @@ function toStagedRow(row: typeof stagedRows.$inferSelect): StagedRow {
           type: row.parsedType,
           description: row.parsedDescription
         };
+  const categorySuggestion =
+    isNullish(row.suggestionCategoryId) ||
+    isNullish(row.suggestionConfidenceBps) ||
+    isNullish(row.suggestionMethod) ||
+    isNullish(row.suggestionEvidenceCount) ||
+    isNullish(row.suggestionAlgorithmVersion)
+      ? undefined
+      : {
+          categoryId: row.suggestionCategoryId,
+          confidenceBps: row.suggestionConfidenceBps,
+          method: row.suggestionMethod,
+          evidenceCount: row.suggestionEvidenceCount,
+          algorithmVersion: row.suggestionAlgorithmVersion
+        };
   return StagedRowSchema.parse({
     id: row.id,
     batchId: row.batchId,
@@ -198,10 +217,15 @@ function toStagedRow(row: typeof stagedRows.$inferSelect): StagedRow {
     parsed,
     dedupeHash: row.dedupeHash ?? undefined,
     suggestedCategoryId: row.suggestedCategoryId ?? undefined,
+    categorySuggestion,
     problems: row.problems,
     isDuplicate: row.isDuplicate,
     include: row.include
   });
+}
+
+function isNullish(value: unknown): value is null | undefined {
+  return value === null || value === undefined;
 }
 
 function encodeCursor(rowNumber: number): string {

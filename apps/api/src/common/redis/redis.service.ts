@@ -129,6 +129,18 @@ export class RedisService implements OnModuleDestroy {
     return result;
   }
 
+  async hashIncrementBy(key: string, field: string, amount: number): Promise<number> {
+    const result = await this.client.hincrby(key, field, amount);
+    if (!Number.isSafeInteger(result)) {
+      throw new Error("Redis hash increment did not return a safe integer.");
+    }
+    return result;
+  }
+
+  async hashGetAll(key: string): Promise<Readonly<Record<string, string>>> {
+    return this.client.hgetall(key);
+  }
+
   async rateLimit(
     key: string,
     ttlMs: number,

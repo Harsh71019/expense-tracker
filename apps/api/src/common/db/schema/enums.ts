@@ -119,3 +119,28 @@ export const pendingTransactionStatusEnum = pgEnum("pending_transaction_status",
   "confirmed",
   "dismissed"
 ]);
+export const detectedStreamCadenceEnum = pgEnum("detected_stream_cadence", [
+  "weekly",
+  "biweekly",
+  "semimonthly",
+  "monthly",
+  "quarterly",
+  "annual"
+]);
+export const detectedStreamStateEnum = pgEnum("detected_stream_state", [
+  "candidate",
+  "mature",
+  "stale"
+]);
+export const detectedStreamAmountBehaviorEnum = pgEnum("detected_stream_amount_behavior", [
+  "fixed",
+  "variable",
+  "unknown"
+]);
+export const recurringDetectionRunStatusEnum = pgEnum("recurring_detection_run_status", [
+  "running",
+  "completed",
+  "degraded",
+  "abstained",
+  "failed"
+]);

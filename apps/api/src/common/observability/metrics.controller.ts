@@ -9,6 +9,10 @@ import {
   SpendingWarningsQueue,
   SPENDING_WARNINGS_QUEUE_NAME
 } from "../../spending-warnings/spending-warnings.queue.js";
+import {
+  RecurringDetectionQueue,
+  RECURRING_DETECTION_QUEUE_NAME
+} from "../../recurring-detection/recurring-detection.queue.js";
 import { RedisService } from "../redis/redis.service.js";
 import { MetricsService, type QueueMetricSnapshot } from "./metrics.service.js";
 
@@ -21,30 +25,41 @@ export class MetricsController {
     private readonly redis: RedisService,
     private readonly imports: ImportsQueue,
     private readonly notifications: NotificationsQueue,
-    private readonly spendingWarnings: SpendingWarningsQueue
+    private readonly spendingWarnings: SpendingWarningsQueue,
+    private readonly recurringDetection: RecurringDetectionQueue
   ) {}
 
   @Get()
   @Header("Content-Type", "text/plain; version=0.0.4; charset=utf-8")
   async getMetrics(): Promise<string> {
-    const [queues, workerHeartbeatAgeSeconds, balanceVerification] = await Promise.all([
-      this.queueSnapshots(),
-      this.redis.workerHeartbeatAgeSeconds(),
-      this.metrics.readBalanceVerification()
-    ]);
-    return this.metrics.render(queues, workerHeartbeatAgeSeconds, balanceVerification);
+    const [queues, workerHeartbeatAgeSeconds, balanceVerification, recurringDetection] =
+      await Promise.all([
+        this.queueSnapshots(),
+        this.redis.workerHeartbeatAgeSeconds(),
+        this.metrics.readBalanceVerification(),
+        this.metrics.readRecurringDetectionMetrics()
+      ]);
+    return this.metrics.render(
+      queues,
+      workerHeartbeatAgeSeconds,
+      balanceVerification,
+      new Date(),
+      recurringDetection
+    );
   }
 
   private async queueSnapshots(): Promise<QueueMetricSnapshot[]> {
-    const [imports, notifications, spendingWarnings] = await Promise.all([
+    const [imports, notifications, spendingWarnings, recurringDetection] = await Promise.all([
       this.imports.getQueue().getJobCounts(...JOB_STATES),
       this.notifications.getQueue().getJobCounts(...JOB_STATES),
-      this.spendingWarnings.getQueue().getJobCounts(...JOB_STATES)
+      this.spendingWarnings.getQueue().getJobCounts(...JOB_STATES),
+      this.recurringDetection.getQueue().getJobCounts(...JOB_STATES)
     ]);
     return [
       { queue: IMPORTS_QUEUE_NAME, counts: imports },
       { queue: NOTIFICATIONS_QUEUE_NAME, counts: notifications },
-      { queue: SPENDING_WARNINGS_QUEUE_NAME, counts: spendingWarnings }
+      { queue: SPENDING_WARNINGS_QUEUE_NAME, counts: spendingWarnings },
+      { queue: RECURRING_DETECTION_QUEUE_NAME, counts: recurringDetection }
     ];
   }
 }

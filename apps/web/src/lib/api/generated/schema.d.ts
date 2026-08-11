@@ -8114,6 +8114,40 @@ export interface components {
         matchedTransactionId?: string;
         /** @enum {string} */
         matchStatus: "matched" | "missing_from_ledger" | "ambiguous";
+        matchSuggestion?: {
+          confidenceBps: number;
+          /** @enum {string} */
+          method: "global_assignment_v1";
+          evidence: {
+            candidateCount: number;
+            /** Format: uuid */
+            selectedTransactionId: string | null;
+            dateDistanceDays: number | null;
+            descriptionSimilarityBps: number | null;
+            dateCost: number | null;
+            textCost: number | null;
+            sourcePenalty: number;
+            assignedCost: number | null;
+            unmatchedCost: number;
+            alternativeCost: number | null;
+            assignmentMarginCost: number | null;
+          };
+          sufficiency:
+            | {
+                /** @enum {string} */
+                status: "sufficient";
+                candidateCount: number;
+              }
+            | {
+                /** @enum {string} */
+                status: "insufficient";
+                /** @enum {string} */
+                reason: "no_eligible_candidate" | "ambiguous_assignment" | "resource_limit";
+                candidateCount: number;
+              };
+          algorithmVersion: number;
+          inputWatermark: string;
+        };
         acknowledged: boolean;
         problems: string[];
         /** Format: date-time */
@@ -8149,6 +8183,40 @@ export interface components {
       matchedTransactionId?: string;
       /** @enum {string} */
       matchStatus: "matched" | "missing_from_ledger" | "ambiguous";
+      matchSuggestion?: {
+        confidenceBps: number;
+        /** @enum {string} */
+        method: "global_assignment_v1";
+        evidence: {
+          candidateCount: number;
+          /** Format: uuid */
+          selectedTransactionId: string | null;
+          dateDistanceDays: number | null;
+          descriptionSimilarityBps: number | null;
+          dateCost: number | null;
+          textCost: number | null;
+          sourcePenalty: number;
+          assignedCost: number | null;
+          unmatchedCost: number;
+          alternativeCost: number | null;
+          assignmentMarginCost: number | null;
+        };
+        sufficiency:
+          | {
+              /** @enum {string} */
+              status: "sufficient";
+              candidateCount: number;
+            }
+          | {
+              /** @enum {string} */
+              status: "insufficient";
+              /** @enum {string} */
+              reason: "no_eligible_candidate" | "ambiguous_assignment" | "resource_limit";
+              candidateCount: number;
+            };
+        algorithmVersion: number;
+        inputWatermark: string;
+      };
       acknowledged: boolean;
       problems: string[];
       /** Format: date-time */

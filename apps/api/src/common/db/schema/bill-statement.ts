@@ -83,6 +83,7 @@ export const billStatementRows = pgTable(
     parsedDescription: text("parsed_description"),
     matchedTransactionId: uuid("matched_transaction_id").references(() => transactions.id),
     matchStatus: billStatementRowMatchStatusEnum("match_status").notNull(),
+    matchSuggestion: jsonb("match_suggestion"),
     acknowledged: boolean("acknowledged").notNull().default(false),
     problems: text("problems").array().notNull().default([]),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull(),

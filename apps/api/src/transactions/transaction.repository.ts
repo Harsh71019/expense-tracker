@@ -13,6 +13,7 @@ import {
   type TransactionInsights,
   type TransactionPage,
   type TransactionSource,
+  type TransactionType,
   type UpdateTransaction
 } from "@treasury-ops/shared";
 import { and, desc, eq, gte, inArray, isNull, lt, lte, sql } from "drizzle-orm";
@@ -29,6 +30,20 @@ import { normalizeTransactionText } from "../common/transaction-text/normalize-t
 
 const CursorPayloadSchema = z.object({ occurredAt: z.string().datetime(), id: z.string().uuid() });
 const IST_TIME_ZONE = "Asia/Kolkata";
+
+export type ReconciliationCandidateQuery = Readonly<{
+  accountId: string;
+  from: Date;
+  toExclusive: Date;
+  types: readonly TransactionType[];
+  amountMinors: readonly number[];
+  limit: number;
+}>;
+
+export type ReconciliationCandidateResult = Readonly<{
+  items: readonly Transaction[];
+  limitHit: boolean;
+}>;
 
 @Injectable()
 export class TransactionRepository {
@@ -295,6 +310,46 @@ export class TransactionRepository {
       )
       .orderBy(transactions.occurredAt, transactions.id);
     return rows.map(toTransaction);
+  }
+
+  /**
+   * Bounded candidate blocking for statement assignment. The caller derives
+   * the small type/amount/date sets from parsed statement rows; no narration
+   * is part of this database predicate.
+   */
+  async findBoundedReconciliationCandidates(
+    userId: string,
+    query: ReconciliationCandidateQuery
+  ): Promise<ReconciliationCandidateResult> {
+    if (
+      query.types.length === 0 ||
+      query.amountMinors.length === 0 ||
+      !Number.isSafeInteger(query.limit) ||
+      query.limit < 1
+    ) {
+      return { items: [], limitHit: false };
+    }
+    const rows = await this.db
+      .select()
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.userId, userId),
+          eq(transactions.accountId, query.accountId),
+          eq(transactions.status, "posted"),
+          isNull(transactions.billId),
+          inArray(transactions.type, [...query.types]),
+          inArray(transactions.amountMinor, [...query.amountMinors]),
+          gte(transactions.occurredAt, query.from),
+          lt(transactions.occurredAt, query.toExclusive)
+        )
+      )
+      .orderBy(transactions.occurredAt, transactions.id)
+      .limit(query.limit + 1);
+    return {
+      items: rows.slice(0, query.limit).map(toTransaction),
+      limitHit: rows.length > query.limit
+    };
   }
 
   async sumPostedBillPayments(

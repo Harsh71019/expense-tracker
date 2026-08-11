@@ -18,6 +18,9 @@ describe("MetricsService", () => {
     service.recordCategorySuggestions("accepted_unchanged", 2);
     service.recordCategorySuggestions("corrected", 1);
     service.recordCategorySuggestions("dismissed", 1);
+    service.recordStatementAssignments("matched", 3);
+    service.recordStatementAssignments("ambiguous", 1);
+    service.recordStatementAssignments("resource_limit", 1);
 
     const output = service.render(
       [{ queue: "imports", counts: { waiting: 2, failed: 1 } }],
@@ -38,6 +41,9 @@ describe("MetricsService", () => {
     );
     expect(output).toContain('treasuryops_category_suggestions_total{outcome="corrected"} 1');
     expect(output).toContain('treasuryops_category_suggestions_total{outcome="dismissed"} 1');
+    expect(output).toContain('treasuryops_statement_assignments_total{outcome="matched"} 3');
+    expect(output).toContain('treasuryops_statement_assignments_total{outcome="ambiguous"} 1');
+    expect(output).toContain('treasuryops_statement_assignments_total{outcome="resource_limit"} 1');
     expect(output).toContain('treasuryops_queue_jobs{queue="imports",state="failed"} 1');
     expect(output).toContain("treasuryops_worker_heartbeat_age_seconds 15");
     expect(output).toContain("treasuryops_balance_drift_accounts 3");
@@ -86,5 +92,6 @@ describe("MetricsService", () => {
     );
     expect(() => service.recordCategorySuggestions("suggested", -1)).toThrow(RangeError);
     expect(() => service.recordCategorySuggestions("suggested", 0.5)).toThrow(RangeError);
+    expect(() => service.recordStatementAssignments("matched", -1)).toThrow(RangeError);
   });
 });

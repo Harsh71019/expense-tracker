@@ -15,6 +15,7 @@ import {
   type CreditCardBillId,
   type ListBillStatementRowsQuery,
   type ParsedRow,
+  type StatementAssignmentSuggestion,
   type TransactionId,
   type UpdateBillStatementRow
 } from "@treasury-ops/shared";
@@ -36,6 +37,7 @@ export type NewBillStatementRow = Readonly<{
   parsed?: ParsedRow;
   matchedTransactionId?: TransactionId;
   matchStatus: BillStatementRowMatchStatus;
+  matchSuggestion?: StatementAssignmentSuggestion;
   problems: readonly string[];
 }>;
 
@@ -174,6 +176,7 @@ export class BillStatementRepository {
         parsedDescription: row.parsed?.description ?? null,
         matchedTransactionId: row.matchedTransactionId ?? null,
         matchStatus: row.matchStatus,
+        matchSuggestion: row.matchSuggestion ?? null,
         acknowledged: false,
         problems: [...row.problems],
         createdAt: now,
@@ -419,6 +422,7 @@ function toRow(row: typeof billStatementRows.$inferSelect): BillStatementRow {
         };
   return BillStatementRowSchema.parse({
     ...stripNulls(row),
+    ...(row.matchSuggestion === null ? {} : { matchSuggestion: row.matchSuggestion }),
     ...(parsed === undefined ? {} : { parsed })
   });
 }

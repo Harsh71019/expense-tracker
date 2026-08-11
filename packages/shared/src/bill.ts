@@ -26,6 +26,60 @@ export const BillStatementRowMatchStatusSchema = z.enum([
   "ambiguous"
 ]);
 
+export const StatementAssignmentMethodSchema = z.literal("global_assignment_v1");
+export const StatementAssignmentSufficiencyReasonSchema = z.enum([
+  "no_eligible_candidate",
+  "ambiguous_assignment",
+  "resource_limit"
+]);
+export const StatementAssignmentSufficiencySchema = z.discriminatedUnion("status", [
+  z
+    .object({
+      status: z.literal("sufficient"),
+      candidateCount: z.number().int().positive()
+    })
+    .readonly(),
+  z
+    .object({
+      status: z.literal("insufficient"),
+      reason: StatementAssignmentSufficiencyReasonSchema,
+      candidateCount: z.number().int().nonnegative()
+    })
+    .readonly()
+]);
+
+/**
+ * Derived, review-only evidence for one statement-row assignment. It contains
+ * integer score components and opaque transaction identifiers, never raw
+ * narrations or account names.
+ */
+export const StatementAssignmentEvidenceSchema = z
+  .object({
+    candidateCount: z.number().int().nonnegative(),
+    selectedTransactionId: TransactionIdSchema.nullable(),
+    dateDistanceDays: z.number().int().nonnegative().nullable(),
+    descriptionSimilarityBps: z.number().int().min(0).max(10_000).nullable(),
+    dateCost: z.number().int().nonnegative().nullable(),
+    textCost: z.number().int().nonnegative().nullable(),
+    sourcePenalty: z.number().int().nonnegative(),
+    assignedCost: z.number().int().nonnegative().nullable(),
+    unmatchedCost: z.number().int().positive(),
+    alternativeCost: z.number().int().nonnegative().nullable(),
+    assignmentMarginCost: z.number().int().nonnegative().nullable()
+  })
+  .readonly();
+
+export const StatementAssignmentSuggestionSchema = z
+  .object({
+    confidenceBps: z.number().int().min(0).max(10_000),
+    method: StatementAssignmentMethodSchema,
+    evidence: StatementAssignmentEvidenceSchema,
+    sufficiency: StatementAssignmentSufficiencySchema,
+    algorithmVersion: z.number().int().positive(),
+    inputWatermark: z.string().regex(/^[a-f0-9]{64}$/)
+  })
+  .readonly();
+
 export const CreditCardBillSchema = z.object({
   id: CreditCardBillIdSchema,
   userId: z.string().min(1),
@@ -74,6 +128,7 @@ export const BillStatementRowSchema = z.object({
   parsed: ParsedRowSchema.optional(),
   matchedTransactionId: TransactionIdSchema.optional(),
   matchStatus: BillStatementRowMatchStatusSchema,
+  matchSuggestion: StatementAssignmentSuggestionSchema.optional(),
   acknowledged: z.boolean(),
   problems: z.array(z.string()),
   createdAt: z.coerce.date(),
@@ -166,6 +221,13 @@ export type BillReconciliationStatus = z.infer<typeof BillReconciliationStatusSc
 export type BillPaymentStatus = z.infer<typeof BillPaymentStatusSchema>;
 export type BillStatementUploadStatus = z.infer<typeof BillStatementUploadStatusSchema>;
 export type BillStatementRowMatchStatus = z.infer<typeof BillStatementRowMatchStatusSchema>;
+export type StatementAssignmentMethod = z.infer<typeof StatementAssignmentMethodSchema>;
+export type StatementAssignmentSufficiencyReason = z.infer<
+  typeof StatementAssignmentSufficiencyReasonSchema
+>;
+export type StatementAssignmentSufficiency = z.infer<typeof StatementAssignmentSufficiencySchema>;
+export type StatementAssignmentEvidence = z.infer<typeof StatementAssignmentEvidenceSchema>;
+export type StatementAssignmentSuggestion = z.infer<typeof StatementAssignmentSuggestionSchema>;
 export type CreditCardBill = z.infer<typeof CreditCardBillSchema>;
 export type BillStatementStats = z.infer<typeof BillStatementStatsSchema>;
 export type BillStatementUpload = z.infer<typeof BillStatementUploadSchema>;

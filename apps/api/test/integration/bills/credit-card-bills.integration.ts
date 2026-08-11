@@ -198,6 +198,24 @@ describe("credit-card bill lifecycle", () => {
     ).rejects.toThrow(InvalidCreditCardAccountError);
   });
 
+  it("blocks reconciliation candidates by tenant, account, type, amount, and date", async () => {
+    const query = {
+      accountId: cardId,
+      from: new Date("2026-07-09T00:00:00.000Z"),
+      toExclusive: new Date("2026-07-12T00:00:00.000Z"),
+      types: ["expense"] as const,
+      amountMinors: [10_000],
+      limit: 10
+    };
+    const matching = await transactions.findBoundedReconciliationCandidates(USER_ID, query);
+    expect(matching.limitHit).toBe(false);
+    expect(matching.items).toHaveLength(1);
+    expect(matching.items[0]).toMatchObject({ type: "expense", amountMinor: 10_000 });
+
+    const otherUser = await transactions.findBoundedReconciliationCandidates(OTHER_USER_ID, query);
+    expect(otherUser.items).toEqual([]);
+  });
+
   it("uploads, matches, and reconciles the issuer CSV before payment", async () => {
     const [bill] = (await bills.findMany(USER_ID, { limit: 50 })).items;
     if (bill === undefined) throw new Error("Expected generated bill");
@@ -250,10 +268,21 @@ describe("credit-card bill lifecycle", () => {
     );
     expect(upload.result.status).toBe("pending");
 
+    await expect(
+      reconciliation.parseStatement(upload.result.id, bill.id, OTHER_USER_ID, MAPPING, csv)
+    ).rejects.toThrow(EntityNotFoundError);
+
     await reconciliation.parseStatement(upload.result.id, bill.id, USER_ID, MAPPING, csv);
     const rows = await reconciliation.listRows(USER_ID, bill.id, { limit: 50 });
     expect(rows.items).toHaveLength(2);
     expect(rows.items.every((row) => row.matchStatus === "matched")).toBe(true);
+    expect(rows.items.every((row) => row.matchSuggestion?.method === "global_assignment_v1")).toBe(
+      true
+    );
+    expect(rows.items.every((row) => row.matchSuggestion?.inputWatermark.length === 64)).toBe(true);
+    expect(rows.items.every((row) => row.matchSuggestion?.evidence.assignedCost !== null)).toBe(
+      true
+    );
 
     const reconciled = await reconciliation.reconcile(
       USER_ID,

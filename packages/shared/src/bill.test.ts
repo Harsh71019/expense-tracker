@@ -4,6 +4,7 @@ import {
   ListBillsQuerySchema,
   ListBillStatementRowsQuerySchema,
   PayCreditCardBillSchema,
+  StatementAssignmentSuggestionSchema,
   UpdateBillStatementRowSchema
 } from "./bill.js";
 
@@ -55,5 +56,41 @@ describe("PayCreditCardBillSchema", () => {
     expect(PayCreditCardBillSchema.safeParse({ ...base, amountMinor: 1 }).success).toBe(true);
     expect(PayCreditCardBillSchema.safeParse({ ...base, amountMinor: 1.5 }).success).toBe(false);
     expect(PayCreditCardBillSchema.safeParse({ ...base, amountMinor: 0 }).success).toBe(false);
+  });
+});
+
+describe("StatementAssignmentSuggestionSchema", () => {
+  it("requires versioned, opaque, integer reconciliation evidence", () => {
+    const input = {
+      confidenceBps: 9_000,
+      method: "global_assignment_v1",
+      evidence: {
+        candidateCount: 1,
+        selectedTransactionId: "3fa85f64-5717-4562-b3fc-2c963f66beef",
+        dateDistanceDays: 0,
+        descriptionSimilarityBps: 10_000,
+        dateCost: 0,
+        textCost: 0,
+        sourcePenalty: 0,
+        assignedCost: 0,
+        unmatchedCost: 15_000,
+        alternativeCost: 15_000,
+        assignmentMarginCost: 15_000
+      },
+      sufficiency: { status: "sufficient", candidateCount: 1 },
+      algorithmVersion: 1,
+      inputWatermark: "a".repeat(64)
+    };
+    expect(StatementAssignmentSuggestionSchema.safeParse(input).success).toBe(true);
+    expect(
+      StatementAssignmentSuggestionSchema.safeParse({
+        ...input,
+        evidence: { ...input.evidence, descriptionSimilarityBps: 10_001 }
+      }).success
+    ).toBe(false);
+    expect(
+      StatementAssignmentSuggestionSchema.safeParse({ ...input, inputWatermark: "not-a-hash" })
+        .success
+    ).toBe(false);
   });
 });

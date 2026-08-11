@@ -11,6 +11,8 @@ export type QueueMetricSnapshot = Readonly<{
 type TransactionOutcome = "committed" | "failed";
 export type CategorySuggestionMetricOutcome =
   "suggested" | "accepted_unchanged" | "corrected" | "dismissed";
+export type StatementAssignmentMetricOutcome =
+  "matched" | "ambiguous" | "missing_from_ledger" | "resource_limit";
 
 const BALANCE_DRIFT_METRIC_KEY = "treasury-ops:metrics:balance-verification";
 const BalanceVerificationMetricSchema = z.object({
@@ -38,6 +40,12 @@ export class MetricsService {
     corrected: 0,
     dismissed: 0
   };
+  private readonly statementAssignmentOutcomes: Record<StatementAssignmentMetricOutcome, number> = {
+    matched: 0,
+    ambiguous: 0,
+    missing_from_ledger: 0,
+    resource_limit: 0
+  };
 
   constructor(private readonly redis: RedisService) {}
 
@@ -63,6 +71,13 @@ export class MetricsService {
       throw new RangeError("Category suggestion metric count must be a non-negative integer.");
     }
     this.categorySuggestionOutcomes[outcome] += count;
+  }
+
+  recordStatementAssignments(outcome: StatementAssignmentMetricOutcome, count: number): void {
+    if (!Number.isSafeInteger(count) || count < 0) {
+      throw new RangeError("Statement assignment metric count must be a non-negative integer.");
+    }
+    this.statementAssignmentOutcomes[outcome] += count;
   }
 
   async recordBalanceVerification(
@@ -127,6 +142,12 @@ export class MetricsService {
       `treasuryops_category_suggestions_total{outcome="accepted_unchanged"} ${this.categorySuggestionOutcomes.accepted_unchanged}`,
       `treasuryops_category_suggestions_total{outcome="corrected"} ${this.categorySuggestionOutcomes.corrected}`,
       `treasuryops_category_suggestions_total{outcome="dismissed"} ${this.categorySuggestionOutcomes.dismissed}`,
+      "# HELP treasuryops_statement_assignments_total Narration-free statement assignment outcomes.",
+      "# TYPE treasuryops_statement_assignments_total counter",
+      `treasuryops_statement_assignments_total{outcome="matched"} ${this.statementAssignmentOutcomes.matched}`,
+      `treasuryops_statement_assignments_total{outcome="ambiguous"} ${this.statementAssignmentOutcomes.ambiguous}`,
+      `treasuryops_statement_assignments_total{outcome="missing_from_ledger"} ${this.statementAssignmentOutcomes.missing_from_ledger}`,
+      `treasuryops_statement_assignments_total{outcome="resource_limit"} ${this.statementAssignmentOutcomes.resource_limit}`,
       "# HELP treasuryops_queue_jobs Current BullMQ jobs by queue and state.",
       "# TYPE treasuryops_queue_jobs gauge"
     );

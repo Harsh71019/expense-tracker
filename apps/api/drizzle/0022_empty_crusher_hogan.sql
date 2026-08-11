@@ -1,0 +1,1 @@
+ALTER TABLE "bill_statement_rows" ADD COLUMN "match_suggestion" jsonb;

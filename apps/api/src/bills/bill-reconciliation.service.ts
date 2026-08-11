@@ -10,6 +10,7 @@ import {
   CreditCardBillSchema,
   MAX_IMPORT_FILE_SIZE_BYTES,
   MAX_IMPORT_ROWS,
+  addUtcCalendarDays,
   calendarDayDistance,
   type BillStatementRow,
   type BillStatementRowId,
@@ -21,6 +22,8 @@ import {
   type CreditCardBill,
   type CreditCardBillId,
   type ListBillStatementRowsQuery,
+  type ParsedRow,
+  type Transaction,
   type TransactionId,
   type UpdateBillStatementRow
 } from "@treasury-ops/shared";
@@ -41,15 +44,24 @@ import {
   IdempotencyPostgresService,
   type IdempotentResult
 } from "../common/idempotency/idempotency-postgres.service.js";
+import { MetricsService } from "../common/observability/metrics.service.js";
 import { TransactionRepository } from "../transactions/transaction.repository.js";
 import { BillStatementRepository } from "./bill-statement.repository.js";
 import type { NewBillStatementRow } from "./bill-statement.repository.js";
 import { BillStatementsQueue } from "./bill-statements.queue.js";
 import { CreditCardBillRepository } from "./credit-card-bill.repository.js";
-import { matchStatementRows } from "./statement-matcher.js";
+import {
+  STATEMENT_ASSIGNMENT_DATE_WINDOW_DAYS,
+  STATEMENT_ASSIGNMENT_MAX_ROWS,
+  matchStatementRows,
+  type StatementRowCandidate
+} from "./statement-matcher.js";
 
 const RawCsvRecordsSchema = z.array(z.record(z.string(), z.string()));
 const ROW_INSERT_CHUNK_SIZE = 200;
+const STATEMENT_ASSIGNMENT_MAX_CANDIDATES = 150;
+
+type ParsedStatementRowCandidate = StatementRowCandidate & Readonly<{ parsed: ParsedRow }>;
 
 @Injectable()
 export class BillReconciliationService {
@@ -60,7 +72,8 @@ export class BillReconciliationService {
     private readonly transactions: TransactionRepository,
     private readonly audit: AuditRepository,
     private readonly idempotency: IdempotencyPostgresService,
-    private readonly queue: BillStatementsQueue
+    private readonly queue: BillStatementsQueue,
+    private readonly metrics?: MetricsService
   ) {}
 
   async upload(
@@ -142,13 +155,25 @@ export class BillReconciliationService {
       const { parsed, problems } = parseCsvRow(raw, mapping);
       return { rowNumber, raw, ...(parsed === undefined ? {} : { parsed }), problems };
     });
-    const candidates = await this.transactions.findReconciliationCandidates(
+    const assignmentRows: StatementRowCandidate[] = parsedRows.map((row) => ({
+      rowNumber: row.rowNumber,
+      ...(row.parsed === undefined ? {} : { parsed: row.parsed })
+    }));
+    const candidateResult = await this.findAssignmentCandidates(
       userId,
       bill.accountId,
       bill.cycleStart,
-      dayAfter(bill.cycleEnd)
+      dayAfter(bill.cycleEnd),
+      assignmentRows
     );
-    const matches = matchStatementRows(parsedRows, candidates);
+    const inputWatermark = reconciliationInputWatermark(assignmentRows, candidateResult.items);
+    const matches = matchStatementRows(
+      assignmentRows,
+      candidateResult.items,
+      inputWatermark,
+      candidateResult.limitHit
+    );
+    this.recordAssignmentMetrics(matches, candidateResult.limitHit);
     const matchByRow = new Map(matches.map((match) => [match.rowNumber, match]));
     const staged: NewBillStatementRow[] = parsedRows.map((row) => {
       const match = matchByRow.get(row.rowNumber);
@@ -160,6 +185,7 @@ export class BillReconciliationService {
         ...(match.matchedTransactionId === undefined
           ? {}
           : { matchedTransactionId: match.matchedTransactionId }),
+        ...(match.matchSuggestion === undefined ? {} : { matchSuggestion: match.matchSuggestion }),
         matchStatus: match.matchStatus,
         problems: row.problems
       };
@@ -340,6 +366,64 @@ export class BillReconciliationService {
       throw new EntityNotFoundError("Matching cycle transaction");
     }
   }
+
+  private async findAssignmentCandidates(
+    userId: string,
+    accountId: string,
+    cycleStart: Date,
+    cycleEndExclusive: Date,
+    rows: readonly StatementRowCandidate[]
+  ): Promise<Readonly<{ items: readonly Transaction[]; limitHit: boolean }>> {
+    const parsedRows = rows.filter(
+      (row): row is ParsedStatementRowCandidate => row.parsed !== undefined
+    );
+    if (parsedRows.length === 0) return { items: [], limitHit: false };
+    if (parsedRows.length > STATEMENT_ASSIGNMENT_MAX_ROWS) return { items: [], limitHit: true };
+
+    const dates = parsedRows.map((row) => row.parsed.occurredAt.getTime());
+    const earliest = Math.min(...dates);
+    const latest = Math.max(...dates);
+    if (!Number.isFinite(earliest) || !Number.isFinite(latest)) {
+      return { items: [], limitHit: true };
+    }
+    const from = addUtcCalendarDays(new Date(earliest), -STATEMENT_ASSIGNMENT_DATE_WINDOW_DAYS - 1);
+    const toExclusive = addUtcCalendarDays(
+      new Date(latest),
+      STATEMENT_ASSIGNMENT_DATE_WINDOW_DAYS + 2
+    );
+    const boundedFrom = new Date(Math.max(from.getTime(), cycleStart.getTime()));
+    const boundedToExclusive = new Date(
+      Math.min(toExclusive.getTime(), cycleEndExclusive.getTime())
+    );
+    if (boundedFrom >= boundedToExclusive) return { items: [], limitHit: false };
+    return this.transactions.findBoundedReconciliationCandidates(userId, {
+      accountId,
+      from: boundedFrom,
+      toExclusive: boundedToExclusive,
+      types: [...new Set(parsedRows.map((row) => row.parsed.type))],
+      amountMinors: [...new Set(parsedRows.map((row) => row.parsed.amountMinor))],
+      limit: STATEMENT_ASSIGNMENT_MAX_CANDIDATES
+    });
+  }
+
+  private recordAssignmentMetrics(
+    matches: readonly ReturnType<typeof matchStatementRows>[number][],
+    resourceLimitHit: boolean
+  ): void {
+    this.metrics?.recordStatementAssignments(
+      "matched",
+      matches.filter((match) => match.matchStatus === "matched").length
+    );
+    this.metrics?.recordStatementAssignments(
+      "ambiguous",
+      matches.filter((match) => match.matchStatus === "ambiguous").length
+    );
+    this.metrics?.recordStatementAssignments(
+      "missing_from_ledger",
+      matches.filter((match) => match.matchStatus === "missing_from_ledger").length
+    );
+    if (resourceLimitHit) this.metrics?.recordStatementAssignments("resource_limit", 1);
+  }
 }
 
 function assertStatementEditable(bill: CreditCardBill): void {
@@ -376,4 +460,33 @@ function emptyStats(): BillStatementStats {
 
 function dayAfter(date: Date): Date {
   return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() + 1));
+}
+
+function reconciliationInputWatermark(
+  rows: readonly StatementRowCandidate[],
+  transactions: readonly Transaction[]
+): string {
+  const input = {
+    rows: rows.map((row) => ({
+      rowNumber: row.rowNumber,
+      parsed:
+        row.parsed === undefined
+          ? null
+          : {
+              occurredAt: row.parsed.occurredAt.toISOString(),
+              amountMinor: row.parsed.amountMinor,
+              type: row.parsed.type,
+              description: row.parsed.description
+            }
+    })),
+    transactions: transactions.map((transaction) => ({
+      id: transaction.id,
+      occurredAt: transaction.occurredAt.toISOString(),
+      amountMinor: transaction.amountMinor,
+      type: transaction.type,
+      description: transaction.description,
+      updatedAt: transaction.updatedAt.toISOString()
+    }))
+  };
+  return createHash("sha256").update(JSON.stringify(input)).digest("hex");
 }

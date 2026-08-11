@@ -645,6 +645,28 @@ Next.js uses the Better Auth **client SDK** for login/register/passkey UI and ju
 
 ---
 
+## Statement reconciliation assignment (review-only)
+
+Credit-card statement parsing runs in the existing BullMQ worker. For each upload, reconciliation first
+blocks candidates by `userId`, card account, posted/unclaimed status, transaction type, exact integer
+amount, and a one-IST-calendar-day window. The ledger read is bounded to 50 parsed rows and 150
+candidate transactions; exceeding either bound returns reviewable abstentions rather than increasing
+worker cost.
+
+Eligible rows and transactions are solved together with a deterministic rectangular Hungarian assignment.
+Each row has its own dummy-unmatched column, so a match is selected only when it improves on leaving the
+row unmatched and remains stable after removing that assignment. Date distance and private normalized-token
+similarity are integer cost components; text can rank compatible candidates but can never create a candidate.
+
+`bill_statement_rows.match_suggestion` stores the derived `confidenceBps`, method, integer cost evidence,
+sufficiency, algorithm version, and SHA-256 input watermark. It stores no raw narration. Suggestions only
+pre-fill the existing review state: parsing neither creates, changes, reverses, nor deletes ledger entries.
+Aggregate metrics expose only matched, ambiguous, missing, and resource-limit counts; no narration,
+transaction ID, account, or user identifier is a metric label. Rollback disables this derived
+reader/algorithm version; it never removes ledger or audit records.
+
+---
+
 ## 6. Cron Jobs & Background Work (the Proxmox dividend)
 
 Scheduling via `@nestjs/schedule` for triggers, but **every job body runs through BullMQ** so jobs are retryable, observable (Bull Board dashboard), and survive process restarts. All schedules in `Asia/Kolkata`.

@@ -4375,6 +4375,139 @@
                   "type": "string",
                   "enum": ["matched", "missing_from_ledger", "ambiguous"]
                 },
+                "matchSuggestion": {
+                  "type": "object",
+                  "properties": {
+                    "confidenceBps": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 10000
+                    },
+                    "method": {
+                      "type": "string",
+                      "enum": ["global_assignment_v1"]
+                    },
+                    "evidence": {
+                      "type": "object",
+                      "properties": {
+                        "candidateCount": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "selectedTransactionId": {
+                          "type": ["string", "null"],
+                          "format": "uuid"
+                        },
+                        "dateDistanceDays": {
+                          "type": ["integer", "null"],
+                          "minimum": 0
+                        },
+                        "descriptionSimilarityBps": {
+                          "type": ["integer", "null"],
+                          "minimum": 0,
+                          "maximum": 10000
+                        },
+                        "dateCost": {
+                          "type": ["integer", "null"],
+                          "minimum": 0
+                        },
+                        "textCost": {
+                          "type": ["integer", "null"],
+                          "minimum": 0
+                        },
+                        "sourcePenalty": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "assignedCost": {
+                          "type": ["integer", "null"],
+                          "minimum": 0
+                        },
+                        "unmatchedCost": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0
+                        },
+                        "alternativeCost": {
+                          "type": ["integer", "null"],
+                          "minimum": 0
+                        },
+                        "assignmentMarginCost": {
+                          "type": ["integer", "null"],
+                          "minimum": 0
+                        }
+                      },
+                      "required": [
+                        "candidateCount",
+                        "selectedTransactionId",
+                        "dateDistanceDays",
+                        "descriptionSimilarityBps",
+                        "dateCost",
+                        "textCost",
+                        "sourcePenalty",
+                        "assignedCost",
+                        "unmatchedCost",
+                        "alternativeCost",
+                        "assignmentMarginCost"
+                      ]
+                    },
+                    "sufficiency": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "status": {
+                              "type": "string",
+                              "enum": ["sufficient"]
+                            },
+                            "candidateCount": {
+                              "type": "integer",
+                              "exclusiveMinimum": 0
+                            }
+                          },
+                          "required": ["status", "candidateCount"]
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "status": {
+                              "type": "string",
+                              "enum": ["insufficient"]
+                            },
+                            "reason": {
+                              "type": "string",
+                              "enum": [
+                                "no_eligible_candidate",
+                                "ambiguous_assignment",
+                                "resource_limit"
+                              ]
+                            },
+                            "candidateCount": {
+                              "type": "integer",
+                              "minimum": 0
+                            }
+                          },
+                          "required": ["status", "reason", "candidateCount"]
+                        }
+                      ]
+                    },
+                    "algorithmVersion": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0
+                    },
+                    "inputWatermark": {
+                      "type": "string",
+                      "pattern": "^[a-f0-9]{64}$"
+                    }
+                  },
+                  "required": [
+                    "confidenceBps",
+                    "method",
+                    "evidence",
+                    "sufficiency",
+                    "algorithmVersion",
+                    "inputWatermark"
+                  ]
+                },
                 "acknowledged": {
                   "type": "boolean"
                 },
@@ -4479,6 +4612,135 @@
           "matchStatus": {
             "type": "string",
             "enum": ["matched", "missing_from_ledger", "ambiguous"]
+          },
+          "matchSuggestion": {
+            "type": "object",
+            "properties": {
+              "confidenceBps": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 10000
+              },
+              "method": {
+                "type": "string",
+                "enum": ["global_assignment_v1"]
+              },
+              "evidence": {
+                "type": "object",
+                "properties": {
+                  "candidateCount": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "selectedTransactionId": {
+                    "type": ["string", "null"],
+                    "format": "uuid"
+                  },
+                  "dateDistanceDays": {
+                    "type": ["integer", "null"],
+                    "minimum": 0
+                  },
+                  "descriptionSimilarityBps": {
+                    "type": ["integer", "null"],
+                    "minimum": 0,
+                    "maximum": 10000
+                  },
+                  "dateCost": {
+                    "type": ["integer", "null"],
+                    "minimum": 0
+                  },
+                  "textCost": {
+                    "type": ["integer", "null"],
+                    "minimum": 0
+                  },
+                  "sourcePenalty": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "assignedCost": {
+                    "type": ["integer", "null"],
+                    "minimum": 0
+                  },
+                  "unmatchedCost": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0
+                  },
+                  "alternativeCost": {
+                    "type": ["integer", "null"],
+                    "minimum": 0
+                  },
+                  "assignmentMarginCost": {
+                    "type": ["integer", "null"],
+                    "minimum": 0
+                  }
+                },
+                "required": [
+                  "candidateCount",
+                  "selectedTransactionId",
+                  "dateDistanceDays",
+                  "descriptionSimilarityBps",
+                  "dateCost",
+                  "textCost",
+                  "sourcePenalty",
+                  "assignedCost",
+                  "unmatchedCost",
+                  "alternativeCost",
+                  "assignmentMarginCost"
+                ]
+              },
+              "sufficiency": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string",
+                        "enum": ["sufficient"]
+                      },
+                      "candidateCount": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0
+                      }
+                    },
+                    "required": ["status", "candidateCount"]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string",
+                        "enum": ["insufficient"]
+                      },
+                      "reason": {
+                        "type": "string",
+                        "enum": ["no_eligible_candidate", "ambiguous_assignment", "resource_limit"]
+                      },
+                      "candidateCount": {
+                        "type": "integer",
+                        "minimum": 0
+                      }
+                    },
+                    "required": ["status", "reason", "candidateCount"]
+                  }
+                ]
+              },
+              "algorithmVersion": {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              },
+              "inputWatermark": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              }
+            },
+            "required": [
+              "confidenceBps",
+              "method",
+              "evidence",
+              "sufficiency",
+              "algorithmVersion",
+              "inputWatermark"
+            ]
           },
           "acknowledged": {
             "type": "boolean"

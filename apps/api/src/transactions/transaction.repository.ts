@@ -242,23 +242,103 @@ export class TransactionRepository {
   }
 
   /**
-   * Bulk existence check for the CSV import dedupe pass — one query for the
-   * whole file's dedupeHashes rather than one round-trip per row.
+   * Type-aware legacy v1 lookup: dedupe v1 (`dedupe-hash.ts`) hashed
+   * userId|accountId|day|amountMinor|normalizedDescription without the
+   * transaction type, so a same-day/same-amount expense and its reversal can
+   * legitimately share one stored v1 hash. Returning `{hash, type}` pairs
+   * (rather than a bare Set<string>) lets the caller only treat a v1 match as
+   * a real duplicate when the incoming row's type also matches — v2 rows
+   * never populate this column, so this only ever matches pre-migration data.
    */
   async findExistingDedupeHashes(
     userId: string,
     dedupeHashes: readonly string[]
-  ): Promise<Set<string>> {
-    if (dedupeHashes.length === 0) return new Set();
+  ): Promise<Map<string, TransactionType>> {
+    if (dedupeHashes.length === 0) return new Map();
     const rows = await this.db
-      .select({ dedupeHash: transactions.dedupeHash })
+      .select({ dedupeHash: transactions.dedupeHash, type: transactions.type })
       .from(transactions)
       .where(
         and(eq(transactions.userId, userId), inArray(transactions.dedupeHash, [...dedupeHashes]))
       );
+    const byHash = new Map<string, TransactionType>();
+    for (const row of rows) {
+      if (row.dedupeHash !== null) byHash.set(row.dedupeHash, row.type);
+    }
+    return byHash;
+  }
+
+  /**
+   * Bulk existence check for the v2 fingerprint (type-aware) — one query for
+   * the whole file's fingerprints rather than one round-trip per row.
+   */
+  async findExistingDedupeFingerprintsV2(
+    userId: string,
+    dedupeFingerprintsV2: readonly string[]
+  ): Promise<Set<string>> {
+    if (dedupeFingerprintsV2.length === 0) return new Set();
+    const rows = await this.db
+      .select({ dedupeFingerprintV2: transactions.dedupeFingerprintV2 })
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.userId, userId),
+          inArray(transactions.dedupeFingerprintV2, [...dedupeFingerprintsV2])
+        )
+      );
     return new Set(
-      rows.map((row) => row.dedupeHash).filter((hash): hash is string => hash !== null)
+      rows
+        .map((row) => row.dedupeFingerprintV2)
+        .filter((fingerprint): fingerprint is string => fingerprint !== null)
     );
+  }
+
+  /**
+   * One bounded, tenant-scoped candidate window for near-duplicate review
+   * evidence: every posted transaction on this account within a narrow
+   * calendar window, regardless of type/amount — the caller groups and
+   * filters in memory by (type, amountMinor, day) per staged row so a whole
+   * import batch costs one query, not one per row. Bounded by `limit` per
+   * the algorithm's declared resource contract.
+   */
+  async findNearDuplicateCandidateWindow(
+    userId: string,
+    accountId: string,
+    windowStart: Date,
+    windowEndExclusive: Date,
+    limit: number
+  ): Promise<
+    Array<{
+      transactionId: string;
+      type: TransactionType;
+      amountMinor: number;
+      description: string;
+      source: TransactionSource;
+      occurredAt: Date;
+    }>
+  > {
+    const rows = await this.db
+      .select({
+        transactionId: transactions.id,
+        type: transactions.type,
+        amountMinor: transactions.amountMinor,
+        description: transactions.description,
+        source: transactions.source,
+        occurredAt: transactions.occurredAt
+      })
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.userId, userId),
+          eq(transactions.accountId, accountId),
+          eq(transactions.status, "posted"),
+          gte(transactions.occurredAt, windowStart),
+          lt(transactions.occurredAt, windowEndExclusive)
+        )
+      )
+      .orderBy(transactions.occurredAt, transactions.id)
+      .limit(limit);
+    return rows;
   }
 
   async summarizeBillableCycle(
@@ -509,11 +589,18 @@ export class TransactionRepository {
     return toTransaction(row);
   }
 
+  /**
+   * Persists `dedupeFingerprintV2` (type-aware) only — new rows deliberately
+   * leave the legacy `dedupeHash` column null rather than repopulating it, so
+   * the type-blind v1 unique index can never collide across two genuinely
+   * different, differently-typed transactions going forward. Old rows keep
+   * whatever v1 hash they already have; see `findExistingDedupeHashes`.
+   */
   async insertImportedRows(
     userId: string,
     accountId: string,
     importBatchId: ImportBatchId,
-    rows: readonly (ParsedRow & { dedupeHash: string; categoryId?: string })[],
+    rows: readonly (ParsedRow & { dedupeFingerprintV2: string; categoryId?: string })[],
     tx: DbTx
   ): Promise<void> {
     if (rows.length === 0) return;
@@ -532,7 +619,7 @@ export class TransactionRepository {
         source: "csv_import" as const,
         status: "posted" as const,
         importBatchId,
-        dedupeHash: row.dedupeHash,
+        dedupeFingerprintV2: row.dedupeFingerprintV2,
         createdAt: now,
         updatedAt: now
       }))

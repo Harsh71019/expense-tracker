@@ -59,15 +59,49 @@ describe("TransactionRepository Unit Tests", () => {
     expect(res.pageInfo.hasMore).toBe(false);
   });
 
-  it("findExistingDedupeHashes returns matching dedupe hashes", async () => {
-    const mockDb = createMockDrizzleDb([{ dedupeHash: "hash123" }]);
+  it("findExistingDedupeHashes returns matching dedupe hashes mapped to their transaction type", async () => {
+    const mockDb = createMockDrizzleDb([{ dedupeHash: "hash123", type: "expense" }]);
     const repo = new TransactionRepository(mockDb);
 
     const res = await repo.findExistingDedupeHashes("u1", ["hash123", "hash456"]);
-    expect(res.has("hash123")).toBe(true);
+    expect(res.get("hash123")).toBe("expense");
 
     const emptyRes = await repo.findExistingDedupeHashes("u1", []);
     expect(emptyRes.size).toBe(0);
+  });
+
+  it("findExistingDedupeFingerprintsV2 returns matching v2 fingerprints", async () => {
+    const mockDb = createMockDrizzleDb([{ dedupeFingerprintV2: "fp123" }]);
+    const repo = new TransactionRepository(mockDb);
+
+    const res = await repo.findExistingDedupeFingerprintsV2("u1", ["fp123", "fp456"]);
+    expect(res.has("fp123")).toBe(true);
+
+    const emptyRes = await repo.findExistingDedupeFingerprintsV2("u1", []);
+    expect(emptyRes.size).toBe(0);
+  });
+
+  it("findNearDuplicateCandidateWindow returns candidates in the given window", async () => {
+    const mockDb = createMockDrizzleDb([
+      {
+        transactionId: "123e4567-e89b-12d3-a456-426614174000",
+        type: "expense",
+        amountMinor: 2_000,
+        description: "Chai",
+        source: "manual",
+        occurredAt: new Date("2026-01-01")
+      }
+    ]);
+    const repo = new TransactionRepository(mockDb);
+
+    const res = await repo.findNearDuplicateCandidateWindow(
+      "u1",
+      "acc1",
+      new Date("2026-01-01"),
+      new Date("2026-01-02"),
+      20
+    );
+    expect(res).toHaveLength(1);
   });
 
   it("findByIdempotencyKey returns matching transaction or null", async () => {
@@ -163,7 +197,7 @@ describe("TransactionRepository Unit Tests", () => {
           type: "expense",
           amountMinor: 5000,
           description: "Test",
-          dedupeHash: "hash123"
+          dedupeFingerprintV2: "fingerprint123"
         }
       ],
       // @ts-expect-error mock tx

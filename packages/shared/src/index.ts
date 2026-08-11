@@ -222,6 +222,18 @@ export type { CategoryRule, CategoryRuleId, CreateCategoryRule } from "./categor
 export { CategorySuggestionMethodSchema, CategorySuggestionSchema } from "./category-suggestion.js";
 export type { CategorySuggestion, CategorySuggestionMethod } from "./category-suggestion.js";
 export {
+  NearDuplicateAbstentionReasonSchema,
+  NearDuplicateEvidenceSchema,
+  NearDuplicateMethodSchema,
+  NearDuplicateResultSchema
+} from "./near-duplicate.js";
+export type {
+  NearDuplicateAbstentionReason,
+  NearDuplicateEvidence,
+  NearDuplicateMethod,
+  NearDuplicateResult
+} from "./near-duplicate.js";
+export {
   CashflowBucketSchema,
   CashflowQuerySchema,
   CashflowResponseSchema,

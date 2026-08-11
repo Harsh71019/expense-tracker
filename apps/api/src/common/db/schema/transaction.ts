@@ -45,6 +45,7 @@ export const transactions = pgTable(
     billId: uuid("bill_id").references(() => creditCardBills.id),
     recurringRuleId: uuid("recurring_rule_id").references(() => recurringRules.id),
     dedupeHash: text("dedupe_hash"),
+    dedupeFingerprintV2: text("dedupe_fingerprint_v2"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull()
   },
@@ -72,6 +73,9 @@ export const transactions = pgTable(
     uniqueIndex("transactions_user_id_dedupe_hash_unique")
       .on(table.userId, table.dedupeHash)
       .where(sql`${table.dedupeHash} IS NOT NULL`),
+    uniqueIndex("transactions_user_id_dedupe_fingerprint_v2_unique")
+      .on(table.userId, table.dedupeFingerprintV2)
+      .where(sql`${table.dedupeFingerprintV2} IS NOT NULL`),
     index("transactions_import_batch_id")
       .on(table.importBatchId)
       .where(sql`${table.importBatchId} IS NOT NULL`),

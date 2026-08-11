@@ -42,7 +42,7 @@ function includableRow(overrides: Partial<NewStagedRow> = {}): NewStagedRow {
       type: "expense",
       description: "Chai"
     },
-    dedupeHash: `hash-${Math.random().toString(36).slice(2)}`,
+    dedupeFingerprintV2: `fingerprint-${Math.random().toString(36).slice(2)}`,
     problems: [],
     isDuplicate: false,
     include: true,
@@ -195,7 +195,7 @@ describe("ImportsService commit/revert", () => {
             amountMinor: 2_000,
             type: "expense",
             description: "Chai",
-            dedupeHash: nonNull(nonNull(firstRow).dedupeHash)
+            dedupeFingerprintV2: nonNull(nonNull(firstRow).dedupeFingerprintV2)
           }
         ],
         tx
@@ -208,9 +208,9 @@ describe("ImportsService commit/revert", () => {
     const posted = await transactions.findPostedByImportBatchId(userId, batchId);
     // Exactly 3 transactions total — the pre-landed one was not duplicated.
     expect(posted).toHaveLength(rows.length);
-    const dedupeHashes = new Set(rows.map((row) => row.dedupeHash));
+    const dedupeFingerprints = new Set(rows.map((row) => row.dedupeFingerprintV2));
     expect(new Set(posted.map((txn) => txn.description))).toEqual(new Set(["Chai"]));
-    expect(dedupeHashes.size).toBe(3);
+    expect(dedupeFingerprints.size).toBe(3);
   });
 
   it("rejects committing a batch that is not staged", async () => {

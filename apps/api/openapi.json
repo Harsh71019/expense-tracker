@@ -432,6 +432,9 @@
                 "dedupeHash": {
                   "type": "string"
                 },
+                "dedupeFingerprintV2": {
+                  "type": "string"
+                },
                 "suggestedCategoryId": {
                   "type": "string",
                   "format": "uuid"
@@ -473,6 +476,158 @@
                     "method",
                     "evidenceCount",
                     "algorithmVersion"
+                  ]
+                },
+                "nearDuplicateResult": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "outcome": {
+                          "type": "string",
+                          "enum": ["match"]
+                        },
+                        "evidence": {
+                          "type": "object",
+                          "properties": {
+                            "candidateTransactionId": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "method": {
+                              "type": "string",
+                              "enum": ["exact_reference", "counterparty_key", "token_jaccard"]
+                            },
+                            "confidenceBps": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 10000
+                            },
+                            "hasExactReferenceMatch": {
+                              "type": "boolean"
+                            },
+                            "hasCounterpartyKeyMatch": {
+                              "type": "boolean"
+                            },
+                            "tokenJaccardBps": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 10000
+                            },
+                            "calendarDayDistance": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 3660
+                            },
+                            "candidateSource": {
+                              "type": "string",
+                              "enum": ["manual", "csv_import", "recurring", "api"]
+                            },
+                            "algorithmVersion": {
+                              "type": "integer",
+                              "exclusiveMinimum": 0
+                            }
+                          },
+                          "required": [
+                            "candidateTransactionId",
+                            "method",
+                            "confidenceBps",
+                            "hasExactReferenceMatch",
+                            "hasCounterpartyKeyMatch",
+                            "tokenJaccardBps",
+                            "calendarDayDistance",
+                            "candidateSource",
+                            "algorithmVersion"
+                          ]
+                        }
+                      },
+                      "required": ["outcome", "evidence"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "outcome": {
+                          "type": "string",
+                          "enum": ["ambiguous"]
+                        },
+                        "candidateCount": {
+                          "type": "integer",
+                          "minimum": 2
+                        },
+                        "topEvidence": {
+                          "type": "object",
+                          "properties": {
+                            "candidateTransactionId": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "method": {
+                              "type": "string",
+                              "enum": ["exact_reference", "counterparty_key", "token_jaccard"]
+                            },
+                            "confidenceBps": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 10000
+                            },
+                            "hasExactReferenceMatch": {
+                              "type": "boolean"
+                            },
+                            "hasCounterpartyKeyMatch": {
+                              "type": "boolean"
+                            },
+                            "tokenJaccardBps": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 10000
+                            },
+                            "calendarDayDistance": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 3660
+                            },
+                            "candidateSource": {
+                              "type": "string",
+                              "enum": ["manual", "csv_import", "recurring", "api"]
+                            },
+                            "algorithmVersion": {
+                              "type": "integer",
+                              "exclusiveMinimum": 0
+                            }
+                          },
+                          "required": [
+                            "candidateTransactionId",
+                            "method",
+                            "confidenceBps",
+                            "hasExactReferenceMatch",
+                            "hasCounterpartyKeyMatch",
+                            "tokenJaccardBps",
+                            "calendarDayDistance",
+                            "candidateSource",
+                            "algorithmVersion"
+                          ]
+                        }
+                      },
+                      "required": ["outcome", "candidateCount", "topEvidence"]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "outcome": {
+                          "type": "string",
+                          "enum": ["abstained"]
+                        },
+                        "reason": {
+                          "type": "string",
+                          "enum": ["no_candidates", "insufficient_evidence"]
+                        },
+                        "algorithmVersion": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0
+                        }
+                      },
+                      "required": ["outcome", "reason", "algorithmVersion"]
+                    }
                   ]
                 },
                 "problems": {
@@ -563,6 +718,9 @@
           "dedupeHash": {
             "type": "string"
           },
+          "dedupeFingerprintV2": {
+            "type": "string"
+          },
           "suggestedCategoryId": {
             "type": "string",
             "format": "uuid"
@@ -604,6 +762,158 @@
               "method",
               "evidenceCount",
               "algorithmVersion"
+            ]
+          },
+          "nearDuplicateResult": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "outcome": {
+                    "type": "string",
+                    "enum": ["match"]
+                  },
+                  "evidence": {
+                    "type": "object",
+                    "properties": {
+                      "candidateTransactionId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "method": {
+                        "type": "string",
+                        "enum": ["exact_reference", "counterparty_key", "token_jaccard"]
+                      },
+                      "confidenceBps": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 10000
+                      },
+                      "hasExactReferenceMatch": {
+                        "type": "boolean"
+                      },
+                      "hasCounterpartyKeyMatch": {
+                        "type": "boolean"
+                      },
+                      "tokenJaccardBps": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 10000
+                      },
+                      "calendarDayDistance": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 3660
+                      },
+                      "candidateSource": {
+                        "type": "string",
+                        "enum": ["manual", "csv_import", "recurring", "api"]
+                      },
+                      "algorithmVersion": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0
+                      }
+                    },
+                    "required": [
+                      "candidateTransactionId",
+                      "method",
+                      "confidenceBps",
+                      "hasExactReferenceMatch",
+                      "hasCounterpartyKeyMatch",
+                      "tokenJaccardBps",
+                      "calendarDayDistance",
+                      "candidateSource",
+                      "algorithmVersion"
+                    ]
+                  }
+                },
+                "required": ["outcome", "evidence"]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "outcome": {
+                    "type": "string",
+                    "enum": ["ambiguous"]
+                  },
+                  "candidateCount": {
+                    "type": "integer",
+                    "minimum": 2
+                  },
+                  "topEvidence": {
+                    "type": "object",
+                    "properties": {
+                      "candidateTransactionId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "method": {
+                        "type": "string",
+                        "enum": ["exact_reference", "counterparty_key", "token_jaccard"]
+                      },
+                      "confidenceBps": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 10000
+                      },
+                      "hasExactReferenceMatch": {
+                        "type": "boolean"
+                      },
+                      "hasCounterpartyKeyMatch": {
+                        "type": "boolean"
+                      },
+                      "tokenJaccardBps": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 10000
+                      },
+                      "calendarDayDistance": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 3660
+                      },
+                      "candidateSource": {
+                        "type": "string",
+                        "enum": ["manual", "csv_import", "recurring", "api"]
+                      },
+                      "algorithmVersion": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0
+                      }
+                    },
+                    "required": [
+                      "candidateTransactionId",
+                      "method",
+                      "confidenceBps",
+                      "hasExactReferenceMatch",
+                      "hasCounterpartyKeyMatch",
+                      "tokenJaccardBps",
+                      "calendarDayDistance",
+                      "candidateSource",
+                      "algorithmVersion"
+                    ]
+                  }
+                },
+                "required": ["outcome", "candidateCount", "topEvidence"]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "outcome": {
+                    "type": "string",
+                    "enum": ["abstained"]
+                  },
+                  "reason": {
+                    "type": "string",
+                    "enum": ["no_candidates", "insufficient_evidence"]
+                  },
+                  "algorithmVersion": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0
+                  }
+                },
+                "required": ["outcome", "reason", "algorithmVersion"]
+              }
             ]
           },
           "problems": {

@@ -32,6 +32,7 @@ import { parseCsvRow } from "../common/csv/parse-csv-row.js";
 import { DATABASE_CONNECTION } from "../common/db/db.module.js";
 import type { DrizzleDb } from "../common/db/db.module.js";
 import { withTxn } from "../common/db/db-txn.js";
+import { isUniqueViolation } from "../common/db/postgres-error.js";
 import { CategoryKindMismatchError } from "../common/errors/category-kind-mismatch.error.js";
 import { EntityNotFoundError } from "../common/errors/entity-not-found.error.js";
 import { ImportAlreadyCommittedError } from "../common/errors/import-already-committed.error.js";
@@ -39,12 +40,23 @@ import { ImportBatchNotReadyError } from "../common/errors/import-batch-not-read
 import { InvalidImportFileError } from "../common/errors/invalid-import-file.error.js";
 import { LoggingContextService } from "../common/logging/logging-context.service.js";
 import { MetricsService } from "../common/observability/metrics.service.js";
+import { addDaysUtc, istCalendarDateStartUtc } from "../common/time/ist.js";
 import { TransactionRepository } from "../transactions/transaction.repository.js";
+import { computeDedupeFingerprintV2 } from "./dedupe-fingerprint-v2.js";
 import { computeDedupeHash } from "./dedupe-hash.js";
 import { ImportBatchRepository } from "./import-batch.repository.js";
 import type { ImportWorkflowJobData } from "./import-workflow.js";
+import {
+  calendarDayDistance,
+  evaluateNearDuplicates,
+  NEAR_DUPLICATE_DAY_WINDOW,
+  NEAR_DUPLICATE_RESOURCE_CONTRACT
+} from "./near-duplicate-scoring.js";
+import type { NearDuplicateCandidate } from "./near-duplicate-scoring.js";
 import { StagedRowRepository } from "./staged-row.repository.js";
 import type { NewStagedRow } from "./staged-row.repository.js";
+
+const COMMIT_CONFLICT_MAX_ATTEMPTS = 2;
 
 const STAGED_ROW_INSERT_CHUNK_SIZE = 200;
 const COMMIT_CHUNK_SIZE = 200;
@@ -53,6 +65,15 @@ const WORKFLOW_LEASE_MS = 5 * 60_000;
 const WORKFLOW_RETRY_DELAY_MS = 60_000;
 
 const RawCsvRecordsSchema = z.array(z.record(z.string(), z.string()));
+
+type ParsedImportRow = Readonly<{
+  rowNumber: number;
+  raw: Record<string, string>;
+  parsed?: ParsedRow | undefined;
+  problems: readonly string[];
+  dedupeHashV1?: string | undefined;
+  dedupeFingerprintV2?: string | undefined;
+}>;
 
 @Injectable()
 export class ImportsService {
@@ -215,25 +236,36 @@ export class ImportsService {
       const { parsed, problems: readonlyProblems } = parseCsvRow(raw, mapping);
       const problems = [...readonlyProblems];
       if (parsed === undefined) {
-        return { rowNumber, raw, problems, dedupeHash: undefined };
+        return { rowNumber, raw, parsed, problems };
       }
-      const dedupeHash = computeDedupeHash(
+      const dedupeHashV1 = computeDedupeHash(
         userId,
         accountId,
         parsed.occurredAt,
         parsed.amountMinor,
         parsed.description
       );
-      return { rowNumber, raw, parsed, problems, dedupeHash };
+      const dedupeFingerprintV2 = computeDedupeFingerprintV2(
+        userId,
+        accountId,
+        parsed.type,
+        parsed.occurredAt,
+        parsed.amountMinor,
+        parsed.description
+      );
+      return { rowNumber, raw, parsed, problems, dedupeHashV1, dedupeFingerprintV2 };
     });
 
-    const candidateHashes = rows
-      .map((row) => row.dedupeHash)
-      .filter((hash): hash is string => hash !== undefined);
-    const existingHashes = await this.transactions.findExistingDedupeHashes(
-      userId,
-      candidateHashes
+    const candidateFingerprintsV2 = rows.flatMap((row) =>
+      row.parsed === undefined ? [] : [row.dedupeFingerprintV2]
     );
+    const candidateHashesV1 = rows.flatMap((row) =>
+      row.parsed === undefined ? [] : [row.dedupeHashV1]
+    );
+    const [existingFingerprintsV2, existingLegacyHashes] = await Promise.all([
+      this.transactions.findExistingDedupeFingerprintsV2(userId, candidateFingerprintsV2),
+      this.transactions.findExistingDedupeHashes(userId, candidateHashesV1)
+    ]);
     const activeCategories = await this.categories.list(userId);
     const suggestions = await this.categorySuggestions.suggestMany(
       userId,
@@ -255,7 +287,7 @@ export class ImportsService {
     let duplicates = 0;
     let suggestionIndex = 0;
     const stagedRows: NewStagedRow[] = rows.map((row) => {
-      if (row.dedupeHash === undefined) {
+      if (row.parsed === undefined) {
         return {
           rowNumber: row.rowNumber,
           raw: row.raw,
@@ -265,8 +297,15 @@ export class ImportsService {
         };
       }
 
-      const isDuplicate = seenInFile.has(row.dedupeHash) || existingHashes.has(row.dedupeHash);
-      seenInFile.add(row.dedupeHash);
+      // Exact duplicate: type-aware v2 fingerprint first (against both this
+      // file and every prior v2-populated transaction), then a type-filtered
+      // fallback against legacy v1-only rows so pre-migration data is never
+      // silently reinterpreted or double-posted.
+      const isDuplicate =
+        seenInFile.has(row.dedupeFingerprintV2) ||
+        existingFingerprintsV2.has(row.dedupeFingerprintV2) ||
+        existingLegacyHashes.get(row.dedupeHashV1) === row.parsed.type;
+      seenInFile.add(row.dedupeFingerprintV2);
       if (isDuplicate) duplicates += 1;
       const categorySuggestion = suggestions[suggestionIndex];
       suggestionIndex += 1;
@@ -275,7 +314,7 @@ export class ImportsService {
         rowNumber: row.rowNumber,
         raw: row.raw,
         parsed: row.parsed,
-        dedupeHash: row.dedupeHash,
+        dedupeFingerprintV2: row.dedupeFingerprintV2,
         ...(categorySuggestion === undefined
           ? {}
           : {
@@ -287,6 +326,8 @@ export class ImportsService {
         include: !isDuplicate
       };
     });
+
+    await this.attachNearDuplicateEvidence(userId, accountId, rows, stagedRows);
 
     for (let start = 0; start < stagedRows.length; start += STAGED_ROW_INSERT_CHUNK_SIZE) {
       await assertWorkflowLease(heartbeat);
@@ -310,6 +351,74 @@ export class ImportsService {
       await this.batches.completeWorkflow(userId, batchId, "parse", claimToken, "staged", stats);
     }
     this.metrics.recordCategorySuggestions("suggested", suggestions.filter(Boolean).length);
+  }
+
+  /**
+   * Strict blocking before approximate comparison: one bounded, tenant-scoped
+   * window query covers the whole file (not one query per row), then each
+   * non-exact-duplicate row is scored only against candidates that also
+   * share its exact type + amount and fall within the narrow calendar-day
+   * window. This is advisory review evidence only — it never flips
+   * `include`/`isDuplicate`, never mutates a ledger entry, and abstains
+   * (leaves `nearDuplicateResult` unset) rather than guessing.
+   */
+  private async attachNearDuplicateEvidence(
+    userId: string,
+    accountId: string,
+    rows: readonly ParsedImportRow[],
+    stagedRows: NewStagedRow[]
+  ): Promise<void> {
+    const scorable = rows.flatMap((row, index) => {
+      const stagedRow = stagedRows[index];
+      if (row.parsed === undefined || stagedRow === undefined || stagedRow.isDuplicate) return [];
+      return [
+        {
+          index,
+          type: row.parsed.type,
+          amountMinor: row.parsed.amountMinor,
+          occurredAt: row.parsed.occurredAt,
+          description: row.parsed.description
+        }
+      ];
+    });
+    if (scorable.length === 0) return;
+
+    const { start, end } = candidateWindowBounds(scorable.map((row) => row.occurredAt));
+    const candidates = await this.transactions.findNearDuplicateCandidateWindow(
+      userId,
+      accountId,
+      start,
+      end,
+      NEAR_DUPLICATE_RESOURCE_CONTRACT.maxRows
+    );
+
+    const byTypeAndAmount = new Map<string, NearDuplicateCandidate[]>();
+    for (const candidate of candidates) {
+      const key = `${candidate.type}|${candidate.amountMinor}`;
+      const bucket = byTypeAndAmount.get(key) ?? [];
+      bucket.push({
+        transactionId: candidate.transactionId,
+        description: candidate.description,
+        source: candidate.source,
+        occurredAt: candidate.occurredAt
+      });
+      byTypeAndAmount.set(key, bucket);
+    }
+
+    for (const row of scorable) {
+      const bucket = byTypeAndAmount.get(`${row.type}|${row.amountMinor}`) ?? [];
+      const blocked = bucket.filter(
+        (candidate) =>
+          calendarDayDistance(row.occurredAt, candidate.occurredAt) <= NEAR_DUPLICATE_DAY_WINDOW
+      );
+      const result = evaluateNearDuplicates(
+        { description: row.description, occurredAt: row.occurredAt },
+        blocked
+      );
+      if (result.outcome === "abstained") continue;
+      const stagedRow = stagedRows[row.index];
+      if (stagedRow !== undefined) stagedRow.nearDuplicateResult = result;
+    }
   }
 
   list(userId: string): Promise<ImportBatch[]> {
@@ -418,13 +527,21 @@ export class ImportsService {
   /**
    * Chunks of 200 rows, each chunk = one Postgres transaction (insert +
    * balance update + stats + audit), per BACKEND.md §4. Resumable: rows
-   * whose dedupeHash already landed (from a previous, interrupted run) are
-   * pre-filtered out via the same bulk findExistingDedupeHashes query the
-   * parse job uses, so re-invoking a partially-committed batch only
-   * processes what's left — never double-posts. The batch stays "staged"
-   * for the whole run and only flips to "committed" once every includable
-   * row has landed; a crash mid-run leaves it "staged" with partial
-   * transactions, exactly as designed.
+   * whose v2 fingerprint already landed (from a previous, interrupted run)
+   * are pre-filtered out via the same bulk findExistingDedupeFingerprintsV2
+   * query the parse job uses, so re-invoking a partially-committed batch
+   * only processes what's left — never double-posts. The batch stays
+   * "staged" for the whole run and only flips to "committed" once every
+   * includable row has landed; a crash mid-run leaves it "staged" with
+   * partial transactions, exactly as designed.
+   *
+   * The pre-filter is a check-then-insert race window, not a guarantee: two
+   * raw concurrent commitBatch calls for the same batch can both pass it.
+   * The per-chunk insert is additionally guarded by the
+   * `transactions_user_id_dedupe_fingerprint_v2_unique` index — on conflict,
+   * the chunk is re-filtered against what actually landed and retried once,
+   * so identical parallel commit attempts still produce exactly one ledger
+   * effect (see the "idempotent under concurrent commit" integration test).
    */
   async commitBatch(
     userId: string,
@@ -442,12 +559,15 @@ export class ImportsService {
 
     await assertWorkflowLease(heartbeat);
     const includable = await this.stagedRows.findIncludableForBatch(userId, batchId);
-    const candidateHashes = includable
-      .map((row) => row.dedupeHash)
-      .filter((hash): hash is string => hash !== undefined);
-    const alreadyLanded = await this.transactions.findExistingDedupeHashes(userId, candidateHashes);
+    const candidateFingerprints = includable
+      .map((row) => row.dedupeFingerprintV2)
+      .filter((fingerprint): fingerprint is string => fingerprint !== undefined);
+    const alreadyLanded = await this.transactions.findExistingDedupeFingerprintsV2(
+      userId,
+      candidateFingerprints
+    );
     const remaining = includable.filter(
-      (row) => row.dedupeHash !== undefined && !alreadyLanded.has(row.dedupeHash)
+      (row) => row.dedupeFingerprintV2 !== undefined && !alreadyLanded.has(row.dedupeFingerprintV2)
     );
     const activeCategories = await this.categories.list(userId);
     const categoryKinds = new Map(
@@ -456,31 +576,51 @@ export class ImportsService {
 
     for (let start = 0; start < remaining.length; start += COMMIT_CHUNK_SIZE) {
       await assertWorkflowLease(heartbeat);
-      const chunk = remaining.slice(start, start + COMMIT_CHUNK_SIZE);
-      const rows = chunk.map((row) => toCommitRow(row));
-      for (const row of rows) {
-        if (row.categoryId !== undefined) {
-          assertCategoryKind(categoryKinds, row.categoryId, row.type);
-        }
-      }
-      const netMinor = rows.reduce(
-        (sum, row) => sum + (row.type === "income" ? row.amountMinor : -row.amountMinor),
-        0
-      );
+      let chunk = remaining.slice(start, start + COMMIT_CHUNK_SIZE);
 
-      await withTxn(this.db, async (tx) => {
-        await this.transactions.insertImportedRows(userId, batch.accountId, batchId, rows, tx);
-        if (netMinor !== 0) {
-          assertBalanceDeltaApplied(
-            await this.accounts.applyBalanceDelta(userId, batch.accountId, netMinor, tx)
+      for (let attempt = 1; chunk.length > 0; attempt += 1) {
+        const rows = chunk.map((row) => toCommitRow(row));
+        for (const row of rows) {
+          if (row.categoryId !== undefined) {
+            assertCategoryKind(categoryKinds, row.categoryId, row.type);
+          }
+        }
+        const netMinor = rows.reduce(
+          (sum, row) => sum + (row.type === "income" ? row.amountMinor : -row.amountMinor),
+          0
+        );
+
+        try {
+          await withTxn(this.db, async (tx) => {
+            await this.transactions.insertImportedRows(userId, batch.accountId, batchId, rows, tx);
+            if (netMinor !== 0) {
+              assertBalanceDeltaApplied(
+                await this.accounts.applyBalanceDelta(userId, batch.accountId, netMinor, tx)
+              );
+            }
+            await this.audit.record(userId, "import.commit", batchId, tx, {
+              chunkSize: chunk.length,
+              netMinor
+            });
+            await this.batches.incrementCommittedCount(userId, batchId, chunk.length, tx);
+          });
+          break;
+        } catch (error) {
+          if (!isUniqueViolation(error) || attempt >= COMMIT_CONFLICT_MAX_ATTEMPTS) throw error;
+          // A concurrent commit attempt won the race on one or more rows in
+          // this chunk. Re-check what actually landed and retry only the
+          // genuinely-new remainder — never re-post what's already there.
+          const fingerprints = rows.map((row) => row.dedupeFingerprintV2);
+          const landedNow = await this.transactions.findExistingDedupeFingerprintsV2(
+            userId,
+            fingerprints
+          );
+          chunk = chunk.filter(
+            (row) =>
+              row.dedupeFingerprintV2 !== undefined && !landedNow.has(row.dedupeFingerprintV2)
           );
         }
-        await this.audit.record(userId, "import.commit", batchId, tx, {
-          chunkSize: chunk.length,
-          netMinor
-        });
-        await this.batches.incrementCommittedCount(userId, batchId, chunk.length, tx);
-      });
+      }
     }
 
     if (claimToken === undefined) {
@@ -597,18 +737,42 @@ export class ImportsService {
   }
 }
 
-function toCommitRow(row: StagedRow): ParsedRow & { dedupeHash: string; categoryId?: string } {
-  if (row.parsed === undefined || row.dedupeHash === undefined) {
+function toCommitRow(
+  row: StagedRow
+): ParsedRow & { dedupeFingerprintV2: string; categoryId?: string } {
+  if (row.parsed === undefined || row.dedupeFingerprintV2 === undefined) {
     throw new Error(
-      `Staged row ${row.id} is marked includable but is missing its parsed data or dedupeHash — ` +
-        "this should be impossible by construction (parseFile only ever sets include: true " +
-        "alongside a successful parse)."
+      `Staged row ${row.id} is marked includable but is missing its parsed data or ` +
+        "dedupeFingerprintV2 — this should be impossible by construction (parseFile only ever " +
+        "sets include: true alongside a successful parse)."
     );
   }
   return {
     ...row.parsed,
-    dedupeHash: row.dedupeHash,
+    dedupeFingerprintV2: row.dedupeFingerprintV2,
     ...(row.suggestedCategoryId === undefined ? {} : { categoryId: row.suggestedCategoryId })
+  };
+}
+
+/**
+ * The bounded window for the whole file's near-duplicate candidate query:
+ * one calendar day of slack on either side of the earliest/latest row in
+ * this batch, covering the IST/UTC midnight boundary without scanning
+ * unbounded history.
+ */
+function candidateWindowBounds(
+  occurredAtValues: readonly Date[]
+): Readonly<{ start: Date; end: Date }> {
+  let earliestMs = Number.POSITIVE_INFINITY;
+  let latestMs = Number.NEGATIVE_INFINITY;
+  for (const date of occurredAtValues) {
+    const ms = date.getTime();
+    if (ms < earliestMs) earliestMs = ms;
+    if (ms > latestMs) latestMs = ms;
+  }
+  return {
+    start: addDaysUtc(istCalendarDateStartUtc(new Date(earliestMs)), -NEAR_DUPLICATE_DAY_WINDOW),
+    end: addDaysUtc(istCalendarDateStartUtc(new Date(latestMs)), NEAR_DUPLICATE_DAY_WINDOW + 1)
   };
 }
 

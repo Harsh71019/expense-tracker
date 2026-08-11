@@ -162,6 +162,13 @@
       "when": 1786468948566,
       "tag": "0022_empty_crusher_hogan",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1786472968203,
+      "tag": "0023_clumsy_switch",
+      "breakpoints": true
     }
   ]
 }

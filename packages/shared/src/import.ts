@@ -3,6 +3,7 @@ import { z } from "zod";
 import { AccountIdSchema } from "./account.js";
 import { CategoryIdSchema } from "./category.js";
 import { CategorySuggestionSchema } from "./category-suggestion.js";
+import { NearDuplicateResultSchema } from "./near-duplicate.js";
 import { PageInfoSchema } from "./pagination.js";
 import { TransactionTypeSchema } from "./transaction.js";
 
@@ -103,8 +104,10 @@ export const StagedRowSchema = z.object({
   raw: z.record(z.string(), z.string()),
   parsed: ParsedRowSchema.optional(),
   dedupeHash: z.string().optional(),
+  dedupeFingerprintV2: z.string().optional(),
   suggestedCategoryId: CategoryIdSchema.optional(),
   categorySuggestion: CategorySuggestionSchema.optional(),
+  nearDuplicateResult: NearDuplicateResultSchema.optional(),
   problems: z.array(z.string()),
   isDuplicate: z.boolean(),
   include: z.boolean()

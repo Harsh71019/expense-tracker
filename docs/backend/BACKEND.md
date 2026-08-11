@@ -131,7 +131,8 @@ spending-warning references; linked historical data is never cascaded.
 
   // ---- import lineage ----
   importBatchId?: ObjectId,
-  dedupeHash?: string,           // sha256(userId|accountId|date|amount|normalizedDesc)
+  dedupeHash?: string,             // v1, pre-migration only: sha256(userId|accountId|date|amount|normalizedDesc) — type-blind, no longer written by new imports
+  dedupeFingerprintV2?: string,    // v2: sha256(v2|normalizerVersion|userId|accountId|type|date|amount|normalizedTextV2) — type-aware
 
   // ---- idempotency ----
   idempotencyKey?: string,       // unique sparse index; client-supplied
@@ -161,7 +162,8 @@ legs of a transfer.
 { userId: 1, occurredAt: -1 }                          // main list view
 { userId: 1, accountId: 1, occurredAt: -1 }            // per-account view
 { userId: 1, categoryId: 1, occurredAt: -1 }           // per-category reports
-{ userId: 1, dedupeHash: 1 }  (unique, sparse)         // import dedupe
+{ userId: 1, dedupeHash: 1 }  (unique, sparse)         // import dedupe v1 (legacy, read-only)
+{ userId: 1, dedupeFingerprintV2: 1 }  (unique, sparse) // import dedupe v2 (type-aware, active)
 { idempotencyKey: 1 }         (unique, sparse)         // write idempotency
 { importBatchId: 1 }                                   // batch revert
 { transferGroupId: 1 }                                 // transfer pairing
@@ -532,8 +534,11 @@ POST /imports (multipart CSV + accountId)
    │  worker-only dispatcher claims with a lease and puts only a batch pointer in Redis
    ▼
 [BullMQ job: parse]                     ← csv-parse, never in the request cycle
-   │  per row: normalize date/amount → compute dedupeHash
-   │  dedupe against BOTH existing transactions and rows within the file
+   │  per row: normalize date/amount → compute dedupeFingerprintV2 (type-aware)
+   │           + legacy v1 hash for pre-migration compatibility
+   │  exact dedupe against BOTH existing transactions and rows within the file
+   │  near-duplicate review evidence (advisory, never excludes a row) for
+   │  same-type/amount rows within a narrow calendar-day window
    ▼
 staged_rows (+ batch.status = 'staged')
    │
@@ -546,11 +551,14 @@ POST /imports/:id/commit
    ▼
 [BullMQ job: commit]
    │  chunks of 200 rows, each chunk = one Postgres transaction:
-   │    insert transactions (source:'csv_import', importBatchId, dedupeHash)
+   │    insert transactions (source:'csv_import', importBatchId, dedupeFingerprintV2)
    │    update account balance by chunk net
    │  batch.status = 'committed' only after ALL chunks succeed;
    │  a mid-way crash leaves status 'staged' + partial rows, and commit is
-   │  RESUMABLE: re-running skips rows whose dedupeHash already landed.
+   │  RESUMABLE: re-running skips rows whose dedupeFingerprintV2 already landed.
+   │  A chunk that hits the fingerprint's unique-index conflict (a raw
+   │  concurrent commit, not just a retried worker) re-checks what actually
+   │  landed and retries only the genuine remainder — never double-posts.
    ▼
 POST /imports/:id/revert
    │  202 after the durable command transitions to revert_queued
@@ -591,7 +599,8 @@ requires both precision and coverage to improve before promotion.
 
 - **Column mapping is saved per account** (`import_batches.mapping`), so HDFC's `Txn Date / Narration / Withdrawal Amt / Deposit Amt` is a one-time setup. Support both single-signed-amount and separate debit/credit column conventions. Batch creation uses the database statement timestamp (not a JavaScript millisecond timestamp), so two rapid uploads still have a deterministic latest mapping.
 - **Date parsing:** enforce explicit `dateFormat` from the mapping (`DD/MM/YYYY` default) — never auto-guess, that's how 04/07 becomes April 7th.
-- **`dedupeHash` = sha256(userId|accountId|date(day)|amountMinor|normalizedDescription)**. Normalized = lowercased, whitespace-collapsed, UPI ref numbers stripped. Same-day identical transactions (two ₹20 chai UPIs) are flagged as _possible_ dupes in preview rather than silently dropped — user decides.
+- **`dedupeFingerprintV2` = sha256(fingerprintVersion|normalizerVersion|userId|accountId|type|date(day)|amountMinor|normalizedTextV2)**, using the shared, versioned narration normalizer (`common/transaction-text`). Type-aware, unlike v1: a same-day/same-amount/same-narration expense and its reversal no longer collide. New imports no longer populate the legacy `dedupeHash` column; existing pre-migration rows keep it, and a type-filtered fallback lookup against it preserves compatibility without ever reinterpreting a stored v1 hash.
+- **Near-duplicate review evidence**: for rows that are not exact duplicates, one bounded, tenant-scoped candidate query per file (not per row) blocks on same account/type/exact amount and a ±1 IST-day window, then scores token Jaccard similarity, exact extracted bank reference, and shared normalized counterparty key. The result is always an explicit `match` / `ambiguous` / `abstained` outcome with compact, narration-free evidence (method, confidence in basis points, algorithm version) — advisory only, it never excludes a row, and abstains rather than guessing when evidence is insufficient or ambiguous. Same-day identical transactions (two ₹20 chai UPIs) are still flagged as _possible_ dupes in preview rather than silently dropped — the user decides.
 - **n8n hook:** your existing HDFC/ICICI email-parser flow can `POST /transactions` directly (source: `'api'`, with idempotency key = bank ref number). CSV and email ingestion converge on the same dedupe logic, so overlap between the two is handled automatically.
 
 ---

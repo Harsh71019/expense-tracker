@@ -50,7 +50,7 @@ const ROW: StagedRow = {
     type: "expense",
     description: "Coffee"
   },
-  dedupeHash: "dedupe-1",
+  dedupeFingerprintV2: "dedupe-1",
   suggestedCategoryId: CATEGORY_ID,
   problems: [],
   isDuplicate: false,
@@ -232,11 +232,12 @@ describe("ImportsService create and parse", () => {
       insertMany: vi.fn().mockResolvedValue(undefined)
     };
     const transactions = {
-      findExistingDedupeHashes: vi
+      findExistingDedupeFingerprintsV2: vi
         .fn()
         .mockImplementation(
-          async (_userId: string, hashes: readonly string[]) => new Set([hashes[0]])
-        )
+          async (_userId: string, fingerprints: readonly string[]) => new Set([fingerprints[0]])
+        ),
+      findExistingDedupeHashes: vi.fn().mockResolvedValue(new Map())
     };
     const categorySuggestions = {
       suggestMany: vi
@@ -302,7 +303,11 @@ describe("ImportsService create and parse", () => {
       deleteAllForBatch: vi.fn().mockResolvedValue(undefined),
       insertMany: vi.fn().mockResolvedValue(undefined)
     };
-    const transactions = { findExistingDedupeHashes: vi.fn().mockResolvedValue(new Set()) };
+    const transactions = {
+      findExistingDedupeFingerprintsV2: vi.fn().mockResolvedValue(new Set()),
+      findExistingDedupeHashes: vi.fn().mockResolvedValue(new Map()),
+      findNearDuplicateCandidateWindow: vi.fn().mockResolvedValue([])
+    };
     const categorySuggestions = {
       suggestMany: vi
         .fn()
@@ -462,12 +467,12 @@ describe("ImportsService commit and revert", () => {
     const incomeRow = {
       ...ROW,
       id: "523e4567-e89b-42d3-a456-426614174000",
-      dedupeHash: "dedupe-2",
+      dedupeFingerprintV2: "dedupe-2",
       parsed: { ...ROW.parsed, type: "income" as const }
     };
     const stagedRows = { findIncludableForBatch: vi.fn().mockResolvedValue([ROW, incomeRow]) };
     const transactions = {
-      findExistingDedupeHashes: vi.fn().mockResolvedValue(new Set()),
+      findExistingDedupeFingerprintsV2: vi.fn().mockResolvedValue(new Set()),
       insertImportedRows: vi.fn().mockResolvedValue([])
     };
     const accounts = { applyBalanceDelta: vi.fn() };
@@ -503,7 +508,7 @@ describe("ImportsService commit and revert", () => {
       markCommitted: vi.fn().mockResolvedValue(undefined)
     };
     const transactions = {
-      findExistingDedupeHashes: vi.fn().mockResolvedValue(new Set(["dedupe-1"]))
+      findExistingDedupeFingerprintsV2: vi.fn().mockResolvedValue(new Set(["dedupe-1"]))
     };
     const { service } = createService({
       batches,
@@ -533,14 +538,14 @@ describe("ImportsService commit and revert", () => {
     const corrected = {
       ...ROW,
       id: "623e4567-e89b-42d3-a456-426614174000",
-      dedupeHash: "dedupe-2",
+      dedupeFingerprintV2: "dedupe-2",
       suggestedCategoryId: "723e4567-e89b-42d3-a456-426614174000",
       categorySuggestion: suggestion
     };
     const dismissed = {
       ...ROW,
       id: "823e4567-e89b-42d3-a456-426614174000",
-      dedupeHash: "dedupe-3",
+      dedupeFingerprintV2: "dedupe-3",
       suggestedCategoryId: undefined,
       categorySuggestion: suggestion
     };
@@ -551,7 +556,7 @@ describe("ImportsService commit and revert", () => {
         findIncludableForBatch: vi.fn().mockResolvedValue([accepted, corrected, dismissed])
       },
       transactions: {
-        findExistingDedupeHashes: vi
+        findExistingDedupeFingerprintsV2: vi
           .fn()
           .mockResolvedValue(new Set(["dedupe-1", "dedupe-2", "dedupe-3"]))
       },
@@ -574,7 +579,7 @@ describe("ImportsService commit and revert", () => {
   it("rejects invalid includable rows and invalid category assignments", async () => {
     const base = {
       batches: { findById: vi.fn().mockResolvedValue(BATCH) },
-      transactions: { findExistingDedupeHashes: vi.fn().mockResolvedValue(new Set()) }
+      transactions: { findExistingDedupeFingerprintsV2: vi.fn().mockResolvedValue(new Set()) }
     };
     const invalidRow = { ...ROW, parsed: undefined };
     await expect(
@@ -604,7 +609,7 @@ describe("ImportsService commit and revert", () => {
     const collaborators = {
       stagedRows: { findIncludableForBatch: vi.fn().mockResolvedValue([ROW]) },
       transactions: {
-        findExistingDedupeHashes: vi.fn().mockResolvedValue(new Set()),
+        findExistingDedupeFingerprintsV2: vi.fn().mockResolvedValue(new Set()),
         insertImportedRows: vi.fn().mockResolvedValue([])
       },
       categories: {

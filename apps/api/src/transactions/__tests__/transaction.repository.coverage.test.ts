@@ -123,10 +123,22 @@ describe("TransactionRepository edge coverage", () => {
 
   it("filters null dedupe hashes", async () => {
     const repository = new TransactionRepository(
-      createMockDrizzleDb([{ dedupeHash: null }, { dedupeHash: "hash" }])
+      createMockDrizzleDb([
+        { dedupeHash: null, type: "expense" },
+        { dedupeHash: "hash", type: "expense" }
+      ])
     );
     await expect(repository.findExistingDedupeHashes("u1", ["hash"])).resolves.toEqual(
-      new Set(["hash"])
+      new Map([["hash", "expense"]])
+    );
+  });
+
+  it("filters null dedupe fingerprints v2", async () => {
+    const repository = new TransactionRepository(
+      createMockDrizzleDb([{ dedupeFingerprintV2: null }, { dedupeFingerprintV2: "fp" }])
+    );
+    await expect(repository.findExistingDedupeFingerprintsV2("u1", ["fp"])).resolves.toEqual(
+      new Set(["fp"])
     );
   });
 
@@ -216,7 +228,7 @@ describe("TransactionRepository edge coverage", () => {
           type: "income",
           amountMinor: 1,
           description: "Refund",
-          dedupeHash: "hash",
+          dedupeFingerprintV2: "fingerprint",
           categoryId: CATEGORY_ID
         }
       ],

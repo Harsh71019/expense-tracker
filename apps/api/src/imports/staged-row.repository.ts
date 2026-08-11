@@ -1,7 +1,9 @@
 import { Inject, Injectable } from "@nestjs/common";
 import {
+  NearDuplicateResultSchema,
   StagedRowSchema,
   type ImportBatchId,
+  type NearDuplicateResult,
   type StagedRow,
   type StagedRowId,
   type UpdateStagedRow
@@ -58,12 +60,16 @@ export class StagedRowRepository {
         parsedType: row.parsed?.type ?? null,
         parsedDescription: row.parsed?.description ?? null,
         dedupeHash: row.dedupeHash ?? null,
+        dedupeFingerprintV2: row.dedupeFingerprintV2 ?? null,
         suggestedCategoryId: row.suggestedCategoryId ?? null,
         suggestionCategoryId: row.categorySuggestion?.categoryId ?? null,
         suggestionConfidenceBps: row.categorySuggestion?.confidenceBps ?? null,
         suggestionMethod: row.categorySuggestion?.method ?? null,
         suggestionEvidenceCount: row.categorySuggestion?.evidenceCount ?? null,
         suggestionAlgorithmVersion: row.categorySuggestion?.algorithmVersion ?? null,
+        nearDuplicateOutcome: row.nearDuplicateResult?.outcome ?? null,
+        nearDuplicateConfidenceBps: nearDuplicateConfidenceBps(row.nearDuplicateResult),
+        nearDuplicateResult: row.nearDuplicateResult ?? null,
         problems: [...row.problems],
         isDuplicate: row.isDuplicate,
         include: row.include,
@@ -182,6 +188,14 @@ export class StagedRowRepository {
   }
 }
 
+/** The one field worth a dedicated column for cheap sorting/filtering without parsing the jsonb blob. */
+function nearDuplicateConfidenceBps(result: NearDuplicateResult | undefined): number | null {
+  if (result === undefined || result.outcome === "abstained") return null;
+  return result.outcome === "match"
+    ? result.evidence.confidenceBps
+    : result.topEvidence.confidenceBps;
+}
+
 function toStagedRow(row: typeof stagedRows.$inferSelect): StagedRow {
   const parsed =
     row.parsedOccurredAt === null ||
@@ -209,6 +223,10 @@ function toStagedRow(row: typeof stagedRows.$inferSelect): StagedRow {
           evidenceCount: row.suggestionEvidenceCount,
           algorithmVersion: row.suggestionAlgorithmVersion
         };
+  const nearDuplicateResult = isNullish(row.nearDuplicateResult)
+    ? undefined
+    : NearDuplicateResultSchema.parse(row.nearDuplicateResult);
+
   return StagedRowSchema.parse({
     id: row.id,
     batchId: row.batchId,
@@ -216,8 +234,10 @@ function toStagedRow(row: typeof stagedRows.$inferSelect): StagedRow {
     raw: row.raw,
     parsed,
     dedupeHash: row.dedupeHash ?? undefined,
+    dedupeFingerprintV2: row.dedupeFingerprintV2 ?? undefined,
     suggestedCategoryId: row.suggestedCategoryId ?? undefined,
     categorySuggestion,
+    nearDuplicateResult,
     problems: row.problems,
     isDuplicate: row.isDuplicate,
     include: row.include

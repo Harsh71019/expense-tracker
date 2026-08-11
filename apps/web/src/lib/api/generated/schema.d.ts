@@ -6837,6 +6837,7 @@ export interface components {
           description: string;
         };
         dedupeHash?: string;
+        dedupeFingerprintV2?: string;
         /** Format: uuid */
         suggestedCategoryId?: string;
         categorySuggestion?: {
@@ -6849,6 +6850,51 @@ export interface components {
           evidenceCount: number;
           algorithmVersion: number;
         };
+        nearDuplicateResult?:
+          | {
+              /** @enum {string} */
+              outcome: "match";
+              evidence: {
+                /** Format: uuid */
+                candidateTransactionId: string;
+                /** @enum {string} */
+                method: "exact_reference" | "counterparty_key" | "token_jaccard";
+                confidenceBps: number;
+                hasExactReferenceMatch: boolean;
+                hasCounterpartyKeyMatch: boolean;
+                tokenJaccardBps: number;
+                calendarDayDistance: number;
+                /** @enum {string} */
+                candidateSource: "manual" | "csv_import" | "recurring" | "api";
+                algorithmVersion: number;
+              };
+            }
+          | {
+              /** @enum {string} */
+              outcome: "ambiguous";
+              candidateCount: number;
+              topEvidence: {
+                /** Format: uuid */
+                candidateTransactionId: string;
+                /** @enum {string} */
+                method: "exact_reference" | "counterparty_key" | "token_jaccard";
+                confidenceBps: number;
+                hasExactReferenceMatch: boolean;
+                hasCounterpartyKeyMatch: boolean;
+                tokenJaccardBps: number;
+                calendarDayDistance: number;
+                /** @enum {string} */
+                candidateSource: "manual" | "csv_import" | "recurring" | "api";
+                algorithmVersion: number;
+              };
+            }
+          | {
+              /** @enum {string} */
+              outcome: "abstained";
+              /** @enum {string} */
+              reason: "no_candidates" | "insufficient_evidence";
+              algorithmVersion: number;
+            };
         problems: string[];
         isDuplicate: boolean;
         include: boolean;
@@ -6877,6 +6923,7 @@ export interface components {
         description: string;
       };
       dedupeHash?: string;
+      dedupeFingerprintV2?: string;
       /** Format: uuid */
       suggestedCategoryId?: string;
       categorySuggestion?: {
@@ -6888,6 +6935,51 @@ export interface components {
         evidenceCount: number;
         algorithmVersion: number;
       };
+      nearDuplicateResult?:
+        | {
+            /** @enum {string} */
+            outcome: "match";
+            evidence: {
+              /** Format: uuid */
+              candidateTransactionId: string;
+              /** @enum {string} */
+              method: "exact_reference" | "counterparty_key" | "token_jaccard";
+              confidenceBps: number;
+              hasExactReferenceMatch: boolean;
+              hasCounterpartyKeyMatch: boolean;
+              tokenJaccardBps: number;
+              calendarDayDistance: number;
+              /** @enum {string} */
+              candidateSource: "manual" | "csv_import" | "recurring" | "api";
+              algorithmVersion: number;
+            };
+          }
+        | {
+            /** @enum {string} */
+            outcome: "ambiguous";
+            candidateCount: number;
+            topEvidence: {
+              /** Format: uuid */
+              candidateTransactionId: string;
+              /** @enum {string} */
+              method: "exact_reference" | "counterparty_key" | "token_jaccard";
+              confidenceBps: number;
+              hasExactReferenceMatch: boolean;
+              hasCounterpartyKeyMatch: boolean;
+              tokenJaccardBps: number;
+              calendarDayDistance: number;
+              /** @enum {string} */
+              candidateSource: "manual" | "csv_import" | "recurring" | "api";
+              algorithmVersion: number;
+            };
+          }
+        | {
+            /** @enum {string} */
+            outcome: "abstained";
+            /** @enum {string} */
+            reason: "no_candidates" | "insufficient_evidence";
+            algorithmVersion: number;
+          };
       problems: string[];
       isDuplicate: boolean;
       include: boolean;

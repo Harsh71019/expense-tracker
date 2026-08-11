@@ -1,5 +1,5 @@
 {
-  "id": "24464cf7-c893-4ace-bef8-d32d86ea417e",
+  "id": "9e31b91d-5779-407d-ad7f-028402b95756",
   "prevId": "6e40aa34-27e5-4d18-98f2-929eea5d908e",
   "version": "7",
   "dialect": "postgresql",
@@ -1672,36 +1672,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "suggestion_category_id": {
-          "name": "suggestion_category_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "suggestion_confidence_bps": {
-          "name": "suggestion_confidence_bps",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "suggestion_method": {
-          "name": "suggestion_method",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "suggestion_evidence_count": {
-          "name": "suggestion_evidence_count",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "suggestion_algorithm_version": {
-          "name": "suggestion_algorithm_version",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
         "problems": {
           "name": "problems",
           "type": "text[]",
@@ -1775,15 +1745,6 @@
           "tableFrom": "staged_rows",
           "tableTo": "categories",
           "columnsFrom": ["suggested_category_id"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "staged_rows_suggestion_category_id_categories_id_fk": {
-          "name": "staged_rows_suggestion_category_id_categories_id_fk",
-          "tableFrom": "staged_rows",
-          "tableTo": "categories",
-          "columnsFrom": ["suggestion_category_id"],
           "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
@@ -3757,6 +3718,132 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.pending_transactions": {
+      "name": "pending_transactions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "account_id": {
+          "name": "account_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "transaction_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "occurred_at": {
+          "name": "occurred_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "pending_transaction_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "resulting_transaction_id": {
+          "name": "resulting_transaction_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "pending_transactions_user_id_status": {
+          "name": "pending_transactions_user_id_status",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "pending_transactions_user_id_user_id_fk": {
+          "name": "pending_transactions_user_id_user_id_fk",
+          "tableFrom": "pending_transactions",
+          "tableTo": "user",
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "pending_transactions_account_id_accounts_id_fk": {
+          "name": "pending_transactions_account_id_accounts_id_fk",
+          "tableFrom": "pending_transactions",
+          "tableTo": "accounts",
+          "columnsFrom": ["account_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "pending_transactions_resulting_transaction_id_transactions_id_fk": {
+          "name": "pending_transactions_resulting_transaction_id_transactions_id_fk",
+          "tableFrom": "pending_transactions",
+          "tableTo": "transactions",
+          "columnsFrom": ["resulting_transaction_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.account": {
       "name": "account",
       "schema": "",
@@ -4367,6 +4454,11 @@
         "goal_achieved",
         "recurring_reconciliation_pending"
       ]
+    },
+    "public.pending_transaction_status": {
+      "name": "pending_transaction_status",
+      "schema": "public",
+      "values": ["pending", "confirmed", "dismissed"]
     },
     "public.recurring_reconciliation_resolution": {
       "name": "recurring_reconciliation_resolution",

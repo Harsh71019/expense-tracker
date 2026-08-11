@@ -5,7 +5,6 @@ import { useState } from "react";
 import type { ReactNode } from "react";
 import { toast } from "@/lib/toast";
 
-import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { EmptyState } from "@/components/ui/empty-state";
 
 import {
@@ -34,8 +33,14 @@ export function ApiKeyManager({
   const revokeKey = useRevokeApiKey();
   const [revealedKey, setRevealedKey] = useState<string>();
   const [activeTab, setActiveTab] = useState<TabId>("keys");
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const items = apiKeys.data ?? initialApiKeys;
+  const rawItems = apiKeys.data ?? initialApiKeys;
+  let items = rawItems;
+  if (searchQuery.trim() !== "") {
+    const q = searchQuery.toLowerCase().trim();
+    items = items.filter((key) => key.name.toLowerCase().includes(q));
+  }
 
   async function create(input: CreateApiKey): Promise<void> {
     try {
@@ -67,10 +72,6 @@ export function ApiKeyManager({
 
   return (
     <section className="mx-auto max-w-[940px] space-y-6">
-      <Breadcrumbs
-        items={[{ label: "Settings", href: "/settings?tab=management" }, { label: "API keys" }]}
-      />
-
       <header>
         <p className="font-mono text-[11px] font-bold tracking-[2px] text-accent">
           LEDGER · AUTOMATION
@@ -85,32 +86,65 @@ export function ApiKeyManager({
       </header>
 
       <div
-        role="tablist"
-        aria-label="API keys sections"
-        className="flex w-full gap-1 rounded-xl border border-border bg-surface-elevated p-1 sm:inline-flex sm:w-auto"
+        className={`mb-5 flex flex-wrap items-center gap-3.5 rounded-2xl border p-3.5 backdrop-blur transition-all duration-200 ${
+          searchQuery.trim() !== ""
+            ? "border-accent/40 bg-surface-elevated/90 shadow-sm"
+            : "border-border/80 bg-surface-elevated/90"
+        }`}
       >
-        {TABS.map((tab) => {
-          const active = tab.id === activeTab;
-          return (
+        <div className="flex min-w-0 flex-1 basis-full items-center gap-2.5 rounded-xl border border-border/80 bg-surface-muted/60 px-3.5 transition-colors focus-within:border-accent/60 focus-within:bg-surface-muted focus-within:ring-2 focus-within:ring-accent/20 sm:min-w-56 sm:basis-auto">
+          <span className="text-foreground-muted/70 text-sm font-semibold" aria-hidden="true">
+            ⌕
+          </span>
+          <input
+            value={searchQuery}
+            name="apiKeySearch"
+            autoComplete="off"
+            onChange={(event) => setSearchQuery(event.target.value)}
+            placeholder="Search API keys by name…"
+            aria-label="Search API keys"
+            className="min-h-10 w-full bg-transparent py-2 text-base text-foreground outline-none placeholder:text-foreground-muted/60 sm:text-sm"
+          />
+          {searchQuery !== "" && (
             <button
-              key={tab.id}
               type="button"
-              role="tab"
-              id={`api-keys-tab-${tab.id}`}
-              aria-selected={active}
-              aria-controls={`api-keys-panel-${tab.id}`}
-              tabIndex={active ? 0 : -1}
-              onClick={() => setActiveTab(tab.id)}
-              className={`min-h-11 flex-1 rounded-lg px-4 py-2 text-sm font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:flex-none ${
-                active
-                  ? "bg-accent text-accent-foreground shadow-glow"
-                  : "text-foreground-muted hover:bg-accent-glow hover:text-foreground"
-              }`}
+              onClick={() => setSearchQuery("")}
+              aria-label="Clear search input"
+              className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-xs text-foreground-muted hover:bg-surface-elevated hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             >
-              {tab.label}
+              ✕
             </button>
-          );
-        })}
+          )}
+        </div>
+
+        <div
+          role="tablist"
+          aria-label="API keys sections"
+          className="flex gap-1 rounded-xl border border-border bg-surface-muted p-1"
+        >
+          {TABS.map((tab) => {
+            const active = tab.id === activeTab;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                role="tab"
+                id={`api-keys-tab-${tab.id}`}
+                aria-selected={active}
+                aria-controls={`api-keys-panel-${tab.id}`}
+                tabIndex={active ? 0 : -1}
+                onClick={() => setActiveTab(tab.id)}
+                className={`min-h-9 rounded-lg px-3.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                  active
+                    ? "bg-surface-elevated text-foreground shadow-xs"
+                    : "text-foreground-muted hover:text-foreground"
+                }`}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {activeTab === "keys" ? (

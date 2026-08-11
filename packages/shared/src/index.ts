@@ -76,6 +76,7 @@ export {
   BillStatementUploadStatusSchema,
   CreditCardBillIdSchema,
   CreditCardBillSchema,
+  LinkBillPaymentSchema,
   ListBillsQuerySchema,
   ListBillStatementRowsQuerySchema,
   PayCreditCardBillSchema,
@@ -100,6 +101,7 @@ export type {
   BillStatementUploadStatus,
   CreditCardBill,
   CreditCardBillId,
+  LinkBillPayment,
   ListBillsQuery,
   ListBillStatementRowsQuery,
   PayCreditCardBill,
@@ -219,6 +221,8 @@ export {
   DashboardStatsQuerySchema,
   DashboardStatsSchema,
   DashboardSummarySchema,
+  DailySpendingBucketSchema,
+  MonthlySpendingSchema,
   RecentActivityItemSchema,
   RecentActivityQuerySchema,
   RecurringForecastQuerySchema,
@@ -227,7 +231,8 @@ export {
   SpendMixQuerySchema,
   SpendMixSchema,
   TopSpendingItemSchema,
-  TopSpendingQuerySchema
+  TopSpendingQuerySchema,
+  WeeklySpendingBucketSchema
 } from "./dashboard.js";
 export type {
   CashflowBucket,
@@ -239,6 +244,8 @@ export type {
   DashboardStats,
   DashboardStatsQuery,
   DashboardSummary,
+  DailySpendingBucket,
+  MonthlySpending,
   RecentActivityItem,
   RecentActivityQuery,
   RecurringForecast,
@@ -247,7 +254,8 @@ export type {
   SpendMix,
   SpendMixQuery,
   TopSpendingItem,
-  TopSpendingQuery
+  TopSpendingQuery,
+  WeeklySpendingBucket
 } from "./dashboard.js";
 export { ErrorCodes } from "./errors/codes.js";
 export type { ErrorCode } from "./errors/codes.js";
@@ -334,11 +342,30 @@ export type { MinorAmount } from "./money.js";
 export { PageInfoSchema } from "./pagination.js";
 export type { PageInfo } from "./pagination.js";
 export {
+  ConfirmPendingTransactionSchema,
+  CreatePendingTransactionSchema,
+  ListPendingTransactionsQuerySchema,
+  PendingTransactionIdSchema,
+  PendingTransactionSchema,
+  PendingTransactionStatusSchema,
+  StoredPendingTransactionSchema
+} from "./pending-transaction.js";
+export type {
+  ConfirmPendingTransaction,
+  CreatePendingTransaction,
+  ListPendingTransactionsQuery,
+  PendingTransaction,
+  PendingTransactionId,
+  PendingTransactionStatus,
+  StoredPendingTransaction
+} from "./pending-transaction.js";
+export {
   computeFirstOccurrence,
   computeNextOccurrence,
   CreateRecurringRuleSchema,
   RecurringRuleIdSchema,
   RecurringRuleSchema,
+  RecurringStatsSchema,
   RecurringRuleTemplateSchema,
   RRuleStringSchema,
   UpdateRecurringRuleSchema
@@ -347,6 +374,7 @@ export type {
   CreateRecurringRule,
   RecurringRule,
   RecurringRuleId,
+  RecurringStats,
   RecurringRuleTemplate,
   UpdateRecurringRule
 } from "./recurring.js";
@@ -368,6 +396,22 @@ export type {
   RecurringReconciliationStatus,
   ResolveRecurringReconciliation
 } from "./recurring-reconciliation.js";
+export {
+  LinkRecurringOccurrencePaymentSchema,
+  ListRecurringOccurrencesQuerySchema,
+  RecurringOccurrenceIdSchema,
+  RecurringOccurrencePageSchema,
+  RecurringOccurrenceSchema,
+  RecurringOccurrenceStatusSchema
+} from "./recurring-occurrence.js";
+export type {
+  LinkRecurringOccurrencePayment,
+  ListRecurringOccurrencesQuery,
+  RecurringOccurrence,
+  RecurringOccurrenceId,
+  RecurringOccurrencePage,
+  RecurringOccurrenceStatus
+} from "./recurring-occurrence.js";
 export {
   AccountRollupSchema,
   CategoryRollupSchema,

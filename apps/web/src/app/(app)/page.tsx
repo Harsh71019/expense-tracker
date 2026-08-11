@@ -8,6 +8,7 @@ import {
   TOP_SPENDING_LIMIT,
   getCashflow,
   getInvestments,
+  getMonthlySpending,
   getRecurringForecast,
   getSpendMix,
   getStats,
@@ -15,20 +16,30 @@ import {
 } from "@/features/dashboard";
 
 export default async function DashboardPage(): Promise<ReactNode> {
-  const [stats, cashflow, spendMix, topSpending, recurringForecast, investments, budgets] =
-    await Promise.all([
-      getStats(),
-      getCashflow(DEFAULT_CASHFLOW_RANGE),
-      getSpendMix(DEFAULT_PANEL_RANGE),
-      getTopSpending(DEFAULT_PANEL_RANGE, TOP_SPENDING_LIMIT),
-      getRecurringForecast(DEFAULT_PANEL_RANGE),
-      getInvestments(),
-      getBudgetPage(false, 200)
-    ]);
+  const [
+    stats,
+    monthlySpending,
+    cashflow,
+    spendMix,
+    topSpending,
+    recurringForecast,
+    investments,
+    budgets
+  ] = await Promise.all([
+    getStats(),
+    getMonthlySpending(),
+    getCashflow(DEFAULT_CASHFLOW_RANGE),
+    getSpendMix(DEFAULT_PANEL_RANGE),
+    getTopSpending(DEFAULT_PANEL_RANGE, TOP_SPENDING_LIMIT),
+    getRecurringForecast(DEFAULT_PANEL_RANGE),
+    getInvestments(),
+    getBudgetPage(false, 200)
+  ]);
 
   return (
     <DashboardOverview
       initialStats={stats}
+      initialMonthlySpending={monthlySpending}
       initialCashflow={cashflow}
       initialSpendMix={spendMix}
       initialTopSpending={topSpending}

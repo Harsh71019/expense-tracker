@@ -2970,6 +2970,8 @@ export interface paths {
             rrule: string;
             /** Format: date-time */
             startAt: string | null;
+            /** @default true */
+            autoPost?: boolean;
           };
         };
       };
@@ -3046,6 +3048,68 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/v1/recurring/stats": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Recurring rule and next-30-days forecast statistics */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["RecurringStats"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/v1/recurring/{ruleId}": {
     parameters: {
       query?: never;
@@ -3086,6 +3150,7 @@ export interface paths {
             };
             rrule?: string;
             isPaused?: boolean;
+            autoPost?: boolean;
           };
         };
       };
@@ -3147,6 +3212,237 @@ export interface paths {
         };
       };
     };
+    trace?: never;
+  };
+  "/v1/recurring/occurrences/outstanding": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Outstanding (expected/missed) occurrences across all manual-post rules */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["RecurringOccurrence"][];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/recurring/{ruleId}/occurrences": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: {
+          cursor?: string;
+          limit?: number;
+        };
+        header?: never;
+        path: {
+          ruleId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Occurrence history for a manual-post recurring rule */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["RecurringOccurrencePage"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Recurring rule not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/recurring/{ruleId}/occurrences/{occurrenceId}/link-payment": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path: {
+          ruleId: string;
+          occurrenceId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
+            /** Format: uuid */
+            transactionId: string;
+          };
+        };
+      };
+      responses: {
+        /** @description Confirmed occurrence, or idempotent replay */
+        200: {
+          headers: {
+            "Idempotency-Replayed"?: "true";
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["RecurringOccurrence"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Recurring rule, occurrence, or transaction not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Transaction is not an eligible source, or the occurrence is already confirmed */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
     trace?: never;
   };
   "/v1/recurring/reconciliations": {
@@ -4794,6 +5090,68 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/v1/dashboard/monthly-spending": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Current IST calendar-month spending with daily and elapsed weekly buckets */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["MonthlySpending"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/v1/dashboard/top-spending": {
     parameters: {
       query?: never;
@@ -5892,6 +6250,424 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/v1/bills/{billId}/link-payment": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path: {
+          billId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
+            /** Format: uuid */
+            transactionId: string;
+            amountMinor?: number;
+          };
+        };
+      };
+      responses: {
+        /** @description Bill payment linked to an existing transaction, or idempotent replay */
+        200: {
+          headers: {
+            "Idempotency-Replayed"?: "true";
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["BillPaymentResult"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Bill or transaction not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Transaction is not an eligible payment source, or the bill would be overpaid */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/pending-transactions": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: {
+          status?: "pending" | "confirmed" | "dismissed";
+        };
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Pending transactions page */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["PendingTransaction"][];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
+            /** Format: uuid */
+            accountId: string;
+            /** @enum {string} */
+            type: "expense" | "income";
+            /** Format: date-time */
+            occurredAt: string | null;
+            description: string;
+          };
+        };
+      };
+      responses: {
+        /** @description Idempotent replay of the created pending transaction */
+        200: {
+          headers: {
+            "Idempotency-Replayed": "true";
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["PendingTransaction"];
+          };
+        };
+        /** @description Created pending transaction */
+        201: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["PendingTransaction"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Account not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/pending-transactions/{id}/confirm": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path: {
+          id: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
+            amountMinor: number;
+          };
+        };
+      };
+      responses: {
+        /** @description Pending transaction confirmed into a real transaction */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["PendingTransaction"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Pending transaction not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Pending transaction was already dismissed */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/pending-transactions/{id}/dismiss": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path: {
+          id: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Pending transaction dismissed, or idempotent replay */
+        204: {
+          headers: {
+            "Idempotency-Replayed"?: "true";
+            [name: string]: unknown;
+          };
+          content?: never;
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Pending transaction not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -5959,9 +6735,13 @@ export interface components {
         | "bill.statement_not_ready"
         | "bill.unresolved_statement"
         | "bill.already_reconciled"
+        | "bill.invalid_payment_source"
         | "recurring.no_occurrences"
         | "recurring.reconciliation_already_resolved"
-        | "recurring.invalid_reconciliation_resolution";
+        | "recurring.invalid_reconciliation_resolution"
+        | "recurring.invalid_occurrence_source"
+        | "recurring.occurrence_already_confirmed"
+        | "pending_transaction.already_resolved";
       reqId: string;
       /** Format: date-time */
       timestamp: string | null;
@@ -6178,6 +6958,9 @@ export interface components {
         billId?: string;
         /** Format: uuid */
         recurringRuleId?: string;
+        /** @enum {string} */
+        paymentRail: "upi" | "neft" | "rtgs" | "imps" | "nach" | "card" | "unknown";
+        counterpartyHandle: string | null;
         /** Format: date-time */
         createdAt: string | null;
         /** Format: date-time */
@@ -6249,6 +7032,9 @@ export interface components {
       billId?: string;
       /** Format: uuid */
       recurringRuleId?: string;
+      /** @enum {string} */
+      paymentRail: "upi" | "neft" | "rtgs" | "imps" | "nach" | "card" | "unknown";
+      counterpartyHandle: string | null;
       /** Format: date-time */
       createdAt: string | null;
       /** Format: date-time */
@@ -6291,6 +7077,9 @@ export interface components {
         billId?: string;
         /** Format: uuid */
         recurringRuleId?: string;
+        /** @enum {string} */
+        paymentRail: "upi" | "neft" | "rtgs" | "imps" | "nach" | "card" | "unknown";
+        counterpartyHandle: string | null;
         /** Format: date-time */
         createdAt: string | null;
         /** Format: date-time */
@@ -6330,6 +7119,9 @@ export interface components {
         billId?: string;
         /** Format: uuid */
         recurringRuleId?: string;
+        /** @enum {string} */
+        paymentRail: "upi" | "neft" | "rtgs" | "imps" | "nach" | "card" | "unknown";
+        counterpartyHandle: string | null;
         /** Format: date-time */
         createdAt: string | null;
         /** Format: date-time */
@@ -6374,6 +7166,9 @@ export interface components {
           billId?: string;
           /** Format: uuid */
           recurringRuleId?: string;
+          /** @enum {string} */
+          paymentRail: "upi" | "neft" | "rtgs" | "imps" | "nach" | "card" | "unknown";
+          counterpartyHandle: string | null;
           /** Format: date-time */
           createdAt: string | null;
           /** Format: date-time */
@@ -6413,6 +7208,9 @@ export interface components {
           billId?: string;
           /** Format: uuid */
           recurringRuleId?: string;
+          /** @enum {string} */
+          paymentRail: "upi" | "neft" | "rtgs" | "imps" | "nach" | "card" | "unknown";
+          counterpartyHandle: string | null;
           /** Format: date-time */
           createdAt: string | null;
           /** Format: date-time */
@@ -6559,10 +7357,73 @@ export interface components {
       /** Format: date-time */
       lastRunAt?: string | null;
       isPaused: boolean;
+      /** @default true */
+      autoPost: boolean;
       /** Format: date-time */
       createdAt: string | null;
       /** Format: date-time */
       updatedAt: string | null;
+    };
+    RecurringStats: {
+      /** @enum {number} */
+      forecastDays: 30;
+      totalRules: number;
+      activeRules: number;
+      pausedRules: number;
+      upcomingTransactionCount: number;
+      upcomingExpenseMinor: number;
+      upcomingIncomeMinor: number;
+      upcomingNetMinor: number;
+      topSpendingCategory: {
+        /** Format: uuid */
+        categoryId?: string;
+        name: string;
+        color?: string;
+        icon?: string;
+        amountMinor: number;
+        transactionCount: number;
+      } | null;
+    };
+    RecurringOccurrence: {
+      /** Format: uuid */
+      id: string;
+      userId: string;
+      /** Format: uuid */
+      recurringRuleId: string;
+      /** Format: date-time */
+      occurredAt: string | null;
+      /** @enum {string} */
+      status: "expected" | "confirmed" | "missed";
+      /** Format: uuid */
+      confirmedTransactionId?: string;
+      /** Format: date-time */
+      createdAt: string | null;
+      /** Format: date-time */
+      updatedAt: string | null;
+    };
+    RecurringOccurrencePage: {
+      items: {
+        /** Format: uuid */
+        id: string;
+        userId: string;
+        /** Format: uuid */
+        recurringRuleId: string;
+        /** Format: date-time */
+        occurredAt: string | null;
+        /** @enum {string} */
+        status: "expected" | "confirmed" | "missed";
+        /** Format: uuid */
+        confirmedTransactionId?: string;
+        /** Format: date-time */
+        createdAt: string | null;
+        /** Format: date-time */
+        updatedAt: string | null;
+      }[];
+      pageInfo: {
+        nextCursor: string | null;
+        hasMore: boolean;
+        limit: number;
+      };
     };
     RecurringReconciliationReviewItem: {
       /** Format: uuid */
@@ -6619,6 +7480,9 @@ export interface components {
         billId?: string;
         /** Format: uuid */
         recurringRuleId?: string;
+        /** @enum {string} */
+        paymentRail: "upi" | "neft" | "rtgs" | "imps" | "nach" | "card" | "unknown";
+        counterpartyHandle: string | null;
         /** Format: date-time */
         createdAt: string | null;
         /** Format: date-time */
@@ -6658,6 +7522,9 @@ export interface components {
         billId?: string;
         /** Format: uuid */
         recurringRuleId?: string;
+        /** @enum {string} */
+        paymentRail: "upi" | "neft" | "rtgs" | "imps" | "nach" | "card" | "unknown";
+        counterpartyHandle: string | null;
         /** Format: date-time */
         createdAt: string | null;
         /** Format: date-time */
@@ -6942,6 +7809,24 @@ export interface components {
         expenseMinor: number;
       }[];
     };
+    MonthlySpending: {
+      period: string;
+      /** Format: date-time */
+      asOf: string | null;
+      totalMinor: number;
+      daily: {
+        /** Format: date-time */
+        date: string | null;
+        amountMinor: number;
+      }[];
+      weekly: {
+        /** Format: date-time */
+        startAt: string | null;
+        /** Format: date-time */
+        endAt: string | null;
+        amountMinor: number;
+      }[];
+    };
     TopSpendingItem: {
       /** Format: uuid */
       categoryId?: string;
@@ -7161,6 +8046,9 @@ export interface components {
           billId?: string;
           /** Format: uuid */
           recurringRuleId?: string;
+          /** @enum {string} */
+          paymentRail: "upi" | "neft" | "rtgs" | "imps" | "nach" | "card" | "unknown";
+          counterpartyHandle: string | null;
           /** Format: date-time */
           createdAt: string | null;
           /** Format: date-time */
@@ -7354,6 +8242,9 @@ export interface components {
           billId?: string;
           /** Format: uuid */
           recurringRuleId?: string;
+          /** @enum {string} */
+          paymentRail: "upi" | "neft" | "rtgs" | "imps" | "nach" | "card" | "unknown";
+          counterpartyHandle: string | null;
           /** Format: date-time */
           createdAt: string | null;
           /** Format: date-time */
@@ -7393,12 +8284,35 @@ export interface components {
           billId?: string;
           /** Format: uuid */
           recurringRuleId?: string;
+          /** @enum {string} */
+          paymentRail: "upi" | "neft" | "rtgs" | "imps" | "nach" | "card" | "unknown";
+          counterpartyHandle: string | null;
           /** Format: date-time */
           createdAt: string | null;
           /** Format: date-time */
           updatedAt: string | null;
         };
       };
+    };
+    PendingTransaction: {
+      /** Format: uuid */
+      accountId: string;
+      /** @enum {string} */
+      type: "expense" | "income";
+      /** Format: date-time */
+      occurredAt: string | null;
+      description: string;
+      /** Format: uuid */
+      id: string;
+      userId: string;
+      /** @enum {string} */
+      status: "pending" | "confirmed" | "dismissed";
+      /** Format: uuid */
+      resultingTransactionId?: string;
+      /** Format: date-time */
+      createdAt: string | null;
+      /** Format: date-time */
+      updatedAt: string | null;
     };
   };
   responses: never;

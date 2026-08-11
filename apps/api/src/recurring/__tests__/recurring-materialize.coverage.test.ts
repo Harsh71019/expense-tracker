@@ -19,6 +19,7 @@ const RULE: RecurringRule = {
   startAt: NOW,
   nextRunAt: NOW,
   isPaused: false,
+  autoPost: true,
   createdAt: NOW,
   updatedAt: NOW
 };
@@ -31,6 +32,8 @@ const POSTED: Transaction = {
   currency: "INR",
   source: "recurring",
   status: "posted",
+  paymentRail: "unknown",
+  counterpartyHandle: null,
   occurredAt: NOW,
   description: "Rent",
   tags: [],
@@ -65,6 +68,9 @@ function createMaterializer(
         ? vi.fn().mockResolvedValue(POSTED)
         : vi.fn().mockRejectedValue(options.transactionError)
   };
+  const occurrences = {
+    createExpected: vi.fn().mockResolvedValue({ id: "occ-1", recurringRuleId: rule.id })
+  };
   const audit = { record: vi.fn().mockResolvedValue(undefined) };
   const logger = { log: vi.fn(), error: vi.fn() };
   const service = new RecurringMaterializeService(
@@ -73,10 +79,11 @@ function createMaterializer(
     focusedTestDouble(rules),
     focusedTestDouble(accounts),
     focusedTestDouble(transactions),
+    focusedTestDouble(occurrences),
     focusedTestDouble(audit),
     focusedTestDouble(logger)
   );
-  return { service, rules, accounts, transactions, audit, logger };
+  return { service, rules, accounts, transactions, occurrences, audit, logger };
 }
 
 describe("RecurringMaterializeService edge coverage", () => {
@@ -115,6 +122,21 @@ describe("RecurringMaterializeService edge coverage", () => {
       5_000,
       expect.anything()
     );
+    expect(context.logger.log).toHaveBeenCalled();
+  });
+
+  it("records an expected occurrence instead of posting a transaction for a manual-post rule", async () => {
+    const manualRule = { ...RULE, autoPost: false };
+    const context = createMaterializer({ rule: manualRule });
+    await context.service.materialize();
+    expect(context.occurrences.createExpected).toHaveBeenCalledWith(
+      "u1",
+      RULE.id,
+      RULE.nextRunAt,
+      expect.anything()
+    );
+    expect(context.transactions.create).not.toHaveBeenCalled();
+    expect(context.accounts.applyBalanceDelta).not.toHaveBeenCalled();
     expect(context.logger.log).toHaveBeenCalled();
   });
 

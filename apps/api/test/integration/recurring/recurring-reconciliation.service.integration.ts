@@ -18,6 +18,7 @@ import { IdempotencyPostgresRepository } from "../../../src/common/idempotency/i
 import { IdempotencyPostgresService } from "../../../src/common/idempotency/idempotency-postgres.service.js";
 import { NotificationOutboxRepository } from "../../../src/notifications/notification-outbox.repository.js";
 import { RecurringMaterializeService } from "../../../src/recurring/recurring-materialize.service.js";
+import { RecurringOccurrenceRepository } from "../../../src/recurring/recurring-occurrence.repository.js";
 import { RecurringReconciliationRepository } from "../../../src/recurring/recurring-reconciliation.repository.js";
 import { RecurringReconciliationService } from "../../../src/recurring/recurring-reconciliation.service.js";
 import { RecurringRuleRepository } from "../../../src/recurring/recurring-rule.repository.js";
@@ -38,6 +39,7 @@ describe("RecurringReconciliationService (integration)", () => {
   let transactionRepository: TransactionRepository;
   let transactionsService: TransactionService;
   let reconciliations: RecurringReconciliationRepository;
+  let occurrences: RecurringOccurrenceRepository;
   let reconciliationService: RecurringReconciliationService;
   let accountId: string;
   let ruleCounter = 0;
@@ -72,11 +74,13 @@ describe("RecurringReconciliationService (integration)", () => {
     // inside create() itself) rather than each test calling
     // reconcileIncoming by hand.
     reconciliations = new RecurringReconciliationRepository(testDb.db);
+    occurrences = new RecurringOccurrenceRepository(testDb.db);
     reconciliationService = new RecurringReconciliationService(
       testDb.db,
       transactionRepository,
       accounts,
       reconciliations,
+      occurrences,
       new NotificationOutboxRepository(testDb.db),
       new AuditRepository(testDb.db),
       new IdempotencyPostgresService(testDb.db, new IdempotencyPostgresRepository(testDb.db)),
@@ -111,13 +115,17 @@ describe("RecurringReconciliationService (integration)", () => {
    * role), returning the posted `recurring`-sourced transaction row -- the
    * bait each test reconciles an incoming `api`-sourced transaction against.
    */
-  async function postRecurringTransaction(amountMinor: number): Promise<Transaction> {
+  async function postRecurringTransaction(
+    amountMinor: number,
+    customDescription?: string
+  ): Promise<Transaction> {
     ruleCounter += 1;
-    const description = `Recurring fixture ${ruleCounter}`;
+    const description = customDescription ?? `Recurring fixture ${ruleCounter}`;
     await ruleService.create(USER_ID, {
       template: { accountId, type: "expense", amountMinor, description, tags: [] },
       rrule: "FREQ=MONTHLY;BYMONTHDAY=1",
-      startAt: new Date("2020-01-01T00:00:00.000Z")
+      startAt: new Date("2020-01-01T00:00:00.000Z"),
+      autoPost: true
     });
     const materializer = new RecurringMaterializeService(
       testDb.db,
@@ -125,6 +133,7 @@ describe("RecurringReconciliationService (integration)", () => {
       rules,
       accounts,
       transactionRepository,
+      occurrences,
       new AuditRepository(testDb.db),
       NOOP_LOGGER
     );
@@ -139,11 +148,12 @@ describe("RecurringReconciliationService (integration)", () => {
 
   async function postIncomingApiTransaction(
     amountMinor: number,
-    occurredAt: Date
+    occurredAt: Date,
+    description = "Bank debit"
   ): Promise<Transaction> {
     const result = await transactionsService.create(
       USER_ID,
-      { accountId, type: "expense", amountMinor, occurredAt, description: "Bank debit", tags: [] },
+      { accountId, type: "expense", amountMinor, occurredAt, description, tags: [] },
       randomUUID(),
       "api"
     );
@@ -286,6 +296,23 @@ describe("RecurringReconciliationService (integration)", () => {
 
     expect(await statusOf(first.id)).toBe("posted");
     expect(await statusOf(second.id)).toBe("reversed");
+  });
+
+  it("auto-reconciles via a shared mandate reference token even when the amount changed", async () => {
+    const recurringTxn = await postRecurringTransaction(199_900, "Anthropic (mandate:YIcCmzpAfi)");
+
+    const incoming = await postIncomingApiTransaction(
+      249_900,
+      recurringTxn.occurredAt,
+      "CARD/EMANDATE/Anthropic/mandate:YIcCmzpAfi"
+    );
+
+    expect(await statusOf(recurringTxn.id)).toBe("reversed");
+    expect(await statusOf(incoming.id)).toBe("posted");
+
+    const row = await reconciliationRowFor(incoming.id);
+    expect(row?.status).toBe("auto_matched");
+    expect(row?.recurringTransactionId).toBe(recurringTxn.id);
   });
 
   it("never reconciles a session-authenticated (manual) transaction against a recurring posting", async () => {

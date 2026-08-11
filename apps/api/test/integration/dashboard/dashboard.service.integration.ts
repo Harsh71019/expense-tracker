@@ -7,7 +7,11 @@ import { ValuationRepository } from "../../../src/assets/valuation.repository.js
 import { AuditRepository } from "../../../src/audit/audit.repository.js";
 import { CategoryRepository } from "../../../src/categories/category.repository.js";
 import { withTxn } from "../../../src/common/db/db-txn.js";
-import { toISTCalendarDate, toISTMonth } from "../../../src/common/time/ist.js";
+import {
+  listISTMonthDayKeys,
+  toISTCalendarDate,
+  toISTMonth
+} from "../../../src/common/time/ist.js";
 import { DashboardRepository } from "../../../src/dashboard/dashboard.repository.js";
 import { DashboardService } from "../../../src/dashboard/dashboard.service.js";
 import { MonthlyRollupRepository } from "../../../src/reports/monthly-rollup.repository.js";
@@ -156,7 +160,8 @@ describe("DashboardService", () => {
             tags: []
           },
           rrule: "FREQ=DAILY;COUNT=1",
-          startAt: rentDueAt
+          startAt: rentDueAt,
+          autoPost: true
         },
         rentDueAt,
         tx
@@ -176,7 +181,8 @@ describe("DashboardService", () => {
             tags: []
           },
           rrule: "FREQ=DAILY;COUNT=1",
-          startAt: bonusDueAt
+          startAt: bonusDueAt,
+          autoPost: true
         },
         bonusDueAt,
         tx
@@ -277,6 +283,19 @@ describe("DashboardService", () => {
       const cashflow = await service.getCashflow("user-a", "6M");
       expect(cashflow.buckets).toHaveLength(6);
       expect(cashflow.buckets.at(-1)?.label).toBe(toISTMonth(new Date()));
+    });
+  });
+
+  describe("getMonthlySpending", () => {
+    it("returns a complete calendar month scoped to the requesting user", async () => {
+      const spending = await service.getMonthlySpending("user-a");
+
+      expect(spending.daily).toHaveLength(listISTMonthDayKeys(spending.period).length);
+      expect(spending.weekly.length).toBeGreaterThan(0);
+      expect(spending.totalMinor).toBeGreaterThanOrEqual(2_300);
+
+      const otherUserSpending = await service.getMonthlySpending("user-b");
+      expect(otherUserSpending.totalMinor).toBe(0);
     });
   });
 

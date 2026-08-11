@@ -39,6 +39,7 @@ export class RecurringRuleRepository {
         startAt: input.startAt,
         nextRunAt,
         isPaused: false,
+        autoPost: input.autoPost,
         createdAt: now,
         updatedAt: now
       })
@@ -99,6 +100,7 @@ export class RecurringRuleRepository {
     if (patch.template?.tags !== undefined) set.templateTags = patch.template.tags;
     if (patch.rrule !== undefined) set.rrule = patch.rrule;
     if (patch.isPaused !== undefined) set.isPaused = patch.isPaused;
+    if (patch.autoPost !== undefined) set.autoPost = patch.autoPost;
     if (nextRunAt !== undefined) set.nextRunAt = nextRunAt;
 
     const [row] = await tx
@@ -189,6 +191,7 @@ function toRecurringRule(row: typeof recurringRules.$inferSelect): RecurringRule
     nextRunAt: row.nextRunAt,
     lastRunAt: stripped.lastRunAt,
     isPaused: row.isPaused,
+    autoPost: row.autoPost,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt
   });

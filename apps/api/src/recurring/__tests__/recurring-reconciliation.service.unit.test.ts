@@ -33,13 +33,17 @@ const incomingTransaction = {
   tags: [],
   source: "api" as const,
   status: "posted" as const,
+  paymentRail: "unknown" as const,
+  counterpartyHandle: null,
   createdAt: new Date(),
   updatedAt: new Date()
 };
 
 function buildService(overrides: {
   candidates?: unknown[];
+  occurrenceCandidates?: unknown[];
   reconciliations?: Record<string, unknown>;
+  occurrences?: Record<string, unknown>;
   notifications?: Record<string, unknown>;
   transactions?: Record<string, unknown>;
 }) {
@@ -49,6 +53,9 @@ function buildService(overrides: {
   };
   const transactions = {
     findById: vi.fn(async () => null),
+    attachToRecurringRule: vi.fn(async (_userId: string, transactionId: string) => ({
+      id: transactionId
+    })),
     ...overrides.transactions
   };
   const accounts = {};
@@ -62,6 +69,17 @@ function buildService(overrides: {
       resolution
     })),
     ...overrides.reconciliations
+  };
+  const occurrences = {
+    findPendingCandidatesForMatching: vi.fn(async () => overrides.occurrenceCandidates ?? []),
+    confirm: vi.fn(
+      async (_userId: string, occurrenceId: string, confirmedTransactionId: string) => ({
+        id: occurrenceId,
+        status: "confirmed",
+        confirmedTransactionId
+      })
+    ),
+    ...overrides.occurrences
   };
   const notifications = { enqueue: vi.fn(async () => undefined), ...overrides.notifications };
   const audit = { record: vi.fn(async () => undefined) };
@@ -88,12 +106,13 @@ function buildService(overrides: {
     transactions,
     accounts,
     reconciliations,
+    occurrences,
     notifications,
     audit,
     idempotency,
     logger
   );
-  return { service, reconciliations, notifications, audit, idempotency, transactions };
+  return { service, reconciliations, occurrences, notifications, audit, idempotency, transactions };
 }
 
 describe("RecurringReconciliationService.reconcileIncoming", () => {
@@ -200,6 +219,69 @@ describe("RecurringReconciliationService.reconcileIncoming", () => {
       expect.objectContaining({ status: "amount_mismatch" }),
       "tx1"
     );
+  });
+});
+
+describe("RecurringReconciliationService.reconcileIncoming — manual-post occurrence matching", () => {
+  const OCCURRENCE_ID = "88888888-8888-4888-8888-888888888888";
+
+  it("auto-confirms a clean occurrence match by attaching the rule and confirming the occurrence", async () => {
+    const { service, occurrences, transactions } = buildService({
+      candidates: [],
+      occurrenceCandidates: [
+        {
+          transactionId: OCCURRENCE_ID,
+          ruleId: RULE_ID,
+          accountId: ACCOUNT_ID,
+          type: "expense",
+          amountMinor: 200_000,
+          occurredAt: new Date("2026-08-01T00:00:00.000Z")
+        }
+      ]
+    });
+
+    await service.reconcileIncoming("user-a", incomingTransaction);
+
+    expect(transactions.attachToRecurringRule).toHaveBeenCalledWith(
+      "user-a",
+      INCOMING_TXN_ID,
+      RULE_ID,
+      "tx1"
+    );
+    expect(occurrences.confirm).toHaveBeenCalledWith(
+      "user-a",
+      OCCURRENCE_ID,
+      INCOMING_TXN_ID,
+      "tx1"
+    );
+  });
+
+  it("does not confirm an ambiguous occurrence match, leaving it expected for manual linking", async () => {
+    const { service, occurrences } = buildService({
+      candidates: [],
+      occurrenceCandidates: [
+        {
+          transactionId: OCCURRENCE_ID,
+          ruleId: RULE_ID,
+          accountId: ACCOUNT_ID,
+          type: "expense",
+          amountMinor: 200_000,
+          occurredAt: new Date("2026-08-01T00:00:00.000Z")
+        },
+        {
+          transactionId: "99999999-9999-4999-8999-999999999999",
+          ruleId: "55555555-5555-4555-8555-555555555555",
+          accountId: ACCOUNT_ID,
+          type: "expense",
+          amountMinor: 200_000,
+          occurredAt: new Date("2026-08-01T00:00:00.000Z")
+        }
+      ]
+    });
+
+    await service.reconcileIncoming("user-a", incomingTransaction);
+
+    expect(occurrences.confirm).not.toHaveBeenCalled();
   });
 });
 

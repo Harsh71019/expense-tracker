@@ -95,6 +95,21 @@ describe("TransactionRepository Unit Tests", () => {
     expect(res?.id).toBe(sampleTxRow.id);
   });
 
+  it("derives payment context while mapping a transaction row", async () => {
+    const mockDb = createMockDrizzleDb([
+      {
+        ...sampleTxRow,
+        description: "UPI/DR/BLINKIT/RRN:630934540626/blinkit.payu@hdfcbank"
+      }
+    ]);
+    const repo = new TransactionRepository(mockDb);
+
+    await expect(repo.findById("u1", sampleTxRow.id)).resolves.toMatchObject({
+      paymentRail: "upi",
+      counterpartyHandle: "blinkit.payu@hdfcbank"
+    });
+  });
+
   it("updateNonMonetaryFields updates description and tags", async () => {
     const updatedRow = { ...sampleTxRow, description: "Updated Coffee" };
     const mockDb = createMockDrizzleDb([updatedRow]);

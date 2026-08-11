@@ -140,6 +140,21 @@ spending-warning references; linked historical data is never cascaded.
 }
 ```
 
+The transaction API read model also includes derived, non-persisted payment context:
+
+```ts
+{
+  paymentRail: 'upi' | 'card' | 'neft' | 'rtgs' | 'imps' | 'nach' | 'unknown',
+  counterpartyHandle: string | null
+}
+```
+
+`TransactionRepository` computes these fields from `description` through the versioned private
+narration normalizer before parsing the response with `TransactionSchema`. Create/update requests
+do not accept the fields, no transaction column stores them, and absent or conflicting evidence
+returns `unknown`/`null`. This same mapping covers normal transactions, reversals, imports, and both
+legs of a transfer.
+
 **Indexes**
 
 ```js
@@ -692,6 +707,8 @@ GET    /assets/:id/valuations | POST /assets/:id/valuations
 GET    /net-worth
 GET    /profile                         read-only app profile
 GET    /recurring | POST /recurring | PATCH /recurring/:id
+GET    /recurring/stats                 rule counts + next-30-days transaction, cash-flow,
+                                        and highest-spend-category forecast
 GET    /budgets | PUT /budgets/:categoryId | PATCH /budgets/:budgetId/archive
 
 GET    /reports/monthly/:month          reads monthly_rollups

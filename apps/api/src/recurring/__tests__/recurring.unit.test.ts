@@ -19,6 +19,7 @@ describe("Recurring Materialization Unit Tests", () => {
     nextRunAt: new Date("2026-01-01"),
     endAt: null,
     isPaused: false,
+    autoPost: true,
     createdAt: new Date(),
     updatedAt: new Date()
   };
@@ -52,6 +53,9 @@ describe("Recurring Materialization Unit Tests", () => {
         updatedAt: new Date()
       }))
     };
+    const mockOccurrenceRepo = {
+      createExpected: vi.fn(async () => ({ id: "occ_1" }))
+    };
     const mockAuditRepo = {
       record: vi.fn(async () => undefined)
     };
@@ -64,6 +68,7 @@ describe("Recurring Materialization Unit Tests", () => {
       mockRuleRepo,
       mockAccountRepo,
       mockTxRepo,
+      mockOccurrenceRepo,
       mockAuditRepo,
       mockLogger
     );

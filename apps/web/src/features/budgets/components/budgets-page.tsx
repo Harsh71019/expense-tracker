@@ -29,6 +29,7 @@ export function BudgetsPage({ initialPage, categories }: BudgetsPageProps): Reac
   const [editorOpen, setEditorOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<BudgetProgress>();
   const [archiveTarget, setArchiveTarget] = useState<BudgetProgress>();
+  const [searchQuery, setSearchQuery] = useState("");
   const [status, setStatus] = useState("");
   const query = useBudgets({
     includeArchived,
@@ -38,7 +39,14 @@ export function BudgetsPage({ initialPage, categories }: BudgetsPageProps): Reac
   const archive = useArchiveBudget();
   const pages = query.data?.pages ?? [];
   const firstPage = pages[0] ?? (includeArchived ? undefined : (initialPage ?? undefined));
-  const items = pages.flatMap((page) => page.items);
+  const items = pages.flatMap((page) => {
+    const pageItems = page.items;
+    if (searchQuery.trim() !== "") {
+      const q = searchQuery.toLowerCase().trim();
+      return pageItems.filter((progress) => progress.category.name.toLowerCase().includes(q));
+    }
+    return pageItems;
+  });
   const expenseCategories = categories.filter(
     (category) => category.kind === "expense" && !category.isArchived
   );
@@ -153,6 +161,39 @@ export function BudgetsPage({ initialPage, categories }: BudgetsPageProps): Reac
         />
       ) : firstPage === undefined ? null : (
         <>
+          <div
+            className={`mb-5 flex flex-wrap items-center gap-3.5 rounded-2xl border p-3.5 backdrop-blur transition-all duration-200 ${
+              searchQuery.trim() !== ""
+                ? "border-accent/40 bg-surface-elevated/90 shadow-sm"
+                : "border-border/80 bg-surface-elevated/90"
+            }`}
+          >
+            <div className="flex min-w-0 flex-1 items-center gap-2.5 rounded-xl border border-border/80 bg-surface-muted/60 px-3.5 transition-colors focus-within:border-accent/60 focus-within:bg-surface-muted focus-within:ring-2 focus-within:ring-accent/20">
+              <span className="text-foreground-muted/70 text-sm font-semibold" aria-hidden="true">
+                ⌕
+              </span>
+              <input
+                value={searchQuery}
+                name="budgetSearch"
+                autoComplete="off"
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Search budgets by category name…"
+                aria-label="Search budgets"
+                className="min-h-10 w-full bg-transparent py-2 text-base text-foreground outline-none placeholder:text-foreground-muted/60 sm:text-sm"
+              />
+              {searchQuery !== "" && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  aria-label="Clear search input"
+                  className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-xs text-foreground-muted hover:bg-surface-elevated hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          </div>
+
           <BudgetOverview overview={firstPage.overview} />
 
           {items.length === 0 ? (

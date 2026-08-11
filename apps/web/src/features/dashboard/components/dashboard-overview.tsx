@@ -5,6 +5,7 @@ import type {
   BudgetPage,
   DashboardInvestments,
   DashboardStats,
+  MonthlySpending,
   RecurringForecast,
   SpendMix,
   TopSpendingItem
@@ -14,10 +15,12 @@ import type { ReactNode } from "react";
 import { BudgetDashboardPanel } from "@/features/budgets";
 
 import { useInvestments } from "../hooks/use-investments";
+import { useMonthlySpending } from "../hooks/use-monthly-spending";
 import { useStats } from "../hooks/use-stats";
 import { DEFAULT_CASHFLOW_RANGE, DEFAULT_PANEL_RANGE } from "../model/defaults";
 import { CashFlowPanel } from "./cash-flow-panel";
 import { InvestmentsPanel } from "./investments-panel";
+import { MonthlySpendingPanel } from "./monthly-spending-panel";
 import { RecurringPanel } from "./recurring-panel";
 import { SpendMixPanel } from "./spend-mix-panel";
 import { StatCards } from "./stat-cards";
@@ -25,6 +28,7 @@ import { TopSpendingPanel } from "./top-spending-panel";
 
 type DashboardOverviewProps = Readonly<{
   initialStats: DashboardStats | null;
+  initialMonthlySpending: MonthlySpending | null;
   initialCashflow: CashflowResponse;
   initialSpendMix: SpendMix;
   initialTopSpending: TopSpendingItem[];
@@ -35,6 +39,7 @@ type DashboardOverviewProps = Readonly<{
 
 export function DashboardOverview({
   initialStats,
+  initialMonthlySpending,
   initialCashflow,
   initialSpendMix,
   initialTopSpending,
@@ -43,8 +48,10 @@ export function DashboardOverview({
   initialBudgets
 }: DashboardOverviewProps): ReactNode {
   const statsQuery = useStats(initialStats);
+  const monthlySpendingQuery = useMonthlySpending(initialMonthlySpending);
   const investmentsQuery = useInvestments(initialInvestments);
   const stats = statsQuery.data ?? initialStats;
+  const monthlySpending = monthlySpendingQuery.data ?? initialMonthlySpending;
   const investments = investmentsQuery.data ?? initialInvestments;
 
   return (
@@ -62,6 +69,8 @@ export function DashboardOverview({
       </header>
 
       {stats === null ? null : <StatCards stats={stats} />}
+
+      {monthlySpending === null ? null : <MonthlySpendingPanel spending={monthlySpending} />}
 
       <div className="grid items-start gap-5 lg:grid-cols-[1.5fr_1fr]">
         <CashFlowPanel initialCashflow={initialCashflow} initialRange={DEFAULT_CASHFLOW_RANGE} />

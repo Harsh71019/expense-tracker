@@ -11,7 +11,6 @@ import {
 import { useState } from "react";
 import type { ReactNode } from "react";
 
-import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { Button } from "@/components/ui/button";
 import { Money, SignedMoney } from "@/components/ui/money";
 import { toast } from "@/lib/toast";
@@ -71,8 +70,6 @@ export function GoalDetail({
 
   return (
     <section className="space-y-6">
-      <Breadcrumbs items={[{ label: "Goals", href: "/goals" }, { label: goal.name }]} />
-
       <div className="rounded-[22px] border border-border bg-surface-elevated p-6 sm:p-8">
         <div className="flex flex-wrap items-start gap-5">
           <GoalProgressRing

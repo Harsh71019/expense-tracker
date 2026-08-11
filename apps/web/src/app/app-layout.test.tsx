@@ -23,7 +23,14 @@ vi.mock("@/lib/api/session", () => ({ getSession: async () => mocks.session }));
 vi.mock("@/lib/theme-server", () => ({ getStoredTheme: async () => "light" }));
 vi.mock("@/components/app-nav", () => ({
   AppNav: () => <nav>Navigation</nav>,
-  mainNavItems: []
+  mainNavItems: [],
+  useNavPreferences: () => ({
+    orderedVisibleItems: [],
+    allOrderedItems: [],
+    reorder: vi.fn(),
+    toggleVisible: vi.fn(),
+    reset: vi.fn()
+  })
 }));
 vi.mock("@/components/mobile-bottom-nav", () => ({
   MobileBottomNav: () => <nav>Mobile navigation</nav>

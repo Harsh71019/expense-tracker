@@ -45,6 +45,8 @@ const base = {
   tags: ["groceries"],
   currency: "INR" as const,
   source: "manual" as const,
+  paymentRail: "upi" as const,
+  counterpartyHandle: "bigbasket@okhdfcbank",
   createdAt: new Date(),
   updatedAt: new Date()
 };
@@ -65,6 +67,8 @@ describe("TxnDetailDrawer", () => {
     expect(screen.getByText("HDFC Bank")).toBeVisible();
     expect(screen.getByText("−₹342.00")).toBeVisible();
     expect(screen.getByText("posted")).toBeVisible();
+    expect(screen.getByText("UPI")).toBeVisible();
+    expect(screen.getByText("bigbasket@okhdfcbank")).toBeVisible();
     expect(screen.getByDisplayValue("BigBasket order")).toBeVisible();
     expect(screen.getByText("#groceries")).toBeVisible();
 

@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { AccountIdSchema } from "./account.js";
 import { CategoryIdSchema } from "./category.js";
-import { TransactionTypeSchema } from "./transaction.js";
+import { TopSpendingCategorySchema, TransactionTypeSchema } from "./transaction.js";
 
 type RRuleConstructor = typeof import("rrule").RRule;
 
@@ -79,7 +79,18 @@ export const RRuleStringSchema = z
 export const CreateRecurringRuleSchema = z.object({
   template: RecurringRuleTemplateSchema,
   rrule: RRuleStringSchema,
-  startAt: z.coerce.date()
+  startAt: z.coerce.date(),
+  /**
+   * `true` (default): the materializer posts a ledger transaction for each
+   * occurrence, as it always has. `false`: the materializer only records an
+   * expected occurrence (see recurring-occurrence.ts) — no ledger effect —
+   * and the real transaction (e.g. posted by an external ingestion source)
+   * is linked to it afterward, either automatically by
+   * RecurringReconciliationService or manually via the occurrence's
+   * link-payment endpoint. Use this for rules whose transactions already
+   * arrive from elsewhere (bank-alert ingestion), to avoid a duplicate post.
+   */
+  autoPost: z.boolean().default(true)
 });
 
 /**
@@ -103,11 +114,15 @@ export const UpdateRecurringRuleSchema = z
   .object({
     template: RecurringRuleTemplatePatchSchema.optional(),
     rrule: RRuleStringSchema.optional(),
-    isPaused: z.boolean().optional()
+    isPaused: z.boolean().optional(),
+    autoPost: z.boolean().optional()
   })
   .refine(
     (value) =>
-      value.template !== undefined || value.rrule !== undefined || value.isPaused !== undefined,
+      value.template !== undefined ||
+      value.rrule !== undefined ||
+      value.isPaused !== undefined ||
+      value.autoPost !== undefined,
     { message: "At least one field must be provided." }
   );
 
@@ -120,8 +135,26 @@ export const RecurringRuleSchema = z.object({
   nextRunAt: z.coerce.date(),
   lastRunAt: z.coerce.date().optional(),
   isPaused: z.boolean(),
+  autoPost: z.boolean().default(true),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date()
+});
+
+/**
+ * A live read model for the recurring page. Forecast amounts cover the next
+ * 30 rolling days so rules with different frequencies can be compared on the
+ * same time horizon.
+ */
+export const RecurringStatsSchema = z.object({
+  forecastDays: z.literal(30),
+  totalRules: z.number().int().min(0),
+  activeRules: z.number().int().min(0),
+  pausedRules: z.number().int().min(0),
+  upcomingTransactionCount: z.number().int().min(0),
+  upcomingExpenseMinor: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER),
+  upcomingIncomeMinor: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER),
+  upcomingNetMinor: z.number().int().min(-Number.MAX_SAFE_INTEGER).max(Number.MAX_SAFE_INTEGER),
+  topSpendingCategory: TopSpendingCategorySchema.nullable()
 });
 
 export type RecurringRuleId = z.infer<typeof RecurringRuleIdSchema>;
@@ -129,6 +162,7 @@ export type RecurringRuleTemplate = z.infer<typeof RecurringRuleTemplateSchema>;
 export type CreateRecurringRule = z.infer<typeof CreateRecurringRuleSchema>;
 export type UpdateRecurringRule = z.infer<typeof UpdateRecurringRuleSchema>;
 export type RecurringRule = z.infer<typeof RecurringRuleSchema>;
+export type RecurringStats = z.infer<typeof RecurringStatsSchema>;
 
 function isParseableRRule(value: string): boolean {
   try {

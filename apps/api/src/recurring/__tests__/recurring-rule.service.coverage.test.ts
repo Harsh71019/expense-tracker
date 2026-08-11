@@ -21,7 +21,8 @@ const INPUT: CreateRecurringRule = {
     tags: ["home"]
   },
   rrule: "FREQ=MONTHLY;BYMONTHDAY=1",
-  startAt: START
+  startAt: START,
+  autoPost: true
 };
 const RULE: RecurringRule = {
   id: RULE_ID,
@@ -31,6 +32,7 @@ const RULE: RecurringRule = {
   startAt: START,
   nextRunAt: START,
   isPaused: false,
+  autoPost: true,
   createdAt: START,
   updatedAt: START
 };

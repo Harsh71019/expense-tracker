@@ -201,6 +201,8 @@ export function billHandlers(http: MockHttp, store: MockStore): HttpHandler[] {
         currency: "INR" as const,
         source: "manual" as const,
         status: "posted" as const,
+        paymentRail: "unknown" as const,
+        counterpartyHandle: null,
         transferGroupId,
         createdAt: now,
         updatedAt: now

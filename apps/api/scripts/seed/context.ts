@@ -32,6 +32,7 @@ import { NotificationSweepService } from "../../src/notifications/notification-s
 import { MonthlyRollupRepository } from "../../src/reports/monthly-rollup.repository.js";
 import { RollupsRefreshService } from "../../src/reports/rollups-refresh.service.js";
 import { RecurringMaterializeService } from "../../src/recurring/recurring-materialize.service.js";
+import { RecurringOccurrenceRepository } from "../../src/recurring/recurring-occurrence.repository.js";
 import { RecurringRuleRepository } from "../../src/recurring/recurring-rule.repository.js";
 import { RecurringRuleService } from "../../src/recurring/recurring-rule.service.js";
 import { TransactionRepository } from "../../src/transactions/transaction.repository.js";
@@ -170,6 +171,7 @@ export async function createSeedContext(): Promise<SeedContext> {
     recurringRuleRepo,
     accounts,
     transactionsRepo,
+    new RecurringOccurrenceRepository(db),
     audit,
     seedLogger
   );

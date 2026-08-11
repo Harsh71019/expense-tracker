@@ -36,4 +36,21 @@ describe("NormalizedTransactionTextSchema", () => {
       })
     ).toThrow();
   });
+
+  it("accepts RTGS as a supported payment rail", () => {
+    expect(
+      NormalizedTransactionTextSchema.parse({
+        normalized: "acme rentals",
+        counterpartyKey: "acme rentals",
+        paymentRail: "rtgs",
+        counterpartyHandle: null,
+        directionHint: "debit",
+        isFeeHint: false,
+        isRefundHint: false,
+        tokens: ["acme", "rentals"],
+        referenceTokens: [{ kind: "utr", value: "hdfc0000000001" }],
+        normalizerVersion: 1
+      })
+    ).toMatchObject({ paymentRail: "rtgs" });
+  });
 });

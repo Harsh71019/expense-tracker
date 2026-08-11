@@ -5,18 +5,23 @@ import { useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 
 import { Badge } from "@/components/ui/badge";
-import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Money } from "@/components/ui/money";
 import { Select } from "@/components/ui/select";
 import { useAccounts } from "@/features/accounts";
+import { isLinkableBillPaymentSource, LinkBillPaymentDialog } from "@/features/bills";
 import { useCategories } from "@/features/categories";
+import {
+  isLinkableRecurringOccurrenceSource,
+  LinkRecurringOccurrenceDialog
+} from "@/features/recurring/components/link-recurring-occurrence-dialog";
 import { useReverseTransfer } from "@/features/transfers/hooks/use-transfers";
 import { toast } from "@/lib/toast";
 
 import { useReverseTxn } from "../hooks/use-reverse-txn";
 import { useTxn, useUpdateTxn } from "../hooks/use-txn";
+import { PaymentRailBadge, paymentRailLabel } from "./payment-rail-badge";
 
 const dateTime = new Intl.DateTimeFormat("en-IN", {
   dateStyle: "medium",
@@ -37,6 +42,8 @@ export function TxnDetail({ initialTransaction }: { initialTransaction: Transact
   const [categoryId, setCategoryId] = useState(transaction.categoryId ?? "");
   const [tags, setTags] = useState(transaction.tags.join(", "));
   const [error, setError] = useState<string>();
+  const [linkingRecurring, setLinkingRecurring] = useState(false);
+  const [linkingBillPayment, setLinkingBillPayment] = useState(false);
   const accountName =
     accounts.data?.find((item) => item.id === transaction.accountId)?.name ?? "Archived account";
   const categoryName =
@@ -81,13 +88,6 @@ export function TxnDetail({ initialTransaction }: { initialTransaction: Transact
 
   return (
     <section className="space-y-6">
-      <Breadcrumbs
-        items={[
-          { label: "Transactions", href: "/transactions" },
-          { label: transaction.description }
-        ]}
-      />
-
       <header className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">{transaction.description}</h1>
@@ -97,6 +97,7 @@ export function TxnDetail({ initialTransaction }: { initialTransaction: Transact
             </Badge>
             <Badge variant="pending">{transaction.source}</Badge>
             {isTransfer ? <Badge variant="success">transfer</Badge> : null}
+            <PaymentRailBadge rail={transaction.paymentRail} />
           </div>
         </div>
         <Money minor={transaction.amountMinor} variant={transaction.type} signed size="lg" />
@@ -107,6 +108,13 @@ export function TxnDetail({ initialTransaction }: { initialTransaction: Transact
           <Fact label="Account" value={accountName} />
           <Fact label="Category" value={categoryName} />
           <Fact label="Type" value={transaction.type} />
+          <Fact
+            label="Payment rail"
+            value={paymentRailLabel(transaction.paymentRail) ?? "Unknown"}
+          />
+          {transaction.counterpartyHandle === null ? null : (
+            <Fact label="UPI handle" value={transaction.counterpartyHandle} />
+          )}
           <Fact label="Occurred" value={dateTime.format(transaction.occurredAt)} />
           <Fact label="Created" value={dateTime.format(transaction.createdAt)} />
           <Fact label="Updated" value={dateTime.format(transaction.updatedAt)} />
@@ -203,18 +211,42 @@ export function TxnDetail({ initialTransaction }: { initialTransaction: Transact
               </Button>
             </form>
           ) : null}
-          {transaction.status === "posted" ? (
-            <Button
-              type="button"
-              variant="secondary"
-              disabled={reverse.isPending}
-              onClick={() => reverse.mutate(transaction.id)}
-            >
-              {reverse.isPending ? "Recording reversal…" : "Reverse transaction"}
-            </Button>
-          ) : null}
+          <div className="flex flex-wrap gap-2">
+            {transaction.status === "posted" ? (
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={reverse.isPending}
+                onClick={() => reverse.mutate(transaction.id)}
+              >
+                {reverse.isPending ? "Recording reversal…" : "Reverse transaction"}
+              </Button>
+            ) : null}
+            {isLinkableRecurringOccurrenceSource(transaction) ? (
+              <Button type="button" variant="secondary" onClick={() => setLinkingRecurring(true)}>
+                Mark as recurring payment
+              </Button>
+            ) : null}
+            {isLinkableBillPaymentSource(transaction, accounts.data ?? []) ? (
+              <Button type="button" variant="secondary" onClick={() => setLinkingBillPayment(true)}>
+                Mark as credit card bill payment
+              </Button>
+            ) : null}
+          </div>
         </section>
       )}
+      {linkingRecurring ? (
+        <LinkRecurringOccurrenceDialog
+          transaction={transaction}
+          onClose={() => setLinkingRecurring(false)}
+        />
+      ) : null}
+      {linkingBillPayment ? (
+        <LinkBillPaymentDialog
+          transaction={transaction}
+          onClose={() => setLinkingBillPayment(false)}
+        />
+      ) : null}
       <p className="text-xs text-foreground-muted">
         Money corrections create compensating entries. Ledger amounts are never edited or deleted.
       </p>

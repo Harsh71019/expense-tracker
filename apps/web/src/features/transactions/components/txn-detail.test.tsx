@@ -41,6 +41,8 @@ const transaction: Transaction = {
   currency: "INR",
   source: "manual",
   status: "posted",
+  paymentRail: "upi",
+  counterpartyHandle: "chai@okhdfcbank",
   createdAt: new Date("2026-07-16T00:00:00.000Z"),
   updatedAt: new Date("2026-07-16T00:00:00.000Z")
 };
@@ -57,10 +59,8 @@ describe("TxnDetail", () => {
     mocks.update.mockResolvedValue({ ...transaction, description: "Masala chai" });
     render(<TxnDetail initialTransaction={transaction} />);
 
-    expect(screen.getByRole("link", { name: "Transactions" })).toHaveAttribute(
-      "href",
-      "/transactions"
-    );
+    expect(screen.getAllByText("UPI")).toHaveLength(2);
+    expect(screen.getByText("chai@okhdfcbank")).toBeVisible();
     await user.click(screen.getByRole("button", { name: "Edit metadata" }));
     await user.clear(screen.getByLabelText("Description"));
     await user.type(screen.getByLabelText("Description"), "Masala chai");

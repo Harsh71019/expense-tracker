@@ -37,7 +37,7 @@ See `docs/backend/BACKEND.md` for the full target architecture, `AGENTS.md` for 
 - **Credit card bills** — statement cycles, reconciliation, overpayment/underpayment handling
 - **Spending pattern warnings** — detects and surfaces anomalous spend against recent history
 - **API keys** — scoped, user-issued keys (`RequireScopes` guard) as an alternative to session auth
-- **Dashboard** — aggregate summary endpoint backing the frontend's home view
+- **Dashboard** — aggregate summary plus current-month daily/weekly spending analytics backing the frontend's home view
 - **Standardized API errors** — RFC 7807 problem+json with stable `code` and user-facing `message` fields, request references, typed `DomainError` codes, and per-field validation errors
 - **Health checks** — `/healthz` (liveness), `/readyz` (Postgres/Redis ping)
 - **OpenAPI spec + generated client** — `pnpm gen:client` generates `apps/api/openapi.json` (via `@asteasolutions/zod-to-openapi`) and a typed `apps/web/src/lib/api/generated/schema.d.ts` from it

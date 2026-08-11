@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { Account, Category, RecurringRule } from "@treasury-ops/shared";
+import type { Account, Category, RecurringRule, RecurringStats } from "@treasury-ops/shared";
 import { describe, expect, it, vi } from "vitest";
 
 import { RecurringManager } from "./recurring-manager";
@@ -37,6 +37,9 @@ vi.mock("../hooks/use-recurring-reconciliations", () => ({
     isError: false,
     error: null
   })
+}));
+vi.mock("./recurring-stats-cards", () => ({
+  RecurringStatsCards: () => <div>Recurring insights</div>
 }));
 
 const timestamp = new Date("2026-07-19T00:00:00.000Z");
@@ -78,8 +81,20 @@ const rule: RecurringRule = {
   startAt: timestamp,
   nextRunAt: new Date("2026-08-01T00:00:00.000Z"),
   isPaused: false,
+  autoPost: true,
   createdAt: timestamp,
   updatedAt: timestamp
+};
+const stats: RecurringStats = {
+  forecastDays: 30,
+  totalRules: 1,
+  activeRules: 1,
+  pausedRules: 0,
+  upcomingTransactionCount: 1,
+  upcomingExpenseMinor: rule.template.amountMinor,
+  upcomingIncomeMinor: 0,
+  upcomingNetMinor: -rule.template.amountMinor,
+  topSpendingCategory: null
 };
 
 describe("RecurringManager", () => {
@@ -91,6 +106,7 @@ describe("RecurringManager", () => {
         accounts={[account]}
         categories={[category]}
         initialReconciliations={[]}
+        initialStats={stats}
       />
     );
 
@@ -112,6 +128,7 @@ describe("RecurringManager", () => {
         accounts={[account]}
         categories={[category]}
         initialReconciliations={[]}
+        initialStats={stats}
       />
     );
     await userEvent.click(screen.getByRole("button", { name: /New rule/ }));
@@ -125,6 +142,7 @@ describe("RecurringManager", () => {
         accounts={[]}
         categories={[]}
         initialReconciliations={[]}
+        initialStats={null}
       />
     );
     expect(screen.getByText(/Create an account before adding/)).toBeVisible();

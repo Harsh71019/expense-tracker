@@ -38,6 +38,7 @@ const rule: RecurringRule = {
   startAt: timestamp,
   nextRunAt: timestamp,
   isPaused: false,
+  autoPost: true,
   createdAt: timestamp,
   updatedAt: timestamp
 };
@@ -57,13 +58,15 @@ describe("recurring rule hooks", () => {
     await hook.result.current.mutateAsync({
       template: rule.template,
       rrule: rule.rrule,
-      startAt: timestamp
+      startAt: timestamp,
+      autoPost: true
     });
     expect(mocks.POST).toHaveBeenCalledWith("/v1/recurring", {
       body: {
         template: rule.template,
         rrule: rule.rrule,
-        startAt: "2026-07-19T00:00:00.000Z"
+        startAt: "2026-07-19T00:00:00.000Z",
+        autoPost: true
       },
       params: { header: { "Idempotency-Key": "11111111-1111-4111-8111-111111111111" } }
     });

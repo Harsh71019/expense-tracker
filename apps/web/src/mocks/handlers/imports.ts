@@ -266,6 +266,8 @@ export function importHandlers(http: MockHttp, store: MockStore): HttpHandler[] 
           tags: [],
           source: "csv_import",
           status: "posted",
+          paymentRail: "unknown",
+          counterpartyHandle: null,
           createdAt: now,
           updatedAt: now
         };

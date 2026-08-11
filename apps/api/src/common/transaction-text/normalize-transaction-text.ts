@@ -13,6 +13,7 @@ const RAIL_MARKERS: ReadonlyArray<
 > = [
   { rail: "upi", tokens: new Set(["upi"]) },
   { rail: "neft", tokens: new Set(["neft"]) },
+  { rail: "rtgs", tokens: new Set(["rtgs"]) },
   { rail: "imps", tokens: new Set(["imps"]) },
   { rail: "nach", tokens: new Set(["nach"]) },
   { rail: "card", tokens: new Set(["card", "ecom", "pos"]) }
@@ -55,6 +56,7 @@ const TRANSPORT_NOISE = new Set([
   "reversal",
   "reversed",
   "rrn",
+  "rtgs",
   "rvs",
   "to",
   "transaction",
@@ -100,6 +102,11 @@ const UPI_ADAPTER: RailAdapter = {
 };
 
 const NEFT_ADAPTER: RailAdapter = {
+  extractHandle: () => null,
+  twelveDigitReferenceKind: "other"
+};
+
+const RTGS_ADAPTER: RailAdapter = {
   extractHandle: () => null,
   twelveDigitReferenceKind: "other"
 };
@@ -166,6 +173,8 @@ function adapterFor(paymentRail: TransactionTextPaymentRail): RailAdapter {
       return UPI_ADAPTER;
     case "neft":
       return NEFT_ADAPTER;
+    case "rtgs":
+      return RTGS_ADAPTER;
     case "imps":
       return IMPS_ADAPTER;
     case "nach":

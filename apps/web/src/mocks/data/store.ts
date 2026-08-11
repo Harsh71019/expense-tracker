@@ -18,6 +18,7 @@ export type UserProfileDto = components["schemas"]["UserProfile"];
 export type TransferDto = components["schemas"]["Transfer"];
 export type TransferReversalDto = components["schemas"]["TransferReversal"];
 export type RecurringRuleDto = components["schemas"]["RecurringRule"];
+export type RecurringStatsDto = components["schemas"]["RecurringStats"];
 export type GoalDto = components["schemas"]["Goal"];
 export type BillDto = components["schemas"]["CreditCardBill"];
 export type BillStatementUploadDto = components["schemas"]["BillStatementUpload"];
@@ -2088,6 +2089,7 @@ function seedRecurringRules(store: MockStore): void {
       nextRunAt: daysAgo(-8),
       lastRunAt: daysAgo(22),
       isPaused: template.isPaused,
+      autoPost: true,
       createdAt,
       updatedAt: createdAt
     });
@@ -2142,6 +2144,8 @@ function seedTransactions(store: MockStore): void {
       tags: [...template.tags],
       source: "manual",
       status: "posted",
+      paymentRail: "unknown",
+      counterpartyHandle: null,
       createdAt: occurredAt,
       updatedAt: occurredAt
     };
@@ -2276,6 +2280,8 @@ function seedTransfers(store: MockStore): void {
       tags: [...template.tags],
       source: "manual",
       status: "posted",
+      paymentRail: "unknown",
+      counterpartyHandle: null,
       transferGroupId,
       createdAt: occurredAt,
       updatedAt: occurredAt
@@ -2292,6 +2298,8 @@ function seedTransfers(store: MockStore): void {
       tags: [...template.tags],
       source: "manual",
       status: "posted",
+      paymentRail: "unknown",
+      counterpartyHandle: null,
       transferGroupId,
       createdAt: occurredAt,
       updatedAt: occurredAt

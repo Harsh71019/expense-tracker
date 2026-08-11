@@ -25,6 +25,7 @@ export const recurringRules = pgTable(
     nextRunAt: timestamp("next_run_at", { withTimezone: true }).notNull(),
     lastRunAt: timestamp("last_run_at", { withTimezone: true }),
     isPaused: boolean("is_paused").notNull().default(false),
+    autoPost: boolean("auto_post").notNull().default(true),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull()
   },

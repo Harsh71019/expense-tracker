@@ -50,6 +50,7 @@ import {
   DashboardStatsQuerySchema,
   DashboardStatsSchema,
   DashboardSummarySchema,
+  MonthlySpendingSchema,
   ExportCsvQuerySchema,
   ListTransactionsQuerySchema,
   ListCategoriesQuerySchema,
@@ -104,13 +105,20 @@ import {
   ListBillsQuerySchema,
   ListBillStatementRowsQuerySchema,
   ListRecurringReconciliationsQuerySchema,
+  ListRecurringOccurrencesQuerySchema,
+  LinkRecurringOccurrencePaymentSchema,
+  RecurringOccurrenceIdSchema,
+  RecurringOccurrencePageSchema,
+  RecurringOccurrenceSchema,
   RecurringReconciliationReviewItemSchema,
   ReorderGoalsSchema,
   RecurringReconciliationIdSchema,
   RecurringReconciliationSchema,
   RecurringRuleIdSchema,
   RecurringRuleSchema,
+  RecurringStatsSchema,
   ResolveRecurringReconciliationSchema,
+  LinkBillPaymentSchema,
   PayCreditCardBillSchema,
   UpdateApiKeySchema,
   UpdateBillStatementRowSchema,
@@ -121,7 +129,12 @@ import {
   SpendingWarningPageSchema,
   UpdateGoalSchema,
   ListBudgetsQuerySchema,
-  UpsertBudgetSchema
+  UpsertBudgetSchema,
+  ConfirmPendingTransactionSchema,
+  CreatePendingTransactionSchema,
+  ListPendingTransactionsQuerySchema,
+  PendingTransactionIdSchema,
+  PendingTransactionSchema
 } from "@treasury-ops/shared";
 import { z } from "zod";
 
@@ -147,11 +160,16 @@ const StagedRowPage = StagedRowPageSchema.meta({ id: "StagedRowPage" });
 const UserProfile = UserProfileSchema.meta({ id: "UserProfile" });
 const MonthlyRollup = MonthlyRollupSchema.meta({ id: "MonthlyRollup" });
 const RecurringRule = RecurringRuleSchema.meta({ id: "RecurringRule" });
+const RecurringStats = RecurringStatsSchema.meta({ id: "RecurringStats" });
 const RecurringReconciliation = RecurringReconciliationSchema.meta({
   id: "RecurringReconciliation"
 });
 const RecurringReconciliationReviewItem = RecurringReconciliationReviewItemSchema.meta({
   id: "RecurringReconciliationReviewItem"
+});
+const RecurringOccurrence = RecurringOccurrenceSchema.meta({ id: "RecurringOccurrence" });
+const RecurringOccurrencePage = RecurringOccurrencePageSchema.meta({
+  id: "RecurringOccurrencePage"
 });
 const SpendingWarningPage = SpendingWarningPageSchema.meta({ id: "SpendingWarningPage" });
 const DismissSpendingWarningResponse = DismissSpendingWarningResponseSchema.meta({
@@ -161,10 +179,12 @@ const Budget = BudgetSchema.meta({ id: "Budget" });
 const BudgetPage = BudgetPageSchema.meta({ id: "BudgetPage" });
 const Goal = GoalSchema.meta({ id: "Goal" });
 const GoalPlan = GoalPlanSchema.meta({ id: "GoalPlan" });
+const PendingTransaction = PendingTransactionSchema.meta({ id: "PendingTransaction" });
 const DashboardSummary = DashboardSummarySchema.meta({ id: "DashboardSummary" });
 const RecentActivityItem = RecentActivityItemSchema.meta({ id: "RecentActivityItem" });
 const DashboardStats = DashboardStatsSchema.meta({ id: "DashboardStats" });
 const CashflowResponse = CashflowResponseSchema.meta({ id: "CashflowResponse" });
+const MonthlySpending = MonthlySpendingSchema.meta({ id: "MonthlySpending" });
 const TopSpendingItem = TopSpendingItemSchema.meta({ id: "TopSpendingItem" });
 const SpendMix = SpendMixSchema.meta({ id: "SpendMix" });
 const DashboardInvestments = DashboardInvestmentsSchema.meta({ id: "DashboardInvestments" });
@@ -190,6 +210,10 @@ const importBatchAndRowId = z.object({
 });
 const month = z.object({ month: MonthSchema });
 const recurringRuleId = z.object({ ruleId: RecurringRuleIdSchema });
+const recurringRuleAndOccurrenceId = z.object({
+  ruleId: RecurringRuleIdSchema,
+  occurrenceId: RecurringOccurrenceIdSchema
+});
 const recurringReconciliationId = z.object({ id: RecurringReconciliationIdSchema });
 const spendingWarningId = z.object({ warningId: SpendingWarningIdSchema });
 const goalId = z.object({ goalId: GoalIdSchema });
@@ -199,6 +223,7 @@ const billAndRowId = z.object({
   rowId: BillStatementRowIdSchema
 });
 const budgetId = z.object({ budgetId: BudgetIdSchema });
+const pendingTransactionId = z.object({ id: PendingTransactionIdSchema });
 const json = (schema: z.ZodType): { content: { "application/json": { schema: z.ZodType } } } => ({
   content: { "application/json": { schema } }
 });
@@ -745,6 +770,18 @@ registry.registerPath({
   }
 });
 registry.registerPath({
+  method: "get",
+  path: "/v1/recurring/stats",
+  security: secured,
+  responses: {
+    200: {
+      description: "Recurring rule and next-30-days forecast statistics",
+      ...json(RecurringStats)
+    },
+    ...problemResponses
+  }
+});
+registry.registerPath({
   method: "post",
   path: "/v1/recurring",
   security: secured,
@@ -778,6 +815,59 @@ registry.registerPath({
     },
     404: { description: "Recurring rule, account, or category not found", ...json(ProblemDetails) },
     ...idempotencyConflictResponse,
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/v1/recurring/occurrences/outstanding",
+  security: secured,
+  responses: {
+    200: {
+      description: "Outstanding (expected/missed) occurrences across all manual-post rules",
+      ...json(z.array(RecurringOccurrence))
+    },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "get",
+  path: "/v1/recurring/{ruleId}/occurrences",
+  security: secured,
+  request: { params: recurringRuleId, query: ListRecurringOccurrencesQuerySchema },
+  responses: {
+    200: {
+      description: "Occurrence history for a manual-post recurring rule",
+      ...json(RecurringOccurrencePage)
+    },
+    404: { description: "Recurring rule not found", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "post",
+  path: "/v1/recurring/{ruleId}/occurrences/{occurrenceId}/link-payment",
+  security: secured,
+  request: {
+    params: recurringRuleAndOccurrenceId,
+    body: json(LinkRecurringOccurrencePaymentSchema),
+    headers: idempotencyKeyHeaders
+  },
+  responses: {
+    200: {
+      description: "Confirmed occurrence, or idempotent replay",
+      headers: optionalReplayHeaders,
+      ...json(RecurringOccurrence)
+    },
+    404: {
+      description: "Recurring rule, occurrence, or transaction not found",
+      ...json(ProblemDetails)
+    },
+    409: {
+      description: "Transaction is not an eligible source, or the occurrence is already confirmed",
+      ...json(ProblemDetails)
+    },
     ...problemResponses
   }
 });
@@ -1111,6 +1201,18 @@ registry.registerPath({
 });
 registry.registerPath({
   method: "get",
+  path: "/v1/dashboard/monthly-spending",
+  security: secured,
+  responses: {
+    200: {
+      description: "Current IST calendar-month spending with daily and elapsed weekly buckets",
+      ...json(MonthlySpending)
+    },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "get",
   path: "/v1/dashboard/top-spending",
   security: secured,
   request: { query: TopSpendingQuerySchema },
@@ -1328,6 +1430,91 @@ registry.registerPath({
       description: "Bill is unreconciled, paid, or would be overpaid",
       ...json(ProblemDetails)
     },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "post",
+  path: "/v1/bills/{billId}/link-payment",
+  security: secured,
+  request: {
+    params: billId,
+    headers: idempotencyKeyHeaders,
+    body: json(LinkBillPaymentSchema)
+  },
+  responses: {
+    200: {
+      description: "Bill payment linked to an existing transaction, or idempotent replay",
+      headers: optionalReplayHeaders,
+      ...json(BillPaymentResult)
+    },
+    404: { description: "Bill or transaction not found", ...json(ProblemDetails) },
+    409: {
+      description: "Transaction is not an eligible payment source, or the bill would be overpaid",
+      ...json(ProblemDetails)
+    },
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/v1/pending-transactions",
+  security: securedByKeyOrCookie,
+  request: { body: json(CreatePendingTransactionSchema), headers: idempotencyKeyHeaders },
+  responses: {
+    200: {
+      description: "Idempotent replay of the created pending transaction",
+      headers: replayedHeaders,
+      ...json(PendingTransaction)
+    },
+    201: { description: "Created pending transaction", ...json(PendingTransaction) },
+    404: { description: "Account not found", ...json(ProblemDetails) },
+    ...idempotencyConflictResponse,
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "get",
+  path: "/v1/pending-transactions",
+  security: secured,
+  request: { query: ListPendingTransactionsQuerySchema },
+  responses: {
+    200: { description: "Pending transactions page", ...json(z.array(PendingTransaction)) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "post",
+  path: "/v1/pending-transactions/{id}/confirm",
+  security: secured,
+  request: {
+    params: pendingTransactionId,
+    body: json(ConfirmPendingTransactionSchema),
+    headers: idempotencyKeyHeaders
+  },
+  responses: {
+    200: {
+      description: "Pending transaction confirmed into a real transaction",
+      ...json(PendingTransaction)
+    },
+    404: { description: "Pending transaction not found", ...json(ProblemDetails) },
+    409: { description: "Pending transaction was already dismissed", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "post",
+  path: "/v1/pending-transactions/{id}/dismiss",
+  security: secured,
+  request: { params: pendingTransactionId, headers: idempotencyKeyHeaders },
+  responses: {
+    204: {
+      description: "Pending transaction dismissed, or idempotent replay",
+      headers: optionalReplayHeaders
+    },
+    404: { description: "Pending transaction not found", ...json(ProblemDetails) },
+    ...idempotencyConflictResponse,
     ...problemResponses
   }
 });

@@ -115,16 +115,34 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
     }))
   ];
 
+  function applyPreset(preset: "this-month" | "30-days" | "this-year"): void {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    const today = new Date(Date.UTC(year, month, now.getDate()));
+
+    let fromDate: Date;
+    if (preset === "this-month") {
+      fromDate = new Date(Date.UTC(year, month, 1));
+    } else if (preset === "30-days") {
+      fromDate = new Date(Date.UTC(year, month, now.getDate() - 30));
+    } else {
+      fromDate = new Date(Date.UTC(year, 0, 1));
+    }
+
+    navigate({ from: fromDate, to: today });
+  }
+
   return (
     <div
-      className={`mb-4 flex flex-wrap items-center gap-2.5 rounded-2xl border p-3 transition-colors duration-150 ${
+      className={`mb-5 flex flex-wrap items-center gap-3 rounded-2xl border p-3.5 backdrop-blur transition-all duration-200 ${
         isFiltered
-          ? "border-accent/40 bg-surface-elevated shadow-sm"
-          : "border-border bg-surface-elevated"
+          ? "border-accent/40 bg-surface-elevated/90 shadow-sm"
+          : "border-border/80 bg-surface-elevated/90"
       }`}
     >
-      <div className="flex min-w-0 flex-1 basis-full items-center gap-2 rounded-lg border border-border bg-surface-muted px-3 sm:min-w-52 sm:basis-auto">
-        <span className="text-foreground-muted" aria-hidden="true">
+      <div className="flex min-w-0 flex-1 basis-full items-center gap-2.5 rounded-xl border border-border/80 bg-surface-muted/60 px-3.5 transition-colors focus-within:border-accent/60 focus-within:bg-surface-muted focus-within:ring-2 focus-within:ring-accent/20 sm:min-w-56 sm:basis-auto">
+        <span className="text-foreground-muted/70 text-sm font-semibold" aria-hidden="true">
           ⌕
         </span>
         <input
@@ -134,25 +152,26 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Search description…"
           aria-label="Search description"
-          className="min-h-11 w-full bg-transparent py-2.5 text-base text-foreground outline-none placeholder:text-foreground-muted/60 sm:text-sm"
+          className="min-h-10 w-full bg-transparent py-2 text-base text-foreground outline-none placeholder:text-foreground-muted/60 sm:text-sm"
         />
         {query !== "" && (
           <button
             type="button"
             onClick={() => setQuery("")}
             aria-label="Clear search input"
-            className="grid h-11 w-11 shrink-0 place-items-center rounded-lg text-xs text-foreground-muted hover:bg-surface-elevated hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-xs text-foreground-muted hover:bg-surface-elevated hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
             ✕
           </button>
         )}
       </div>
+
       <button
         type="button"
         aria-controls="transaction-filter-controls"
         aria-expanded={filtersOpen}
         onClick={() => setFiltersOpen((isOpen) => !isOpen)}
-        className="flex min-h-11 w-full items-center justify-between rounded-lg border border-border bg-surface-muted px-3 text-sm font-semibold text-foreground transition-colors hover:border-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:hidden"
+        className="flex min-h-11 w-full items-center justify-between rounded-xl border border-border bg-surface-muted px-3.5 text-sm font-semibold text-foreground transition-colors hover:border-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:hidden"
       >
         <span>Filters</span>
         <span className="flex items-center gap-2 text-foreground-muted">
@@ -164,9 +183,10 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
           <span aria-hidden="true">{filtersOpen ? "−" : "+"}</span>
         </span>
       </button>
+
       <div
         id="transaction-filter-controls"
-        className={`${filtersOpen ? "grid" : "hidden"} w-full grid-cols-1 gap-2.5 border-t border-border pt-3 sm:contents`}
+        className={`${filtersOpen ? "grid" : "hidden"} w-full grid-cols-1 gap-2.5 border-t border-border/70 pt-3 sm:contents`}
       >
         <Select
           aria-label="Filter by account"
@@ -198,13 +218,14 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
           value={toDateInputValue(filters.to)}
           onChange={(val) => navigate({ to: parseDate(val) })}
         />
+
         {isFiltered ? (
           <button
             type="button"
             onClick={clear}
             aria-label="Clear"
             title="Clear all filters (Esc)"
-            className="flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-border/80 bg-surface-muted/60 px-3 py-2 text-xs font-semibold text-foreground-muted transition-colors hover:border-expense/40 hover:bg-expense/10 hover:text-expense focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            className="flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-border/80 bg-surface-muted/60 px-3.5 py-2 text-xs font-semibold text-foreground-muted transition-colors hover:border-expense/40 hover:bg-expense/10 hover:text-expense focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
             <span>Clear</span>
             <span className="rounded-full bg-accent/20 px-1.5 py-0.5 font-mono text-[10px] text-accent">
@@ -214,9 +235,37 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
         ) : null}
       </div>
 
+      {/* Quick Date Presets */}
+      <div className="flex w-full flex-wrap items-center gap-1.5 pt-1">
+        <span className="font-mono text-[10px] font-semibold text-foreground-muted uppercase">
+          Quick dates:
+        </span>
+        <button
+          type="button"
+          onClick={() => applyPreset("this-month")}
+          className="rounded-lg border border-border/60 bg-surface-muted/50 px-2.5 py-1 text-[11px] font-semibold text-foreground-muted transition-colors hover:border-accent/40 hover:bg-surface-elevated hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        >
+          This Month
+        </button>
+        <button
+          type="button"
+          onClick={() => applyPreset("30-days")}
+          className="rounded-lg border border-border/60 bg-surface-muted/50 px-2.5 py-1 text-[11px] font-semibold text-foreground-muted transition-colors hover:border-accent/40 hover:bg-surface-elevated hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        >
+          Last 30 Days
+        </button>
+        <button
+          type="button"
+          onClick={() => applyPreset("this-year")}
+          className="rounded-lg border border-border/60 bg-surface-muted/50 px-2.5 py-1 text-[11px] font-semibold text-foreground-muted transition-colors hover:border-accent/40 hover:bg-surface-elevated hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        >
+          This Year
+        </button>
+      </div>
+
       {/* Active Filter Badges */}
       {isFiltered && (
-        <div className="flex w-full flex-wrap items-center gap-1.5 border-t border-border/50 pt-2.5">
+        <div className="flex w-full flex-wrap items-center gap-1.5 border-t border-border/60 pt-2.5">
           <span className="font-mono text-[10px] font-semibold text-foreground-muted uppercase">
             Active:
           </span>

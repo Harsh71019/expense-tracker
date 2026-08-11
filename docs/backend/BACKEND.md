@@ -676,6 +676,42 @@ reader/algorithm version; it never removes ledger or audit records.
 
 ---
 
+## Recurring inflow/outflow detection (shadow-only)
+
+`recurring-detection/` is separate from the user-authored recurring-rule materializer. At 04:30
+IST, a worker-role-only scheduler calls `systemFindUsersNeedingRefresh`, which returns owning
+`userId` values and enqueues deterministic `userId + IST date + detector version` BullMQ jobs. The
+API role exits before discovery. Every subsequent history read and result write takes that
+`userId` first and filters on it.
+
+Each job reads at most 5,001 rows to disclose a 5,000-row ceiling from the previous 365 days. Only
+posted, non-transfer transactions whose occurrence, creation, and latest-update timestamps are at
+or before the requested `asOf` are eligible. The pure detector separates income from expense,
+groups by the PR 02 private normalized counterparty/narration evidence, splits clearly different
+amount bands, and evaluates weekly, biweekly, semimonthly, calendar-monthly, quarterly, and annual
+cadences. Amount median/MAD and all ratios use the PR 03 integer statistics; weighted products use
+`bigint` intermediates. Missing counterparties, insufficient histories, irregular/tied cadences,
+row ceilings, and the 30-second runtime ceiling produce explicit abstention or degraded evidence.
+
+Detected results are immutable revisions in `detected_recurring_streams`; membership rows link the
+existing transaction IDs without copying or changing money. Each revision stores detector and
+scoring-policy versions, confidence, cadence, amount behavior, sufficiency, evidence, next expected
+date, SHA-256 input watermark, and `supersedes_stream_id`. `recurring_detection_runs` is the only
+mutable operational record: its unique tenant/version/as-of/digest key and capped progress count
+make retries idempotent and failed jobs resumable. Detection runs before any transaction; stream
+and member persistence uses short `withTxn` calls with member batches capped at 200.
+
+Promotion is not implied by an in-sample confidence score. The PR 04 rolling-origin harness trains
+on chronological prefixes only and reports aggregate mature-stream precision, coverage, next-date,
+and next-amount decision metrics against an inactive baseline. Version 1 remains shadow-only unless
+at least four complete decision windows, at least 80% mature-stream precision, and a measured
+true-positive improvement without additional false positives are demonstrated. There is no list or
+review API in this change: no visible claim, notification, recurring-rule creation, or ledger write
+can result. Rollback stops the scheduler/worker or reader promotion; additive derived rows may be
+retained because the ledger, recurring rules, audit log, and outbox are untouched.
+
+---
+
 ## 6. Cron Jobs & Background Work (the Proxmox dividend)
 
 Scheduling via `@nestjs/schedule` for triggers, but **every job body runs through BullMQ** so jobs are retryable, observable (Bull Board dashboard), and survive process restarts. All schedules in `Asia/Kolkata`.
@@ -692,16 +728,17 @@ leases failed, emits `scheduler.run_overlong`, emits `scheduler.run_missing` whe
 job exceeds its expected cadence, and removes terminal history older than 30 days. Operators can
 inspect `scheduled_job_runs` directly when reconstructing a missed or failed schedule window.
 
-| Job                          | Schedule                | What it does                                                                                                                                                                                                                              |
-| ---------------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `recurring.materialize`      | `0 1 * * *` (01:00)     | Finds `recurring_rules` with `nextRunAt <= now`, posts each templated txn **in its own transaction**, advances `nextRunAt` via rrule in the same txn. Idempotency key = `ruleId + scheduledDate` so a crashed run can't double-post rent. |
-| `rollups.refresh`            | `0 2 * * *` (02:00)     | Recomputes current + previous month `monthly_rollups` via aggregation pipeline. Dashboard reads rollups, never raw aggregation.                                                                                                           |
-| `balances.verify`            | `0 3 * * 0` (Sun 03:00) | Recomputes every account balance from `SUM(transactions)` and compares to the cached `balanceMinor`. Any drift → GlitchTip alert. This is the self-auditing safety net for the derived cache.                                             |
-| `budgets.alert`              | `0 8 * * *` (08:00)     | Evaluates budget thresholds against rollups; sends ntfy/Telegram push ("Food at 84% with 9 days left").                                                                                                                                   |
-| `backup.dump`                | `0 4 * * *` (04:00)     | `mongodump` from Atlas → your NAS, gzip, keep 30 dailies + 12 monthlies. Atlas M0 has no PITR — this cron **is** your backup strategy. Test restore quarterly.                                                                            |
-| `staging.sweep`              | TTL index               | Mongo TTL index expires `staged_rows` after 7 days — no cron needed.                                                                                                                                                                      |
-| `month.report`               | `0 9 1 * *`             | Renders last month's summary (top categories, MoM delta, biggest txns) → ntfy/email.                                                                                                                                                      |
-| `spending-warnings.schedule` | `0 5 * * *` (05:00)     | Enqueues one `spending-warnings` BullMQ job per user with posted transactions (bounded attempts, exponential backoff). Each job re-runs the three spend-pattern detectors and reconciles `spending_warnings` — see §2.1 above.            |
+| Job                            | Schedule                | What it does                                                                                                                                                                                                                              |
+| ------------------------------ | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `recurring.materialize`        | `0 1 * * *` (01:00)     | Finds `recurring_rules` with `nextRunAt <= now`, posts each templated txn **in its own transaction**, advances `nextRunAt` via rrule in the same txn. Idempotency key = `ruleId + scheduledDate` so a crashed run can't double-post rent. |
+| `rollups.refresh`              | `0 2 * * *` (02:00)     | Recomputes current + previous month `monthly_rollups` via aggregation pipeline. Dashboard reads rollups, never raw aggregation.                                                                                                           |
+| `balances.verify`              | `0 3 * * 0` (Sun 03:00) | Recomputes every account balance from `SUM(transactions)` and compares to the cached `balanceMinor`. Any drift → GlitchTip alert. This is the self-auditing safety net for the derived cache.                                             |
+| `budgets.alert`                | `0 8 * * *` (08:00)     | Evaluates budget thresholds against rollups; sends ntfy/Telegram push ("Food at 84% with 9 days left").                                                                                                                                   |
+| `backup.dump`                  | `0 4 * * *` (04:00)     | `mongodump` from Atlas → your NAS, gzip, keep 30 dailies + 12 monthlies. Atlas M0 has no PITR — this cron **is** your backup strategy. Test restore quarterly.                                                                            |
+| `recurring_detection.schedule` | `30 4 * * *` (04:30)    | Worker-only owner discovery enqueues bounded, retry-safe recurring inflow/outflow shadow analysis. No recurring rule, notification, or ledger transaction is created.                                                                     |
+| `staging.sweep`                | TTL index               | Mongo TTL index expires `staged_rows` after 7 days — no cron needed.                                                                                                                                                                      |
+| `month.report`                 | `0 9 1 * *`             | Renders last month's summary (top categories, MoM delta, biggest txns) → ntfy/email.                                                                                                                                                      |
+| `spending-warnings.schedule`   | `0 5 * * *` (05:00)     | Enqueues one `spending-warnings` BullMQ job per user with posted transactions (bounded attempts, exponential backoff). Each job re-runs the three spend-pattern detectors and reconciles `spending_warnings` — see §2.1 above.            |
 
 ---
 
@@ -773,6 +810,7 @@ apps/api/src/
 ├─ transactions/              + reversal.service.ts, transfer.service.ts
 ├─ imports/                   + parser.processor.ts (BullMQ), dedupe.service.ts
 ├─ recurring/
+├─ recurring-detection/       pure cadence/scoring evaluation + immutable shadow snapshots
 ├─ budgets/
 ├─ reports/                   aggregation pipelines + rollup reader
 ├─ spending-warnings/         detector (pure) + queue/processor + worker-only 05:00 IST schedule
@@ -865,7 +903,7 @@ Conventions: controllers do HTTP only; services own business rules and transacti
 
 - **Implemented correlation:** `x-request-id` is accepted or generated per request. Queue producers copy it into zod-validated job payloads, and workers restore it as the structured-log `reqId`. One id follows an upload from the API into its parse worker.
 - **OpenTelemetry:** auto-instrumentation for HTTP/Mongoose/BullMQ/Redis exporting OTLP → a tiny **Grafana LGTM stack** (or just Tempo+Grafana) in an `observability` LXC. Traces answer "why was commit slow" without printf debugging.
-- **Implemented metrics:** authenticated `/api/v1/metrics` exposes RED counters/duration by bounded route pattern, live BullMQ depth/failures, `withTxn` retries/outcomes/duration, worker-heartbeat age, and Redis-backed balance-drift count/verification age. See `docs/backend/OBSERVABILITY-RUNBOOK.md`.
+- **Implemented metrics:** authenticated `/api/v1/metrics` exposes RED counters/duration by bounded route pattern, live BullMQ depth/failures, `withTxn` retries/outcomes/duration, worker-heartbeat age, Redis-backed balance-drift count/verification age, and low-cardinality recurring-detection outcomes/resource totals. See `docs/backend/OBSERVABILITY-RUNBOOK.md`.
 - **SLOs (yes, for one user — they're the point):** p95 write < 150 ms LAN, p95 dashboard read < 100 ms (rollup-backed), import commit of 1k rows < 30 s, error budget: zero balance-drift events.
 - **Log retention:** pino → Loki, 30 days; audit_log in Mongo is permanent (it's data, not logs).
 

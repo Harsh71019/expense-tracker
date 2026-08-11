@@ -16,6 +16,8 @@ import { NotificationDeliveryService } from "./notifications/notification-delive
 import { startNotificationsWorker } from "./notifications/notifications.processor.js";
 import { SpendingWarningsService } from "./spending-warnings/spending-warnings.service.js";
 import { startSpendingWarningsWorker } from "./spending-warnings/spending-warnings.processor.js";
+import { startRecurringDetectionWorker } from "./recurring-detection/recurring-detection.processor.js";
+import { RecurringDetectionService } from "./recurring-detection/recurring-detection.service.js";
 
 async function bootstrapWorker(): Promise<void> {
   const app = await NestFactory.createApplicationContext(AppModule);
@@ -57,6 +59,12 @@ async function bootstrapWorker(): Promise<void> {
     logger,
     loggingContext
   );
+  const recurringDetectionWorker = startRecurringDetectionWorker(
+    app.get(RuntimeConfigService),
+    app.get(RecurringDetectionService),
+    logger,
+    loggingContext
+  );
   logger.log({ event: "worker.started" }, "worker process started");
 
   let isShuttingDown = false;
@@ -75,7 +83,8 @@ async function bootstrapWorker(): Promise<void> {
             importsWorker.close(),
             notificationsWorker.close(),
             billStatementsWorker.close(),
-            spendingWarningsWorker.close()
+            spendingWarningsWorker.close(),
+            recurringDetectionWorker.close()
           ]);
           for (const result of results) {
             if (result.status === "rejected") {

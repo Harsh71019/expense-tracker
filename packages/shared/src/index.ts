@@ -531,3 +531,33 @@ export type {
   SpendingWarningStatus,
   UnusuallyLargeExpenseEvidence
 } from "./spending-warning.js";
+export {
+  DetectedRecurringStreamIdSchema,
+  DetectedRecurringStreamSchema,
+  DetectedStreamAmountBehaviorSchema,
+  DetectedStreamCadenceEvidenceSchema,
+  DetectedStreamCadenceSchema,
+  DetectedStreamEvidenceSchema,
+  DetectedStreamMemberSchema,
+  DetectedStreamStateSchema,
+  RecurringDetectionAbstentionReasonSchema,
+  RecurringDetectionInputWatermarkSchema,
+  RecurringDetectionPromotionDecisionSchema,
+  RecurringDetectionRunStatusSchema,
+  RecurringDetectionRunResultSchema
+} from "./recurring-detection.js";
+export type {
+  DetectedRecurringStream,
+  DetectedRecurringStreamId,
+  DetectedStreamAmountBehavior,
+  DetectedStreamCadence,
+  DetectedStreamCadenceEvidence,
+  DetectedStreamEvidence,
+  DetectedStreamMember,
+  DetectedStreamState,
+  RecurringDetectionAbstentionReason,
+  RecurringDetectionInputWatermark,
+  RecurringDetectionPromotionDecision,
+  RecurringDetectionRunStatus,
+  RecurringDetectionRunResult
+} from "./recurring-detection.js";

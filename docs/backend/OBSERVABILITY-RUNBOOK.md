@@ -29,25 +29,33 @@ curl --fail-with-body \
 
 ## Metric catalogue
 
-| Metric                                         | Type    | Meaning                                                                                       |
-| ---------------------------------------------- | ------- | --------------------------------------------------------------------------------------------- |
-| `treasuryops_http_requests_total`              | counter | HTTP request rate and error count by method, route pattern, and status code                   |
-| `treasuryops_http_request_duration_ms`         | summary | In-process HTTP duration sum/count with the same bounded labels                               |
-| `treasuryops_db_transaction_retries_total`     | counter | PostgreSQL serialization/deadlock retries performed by `withTxn`                              |
-| `treasuryops_db_transactions_total`            | counter | Final committed/failed transaction outcomes                                                   |
-| `treasuryops_db_transaction_duration_ms`       | summary | Transaction duration sum/count                                                                |
-| `treasuryops_queue_jobs`                       | gauge   | Live BullMQ depth for `waiting`, `active`, `delayed`, and retained `failed` jobs              |
-| `treasuryops_worker_heartbeat_age_seconds`     | gauge   | Age of the Redis worker heartbeat; `-1` means missing                                         |
-| `treasuryops_balance_drift_accounts`           | gauge   | Accounts with drift in the most recent weekly verification; `-1` means it has never completed |
-| `treasuryops_balance_verification_age_seconds` | gauge   | Age of the latest completed verification; `-1` means absent                                   |
+| Metric                                                      | Type    | Meaning                                                                                       |
+| ----------------------------------------------------------- | ------- | --------------------------------------------------------------------------------------------- |
+| `treasuryops_http_requests_total`                           | counter | HTTP request rate and error count by method, route pattern, and status code                   |
+| `treasuryops_http_request_duration_ms`                      | summary | In-process HTTP duration sum/count with the same bounded labels                               |
+| `treasuryops_db_transaction_retries_total`                  | counter | PostgreSQL serialization/deadlock retries performed by `withTxn`                              |
+| `treasuryops_db_transactions_total`                         | counter | Final committed/failed transaction outcomes                                                   |
+| `treasuryops_db_transaction_duration_ms`                    | summary | Transaction duration sum/count                                                                |
+| `treasuryops_queue_jobs`                                    | gauge   | Live BullMQ depth for `waiting`, `active`, `delayed`, and retained `failed` jobs              |
+| `treasuryops_worker_heartbeat_age_seconds`                  | gauge   | Age of the Redis worker heartbeat; `-1` means missing                                         |
+| `treasuryops_balance_drift_accounts`                        | gauge   | Accounts with drift in the most recent weekly verification; `-1` means it has never completed |
+| `treasuryops_balance_verification_age_seconds`              | gauge   | Age of the latest completed verification; `-1` means absent                                   |
+| `treasuryops_recurring_detection_runs_total`                | counter | Shadow runs by completed/degraded/abstained/failed outcome; no tenant label                   |
+| `treasuryops_recurring_detection_streams_total`             | counter | Immutable stream revisions produced by shadow runs                                            |
+| `treasuryops_recurring_detection_abstained_groups_total`    | counter | Groups withheld by sufficiency or cadence rules                                               |
+| `treasuryops_recurring_detection_rows_scanned_total`        | counter | Rows consumed by bounded history reads                                                        |
+| `treasuryops_recurring_detection_runtime_ms`                | summary | Pure detector runtime sum/count                                                               |
+| `treasuryops_recurring_detection_row_budget_hits_total`     | counter | Runs that explicitly reached the 5,000-row ceiling                                            |
+| `treasuryops_recurring_detection_promotion_decisions_total` | counter | Aggregate chronological evaluation decisions (`eligible`/`held`)                              |
 
-Process counters reset when the API process restarts. Queue and heartbeat values
-come from Redis on every scrape. The worker writes the balance verification
-result to Redis so the separate API process can expose it.
+Most process counters reset when the API process restarts. Queue and heartbeat values come from
+Redis on every scrape. The worker writes balance verification and recurring-detection aggregate
+counters to Redis so the separate API process can expose them; those counters persist until the
+application Redis namespace is deliberately cleared.
 
 ## Minimum dashboard
 
-Use four rows:
+Use five rows:
 
 1. HTTP rate, 5xx rate, and average duration:
    `rate(treasuryops_http_requests_total[5m])`,
@@ -56,7 +64,8 @@ Use four rows:
 rate(treasuryops_http_request_duration_ms_count[5m])`.
 2. Transaction retry rate, failed outcomes, and average duration.
 3. Queue depth split by queue/state plus worker heartbeat age.
-4. Balance drift count and balance-verification age.
+4. Recurring shadow outcomes, average runtime, scanned rows, and row-budget hits.
+5. Balance drift count and balance-verification age.
 
 Do not turn `reqId`, `userId`, account ids, job ids, or batch ids into
 Prometheus labels. Use Loki structured-log queries for those high-cardinality
@@ -108,6 +117,6 @@ BullMQ job, use Bull Board to get the job id and query `jobId="<job-id>"`.
    families above.
 3. Confirm a normal API request increases `treasuryops_http_requests_total`.
 4. Confirm `treasuryops_worker_heartbeat_age_seconds` stays below 60.
-5. Confirm all three queues are present, including a `failed` state.
+5. Confirm all queues are present, including `recurring-detection` and a `failed` state.
 6. After the weekly verification, confirm drift is `0` and verification age
    resets near zero.

@@ -5,7 +5,8 @@ import { describe, expect, it } from "vitest";
 const RESOURCE_REPOSITORIES = [
   new URL("../imports/import-batch.repository.ts", import.meta.url),
   new URL("../imports/staged-row.repository.ts", import.meta.url),
-  new URL("../notifications/notification-outbox.repository.ts", import.meta.url)
+  new URL("../notifications/notification-outbox.repository.ts", import.meta.url),
+  new URL("../recurring-detection/recurring-detection.repository.ts", import.meta.url)
 ] as const;
 
 const PUBLIC_ASYNC_METHOD = /^\s{2}async\s+([A-Za-z0-9_]+)\s*\(\s*([^,\n)]*)/gm;
@@ -34,5 +35,14 @@ describe("repository tenancy contract", () => {
       /async systemFind[A-Za-z0-9_]*\([^)]*\): Promise<NotificationOutboxEntry\[\]>/
     );
     expect(source).toMatch(/NotificationOutboxSchema = z\.object\(\{\s+id:[\s\S]*userId:/);
+  });
+
+  it("names recurring discovery as worker-only system discovery and returns owners", () => {
+    const source = readFileSync(RESOURCE_REPOSITORIES[3], "utf8");
+
+    expect(source).toMatch(
+      /async systemFindUsersNeedingRefresh\([^)]*\): Promise<readonly string\[\]>/
+    );
+    expect(source).toMatch(/SystemCandidateSchema = z\.object\(\{ userId:/);
   });
 });

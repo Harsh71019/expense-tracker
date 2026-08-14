@@ -26,6 +26,10 @@ describe("SettingsTabList", () => {
       "href",
       "/settings?tab=management"
     );
+    expect(screen.getByRole("tab", { name: /Invariants/ })).toHaveAttribute(
+      "href",
+      "/settings?tab=invariants"
+    );
     expect(
       screen.getByRole("tab", { name: /Management/ }).querySelector('[aria-hidden="true"]')
     ).toHaveTextContent("▦");
@@ -36,19 +40,19 @@ describe("SettingsTabList", () => {
     render(<SettingsTabList activeTab="profile" />);
     const profile = screen.getByRole("tab", { name: /Profile/ });
     const appearance = screen.getByRole("tab", { name: /Appearance/ });
-    const management = screen.getByRole("tab", { name: /Management/ });
+    const invariants = screen.getByRole("tab", { name: /Invariants/ });
 
     profile.focus();
     await user.keyboard("{ArrowRight}");
     expect(appearance).toHaveFocus();
 
     await user.keyboard("{End}");
-    expect(management).toHaveFocus();
+    expect(invariants).toHaveFocus();
 
     await user.keyboard("{Home}");
     expect(profile).toHaveFocus();
 
     await user.keyboard("{ArrowLeft}");
-    expect(management).toHaveFocus();
+    expect(invariants).toHaveFocus();
   });
 });

@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  BatchCategorizeTransactionsResultSchema,
+  BatchCategorizeTransactionsSchema,
   CreateTransactionSchema,
   CreateTransferSchema,
   ListTransactionsQuerySchema,
@@ -106,6 +108,45 @@ describe("UpdateTransactionSchema", () => {
 
   it("rejects an empty patch", () => {
     expect(() => UpdateTransactionSchema.parse({})).toThrow();
+  });
+});
+
+describe("BatchCategorizeTransactionsSchema", () => {
+  const transactionId = "3fa85f64-5717-4562-b3fc-2c963f66beef";
+  const categoryId = "3fa85f64-5717-4562-b3fc-2c963f66be99";
+
+  it("accepts a bounded set of unique transaction ids", () => {
+    expect(
+      BatchCategorizeTransactionsSchema.parse({ transactionIds: [transactionId], categoryId })
+    ).toEqual({ transactionIds: [transactionId], categoryId });
+    expect(
+      BatchCategorizeTransactionsResultSchema.parse({
+        transactionIds: [transactionId],
+        categoryId,
+        updatedCount: 1
+      })
+    ).toEqual({ transactionIds: [transactionId], categoryId, updatedCount: 1 });
+  });
+
+  it("rejects empty, duplicate, and oversized batches", () => {
+    expect(
+      BatchCategorizeTransactionsSchema.safeParse({ transactionIds: [], categoryId }).success
+    ).toBe(false);
+    expect(
+      BatchCategorizeTransactionsSchema.safeParse({
+        transactionIds: [transactionId, transactionId],
+        categoryId
+      }).success
+    ).toBe(false);
+    expect(
+      BatchCategorizeTransactionsSchema.safeParse({
+        transactionIds: Array.from(
+          { length: 201 },
+          (_, index) => `00000000-0000-4000-8000-${String(index).padStart(12, "0")}`
+        ),
+        categoryId
+      }).success
+    ).toBe(false);
   });
 });
 

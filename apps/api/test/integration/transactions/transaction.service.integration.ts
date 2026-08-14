@@ -449,6 +449,106 @@ describe("TransactionService", () => {
     ).toBe(1);
   });
 
+  it("assigns one category to a batch exactly once across five identical attempts", async () => {
+    const first = await transactions.create(
+      "user-a",
+      {
+        accountId,
+        type: "expense",
+        amountMinor: 325,
+        occurredAt: new Date("2026-07-14T13:10:00.000Z"),
+        description: "Batch category one",
+        tags: []
+      },
+      "19191919-aaaa-4191-8191-191919191919"
+    );
+    const second = await transactions.create(
+      "user-a",
+      {
+        accountId,
+        type: "expense",
+        amountMinor: 475,
+        occurredAt: new Date("2026-07-14T13:20:00.000Z"),
+        description: "Batch category two",
+        tags: []
+      },
+      "20202020-aaaa-4202-8202-202020202020"
+    );
+    const input = {
+      transactionIds: [first.transaction.id, second.transaction.id],
+      categoryId: travelCategoryId
+    };
+
+    const results = await Promise.all(
+      Array.from({ length: 5 }, () =>
+        transactionMutations.assignCategory("user-a", input, "21212121-aaaa-4212-8212-212121212121")
+      )
+    );
+
+    expect(results.filter((result) => !result.replayed)).toHaveLength(1);
+    expect(results.every((result) => result.result.updatedCount === 2)).toBe(true);
+    await expect(transactions.get("user-a", first.transaction.id)).resolves.toMatchObject({
+      categoryId: travelCategoryId
+    });
+    await expect(transactions.get("user-a", second.transaction.id)).resolves.toMatchObject({
+      categoryId: travelCategoryId
+    });
+    const auditRows = await testDb.db
+      .select()
+      .from(auditLog)
+      .where(and(eq(auditLog.userId, "user-a"), eq(auditLog.action, "transaction.update")));
+    expect(auditRows.filter((row) => input.transactionIds.includes(row.entityId))).toHaveLength(2);
+  });
+
+  it("rejects a cross-tenant batch atomically", async () => {
+    await insertTestUser(testDb.db, "user-b");
+    const accountRepository = new AccountRepository(testDb.db);
+    const otherAccount = await withTxn(testDb.db, (tx) =>
+      accountRepository.create(
+        "user-b",
+        { name: "Other user cash", type: "cash", openingBalanceMinor: 1_000 },
+        tx
+      )
+    );
+    const own = await transactions.create(
+      "user-a",
+      {
+        accountId,
+        type: "expense",
+        amountMinor: 110,
+        occurredAt: new Date("2026-07-14T13:30:00.000Z"),
+        description: "Tenant-owned batch row",
+        tags: []
+      },
+      "22222222-aaaa-4222-8222-222222222222"
+    );
+    const other = await transactions.create(
+      "user-b",
+      {
+        accountId: otherAccount.id,
+        type: "expense",
+        amountMinor: 120,
+        occurredAt: new Date("2026-07-14T13:40:00.000Z"),
+        description: "Other tenant batch row",
+        tags: []
+      },
+      "23232323-aaaa-4232-8232-232323232323"
+    );
+
+    await expect(
+      transactionMutations.assignCategory(
+        "user-a",
+        {
+          transactionIds: [own.transaction.id, other.transaction.id],
+          categoryId: foodCategoryId
+        },
+        "24242424-aaaa-4242-8242-242424242424"
+      )
+    ).rejects.toThrow(EntityNotFoundError);
+    expect((await transactions.get("user-a", own.transaction.id)).categoryId).toBeUndefined();
+    expect((await transactions.get("user-b", other.transaction.id)).categoryId).toBeUndefined();
+  });
+
   it("rejects metadata edits on an individual transfer leg", async () => {
     const transferLeg = await withTxn(testDb.db, async (tx) => {
       const created = await transactionRepository.create(

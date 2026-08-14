@@ -59,6 +59,23 @@ export const UpdateTransactionSchema = z
     { message: "At least one field must be provided." }
   );
 
+export const BatchCategorizeTransactionsSchema = z.object({
+  transactionIds: z
+    .array(TransactionIdSchema)
+    .min(1, "Select at least one transaction.")
+    .max(200, "A batch can contain at most 200 transactions.")
+    .refine((transactionIds) => new Set(transactionIds).size === transactionIds.length, {
+      message: "Transaction ids must be unique."
+    }),
+  categoryId: CategoryIdSchema
+});
+
+export const BatchCategorizeTransactionsResultSchema = z.object({
+  transactionIds: z.array(TransactionIdSchema).min(1).max(200),
+  categoryId: CategoryIdSchema,
+  updatedCount: z.number().int().min(1).max(200)
+});
+
 export const ListTransactionsQuerySchema = z.object({
   accountId: AccountIdSchema.optional(),
   categoryId: CategoryIdSchema.optional(),
@@ -132,6 +149,10 @@ export const TransferReversalSchema = z.object({
 
 export type CreateTransaction = z.infer<typeof CreateTransactionSchema>;
 export type UpdateTransaction = z.infer<typeof UpdateTransactionSchema>;
+export type BatchCategorizeTransactions = z.infer<typeof BatchCategorizeTransactionsSchema>;
+export type BatchCategorizeTransactionsResult = z.infer<
+  typeof BatchCategorizeTransactionsResultSchema
+>;
 export type Transaction = z.infer<typeof TransactionSchema>;
 export type TransactionId = z.infer<typeof TransactionIdSchema>;
 export type TransactionType = z.infer<typeof TransactionTypeSchema>;

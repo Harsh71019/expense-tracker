@@ -144,6 +144,54 @@ describe("TransactionRepository Unit Tests", () => {
     expect(res?.id).toBe(sampleTxRow.id);
   });
 
+  it("finds and categorizes a tenant-scoped transaction batch", async () => {
+    const mockDb = createMockDrizzleDb([sampleTxRow]);
+    const repo = new TransactionRepository(mockDb);
+
+    await expect(
+      repo.findByIds(
+        "u1",
+        [sampleTxRow.id],
+        // @ts-expect-error mock tx
+        mockDb
+      )
+    ).resolves.toHaveLength(1);
+    await expect(
+      repo.assignCategory(
+        "u1",
+        [sampleTxRow.id],
+        sampleTxRow.categoryId,
+        // @ts-expect-error mock tx
+        mockDb
+      )
+    ).resolves.toBe(1);
+  });
+
+  it("skips empty transaction batches", async () => {
+    const mockDb = createMockDrizzleDb();
+    const repo = new TransactionRepository(mockDb);
+
+    await expect(
+      repo.findByIds(
+        "u1",
+        [],
+        // @ts-expect-error mock tx
+        mockDb
+      )
+    ).resolves.toEqual([]);
+    await expect(
+      repo.assignCategory(
+        "u1",
+        [],
+        sampleTxRow.categoryId,
+        // @ts-expect-error mock tx
+        mockDb
+      )
+    ).resolves.toBe(0);
+    expect(mockDb.select).not.toHaveBeenCalled();
+    expect(mockDb.update).not.toHaveBeenCalled();
+  });
+
   it("derives payment context while mapping a transaction row", async () => {
     const mockDb = createMockDrizzleDb([
       {

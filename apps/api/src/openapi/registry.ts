@@ -20,6 +20,8 @@
 
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import {
+  BatchCategorizeTransactionsResultSchema,
+  BatchCategorizeTransactionsSchema,
   AccountIdSchema,
   AccountSchema,
   AcknowledgeExtraTransactionSchema,
@@ -148,6 +150,9 @@ const CategoryRule = CategoryRuleSchema.meta({ id: "CategoryRule" });
 const Transaction = TransactionSchema.meta({ id: "Transaction" });
 const TransactionPage = TransactionPageSchema.meta({ id: "TransactionPage" });
 const TransactionInsights = TransactionInsightsSchema.meta({ id: "TransactionInsights" });
+const BatchCategorizeTransactionsResult = BatchCategorizeTransactionsResultSchema.meta({
+  id: "BatchCategorizeTransactionsResult"
+});
 const ProblemDetails = ProblemDetailsSchema.meta({ id: "ProblemDetails" });
 const Transfer = TransferSchema.meta({ id: "Transfer" });
 const TransferReversal = TransferReversalSchema.meta({ id: "TransferReversal" });
@@ -280,6 +285,29 @@ registry.registerPath({
   security: secured,
   responses: {
     200: { description: "Import batches", ...json(z.array(ImportBatch)) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "patch",
+  path: "/v1/transactions",
+  security: secured,
+  request: {
+    body: json(BatchCategorizeTransactionsSchema),
+    headers: idempotencyKeyHeaders
+  },
+  responses: {
+    200: {
+      description: "Assigned one category to the selected transactions, or idempotent replay",
+      headers: optionalReplayHeaders,
+      ...json(BatchCategorizeTransactionsResult)
+    },
+    404: { description: "Category or transaction not found", ...json(ProblemDetails) },
+    409: {
+      description:
+        "Category kind, transfer metadata, or idempotency intent conflicts with the batch",
+      ...json(ProblemDetails)
+    },
     ...problemResponses
   }
 });

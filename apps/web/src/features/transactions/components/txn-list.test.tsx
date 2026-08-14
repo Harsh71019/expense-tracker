@@ -5,6 +5,8 @@ import { describe, expect, it, vi } from "vitest";
 import { TxnList } from "./txn-list";
 
 const mocks = vi.hoisted(() => ({
+  batchCategorize: vi.fn(),
+  batchPending: false,
   empty: false,
   fetchNextPage: vi.fn(),
   hasNextPage: true,
@@ -20,8 +22,32 @@ vi.mock("@/features/accounts", () => ({
 }));
 vi.mock("@/features/categories", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/features/categories")>();
-  return { ...actual, useCategories: () => ({ data: [] }) };
+  return {
+    ...actual,
+    useCategories: () => ({
+      data: [
+        {
+          id: "3fa85f64-5717-4562-b3fc-2c963f66be99",
+          userId: "user-1",
+          name: "Salary",
+          kind: "income",
+          isArchived: false,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }
+      ]
+    })
+  };
 });
+vi.mock("../hooks/use-batch-categorize", () => ({
+  useBatchCategorize: () => ({
+    mutateAsync: mocks.batchCategorize,
+    isPending: mocks.batchPending
+  })
+}));
+vi.mock("@/lib/toast", () => ({
+  toast: { success: vi.fn(), error: vi.fn() }
+}));
 vi.mock("@/features/transfers/hooks/use-transfers", () => ({
   useReverseTransfer: () => ({ mutate: vi.fn(), isPending: false })
 }));
@@ -96,7 +122,10 @@ describe("TxnList", () => {
     mocks.isError = true;
     render(<TxnList filters={{ limit: 50 }} initialPage={page} initialInsights={null} />);
 
-    expect(screen.getByText("Description").parentElement).toHaveClass("hidden", "md:grid");
+    expect(screen.getByText("Description").parentElement?.parentElement).toHaveClass(
+      "hidden",
+      "md:flex"
+    );
     await user.click(screen.getByRole("button", { name: /Refund/ }));
     const drawer = screen.getByRole("dialog", { name: "detail-drawer" });
     expect(drawer).toBeVisible();
@@ -132,5 +161,28 @@ describe("TxnList", () => {
     mocks.fetching = true;
     render(<TxnList filters={{ limit: 50 }} initialPage={page} initialInsights={null} />);
     expect(screen.getByRole("button", { name: "Loading entries…" })).toBeDisabled();
+  });
+
+  it("selects transactions and assigns one matching category to the batch", async () => {
+    const user = userEvent.setup();
+    mocks.empty = false;
+    mocks.isError = false;
+    mocks.batchCategorize.mockResolvedValue({
+      transactionIds: [transaction.id],
+      categoryId: "3fa85f64-5717-4562-b3fc-2c963f66be99",
+      updatedCount: 1
+    });
+    render(<TxnList filters={{ limit: 50 }} initialPage={page} initialInsights={null} />);
+
+    await user.click(screen.getByRole("checkbox", { name: "Select Refund" }));
+    expect(screen.getByRole("region", { name: "Bulk category assignment" })).toBeVisible();
+    await user.click(screen.getByRole("combobox", { name: "Assign income category" }));
+    await user.click(screen.getByRole("option", { name: "Salary" }));
+    await user.click(screen.getByRole("button", { name: "Assign category" }));
+
+    expect(mocks.batchCategorize).toHaveBeenCalledWith({
+      transactionIds: [transaction.id],
+      categoryId: "3fa85f64-5717-4562-b3fc-2c963f66be99"
+    });
   });
 });

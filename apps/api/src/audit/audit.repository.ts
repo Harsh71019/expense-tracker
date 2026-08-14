@@ -20,4 +20,23 @@ export class AuditRepository {
       .insert(auditLog)
       .values({ userId, action, entityId, meta: meta ?? null, at: new Date() });
   }
+
+  async recordMany(
+    userId: string,
+    action: string,
+    entries: readonly Readonly<{ entityId: string; meta?: Record<string, unknown> }>[],
+    tx: DbTx
+  ): Promise<void> {
+    if (entries.length === 0) return;
+    const at = new Date();
+    await tx.insert(auditLog).values(
+      entries.map((entry) => ({
+        userId,
+        action,
+        entityId: entry.entityId,
+        meta: entry.meta ?? null,
+        at
+      }))
+    );
+  }
 }

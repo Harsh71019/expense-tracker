@@ -1,5 +1,7 @@
 import { Inject, Injectable, Optional } from "@nestjs/common";
 import {
+  type BatchCategorizeTransactions,
+  type BatchCategorizeTransactionsResult,
   type CreateTransaction,
   type ListTransactionsQuery,
   type Transaction,
@@ -177,6 +179,56 @@ export class TransactionService {
     });
 
     return after;
+  }
+
+  async assignCategoryInTx(
+    userId: string,
+    input: BatchCategorizeTransactions,
+    tx: DbTx
+  ): Promise<BatchCategorizeTransactionsResult> {
+    const category = await this.categories.findActiveById(userId, input.categoryId, tx);
+    if (category === null) throw new EntityNotFoundError("Category");
+
+    const before = await this.transactions.findByIds(userId, input.transactionIds, tx);
+    if (before.length !== input.transactionIds.length) {
+      throw new EntityNotFoundError("Transaction");
+    }
+    if (before.some((transaction) => transaction.transferGroupId !== undefined)) {
+      throw new TransferMetadataRequiresGroupError();
+    }
+    if (before.some((transaction) => transaction.type !== category.kind)) {
+      throw new CategoryKindMismatchError();
+    }
+
+    const updatedCount = await this.transactions.assignCategory(
+      userId,
+      input.transactionIds,
+      input.categoryId,
+      tx
+    );
+    if (updatedCount !== input.transactionIds.length) {
+      throw new EntityNotFoundError("Transaction");
+    }
+
+    await this.audit.recordMany(
+      userId,
+      "transaction.update",
+      before.map((transaction) => ({
+        entityId: transaction.id,
+        meta: {
+          before: { categoryId: transaction.categoryId },
+          after: { categoryId: input.categoryId },
+          batch: true
+        }
+      })),
+      tx
+    );
+
+    return {
+      transactionIds: input.transactionIds,
+      categoryId: input.categoryId,
+      updatedCount
+    };
   }
 
   async reverse(userId: string, transactionId: TransactionId): Promise<CreateTransactionResult> {

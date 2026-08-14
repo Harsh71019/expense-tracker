@@ -48,4 +48,37 @@ describe("TransactionMutationService Unit Tests", () => {
     expect(res.result.id).toBe("tx_123");
     expect(res.replayed).toBe(false);
   });
+
+  it("delegates batch category assignment to idempotency service", async () => {
+    const input = {
+      transactionIds: ["3fa85f64-5717-4562-b3fc-2c963f66beef"],
+      categoryId: "3fa85f64-5717-4562-b3fc-2c963f66be99"
+    };
+    const result = { ...input, updatedCount: 1 };
+    // @ts-expect-error mock transaction service
+    const mockTxService: TransactionService = {
+      assignCategoryInTx: vi.fn(async () => result)
+    };
+    // @ts-expect-error mock idempotency service
+    const mockIdempotency: IdempotencyPostgresService = {
+      execute: vi.fn(async (_u, _op, _k, _intent, _schema, work) => ({
+        result: await work("tx1"),
+        replayed: false
+      }))
+    };
+
+    const service = new TransactionMutationService(mockTxService, mockIdempotency);
+
+    await expect(
+      service.assignCategory("u1", input, "18181818-aaaa-4181-8181-181818181818")
+    ).resolves.toEqual({ result, replayed: false });
+    expect(mockIdempotency.execute).toHaveBeenCalledWith(
+      "u1",
+      "transaction.category.batch-assign",
+      "18181818-aaaa-4181-8181-181818181818",
+      input,
+      expect.anything(),
+      expect.any(Function)
+    );
+  });
 });

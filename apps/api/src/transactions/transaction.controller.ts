@@ -12,10 +12,12 @@ import {
   Res
 } from "@nestjs/common";
 import {
+  BatchCategorizeTransactionsSchema,
   CreateTransactionSchema,
   ListTransactionsQuerySchema,
   TransactionIdSchema,
   UpdateTransactionSchema,
+  type BatchCategorizeTransactionsResult,
   type Transaction,
   type TransactionInsights,
   type TransactionPage
@@ -35,7 +37,7 @@ const IdempotencyKeySchema = z.string().uuid();
 export class TransactionController {
   constructor(
     private readonly transactions: TransactionService,
-    private readonly mutations?: TransactionMutationService
+    private readonly mutations: TransactionMutationService
   ) {}
 
   @Get()
@@ -90,7 +92,6 @@ export class TransactionController {
   ): Promise<Transaction> {
     const parsedId = TransactionIdSchema.parse(transactionId);
     const patch = UpdateTransactionSchema.parse(body);
-    if (this.mutations === undefined) return this.transactions.update(user.id, parsedId, patch);
     const result = await this.mutations.update(
       user.id,
       parsedId,
@@ -98,6 +99,25 @@ export class TransactionController {
       IdempotencyKeySchema.parse(key)
     );
     if (result.replayed && response !== undefined) {
+      response.setHeader("Idempotency-Replayed", "true");
+    }
+    return result.result;
+  }
+
+  @Patch()
+  async assignCategory(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() body: unknown,
+    @Headers("idempotency-key") key: string | undefined,
+    @Res({ passthrough: true }) response: Response
+  ): Promise<BatchCategorizeTransactionsResult> {
+    const input = BatchCategorizeTransactionsSchema.parse(body);
+    const result = await this.mutations.assignCategory(
+      user.id,
+      input,
+      IdempotencyKeySchema.parse(key)
+    );
+    if (result.replayed) {
       response.setHeader("Idempotency-Replayed", "true");
     }
     return result.result;

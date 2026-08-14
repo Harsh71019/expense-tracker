@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { SidebarEditPanel } from "../sidebar-edit-panel";
@@ -70,6 +70,35 @@ describe("SidebarEditPanel", () => {
     expect(onReorder).toHaveBeenCalledWith(1, 2);
   });
 
+  it("calls onReorder when an item is dropped onto another item", () => {
+    const onReorder = vi.fn();
+    render(
+      <SidebarEditPanel
+        items={sampleItems}
+        compact={false}
+        onReorder={onReorder}
+        onToggle={vi.fn()}
+        onReset={vi.fn()}
+      />
+    );
+
+    const [dashboard, , hiddenItem] = screen.getAllByRole("listitem");
+    if (dashboard === undefined || hiddenItem === undefined) {
+      throw new Error("Expected navigation items");
+    }
+    const dataTransfer = {
+      dropEffect: "",
+      effectAllowed: "",
+      setData: vi.fn()
+    };
+
+    fireEvent.dragStart(dashboard, { dataTransfer });
+    fireEvent.dragOver(hiddenItem, { dataTransfer });
+    fireEvent.drop(hiddenItem, { dataTransfer });
+
+    expect(onReorder).toHaveBeenCalledWith(0, 2);
+  });
+
   it("disables move-up button on first item and move-down button on last item", () => {
     render(
       <SidebarEditPanel
@@ -124,7 +153,24 @@ describe("SidebarEditPanel", () => {
     );
   });
 
-  it("applies opacity-40 class to hidden items", () => {
+  it("does not allow the final visible destination to be hidden", () => {
+    render(
+      <SidebarEditPanel
+        items={[
+          { href: "/dash", label: "Dashboard", icon: "⌂", visible: true },
+          { href: "/hidden", label: "Hidden", icon: "○", visible: false }
+        ]}
+        compact={false}
+        onReorder={vi.fn()}
+        onToggle={vi.fn()}
+        onReset={vi.fn()}
+      />
+    );
+
+    expect(screen.getByRole("button", { name: "Hide Dashboard" })).toBeDisabled();
+  });
+
+  it("applies the subdued hidden-item treatment", () => {
     render(
       <SidebarEditPanel
         items={sampleItems}
@@ -136,7 +182,7 @@ describe("SidebarEditPanel", () => {
     );
 
     const listItems = screen.getAllByRole("listitem");
-    expect(listItems[0]).not.toHaveClass("opacity-40");
-    expect(listItems[2]).toHaveClass("opacity-40");
+    expect(listItems[0]).not.toHaveClass("opacity-55");
+    expect(listItems[2]).toHaveClass("opacity-55");
   });
 });

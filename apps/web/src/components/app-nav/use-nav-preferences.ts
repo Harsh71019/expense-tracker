@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { mainNavItems, type NavItem } from "./nav-items";
 
 const STORAGE_KEY = "treasury-ops-nav-prefs";
@@ -8,6 +8,7 @@ const CURRENT_VERSION = 1;
 
 type NavPref = { href: string; visible: boolean };
 type StoredNavPrefs = { version: 1; items: readonly NavPref[] };
+type LoadedPrefs = Readonly<{ prefs: StoredNavPrefs; shouldPersist: boolean }>;
 
 function isNavPref(item: unknown): item is NavPref {
   if (typeof item !== "object" || item === null) return false;
@@ -33,35 +34,40 @@ function defaultPrefs(): StoredNavPrefs {
   };
 }
 
-function loadPrefs(): StoredNavPrefs {
+function loadPrefs(): LoadedPrefs {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (raw === null) return defaultPrefs();
+    if (raw === null) return { prefs: defaultPrefs(), shouldPersist: false };
     const parsed: unknown = JSON.parse(raw);
     if (!isStoredNavPrefs(parsed)) {
-      return defaultPrefs();
+      return { prefs: defaultPrefs(), shouldPersist: true };
     }
 
-    // Merge: add any new canonical items the stored prefs don't know about
-    const knownHrefs = new Set(parsed.items.map((p) => p.href));
-    const merged: NavPref[] = [...parsed.items];
+    const canonical = new Set(mainNavItems.map((item) => item.href));
+    const knownHrefs = new Set<string>();
+    const merged: NavPref[] = [];
+
+    for (const item of parsed.items) {
+      if (canonical.has(item.href) && !knownHrefs.has(item.href)) {
+        merged.push(item);
+        knownHrefs.add(item.href);
+      }
+    }
+
     for (const item of mainNavItems) {
       if (!knownHrefs.has(item.href)) {
         merged.push({ href: item.href, visible: true });
       }
     }
 
-    // Remove stale hrefs no longer in mainNavItems
-    const canonical = new Set(mainNavItems.map((i) => i.href));
-    const pruned = merged.filter((p) => canonical.has(p.href));
+    if (!merged.some((item) => item.visible)) {
+      return { prefs: defaultPrefs(), shouldPersist: true };
+    }
 
-    // Safety: if all are hidden, reset
-    const hasVisible = pruned.some((p) => p.visible);
-    if (!hasVisible) return defaultPrefs();
-
-    return { version: CURRENT_VERSION, items: pruned };
+    const prefs: StoredNavPrefs = { version: CURRENT_VERSION, items: merged };
+    return { prefs, shouldPersist: JSON.stringify(prefs) !== raw };
   } catch {
-    return defaultPrefs();
+    return { prefs: defaultPrefs(), shouldPersist: true };
   }
 }
 
@@ -75,33 +81,60 @@ export type UseNavPreferences = {
 
 export function useNavPreferences(): UseNavPreferences {
   const [prefs, setPrefs] = useState<StoredNavPrefs>(defaultPrefs);
+  const prefsRef = useRef(prefs);
 
   useEffect(() => {
-    setPrefs(loadPrefs());
+    const loaded = loadPrefs();
+    prefsRef.current = loaded.prefs;
+    setPrefs(loaded.prefs);
+    if (loaded.shouldPersist) {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(loaded.prefs));
+    }
   }, []);
 
   const persist = useCallback((next: StoredNavPrefs): void => {
+    prefsRef.current = next;
     setPrefs(next);
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   }, []);
 
   const reorder = useCallback(
     (fromIndex: number, toIndex: number): void => {
-      const items = [...prefs.items];
+      const current = prefsRef.current;
+      if (
+        fromIndex < 0 ||
+        toIndex < 0 ||
+        fromIndex >= current.items.length ||
+        toIndex >= current.items.length ||
+        fromIndex === toIndex
+      ) {
+        return;
+      }
+
+      const items = [...current.items];
       const [moved] = items.splice(fromIndex, 1);
       if (moved === undefined) return;
       items.splice(toIndex, 0, moved);
-      persist({ ...prefs, items });
+      persist({ ...current, items });
     },
-    [prefs, persist]
+    [persist]
   );
 
   const toggleVisible = useCallback(
     (href: string): void => {
-      const items = prefs.items.map((p) => (p.href === href ? { ...p, visible: !p.visible } : p));
-      persist({ ...prefs, items });
+      const current = prefsRef.current;
+      const target = current.items.find((item) => item.href === href);
+      const visibleCount = current.items.filter((item) => item.visible).length;
+      if (target === undefined || (target.visible && visibleCount === 1)) {
+        return;
+      }
+
+      const items = current.items.map((item) =>
+        item.href === href ? { ...item, visible: !item.visible } : item
+      );
+      persist({ ...current, items });
     },
-    [prefs, persist]
+    [persist]
   );
 
   const reset = useCallback((): void => {

@@ -43,6 +43,8 @@
   --animate-drawer-in: drawer-in 0.24s cubic-bezier(0.2, 0.8, 0.2, 1) both;
   --animate-sheet-in: sheet-in 0.24s cubic-bezier(0.2, 0.8, 0.2, 1) both;
   --animate-float-glow: float-glow 12s ease-in-out infinite;
+  --animate-sidebar-editor-in: sidebar-editor-in 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-sidebar-row-in: sidebar-row-in 0.36s cubic-bezier(0.16, 1, 0.3, 1) both;
 
   @keyframes fade-in {
     from {
@@ -93,6 +95,28 @@
     }
     50% {
       transform: translate(20px, -20px);
+    }
+  }
+
+  @keyframes sidebar-editor-in {
+    from {
+      opacity: 0;
+      transform: translateX(-10px) scale(0.985);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0) scale(1);
+    }
+  }
+
+  @keyframes sidebar-row-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
     }
   }
 }

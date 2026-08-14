@@ -90,6 +90,22 @@ describe("AppNav", () => {
     expect(screen.getByRole("link", { name: "Home" })).not.toHaveClass("bg-accent-glow");
   });
 
+  it("prefers an exact destination over its parent navigation item", () => {
+    pathname.value = "/settings/api-keys";
+    render(
+      <AppNav
+        items={[
+          { href: "/settings", label: "Settings", icon: "⚙" },
+          { href: "/settings/api-keys", label: "API keys", icon: "⚿" }
+        ]}
+        orientation="sidebar"
+      />
+    );
+
+    expect(screen.getByRole("link", { name: "API keys" })).toHaveClass("bg-accent-glow");
+    expect(screen.getByRole("link", { name: "Settings" })).not.toHaveClass("bg-accent-glow");
+  });
+
   it("does not treat an unrelated route as active by text prefix alone", () => {
     pathname.value = "/transactions-export";
     render(<AppNav items={items} orientation="sidebar" />);

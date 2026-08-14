@@ -120,6 +120,47 @@ describe("useNavPreferences", () => {
     expect(result.current.orderedVisibleItems).toEqual(mainNavItems);
   });
 
+  it("keeps one destination visible", () => {
+    const { result } = renderHook(() => useNavPreferences());
+
+    for (const item of mainNavItems.slice(1)) {
+      act(() => {
+        result.current.toggleVisible(item.href);
+      });
+    }
+
+    act(() => {
+      result.current.toggleVisible(mainNavItems[0]?.href ?? "");
+    });
+
+    expect(result.current.orderedVisibleItems).toEqual([mainNavItems[0]]);
+  });
+
+  it("repairs duplicate and stale stored destinations", () => {
+    const firstItem = mainNavItems[0];
+    if (firstItem === undefined) {
+      throw new Error("Expected at least one navigation item");
+    }
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        version: 1,
+        items: [
+          { href: firstItem.href, visible: true },
+          { href: firstItem.href, visible: false },
+          { href: "/removed", visible: true }
+        ]
+      })
+    );
+
+    const { result } = renderHook(() => useNavPreferences());
+
+    expect(result.current.allOrderedItems).toHaveLength(mainNavItems.length);
+    expect(
+      result.current.allOrderedItems.filter((item) => item.href === firstItem.href)
+    ).toHaveLength(1);
+  });
+
   it("falls back to defaults if version mismatch", () => {
     const wrongVersion = {
       version: 99,

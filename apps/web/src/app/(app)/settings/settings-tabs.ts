@@ -2,20 +2,26 @@ export const SETTINGS_TABS = [
   {
     id: "profile",
     label: "Profile",
-    description: "Identity and session",
+    description: "Identity & session security",
     icon: "◉"
   },
   {
     id: "appearance",
     label: "Appearance",
-    description: "Theme and accent",
+    description: "Theme & color studio",
     icon: "◐"
   },
   {
     id: "management",
     label: "Management",
-    description: "Accounts and tools",
+    description: "12 ledger subsystems",
     icon: "▦"
+  },
+  {
+    id: "invariants",
+    label: "Invariants",
+    description: "Double-entry rules & math",
+    icon: "⛨"
   }
 ] as const;
 

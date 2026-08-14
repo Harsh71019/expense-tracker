@@ -36,6 +36,7 @@ export function ProfileSummary({
         />
       </div>
       <div className="min-w-0 flex-1">
+        <p className="text-[11px] font-semibold text-foreground-muted">Signed in as</p>
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="truncate text-base font-bold tracking-tight text-foreground sm:text-lg">
             {displayName}

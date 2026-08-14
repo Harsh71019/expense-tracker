@@ -8,6 +8,7 @@ import type { ReactNode } from "react";
 import { DialogSurface } from "@/components/ui/dialog";
 import { Money } from "@/components/ui/money";
 import { useAccounts } from "@/features/accounts";
+import { isLinkableBillPaymentSource, LinkBillPaymentDialog } from "@/features/bills";
 import { IconGlyph, useCategories } from "@/features/categories";
 import { toast } from "@/lib/toast";
 
@@ -40,6 +41,7 @@ export function TxnDetailDrawer({
   const update = useUpdateTxn();
   const reverse = useReverseTxn();
   const [reverseOpen, setReverseOpen] = useState(false);
+  const [linkingBillPayment, setLinkingBillPayment] = useState(false);
   const [description, setDescription] = useState(transaction.description);
   const [categoryId, setCategoryId] = useState<string | undefined>(transaction.categoryId);
   const [tags, setTags] = useState<string[]>(transaction.tags);
@@ -57,6 +59,7 @@ export function TxnDetailDrawer({
   const category = categories.data?.find((item) => item.id === transaction.categoryId);
   const activeCategories = (categories.data ?? []).filter((item) => !item.isArchived);
   const railLabel = paymentRailLabel(transaction.paymentRail);
+  const canLinkBillPayment = isLinkableBillPaymentSource(transaction, accounts.data ?? []);
 
   async function saveChanges(): Promise<void> {
     const patch = {
@@ -85,6 +88,16 @@ export function TxnDetailDrawer({
     if (value === "" || tags.includes(value)) return;
     setTags([...tags, value]);
     setTagDraft("");
+  }
+
+  if (linkingBillPayment) {
+    return (
+      <LinkBillPaymentDialog
+        transaction={transaction}
+        accounts={accounts.data ?? []}
+        onClose={() => setLinkingBillPayment(false)}
+      />
+    );
   }
 
   return (
@@ -181,6 +194,32 @@ export function TxnDetailDrawer({
         >
           More details →
         </Link>
+
+        {canLinkBillPayment ? (
+          <button
+            type="button"
+            onClick={() => setLinkingBillPayment(true)}
+            className="mt-5 flex min-h-14 w-full items-center gap-3 rounded-xl border border-income/25 bg-income/5 px-4 py-3 text-left transition-colors hover:bg-income/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-income"
+          >
+            <span
+              aria-hidden="true"
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-income/15 text-lg"
+            >
+              ↗
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-semibold text-foreground">
+                Mark as credit card payment
+              </span>
+              <span className="mt-0.5 block text-xs text-foreground-muted">
+                Apply this debit to a card and reduce its outstanding balance.
+              </span>
+            </span>
+            <span aria-hidden="true" className="text-income">
+              →
+            </span>
+          </button>
+        ) : null}
 
         {isTransfer ? (
           <div className="mt-5 rounded-xl border border-border bg-accent/5 p-4">

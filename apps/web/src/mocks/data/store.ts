@@ -24,6 +24,7 @@ export type BillDto = components["schemas"]["CreditCardBill"];
 export type BillStatementUploadDto = components["schemas"]["BillStatementUpload"];
 export type BillStatementRowDto = components["schemas"]["BillStatementRow"];
 export type BillPaymentResultDto = components["schemas"]["BillPaymentResult"];
+export type CreditCardPaymentResultDto = components["schemas"]["CreditCardPaymentResult"];
 export type BudgetDto = components["schemas"]["Budget"];
 /** Generated-schema shape, distinct from `@treasury-ops/shared`'s `ColumnMapping` — see toColumnMappingDto in handlers/imports.ts. */
 export type ColumnMappingDto = ImportBatchDto["mapping"];
@@ -44,6 +45,7 @@ export interface MockIdempotency {
   billStatementUploads: Map<string, BillStatementUploadDto>;
   billReconcile: Map<string, BillDto>;
   billPayments: Map<string, BillPaymentResultDto>;
+  creditCardPayments: Map<string, CreditCardPaymentResultDto>;
   accountArchive: Set<string>;
   categories: Map<string, CategoryDto>;
   categoryArchive: Set<string>;
@@ -1841,6 +1843,7 @@ export function createMockStore(): MockStore {
       billStatementUploads: new Map(),
       billReconcile: new Map(),
       billPayments: new Map(),
+      creditCardPayments: new Map(),
       accountArchive: new Set(),
       categories: new Map(),
       categoryArchive: new Set(),

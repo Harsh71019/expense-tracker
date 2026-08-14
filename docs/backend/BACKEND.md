@@ -511,6 +511,16 @@ again before committing staged import rows.
 
 Non-monetary metadata on a transfer is also group-scoped. Until a group-level metadata endpoint exists, `PATCH /transactions/:id` rejects transfer legs instead of changing only one half of the transfer.
 
+An externally posted credit-card payment starts life as only the source-account expense (for
+example, an n8n-ingested CRED debit). `POST /v1/credit-card-payments` accepts that existing
+`transactionId`, the receiving `creditCardAccountId`, and an optional `billId`. In one `withTxn`
+call it guards the source row, attaches a new `transferGroupId`, appends an equal income leg on the
+card, updates only the card balance cache, and records the audit event. The bank balance is not
+changed again. A supplied bill must belong to the selected card and be able to absorb the source
+transaction's full amount; partial conversion is rejected because unequal transfer legs would
+violate conservation. Omitting `billId` still reduces card outstanding, including for legacy cards
+without generated statement bills.
+
 ### 3.4 Idempotency
 
 Client-initiated create/update/archive/delete operations require an `Idempotency-Key` header (the client generates one UUID per logical action and reuses it for retries). General mutations store their Zod-validated response in `idempotency_records`, uniquely keyed by `(userId, operation, key)`, in the same PostgreSQL transaction as the business effect. Each record also stores a SHA-256 fingerprint of the canonicalized, validated request intent, including path identifiers. Reusing the key for the same intent returns the authoritative stored response; reusing it for different intent returns `409 common.idempotency_conflict`. No-content operations store `null` so an archive/delete replay cannot fall through to `404`.

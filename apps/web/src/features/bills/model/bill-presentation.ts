@@ -66,11 +66,19 @@ export function eligiblePaymentAccounts(
   );
 }
 
-export function eligibleBillsForLinking(
+export function eligibleBillsForCardPayment(
   bills: readonly CreditCardBill[],
-  sourceAccountId: string
+  creditCardAccountId: string,
+  amountMinor: number
 ): CreditCardBill[] {
-  return bills.filter((bill) => bill.remainingMinor > 0 && bill.accountId !== sourceAccountId);
+  return bills
+    .filter(
+      (bill) =>
+        bill.accountId === creditCardAccountId &&
+        bill.remainingMinor > 0 &&
+        bill.remainingMinor >= amountMinor
+    )
+    .toSorted((left, right) => left.dueDate.getTime() - right.dueDate.getTime());
 }
 
 export const actionLabel: Readonly<Record<BillAction, string>> = {

@@ -212,6 +212,17 @@ export const LinkBillPaymentSchema = z.object({
   amountMinor: PositiveMinorSchema.optional()
 });
 
+export const CreateCreditCardPaymentSchema = z.object({
+  transactionId: TransactionIdSchema,
+  creditCardAccountId: AccountIdSchema,
+  billId: CreditCardBillIdSchema.optional()
+});
+
+export const CreditCardPaymentResultSchema = z.object({
+  transfer: TransferSchema,
+  bill: CreditCardBillSchema.optional()
+});
+
 export { CreditCardConfigInputSchema };
 
 export type CreditCardBillId = z.infer<typeof CreditCardBillIdSchema>;
@@ -244,3 +255,5 @@ export type AcknowledgeExtraTransaction = z.infer<typeof AcknowledgeExtraTransac
 export type PayCreditCardBill = z.infer<typeof PayCreditCardBillSchema>;
 export type BillPaymentResult = z.infer<typeof BillPaymentResultSchema>;
 export type LinkBillPayment = z.infer<typeof LinkBillPaymentSchema>;
+export type CreateCreditCardPayment = z.infer<typeof CreateCreditCardPaymentSchema>;
+export type CreditCardPaymentResult = z.infer<typeof CreditCardPaymentResultSchema>;

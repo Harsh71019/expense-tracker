@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Headers,
+  HttpCode,
   Param,
   Patch,
   Post,
@@ -18,6 +19,7 @@ import {
   BillStatementRowIdSchema,
   CreditCardBillIdSchema,
   CreditCardConfigInputSchema,
+  CreateCreditCardPaymentSchema,
   LinkBillPaymentSchema,
   ListBillsQuerySchema,
   ListBillStatementRowsQuerySchema,
@@ -31,7 +33,8 @@ import {
   type BillStatementRowPage,
   type BillStatementUpload,
   type CreditCardBill,
-  type BillDetail
+  type BillDetail,
+  type CreditCardPaymentResult
 } from "@treasury-ops/shared";
 import type { Response } from "express";
 import { z } from "zod";
@@ -67,6 +70,28 @@ export class CreditCardConfigController {
       user.id,
       AccountIdSchema.parse(accountId),
       CreditCardConfigInputSchema.parse(body),
+      IdempotencyKeySchema.parse(key)
+    );
+    setReplayHeader(response, result.replayed);
+    return result.result;
+  }
+}
+
+@Controller("v1/credit-card-payments")
+export class CreditCardPaymentsController {
+  constructor(private readonly bills: BillsService) {}
+
+  @Post()
+  @HttpCode(200)
+  async create(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() body: unknown,
+    @Headers("idempotency-key") key: string | undefined,
+    @Res({ passthrough: true }) response: Response
+  ): Promise<CreditCardPaymentResult> {
+    const result = await this.bills.linkCreditCardPayment(
+      user.id,
+      CreateCreditCardPaymentSchema.parse(body),
       IdempotencyKeySchema.parse(key)
     );
     setReplayHeader(response, result.replayed);

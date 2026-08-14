@@ -12,7 +12,16 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@/features/accounts", () => ({
-  useAccounts: () => ({ data: [{ id: "3fa85f64-5717-4562-b3fc-2c963f66beef", name: "HDFC" }] })
+  useAccounts: () => ({
+    data: [
+      {
+        id: "3fa85f64-5717-4562-b3fc-2c963f66beef",
+        name: "HDFC",
+        type: "bank",
+        isArchived: false
+      }
+    ]
+  })
 }));
 vi.mock("@/features/categories", () => ({ useCategories: () => ({ data: [] }) }));
 vi.mock("@/features/transfers/hooks/use-transfers", () => ({

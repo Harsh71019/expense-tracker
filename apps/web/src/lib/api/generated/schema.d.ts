@@ -6250,6 +6250,100 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/v1/credit-card-payments": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
+            /** Format: uuid */
+            transactionId: string;
+            /** Format: uuid */
+            creditCardAccountId: string;
+            /** Format: uuid */
+            billId?: string;
+          };
+        };
+      };
+      responses: {
+        /** @description Existing expense linked to a credit-card account, with optional bill attribution, or idempotent replay */
+        200: {
+          headers: {
+            "Idempotency-Replayed"?: "true";
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["CreditCardPaymentResult"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Transaction, bill, or account not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Transaction is ineligible, target account or bill does not match, or the bill would be overpaid */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/v1/bills/{billId}/link-payment": {
     parameters: {
       query?: never;
@@ -6736,6 +6830,8 @@ export interface components {
         | "bill.unresolved_statement"
         | "bill.already_reconciled"
         | "bill.invalid_payment_source"
+        | "bill.payment_amount_mismatch"
+        | "bill.payment_account_mismatch"
         | "recurring.no_occurrences"
         | "recurring.reconciliation_already_resolved"
         | "recurring.invalid_reconciliation_resolution"
@@ -8471,6 +8567,120 @@ export interface components {
           /** Format: date-time */
           updatedAt: string | null;
         };
+      };
+    };
+    CreditCardPaymentResult: {
+      transfer: {
+        /** Format: uuid */
+        transferGroupId: string;
+        fromTransaction: {
+          /** Format: uuid */
+          accountId: string;
+          /** Format: uuid */
+          categoryId?: string;
+          /** @enum {string} */
+          type: "expense" | "income";
+          amountMinor: number;
+          /** Format: date-time */
+          occurredAt: string | null;
+          description: string;
+          /** @default [] */
+          tags: string[];
+          /** Format: uuid */
+          id: string;
+          userId: string;
+          /** @enum {string} */
+          currency: "INR";
+          /** @enum {string} */
+          source: "manual" | "csv_import" | "recurring" | "api";
+          /** @enum {string} */
+          status: "posted" | "reversed" | "reversal";
+          /** Format: uuid */
+          idempotencyKey?: string;
+          /** Format: uuid */
+          reversalOf?: string;
+          /** Format: uuid */
+          reversedBy?: string;
+          /** Format: uuid */
+          transferGroupId?: string;
+          /** Format: uuid */
+          billId?: string;
+          /** Format: uuid */
+          recurringRuleId?: string;
+          /** @enum {string} */
+          paymentRail: "upi" | "neft" | "rtgs" | "imps" | "nach" | "card" | "unknown";
+          counterpartyHandle: string | null;
+          /** Format: date-time */
+          createdAt: string | null;
+          /** Format: date-time */
+          updatedAt: string | null;
+        };
+        toTransaction: {
+          /** Format: uuid */
+          accountId: string;
+          /** Format: uuid */
+          categoryId?: string;
+          /** @enum {string} */
+          type: "expense" | "income";
+          amountMinor: number;
+          /** Format: date-time */
+          occurredAt: string | null;
+          description: string;
+          /** @default [] */
+          tags: string[];
+          /** Format: uuid */
+          id: string;
+          userId: string;
+          /** @enum {string} */
+          currency: "INR";
+          /** @enum {string} */
+          source: "manual" | "csv_import" | "recurring" | "api";
+          /** @enum {string} */
+          status: "posted" | "reversed" | "reversal";
+          /** Format: uuid */
+          idempotencyKey?: string;
+          /** Format: uuid */
+          reversalOf?: string;
+          /** Format: uuid */
+          reversedBy?: string;
+          /** Format: uuid */
+          transferGroupId?: string;
+          /** Format: uuid */
+          billId?: string;
+          /** Format: uuid */
+          recurringRuleId?: string;
+          /** @enum {string} */
+          paymentRail: "upi" | "neft" | "rtgs" | "imps" | "nach" | "card" | "unknown";
+          counterpartyHandle: string | null;
+          /** Format: date-time */
+          createdAt: string | null;
+          /** Format: date-time */
+          updatedAt: string | null;
+        };
+      };
+      bill?: {
+        /** Format: uuid */
+        id: string;
+        userId: string;
+        /** Format: uuid */
+        accountId: string;
+        /** Format: date-time */
+        cycleStart: string | null;
+        /** Format: date-time */
+        cycleEnd: string | null;
+        /** Format: date-time */
+        dueDate: string | null;
+        amountDueMinor: number;
+        /** @enum {string} */
+        reconciliationStatus: "awaiting_statement" | "reconciled";
+        paidMinor: number;
+        remainingMinor: number;
+        /** @enum {string} */
+        paymentStatus: "unpaid" | "partial" | "paid";
+        /** Format: date-time */
+        createdAt: string | null;
+        /** Format: date-time */
+        updatedAt: string | null;
       };
     };
     PendingTransaction: {

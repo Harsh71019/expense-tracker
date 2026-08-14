@@ -20,6 +20,8 @@
 
   --font-sans: var(--font-inter-tight), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-jetbrains-mono), ui-monospace, "SFMono-Regular", monospace;
+  --text-2xs: 0.625rem;
+  --text-2xs--line-height: 0.875rem;
 
   --shadow-glow: 0 0 20px var(--color-accent-glow);
   --shadow-glow-strong: 0 0 30px var(--color-accent-glow);
@@ -380,4 +382,3 @@ body,
     transition-duration: 0.01ms !important;
   }
 }
-

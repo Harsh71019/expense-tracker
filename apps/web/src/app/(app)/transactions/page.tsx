@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { PageShell } from "@/components/ui/page-shell";
 import {
   parseTransactionFilters,
   TxnList,
@@ -7,7 +8,6 @@ import {
 } from "@/features/transactions";
 import { getTxnPage } from "@/features/transactions/server/get-txn-page";
 import { getTransactionInsights } from "@/features/transactions/server/get-transaction-insights";
-import { PendingTransactionsPanel } from "@/features/pending-transactions/components/pending-transactions-panel";
 import { getPendingTransactions } from "@/features/pending-transactions/server/get-pending-transactions";
 
 export default async function TransactionsPage({
@@ -20,9 +20,13 @@ export default async function TransactionsPage({
     getPendingTransactions()
   ]);
   return (
-    <div className="space-y-8">
-      <PendingTransactionsPanel initialPendingTransactions={pendingTransactions} />
-      <TxnList filters={filters} initialPage={firstPage} initialInsights={insights} />
-    </div>
+    <PageShell width="wide">
+      <TxnList
+        filters={filters}
+        initialPage={firstPage}
+        initialInsights={insights}
+        initialPendingTransactions={pendingTransactions}
+      />
+    </PageShell>
   );
 }

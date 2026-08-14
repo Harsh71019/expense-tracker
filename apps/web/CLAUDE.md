@@ -34,9 +34,13 @@ Server components by default; `"use client"` only where interaction requires it 
 - **`src/features/<name>/hooks/*.ts`** — client-side TanStack Query hooks (`"use client"`), calling the browser API client. These take the server-rendered data as `initialData`/`initialPage` so there's no refetch-on-mount waterfall, then own subsequent pagination/mutation/invalidation.
 - **`src/features/<name>/components/*.tsx`** — presentation, composed in route files under `src/app/`.
 - **`src/features/<name>/model/*.ts`** — pure functions (zod-backed parsing/serialization of URL search params into typed filters, form-adjacent transforms). No I/O.
+
+`auth` is an intentional exception to this 5-layer shape — it's `components/` + `index.ts` only, no `server/`, `hooks/`, or `model/`. Sign-in/sign-out/register call `better-auth/react` directly via `src/lib/auth/client.ts`, not a TanStack Query hook, so there's no data-fetching layer to split out.
+
 - **`src/features/<name>/index.ts`** — the feature's public surface; import from here, not from internal files across feature boundaries. Exception: `server/*.ts` fetchers are never re-exported from `index.ts` — route files always deep-import them directly (`@/features/<name>/server/<fetcher>`), even from that fetcher's own feature's route. This isn't just a barrel-boundary nicety: a client component importing a feature barrel that also exports a server-only fetcher breaks `next build`, so keeping fetchers out of `index.ts` entirely avoids the trap by construction.
 
 Two separate `openapi-fetch` clients exist for exactly this client/server split — never mix them up:
+
 - `src/lib/api/client.ts` — browser client, `baseUrl: "/api"`, relies on the Next.js rewrite in `next.config.ts` (`/api/:path*` → `INTERNAL_API_URL`).
 - `src/lib/api/server.ts` — server client (RSC/route handlers), calls `INTERNAL_API_URL` directly, forwards the incoming cookie header and a generated `x-request-id`.
 
@@ -61,6 +65,7 @@ Never format `amountMinor` by hand — use `<Money>`/`<SignedMoney>` (`src/compo
 ### UI composition
 
 Overlays (dialogs/sheets/drawers) all build on the shared `DialogSurface` (`src/components/ui/dialog/dialog-surface.tsx`) — never roll a bespoke overlay. Pick the file suffix by purpose, not by feel:
+
 - `-dialog`: confirmations and small single-purpose actions (e.g. `reverse-confirm-dialog.tsx`).
 - `-sheet`: create/edit forms (e.g. `create-txn-sheet.tsx`).
 - `-drawer`: read-heavy detail views (e.g. `txn-detail-drawer.tsx`).

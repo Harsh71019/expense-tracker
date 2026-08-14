@@ -1,6 +1,6 @@
 "use client";
 
-import { AccountTypeSchema, CreateAccountSchema, type AccountType } from "@treasury-ops/shared";
+import type { AccountType } from "@treasury-ops/shared";
 import { useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 
@@ -10,6 +10,8 @@ import { Select } from "@/components/ui/select";
 import { useCreateAccount } from "@/features/accounts";
 import { userErrorMessage } from "@/lib/errors";
 import { toast } from "@/lib/toast";
+
+import { parseAccountSetupInput, parseAccountType } from "../model/account-setup-form";
 
 const accountTypes: readonly Readonly<{ value: AccountType; label: string }>[] = [
   { value: "cash", label: "Cash" },
@@ -27,7 +29,7 @@ export function AccountSetup(): ReactNode {
 
   async function submit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
-    const parsed = CreateAccountSchema.safeParse({ name, type, openingBalanceMinor: 0 });
+    const parsed = parseAccountSetupInput({ name, type });
     if (!parsed.success) {
       setError(parsed.error.issues[0]?.message ?? "Enter an account name.");
       return;
@@ -71,7 +73,7 @@ export function AccountSetup(): ReactNode {
             options={accountTypes}
             value={type}
             onChange={(val) => {
-              const parsedType = AccountTypeSchema.safeParse(val);
+              const parsedType = parseAccountType(val);
               if (parsedType.success) {
                 setType(parsedType.data);
               }

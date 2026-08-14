@@ -1,6 +1,6 @@
 "use client";
 
-import { CreateTransferSchema, parseMinor, type CreateTransfer } from "@treasury-ops/shared";
+import { parseMinor, type CreateTransfer } from "@treasury-ops/shared";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import type { ReactNode } from "react";
@@ -17,20 +17,7 @@ import { userErrorMessage, ValidationError } from "@/lib/errors";
 import { generateRequestId } from "@/lib/request-id";
 
 import { useCreateTransfer } from "../hooks/use-transfers";
-
-function fieldErrorName(path: string): keyof CreateTransfer | null {
-  if (
-    path === "fromAccountId" ||
-    path === "toAccountId" ||
-    path === "amountMinor" ||
-    path === "occurredAt" ||
-    path === "description" ||
-    path === "tags"
-  ) {
-    return path;
-  }
-  return null;
-}
+import { fieldErrorName, parseCreateTransferInput } from "../model/transfer-form";
 
 export function CreateTransferSheet({ onClose }: Readonly<{ onClose: () => void }>): ReactNode {
   const [idempotencyKey, setIdempotencyKey] = useState(generateRequestId);
@@ -68,7 +55,7 @@ export function CreateTransferSheet({ onClose }: Readonly<{ onClose: () => void 
   }
 
   async function submit(values: CreateTransfer): Promise<void> {
-    const parsed = CreateTransferSchema.safeParse(values);
+    const parsed = parseCreateTransferInput(values);
     if (!parsed.success) {
       for (const issue of parsed.error.issues) {
         const name = fieldErrorName(issue.path.join("."));

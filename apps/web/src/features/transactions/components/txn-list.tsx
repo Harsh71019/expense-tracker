@@ -31,7 +31,7 @@ import { useCategories } from "@/features/categories";
 import { useReverseTransfer } from "@/features/transfers/hooks/use-transfers";
 import { downloadCsvFile, generateTransactionsCsv } from "../model/export-csv";
 import { toast } from "@/lib/toast";
-import { PendingTransactionsPanel } from "@/features/pending-transactions/components/pending-transactions-panel";
+import { PendingTransactionsPanel } from "@/features/pending-transactions";
 
 export function TxnList({
   filters,

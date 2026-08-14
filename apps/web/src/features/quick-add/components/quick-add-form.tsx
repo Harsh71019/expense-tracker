@@ -1,6 +1,6 @@
 "use client";
 
-import { CreateTransactionSchema, type CreateTransaction } from "@treasury-ops/shared";
+import type { CreateTransaction } from "@treasury-ops/shared";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import type { ReactNode } from "react";
@@ -18,22 +18,8 @@ import { generateRequestId } from "@/lib/request-id";
 import { toast } from "@/lib/toast";
 
 import { useCreateTxn } from "../hooks/use-create-txn";
+import { fieldErrorName, parseCreateTransactionInput } from "../model/quick-add-form";
 import { AccountSetup } from "./account-setup";
-
-function fieldErrorName(path: string): keyof CreateTransaction | null {
-  if (
-    path === "accountId" ||
-    path === "categoryId" ||
-    path === "type" ||
-    path === "amountMinor" ||
-    path === "occurredAt" ||
-    path === "description" ||
-    path === "tags"
-  ) {
-    return path;
-  }
-  return null;
-}
 
 export function QuickAddForm(): ReactNode {
   const [idempotencyKey, setIdempotencyKey] = useState(generateRequestId);
@@ -55,7 +41,7 @@ export function QuickAddForm(): ReactNode {
   );
 
   async function submit(values: CreateTransaction): Promise<void> {
-    const parsed = CreateTransactionSchema.safeParse(values);
+    const parsed = parseCreateTransactionInput(values);
     if (!parsed.success) {
       for (const issue of parsed.error.issues) {
         const name = fieldErrorName(issue.path.join("."));

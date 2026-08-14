@@ -344,7 +344,7 @@ export function DatePicker({
             {WEEKDAY_NAMES.map((dayName) => (
               <div
                 key={dayName}
-                className="font-mono text-[10px] font-bold text-foreground-muted uppercase tracking-wider"
+                className="font-mono text-2xs font-bold text-foreground-muted uppercase tracking-wider"
               >
                 {dayName}
               </div>
@@ -390,7 +390,7 @@ export function DatePicker({
           {/* Optional Time Selector for datetime-local mode */}
           {includeTime ? (
             <div className="mt-3 flex items-center justify-between gap-2 rounded-xl border border-border/80 bg-surface-muted/60 p-2 text-xs">
-              <span className="flex items-center gap-1.5 font-mono text-[10px] font-bold text-foreground-muted uppercase tracking-wider">
+              <span className="flex items-center gap-1.5 font-mono text-2xs font-bold text-foreground-muted uppercase tracking-wider">
                 <Clock size={14} className="text-foreground-muted" /> Time
               </span>
               <div className="flex items-center gap-1 font-mono">
@@ -422,7 +422,7 @@ export function DatePicker({
             <button
               type="button"
               onClick={handleSetToday}
-              className="rounded-md px-2 py-1 font-mono text-[11px] font-semibold text-accent hover:bg-accent/10 transition-colors"
+              className="rounded-md px-2 py-1 font-mono text-2xs font-semibold text-accent hover:bg-accent/10 transition-colors"
             >
               Today
             </button>
@@ -430,7 +430,7 @@ export function DatePicker({
               <button
                 type="button"
                 onClick={handleClear}
-                className="rounded-md px-2 py-1 font-mono text-[11px] font-semibold text-foreground-muted hover:text-expense hover:bg-expense/10 transition-colors"
+                className="rounded-md px-2 py-1 font-mono text-2xs font-semibold text-foreground-muted hover:text-expense hover:bg-expense/10 transition-colors"
               >
                 Clear
               </button>
@@ -438,7 +438,7 @@ export function DatePicker({
             <button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="ml-auto rounded-md bg-surface-muted px-2.5 py-1 font-mono text-[11px] font-semibold text-foreground hover:bg-surface transition-colors"
+              className="ml-auto rounded-md bg-surface-muted px-2.5 py-1 font-mono text-2xs font-semibold text-foreground hover:bg-surface transition-colors"
             >
               Done
             </button>

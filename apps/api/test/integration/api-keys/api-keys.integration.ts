@@ -1,13 +1,20 @@
+import { randomUUID } from "node:crypto";
 import type { Logger } from "nestjs-pino";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { ApiKeysService } from "../../../src/api-keys/api-keys.service.js";
 import { AuthService } from "../../../src/auth/auth.service.js";
 import type { RuntimeConfigService } from "../../../src/common/config/runtime-config.service.js";
+import { IdempotencyPostgresRepository } from "../../../src/common/idempotency/idempotency-postgres.repository.js";
+import { IdempotencyPostgresService } from "../../../src/common/idempotency/idempotency-postgres.service.js";
 import type { RedisService } from "../../../src/common/redis/redis.service.js";
 import type { UserProfileService } from "../../../src/user-profiles/user-profile.service.js";
 import { createTestDb, insertTestUser } from "../support/postgres-test-db.js";
 import type { TestDb } from "../support/postgres-test-db.js";
+
+function idempotencyKey(): string {
+  return randomUUID();
+}
 
 class TestRuntimeConfigService implements RuntimeConfigService {
   env = {
@@ -66,7 +73,10 @@ describe("api-key plugin integration", () => {
       profilesMock,
       loggerMock
     );
-    apiKeys = new ApiKeysService(authService);
+    apiKeys = new ApiKeysService(
+      authService,
+      new IdempotencyPostgresService(testDb.db, new IdempotencyPostgresRepository(testDb.db))
+    );
   }, 60_000);
 
   afterAll(async () => {
@@ -74,10 +84,11 @@ describe("api-key plugin integration", () => {
   });
 
   it("round-trips create -> verify with matching permissions", async () => {
-    const created = await apiKeys.create("user-a", {
-      name: "n8n",
-      permissions: { transactions: ["write"] }
-    });
+    const { result: created } = await apiKeys.create(
+      "user-a",
+      { name: "n8n", permissions: { transactions: ["write"] } },
+      idempotencyKey()
+    );
 
     const verified = await authService.auth.api.verifyApiKey({
       body: { key: created.key, permissions: { transactions: ["write"] } }
@@ -88,10 +99,11 @@ describe("api-key plugin integration", () => {
   });
 
   it("verifyApiKey's own permission check collapses insufficient-scope into KEY_NOT_FOUND, same as an invalid key -- this is why AuthGuard (Task 5) never passes permissions to verifyApiKey and compares scopes itself", async () => {
-    const created = await apiKeys.create("user-a", {
-      name: "read-only",
-      permissions: { categories: ["read"] }
-    });
+    const { result: created } = await apiKeys.create(
+      "user-a",
+      { name: "read-only", permissions: { categories: ["read"] } },
+      idempotencyKey()
+    );
 
     const verified = await authService.auth.api.verifyApiKey({
       body: { key: created.key, permissions: { transactions: ["write"] } }
@@ -124,10 +136,11 @@ describe("api-key plugin integration", () => {
   });
 
   it("a revoked (disabled) key fails verification", async () => {
-    const created = await apiKeys.create("user-a", {
-      name: "to-revoke",
-      permissions: { accounts: ["read"] }
-    });
+    const { result: created } = await apiKeys.create(
+      "user-a",
+      { name: "to-revoke", permissions: { accounts: ["read"] } },
+      idempotencyKey()
+    );
 
     await apiKeys.revoke("user-a", created.id);
 
@@ -138,10 +151,11 @@ describe("api-key plugin integration", () => {
   });
 
   it("cannot update or revoke another user's key", async () => {
-    const created = await apiKeys.create("user-a", {
-      name: "user-a-key",
-      permissions: { accounts: ["read"] }
-    });
+    const { result: created } = await apiKeys.create(
+      "user-a",
+      { name: "user-a-key", permissions: { accounts: ["read"] } },
+      idempotencyKey()
+    );
 
     await expect(apiKeys.update("user-b", created.id, { name: "hijacked" })).rejects.toThrow();
     await expect(apiKeys.revoke("user-b", created.id)).rejects.toThrow();

@@ -112,7 +112,7 @@ export function AppHeader({
             className="hidden items-center gap-1.5 text-xs font-medium text-foreground-muted transition-colors hover:text-foreground sm:flex"
           >
             <span className="font-mono text-sm text-accent">₹</span>
-            <span className="hidden sm:inline font-mono text-[11px] uppercase tracking-wider">
+            <span className="hidden sm:inline font-mono text-2xs uppercase tracking-wider">
               TreasuryOps
             </span>
           </Link>
@@ -129,7 +129,7 @@ export function AppHeader({
           </div>
 
           {currentDate !== "" && (
-            <div className="hidden lg:flex items-center gap-1.5 ml-2 font-mono text-[11px] text-foreground-muted/80 bg-surface-muted/30 px-2.5 py-1 rounded-lg border border-border/40">
+            <div className="hidden lg:flex items-center gap-1.5 ml-2 font-mono text-2xs text-foreground-muted/80 bg-surface-muted/30 px-2.5 py-1 rounded-lg border border-border/40">
               <span>{currentDate}</span>
               <span className="text-foreground-muted/40">·</span>
               <span className="font-semibold text-foreground-muted">{currentTime} IST</span>
@@ -149,7 +149,7 @@ export function AppHeader({
           >
             <Search size={15} />
             <span className="hidden md:inline">Search...</span>
-            <kbd className="rounded border border-border/80 bg-surface px-1.5 font-mono text-[10px] font-semibold text-foreground-muted">
+            <kbd className="rounded border border-border/80 bg-surface px-1.5 font-mono text-2xs font-semibold text-foreground-muted">
               ⌘K
             </kbd>
           </button>

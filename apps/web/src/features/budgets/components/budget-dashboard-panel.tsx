@@ -14,7 +14,7 @@ export function BudgetDashboardPanel({ page }: BudgetDashboardPanelProps): React
   if (page === null || page.overview.activeBudgetCount === 0) {
     return (
       <section className="rounded-2xl border border-border bg-surface-elevated p-6">
-        <p className="font-mono text-[10px] font-bold tracking-[0.18em] text-accent uppercase">
+        <p className="font-mono text-2xs font-bold tracking-[0.18em] text-accent uppercase">
           Monthly planning
         </p>
         <h2 className="mt-2 text-lg font-bold tracking-tight text-foreground">Monthly budgets</h2>
@@ -39,7 +39,7 @@ export function BudgetDashboardPanel({ page }: BudgetDashboardPanelProps): React
     <section className="rounded-2xl border border-border bg-surface-elevated p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="font-mono text-[10px] font-bold tracking-[0.18em] text-accent uppercase">
+          <p className="font-mono text-2xs font-bold tracking-[0.18em] text-accent uppercase">
             Monthly planning
           </p>
           <h2 className="mt-2 text-lg font-bold tracking-tight text-foreground">Monthly budgets</h2>

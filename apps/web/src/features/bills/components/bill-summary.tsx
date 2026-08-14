@@ -11,7 +11,7 @@ export function BillSummary({ detail }: Readonly<{ detail: BillDetail }>): React
     <section className="rounded-2xl border border-border bg-surface-elevated p-6 sm:p-7">
       <div className="flex flex-wrap items-start justify-between gap-5">
         <div>
-          <p className="font-mono text-[10px] font-bold tracking-[0.2em] text-accent uppercase">
+          <p className="font-mono text-2xs font-bold tracking-[0.2em] text-accent uppercase">
             {detail.account.name}
           </p>
           <h1 className="mt-2 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
@@ -22,7 +22,7 @@ export function BillSummary({ detail }: Readonly<{ detail: BillDetail }>): React
           </p>
         </div>
         <div className="text-right">
-          <p className="font-mono text-[9px] font-bold tracking-wider text-foreground-muted uppercase">
+          <p className="font-mono text-2xs font-bold tracking-wider text-foreground-muted uppercase">
             Remaining
           </p>
           <div className="mt-1">

@@ -69,7 +69,7 @@ export function MobileMenu({
           <div className="flex h-16 shrink-0 items-center justify-between border-b border-border px-5">
             <div>
               <p className="text-base font-bold tracking-tight text-foreground">TreasuryOps</p>
-              <p className="mt-1 font-mono text-[9px] font-bold tracking-[0.18em] text-accent uppercase">
+              <p className="mt-1 font-mono text-2xs font-bold tracking-[0.18em] text-accent uppercase">
                 Expense tracker
               </p>
             </div>
@@ -85,7 +85,7 @@ export function MobileMenu({
           </div>
 
           <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-5">
-            <p className="mb-3 px-3 font-mono text-[10px] font-bold tracking-[0.18em] text-foreground-muted uppercase">
+            <p className="mb-3 px-3 font-mono text-2xs font-bold tracking-[0.18em] text-foreground-muted uppercase">
               Navigate
             </p>
             <AppNav items={mainNavItems} orientation="sidebar" onNavigate={closeMenu} />

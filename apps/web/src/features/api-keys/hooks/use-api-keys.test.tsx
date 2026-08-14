@@ -49,7 +49,8 @@ describe("useCreateApiKey", () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data).toMatchObject({ id: "key-1", key: "ak_secret" });
     expect(mocks.POST).toHaveBeenCalledWith("/v1/api-keys", {
-      body: { name: "n8n", permissions: { transactions: ["write"] } }
+      body: { name: "n8n", permissions: { transactions: ["write"] } },
+      params: { header: { "Idempotency-Key": expect.any(String) } }
     });
   });
 });

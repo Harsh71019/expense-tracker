@@ -56,7 +56,7 @@ export function RecurringPanel({ initialForecast, initialRange }: RecurringPanel
           <div className="h-full flex-1 rounded-r-full bg-expense/70" />
         </div>
       </div>
-      <p className="mt-6 mb-2 font-mono text-[10px] font-semibold tracking-[1.2px] text-foreground-muted">
+      <p className="mt-6 mb-2 font-mono text-2xs font-semibold tracking-[1.2px] text-foreground-muted">
         UPCOMING · NEXT 30 DAYS
       </p>
       <div className="flex flex-col gap-0.5">
@@ -71,7 +71,7 @@ export function RecurringPanel({ initialForecast, initialRange }: RecurringPanel
                   <p className="font-mono text-lg leading-none font-bold text-foreground">
                     {dayFormatter.format(item.nextRunAt)}
                   </p>
-                  <p className="mt-0.5 font-mono text-[9px] font-semibold tracking-wide text-foreground-muted uppercase">
+                  <p className="mt-0.5 font-mono text-2xs font-semibold tracking-wide text-foreground-muted uppercase">
                     {monthFormatter.format(item.nextRunAt)}
                   </p>
                 </div>

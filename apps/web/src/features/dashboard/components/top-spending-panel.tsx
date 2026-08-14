@@ -60,7 +60,7 @@ export function TopSpendingPanel({ initialItems, initialRange }: TopSpendingPane
                   <span className="text-sm font-semibold text-foreground">{item.name}</span>
                   <div className="flex-1" />
                   <Money minor={item.amountMinor} size="sm" />
-                  <span className="w-9 text-right font-mono text-[11px] text-foreground-muted">
+                  <span className="w-9 text-right font-mono text-2xs text-foreground-muted">
                     {pct}%
                   </span>
                 </div>

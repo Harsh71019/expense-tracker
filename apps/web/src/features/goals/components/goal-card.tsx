@@ -94,7 +94,7 @@ export function GoalCard({
           </div>
 
           <span
-            className={`mt-3 inline-flex max-w-full rounded-md border px-2 py-1 font-mono text-[9px] leading-relaxed font-bold tracking-wide uppercase ${toneClasses[verdict.tone]}`}
+            className={`mt-3 inline-flex max-w-full rounded-md border px-2 py-1 font-mono text-2xs leading-relaxed font-bold tracking-wide uppercase ${toneClasses[verdict.tone]}`}
           >
             {verdict.label}
           </span>

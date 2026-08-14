@@ -21,17 +21,17 @@ export const ACCOUNT_TYPE_META: ReadonlyArray<
   { value: "investment", label: "Investment", icon: "📈" }
 ];
 
-type CreateAccountModalProps = Readonly<{
+type CreateAccountSheetProps = Readonly<{
   open: boolean;
   initialType: AccountType;
   onClose: () => void;
 }>;
 
-export function CreateAccountModal({
+export function CreateAccountSheet({
   open,
   initialType,
   onClose
-}: CreateAccountModalProps): ReactNode {
+}: CreateAccountSheetProps): ReactNode {
   const createAccount = useCreateAccount();
   const [name, setName] = useState("");
   const [type, setType] = useState<AccountType>(initialType);
@@ -93,7 +93,7 @@ export function CreateAccountModal({
         />
 
         <div>
-          <p className="font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+          <p className="font-mono text-2xs font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
             Type
           </p>
           <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-5">
@@ -102,7 +102,7 @@ export function CreateAccountModal({
                 key={meta.value}
                 type="button"
                 onClick={() => setType(meta.value)}
-                className={`flex min-h-11 flex-col items-center gap-1.5 rounded-xl border px-2 py-3 text-[10px] font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                className={`flex min-h-11 flex-col items-center gap-1.5 rounded-xl border px-2 py-3 text-2xs font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                   type === meta.value
                     ? "border-accent bg-accent-glow text-accent"
                     : "border-border bg-surface text-foreground-muted"

@@ -78,7 +78,7 @@ export function TransferDetailDrawer({
 
         <div className="mt-5 flex flex-col gap-2">
           <div className="rounded-xl border border-border bg-surface p-4.5">
-            <p className="font-mono text-[10px] font-bold tracking-wider text-foreground-muted uppercase">
+            <p className="font-mono text-2xs font-bold tracking-wider text-foreground-muted uppercase">
               From · Expense leg
             </p>
             <p className="mt-2 text-base font-semibold text-foreground">
@@ -92,7 +92,7 @@ export function TransferDetailDrawer({
             ↓
           </div>
           <div className="rounded-xl border border-border bg-surface p-4.5">
-            <p className="font-mono text-[10px] font-bold tracking-wider text-foreground-muted uppercase">
+            <p className="font-mono text-2xs font-bold tracking-wider text-foreground-muted uppercase">
               To · Income leg
             </p>
             <p className="mt-2 text-base font-semibold text-foreground">

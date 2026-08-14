@@ -73,7 +73,7 @@ export function ApiKeyManager({
   return (
     <section className="mx-auto max-w-[940px] space-y-6">
       <header>
-        <p className="font-mono text-[11px] font-bold tracking-[2px] text-accent">
+        <p className="font-mono text-2xs font-bold tracking-[2px] text-accent">
           LEDGER · AUTOMATION
         </p>
         <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">

@@ -135,14 +135,14 @@ export function RecurringManager({
       <header className="flex flex-col items-stretch gap-4 rounded-2xl border border-border/80 bg-surface-elevated/90 px-5 py-4.5 shadow-xs backdrop-blur-md sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-md border border-accent/30 bg-accent-glow/40 px-2.5 py-0.5 font-mono text-[10px] font-bold tracking-wider text-accent uppercase">
+            <span className="inline-flex items-center gap-1.5 rounded-md border border-accent/30 bg-accent-glow/40 px-2.5 py-0.5 font-mono text-2xs font-bold tracking-wider text-accent uppercase">
               <span
                 className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse"
                 aria-hidden="true"
               />
               Automation Engine
             </span>
-            <span className="inline-flex items-center gap-1.5 rounded-md border border-income/30 bg-income/10 px-2 py-0.5 font-mono text-[10px] font-bold text-income">
+            <span className="inline-flex items-center gap-1.5 rounded-md border border-income/30 bg-income/10 px-2 py-0.5 font-mono text-2xs font-bold text-income">
               ● Active
             </span>
           </div>
@@ -398,7 +398,7 @@ function RecurringRuleCard({
                 {rule.template.description}
               </h2>
               <span
-                className={`rounded-md px-2 py-0.5 font-mono text-[9px] font-bold tracking-wider uppercase ${
+                className={`rounded-md px-2 py-0.5 font-mono text-2xs font-bold tracking-wider uppercase ${
                   rule.template.type === "expense"
                     ? "bg-expense/10 text-expense border border-expense/20"
                     : "bg-income/10 text-income border border-income/20"
@@ -407,22 +407,22 @@ function RecurringRuleCard({
                 {rule.template.type}
               </span>
               {rule.isPaused ? (
-                <span className="rounded-md border border-border bg-surface-muted px-2 py-0.5 font-mono text-[9px] font-bold tracking-wider text-foreground-muted uppercase">
+                <span className="rounded-md border border-border bg-surface-muted px-2 py-0.5 font-mono text-2xs font-bold tracking-wider text-foreground-muted uppercase">
                   {isCompleted ? "Completed" : "Paused"}
                 </span>
               ) : (
-                <span className="rounded-md border border-income/30 bg-income/10 px-2 py-0.5 font-mono text-[9px] font-bold tracking-wider text-income uppercase">
+                <span className="rounded-md border border-income/30 bg-income/10 px-2 py-0.5 font-mono text-2xs font-bold tracking-wider text-income uppercase">
                   Active
                 </span>
               )}
               {rule.autoPost ? (
-                <span className="rounded-md border border-border/80 bg-surface-muted/60 px-2 py-0.5 font-mono text-[9px] font-bold tracking-wider text-foreground-muted uppercase">
+                <span className="rounded-md border border-border/80 bg-surface-muted/60 px-2 py-0.5 font-mono text-2xs font-bold tracking-wider text-foreground-muted uppercase">
                   ⚡ Auto-Post
                 </span>
               ) : (
                 <span
                   title="No transaction is posted for you — link one from its detail panel, or it gets matched automatically."
-                  className="rounded-md border border-accent/30 bg-accent-glow px-2 py-0.5 font-mono text-[9px] font-bold tracking-wider text-accent uppercase"
+                  className="rounded-md border border-accent/30 bg-accent-glow px-2 py-0.5 font-mono text-2xs font-bold tracking-wider text-accent uppercase"
                 >
                   Manual
                 </span>
@@ -432,7 +432,7 @@ function RecurringRuleCard({
             <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-foreground-muted">
               <span className="font-semibold text-foreground">{scheduleLabel}</span>
               <span aria-hidden="true">·</span>
-              <span className="inline-flex items-center gap-1 rounded bg-surface-muted/80 px-1.5 py-0.5 font-mono text-[11px] text-foreground-muted border border-border/60">
+              <span className="inline-flex items-center gap-1 rounded bg-surface-muted/80 px-1.5 py-0.5 font-mono text-2xs text-foreground-muted border border-border/60">
                 🏦 {account?.name ?? "Unknown account"}
               </span>
               {category !== undefined ? (
@@ -443,7 +443,7 @@ function RecurringRuleCard({
               ) : null}
             </div>
 
-            <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-[10px] text-foreground-muted">
+            <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-2xs text-foreground-muted">
               <span className="inline-flex items-center gap-1">
                 <span className="text-foreground-muted/80">Next:</span>
                 <strong className={rule.isPaused ? "text-foreground-muted" : "text-accent"}>
@@ -479,7 +479,7 @@ function RecurringRuleCard({
               signed
               size="lg"
             />
-            <p className="mt-0.5 font-mono text-[11px] text-foreground-muted">per {period}</p>
+            <p className="mt-0.5 font-mono text-2xs text-foreground-muted">per {period}</p>
           </div>
           <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
             {isCompleted ? null : (

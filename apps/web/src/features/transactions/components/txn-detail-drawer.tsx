@@ -159,25 +159,25 @@ export function TxnDetailDrawer({
         ) : null}
 
         <dl className="mt-6 grid grid-cols-[auto_1fr] items-center gap-x-5 gap-y-3 border-y border-border py-4.5">
-          <dt className="font-mono text-[10px] font-bold tracking-wider text-foreground-muted uppercase">
+          <dt className="font-mono text-2xs font-bold tracking-wider text-foreground-muted uppercase">
             Account
           </dt>
           <dd className="text-right text-sm font-semibold text-foreground">
             {account?.name ?? "Archived account"}
           </dd>
-          <dt className="font-mono text-[10px] font-bold tracking-wider text-foreground-muted uppercase">
+          <dt className="font-mono text-2xs font-bold tracking-wider text-foreground-muted uppercase">
             Date
           </dt>
           <dd className="text-right text-sm font-semibold text-foreground">
             {dateFormatter.format(transaction.occurredAt)}
           </dd>
-          <dt className="font-mono text-[10px] font-bold tracking-wider text-foreground-muted uppercase">
+          <dt className="font-mono text-2xs font-bold tracking-wider text-foreground-muted uppercase">
             Source
           </dt>
           <dd className="text-right text-sm font-semibold text-foreground capitalize">
             {sourceLabel(transaction.source)}
           </dd>
-          <dt className="font-mono text-[10px] font-bold tracking-wider text-foreground-muted uppercase">
+          <dt className="font-mono text-2xs font-bold tracking-wider text-foreground-muted uppercase">
             Status
           </dt>
           <dd className="text-right text-sm font-semibold text-foreground capitalize">
@@ -185,7 +185,7 @@ export function TxnDetailDrawer({
           </dd>
           {railLabel === null ? null : (
             <>
-              <dt className="font-mono text-[10px] font-bold tracking-wider text-foreground-muted uppercase">
+              <dt className="font-mono text-2xs font-bold tracking-wider text-foreground-muted uppercase">
                 Payment rail
               </dt>
               <dd className="text-right text-sm font-semibold text-foreground">{railLabel}</dd>
@@ -193,7 +193,7 @@ export function TxnDetailDrawer({
           )}
           {transaction.counterpartyHandle === null ? null : (
             <>
-              <dt className="font-mono text-[10px] font-bold tracking-wider text-foreground-muted uppercase">
+              <dt className="font-mono text-2xs font-bold tracking-wider text-foreground-muted uppercase">
                 UPI handle
               </dt>
               <dd className="break-all text-right text-sm font-semibold text-foreground">
@@ -210,7 +210,7 @@ export function TxnDetailDrawer({
         transaction.reversalOf ||
         transaction.reversedBy ? (
           <div className="mt-4 space-y-2 rounded-xl border border-border/80 bg-surface-muted/50 p-3 text-xs">
-            <p className="font-mono text-[10px] font-bold tracking-wider text-foreground-muted uppercase">
+            <p className="font-mono text-2xs font-bold tracking-wider text-foreground-muted uppercase">
               Linked Ledger Entities
             </p>
             {transaction.recurringRuleId ? (
@@ -219,7 +219,7 @@ export function TxnDetailDrawer({
                 className="flex items-center justify-between gap-2 rounded-lg border border-accent/20 bg-accent/5 p-2 font-medium text-foreground hover:bg-accent/10"
               >
                 <span>⚡ Active Recurring Automation Rule</span>
-                <span className="font-mono text-[10px] text-accent">View Rule →</span>
+                <span className="font-mono text-2xs text-accent">View Rule →</span>
               </Link>
             ) : null}
             {transaction.billId ? (
@@ -228,7 +228,7 @@ export function TxnDetailDrawer({
                 className="flex items-center justify-between gap-2 rounded-lg border border-income/20 bg-income/5 p-2 font-medium text-foreground hover:bg-income/10"
               >
                 <span>💳 Credit Card Statement Match</span>
-                <span className="font-mono text-[10px] text-income">View Statement →</span>
+                <span className="font-mono text-2xs text-income">View Statement →</span>
               </Link>
             ) : null}
             {transaction.transferGroupId ? (
@@ -237,7 +237,7 @@ export function TxnDetailDrawer({
                 className="flex items-center justify-between gap-2 rounded-lg border border-border bg-surface p-2 font-medium text-foreground hover:bg-surface-muted"
               >
                 <span>⤢ Paired Transfer Group</span>
-                <span className="font-mono text-[10px] text-accent">View Pair →</span>
+                <span className="font-mono text-2xs text-accent">View Pair →</span>
               </Link>
             ) : null}
             {transaction.reversalOf ? (
@@ -246,7 +246,7 @@ export function TxnDetailDrawer({
                 className="flex items-center justify-between gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 p-2 font-medium text-foreground hover:bg-amber-500/10"
               >
                 <span>↺ Compensating Reversal of Earlier Entry</span>
-                <span className="font-mono text-[10px] text-amber-500">View Original →</span>
+                <span className="font-mono text-2xs text-amber-500">View Original →</span>
               </Link>
             ) : null}
             {transaction.reversedBy ? (
@@ -255,7 +255,7 @@ export function TxnDetailDrawer({
                 className="flex items-center justify-between gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 p-2 font-medium text-foreground hover:bg-amber-500/10"
               >
                 <span>↺ Compensated by Reversal Entry</span>
-                <span className="font-mono text-[10px] text-amber-500">View Reversal →</span>
+                <span className="font-mono text-2xs text-amber-500">View Reversal →</span>
               </Link>
             ) : null}
           </div>
@@ -304,7 +304,7 @@ export function TxnDetailDrawer({
           </div>
         ) : editable ? (
           <div className="mt-5 space-y-4">
-            <label className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+            <label className="flex flex-col gap-1.5 font-mono text-2xs font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
               Description
               <input
                 value={description}
@@ -315,7 +315,7 @@ export function TxnDetailDrawer({
             </label>
 
             <div>
-              <p className="font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+              <p className="font-mono text-2xs font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
                 Category
               </p>
               <div className="mt-2 flex flex-wrap gap-1.5">
@@ -352,7 +352,7 @@ export function TxnDetailDrawer({
             </div>
 
             <div>
-              <p className="font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+              <p className="font-mono text-2xs font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
                 Tags
               </p>
               <div className="mt-2 flex flex-wrap items-center gap-1.5 rounded-lg border border-border bg-surface-muted px-2.5 py-2">

@@ -140,7 +140,7 @@ export function GoalManager({
     <section className="space-y-7">
       <header className="flex flex-col items-stretch gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="font-mono text-[11px] font-bold tracking-[0.2em] text-accent uppercase">
+          <p className="font-mono text-2xs font-bold tracking-[0.2em] text-accent uppercase">
             Plan · Build · Reach
           </p>
           <h1 className="mt-1.5 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
@@ -158,7 +158,7 @@ export function GoalManager({
       {active.length > 0 ? (
         <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-4">
           <div className="rounded-2xl border border-border bg-surface-elevated p-4">
-            <p className="font-mono text-[9px] font-bold tracking-[0.2em] text-foreground-muted uppercase">
+            <p className="font-mono text-2xs font-bold tracking-[0.2em] text-foreground-muted uppercase">
               Total Target
             </p>
             <div className="mt-2">
@@ -166,7 +166,7 @@ export function GoalManager({
             </div>
           </div>
           <div className="rounded-2xl border border-border bg-surface-elevated p-4">
-            <p className="font-mono text-[9px] font-bold tracking-[0.2em] text-foreground-muted uppercase">
+            <p className="font-mono text-2xs font-bold tracking-[0.2em] text-foreground-muted uppercase">
               Total Saved
             </p>
             <div className="mt-2">
@@ -174,7 +174,7 @@ export function GoalManager({
             </div>
           </div>
           <div className="rounded-2xl border border-border bg-surface-elevated p-4">
-            <p className="font-mono text-[9px] font-bold tracking-[0.2em] text-foreground-muted uppercase">
+            <p className="font-mono text-2xs font-bold tracking-[0.2em] text-foreground-muted uppercase">
               Overall Progress
             </p>
             <p className="mt-2 text-xl font-bold tracking-tight text-foreground">
@@ -182,7 +182,7 @@ export function GoalManager({
             </p>
           </div>
           <div className="rounded-2xl border border-border bg-surface-elevated p-4">
-            <p className="font-mono text-[9px] font-bold tracking-[0.2em] text-foreground-muted uppercase">
+            <p className="font-mono text-2xs font-bold tracking-[0.2em] text-foreground-muted uppercase">
               Active Goals
             </p>
             <p className="mt-2 text-xl font-bold tracking-tight text-accent">{active.length}</p>

@@ -63,16 +63,16 @@ export function WarningCard({
             </span>
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <p className="font-mono text-[10px] font-bold tracking-wider text-foreground-muted uppercase">
+                <p className="font-mono text-2xs font-bold tracking-wider text-foreground-muted uppercase">
                   {warningKindLabel(warning.kind)}
                 </p>
                 {evidence.kind === "overall_spend_spike" ||
                 evidence.kind === "category_spend_spike" ? (
-                  <span className="inline-flex items-center rounded-md border border-expense/30 bg-expense/10 px-2 py-0.5 font-mono text-[10px] font-bold text-expense">
+                  <span className="inline-flex items-center rounded-md border border-expense/30 bg-expense/10 px-2 py-0.5 font-mono text-2xs font-bold text-expense">
                     +{percentAboveBaseline(evidence.ratioBasisPoints)}% vs median
                   </span>
                 ) : (
-                  <span className="inline-flex items-center rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 font-mono text-[10px] font-bold text-amber-600 dark:text-amber-400">
+                  <span className="inline-flex items-center rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 font-mono text-2xs font-bold text-amber-600 dark:text-amber-400">
                     IQR Outlier
                   </span>
                 )}
@@ -86,7 +86,7 @@ export function WarningCard({
             </div>
           </div>
           <span
-            className={`shrink-0 rounded-md border px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase ${
+            className={`shrink-0 rounded-md border px-2.5 py-0.5 font-mono text-2xs font-bold uppercase ${
               warning.severity === "high"
                 ? "border-expense/30 bg-expense/10 text-expense"
                 : "border-border/80 bg-surface-muted/60 text-foreground-muted"
@@ -107,7 +107,7 @@ export function WarningCard({
               key={fact.label}
               className="flex items-center justify-between gap-3 sm:justify-start"
             >
-              <dt className="font-mono text-[10px] font-bold tracking-wider text-foreground-muted uppercase">
+              <dt className="font-mono text-2xs font-bold tracking-wider text-foreground-muted uppercase">
                 {fact.label}
               </dt>
               <dd className="font-semibold text-foreground">
@@ -128,7 +128,7 @@ export function WarningCard({
         </dl>
 
         {/* Forensic Sample Size & Window Range */}
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 font-mono text-[10px] text-foreground-muted">
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 font-mono text-2xs text-foreground-muted">
           <span>{formatWindowRange(warning.windowStart, warning.windowEnd)}</span>
           <span className="rounded bg-surface-muted/80 px-1.5 py-0.5 border border-border/60">
             {sampleSize}
@@ -157,7 +157,7 @@ export function WarningCard({
       </footer>
 
       {dismiss.isError ? (
-        <p className="mt-3 rounded-xl border border-expense/25 bg-expense/10 px-3.5 py-2 font-mono text-[11px] text-expense">
+        <p className="mt-3 rounded-xl border border-expense/25 bg-expense/10 px-3.5 py-2 font-mono text-2xs text-expense">
           {dismiss.error.message || "Could not dismiss this warning."}{" "}
           <button type="button" className="min-h-9 font-semibold underline" onClick={handleDismiss}>
             Try again

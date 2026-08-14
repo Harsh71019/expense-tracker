@@ -9,11 +9,13 @@ import {
   type CreateApiKeyResponse,
   type UpdateApiKey
 } from "@treasury-ops/shared";
+import { useState } from "react";
 import { z } from "zod";
 
 import { apiClient } from "@/lib/api/client";
 import { toAppError, toNetworkError } from "@/lib/api/problem";
 import { qk } from "@/lib/query/keys";
+import { generateRequestId } from "@/lib/request-id";
 
 const ApiKeysSchema = z.array(ApiKeySchema);
 
@@ -33,6 +35,7 @@ export function useApiKeys(initialData: ApiKey[]): UseQueryResult<ApiKey[], Erro
 
 export function useCreateApiKey() {
   const client = useQueryClient();
+  const [idempotencyKey, setIdempotencyKey] = useState(generateRequestId);
   return useMutation<CreateApiKeyResponse, Error, CreateApiKey>({
     mutationFn: async (input): Promise<CreateApiKeyResponse> => {
       try {
@@ -53,7 +56,10 @@ export function useCreateApiKey() {
           permissions,
           ...(input.expiresAt !== undefined && { expiresAt: input.expiresAt.toISOString() })
         };
-        const result = await apiClient.POST("/v1/api-keys", { body });
+        const result = await apiClient.POST("/v1/api-keys", {
+          body,
+          params: { header: { "Idempotency-Key": idempotencyKey } }
+        });
         if (result.error !== undefined) throw toAppError(result.error, result.response.status);
         const parsed = CreateApiKeyResponseSchema.safeParse(result.data);
         if (!parsed.success) throw toAppError(undefined, result.response.status);
@@ -64,6 +70,7 @@ export function useCreateApiKey() {
       }
     },
     onSuccess: async () => {
+      setIdempotencyKey(generateRequestId());
       await client.invalidateQueries({ queryKey: qk.apiKeys() });
     }
   });

@@ -39,7 +39,7 @@ export function MobileBottomNav(): ReactNode {
                 key={item.href}
                 href={item.href}
                 aria-current={isActiveRoute(pathname, item.href) ? "page" : undefined}
-                className={`flex min-h-14 min-w-0 touch-manipulation flex-col items-center justify-center gap-0.5 rounded-xl px-1 text-[10px] font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                className={`flex min-h-14 min-w-0 touch-manipulation flex-col items-center justify-center gap-0.5 rounded-xl px-1 text-2xs font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                   isActiveRoute(pathname, item.href)
                     ? "bg-accent-glow text-accent"
                     : "text-foreground-muted hover:bg-surface-muted hover:text-foreground"
@@ -56,7 +56,7 @@ export function MobileBottomNav(): ReactNode {
             aria-label="Add transaction"
             aria-haspopup="dialog"
             onClick={() => setCreateOpen(true)}
-            className="group flex min-h-14 touch-manipulation flex-col items-center justify-end gap-0.5 rounded-xl text-[10px] font-semibold text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            className="group flex min-h-14 touch-manipulation flex-col items-center justify-end gap-0.5 rounded-xl text-2xs font-semibold text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
             <span className="grid h-13 w-13 -translate-y-2 place-items-center rounded-2xl border-4 border-surface-elevated bg-accent text-2xl font-semibold leading-none text-accent-foreground shadow-glow-strong transition-transform duration-150 group-active:translate-y-[-6px] group-active:scale-95">
               <span aria-hidden="true">+</span>
@@ -71,7 +71,7 @@ export function MobileBottomNav(): ReactNode {
                 key={item.href}
                 href={item.href}
                 aria-current={isActiveRoute(pathname, item.href) ? "page" : undefined}
-                className={`flex min-h-14 min-w-0 touch-manipulation flex-col items-center justify-center gap-0.5 rounded-xl px-1 text-[10px] font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                className={`flex min-h-14 min-w-0 touch-manipulation flex-col items-center justify-center gap-0.5 rounded-xl px-1 text-2xs font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                   isActiveRoute(pathname, item.href)
                     ? "bg-accent-glow text-accent"
                     : "text-foreground-muted hover:bg-surface-muted hover:text-foreground"

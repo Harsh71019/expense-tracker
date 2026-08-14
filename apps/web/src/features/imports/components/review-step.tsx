@@ -99,19 +99,19 @@ export function ReviewStep({ batchId, categories, onCountsChange }: ReviewStepPr
             <div className="font-mono text-3xl font-bold tracking-tight text-foreground">
               {total}
             </div>
-            <div className="mt-0.5 text-[11px] font-medium text-foreground-muted">total rows</div>
+            <div className="mt-0.5 text-2xs font-medium text-foreground-muted">total rows</div>
           </div>
           <div>
             <div className="font-mono text-3xl font-bold tracking-tight text-accent">
               {included}
             </div>
-            <div className="mt-0.5 text-[11px] font-medium text-foreground-muted">will post</div>
+            <div className="mt-0.5 text-2xs font-medium text-foreground-muted">will post</div>
           </div>
           <div>
             <div className="font-mono text-3xl font-bold tracking-tight text-amber-500">
               {duplicates}
             </div>
-            <div className="mt-0.5 text-[11px] font-medium text-foreground-muted">
+            <div className="mt-0.5 text-2xs font-medium text-foreground-muted">
               flagged duplicate
             </div>
           </div>
@@ -121,7 +121,7 @@ export function ReviewStep({ batchId, categories, onCountsChange }: ReviewStepPr
             >
               {problems}
             </div>
-            <div className="mt-0.5 text-[11px] font-medium text-foreground-muted">
+            <div className="mt-0.5 text-2xs font-medium text-foreground-muted">
               can&apos;t parse
             </div>
           </div>
@@ -132,7 +132,7 @@ export function ReviewStep({ batchId, categories, onCountsChange }: ReviewStepPr
       </div>
 
       <div className="mt-3.5 overflow-hidden rounded-2xl border border-border bg-surface-elevated">
-        <div className="hidden items-center gap-3.5 border-b border-border px-5 py-3 font-mono text-[10px] font-semibold tracking-wider text-foreground-muted uppercase md:flex">
+        <div className="hidden items-center gap-3.5 border-b border-border px-5 py-3 font-mono text-2xs font-semibold tracking-wider text-foreground-muted uppercase md:flex">
           <div className="w-4" />
           <div className="w-24">Date</div>
           <div className="flex-1">Description</div>
@@ -189,14 +189,14 @@ export function ReviewStep({ batchId, categories, onCountsChange }: ReviewStepPr
                 {row.isDuplicate || row.problems.length > 0 ? (
                   <div className="mt-1 flex flex-wrap gap-1.5">
                     {row.isDuplicate ? (
-                      <span className="rounded-[5px] border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 font-mono text-[9px] font-semibold tracking-wide text-amber-500 uppercase">
+                      <span className="rounded-[5px] border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 font-mono text-2xs font-semibold tracking-wide text-amber-500 uppercase">
                         Likely duplicate
                       </span>
                     ) : null}
                     {row.problems.map((problem) => (
                       <span
                         key={problem}
-                        className="rounded-[5px] border border-expense/30 bg-expense/10 px-1.5 py-0.5 font-mono text-[9px] font-semibold tracking-wide text-expense uppercase"
+                        className="rounded-[5px] border border-expense/30 bg-expense/10 px-1.5 py-0.5 font-mono text-2xs font-semibold tracking-wide text-expense uppercase"
                       >
                         ⚠ {problem}
                       </span>
@@ -231,7 +231,7 @@ export function ReviewStep({ batchId, categories, onCountsChange }: ReviewStepPr
                       placeholder="Uncategorized"
                     />
                     {showingSuggestion ? (
-                      <p className="mt-1 text-[10px] font-medium text-accent">
+                      <p className="mt-1 text-2xs font-medium text-accent">
                         ✦ {suggestionLabel(suggestion.method)} ·{" "}
                         {formatConfidenceBps(suggestion.confidenceBps)} confidence ·{" "}
                         {suggestion.evidenceCount}{" "}

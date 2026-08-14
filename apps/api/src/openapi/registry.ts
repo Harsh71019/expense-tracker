@@ -1200,12 +1200,18 @@ registry.registerPath({
   method: "post",
   path: "/v1/api-keys",
   security: secured,
-  request: { body: json(CreateApiKeySchema) },
+  request: { body: json(CreateApiKeySchema), headers: idempotencyKeyHeaders },
   responses: {
+    200: {
+      description: "Idempotent replay of the created API key (raw key shown once)",
+      headers: replayedHeaders,
+      ...json(CreateApiKeyResponseSchema)
+    },
     201: {
       description: "Created API key (raw key shown once)",
       ...json(CreateApiKeyResponseSchema)
     },
+    ...idempotencyConflictResponse,
     ...problemResponses
   }
 });

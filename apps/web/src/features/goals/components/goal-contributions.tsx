@@ -27,7 +27,7 @@ export function GoalContributions({ filters, initialPage }: GoalContributionsPro
   return (
     <section className="rounded-2xl border border-border bg-surface-elevated p-5 sm:p-6">
       <div>
-        <p className="font-mono text-[9px] font-bold tracking-[0.2em] text-accent uppercase">
+        <p className="font-mono text-2xs font-bold tracking-[0.2em] text-accent uppercase">
           Ledger evidence
         </p>
         <h2 className="mt-1 text-lg font-bold text-foreground">Contributions</h2>
@@ -48,7 +48,7 @@ export function GoalContributions({ filters, initialPage }: GoalContributionsPro
                 <span className="block truncate text-sm font-semibold text-foreground">
                   {transaction.description}
                 </span>
-                <span className="mt-0.5 block font-mono text-[11px] text-foreground-muted">
+                <span className="mt-0.5 block font-mono text-2xs text-foreground-muted">
                   {dateFormatter.format(transaction.occurredAt)}
                 </span>
               </span>

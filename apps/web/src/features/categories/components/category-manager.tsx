@@ -302,7 +302,7 @@ export function CategoryManager({
       {/* Header */}
       <header className="flex flex-col items-stretch gap-4 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <p className="font-mono text-[10px] font-bold tracking-[0.2em] text-accent uppercase">
+          <p className="font-mono text-2xs font-bold tracking-[0.2em] text-accent uppercase">
             Treasury Classification
           </p>
           <h1 className="mt-1.5 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
@@ -329,27 +329,27 @@ export function CategoryManager({
       {allItems.length > 0 ? (
         <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-4">
           <div className="rounded-2xl border border-border/80 bg-surface-elevated/90 p-4 shadow-xs">
-            <p className="font-mono text-[9px] font-bold tracking-wider text-foreground-muted uppercase">
+            <p className="font-mono text-2xs font-bold tracking-wider text-foreground-muted uppercase">
               Active Pools
             </p>
             <p className="mt-1.5 font-mono text-2xl font-bold text-foreground">{items.length}</p>
-            <p className="mt-1 text-[11px] text-foreground-muted">
+            <p className="mt-1 text-2xs text-foreground-muted">
               {totalTopLevel} parent · {totalSubcategories} subcategories
             </p>
           </div>
 
           <div className="rounded-2xl border border-border/80 bg-surface-elevated/90 p-4 shadow-xs">
-            <p className="font-mono text-[9px] font-bold tracking-wider text-foreground-muted uppercase">
+            <p className="font-mono text-2xs font-bold tracking-wider text-foreground-muted uppercase">
               This Month Spend
             </p>
             <p className="mt-1.5 font-mono text-2xl font-bold text-rose-600 dark:text-rose-400">
               {formatMinor(totalMonthlyExpenseSpent)}
             </p>
-            <p className="mt-1 text-[11px] text-foreground-muted">Across active expense pools</p>
+            <p className="mt-1 text-2xs text-foreground-muted">Across active expense pools</p>
           </div>
 
           <div className="rounded-2xl border border-border/80 bg-surface-elevated/90 p-4 shadow-xs">
-            <p className="font-mono text-[9px] font-bold tracking-wider text-foreground-muted uppercase">
+            <p className="font-mono text-2xs font-bold tracking-wider text-foreground-muted uppercase">
               50/30/20 Breakdown
             </p>
             <div className="mt-1.5 flex items-baseline gap-2">
@@ -363,17 +363,17 @@ export function CategoryManager({
               </span>
               <span className="text-xs font-semibold text-foreground-muted">Wants</span>
             </div>
-            <p className="mt-1 text-[11px] text-foreground-muted">Essential vs Lifestyle pools</p>
+            <p className="mt-1 text-2xs text-foreground-muted">Essential vs Lifestyle pools</p>
           </div>
 
           <div className="rounded-2xl border border-border/80 bg-surface-elevated/90 p-4 shadow-xs">
-            <p className="font-mono text-[9px] font-bold tracking-wider text-foreground-muted uppercase">
+            <p className="font-mono text-2xs font-bold tracking-wider text-foreground-muted uppercase">
               Budget Coverage
             </p>
             <p className="mt-1.5 font-mono text-2xl font-bold text-emerald-600 dark:text-emerald-400">
               {budgetedExpenseCount} / {totalExpense}
             </p>
-            <p className="mt-1 text-[11px] text-foreground-muted">
+            <p className="mt-1 text-2xs text-foreground-muted">
               {totalExpense > 0
                 ? `${Math.round((budgetedExpenseCount / totalExpense) * 100)}% budgeted`
                 : "No expense pools"}
@@ -420,7 +420,7 @@ export function CategoryManager({
               >
                 {value === "expense" ? "Expense Pools" : "Income Pools"}
                 <span
-                  className={`rounded-[5px] px-1.5 py-0.5 font-mono text-[10px] font-semibold ${
+                  className={`rounded-[5px] px-1.5 py-0.5 font-mono text-2xs font-semibold ${
                     active ? "bg-accent/15 text-accent" : "bg-surface-muted text-foreground-muted"
                   }`}
                 >
@@ -506,7 +506,7 @@ export function CategoryManager({
         {/* Active Filter Indicators */}
         {(searchQuery.trim() !== "" || view === "archived" || groupFilter !== "all") && (
           <div className="flex w-full flex-wrap items-center gap-1.5 border-t border-border/60 pt-2.5">
-            <span className="font-mono text-[10px] font-semibold text-foreground-muted uppercase">
+            <span className="font-mono text-2xs font-semibold text-foreground-muted uppercase">
               Active Filters:
             </span>
             {searchQuery.trim() !== "" && (

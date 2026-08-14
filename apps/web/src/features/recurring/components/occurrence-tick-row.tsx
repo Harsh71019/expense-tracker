@@ -35,7 +35,7 @@ export function OccurrenceTickRow({ ruleId }: Readonly<{ ruleId: string }>): Rea
 
   return (
     <div className="mt-3 flex flex-wrap items-center gap-1.5">
-      <span className="font-mono text-[9px] font-bold tracking-[0.2em] text-foreground-muted uppercase">
+      <span className="font-mono text-2xs font-bold tracking-[0.2em] text-foreground-muted uppercase">
         Occurrences
       </span>
       <div className="flex flex-wrap gap-1">
@@ -44,7 +44,7 @@ export function OccurrenceTickRow({ ruleId }: Readonly<{ ruleId: string }>): Rea
             key={occurrence.id}
             title={`${dateFormatter.format(occurrence.occurredAt)} — ${occurrence.status}`}
             aria-label={`${dateFormatter.format(occurrence.occurredAt)}, ${occurrence.status}`}
-            className={`grid h-6 w-6 place-items-center rounded-md border text-[10px] font-bold ${TICK_STYLES[occurrence.status]}`}
+            className={`grid h-6 w-6 place-items-center rounded-md border text-2xs font-bold ${TICK_STYLES[occurrence.status]}`}
           >
             {TICK_GLYPH[occurrence.status]}
           </span>

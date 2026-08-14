@@ -228,7 +228,7 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
             className="flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-border/80 bg-surface-muted/60 px-3.5 py-2 text-xs font-semibold text-foreground-muted transition-colors hover:border-expense/40 hover:bg-expense/10 hover:text-expense focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
             <span>Clear</span>
-            <span className="rounded-full bg-accent/20 px-1.5 py-0.5 font-mono text-[10px] text-accent">
+            <span className="rounded-full bg-accent/20 px-1.5 py-0.5 font-mono text-2xs text-accent">
               {activeFilterCount}
             </span>
           </button>
@@ -237,27 +237,27 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
 
       {/* Quick Date Presets */}
       <div className="flex w-full flex-wrap items-center gap-1.5 pt-1">
-        <span className="font-mono text-[10px] font-semibold text-foreground-muted uppercase">
+        <span className="font-mono text-2xs font-semibold text-foreground-muted uppercase">
           Quick dates:
         </span>
         <button
           type="button"
           onClick={() => applyPreset("this-month")}
-          className="rounded-lg border border-border/60 bg-surface-muted/50 px-2.5 py-1 text-[11px] font-semibold text-foreground-muted transition-colors hover:border-accent/40 hover:bg-surface-elevated hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          className="rounded-lg border border-border/60 bg-surface-muted/50 px-2.5 py-1 text-2xs font-semibold text-foreground-muted transition-colors hover:border-accent/40 hover:bg-surface-elevated hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         >
           This Month
         </button>
         <button
           type="button"
           onClick={() => applyPreset("30-days")}
-          className="rounded-lg border border-border/60 bg-surface-muted/50 px-2.5 py-1 text-[11px] font-semibold text-foreground-muted transition-colors hover:border-accent/40 hover:bg-surface-elevated hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          className="rounded-lg border border-border/60 bg-surface-muted/50 px-2.5 py-1 text-2xs font-semibold text-foreground-muted transition-colors hover:border-accent/40 hover:bg-surface-elevated hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         >
           Last 30 Days
         </button>
         <button
           type="button"
           onClick={() => applyPreset("this-year")}
-          className="rounded-lg border border-border/60 bg-surface-muted/50 px-2.5 py-1 text-[11px] font-semibold text-foreground-muted transition-colors hover:border-accent/40 hover:bg-surface-elevated hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          className="rounded-lg border border-border/60 bg-surface-muted/50 px-2.5 py-1 text-2xs font-semibold text-foreground-muted transition-colors hover:border-accent/40 hover:bg-surface-elevated hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         >
           This Year
         </button>
@@ -266,7 +266,7 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
       {/* Active Filter Badges */}
       {isFiltered && (
         <div className="flex w-full flex-wrap items-center gap-1.5 border-t border-border/60 pt-2.5">
-          <span className="font-mono text-[10px] font-semibold text-foreground-muted uppercase">
+          <span className="font-mono text-2xs font-semibold text-foreground-muted uppercase">
             Active:
           </span>
           {filters.q !== undefined && filters.q !== "" && (

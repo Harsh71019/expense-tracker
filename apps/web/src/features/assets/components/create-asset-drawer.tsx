@@ -146,7 +146,7 @@ export function CreateAssetDrawer({ onClose }: Readonly<{ onClose: () => void }>
         />
 
         <div className="grid gap-3.5 sm:grid-cols-2">
-          <div className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+          <div className="flex flex-col gap-1.5 font-mono text-2xs font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
             <span>Opened</span>
             <DatePicker
               id="asset-opened"
@@ -157,7 +157,7 @@ export function CreateAssetDrawer({ onClose }: Readonly<{ onClose: () => void }>
             />
           </div>
           {kind === "fixed_deposit" ? (
-            <div className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+            <div className="flex flex-col gap-1.5 font-mono text-2xs font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
               <span>Maturity</span>
               <DatePicker
                 id="asset-maturity"

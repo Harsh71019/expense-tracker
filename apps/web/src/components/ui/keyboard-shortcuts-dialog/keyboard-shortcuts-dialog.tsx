@@ -52,7 +52,7 @@ export function KeyboardShortcutsDialog({
               {shortcut.keys.map((key) => (
                 <kbd
                   key={key}
-                  className="min-w-6 rounded border border-border bg-surface-muted px-2 py-1 text-center font-mono text-[11px] font-bold text-foreground shadow-2xs"
+                  className="min-w-6 rounded border border-border bg-surface-muted px-2 py-1 text-center font-mono text-2xs font-bold text-foreground shadow-2xs"
                 >
                   {key}
                 </kbd>

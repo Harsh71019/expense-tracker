@@ -22,7 +22,7 @@ import { useCreateGoal, useUpdateGoal } from "../hooks/use-goals";
 import { dateInputToUtc, dateToInput, todayInIndia } from "../model/goal-form";
 
 const fieldLabel =
-  "mb-1.5 block font-mono text-[9px] font-extrabold tracking-[0.22em] text-foreground-muted uppercase";
+  "mb-1.5 block font-mono text-2xs font-extrabold tracking-[0.22em] text-foreground-muted uppercase";
 
 type GoalEditorDrawerProps = Readonly<{
   accounts: readonly Account[];
@@ -120,7 +120,7 @@ export function GoalEditorDrawer({ accounts, goal, onClose }: GoalEditorDrawerPr
     >
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="font-mono text-[9px] font-bold tracking-[0.2em] text-accent uppercase">
+          <p className="font-mono text-2xs font-bold tracking-[0.2em] text-accent uppercase">
             Savings plan
           </p>
           <h2 id="goal-editor-title" className="mt-1.5 text-xl font-bold text-foreground">
@@ -154,7 +154,7 @@ export function GoalEditorDrawer({ accounts, goal, onClose }: GoalEditorDrawerPr
           value={targetMinor}
           onChange={setTargetMinor}
         />
-        <div className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+        <div className="flex flex-col gap-1.5 font-mono text-2xs font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
           <span>Target date (optional)</span>
           <DatePicker
             id="goal-target-date"
@@ -203,14 +203,14 @@ export function GoalEditorDrawer({ accounts, goal, onClose }: GoalEditorDrawerPr
         {fundingMode === "manual_envelope" ? (
           <div className="rounded-xl border border-accent/20 bg-accent/5 p-3.5 text-xs text-foreground-muted">
             <p className="font-semibold text-foreground">💡 Independent Contribution Tracking</p>
-            <p className="mt-1 text-[11px] leading-relaxed">
+            <p className="mt-1 text-2xs leading-relaxed">
               Ideal for cash savings, physical jars, or virtual sinking funds. Everyday bank
               transactions won’t interfere with this goal. You can log deposits and withdrawals
               directly.
             </p>
           </div>
         ) : fundingMode === "linked_account" ? (
-          <div className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.22em] text-foreground-muted uppercase">
+          <div className="flex flex-col gap-1.5 font-mono text-2xs font-extrabold tracking-[0.22em] text-foreground-muted uppercase">
             <span>Linked account</span>
             <Select
               aria-label="Linked account"

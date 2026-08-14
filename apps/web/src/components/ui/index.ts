@@ -18,3 +18,4 @@ export * from "./date-picker";
 export * from "./page-header";
 export * from "./page-shell";
 export * from "./section-header";
+export * from "./stat-card";

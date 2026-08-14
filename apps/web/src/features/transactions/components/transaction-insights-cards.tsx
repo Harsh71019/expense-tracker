@@ -18,8 +18,7 @@ const monthFormatter = new Intl.DateTimeFormat("en-IN", {
 
 const cardClass =
   "min-w-0 rounded-2xl border border-border/80 bg-surface-elevated/90 p-5 shadow-sm transition-colors duration-200 hover:border-accent/35";
-const labelClass =
-  "font-mono text-[10px] font-bold tracking-[0.14em] text-foreground-muted uppercase";
+const labelClass = "font-mono text-2xs font-bold tracking-[0.14em] text-foreground-muted uppercase";
 
 export function TransactionInsightsCards({
   initialInsights
@@ -62,7 +61,7 @@ export function TransactionInsightsCards({
               {insights.monthlyTransactionCount === 1 ? "transaction" : "transactions"}
             </p>
           </div>
-          <span className="rounded-full border border-accent/20 bg-accent/10 px-2 py-1 font-mono text-[9px] font-bold tracking-wider text-accent uppercase">
+          <span className="rounded-full border border-accent/20 bg-accent/10 px-2 py-1 font-mono text-2xs font-bold tracking-wider text-accent uppercase">
             Live
           </span>
         </div>

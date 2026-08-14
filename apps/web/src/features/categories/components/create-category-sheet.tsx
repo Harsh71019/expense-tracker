@@ -191,7 +191,7 @@ export function CreateCategorySheet({
 
       <form onSubmit={(event) => void submit(event)} className="mt-6 space-y-5">
         <div>
-          <span className="mb-1.5 block font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+          <span className="mb-1.5 block font-mono text-2xs font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
             Pool Type
           </span>
           {editing ? (
@@ -231,7 +231,7 @@ export function CreateCategorySheet({
             onChange={(event) => setName(event.target.value)}
           />
           {errors.name === undefined ? null : (
-            <span className="mt-1.5 inline-block rounded-lg border border-expense/25 bg-expense/10 px-2.5 py-0.5 font-mono text-[10px] text-expense">
+            <span className="mt-1.5 inline-block rounded-lg border border-expense/25 bg-expense/10 px-2.5 py-0.5 font-mono text-2xs text-expense">
               {errors.name}
             </span>
           )}
@@ -240,10 +240,10 @@ export function CreateCategorySheet({
         {kind === "expense" ? (
           <div>
             <div className="mb-1.5 flex items-center justify-between">
-              <span className="font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+              <span className="font-mono text-2xs font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
                 50/30/20 Grouping
               </span>
-              <span className="text-[11px] text-foreground-muted">optional</span>
+              <span className="text-2xs text-foreground-muted">optional</span>
             </div>
             <div className="grid grid-cols-3 gap-2">
               {[
@@ -263,17 +263,17 @@ export function CreateCategorySheet({
                   }`}
                 >
                   <span className="text-xs font-bold">{item.label}</span>
-                  <span className="text-[10px] font-medium opacity-80">{item.sub}</span>
+                  <span className="text-2xs font-medium opacity-80">{item.sub}</span>
                 </button>
               ))}
             </div>
           </div>
         ) : null}
 
-        <div className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+        <div className="flex flex-col gap-1.5 font-mono text-2xs font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
           <span>
             Parent category{" "}
-            <span className="font-sans text-[11px] font-normal normal-case tracking-normal text-foreground-muted">
+            <span className="font-sans text-2xs font-normal normal-case tracking-normal text-foreground-muted">
               optional · {kind} only
             </span>
           </span>
@@ -289,7 +289,7 @@ export function CreateCategorySheet({
             onChange={setParentId}
           />
           {errors.parentId === undefined ? null : (
-            <span className="font-sans text-[11px] font-medium normal-case tracking-normal text-expense">
+            <span className="font-sans text-2xs font-medium normal-case tracking-normal text-expense">
               {errors.parentId}
             </span>
           )}
@@ -303,9 +303,9 @@ export function CreateCategorySheet({
         ) : null}
 
         <div>
-          <span className="mb-1.5 block font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+          <span className="mb-1.5 block font-mono text-2xs font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
             Icon{" "}
-            <span className="font-sans text-[11px] font-normal normal-case tracking-normal">
+            <span className="font-sans text-2xs font-normal normal-case tracking-normal">
               optional
             </span>
           </span>
@@ -343,9 +343,9 @@ export function CreateCategorySheet({
         </div>
 
         <div>
-          <span className="mb-1.5 block font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+          <span className="mb-1.5 block font-mono text-2xs font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
             Colour{" "}
-            <span className="font-sans text-[11px] font-normal normal-case tracking-normal">
+            <span className="font-sans text-2xs font-normal normal-case tracking-normal">
               optional
             </span>
           </span>
@@ -396,7 +396,7 @@ export function CreateCategorySheet({
         </div>
 
         <div className="rounded-2xl border border-border bg-surface-muted/60 p-4">
-          <p className="font-mono text-[9px] font-bold tracking-widest text-foreground-muted uppercase">
+          <p className="font-mono text-2xs font-bold tracking-widest text-foreground-muted uppercase">
             Live Preview
           </p>
           <div className="mt-3 flex items-center justify-between gap-3">
@@ -413,7 +413,7 @@ export function CreateCategorySheet({
                 <span className="block text-sm font-bold text-foreground">
                   {name.trim() || "Category name"}
                 </span>
-                <span className="text-[11px] text-foreground-muted">
+                <span className="text-2xs text-foreground-muted">
                   {parentId !== ""
                     ? `Subcategory of ${parentOptions.find((p) => p.id === parentId)?.name ?? "Parent"}`
                     : "Top-level category"}
@@ -422,7 +422,7 @@ export function CreateCategorySheet({
             </div>
             {kind === "expense" && group !== "" ? (
               <span
-                className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+                className={`rounded-full px-2.5 py-0.5 text-2xs font-semibold ${
                   group === "essential"
                     ? "bg-blue-500/10 text-blue-600 dark:text-blue-400"
                     : "bg-purple-500/10 text-purple-600 dark:text-purple-400"

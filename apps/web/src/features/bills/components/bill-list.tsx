@@ -36,7 +36,7 @@ export function BillList({
     <section className="space-y-7">
       <header className="flex flex-col items-stretch gap-4 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
         <div className="min-w-0">
-          <p className="font-mono text-[10px] font-bold tracking-[0.2em] text-accent uppercase">
+          <p className="font-mono text-2xs font-bold tracking-[0.2em] text-accent uppercase">
             Card control centre
           </p>
           <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
@@ -52,7 +52,7 @@ export function BillList({
       {bills.length === 0 ? null : (
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="rounded-2xl border border-border bg-surface-elevated p-5">
-            <p className="font-mono text-[9px] font-bold tracking-wider text-foreground-muted uppercase">
+            <p className="font-mono text-2xs font-bold tracking-wider text-foreground-muted uppercase">
               Outstanding · shown bills
             </p>
             <div className="mt-2">
@@ -60,7 +60,7 @@ export function BillList({
             </div>
           </div>
           <div className="rounded-2xl border border-border bg-surface-elevated p-5">
-            <p className="font-mono text-[9px] font-bold tracking-wider text-foreground-muted uppercase">
+            <p className="font-mono text-2xs font-bold tracking-wider text-foreground-muted uppercase">
               Next due
             </p>
             <p className="mt-2 text-lg font-semibold text-foreground">
@@ -68,7 +68,7 @@ export function BillList({
             </p>
           </div>
           <div className="rounded-2xl border border-border bg-surface-elevated p-5">
-            <p className="font-mono text-[9px] font-bold tracking-wider text-foreground-muted uppercase">
+            <p className="font-mono text-2xs font-bold tracking-wider text-foreground-muted uppercase">
               Needs review · shown bills
             </p>
             <p className="mt-2 text-2xl font-bold text-foreground">{actionCount}</p>

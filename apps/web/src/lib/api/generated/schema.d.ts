@@ -4935,7 +4935,9 @@ export interface paths {
     post: {
       parameters: {
         query?: never;
-        header?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
         path?: never;
         cookie?: never;
       };
@@ -4954,6 +4956,33 @@ export interface paths {
         };
       };
       responses: {
+        /** @description Idempotent replay of the created API key (raw key shown once) */
+        200: {
+          headers: {
+            "Idempotency-Replayed": "true";
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              id: string;
+              name: string;
+              start: string | null;
+              permissions: {
+                transactions?: "write"[];
+                categories?: "read"[];
+                accounts?: "read"[];
+              } | null;
+              enabled: boolean;
+              /** Format: date-time */
+              createdAt: string | null;
+              /** Format: date-time */
+              expiresAt: string | null;
+              /** Format: date-time */
+              lastRequest: string | null;
+              key: string;
+            };
+          };
+        };
         /** @description Created API key (raw key shown once) */
         201: {
           headers: {
@@ -4982,6 +5011,15 @@ export interface paths {
         };
         /** @description Unauthenticated */
         401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
           headers: {
             [name: string]: unknown;
           };

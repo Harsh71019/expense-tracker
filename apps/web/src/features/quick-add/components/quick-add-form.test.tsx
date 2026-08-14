@@ -18,10 +18,10 @@ const mocks = vi.hoisted(() => ({
   success: false
 }));
 
-vi.mock("../hooks/use-accounts", () => ({
+vi.mock("@/features/accounts", () => ({
   useAccounts: () => ({ data: mocks.accounts, isLoading: mocks.accountsLoading })
 }));
-vi.mock("../hooks/use-categories", () => ({ useCategories: () => ({ data: mocks.categories }) }));
+vi.mock("@/features/categories", () => ({ useCategories: () => ({ data: mocks.categories }) }));
 vi.mock("../hooks/use-create-txn", () => ({
   useCreateTxn: () => ({
     mutateAsync: mocks.mutateAsync,

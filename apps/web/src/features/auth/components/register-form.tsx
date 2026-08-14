@@ -149,7 +149,7 @@ export function RegisterForm(): ReactNode {
           id="registration-error"
           role="alert"
           tabIndex={-1}
-          className="rounded-lg border border-expense/25 bg-expense/10 px-3 py-2 text-center font-mono text-[11px] font-semibold text-expense outline-none animate-fade-in"
+          className="rounded-lg border border-expense/25 bg-expense/10 px-3 py-2 text-center font-mono text-2xs font-semibold text-expense outline-none animate-fade-in"
         >
           {error}
         </p>

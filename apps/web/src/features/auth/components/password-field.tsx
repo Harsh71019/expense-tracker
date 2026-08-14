@@ -36,7 +36,7 @@ export function PasswordField({
     <div className="flex flex-col gap-1.5">
       <label
         htmlFor={id}
-        className="font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase"
+        className="font-mono text-2xs font-extrabold tracking-[0.25em] text-foreground-muted uppercase"
       >
         {label}
       </label>

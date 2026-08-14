@@ -98,7 +98,7 @@ export function SidebarEditPanel({
               aria-label={`Move ${item.label} up`}
               disabled={index === 0}
               onClick={() => onReorder(index, index - 1)}
-              className="grid h-5 w-5 place-items-center rounded text-[10px] text-foreground-muted hover:text-foreground disabled:opacity-30"
+              className="grid h-5 w-5 place-items-center rounded text-2xs text-foreground-muted hover:text-foreground disabled:opacity-30"
             >
               ↑
             </button>
@@ -107,7 +107,7 @@ export function SidebarEditPanel({
               aria-label={`Move ${item.label} down`}
               disabled={index === items.length - 1}
               onClick={() => onReorder(index, index + 1)}
-              className="grid h-5 w-5 place-items-center rounded text-[10px] text-foreground-muted hover:text-foreground disabled:opacity-30"
+              className="grid h-5 w-5 place-items-center rounded text-2xs text-foreground-muted hover:text-foreground disabled:opacity-30"
             >
               ↓
             </button>

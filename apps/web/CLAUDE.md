@@ -34,7 +34,7 @@ Server components by default; `"use client"` only where interaction requires it 
 - **`src/features/<name>/hooks/*.ts`** — client-side TanStack Query hooks (`"use client"`), calling the browser API client. These take the server-rendered data as `initialData`/`initialPage` so there's no refetch-on-mount waterfall, then own subsequent pagination/mutation/invalidation.
 - **`src/features/<name>/components/*.tsx`** — presentation, composed in route files under `src/app/`.
 - **`src/features/<name>/model/*.ts`** — pure functions (zod-backed parsing/serialization of URL search params into typed filters, form-adjacent transforms). No I/O.
-- **`src/features/<name>/index.ts`** — the feature's public surface; import from here, not from internal files across feature boundaries.
+- **`src/features/<name>/index.ts`** — the feature's public surface; import from here, not from internal files across feature boundaries. Exception: `server/*.ts` fetchers are never re-exported from `index.ts` — route files always deep-import them directly (`@/features/<name>/server/<fetcher>`), even from that fetcher's own feature's route. This isn't just a barrel-boundary nicety: a client component importing a feature barrel that also exports a server-only fetcher breaks `next build`, so keeping fetchers out of `index.ts` entirely avoids the trap by construction.
 
 Two separate `openapi-fetch` clients exist for exactly this client/server split — never mix them up:
 - `src/lib/api/client.ts` — browser client, `baseUrl: "/api"`, relies on the Next.js rewrite in `next.config.ts` (`/api/:path*` → `INTERNAL_API_URL`).
@@ -57,6 +57,18 @@ Mutation hooks that create resources (e.g. `useCreateTxn`) require an idempotenc
 ### Money & theme
 
 Never format `amountMinor` by hand — use `<Money>`/`<SignedMoney>` (`src/components/ui/money`) or `formatMinor()` from `@treasury-ops/shared`, matching the backend's paise-based integer money invariant. Theme (`light`/`dark`) is cookie-backed (`treasury-ops-theme`, `src/lib/theme*.ts`), read server-side in the root layout to set `data-theme` before hydration, toggled via a server action (`toggleTheme`) — there is no client-side flash-of-unstyled-theme handling needed because it's resolved before first paint. Accent preference follows the same SSR model through `treasury-ops-accent` and `src/lib/accent*.ts`; custom input is strictly parsed and converted into derived CSS variables before rendering. Keep income, expense, reversal, category, and chart colors independent from the chosen accent.
+
+### UI composition
+
+Overlays (dialogs/sheets/drawers) all build on the shared `DialogSurface` (`src/components/ui/dialog/dialog-surface.tsx`) — never roll a bespoke overlay. Pick the file suffix by purpose, not by feel:
+- `-dialog`: confirmations and small single-purpose actions (e.g. `reverse-confirm-dialog.tsx`).
+- `-sheet`: create/edit forms (e.g. `create-txn-sheet.tsx`).
+- `-drawer`: read-heavy detail views (e.g. `txn-detail-drawer.tsx`).
+- `-modal` is not a valid suffix here — it always resolves to one of the three above.
+
+Stat/summary tiles use the shared `StatCard` (`src/components/ui/stat-card`) rather than a bespoke per-feature card — see its usage in `dashboard/stat-cards.tsx`, `recurring/recurring-stats-cards.tsx`, `bills/bill-summary.tsx`, `profile/profile-summary.tsx`, `assets/asset-card.tsx` for the range of shapes it covers before reaching for something custom.
+
+Loading states use the shared `Skeleton` (`src/components/ui/skeleton`) — don't hand-roll `animate-pulse` divs.
 
 ### Debug logging & Sentry
 

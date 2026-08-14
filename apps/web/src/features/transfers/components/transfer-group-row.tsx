@@ -64,12 +64,12 @@ export function TransferGroupRow({ legs, accounts, onOpen }: TransferGroupRowPro
       <div className="flex items-end justify-between gap-3 pl-14 sm:ml-auto sm:block sm:shrink-0 sm:pl-0 sm:text-right">
         <div className="flex flex-wrap gap-1.5 sm:justify-end">
           {isReversed ? (
-            <span className="rounded-md border border-border bg-surface-muted px-1.5 py-0.5 font-mono text-[9px] font-bold tracking-wider text-foreground-muted uppercase">
+            <span className="rounded-md border border-border bg-surface-muted px-1.5 py-0.5 font-mono text-2xs font-bold tracking-wider text-foreground-muted uppercase">
               Reversed
             </span>
           ) : null}
           {isReversal ? (
-            <span className="rounded-md border border-border bg-surface-muted px-1.5 py-0.5 font-mono text-[9px] font-bold tracking-wider text-amber-500 uppercase">
+            <span className="rounded-md border border-border bg-surface-muted px-1.5 py-0.5 font-mono text-2xs font-bold tracking-wider text-amber-500 uppercase">
               Reversal
             </span>
           ) : null}

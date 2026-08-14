@@ -27,7 +27,7 @@ export function SpendingWarningsPage({
   return (
     <section className="w-full space-y-6">
       <header>
-        <p className="font-mono text-[11px] font-bold tracking-[0.2em] text-accent uppercase">
+        <p className="font-mono text-2xs font-bold tracking-[0.2em] text-accent uppercase">
           Insights
         </p>
         <h1 className="mt-1.5 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">

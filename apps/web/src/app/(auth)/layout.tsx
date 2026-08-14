@@ -29,7 +29,7 @@ export default async function AuthLayout({
               </span>
               <div>
                 <p className="text-lg font-bold tracking-tight text-foreground">TreasuryOps</p>
-                <p className="mt-0.5 font-mono text-[9px] font-bold tracking-[0.2em] text-accent uppercase">
+                <p className="mt-0.5 font-mono text-2xs font-bold tracking-[0.2em] text-accent uppercase">
                   Expense tracker
                 </p>
               </div>
@@ -38,7 +38,7 @@ export default async function AuthLayout({
             {children}
           </div>
 
-          <p className="mt-8 text-center font-mono text-[11px] text-foreground-muted">
+          <p className="mt-8 text-center font-mono text-2xs text-foreground-muted">
             Protected by end-to-end encryption · India (INR)
           </p>
         </div>

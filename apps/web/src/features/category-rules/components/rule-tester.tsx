@@ -65,11 +65,11 @@ export function RuleTester({ rules, categories, initialValue = "" }: RuleTesterP
           <span className="grid h-6 w-6 place-items-center rounded-lg bg-accent/10 text-xs text-accent">
             ⚡
           </span>
-          <p className="font-mono text-[10.5px] font-bold tracking-[1.2px] text-foreground-muted uppercase">
+          <p className="font-mono text-2xs font-bold tracking-[1.2px] text-foreground-muted uppercase">
             Interactive Rule Tester
           </p>
         </div>
-        <span className="text-[11px] text-foreground-muted">
+        <span className="text-2xs text-foreground-muted">
           Type or click a sample to simulate import matching
         </span>
       </div>
@@ -98,7 +98,7 @@ export function RuleTester({ rules, categories, initialValue = "" }: RuleTesterP
 
       {/* Quick Sample Chips */}
       <div className="mt-3 flex flex-wrap items-center gap-1.5">
-        <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-foreground-muted">
+        <span className="font-mono text-2xs font-bold uppercase tracking-wider text-foreground-muted">
           Try Samples:
         </span>
         {SAMPLE_DESCRIPTIONS.map((sample) => (
@@ -136,7 +136,7 @@ export function RuleTester({ rules, categories, initialValue = "" }: RuleTesterP
                   </span>
                   <span>{primaryCategory?.name ?? "Unavailable category"}</span>
                   <span
-                    className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase ${
+                    className={`rounded-full px-2 py-0.5 text-2xs font-extrabold uppercase ${
                       primaryCategory?.kind === "income"
                         ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                         : "bg-rose-500/10 text-rose-600 dark:text-rose-400"

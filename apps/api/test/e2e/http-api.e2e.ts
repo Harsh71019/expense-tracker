@@ -1,6 +1,7 @@
 import type { INestApplication } from "@nestjs/common";
 import {
   AccountSchema,
+  CreditCardPaymentResultSchema,
   CreateApiKeyResponseSchema,
   ImportBatchSchema,
   PendingTransactionSchema,
@@ -168,6 +169,66 @@ describe("production HTTP composition", () => {
     expect(
       (await parseResponse(insightsResponse, TransactionInsightsSchema)).lifetimeTransactionCount
     ).toBeGreaterThanOrEqual(2);
+  });
+
+  it("links an existing debit to a credit card without debiting the bank twice", async () => {
+    const bank = await createAccount(baseUrl, sessionA, "CRED source bank");
+    const card = await createAccount(baseUrl, sessionA, "CRED target card", "credit_card", -50_000);
+    const transactionResponse = await fetch(`${baseUrl}/api/v1/transactions`, {
+      method: "POST",
+      headers: {
+        ...JSON_HEADERS,
+        cookie: sessionA,
+        "idempotency-key": crypto.randomUUID()
+      },
+      body: JSON.stringify({
+        accountId: bank.id,
+        type: "expense",
+        amountMinor: 19_990,
+        occurredAt: "2026-08-12T06:30:00.000Z",
+        description: "CRED credit card bill payment",
+        tags: []
+      })
+    });
+    expect(transactionResponse.status).toBe(201);
+    const source = await parseResponse(transactionResponse, TransactionSchema);
+    const key = crypto.randomUUID();
+    const paymentBody = {
+      transactionId: source.id,
+      creditCardAccountId: card.id
+    };
+
+    const paymentResponse = await fetch(`${baseUrl}/api/v1/credit-card-payments`, {
+      method: "POST",
+      headers: { ...JSON_HEADERS, cookie: sessionA, "idempotency-key": key },
+      body: JSON.stringify(paymentBody)
+    });
+    expect(paymentResponse.status).toBe(200);
+    const payment = await parseResponse(paymentResponse, CreditCardPaymentResultSchema);
+    expect(payment.transfer.fromTransaction.id).toBe(source.id);
+    expect(payment.transfer.toTransaction).toMatchObject({
+      accountId: card.id,
+      type: "income",
+      amountMinor: 19_990
+    });
+
+    const replayResponse = await fetch(`${baseUrl}/api/v1/credit-card-payments`, {
+      method: "POST",
+      headers: { ...JSON_HEADERS, cookie: sessionA, "idempotency-key": key },
+      body: JSON.stringify(paymentBody)
+    });
+    expect(replayResponse.status).toBe(200);
+    expect(replayResponse.headers.get("idempotency-replayed")).toBe("true");
+    expect(
+      (await parseResponse(replayResponse, CreditCardPaymentResultSchema)).transfer.transferGroupId
+    ).toBe(payment.transfer.transferGroupId);
+
+    const accountsResponse = await fetch(`${baseUrl}/api/v1/accounts`, {
+      headers: { cookie: sessionA }
+    });
+    const accountList = await parseResponse(accountsResponse, z.array(AccountSchema));
+    expect(accountList.find((account) => account.id === bank.id)?.balanceMinor).toBe(80_010);
+    expect(accountList.find((account) => account.id === card.id)?.balanceMinor).toBe(-30_010);
   });
 
   it("enforces API-key scopes and tenant ownership through the HTTP guard", async () => {
@@ -367,7 +428,9 @@ async function registerAndSignIn(baseUrl: string, email: string, name: string): 
 async function createAccount(
   baseUrl: string,
   cookie: string,
-  name: string
+  name: string,
+  type: z.infer<typeof AccountSchema>["type"] = "bank",
+  openingBalanceMinor = 100_000
 ): Promise<z.infer<typeof AccountSchema>> {
   const response = await fetch(`${baseUrl}/api/v1/accounts`, {
     method: "POST",
@@ -376,7 +439,7 @@ async function createAccount(
       cookie,
       "idempotency-key": crypto.randomUUID()
     },
-    body: JSON.stringify({ name, type: "bank", openingBalanceMinor: 100_000 })
+    body: JSON.stringify({ name, type, openingBalanceMinor })
   });
   if (response.status !== 201) {
     throw new Error(`Account creation failed with ${response.status}: ${await response.text()}`);

@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type { Account, Transaction } from "@treasury-ops/shared";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { TxnDetailDrawer } from "./txn-detail-drawer";
@@ -9,7 +10,14 @@ const mocks = vi.hoisted(() => ({
   reverseMutate: vi.fn(),
   reversePending: false,
   toastSuccess: vi.fn(),
-  accounts: [{ id: "3fa85f64-5717-4562-b3fc-2c963f66beff", name: "HDFC Bank" }],
+  accounts: [
+    {
+      id: "3fa85f64-5717-4562-b3fc-2c963f66beff",
+      name: "HDFC Bank",
+      type: "bank",
+      isArchived: false
+    }
+  ],
   categories: [
     { id: "3fa85f64-5717-4562-b3fc-2c963f66be21", name: "Groceries", isArchived: false },
     { id: "3fa85f64-5717-4562-b3fc-2c963f66be22", name: "Dining", isArchived: false }
@@ -17,6 +25,25 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@/features/accounts", () => ({ useAccounts: () => ({ data: mocks.accounts }) }));
+vi.mock("@/features/bills", () => ({
+  isLinkableBillPaymentSource: (transaction: Transaction, accounts: readonly Account[]) =>
+    transaction.type === "expense" &&
+    transaction.status === "posted" &&
+    transaction.transferGroupId === undefined &&
+    accounts.some(
+      (account) =>
+        account.id === transaction.accountId &&
+        !account.isArchived &&
+        account.type !== "credit_card"
+    ),
+  LinkBillPaymentDialog: ({ onClose }: { onClose: () => void }) => (
+    <div role="dialog" aria-label="Mark as credit card payment">
+      <button type="button" onClick={onClose}>
+        Back to transaction
+      </button>
+    </div>
+  )
+}));
 vi.mock("@/features/categories", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/features/categories")>();
   return { ...actual, useCategories: () => ({ data: mocks.categories }) };
@@ -111,6 +138,17 @@ describe("TxnDetailDrawer", () => {
 
     expect(mocks.reverseMutate).toHaveBeenCalledWith(base.id);
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it("opens credit-card payment linking directly from the transaction drawer", async () => {
+    const user = userEvent.setup();
+    render(<TxnDetailDrawer transaction={{ ...base, status: "posted" }} onClose={vi.fn()} />);
+
+    await user.click(screen.getByRole("button", { name: /Mark as credit card payment/ }));
+    expect(screen.getByRole("dialog", { name: "Mark as credit card payment" })).toBeVisible();
+
+    await user.click(screen.getByRole("button", { name: "Back to transaction" }));
+    expect(screen.getByDisplayValue("BigBasket order")).toBeVisible();
   });
 
   it("adds and removes tags via the draft input and chip buttons", async () => {

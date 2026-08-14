@@ -1,12 +1,33 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  CreateCreditCardPaymentSchema,
   ListBillsQuerySchema,
   ListBillStatementRowsQuerySchema,
   PayCreditCardBillSchema,
   StatementAssignmentSuggestionSchema,
   UpdateBillStatementRowSchema
 } from "./bill.js";
+
+describe("CreateCreditCardPaymentSchema", () => {
+  it("requires an existing transaction and target card while keeping bill attribution optional", () => {
+    const input = {
+      transactionId: "3fa85f64-5717-4562-b3fc-2c963f66be01",
+      creditCardAccountId: "3fa85f64-5717-4562-b3fc-2c963f66be02"
+    };
+    expect(CreateCreditCardPaymentSchema.safeParse(input).success).toBe(true);
+    expect(
+      CreateCreditCardPaymentSchema.safeParse({
+        ...input,
+        billId: "3fa85f64-5717-4562-b3fc-2c963f66be03"
+      }).success
+    ).toBe(true);
+    expect(
+      CreateCreditCardPaymentSchema.safeParse({ ...input, creditCardAccountId: "not-a-uuid" })
+        .success
+    ).toBe(false);
+  });
+});
 
 describe("ListBillsQuerySchema", () => {
   it("applies cursor pagination defaults", () => {

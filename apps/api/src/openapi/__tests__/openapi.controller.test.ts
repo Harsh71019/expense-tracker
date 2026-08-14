@@ -37,6 +37,7 @@ describe("OpenApiController", () => {
       expect(paths).toContain("/v1/bills/{billId}/statement");
       expect(paths).toContain("/v1/bills/{billId}/statement/rows");
       expect(paths).toContain("/v1/bills/{billId}/pay");
+      expect(paths).toContain("/v1/credit-card-payments");
       expect(paths).toContain("/v1/spending-warnings");
       expect(paths).toContain("/v1/spending-warnings/{warningId}/dismiss");
     });
@@ -67,7 +68,8 @@ describe("OpenApiController", () => {
         spec.paths?.["/v1/bills/{billId}/statement/rows/{rowId}"]?.patch,
         spec.paths?.["/v1/bills/{billId}/statement/acknowledge-extra"]?.post,
         spec.paths?.["/v1/bills/{billId}/statement/reconcile"]?.post,
-        spec.paths?.["/v1/bills/{billId}/pay"]?.post
+        spec.paths?.["/v1/bills/{billId}/pay"]?.post,
+        spec.paths?.["/v1/credit-card-payments"]?.post
       ];
 
       for (const operation of mutationOperations) {

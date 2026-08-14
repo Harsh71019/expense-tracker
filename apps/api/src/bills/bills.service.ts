@@ -3,23 +3,30 @@ import {
   AccountSchema,
   BillPaymentResultSchema,
   computeNextCreditCardStatementAt,
+  CreditCardPaymentResultSchema,
   type Account,
   type AccountId,
   type BillDetail,
   type BillPage,
   type BillPaymentResult,
+  type CreateCreditCardPayment,
   type CreditCardBill,
   type CreditCardBillId,
   type CreditCardConfigInput,
+  type CreditCardPaymentResult,
   type LinkBillPayment,
   type ListBillsQuery,
-  type PayCreditCardBill
+  type PayCreditCardBill,
+  type Transaction,
+  type Transfer
 } from "@treasury-ops/shared";
 
 import { AccountRepository } from "../accounts/account.repository.js";
 import { assertBalanceDeltaApplied } from "../accounts/balance-delta.js";
 import { AuditRepository } from "../audit/audit.repository.js";
 import { EntityNotFoundError } from "../common/errors/entity-not-found.error.js";
+import { BillPaymentAccountMismatchError } from "../common/errors/bill-payment-account-mismatch.error.js";
+import { BillPaymentAmountMismatchError } from "../common/errors/bill-payment-amount-mismatch.error.js";
 import { BillNotReconciledError } from "../common/errors/bill-not-reconciled.error.js";
 import { BillOverpaymentError } from "../common/errors/bill-overpayment.error.js";
 import { InvalidBillPaymentSourceError } from "../common/errors/invalid-bill-payment-source.error.js";
@@ -28,6 +35,7 @@ import {
   IdempotencyPostgresService,
   type IdempotentResult
 } from "../common/idempotency/idempotency-postgres.service.js";
+import type { DbTx } from "../common/db/db-txn.js";
 import { TransactionRepository } from "../transactions/transaction.repository.js";
 import { TransferService } from "../transactions/transfer.service.js";
 import { BillStatementRepository } from "./bill-statement.repository.js";
@@ -200,73 +208,89 @@ export class BillsService {
         if (bill === null) throw new EntityNotFoundError("Bill");
         if (bill.remainingMinor <= 0) throw new BillOverpaymentError();
 
-        const source = await this.transactions.findById(userId, input.transactionId, tx);
-        if (
-          source === null ||
-          source.type !== "expense" ||
-          source.status !== "posted" ||
-          source.transferGroupId !== undefined ||
-          source.billId !== undefined ||
-          source.accountId === bill.accountId
-        ) {
-          throw new InvalidBillPaymentSourceError();
-        }
-        const sourceAccount = await this.accounts.findActiveById(userId, source.accountId, tx);
-        if (sourceAccount === null || sourceAccount.type === "credit_card") {
-          throw new InvalidBillPaymentSourceError();
-        }
-
-        const amountMinor = input.amountMinor ?? Math.min(source.amountMinor, bill.remainingMinor);
-        if (
-          amountMinor <= 0 ||
-          amountMinor > bill.remainingMinor ||
-          amountMinor > source.amountMinor
-        ) {
-          throw new BillOverpaymentError();
-        }
-
-        const transferGroupId = crypto.randomUUID();
-        const attached = await this.transactions.attachToTransferGroup(
+        const source = await this.getEligiblePaymentSource(
           userId,
-          source.id,
-          transferGroupId,
+          input.transactionId,
+          bill.accountId,
           tx
         );
-        if (attached === null) throw new InvalidBillPaymentSourceError();
+        if (source.amountMinor > bill.remainingMinor) throw new BillOverpaymentError();
+        if (input.amountMinor !== undefined && input.amountMinor !== source.amountMinor) {
+          throw new BillPaymentAmountMismatchError();
+        }
 
-        assertBalanceDeltaApplied(
-          await this.accounts.applyBalanceDelta(userId, bill.accountId, amountMinor, tx)
-        );
-        const creditLeg = await this.transactions.create(
+        const transfer = await this.appendCreditCardPaymentLeg(
           userId,
-          {
-            accountId: bill.accountId,
-            type: "income",
-            amountMinor,
-            occurredAt: source.occurredAt,
-            description: `Credit card bill payment (linked to "${source.description}")`,
-            tags: ["credit-card-bill"]
-          },
-          undefined,
-          tx,
-          transferGroupId,
-          "manual",
-          bill.id
+          source,
+          bill.accountId,
+          bill.id,
+          tx
         );
         await this.audit.record(userId, "credit-card.bill.link-payment", bill.id, tx, {
-          transferGroupId,
+          transferGroupId: transfer.transferGroupId,
           sourceTransactionId: source.id
         });
         const updated = await this.bills.findById(userId, bill.id, tx);
         if (updated === null) throw new EntityNotFoundError("Bill");
         return {
           bill: updated,
-          transfer: {
-            transferGroupId,
-            fromTransaction: attached,
-            toTransaction: creditLeg
-          }
+          transfer
         };
+      }
+    );
+  }
+
+  linkCreditCardPayment(
+    userId: string,
+    input: CreateCreditCardPayment,
+    key: string
+  ): Promise<IdempotentResult<CreditCardPaymentResult>> {
+    return this.idempotency.execute(
+      userId,
+      "credit-card.payment.link",
+      key,
+      input,
+      CreditCardPaymentResultSchema,
+      async (tx) => {
+        const lockedBill =
+          input.billId === undefined
+            ? undefined
+            : await this.bills.findByIdForUpdate(userId, input.billId, tx);
+        if (input.billId !== undefined && lockedBill === null) {
+          throw new EntityNotFoundError("Bill");
+        }
+        const bill = lockedBill ?? undefined;
+        if (bill !== undefined && bill.accountId !== input.creditCardAccountId) {
+          throw new BillPaymentAccountMismatchError();
+        }
+
+        const source = await this.getEligiblePaymentSource(
+          userId,
+          input.transactionId,
+          input.creditCardAccountId,
+          tx
+        );
+        if (bill !== undefined && source.amountMinor > bill.remainingMinor) {
+          throw new BillOverpaymentError();
+        }
+
+        const transfer = await this.appendCreditCardPaymentLeg(
+          userId,
+          source,
+          input.creditCardAccountId,
+          bill?.id,
+          tx
+        );
+        await this.audit.record(userId, "credit-card.payment.link", source.id, tx, {
+          transferGroupId: transfer.transferGroupId,
+          creditCardAccountId: input.creditCardAccountId,
+          ...(bill === undefined ? {} : { billId: bill.id })
+        });
+
+        if (bill === undefined) return { transfer };
+        const updated = await this.bills.findById(userId, bill.id, tx);
+        if (updated === null) throw new EntityNotFoundError("Bill");
+        return { transfer, bill: updated };
       }
     );
   }
@@ -275,6 +299,71 @@ export class BillsService {
     const bill = await this.bills.findById(userId, billId);
     if (bill === null) throw new EntityNotFoundError("Bill");
     return bill;
+  }
+
+  private async getEligiblePaymentSource(
+    userId: string,
+    transactionId: string,
+    creditCardAccountId: AccountId,
+    tx: DbTx
+  ): Promise<Transaction> {
+    const source = await this.transactions.findById(userId, transactionId, tx);
+    if (
+      source === null ||
+      source.type !== "expense" ||
+      source.status !== "posted" ||
+      source.transferGroupId !== undefined ||
+      source.billId !== undefined ||
+      source.accountId === creditCardAccountId
+    ) {
+      throw new InvalidBillPaymentSourceError();
+    }
+    const sourceAccount = await this.accounts.findActiveById(userId, source.accountId, tx);
+    if (sourceAccount === null || sourceAccount.type === "credit_card") {
+      throw new InvalidBillPaymentSourceError();
+    }
+    return source;
+  }
+
+  private async appendCreditCardPaymentLeg(
+    userId: string,
+    source: Transaction,
+    creditCardAccountId: AccountId,
+    billId: CreditCardBillId | undefined,
+    tx: DbTx
+  ): Promise<Transfer> {
+    const card = await this.accounts.findActiveById(userId, creditCardAccountId, tx);
+    if (card === null || card.type !== "credit_card") throw new InvalidCreditCardAccountError();
+
+    const transferGroupId = crypto.randomUUID();
+    const attached = await this.transactions.attachToTransferGroup(
+      userId,
+      source.id,
+      transferGroupId,
+      tx
+    );
+    if (attached === null) throw new InvalidBillPaymentSourceError();
+
+    assertBalanceDeltaApplied(
+      await this.accounts.applyBalanceDelta(userId, card.id, source.amountMinor, tx)
+    );
+    const creditLeg = await this.transactions.create(
+      userId,
+      {
+        accountId: card.id,
+        type: "income",
+        amountMinor: source.amountMinor,
+        occurredAt: source.occurredAt,
+        description: `Credit card payment · ${source.description}`.slice(0, 500),
+        tags: ["credit-card-bill"]
+      },
+      undefined,
+      tx,
+      transferGroupId,
+      "manual",
+      billId
+    );
+    return { transferGroupId, fromTransaction: attached, toTransaction: creditLeg };
   }
 }
 

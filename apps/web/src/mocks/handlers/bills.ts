@@ -5,6 +5,7 @@ import { applyBalanceDelta, findAccount } from "../data/store";
 import type {
   BillPaymentResultDto,
   BillStatementUploadDto,
+  CreditCardPaymentResultDto,
   MockStore,
   TransactionDto
 } from "../data/store";
@@ -232,6 +233,99 @@ export function billHandlers(http: MockHttp, store: MockStore): HttpHandler[] {
         transfer: { transferGroupId, fromTransaction, toTransaction }
       };
       store.idempotency.billPayments.set(key, result);
+      return response(200).json(result);
+    }),
+
+    http.post("/v1/credit-card-payments", async ({ request, response }) => {
+      const key = request.headers.get("Idempotency-Key") ?? "";
+      const replay = store.idempotency.creditCardPayments.get(key);
+      if (replay !== undefined) {
+        return response(200).json(replay, { headers: { "Idempotency-Replayed": "true" } });
+      }
+      const body = await request.json();
+      if (body === undefined) {
+        return response(422).json(
+          mockProblem(422, "common.validation_failed", "Payment details are required.")
+        );
+      }
+      const source = store.transactions.find(
+        (transaction) => transaction.id === body.transactionId
+      );
+      const sourceAccount = source === undefined ? undefined : findAccount(store, source.accountId);
+      const card = findAccount(store, body.creditCardAccountId);
+      if (source === undefined || sourceAccount === undefined) {
+        return response(404).json(mockProblem(404, "common.not_found", "Transaction not found."));
+      }
+      if (
+        source.type !== "expense" ||
+        source.status !== "posted" ||
+        source.transferGroupId !== undefined ||
+        source.billId !== undefined ||
+        sourceAccount.type === "credit_card"
+      ) {
+        return response(409).json(
+          mockProblem(409, "bill.invalid_payment_source", "Transaction cannot be linked.")
+        );
+      }
+      if (card === undefined || card.type !== "credit_card" || card.isArchived) {
+        return response(409).json(
+          mockProblem(409, "bill.invalid_account_type", "Choose an active credit card.")
+        );
+      }
+      const bill =
+        body.billId === undefined
+          ? undefined
+          : store.bills.find((candidate) => candidate.id === body.billId);
+      if (body.billId !== undefined && bill === undefined) {
+        return response(404).json(mockProblem(404, "common.not_found", "Bill not found."));
+      }
+      if (bill !== undefined && bill.accountId !== card.id) {
+        return response(409).json(
+          mockProblem(409, "bill.payment_account_mismatch", "Bill does not belong to this card.")
+        );
+      }
+      if (bill !== undefined && source.amountMinor > bill.remainingMinor) {
+        return response(409).json(
+          mockProblem(409, "bill.overpayment", "Payment exceeds the remaining bill.")
+        );
+      }
+
+      const now = new Date().toISOString();
+      const transferGroupId = store.nextTransferGroupId();
+      source.transferGroupId = transferGroupId;
+      source.updatedAt = now;
+      const toTransaction: TransactionDto = {
+        id: store.nextTransactionId(),
+        userId: store.profile.userId,
+        accountId: card.id,
+        type: "income",
+        amountMinor: source.amountMinor,
+        occurredAt: source.occurredAt,
+        description: `Credit card payment · ${source.description}`.slice(0, 500),
+        tags: ["credit-card-bill"],
+        currency: "INR",
+        source: "manual",
+        status: "posted",
+        paymentRail: "unknown",
+        counterpartyHandle: null,
+        transferGroupId,
+        ...(bill === undefined ? {} : { billId: bill.id }),
+        createdAt: now,
+        updatedAt: now
+      };
+      store.transactions.push(toTransaction);
+      applyBalanceDelta(store, card.id, source.amountMinor);
+      if (bill !== undefined) {
+        bill.paidMinor += source.amountMinor;
+        bill.remainingMinor = Math.max(0, bill.amountDueMinor - bill.paidMinor);
+        bill.paymentStatus = bill.remainingMinor === 0 ? "paid" : "partial";
+        bill.updatedAt = now;
+      }
+      const result: CreditCardPaymentResultDto = {
+        transfer: { transferGroupId, fromTransaction: source, toTransaction },
+        ...(bill === undefined ? {} : { bill })
+      };
+      store.idempotency.creditCardPayments.set(key, result);
       return response(200).json(result);
     })
   ];

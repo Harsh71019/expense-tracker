@@ -16,7 +16,7 @@ const mocks = vi.hoisted(() => {
 });
 
 vi.mock("../hooks/use-open-bills", () => ({
-  useOpenBills: () => ({ data: mocks.openBills.data })
+  useOpenBills: () => ({ data: mocks.openBills.data, isLoading: false })
 }));
 vi.mock("../hooks/use-link-bill-payment", () => ({
   useLinkBillPayment: () => ({ mutateAsync: mocks.link, isPending: false })
@@ -122,27 +122,63 @@ describe("LinkBillPaymentDialog", () => {
     });
     const onClose = vi.fn();
     const user = userEvent.setup();
-    render(<LinkBillPaymentDialog transaction={expenseOnBank} onClose={onClose} />);
+    render(
+      <LinkBillPaymentDialog
+        transaction={expenseOnBank}
+        accounts={[bank, card]}
+        onClose={onClose}
+      />
+    );
 
-    await user.click(screen.getByRole("button", { name: "Link payment" }));
+    expect(screen.getByText("₹80.00")).toBeVisible();
+    expect(screen.getByText("₹50.00")).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Confirm card payment" }));
 
     await waitFor(() =>
       expect(mocks.link).toHaveBeenCalledWith({
         billId,
         transactionId: expenseOnBank.id,
-        amountMinor: 3_000
+        creditCardAccountId: cardAccountId
       })
     );
     expect(onClose).toHaveBeenCalledOnce();
-    expect(mocks.toastSuccess).toHaveBeenCalledWith("Payment linked to the bill");
+    expect(mocks.toastSuccess).toHaveBeenCalledWith("Card balance and bill payment updated");
   });
 
-  it("shows an empty state and disables submission when there are no open bills to link to", () => {
+  it("updates the card even when there is no generated bill", async () => {
     mocks.openBills.data = [];
-    render(<LinkBillPaymentDialog transaction={expenseOnBank} onClose={vi.fn()} />);
-    expect(
-      screen.getByText("No open credit card bills to link this transaction to.")
-    ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Link payment" })).toBeDisabled();
+    mocks.link.mockResolvedValue({
+      transfer: {
+        transferGroupId: "3fa85f64-5717-4562-b3fc-2c963f66be06",
+        fromTransaction: expenseOnBank,
+        toTransaction: expenseOnBank
+      }
+    });
+    const user = userEvent.setup();
+    render(
+      <LinkBillPaymentDialog
+        transaction={expenseOnBank}
+        accounts={[bank, card]}
+        onClose={vi.fn()}
+      />
+    );
+    expect(screen.getByText(/No matching open bill is required/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Confirm card payment" }));
+    await waitFor(() =>
+      expect(mocks.link).toHaveBeenCalledWith({
+        transactionId: expenseOnBank.id,
+        creditCardAccountId: cardAccountId
+      })
+    );
+    expect(mocks.toastSuccess).toHaveBeenCalledWith("Credit card balance updated");
+  });
+
+  it("requires an active credit-card account", () => {
+    mocks.openBills.data = [];
+    render(
+      <LinkBillPaymentDialog transaction={expenseOnBank} accounts={[bank]} onClose={vi.fn()} />
+    );
+    expect(screen.getByText(/Create an active credit-card account/)).toBeVisible();
+    expect(screen.getByRole("button", { name: "Confirm card payment" })).toBeDisabled();
   });
 });

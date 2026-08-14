@@ -42,10 +42,12 @@ import {
   CreateApiKeySchema,
   CreateCategorySchema,
   CreateCategoryRuleSchema,
+  CreateCreditCardPaymentSchema,
   CreateTransactionSchema,
   CreditCardBillIdSchema,
   CreditCardBillSchema,
   CreditCardConfigInputSchema,
+  CreditCardPaymentResultSchema,
   DashboardInvestmentsSchema,
   DashboardStatsQuerySchema,
   DashboardStatsSchema,
@@ -196,6 +198,9 @@ const BillStatementUpload = BillStatementUploadSchema.meta({ id: "BillStatementU
 const BillStatementRow = BillStatementRowSchema.meta({ id: "BillStatementRow" });
 const BillStatementRowPage = BillStatementRowPageSchema.meta({ id: "BillStatementRowPage" });
 const BillPaymentResult = BillPaymentResultSchema.meta({ id: "BillPaymentResult" });
+const CreditCardPaymentResult = CreditCardPaymentResultSchema.meta({
+  id: "CreditCardPaymentResult"
+});
 
 const accountId = z.object({ accountId: AccountIdSchema });
 const categoryId = z.object({ categoryId: CategoryIdSchema });
@@ -1433,6 +1438,31 @@ registry.registerPath({
     ...problemResponses
   }
 });
+registry.registerPath({
+  method: "post",
+  path: "/v1/credit-card-payments",
+  security: secured,
+  request: {
+    headers: idempotencyKeyHeaders,
+    body: json(CreateCreditCardPaymentSchema)
+  },
+  responses: {
+    200: {
+      description:
+        "Existing expense linked to a credit-card account, with optional bill attribution, or idempotent replay",
+      headers: optionalReplayHeaders,
+      ...json(CreditCardPaymentResult)
+    },
+    404: { description: "Transaction, bill, or account not found", ...json(ProblemDetails) },
+    409: {
+      description:
+        "Transaction is ineligible, target account or bill does not match, or the bill would be overpaid",
+      ...json(ProblemDetails)
+    },
+    ...problemResponses
+  }
+});
+
 registry.registerPath({
   method: "post",
   path: "/v1/bills/{billId}/link-payment",

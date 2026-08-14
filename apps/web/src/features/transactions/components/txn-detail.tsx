@@ -244,6 +244,7 @@ export function TxnDetail({ initialTransaction }: { initialTransaction: Transact
       {linkingBillPayment ? (
         <LinkBillPaymentDialog
           transaction={transaction}
+          accounts={accounts.data ?? []}
           onClose={() => setLinkingBillPayment(false)}
         />
       ) : null}

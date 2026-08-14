@@ -10,6 +10,7 @@ import { BillsService } from "../../../src/bills/bills.service.js";
 import { CreditCardBillRepository } from "../../../src/bills/credit-card-bill.repository.js";
 import { accounts as accountsTable } from "../../../src/common/db/schema/index.js";
 import { withTxn } from "../../../src/common/db/db-txn.js";
+import { BillPaymentAmountMismatchError } from "../../../src/common/errors/bill-payment-amount-mismatch.error.js";
 import { BillOverpaymentError } from "../../../src/common/errors/bill-overpayment.error.js";
 import { BillNotReconciledError } from "../../../src/common/errors/bill-not-reconciled.error.js";
 import { BillStatementUnresolvedError } from "../../../src/common/errors/bill-statement-unresolved.error.js";
@@ -425,6 +426,125 @@ describe("credit-card bill lifecycle", () => {
     ).rejects.toThrow(BillOverpaymentError);
   });
 
+  it("reduces a selected card balance without requiring a generated bill", async () => {
+    const card = await withTxn(testDb.db, (tx) =>
+      accounts.create(
+        USER_ID,
+        { name: "Legacy card", type: "credit_card", openingBalanceMinor: -20_000 },
+        tx
+      )
+    );
+    const source = await withTxn(testDb.db, async (tx) => {
+      if (!(await accounts.applyBalanceDelta(USER_ID, bankId, -4_000, tx))) {
+        throw new EntityNotFoundError("Account");
+      }
+      return transactions.create(
+        USER_ID,
+        {
+          accountId: bankId,
+          type: "expense",
+          amountMinor: 4_000,
+          occurredAt: new Date("2026-08-13T10:00:00.000Z"),
+          description: "CRED card payment",
+          tags: []
+        },
+        undefined,
+        tx
+      );
+    });
+    const bankAfterDebit = await accounts.findById(USER_ID, bankId);
+    if (bankAfterDebit === null) throw new Error("Expected source account");
+    const key = "10101010-aaaa-4101-8101-101010101010";
+
+    const attempts = await Promise.all(
+      Array.from({ length: 5 }, () =>
+        billService.linkCreditCardPayment(
+          USER_ID,
+          { transactionId: source.id, creditCardAccountId: card.id },
+          key
+        )
+      )
+    );
+
+    expect(attempts.filter((attempt) => !attempt.replayed)).toHaveLength(1);
+    expect(new Set(attempts.map((attempt) => attempt.result.transfer.transferGroupId)).size).toBe(
+      1
+    );
+    expect(attempts[0]?.result.bill).toBeUndefined();
+    expect(attempts[0]?.result.transfer.fromTransaction).toMatchObject({
+      id: source.id,
+      accountId: bankId,
+      type: "expense",
+      amountMinor: 4_000
+    });
+    expect(attempts[0]?.result.transfer.toTransaction).toMatchObject({
+      accountId: card.id,
+      type: "income",
+      amountMinor: 4_000
+    });
+    expect(attempts[0]?.result.transfer.toTransaction.billId).toBeUndefined();
+    expect(await accounts.findById(USER_ID, bankId)).toMatchObject({
+      balanceMinor: bankAfterDebit.balanceMinor
+    });
+    expect(await accounts.findById(USER_ID, card.id)).toMatchObject({ balanceMinor: -16_000 });
+  });
+
+  it("optionally attributes the full card payment to a matching open bill", async () => {
+    const card = await withTxn(testDb.db, (tx) =>
+      accounts.create(
+        USER_ID,
+        { name: "Bill-linked card", type: "credit_card", openingBalanceMinor: -7_000 },
+        tx
+      )
+    );
+    const bill = await withTxn(testDb.db, (tx) =>
+      bills.create(
+        USER_ID,
+        {
+          accountId: card.id,
+          cycleStart: new Date("2026-07-01T00:00:00.000Z"),
+          cycleEnd: new Date("2026-07-31T00:00:00.000Z"),
+          dueDate: new Date("2026-08-20T00:00:00.000Z"),
+          amountDueMinor: 7_000
+        },
+        tx
+      )
+    );
+    const source = await withTxn(testDb.db, async (tx) => {
+      if (!(await accounts.applyBalanceDelta(USER_ID, bankId, -3_000, tx))) {
+        throw new EntityNotFoundError("Account");
+      }
+      return transactions.create(
+        USER_ID,
+        {
+          accountId: bankId,
+          type: "expense",
+          amountMinor: 3_000,
+          occurredAt: new Date("2026-08-14T10:00:00.000Z"),
+          description: "CRED partial statement payment",
+          tags: []
+        },
+        undefined,
+        tx
+      );
+    });
+
+    const result = await billService.linkCreditCardPayment(
+      USER_ID,
+      { transactionId: source.id, creditCardAccountId: card.id, billId: bill.id },
+      "12121212-aaaa-4121-8121-121212121212"
+    );
+
+    expect(result.result.bill).toMatchObject({
+      id: bill.id,
+      paidMinor: 3_000,
+      remainingMinor: 4_000,
+      paymentStatus: "partial"
+    });
+    expect(result.result.transfer.toTransaction.billId).toBe(bill.id);
+    expect(await accounts.findById(USER_ID, card.id)).toMatchObject({ balanceMinor: -4_000 });
+  });
+
   it("rejects ineligible source transactions for linking", async () => {
     const secondCard = await withTxn(testDb.db, (tx) =>
       accounts.create(
@@ -537,6 +657,20 @@ describe("credit-card bill lifecycle", () => {
       "30003000-aaaa-4300-8300-300030003000"
     );
     expect(firstLink.result.bill.remainingMinor).toBe(19_000);
+
+    const partialCandidate = await makeExpense(bankId, 2_000);
+    await expect(
+      billService.linkPayment(
+        USER_ID,
+        roomyBill.id,
+        { transactionId: partialCandidate, amountMinor: 1_000 },
+        "35003500-aaaa-4350-8350-350035003500"
+      )
+    ).rejects.toThrow(BillPaymentAmountMismatchError);
+    expect(await transactions.findById(USER_ID, partialCandidate)).toMatchObject({
+      transferGroupId: undefined
+    });
+
     await expect(
       billService.linkPayment(
         USER_ID,

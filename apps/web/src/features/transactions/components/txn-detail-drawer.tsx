@@ -28,6 +28,21 @@ function categoryIcon(category: Category | undefined, isIncome: boolean): string
   return isIncome ? "↓" : "↑";
 }
 
+function sourceLabel(source: string): string {
+  switch (source) {
+    case "csv_import":
+      return "CSV Statement Import";
+    case "recurring":
+      return "Recurring Automation Engine";
+    case "api":
+      return "API Ingestion";
+    case "manual":
+      return "Manual Entry";
+    default:
+      return source.replace("_", " ");
+  }
+}
+
 type TxnDetailDrawerProps = Readonly<{ transaction: Transaction; onClose: () => void }>;
 
 export function TxnDetailDrawer({
@@ -160,7 +175,7 @@ export function TxnDetailDrawer({
             Source
           </dt>
           <dd className="text-right text-sm font-semibold text-foreground capitalize">
-            {transaction.source.replace("_", " ")}
+            {sourceLabel(transaction.source)}
           </dd>
           <dt className="font-mono text-[10px] font-bold tracking-wider text-foreground-muted uppercase">
             Status
@@ -187,6 +202,64 @@ export function TxnDetailDrawer({
             </>
           )}
         </dl>
+
+        {/* Linked Entities Forensics */}
+        {transaction.recurringRuleId ||
+        transaction.billId ||
+        transaction.transferGroupId ||
+        transaction.reversalOf ||
+        transaction.reversedBy ? (
+          <div className="mt-4 space-y-2 rounded-xl border border-border/80 bg-surface-muted/50 p-3 text-xs">
+            <p className="font-mono text-[10px] font-bold tracking-wider text-foreground-muted uppercase">
+              Linked Ledger Entities
+            </p>
+            {transaction.recurringRuleId ? (
+              <Link
+                href="/recurring"
+                className="flex items-center justify-between gap-2 rounded-lg border border-accent/20 bg-accent/5 p-2 font-medium text-foreground hover:bg-accent/10"
+              >
+                <span>⚡ Active Recurring Automation Rule</span>
+                <span className="font-mono text-[10px] text-accent">View Rule →</span>
+              </Link>
+            ) : null}
+            {transaction.billId ? (
+              <Link
+                href="/bills"
+                className="flex items-center justify-between gap-2 rounded-lg border border-income/20 bg-income/5 p-2 font-medium text-foreground hover:bg-income/10"
+              >
+                <span>💳 Credit Card Statement Match</span>
+                <span className="font-mono text-[10px] text-income">View Statement →</span>
+              </Link>
+            ) : null}
+            {transaction.transferGroupId ? (
+              <Link
+                href="/transfers"
+                className="flex items-center justify-between gap-2 rounded-lg border border-border bg-surface p-2 font-medium text-foreground hover:bg-surface-muted"
+              >
+                <span>⤢ Paired Transfer Group</span>
+                <span className="font-mono text-[10px] text-accent">View Pair →</span>
+              </Link>
+            ) : null}
+            {transaction.reversalOf ? (
+              <Link
+                href={`/transactions/${transaction.reversalOf}`}
+                className="flex items-center justify-between gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 p-2 font-medium text-foreground hover:bg-amber-500/10"
+              >
+                <span>↺ Compensating Reversal of Earlier Entry</span>
+                <span className="font-mono text-[10px] text-amber-500">View Original →</span>
+              </Link>
+            ) : null}
+            {transaction.reversedBy ? (
+              <Link
+                href={`/transactions/${transaction.reversedBy}`}
+                className="flex items-center justify-between gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 p-2 font-medium text-foreground hover:bg-amber-500/10"
+              >
+                <span>↺ Compensated by Reversal Entry</span>
+                <span className="font-mono text-[10px] text-amber-500">View Reversal →</span>
+              </Link>
+            ) : null}
+          </div>
+        ) : null}
 
         <Link
           href={`/transactions/${transaction.id}`}

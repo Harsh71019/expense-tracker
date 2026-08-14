@@ -1,6 +1,7 @@
 "use client";
 
 import { UpdateTransactionSchema, type Transaction } from "@treasury-ops/shared";
+import Link from "next/link";
 import { useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 
@@ -28,6 +29,21 @@ const dateTime = new Intl.DateTimeFormat("en-IN", {
   timeStyle: "short",
   timeZone: "Asia/Kolkata"
 });
+
+function sourceLabel(source: string): string {
+  switch (source) {
+    case "csv_import":
+      return "CSV Statement Import";
+    case "recurring":
+      return "Recurring Automation Engine";
+    case "api":
+      return "API Ingestion";
+    case "manual":
+      return "Manual Entry";
+    default:
+      return source.replace("_", " ");
+  }
+}
 
 export function TxnDetail({ initialTransaction }: { initialTransaction: Transaction }): ReactNode {
   const query = useTxn(initialTransaction.id, initialTransaction);
@@ -95,13 +111,15 @@ export function TxnDetail({ initialTransaction }: { initialTransaction: Transact
             <Badge variant={transaction.status === "posted" ? "success" : "reversed"}>
               {transaction.status}
             </Badge>
-            <Badge variant="pending">{transaction.source}</Badge>
+            <Badge variant="pending">{sourceLabel(transaction.source)}</Badge>
             {isTransfer ? <Badge variant="success">transfer</Badge> : null}
             <PaymentRailBadge rail={transaction.paymentRail} />
           </div>
         </div>
         <Money minor={transaction.amountMinor} variant={transaction.type} signed size="lg" />
       </header>
+
+      {/* Forensic Ledger Facts */}
       <section className="rounded-xl border border-border bg-surface-elevated p-5">
         <h2 className="font-bold">Ledger facts</h2>
         <dl className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -136,6 +154,90 @@ export function TxnDetail({ initialTransaction }: { initialTransaction: Transact
           />
         </dl>
       </section>
+
+      {/* Linked Ledger Entities */}
+      {transaction.recurringRuleId ||
+      transaction.billId ||
+      transaction.transferGroupId ||
+      transaction.reversalOf ||
+      transaction.reversedBy ? (
+        <section className="rounded-xl border border-border/80 bg-surface-muted/50 p-5">
+          <h2 className="font-bold">Linked ledger subsystems</h2>
+          <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
+            {transaction.recurringRuleId ? (
+              <Link
+                href="/recurring"
+                className="flex items-center justify-between gap-3 rounded-xl border border-accent/30 bg-accent/5 p-3.5 font-medium text-foreground hover:bg-accent/10"
+              >
+                <div>
+                  <span className="block text-sm font-semibold">⚡ Recurring Automation Rule</span>
+                  <span className="font-mono text-xs text-foreground-muted">
+                    Rule ID: {transaction.recurringRuleId.slice(0, 8)}…
+                  </span>
+                </div>
+                <span className="font-mono text-xs font-bold text-accent">View Rule →</span>
+              </Link>
+            ) : null}
+            {transaction.billId ? (
+              <Link
+                href="/bills"
+                className="flex items-center justify-between gap-3 rounded-xl border border-income/30 bg-income/5 p-3.5 font-medium text-foreground hover:bg-income/10"
+              >
+                <div>
+                  <span className="block text-sm font-semibold">💳 Credit Card Statement</span>
+                  <span className="font-mono text-xs text-foreground-muted">
+                    Bill ID: {transaction.billId.slice(0, 8)}…
+                  </span>
+                </div>
+                <span className="font-mono text-xs font-bold text-income">View Statement →</span>
+              </Link>
+            ) : null}
+            {transaction.transferGroupId ? (
+              <Link
+                href="/transfers"
+                className="flex items-center justify-between gap-3 rounded-xl border border-border bg-surface p-3.5 font-medium text-foreground hover:bg-surface-muted"
+              >
+                <div>
+                  <span className="block text-sm font-semibold">⤢ Paired Transfer Group</span>
+                  <span className="font-mono text-xs text-foreground-muted">
+                    Group: {transaction.transferGroupId.slice(0, 8)}…
+                  </span>
+                </div>
+                <span className="font-mono text-xs font-bold text-accent">View Pair →</span>
+              </Link>
+            ) : null}
+            {transaction.reversalOf ? (
+              <Link
+                href={`/transactions/${transaction.reversalOf}`}
+                className="flex items-center justify-between gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3.5 font-medium text-foreground hover:bg-amber-500/10"
+              >
+                <div>
+                  <span className="block text-sm font-semibold">↺ Compensating Reversal</span>
+                  <span className="font-mono text-xs text-amber-600 dark:text-amber-400">
+                    Reversal of original
+                  </span>
+                </div>
+                <span className="font-mono text-xs font-bold text-amber-500">View Original →</span>
+              </Link>
+            ) : null}
+            {transaction.reversedBy ? (
+              <Link
+                href={`/transactions/${transaction.reversedBy}`}
+                className="flex items-center justify-between gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3.5 font-medium text-foreground hover:bg-amber-500/10"
+              >
+                <div>
+                  <span className="block text-sm font-semibold">↺ Compensated Entry</span>
+                  <span className="font-mono text-xs text-amber-600 dark:text-amber-400">
+                    Reversed by entry
+                  </span>
+                </div>
+                <span className="font-mono text-xs font-bold text-amber-500">View Reversal →</span>
+              </Link>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
+
       {isTransfer ? (
         <section className="rounded-xl border border-accent/30 bg-accent/5 p-5">
           <h2 className="font-bold">Linked transfer leg</h2>

@@ -66,6 +66,8 @@ const transaction = {
   tags: [],
   currency: "INR" as const,
   source: "manual" as const,
+  paymentRail: "unknown" as const,
+  counterpartyHandle: null,
   status: "posted" as const,
   createdAt: new Date(),
   updatedAt: new Date()
@@ -144,6 +146,17 @@ describe("TxnList", () => {
 
     await user.click(screen.getByRole("button", { name: /New entry/ }));
     expect(screen.getByRole("dialog", { name: "create-sheet" })).toBeVisible();
+  });
+
+  it("toggles table density between comfortable and compact", async () => {
+    const user = userEvent.setup();
+    mocks.empty = false;
+    mocks.isError = false;
+    render(<TxnList filters={{ limit: 50 }} initialPage={page} initialInsights={null} />);
+
+    const compactBtn = screen.getByRole("button", { name: "Compact" });
+    await user.click(compactBtn);
+    expect(compactBtn).toHaveClass("bg-surface-elevated");
   });
 
   it("uses the empty state when no rows are returned", () => {

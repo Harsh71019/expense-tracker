@@ -26,9 +26,26 @@ type ImportListProps = Readonly<{
   accounts: readonly Account[];
   onResume: (batch: ImportBatch) => void;
   onRevert: (batch: ImportBatch) => void;
+  onDelete: (batch: ImportBatch) => void;
 }>;
 
-export function ImportList({ batches, accounts, onResume, onRevert }: ImportListProps): ReactNode {
+/**
+ * Mirrors the API's DELETABLE_IMPORT_BATCH_STATUSES (import-batch.repository.ts):
+ * only a batch that never posted anything to the ledger is deletable —
+ * never committed or reverted (both still have real transaction rows
+ * pointing at the batch) and never mid-workflow.
+ */
+function isDeletable(status: ImportBatch["status"]): boolean {
+  return status === "pending" || status === "staged" || status === "failed";
+}
+
+export function ImportList({
+  batches,
+  accounts,
+  onResume,
+  onRevert,
+  onDelete
+}: ImportListProps): ReactNode {
   if (batches.length === 0) {
     return (
       <EmptyState
@@ -100,6 +117,15 @@ export function ImportList({ batches, accounts, onResume, onRevert }: ImportList
                   className="rounded-lg bg-accent px-3.5 py-2 text-[13px] font-semibold text-accent-foreground transition-colors duration-150 hover:bg-accent-strong"
                 >
                   Resume review
+                </button>
+              ) : null}
+              {isDeletable(batch.status) ? (
+                <button
+                  type="button"
+                  onClick={() => onDelete(batch)}
+                  className="rounded-lg border border-border px-3.5 py-2 text-[13px] font-medium text-foreground-muted transition-colors duration-150 hover:bg-surface-muted hover:text-foreground"
+                >
+                  Delete
                 </button>
               ) : null}
             </div>

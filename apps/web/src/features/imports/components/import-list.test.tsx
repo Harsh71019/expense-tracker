@@ -43,25 +43,42 @@ function batch(overrides: Partial<ImportBatch> = {}): ImportBatch {
 
 describe("ImportList", () => {
   it("shows an empty state with no batches", () => {
-    render(<ImportList batches={[]} accounts={[]} onResume={vi.fn()} onRevert={vi.fn()} />);
+    render(
+      <ImportList
+        batches={[]}
+        accounts={[]}
+        onResume={vi.fn()}
+        onRevert={vi.fn()}
+        onDelete={vi.fn()}
+      />
+    );
     expect(screen.getByText("No statements imported")).toBeVisible();
   });
 
-  it("shows Resume review for a staged batch and calls the callback", async () => {
+  it("shows Resume review and Delete for a staged batch and calls their callbacks", async () => {
     const user = userEvent.setup();
     const onResume = vi.fn();
+    const onDelete = vi.fn();
     const staged = batch();
     render(
-      <ImportList batches={[staged]} accounts={[account]} onResume={onResume} onRevert={vi.fn()} />
+      <ImportList
+        batches={[staged]}
+        accounts={[account]}
+        onResume={onResume}
+        onRevert={vi.fn()}
+        onDelete={onDelete}
+      />
     );
 
     expect(screen.getByText("HDFC-Statement-Jun.csv")).toBeVisible();
     expect(screen.getByText(/HDFC Savings/)).toBeVisible();
     await user.click(screen.getByRole("button", { name: "Resume review" }));
     expect(onResume).toHaveBeenCalledWith(staged);
+    await user.click(screen.getByRole("button", { name: "Delete" }));
+    expect(onDelete).toHaveBeenCalledWith(staged);
   });
 
-  it("shows Revert for a committed batch and calls the callback", async () => {
+  it("shows Revert (not Delete) for a committed batch and calls the callback", async () => {
     const user = userEvent.setup();
     const onRevert = vi.fn();
     const committed = batch({
@@ -75,11 +92,55 @@ describe("ImportList", () => {
         accounts={[account]}
         onResume={vi.fn()}
         onRevert={onRevert}
+        onDelete={vi.fn()}
       />
     );
 
     expect(screen.queryByRole("button", { name: "Resume review" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Delete" })).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Revert" }));
     expect(onRevert).toHaveBeenCalledWith(committed);
+  });
+
+  it("shows Delete for a failed batch and calls the callback", async () => {
+    const user = userEvent.setup();
+    const onDelete = vi.fn();
+    const failed = batch({
+      status: "failed",
+      stats: { total: 0, staged: 0, duplicates: 0, committed: 0 }
+    });
+    render(
+      <ImportList
+        batches={[failed]}
+        accounts={[account]}
+        onResume={vi.fn()}
+        onRevert={vi.fn()}
+        onDelete={onDelete}
+      />
+    );
+
+    expect(screen.queryByRole("button", { name: "Revert" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Delete" }));
+    expect(onDelete).toHaveBeenCalledWith(failed);
+  });
+
+  it("hides Delete for a reverted batch — its ledger rows still reference it", () => {
+    const reverted = batch({
+      status: "reverted",
+      stats: { total: 31, staged: 30, duplicates: 1, committed: 0 },
+      revertedAt: new Date("2026-07-19T09:00:00.000Z")
+    });
+    render(
+      <ImportList
+        batches={[reverted]}
+        accounts={[account]}
+        onResume={vi.fn()}
+        onRevert={vi.fn()}
+        onDelete={vi.fn()}
+      />
+    );
+
+    expect(screen.queryByRole("button", { name: "Delete" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Revert" })).not.toBeInTheDocument();
   });
 });

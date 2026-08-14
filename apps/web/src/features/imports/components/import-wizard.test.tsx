@@ -64,6 +64,8 @@ const mocks = vi.hoisted(() => {
     commitPending: false,
     revertMutateAsync: vi.fn(),
     revertPending: false,
+    deleteMutateAsync: vi.fn(),
+    deletePending: false,
     updateMutate: vi.fn(),
     stagedRows,
     toastSuccess: vi.fn(),
@@ -84,6 +86,9 @@ vi.mock("../hooks/use-commit-batch", () => ({
 }));
 vi.mock("../hooks/use-revert-batch", () => ({
   useRevertBatch: () => ({ mutateAsync: mocks.revertMutateAsync, isPending: mocks.revertPending })
+}));
+vi.mock("../hooks/use-delete-batch", () => ({
+  useDeleteBatch: () => ({ mutateAsync: mocks.deleteMutateAsync, isPending: mocks.deletePending })
 }));
 vi.mock("../hooks/use-saved-import-mapping", () => ({
   useSavedImportMapping: () => ({ data: undefined })
@@ -131,6 +136,8 @@ describe("ImportWizard", () => {
     mocks.commitPending = false;
     mocks.revertMutateAsync.mockReset();
     mocks.revertPending = false;
+    mocks.deleteMutateAsync.mockReset();
+    mocks.deletePending = false;
     mocks.updateMutate.mockReset();
     mocks.stagedRows = [];
     mocks.toastSuccess.mockReset();
@@ -231,6 +238,20 @@ describe("ImportWizard", () => {
     await user.click(screen.getByRole("button", { name: "Reverse 2 transactions" }));
     expect(mocks.revertMutateAsync).toHaveBeenCalledWith(mocks.batches[0]?.id);
     expect(mocks.toastSuccess).toHaveBeenCalledWith("Import reversed");
+  });
+
+  it("deletes a staged batch after confirming", async () => {
+    const user = userEvent.setup();
+    mocks.batches = [makeBatch()];
+    mocks.deleteMutateAsync.mockResolvedValue(undefined);
+    renderWizard();
+
+    await user.click(screen.getByRole("button", { name: "Delete" }));
+    expect(screen.getByText("Delete this import?")).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Delete import" }));
+
+    expect(mocks.deleteMutateAsync).toHaveBeenCalledWith(mocks.batches[0]?.id);
+    expect(mocks.toastSuccess).toHaveBeenCalledWith("Import deleted");
   });
 
   it("cancels out of the wizard back to the list without uploading", async () => {

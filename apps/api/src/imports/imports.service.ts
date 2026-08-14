@@ -32,7 +32,7 @@ import { parseCsvRow } from "../common/csv/parse-csv-row.js";
 import { DATABASE_CONNECTION } from "../common/db/db.module.js";
 import type { DrizzleDb } from "../common/db/db.module.js";
 import { withTxn } from "../common/db/db-txn.js";
-import { isUniqueViolation } from "../common/db/postgres-error.js";
+import { isForeignKeyViolation, isUniqueViolation } from "../common/db/postgres-error.js";
 import { CategoryKindMismatchError } from "../common/errors/category-kind-mismatch.error.js";
 import { EntityNotFoundError } from "../common/errors/entity-not-found.error.js";
 import { ImportAlreadyCommittedError } from "../common/errors/import-already-committed.error.js";
@@ -44,7 +44,10 @@ import { addDaysUtc, istCalendarDateStartUtc } from "../common/time/ist.js";
 import { TransactionRepository } from "../transactions/transaction.repository.js";
 import { computeDedupeFingerprintV2 } from "./dedupe-fingerprint-v2.js";
 import { computeDedupeHash } from "./dedupe-hash.js";
-import { ImportBatchRepository } from "./import-batch.repository.js";
+import {
+  DELETABLE_IMPORT_BATCH_STATUSES,
+  ImportBatchRepository
+} from "./import-batch.repository.js";
 import type { ImportWorkflowJobData } from "./import-workflow.js";
 import {
   calendarDayDistance,
@@ -525,6 +528,51 @@ export class ImportsService {
   }
 
   /**
+   * A batch is only deletable while nothing it did is live: never
+   * "committed" or "reverted" (both have real ledger rows — originals and,
+   * for reverted, their compensating reversals too — still pointing at this
+   * batch via `transactions.import_batch_id`; the ledger is append-only, so
+   * those rows are never deleted) and never mid-workflow (a delete racing a
+   * worker's claim could strand it). Deleting removes the batch's staged
+   * rows and its own row; it leaves no trace for a status that never posted
+   * anything, which is the point.
+   */
+  async deleteBatch(userId: string, batchId: ImportBatchId): Promise<void> {
+    const batch = await this.batches.findById(userId, batchId);
+    if (batch === null) throw new EntityNotFoundError("Import batch");
+    if (!isDeletableStatus(batch.status)) {
+      throw new ImportBatchNotReadyError(
+        `Only a non-committed, non-in-progress batch can be deleted (current status: "${batch.status}").`
+      );
+    }
+
+    let deleted: boolean;
+    try {
+      deleted = await withTxn(this.db, async (tx) => {
+        await this.stagedRows.deleteAllForBatch(userId, batchId, tx);
+        return this.batches.delete(userId, batchId, tx);
+      });
+    } catch (error) {
+      // A "staged" batch can carry partial ledger rows from an interrupted
+      // commit run (commitBatch's own doc comment: it stays "staged" until
+      // every includable row has landed). Those rows still reference this
+      // batch, so the FK rejects the delete — surface it as the same
+      // domain error as any other not-yet-safe-to-delete batch.
+      if (isForeignKeyViolation(error)) {
+        throw new ImportBatchNotReadyError(
+          "This batch has posted transactions still referencing it and can't be deleted."
+        );
+      }
+      throw error;
+    }
+    if (!deleted) {
+      throw new ImportBatchNotReadyError(
+        "The batch's status changed before the delete could complete."
+      );
+    }
+  }
+
+  /**
    * Chunks of 200 rows, each chunk = one Postgres transaction (insert +
    * balance update + stats + audit), per BACKEND.md §4. Resumable: rows
    * whose v2 fingerprint already landed (from a previous, interrupted run)
@@ -817,6 +865,10 @@ export function assertValidImportFile(filename: string, mimetype: string, buffer
       `File has approximately ${approximateRowCount} rows, exceeding the ${MAX_IMPORT_ROWS}-row cap.`
     );
   }
+}
+
+function isDeletableStatus(status: ImportBatch["status"]): boolean {
+  return DELETABLE_IMPORT_BATCH_STATUSES.some((deletable) => deletable === status);
 }
 
 function workflowLeaseUntil(): Date {

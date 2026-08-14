@@ -4,13 +4,19 @@ import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 import { useCommitBatch } from "./use-commit-batch";
+import { useDeleteBatch } from "./use-delete-batch";
 import { useImportBatches } from "./use-import-batches";
 import { useRevertBatch } from "./use-revert-batch";
 import { useStagedRows } from "./use-staged-rows";
 import { useUpdateStagedRow } from "./use-update-staged-row";
 import { useUploadImport } from "./use-upload-import";
 
-const mocks = vi.hoisted(() => ({ GET: vi.fn(), PATCH: vi.fn(), POST: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  GET: vi.fn(),
+  PATCH: vi.fn(),
+  POST: vi.fn(),
+  DELETE: vi.fn()
+}));
 vi.mock("@/lib/api/client", () => ({ apiClient: mocks }));
 
 const wrapper = ({ children }: Readonly<{ children: ReactNode }>): ReactNode => (
@@ -81,12 +87,17 @@ describe("import data hooks", () => {
     );
   });
 
-  it("patches row fields and commits or reverts batches", async () => {
+  it("patches row fields and commits, reverts, or deletes batches", async () => {
     mocks.PATCH.mockResolvedValue({ data: row, response });
     mocks.POST.mockResolvedValue({ data: batch, response });
+    mocks.DELETE.mockResolvedValue({
+      data: undefined,
+      response: new Response(null, { status: 204 })
+    });
     const update = renderHook(() => useUpdateStagedRow(), { wrapper });
     const commit = renderHook(() => useCommitBatch(), { wrapper });
     const revert = renderHook(() => useRevertBatch(), { wrapper });
+    const del = renderHook(() => useDeleteBatch(), { wrapper });
     await expect(
       update.result.current.mutateAsync({
         batchId: batch.id,
@@ -100,6 +111,7 @@ describe("import data hooks", () => {
     await expect(revert.result.current.mutateAsync(batch.id)).resolves.toMatchObject({
       id: batch.id
     });
+    await expect(del.result.current.mutateAsync(batch.id)).resolves.toBeUndefined();
     expect(mocks.PATCH).toHaveBeenCalledWith(
       "/v1/imports/{importBatchId}/rows/{stagedRowId}",
       expect.objectContaining({ body: { suggestedCategoryId: null } })
@@ -111,6 +123,10 @@ describe("import data hooks", () => {
     expect(mocks.POST).toHaveBeenCalledWith(
       "/v1/imports/{importBatchId}/revert",
       expect.anything()
+    );
+    expect(mocks.DELETE).toHaveBeenCalledWith(
+      "/v1/imports/{importBatchId}",
+      expect.objectContaining({ params: { path: { importBatchId: batch.id } } })
     );
   });
 
@@ -137,9 +153,15 @@ describe("import data hooks", () => {
     mocks.GET.mockResolvedValueOnce({ data: undefined, error: problem, response: problemResponse });
     mocks.PATCH.mockResolvedValueOnce({ data: { id: "invalid" }, response });
     mocks.POST.mockRejectedValueOnce("offline");
+    mocks.DELETE.mockResolvedValueOnce({
+      data: undefined,
+      error: problem,
+      response: problemResponse
+    });
     const batches = renderHook(() => useImportBatches(), { wrapper });
     const update = renderHook(() => useUpdateStagedRow(), { wrapper });
     const commit = renderHook(() => useCommitBatch(), { wrapper });
+    const del = renderHook(() => useDeleteBatch(), { wrapper });
     await waitFor(() => expect(batches.result.current.isError).toBe(true));
     await expect(
       update.result.current.mutateAsync({ batchId: batch.id, stagedRowId: row.id, include: false })
@@ -147,6 +169,7 @@ describe("import data hooks", () => {
     await expect(commit.result.current.mutateAsync(batch.id)).rejects.toThrow(
       "We could not reach TreasuryOps. Check your connection and try again."
     );
+    await expect(del.result.current.mutateAsync(batch.id)).rejects.toThrow("Check import");
     const fetchMock = vi
       .spyOn(globalThis, "fetch")
       .mockResolvedValue(new Response("not-json", { status: 500 }));

@@ -341,6 +341,18 @@ registry.registerPath({
   }
 });
 registry.registerPath({
+  method: "delete",
+  path: "/v1/imports/{importBatchId}",
+  security: secured,
+  request: { params: importBatchId },
+  responses: {
+    204: { description: "Deleted" },
+    404: { description: "Not found", ...json(ProblemDetails) },
+    409: { description: "Import batch cannot be deleted", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
   method: "patch",
   path: "/v1/accounts/{accountId}/archive",
   security: secured,

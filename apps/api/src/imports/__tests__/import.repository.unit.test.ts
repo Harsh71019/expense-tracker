@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { createMockDrizzleDb } from "../../test/mock-drizzle.js";
+import { asMockDbTx, createMockDrizzleDb } from "../../test/mock-drizzle.js";
 import { ImportBatchRepository } from "../import-batch.repository.js";
 import { StagedRowRepository } from "../staged-row.repository.js";
 
@@ -132,6 +132,23 @@ describe("Import Repositories Unit Tests", () => {
 
       await repo.markReverted("u1", sampleBatchRow.id);
       expect(mockDb.update).toHaveBeenCalled();
+    });
+
+    it("delete returns true when a row was deleted", async () => {
+      const mockDb = createMockDrizzleDb([{ id: sampleBatchRow.id }]);
+      const repo = new ImportBatchRepository(mockDb);
+
+      const res = await repo.delete("u1", sampleBatchRow.id, asMockDbTx(mockDb));
+      expect(res).toBe(true);
+      expect(mockDb.delete).toHaveBeenCalled();
+    });
+
+    it("delete returns false when no row matched (wrong status or already gone)", async () => {
+      const mockDb = createMockDrizzleDb([]);
+      const repo = new ImportBatchRepository(mockDb);
+
+      const res = await repo.delete("u1", sampleBatchRow.id, asMockDbTx(mockDb));
+      expect(res).toBe(false);
     });
   });
 

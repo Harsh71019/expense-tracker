@@ -59,6 +59,21 @@ describe("TransactionRepository Unit Tests", () => {
     expect(res.pageInfo.hasMore).toBe(false);
   });
 
+  it("system discovery returns each unreconciled API row with its owning user", async () => {
+    const apiRow = { ...sampleTxRow, source: "api" as const, userId: "owning-user" };
+    const mockDb = createMockDrizzleDb([{ transaction: apiRow }]);
+    const repo = new TransactionRepository(mockDb);
+
+    const result = await repo.systemFindRecentUnreconciledApiTransactions(
+      new Date("2025-12-25T00:00:00.000Z"),
+      200
+    );
+
+    expect(result).toHaveLength(1);
+    expect(result[0]?.userId).toBe("owning-user");
+    expect(mockDb.select).toHaveBeenCalled();
+  });
+
   it("findExistingDedupeHashes returns matching dedupe hashes mapped to their transaction type", async () => {
     const mockDb = createMockDrizzleDb([{ dedupeHash: "hash123", type: "expense" }]);
     const repo = new TransactionRepository(mockDb);

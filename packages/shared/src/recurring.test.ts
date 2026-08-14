@@ -91,6 +91,24 @@ describe("RecurringStatsSchema", () => {
           name: "Housing",
           amountMinor: 250_000,
           transactionCount: 1
+        },
+        twelveMonthForecast: {
+          forecastMonths: 12,
+          transactionCount: 24,
+          expenseMinor: 3_600_000,
+          incomeMinor: 9_600_000,
+          netMinor: 6_000_000,
+          monthlyExpenseAverageMinor: 300_000,
+          ruleProjections: [
+            {
+              recurringRuleId: "3fa85f64-5717-4562-b3fc-2c963f66be11",
+              description: "Rent",
+              type: "expense",
+              amountMinor: 300_000,
+              occurrenceCount: 12,
+              projectedMinor: 3_600_000
+            }
+          ]
         }
       })
     ).toMatchObject({ totalRules: 3, forecastDays: 30 });

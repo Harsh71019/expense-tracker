@@ -155,6 +155,24 @@ export class RecurringReconciliationRepository {
     return row === undefined ? null : toRecurringReconciliation(row);
   }
 
+  async findByIncomingTransactionId(
+    userId: string,
+    incomingTransactionId: TransactionId,
+    tx?: DbTx
+  ): Promise<RecurringReconciliation | null> {
+    const executor = tx ?? this.db;
+    const [row] = await executor
+      .select()
+      .from(recurringReconciliations)
+      .where(
+        and(
+          eq(recurringReconciliations.userId, userId),
+          eq(recurringReconciliations.incomingTransactionId, incomingTransactionId)
+        )
+      );
+    return row === undefined ? null : toRecurringReconciliation(row);
+  }
+
   async resolve(
     userId: string,
     id: RecurringReconciliationId,

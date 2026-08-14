@@ -55,22 +55,7 @@ export class TransactionService {
     idempotencyKey: string | undefined,
     source: TransactionSource = "manual"
   ): Promise<CreateTransactionResult> {
-    const result = await this.createAndReplay(userId, input, idempotencyKey, source);
-    if (!result.replayed && source === "api") {
-      await this.createdHook
-        ?.onTransactionCreated(userId, result.transaction)
-        .catch((error: unknown) => {
-          this.logger.error(
-            {
-              event: LogEvent.RecurringReconciliationHookFailed,
-              txnId: result.transaction.id,
-              err: error
-            },
-            "post-create reconciliation hook failed"
-          );
-        });
-    }
-    return result;
+    return this.createAndReplay(userId, input, idempotencyKey, source);
   }
 
   private async createAndReplay(
@@ -101,6 +86,9 @@ export class TransactionService {
           source
         );
         await this.audit.record(userId, "transaction.create", created.id, tx);
+        if (source === "api") {
+          await this.createdHook?.onTransactionCreatedInTx(userId, created, tx);
+        }
         return created;
       });
       this.logger.log(

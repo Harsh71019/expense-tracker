@@ -61,6 +61,7 @@ function buildService(overrides: {
   const accounts = {};
   const reconciliations = {
     findUnreconciledRecurringCandidates: vi.fn(async () => overrides.candidates ?? []),
+    findByIncomingTransactionId: vi.fn(async () => null),
     create: vi.fn(async () => undefined),
     findById: vi.fn(async () => null),
     resolve: vi.fn(async (userId: string, id: string, resolution: string) => ({
@@ -132,7 +133,8 @@ describe("RecurringReconciliationService.reconcileIncoming", () => {
           accountId: ACCOUNT_ID,
           type: "expense",
           amountMinor: 200_000,
-          occurredAt: new Date("2026-08-01T00:00:00.000Z")
+          occurredAt: new Date("2026-08-01T00:00:00.000Z"),
+          templateDescription: "Claude subscription"
         }
       ]
     });
@@ -162,7 +164,8 @@ describe("RecurringReconciliationService.reconcileIncoming", () => {
           accountId: ACCOUNT_ID,
           type: "expense",
           amountMinor: 200_000,
-          occurredAt: new Date("2026-08-01T00:00:00.000Z")
+          occurredAt: new Date("2026-08-01T00:00:00.000Z"),
+          templateDescription: "Claude subscription"
         },
         {
           transactionId: OTHER_RECURRING_TXN_ID,
@@ -170,7 +173,8 @@ describe("RecurringReconciliationService.reconcileIncoming", () => {
           accountId: ACCOUNT_ID,
           type: "expense",
           amountMinor: 200_000,
-          occurredAt: new Date("2026-08-01T00:00:00.000Z")
+          occurredAt: new Date("2026-08-01T00:00:00.000Z"),
+          templateDescription: "Claude subscription"
         }
       ]
     });
@@ -200,7 +204,8 @@ describe("RecurringReconciliationService.reconcileIncoming", () => {
           accountId: ACCOUNT_ID,
           type: "expense",
           amountMinor: 250_000,
-          occurredAt: new Date("2026-08-01T00:00:00.000Z")
+          occurredAt: new Date("2026-08-01T00:00:00.000Z"),
+          templateDescription: "Claude subscription"
         }
       ]
     });
@@ -235,7 +240,8 @@ describe("RecurringReconciliationService.reconcileIncoming — manual-post occur
           accountId: ACCOUNT_ID,
           type: "expense",
           amountMinor: 200_000,
-          occurredAt: new Date("2026-08-01T00:00:00.000Z")
+          occurredAt: new Date("2026-08-01T00:00:00.000Z"),
+          templateDescription: "Claude subscription"
         }
       ]
     });
@@ -266,7 +272,8 @@ describe("RecurringReconciliationService.reconcileIncoming — manual-post occur
           accountId: ACCOUNT_ID,
           type: "expense",
           amountMinor: 200_000,
-          occurredAt: new Date("2026-08-01T00:00:00.000Z")
+          occurredAt: new Date("2026-08-01T00:00:00.000Z"),
+          templateDescription: "Claude subscription"
         },
         {
           transactionId: "99999999-9999-4999-8999-999999999999",
@@ -274,7 +281,8 @@ describe("RecurringReconciliationService.reconcileIncoming — manual-post occur
           accountId: ACCOUNT_ID,
           type: "expense",
           amountMinor: 200_000,
-          occurredAt: new Date("2026-08-01T00:00:00.000Z")
+          occurredAt: new Date("2026-08-01T00:00:00.000Z"),
+          templateDescription: "Claude subscription"
         }
       ]
     });

@@ -177,10 +177,12 @@ export class RecurringOccurrenceRepository {
     userId: string,
     accountId: string,
     occurredAt: Date,
-    windowDays: number
+    windowDays: number,
+    tx?: DbTx
   ): Promise<RecurringCandidate[]> {
+    const executor = tx ?? this.db;
     const windowMs = windowDays * 24 * 60 * 60 * 1_000;
-    const rows = await this.db
+    const rows = await executor
       .select({
         id: recurringOccurrences.id,
         recurringRuleId: recurringOccurrences.recurringRuleId,

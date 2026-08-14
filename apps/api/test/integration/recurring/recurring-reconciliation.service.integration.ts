@@ -21,11 +21,13 @@ import { RecurringMaterializeService } from "../../../src/recurring/recurring-ma
 import { RecurringOccurrenceRepository } from "../../../src/recurring/recurring-occurrence.repository.js";
 import { RecurringReconciliationRepository } from "../../../src/recurring/recurring-reconciliation.repository.js";
 import { RecurringReconciliationService } from "../../../src/recurring/recurring-reconciliation.service.js";
+import { RecurringReconciliationSweepService } from "../../../src/recurring/recurring-reconciliation-sweep.service.js";
 import { RecurringRuleRepository } from "../../../src/recurring/recurring-rule.repository.js";
 import { RecurringRuleService } from "../../../src/recurring/recurring-rule.service.js";
 import { TransactionRepository } from "../../../src/transactions/transaction.repository.js";
 import { TransactionService } from "../../../src/transactions/transaction.service.js";
 import { createTestDb, insertTestUser } from "../support/postgres-test-db.js";
+import { assertLedgerInvariants } from "../support/assert-ledger-invariants.js";
 import type { TestDb } from "../support/postgres-test-db.js";
 
 const NOOP_LOGGER = { log: () => undefined, warn: () => undefined, error: () => undefined };
@@ -107,6 +109,7 @@ describe("RecurringReconciliationService (integration)", () => {
   }, 60_000);
 
   afterAll(async () => {
+    await assertLedgerInvariants(testDb.db);
     await testDb.teardown();
   });
 
@@ -179,7 +182,11 @@ describe("RecurringReconciliationService (integration)", () => {
   it("auto-reconciles a clean match: the recurring posting is reversed, the API posting stands", async () => {
     const recurringTxn = await postRecurringTransaction(200_000);
 
-    const incoming = await postIncomingApiTransaction(200_000, recurringTxn.occurredAt);
+    const incoming = await postIncomingApiTransaction(
+      200_000,
+      recurringTxn.occurredAt,
+      recurringTxn.description
+    );
 
     expect(await statusOf(recurringTxn.id)).toBe("reversed");
     expect(await statusOf(incoming.id)).toBe("posted");
@@ -313,6 +320,156 @@ describe("RecurringReconciliationService (integration)", () => {
     const row = await reconciliationRowFor(incoming.id);
     expect(row?.status).toBe("auto_matched");
     expect(row?.recurringTransactionId).toBe(recurringTxn.id);
+  });
+
+  it("recovers when the email transaction arrives before the scheduled placeholder", async () => {
+    ruleCounter += 1;
+    const description = `Email-first fixture ${ruleCounter}`;
+    const rule = await ruleService.create(USER_ID, {
+      template: {
+        accountId,
+        type: "expense",
+        amountMinor: 199_900,
+        description,
+        tags: []
+      },
+      rrule: "FREQ=DAILY",
+      startAt: new Date(Date.now() - 24 * 60 * 60 * 1_000),
+      autoPost: true
+    });
+
+    const incoming = await postIncomingApiTransaction(
+      199_900,
+      rule.nextRunAt,
+      `CARD/DR/EMANDATE/${description}/mandate:testEmailFirst123`
+    );
+    expect(await reconciliationRowFor(incoming.id)).toBeUndefined();
+
+    const materializer = new RecurringMaterializeService(
+      testDb.db,
+      new RuntimeConfigService(),
+      rules,
+      accounts,
+      transactionRepository,
+      occurrences,
+      new AuditRepository(testDb.db),
+      NOOP_LOGGER
+    );
+    await materializer.materialize();
+    const sweep = new RecurringReconciliationSweepService(
+      new RuntimeConfigService(),
+      transactionRepository,
+      reconciliationService,
+      NOOP_LOGGER
+    );
+    await sweep.sweep();
+
+    const page = await transactionRepository.findMany(USER_ID, { limit: 200 });
+    const placeholder = page.items.find(
+      (item) => item.source === "recurring" && item.recurringRuleId === rule.id
+    );
+    if (placeholder === undefined) throw new Error("Expected the recurring placeholder.");
+
+    expect(await statusOf(incoming.id)).toBe("posted");
+    expect(await statusOf(placeholder.id)).toBe("reversed");
+    expect((await reconciliationRowFor(incoming.id))?.status).toBe("auto_matched");
+  });
+
+  it("is retry-safe under five parallel reconciliation attempts", async () => {
+    const recurringTxn = await postRecurringTransaction(321_000, "Parallel subscription");
+    const transactionServiceWithoutHook = new TransactionService(
+      testDb.db,
+      accounts,
+      new CategoryRepository(testDb.db),
+      transactionRepository,
+      new AuditRepository(testDb.db),
+      NOOP_LOGGER
+    );
+    const incoming = (
+      await transactionServiceWithoutHook.create(
+        USER_ID,
+        {
+          accountId,
+          type: "expense",
+          amountMinor: 321_000,
+          occurredAt: recurringTxn.occurredAt,
+          description: "Parallel subscription",
+          tags: []
+        },
+        randomUUID(),
+        "api"
+      )
+    ).transaction;
+
+    await Promise.all(
+      Array.from({ length: 5 }, () => reconciliationService.reconcileIncoming(USER_ID, incoming))
+    );
+
+    expect(await statusOf(recurringTxn.id)).toBe("reversed");
+    const reversalRows = await testDb.db
+      .select()
+      .from(transactionsTable)
+      .where(eq(transactionsTable.reversalOf, recurringTxn.id));
+    expect(reversalRows).toHaveLength(1);
+    expect(await reconciliationRowFor(incoming.id)).toBeDefined();
+  });
+
+  it("system discovery returns the owning tenant for each unreconciled API transaction", async () => {
+    const otherUserId = "user-b";
+    await insertTestUser(testDb.db, otherUserId);
+    const otherAccount = await withTxn(testDb.db, (tx) =>
+      accounts.create(
+        otherUserId,
+        { name: "Other tenant account", type: "bank", openingBalanceMinor: 1_000_000 },
+        tx
+      )
+    );
+    const serviceWithoutHook = new TransactionService(
+      testDb.db,
+      accounts,
+      new CategoryRepository(testDb.db),
+      transactionRepository,
+      new AuditRepository(testDb.db),
+      NOOP_LOGGER
+    );
+    const own = (
+      await serviceWithoutHook.create(
+        USER_ID,
+        {
+          accountId,
+          type: "expense",
+          amountMinor: 101,
+          occurredAt: new Date(),
+          description: "Tenant A discovery fixture",
+          tags: []
+        },
+        randomUUID(),
+        "api"
+      )
+    ).transaction;
+    const other = (
+      await serviceWithoutHook.create(
+        otherUserId,
+        {
+          accountId: otherAccount.id,
+          type: "expense",
+          amountMinor: 202,
+          occurredAt: new Date(),
+          description: "Tenant B discovery fixture",
+          tags: []
+        },
+        randomUUID(),
+        "api"
+      )
+    ).transaction;
+
+    const discovered = await transactionRepository.systemFindRecentUnreconciledApiTransactions(
+      new Date(Date.now() - 60_000),
+      200
+    );
+
+    expect(discovered.find((transaction) => transaction.id === own.id)?.userId).toBe(USER_ID);
+    expect(discovered.find((transaction) => transaction.id === other.id)?.userId).toBe(otherUserId);
   });
 
   it("never reconciles a session-authenticated (manual) transaction against a recurring posting", async () => {

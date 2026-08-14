@@ -59,16 +59,37 @@ export class RecurringReconciliationService implements TransactionCreatedHook {
     );
   }
 
-  async onTransactionCreated(userId: string, incoming: Transaction): Promise<void> {
-    await this.reconcileIncoming(userId, incoming);
+  async onTransactionCreatedInTx(userId: string, incoming: Transaction, tx: DbTx): Promise<void> {
+    await this.reconcileIncomingInTx(userId, incoming, tx);
   }
 
   async reconcileIncoming(userId: string, incoming: Transaction): Promise<void> {
+    try {
+      await withTxn(this.db, (tx) => this.reconcileIncomingInTx(userId, incoming, tx));
+    } catch (error) {
+      const existing = await this.reconciliations.findByIncomingTransactionId(userId, incoming.id);
+      if (existing === null) throw error;
+    }
+  }
+
+  private async reconcileIncomingInTx(
+    userId: string,
+    incoming: Transaction,
+    tx: DbTx
+  ): Promise<void> {
+    const existing = await this.reconciliations.findByIncomingTransactionId(
+      userId,
+      incoming.id,
+      tx
+    );
+    if (existing !== null) return;
+
     const candidates = await this.reconciliations.findUnreconciledRecurringCandidates(
       userId,
       incoming.accountId,
       incoming.occurredAt,
-      RECONCILIATION_WINDOW_DAYS
+      RECONCILIATION_WINDOW_DAYS,
+      tx
     );
     const match = matchIncomingTransaction(
       {
@@ -82,27 +103,25 @@ export class RecurringReconciliationService implements TransactionCreatedHook {
     );
 
     if (match.outcome === "no_match") {
-      await this.tryConfirmExpectedOccurrence(userId, incoming);
+      await this.tryConfirmExpectedOccurrence(userId, incoming, tx);
       return;
     }
 
     if (match.outcome === "auto_matched") {
-      await withTxn(this.db, async (tx) => {
-        await this.reverseInTx(userId, match.recurringTransactionId, tx);
-        await this.reconciliations.create(
-          userId,
-          {
-            incomingTransactionId: incoming.id,
-            recurringRuleId: match.recurringRuleId,
-            recurringTransactionId: match.recurringTransactionId,
-            candidateRecurringTransactionIds: [match.recurringTransactionId],
-            status: "auto_matched"
-          },
-          tx
-        );
-        await this.audit.record(userId, "recurring.reconciliation.auto_matched", incoming.id, tx, {
-          recurringTransactionId: match.recurringTransactionId
-        });
+      await this.reverseInTx(userId, match.recurringTransactionId, tx);
+      await this.reconciliations.create(
+        userId,
+        {
+          incomingTransactionId: incoming.id,
+          recurringRuleId: match.recurringRuleId,
+          recurringTransactionId: match.recurringTransactionId,
+          candidateRecurringTransactionIds: [match.recurringTransactionId],
+          status: "auto_matched"
+        },
+        tx
+      );
+      await this.audit.record(userId, "recurring.reconciliation.auto_matched", incoming.id, tx, {
+        recurringTransactionId: match.recurringTransactionId
       });
       this.logger.log(
         {
@@ -115,30 +134,28 @@ export class RecurringReconciliationService implements TransactionCreatedHook {
       return;
     }
 
-    await withTxn(this.db, async (tx) => {
-      await this.reconciliations.create(
-        userId,
-        {
-          incomingTransactionId: incoming.id,
-          candidateRecurringTransactionIds: match.candidateTransactionIds,
-          status: match.outcome
-        },
-        tx
-      );
-      await this.notifications.enqueue(
-        userId,
-        "recurring_reconciliation_pending",
-        {
-          incomingTransactionId: incoming.id,
-          status: match.outcome,
-          candidateTransactionIds: match.candidateTransactionIds
-        },
-        tx
-      );
-      await this.audit.record(userId, "recurring.reconciliation.flagged", incoming.id, tx, {
+    await this.reconciliations.create(
+      userId,
+      {
+        incomingTransactionId: incoming.id,
+        candidateRecurringTransactionIds: match.candidateTransactionIds,
+        status: match.outcome
+      },
+      tx
+    );
+    await this.notifications.enqueue(
+      userId,
+      "recurring_reconciliation_pending",
+      {
+        incomingTransactionId: incoming.id,
         status: match.outcome,
         candidateTransactionIds: match.candidateTransactionIds
-      });
+      },
+      tx
+    );
+    await this.audit.record(userId, "recurring.reconciliation.flagged", incoming.id, tx, {
+      status: match.outcome,
+      candidateTransactionIds: match.candidateTransactionIds
     });
     this.logger.log(
       {
@@ -166,12 +183,17 @@ export class RecurringReconciliationService implements TransactionCreatedHook {
    * `expected` for the user to link by hand from the transaction detail
    * panel, rather than growing a second review-queue table for this path.
    */
-  private async tryConfirmExpectedOccurrence(userId: string, incoming: Transaction): Promise<void> {
+  private async tryConfirmExpectedOccurrence(
+    userId: string,
+    incoming: Transaction,
+    tx: DbTx
+  ): Promise<void> {
     const candidates = await this.occurrences.findPendingCandidatesForMatching(
       userId,
       incoming.accountId,
       incoming.occurredAt,
-      RECONCILIATION_WINDOW_DAYS
+      RECONCILIATION_WINDOW_DAYS,
+      tx
     );
     const match = matchIncomingTransaction(
       {
@@ -186,23 +208,19 @@ export class RecurringReconciliationService implements TransactionCreatedHook {
     if (match.outcome !== "auto_matched") return;
     const occurrenceId = match.recurringTransactionId;
 
-    const confirmed = await withTxn(this.db, async (tx) => {
-      const attached = await this.transactions.attachToRecurringRule(
-        userId,
-        incoming.id,
-        match.recurringRuleId,
-        tx
-      );
-      if (attached === null) return null;
-      const occurrence = await this.occurrences.confirm(userId, occurrenceId, incoming.id, tx);
-      if (occurrence === null) return null;
-      await this.audit.record(userId, "recurring.occurrence.auto_confirmed", occurrenceId, tx, {
-        ruleId: match.recurringRuleId,
-        transactionId: incoming.id
-      });
-      return occurrence;
+    const attached = await this.transactions.attachToRecurringRule(
+      userId,
+      incoming.id,
+      match.recurringRuleId,
+      tx
+    );
+    if (attached === null) return;
+    const occurrence = await this.occurrences.confirm(userId, occurrenceId, incoming.id, tx);
+    if (occurrence === null) return;
+    await this.audit.record(userId, "recurring.occurrence.auto_confirmed", occurrenceId, tx, {
+      ruleId: match.recurringRuleId,
+      transactionId: incoming.id
     });
-    if (confirmed === null) return;
 
     this.logger.log(
       {

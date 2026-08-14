@@ -46,7 +46,16 @@ describe("RecurringRuleController", () => {
       upcomingExpenseMinor: 50_000,
       upcomingIncomeMinor: 0,
       upcomingNetMinor: -50_000,
-      topSpendingCategory: null
+      topSpendingCategory: null,
+      twelveMonthForecast: {
+        forecastMonths: 12 as const,
+        transactionCount: 12,
+        expenseMinor: 600_000,
+        incomeMinor: 0,
+        netMinor: -600_000,
+        monthlyExpenseAverageMinor: 50_000,
+        ruleProjections: []
+      }
     };
     const stats = { getStats: vi.fn().mockResolvedValue(result) };
     // @ts-expect-error - focused service mocks for unit testing

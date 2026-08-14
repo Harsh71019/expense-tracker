@@ -102,6 +102,40 @@ describe("calculateRecurringStats", () => {
         name: "Housing",
         amountMinor: 250_000,
         transactionCount: 1
+      },
+      twelveMonthForecast: {
+        forecastMonths: 12,
+        transactionCount: 77,
+        expenseMinor: 4_060_000,
+        incomeMinor: 9_600_000,
+        netMinor: 5_540_000,
+        monthlyExpenseAverageMinor: 338_333,
+        ruleProjections: [
+          {
+            recurringRuleId: "3fa85f64-5717-4562-b3fc-2c963f66be11",
+            description: "Rule 3fa85f64-5717-4562-b3fc-2c963f66be11",
+            type: "expense",
+            amountMinor: 250_000,
+            occurrenceCount: 12,
+            projectedMinor: 3_000_000
+          },
+          {
+            recurringRuleId: "3fa85f64-5717-4562-b3fc-2c963f66be12",
+            description: "Rule 3fa85f64-5717-4562-b3fc-2c963f66be12",
+            type: "expense",
+            amountMinor: 20_000,
+            occurrenceCount: 53,
+            projectedMinor: 1_060_000
+          },
+          {
+            recurringRuleId: "3fa85f64-5717-4562-b3fc-2c963f66be13",
+            description: "Rule 3fa85f64-5717-4562-b3fc-2c963f66be13",
+            type: "income",
+            amountMinor: 800_000,
+            occurrenceCount: 12,
+            projectedMinor: 9_600_000
+          }
+        ]
       }
     });
   });
@@ -110,6 +144,15 @@ describe("calculateRecurringStats", () => {
     const empty = calculateRecurringStats([], [], NOW);
     expect(empty.topSpendingCategory).toBeNull();
     expect(empty.upcomingNetMinor).toBe(0);
+    expect(empty.twelveMonthForecast).toEqual({
+      forecastMonths: 12,
+      transactionCount: 0,
+      expenseMinor: 0,
+      incomeMinor: 0,
+      netMinor: 0,
+      monthlyExpenseAverageMinor: 0,
+      ruleProjections: []
+    });
 
     const stats = calculateRecurringStats(
       [
@@ -127,6 +170,52 @@ describe("calculateRecurringStats", () => {
       name: "Uncategorized",
       amountMinor: 2_000,
       transactionCount: 2
+    });
+  });
+
+  it("uses a half-open twelve-month window and excludes paused rules", () => {
+    const stats = calculateRecurringStats(
+      [
+        rule("3fa85f64-5717-4562-b3fc-2c963f66be31", {
+          type: "expense",
+          amountMinor: 1_999,
+          rrule: "FREQ=YEARLY",
+          nextRunAt: NOW
+        }),
+        rule("3fa85f64-5717-4562-b3fc-2c963f66be32", {
+          type: "expense",
+          amountMinor: 99_999,
+          rrule: "FREQ=DAILY",
+          nextRunAt: NOW,
+          isPaused: true
+        })
+      ],
+      [],
+      NOW
+    );
+
+    expect(stats.twelveMonthForecast.transactionCount).toBe(1);
+    expect(stats.twelveMonthForecast.expenseMinor).toBe(1_999);
+    expect(stats.twelveMonthForecast.ruleProjections).toHaveLength(1);
+  });
+
+  it("projects from now when a stored next run is stale", () => {
+    const stats = calculateRecurringStats(
+      [
+        rule("3fa85f64-5717-4562-b3fc-2c963f66be41", {
+          type: "expense",
+          amountMinor: 2_500,
+          rrule: "FREQ=MONTHLY;BYMONTHDAY=5",
+          nextRunAt: new Date("2020-01-05T00:00:00.000Z")
+        })
+      ],
+      [],
+      NOW
+    );
+
+    expect(stats.twelveMonthForecast.ruleProjections[0]).toMatchObject({
+      occurrenceCount: 12,
+      projectedMinor: 30_000
     });
   });
 });

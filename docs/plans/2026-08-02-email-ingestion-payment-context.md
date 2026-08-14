@@ -64,23 +64,28 @@ The current transaction contract accepts:
 
 The server derives `source` from authentication. An API key produces `source: "api"`; callers cannot choose or spoof the source or `userId`.
 
-After a new API-sourced transaction commits, `TransactionService` invokes `RecurringReconciliationService`. The current matcher searches already-materialized recurring transactions using:
+During creation of a new API-sourced transaction, `TransactionService` invokes
+`RecurringReconciliationService` inside the same Postgres transaction. The matcher searches
+already-materialized recurring transactions using:
 
 - same account;
 - same transaction type;
 - occurrence date within three calendar days; and
-- exact amount for automatic matching.
+- a shared mandate/reference token, or a strong normalized-counterparty match plus exact amount,
+  for automatic matching.
 
 Outcomes are:
 
 | Match result                                | Current behavior                                                      |
 | ------------------------------------------- | --------------------------------------------------------------------- |
 | No candidate                                | Keep the incoming transaction; no reconciliation row                  |
-| One exact candidate                         | Reverse the scheduled recurring transaction and record `auto_matched` |
-| Multiple exact candidates                   | Record `ambiguous` and notify for review                              |
+| One merchant-confirmed exact candidate      | Reverse the scheduled recurring transaction and record `auto_matched` |
+| Amount/date only or multiple candidates     | Record `ambiguous` and notify for review                              |
 | Same account/type/date but different amount | Record `amount_mismatch` and notify for review                        |
 
-This means the basic email-to-recurring flow already works without changing `POST /api/v1/transactions`.
+The 01:15 IST worker recovery sweep replays recent unreconciled API transactions after the 01:00
+materializer. This covers email-before-materialization ordering and historical hook failures
+without changing `POST /api/v1/transactions`.
 
 ## End-to-end flow
 
@@ -90,8 +95,8 @@ flowchart TD
     N8N -->|"declined, pending, unmatched"| Skip["Skip and record reason"]
     N8N -->|"completed monetary event"| Validate["Validate account, integer amount, date, and direction"]
     Validate --> API["POST /api/v1/transactions with Idempotency-Key"]
-    API --> Ledger["Append transaction, balance delta, and audit in withTxn"]
-    Ledger --> Hook["Recurring reconciliation hook"]
+    API --> Ledger["Append transaction, balance delta, audit, and reconciliation in one withTxn"]
+    Ledger --> Hook["Recurring reconciliation"]
     Hook --> Candidate{"Expected recurring candidate?"}
     Candidate -->|"one clean match"| Auto["Reverse placeholder and record auto_matched"]
     Candidate -->|"ambiguous or amount changed"| Review["Create review item and outbox notification"]
@@ -541,7 +546,11 @@ The Anthropic e-mandate-paid template's `Amount: USD 23.60` is real evidence tha
 
 ### Net answer
 
-All three pieces are additive and backward compatible: the mandate-matching tier-0 check can ship today with a one-line query change and zero migrations (using the already-merged normalizer); Stage C's persisted evidence table remains an optional upgrade if free-text matching proves fragile; and the foreign-currency confirm flow is a new, small, isolated table + two endpoints that never touches the existing `transactions` write path except through the same `TransactionService.create` every other source already goes through. No existing request shape, response shape, row, or matcher outcome for current data changes.
+All three pieces are additive and API-shape backward compatible: the mandate matcher and
+counterparty ranking need no migration; Stage C's persisted evidence table remains optional; and
+the foreign-currency confirm flow reaches the ledger only through `TransactionService.create`.
+Matcher behavior is intentionally safer: amount/date-only evidence now produces review instead of
+an automatic reversal.
 
 ## Implemented — 2026-08-02
 
@@ -551,4 +560,23 @@ Both the mandate-matching tier-0 check (Question 2) and the pending-transactions
 - **Pending-transactions confirm flow**: new `apps/api/src/pending-transactions/` module (repository/service/mutation-service/controller/module), `pending_transactions` table (migration `0019_short_kree.sql`, additive-only), shared schemas in `packages/shared/src/pending-transaction.ts`. `POST /v1/pending-transactions` reuses the existing `transactions: ["write"]` scope rather than minting a new one (same n8n key, no ledger effect); `GET /`, `POST /:id/confirm`, `POST /:id/dismiss` are session-only by omitting `@RequireScopes` (confirmed via `auth.guard.ts` that this hard-rejects Bearer callers rather than silently allowing them). `confirm` deliberately bypasses the generic `IdempotencyPostgresService` wrapper and calls `TransactionService.create()` directly with the request's `Idempotency-Key` — the same pattern `TransactionController.create` already uses — since wrapping it in a second outer transaction would open an unrelated, non-nested Postgres transaction around the ledger write rather than composing with it. Minimal web UI added at `apps/web/src/features/pending-transactions/`, mirroring the existing recurring-reconciliation review panel, mounted on the transactions page.
 - Not implemented: the zero-code n8n `classify()` skip-reason fallback, and Stage C's persisted `transaction_payment_evidence` table — both remain as designed above, not needed yet.
 
-n8n's own `classify()` regex changes (capturing VPA/UPI-ref/SI-Hub-ID, embedding the `mandate:` token convention, and the new foreign-currency skip reason) are a deliberate follow-up, done outside this repo.
+The n8n workflow remains a deployment artifact rather than an API module; its sanitized Code-node
+sources are versioned under `n8n/`, while credentials, account mappings, and internal URLs stay in
+n8n variables. Parser changes must be deployed to n8n together with the backend release.
+
+## Implemented — 2026-08-14
+
+- API-key transaction creation now runs recurring reconciliation inside the same `withTxn` as the
+  incoming insert, account balance delta, and audit row. A reconciliation error rolls everything
+  back so n8n can safely retry its source-message idempotency key.
+- Automatic fallback matching requires exact amount plus a strong normalized-counterparty match.
+  Shared mandate/reference remains the strongest tier; amount/date-only candidates are review-only.
+- `recurring.reconciliation-sweep` runs worker-only at 01:15 IST and retries recent unreconciled
+  API transactions after the 01:00 materializer. System discovery returns each owning `userId`;
+  all matching and mutations remain tenant-scoped.
+- The local n8n paid e-mandate parser accepts both `Mandate ID` and `SI Hub ID`, while an upcoming
+  e-mandate remains a skipped non-money event.
+- Recurring stats now include a rolling, half-open 12-month projection computed from each active
+  RRULE. The web page surfaces the total recurring expense, monthly equivalent, scheduled charge
+  count, and every expense rule's projected annual cost; paused rules and one-off spending are
+  explicitly excluded.

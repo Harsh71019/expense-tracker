@@ -10,6 +10,7 @@ import { RecurringOccurrenceService } from "./recurring-occurrence.service.js";
 import { RecurringReconciliationController } from "./recurring-reconciliation.controller.js";
 import { RecurringReconciliationRepository } from "./recurring-reconciliation.repository.js";
 import { RecurringReconciliationService } from "./recurring-reconciliation.service.js";
+import { RecurringReconciliationSweepService } from "./recurring-reconciliation-sweep.service.js";
 import { RecurringRuleController } from "./recurring-rule.controller.js";
 import { RecurringRuleRepository } from "./recurring-rule.repository.js";
 import { RecurringRuleService } from "./recurring-rule.service.js";
@@ -32,7 +33,8 @@ import { RecurringStatsService } from "./recurring-stats.service.js";
     RecurringOccurrenceService,
     RecurringMaterializeService,
     RecurringReconciliationRepository,
-    RecurringReconciliationService
+    RecurringReconciliationService,
+    RecurringReconciliationSweepService
   ],
   exports: [RecurringRuleRepository, RecurringReconciliationService, RecurringOccurrenceService]
 })

@@ -352,6 +352,7 @@ export type {
   UploadImportMetadata
 } from "./import.js";
 export {
+  divideMinorAmount,
   formatMinor,
   formatMinorInput,
   formatSignedCompactMinor,

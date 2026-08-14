@@ -94,7 +94,16 @@ const stats: RecurringStats = {
   upcomingExpenseMinor: rule.template.amountMinor,
   upcomingIncomeMinor: 0,
   upcomingNetMinor: -rule.template.amountMinor,
-  topSpendingCategory: null
+  topSpendingCategory: null,
+  twelveMonthForecast: {
+    forecastMonths: 12,
+    transactionCount: 12,
+    expenseMinor: 3_000_000,
+    incomeMinor: 0,
+    netMinor: -3_000_000,
+    monthlyExpenseAverageMinor: 250_000,
+    ruleProjections: []
+  }
 };
 
 describe("RecurringManager", () => {

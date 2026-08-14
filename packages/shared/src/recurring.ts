@@ -140,10 +140,29 @@ export const RecurringRuleSchema = z.object({
   updatedAt: z.coerce.date()
 });
 
+const RecurringRuleProjectionSchema = z.object({
+  recurringRuleId: RecurringRuleIdSchema,
+  description: RecurringRuleTemplateSchema.shape.description,
+  type: RecurringRuleTemplateSchema.shape.type,
+  amountMinor: RecurringRuleTemplateSchema.shape.amountMinor,
+  occurrenceCount: z.number().int().min(0),
+  projectedMinor: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER)
+});
+
+const RecurringTwelveMonthForecastSchema = z.object({
+  forecastMonths: z.literal(12),
+  transactionCount: z.number().int().min(0),
+  expenseMinor: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER),
+  incomeMinor: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER),
+  netMinor: z.number().int().min(-Number.MAX_SAFE_INTEGER).max(Number.MAX_SAFE_INTEGER),
+  monthlyExpenseAverageMinor: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER),
+  ruleProjections: z.array(RecurringRuleProjectionSchema)
+});
+
 /**
- * A live read model for the recurring page. Forecast amounts cover the next
- * 30 rolling days so rules with different frequencies can be compared on the
- * same time horizon.
+ * A live read model for the recurring page. The short forecast covers the
+ * next 30 rolling days; the annual view projects every active rule over a
+ * half-open 12-month window so different frequencies remain comparable.
  */
 export const RecurringStatsSchema = z.object({
   forecastDays: z.literal(30),
@@ -154,7 +173,8 @@ export const RecurringStatsSchema = z.object({
   upcomingExpenseMinor: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER),
   upcomingIncomeMinor: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER),
   upcomingNetMinor: z.number().int().min(-Number.MAX_SAFE_INTEGER).max(Number.MAX_SAFE_INTEGER),
-  topSpendingCategory: TopSpendingCategorySchema.nullable()
+  topSpendingCategory: TopSpendingCategorySchema.nullable(),
+  twelveMonthForecast: RecurringTwelveMonthForecastSchema
 });
 
 export type RecurringRuleId = z.infer<typeof RecurringRuleIdSchema>;

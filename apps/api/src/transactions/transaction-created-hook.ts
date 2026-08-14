@@ -1,5 +1,7 @@
 import type { Transaction } from "@treasury-ops/shared";
 
+import type { DbTx } from "../common/db/db-txn.js";
+
 /**
  * A DI seam so `TransactionService` can notify the recurring reconciliation
  * flow about freshly-created API-sourced transactions without importing
@@ -13,5 +15,5 @@ import type { Transaction } from "@treasury-ops/shared";
 export const TRANSACTION_CREATED_HOOK = Symbol("TRANSACTION_CREATED_HOOK");
 
 export interface TransactionCreatedHook {
-  onTransactionCreated(userId: string, transaction: Transaction): Promise<void>;
+  onTransactionCreatedInTx(userId: string, transaction: Transaction, tx: DbTx): Promise<void>;
 }

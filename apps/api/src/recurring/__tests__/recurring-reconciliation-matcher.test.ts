@@ -24,7 +24,7 @@ function candidate(overrides: Partial<RecurringCandidate> = {}): RecurringCandid
 }
 
 describe("matchIncomingTransaction", () => {
-  it("auto-matches a unique same-account, same-amount, in-window candidate", () => {
+  it("keeps an amount-only match for review when the counterparties conflict", () => {
     const result = matchIncomingTransaction(
       {
         accountId: ACCOUNT_ID,
@@ -36,9 +36,8 @@ describe("matchIncomingTransaction", () => {
       [candidate()]
     );
     expect(result).toEqual({
-      outcome: "auto_matched",
-      recurringTransactionId: "33333333-3333-4333-8333-333333333333",
-      recurringRuleId: RULE_ID
+      outcome: "ambiguous",
+      candidateTransactionIds: ["33333333-3333-4333-8333-333333333333"]
     });
   });
 
@@ -53,7 +52,7 @@ describe("matchIncomingTransaction", () => {
       },
       [candidate({ occurredAt: new Date("2026-08-01T00:00:00.000Z") })]
     );
-    expect(result.outcome).toBe("auto_matched");
+    expect(result.outcome).toBe("ambiguous");
   });
 
   it("flags two equally-good same-amount candidates as ambiguous", () => {
@@ -170,6 +169,108 @@ describe("matchIncomingTransaction", () => {
     });
   });
 
+  it("auto-matches the HDFC paid-email merchant to a normalized recurring description", () => {
+    const result = matchIncomingTransaction(
+      {
+        accountId: ACCOUNT_ID,
+        type: "expense",
+        amountMinor: 199_900,
+        occurredAt: new Date("2026-08-12T12:30:00.000Z"),
+        description: "CARD/DR/EMANDATE/OpenAILLC/mandate:testMandate123"
+      },
+      [
+        candidate({
+          amountMinor: 199_900,
+          occurredAt: new Date("2026-08-12T00:00:00.000Z"),
+          templateDescription: "OpenAI"
+        })
+      ]
+    );
+
+    expect(result).toEqual({
+      outcome: "auto_matched",
+      recurringTransactionId: "33333333-3333-4333-8333-333333333333",
+      recurringRuleId: RULE_ID
+    });
+  });
+
+  it("uses the HDFC merchant to disambiguate two equal subscription amounts", () => {
+    const result = matchIncomingTransaction(
+      {
+        accountId: ACCOUNT_ID,
+        type: "expense",
+        amountMinor: 199_900,
+        occurredAt: new Date("2026-08-12T12:30:00.000Z"),
+        description: "CARD/DR/EMANDATE/OpenAILLC/mandate:testMandate123"
+      },
+      [
+        candidate({
+          amountMinor: 199_900,
+          occurredAt: new Date("2026-08-12T00:00:00.000Z"),
+          templateDescription: "OpenAI"
+        }),
+        candidate({
+          transactionId: "44444444-4444-4444-8444-444444444444",
+          ruleId: OTHER_RULE_ID,
+          amountMinor: 199_900,
+          occurredAt: new Date("2026-08-12T00:00:00.000Z"),
+          templateDescription: "YouTube Premium"
+        })
+      ]
+    );
+
+    expect(result).toEqual({
+      outcome: "auto_matched",
+      recurringTransactionId: "33333333-3333-4333-8333-333333333333",
+      recurringRuleId: RULE_ID
+    });
+  });
+
+  it("does not treat a shared generic subscription word as merchant identity", () => {
+    const result = matchIncomingTransaction(
+      {
+        accountId: ACCOUNT_ID,
+        type: "expense",
+        amountMinor: 199_900,
+        occurredAt: new Date("2026-08-12T12:30:00.000Z"),
+        description: "CARD/DR/EMANDATE/Different Merchant/subscription"
+      },
+      [
+        candidate({
+          amountMinor: 199_900,
+          occurredAt: new Date("2026-08-12T00:00:00.000Z"),
+          templateDescription: "Netflix subscription"
+        })
+      ]
+    );
+
+    expect(result).toEqual({
+      outcome: "ambiguous",
+      candidateTransactionIds: ["33333333-3333-4333-8333-333333333333"]
+    });
+  });
+
+  it("does not let a matching mandate reference bypass the occurrence window", () => {
+    const result = matchIncomingTransaction(
+      {
+        accountId: ACCOUNT_ID,
+        type: "expense",
+        amountMinor: 199_900,
+        occurredAt: new Date("2026-08-12T00:00:00.000Z"),
+        description: "CARD/DR/EMANDATE/OpenAI/mandate:testMandate123"
+      },
+      [
+        candidate({
+          amountMinor: 199_900,
+          occurredAt: new Date("2026-07-12T00:00:00.000Z"),
+          templateDescription: "OpenAI mandate:testMandate123"
+        })
+      ]
+    );
+
+    expect(result).toEqual({ outcome: "no_match" });
+  });
+
   it("flags two candidates sharing the same mandate reference token as ambiguous", () => {
     const result = matchIncomingTransaction(
       {
@@ -201,7 +302,7 @@ describe("matchIncomingTransaction", () => {
     });
   });
 
-  it("falls back to amount/window matching when descriptions share no reference token", () => {
+  it("keeps amount/window evidence for review when descriptions share no reference token", () => {
     const result = matchIncomingTransaction(
       {
         accountId: ACCOUNT_ID,
@@ -212,6 +313,9 @@ describe("matchIncomingTransaction", () => {
       },
       [candidate({ amountMinor: 200_000, templateDescription: "Netflix (mandate:XYp7DcGXwW)" })]
     );
-    expect(result.outcome).toBe("auto_matched");
+    expect(result).toEqual({
+      outcome: "ambiguous",
+      candidateTransactionIds: ["33333333-3333-4333-8333-333333333333"]
+    });
   });
 });

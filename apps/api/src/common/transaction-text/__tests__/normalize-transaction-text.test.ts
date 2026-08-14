@@ -98,6 +98,16 @@ describe("normalizeTransactionText", () => {
         directionHint: "debit"
       });
     });
+
+    it("separates an HDFC e-mandate reference from the merchant", () => {
+      const result = normalizeTransactionText("CARD/DR/EMANDATE/OpenAILLC/mandate:testMandate123");
+      expect(result).toMatchObject({
+        counterpartyKey: "openaillc",
+        paymentRail: "card",
+        directionHint: "debit",
+        referenceTokens: [{ kind: "other", value: "testmandate123" }]
+      });
+    });
   });
 
   it("detects fee and refund hints without inferring transaction type", () => {

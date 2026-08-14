@@ -7,12 +7,12 @@ const FORMAT_PATTERNS: Record<
   { regex: RegExp; toParts: (match: RegExpExecArray) => DateParts }
 > = {
   "DD/MM/YYYY": {
-    regex: /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/,
-    toParts: (match) => ({ day: toInt(match[1]), month: toInt(match[2]), year: toInt(match[3]) })
+    regex: /^(\d{1,2})\/(\d{1,2})\/(\d{4}|\d{2})$/,
+    toParts: (match) => ({ day: toInt(match[1]), month: toInt(match[2]), year: toYear(match[3]) })
   },
   "MM/DD/YYYY": {
-    regex: /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/,
-    toParts: (match) => ({ month: toInt(match[1]), day: toInt(match[2]), year: toInt(match[3]) })
+    regex: /^(\d{1,2})\/(\d{1,2})\/(\d{4}|\d{2})$/,
+    toParts: (match) => ({ month: toInt(match[1]), day: toInt(match[2]), year: toYear(match[3]) })
   },
   "YYYY-MM-DD": {
     regex: /^(\d{4})-(\d{1,2})-(\d{1,2})$/,
@@ -28,6 +28,11 @@ const FORMAT_PATTERNS: Record<
  * Rejects anything that isn't a real calendar date (e.g. 30/02/2026) rather
  * than silently rolling it over to March, which is what `new Date(...)` does
  * by default.
+ *
+ * The `.../YYYY` slash formats also accept a 2-digit year (some bank exports
+ * write "26" instead of "2026") and always expand it into the 2000s — this
+ * app only ever imports recent bank statements, never 1900s records, so
+ * there's no century-pivot ambiguity worth guessing at.
  *
  * The returned Date is UTC midnight of that calendar day. Bank-statement
  * dates carry no time component, and UTC midnight of day D always renders
@@ -65,4 +70,9 @@ function toInt(value: string | undefined): number {
     throw new RangeError("Date component is missing.");
   }
   return Number.parseInt(value, 10);
+}
+
+function toYear(value: string | undefined): number {
+  const year = toInt(value);
+  return value?.length === 2 ? 2000 + year : year;
 }

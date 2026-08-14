@@ -54,4 +54,26 @@ describe("parseExplicitDate", () => {
     const date = parseExplicitDate("  04/07/2026  ", "DD/MM/YYYY");
     expect(date.toISOString()).toBe("2026-07-04T00:00:00.000Z");
   });
+
+  it("accepts a 2-digit year under DD/MM/YYYY and expands it into the 2000s", () => {
+    const date = parseExplicitDate("01/08/26", "DD/MM/YYYY");
+    expect(date.toISOString()).toBe("2026-08-01T00:00:00.000Z");
+  });
+
+  it("accepts a 2-digit year under MM/DD/YYYY and expands it into the 2000s", () => {
+    const date = parseExplicitDate("08/01/26", "MM/DD/YYYY");
+    expect(date.toISOString()).toBe("2026-08-01T00:00:00.000Z");
+  });
+
+  it("still rejects a 2-digit year under YYYY-MM-DD — that format's year is always written in full", () => {
+    expect(() => parseExplicitDate("26-08-01", "YYYY-MM-DD")).toThrow(RangeError);
+  });
+
+  it("rejects a 3-digit year as ambiguous rather than guessing", () => {
+    expect(() => parseExplicitDate("01/08/026", "DD/MM/YYYY")).toThrow(RangeError);
+  });
+
+  it("still rejects a non-existent calendar date with a 2-digit year", () => {
+    expect(() => parseExplicitDate("30/02/26", "DD/MM/YYYY")).toThrow(RangeError);
+  });
 });

@@ -1,6 +1,6 @@
 import type { HttpHandler } from "msw";
 
-import { findAccount, type GoalDto } from "../data/store";
+import { findAccount, type GoalContributionDto, type GoalDto } from "../data/store";
 import { mockProblem } from "../data/problem";
 import type { MockHttp, MockStore } from "./types";
 
@@ -8,6 +8,19 @@ function liveGoal(store: MockStore, goal: GoalDto): GoalDto {
   if (goal.fundingMode === "linked_account" && goal.linkedAccountId !== undefined) {
     const account = findAccount(store, goal.linkedAccountId);
     const progressMinor = account === undefined ? 0 : account.balanceMinor - goal.startedMinor;
+    return {
+      ...goal,
+      progressMinor,
+      status:
+        goal.status === "active" && progressMinor >= goal.targetMinor ? "achieved" : goal.status
+    };
+  }
+  if (goal.fundingMode === "manual_envelope") {
+    const contributions = store.goalContributions.filter((c) => c.goalId === goal.id);
+    const progressMinor = contributions.reduce(
+      (total, c) => total + (c.type === "deposit" ? c.amountMinor : -c.amountMinor),
+      0
+    );
     return {
       ...goal,
       progressMinor,
@@ -80,7 +93,9 @@ export function goalHandlers(http: MockHttp, store: MockStore): HttpHandler[] {
         fundingMode: body.fundingMode,
         ...(body.fundingMode === "linked_account"
           ? { linkedAccountId: body.linkedAccountId }
-          : { tag: body.tag }),
+          : body.fundingMode === "tagged"
+            ? { tag: body.tag }
+            : {}),
         priority: store.goals.length,
         status: "active",
         startedMinor: account?.balanceMinor ?? 0,
@@ -185,6 +200,52 @@ export function goalHandlers(http: MockHttp, store: MockStore): HttpHandler[] {
         requiredMonthlyMinor: null,
         projectedCompletionDate: null
       });
+    }),
+
+    http.get("/v1/goals/{goalId}/contributions", ({ params, response }) => {
+      const goal = findGoal(store, params.goalId);
+      if (goal === undefined) {
+        return response(404).json(mockProblem(404, "common.not_found", "Goal not found."));
+      }
+      const contributions = store.goalContributions
+        .filter((c) => c.goalId === params.goalId)
+        .sort(
+          (a, b) => new Date(b.occurredAt ?? "").getTime() - new Date(a.occurredAt ?? "").getTime()
+        );
+      return response(200).json(contributions);
+    }),
+
+    http.post("/v1/goals/{goalId}/contributions", async ({ params, request, response }) => {
+      const key = request.headers.get("Idempotency-Key") ?? "";
+      const replay = store.idempotency.goals.get(key);
+      if (replay !== undefined) {
+        return response(200).json(replay, { headers: { "Idempotency-Replayed": "true" } });
+      }
+      const goal = findGoal(store, params.goalId);
+      if (goal === undefined) {
+        return response(404).json(mockProblem(404, "common.not_found", "Goal not found."));
+      }
+      const body = await request.json();
+      if (body === undefined) {
+        return response(422).json(
+          mockProblem(422, "common.validation_failed", "Request body is required.")
+        );
+      }
+      const now = new Date().toISOString();
+      const contribution: GoalContributionDto = {
+        id: store.nextGoalContributionId(),
+        userId: store.profile.userId,
+        goalId: goal.id,
+        type: body.type,
+        amountMinor: body.amountMinor,
+        ...(body.note === undefined ? {} : { note: body.note }),
+        occurredAt: body.occurredAt ?? now,
+        createdAt: now
+      };
+      store.goalContributions.push(contribution);
+      const live = liveGoal(store, goal);
+      store.idempotency.goals.set(key, live);
+      return response(200).json(live);
     })
   ];
 }

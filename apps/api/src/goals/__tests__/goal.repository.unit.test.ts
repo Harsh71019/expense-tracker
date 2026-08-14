@@ -125,4 +125,60 @@ describe("GoalRepository Unit Tests", () => {
     const res = await repo.markAchieved("u1", sampleGoalRow.id, mockDb);
     expect(res).toBe(true);
   });
+
+  it("createContribution inserts contribution", async () => {
+    const sampleContributionRow = {
+      id: "123e4567-e89b-12d3-a456-426614174001",
+      userId: "u1",
+      goalId: sampleGoalRow.id,
+      type: "deposit",
+      amountMinor: 50000,
+      note: "Cash deposit",
+      occurredAt: new Date(),
+      createdAt: new Date()
+    };
+    const mockDb = createMockDrizzleDb([sampleContributionRow]);
+    const repo = new GoalRepository(mockDb);
+
+    const res = await repo.createContribution(
+      "u1",
+      sampleGoalRow.id,
+      {
+        type: "deposit",
+        amountMinor: 50000,
+        note: "Cash deposit"
+      },
+      // @ts-expect-error mock tx
+      mockDb
+    );
+    expect(res.id).toBe("123e4567-e89b-12d3-a456-426614174001");
+    expect(res.amountMinor).toBe(50000);
+  });
+
+  it("listContributions returns contributions ordered", async () => {
+    const sampleContributionRow = {
+      id: "123e4567-e89b-12d3-a456-426614174001",
+      userId: "u1",
+      goalId: sampleGoalRow.id,
+      type: "deposit",
+      amountMinor: 50000,
+      note: "Cash deposit",
+      occurredAt: new Date(),
+      createdAt: new Date()
+    };
+    const mockDb = createMockDrizzleDb([sampleContributionRow]);
+    const repo = new GoalRepository(mockDb);
+
+    const res = await repo.listContributions("u1", sampleGoalRow.id);
+    expect(res).toHaveLength(1);
+    expect(res[0]?.id).toBe("123e4567-e89b-12d3-a456-426614174001");
+  });
+
+  it("sumManualContributions returns summed minor amount", async () => {
+    const mockDb = createMockDrizzleDb([{ total: "75000" }]);
+    const repo = new GoalRepository(mockDb);
+
+    const res = await repo.sumManualContributions("u1", sampleGoalRow.id);
+    expect(res).toBe(75000);
+  });
 });

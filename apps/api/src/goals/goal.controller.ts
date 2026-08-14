@@ -11,12 +11,14 @@ import {
   Res
 } from "@nestjs/common";
 import {
+  CreateGoalContributionSchema,
   CreateGoalSchema,
   GoalIdSchema,
   ListGoalsQuerySchema,
   ReorderGoalsSchema,
   UpdateGoalSchema,
   type Goal,
+  type GoalContribution,
   type GoalPlan
 } from "@treasury-ops/shared";
 import type { Response } from "express";
@@ -110,6 +112,32 @@ export class GoalController {
       IdempotencyKeySchema.parse(key)
     );
     if (result.replayed) response.setHeader("Idempotency-Replayed", "true");
+  }
+
+  @Post(":goalId/contributions")
+  async recordContribution(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("goalId") goalId: string,
+    @Body() body: unknown,
+    @Headers("idempotency-key") key: string | undefined,
+    @Res({ passthrough: true }) response: Response
+  ): Promise<Goal> {
+    const result = await this.mutations.recordContribution(
+      user.id,
+      GoalIdSchema.parse(goalId),
+      CreateGoalContributionSchema.parse(body),
+      IdempotencyKeySchema.parse(key)
+    );
+    if (result.replayed) response.setHeader("Idempotency-Replayed", "true");
+    return result.result;
+  }
+
+  @Get(":goalId/contributions")
+  listContributions(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("goalId") goalId: string
+  ): Promise<GoalContribution[]> {
+    return this.goals.listContributions(user.id, GoalIdSchema.parse(goalId));
   }
 
   @Get(":goalId/plan")

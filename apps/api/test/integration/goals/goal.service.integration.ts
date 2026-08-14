@@ -49,7 +49,8 @@ describe("GoalService", () => {
       "goal-unique",
       "goal-reorder",
       "goal-idempotent",
-      "goal-cron"
+      "goal-cron",
+      "goal-manual"
     ]) {
       await insertTestUser(testDb.db, userId);
     }
@@ -342,6 +343,72 @@ describe("GoalService", () => {
       name: "Tiny Goal",
       targetMinor: 100_000
     });
+  });
+
+  it("tracks manual envelope contributions with independent deposits and withdrawals", async () => {
+    const goal = await service.create("goal-manual", {
+      name: "Cash Envelope",
+      targetMinor: 100_000,
+      fundingMode: "manual_envelope"
+    });
+    expect(goal.fundingMode).toBe("manual_envelope");
+    expect(goal.progressMinor).toBe(0);
+
+    // Deposit 400
+    const withDeposit = await service.recordContribution("goal-manual", goal.id, {
+      type: "deposit",
+      amountMinor: 40_000,
+      note: "Cash gift"
+    });
+    expect(withDeposit.progressMinor).toBe(40_000);
+
+    // Deposit 300
+    await service.recordContribution("goal-manual", goal.id, {
+      type: "deposit",
+      amountMinor: 30_000,
+      note: "Weekly savings"
+    });
+
+    // Withdraw 100
+    const withWithdrawal = await service.recordContribution("goal-manual", goal.id, {
+      type: "withdrawal",
+      amountMinor: 10_000,
+      note: "Small cash spend"
+    });
+    expect(withWithdrawal.progressMinor).toBe(60_000);
+
+    // List contributions
+    const history = await service.listContributions("goal-manual", goal.id);
+    expect(history).toHaveLength(3);
+    expect(history[0]?.type).toBe("withdrawal");
+    expect(history[0]?.amountMinor).toBe(10_000);
+
+    // Idempotent contribution mutation
+    const key = "11111111-2222-3333-4444-555555555555";
+    const mutationFirst = await mutations.recordContribution(
+      "goal-manual",
+      goal.id,
+      { type: "deposit", amountMinor: 40_000, note: "Final push" },
+      key
+    );
+    expect(mutationFirst.replayed).toBe(false);
+    expect(mutationFirst.result.progressMinor).toBe(100_000);
+
+    const mutationReplayed = await mutations.recordContribution(
+      "goal-manual",
+      goal.id,
+      { type: "deposit", amountMinor: 40_000, note: "Final push" },
+      key
+    );
+    expect(mutationReplayed.replayed).toBe(true);
+    expect(mutationReplayed.result.progressMinor).toBe(100_000);
+
+    // Verify audit log entry was written
+    const auditEntries = await testDb.db
+      .select()
+      .from(auditLog)
+      .where(and(eq(auditLog.userId, "goal-manual"), eq(auditLog.action, "goal.contribute")));
+    expect(auditEntries.length).toBeGreaterThanOrEqual(4);
   });
 
   async function createAccount(

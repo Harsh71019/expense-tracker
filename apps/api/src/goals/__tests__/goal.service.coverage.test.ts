@@ -386,14 +386,140 @@ describe("GoalService progress and plans", () => {
   });
 });
 
+describe("GoalService contributions and manual envelope", () => {
+  const MANUAL_GOAL: StoredGoal = {
+    ...TAGGED_GOAL,
+    fundingMode: "manual_envelope",
+    tag: undefined,
+    linkedAccountId: undefined
+  };
+
+  it("creates a manual_envelope goal without accounts or tags", async () => {
+    const goals = {
+      nextPriority: vi.fn().mockResolvedValue(1),
+      create: vi.fn().mockResolvedValue(MANUAL_GOAL),
+      sumManualContributions: vi.fn().mockResolvedValue(15_000)
+    };
+    const context = createService({ goals });
+
+    await expect(
+      context.service.create("u1", {
+        name: "Cash Fund",
+        targetMinor: 50_000,
+        fundingMode: "manual_envelope"
+      })
+    ).resolves.toMatchObject({
+      id: GOAL_ID,
+      fundingMode: "manual_envelope",
+      progressMinor: 15_000
+    });
+  });
+
+  it("computes manual envelope progress by summing contributions", async () => {
+    const goals = {
+      sumManualContributions: vi.fn().mockResolvedValue(35_000)
+    };
+    const context = createService({ goals });
+
+    await expect(context.service.getProgress("u1", MANUAL_GOAL)).resolves.toBe(35_000);
+    expect(goals.sumManualContributions).toHaveBeenCalledWith("u1", GOAL_ID, undefined);
+  });
+
+  it("records a deposit contribution and updates progress", async () => {
+    const contribution = {
+      id: "cont-1",
+      userId: "u1",
+      goalId: GOAL_ID,
+      type: "deposit" as const,
+      amountMinor: 10_000,
+      note: "Cash savings",
+      occurredAt: NOW,
+      createdAt: NOW
+    };
+    const goals = {
+      findById: vi.fn().mockResolvedValue(MANUAL_GOAL),
+      createContribution: vi.fn().mockResolvedValue(contribution),
+      sumManualContributions: vi.fn().mockResolvedValue(10_000)
+    };
+    const context = createService({ goals });
+
+    const result = await context.service.recordContribution("u1", GOAL_ID, {
+      type: "deposit",
+      amountMinor: 10_000,
+      note: "Cash savings"
+    });
+
+    expect(result).toMatchObject({ id: GOAL_ID, progressMinor: 10_000 });
+    expect(goals.createContribution).toHaveBeenCalledWith(
+      "u1",
+      GOAL_ID,
+      expect.objectContaining({ type: "deposit", amountMinor: 10_000 }),
+      context.tx
+    );
+    expect(context.audit.record).toHaveBeenCalledWith(
+      "u1",
+      "goal.contribute",
+      GOAL_ID,
+      context.tx,
+      expect.objectContaining({ type: "deposit", amountMinor: 10_000 })
+    );
+  });
+
+  it("rejects recording contributions on non-manual or inactive goals", async () => {
+    const taggedContext = createService({
+      goals: { findById: vi.fn().mockResolvedValue(TAGGED_GOAL) }
+    });
+    await expect(
+      taggedContext.service.recordContribution("u1", GOAL_ID, {
+        type: "deposit",
+        amountMinor: 1_000
+      })
+    ).rejects.toThrow("Contributions can only be recorded on manual envelope goals.");
+
+    const inactiveContext = createService({
+      goals: { findById: vi.fn().mockResolvedValue({ ...MANUAL_GOAL, status: "abandoned" }) }
+    });
+    await expect(
+      inactiveContext.service.recordContribution("u1", GOAL_ID, {
+        type: "deposit",
+        amountMinor: 1_000
+      })
+    ).rejects.toThrow("Cannot record contributions on inactive goals.");
+  });
+
+  it("lists contributions for a goal", async () => {
+    const contributionList = [
+      {
+        id: "cont-1",
+        userId: "u1",
+        goalId: GOAL_ID,
+        type: "deposit" as const,
+        amountMinor: 5_000,
+        occurredAt: NOW,
+        createdAt: NOW
+      }
+    ];
+    const goals = {
+      findById: vi.fn().mockResolvedValue(MANUAL_GOAL),
+      listContributions: vi.fn().mockResolvedValue(contributionList)
+    };
+    const context = createService({ goals });
+
+    await expect(context.service.listContributions("u1", GOAL_ID)).resolves.toEqual(
+      contributionList
+    );
+  });
+});
+
 describe("GoalMutationService", () => {
-  it("executes create, update, abandon, and reorder callbacks", async () => {
+  it("executes create, update, abandon, reorder, and recordContribution callbacks", async () => {
     const goalWithProgress: Goal = { ...TAGGED_GOAL, progressMinor: 25_000 };
     const goals = {
       createInTx: vi.fn().mockResolvedValue(goalWithProgress),
       updateInTx: vi.fn().mockResolvedValue(goalWithProgress),
       abandonInTx: vi.fn().mockResolvedValue(null),
-      reorderInTx: vi.fn().mockResolvedValue(null)
+      reorderInTx: vi.fn().mockResolvedValue(null),
+      recordContributionInTx: vi.fn().mockResolvedValue(goalWithProgress)
     };
     const tx = {};
     const idempotency = {
@@ -419,10 +545,22 @@ describe("GoalMutationService", () => {
     await service.update("u1", GOAL_ID, { name: "Updated" }, "key-2");
     await service.abandon("u1", GOAL_ID, "key-3");
     await service.reorder("u1", { goalIds: [GOAL_ID] }, "key-4");
+    await service.recordContribution(
+      "u1",
+      GOAL_ID,
+      { type: "deposit", amountMinor: 10_000 },
+      "key-5"
+    );
 
     expect(goals.createInTx).toHaveBeenCalledWith("u1", expect.anything(), tx);
     expect(goals.updateInTx).toHaveBeenCalledWith("u1", GOAL_ID, { name: "Updated" }, tx);
     expect(goals.abandonInTx).toHaveBeenCalledWith("u1", GOAL_ID, tx);
     expect(goals.reorderInTx).toHaveBeenCalledWith("u1", { goalIds: [GOAL_ID] }, tx);
+    expect(goals.recordContributionInTx).toHaveBeenCalledWith(
+      "u1",
+      GOAL_ID,
+      { type: "deposit", amountMinor: 10_000 },
+      tx
+    );
   });
 });

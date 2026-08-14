@@ -1,7 +1,9 @@
 import {
+  GoalContributionSchema,
   GoalPlanSchema,
   GoalSchema,
   type Goal,
+  type GoalContribution,
   type GoalPlan,
   type GoalStatus
 } from "@treasury-ops/shared";
@@ -11,6 +13,7 @@ import { z } from "zod";
 import { getServerApiClient } from "@/lib/api/server";
 
 const GoalsSchema = z.array(GoalSchema);
+const GoalContributionsSchema = z.array(GoalContributionSchema);
 
 export const getGoals = cache(async (status: GoalStatus): Promise<Goal[]> => {
   try {
@@ -46,5 +49,18 @@ export const getGoalPlan = cache(async (goalId: string): Promise<GoalPlan | null
     return parsed.success ? parsed.data : null;
   } catch {
     return null;
+  }
+});
+
+export const getGoalContributions = cache(async (goalId: string): Promise<GoalContribution[]> => {
+  try {
+    const client = await getServerApiClient();
+    const result = await client.GET("/v1/goals/{goalId}/contributions", {
+      params: { path: { goalId } }
+    });
+    const parsed = GoalContributionsSchema.safeParse(result.data);
+    return parsed.success ? parsed.data : [];
+  } catch {
+    return [];
   }
 });

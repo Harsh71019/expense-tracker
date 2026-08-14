@@ -1,17 +1,20 @@
 import { Inject, Injectable } from "@nestjs/common";
 import {
+  GoalContributionSchema,
   StoredGoalSchema,
   type CreateGoal,
+  type CreateGoalContribution,
+  type GoalContribution,
   type GoalId,
   type GoalStatus,
   type StoredGoal,
   type UpdateGoal
 } from "@treasury-ops/shared";
-import { and, asc, eq, max, sql } from "drizzle-orm";
+import { and, asc, desc, eq, max, sql } from "drizzle-orm";
 
 import { DATABASE_CONNECTION } from "../common/db/db.module.js";
 import type { DrizzleDb } from "../common/db/db.module.js";
-import { goals, transactions } from "../common/db/schema/index.js";
+import { goalContributions, goals, transactions } from "../common/db/schema/index.js";
 import { stripNulls } from "../common/db/strip-nulls.js";
 import type { DbTx } from "../common/db/db-txn.js";
 
@@ -134,6 +137,50 @@ export class GoalRepository {
     return Number(row?.total ?? 0);
   }
 
+  async createContribution(
+    userId: string,
+    goalId: GoalId,
+    input: CreateGoalContribution,
+    tx: DbTx
+  ): Promise<GoalContribution> {
+    const now = new Date();
+    const [row] = await tx
+      .insert(goalContributions)
+      .values({
+        userId,
+        goalId,
+        type: input.type,
+        amountMinor: input.amountMinor,
+        note: input.note ?? null,
+        occurredAt: input.occurredAt ?? now,
+        createdAt: now
+      })
+      .returning();
+    if (row === undefined) throw new Error("Goal contribution insert did not return a row.");
+    return toGoalContribution(row);
+  }
+
+  async listContributions(userId: string, goalId: GoalId, tx?: DbTx): Promise<GoalContribution[]> {
+    const executor = tx ?? this.db;
+    const rows = await executor
+      .select()
+      .from(goalContributions)
+      .where(and(eq(goalContributions.userId, userId), eq(goalContributions.goalId, goalId)))
+      .orderBy(desc(goalContributions.occurredAt), desc(goalContributions.createdAt));
+    return rows.map(toGoalContribution);
+  }
+
+  async sumManualContributions(userId: string, goalId: GoalId, tx?: DbTx): Promise<number> {
+    const executor = tx ?? this.db;
+    const [row] = await executor
+      .select({
+        total: sql<string>`coalesce(sum(case when ${goalContributions.type} = 'deposit' then ${goalContributions.amountMinor} else -${goalContributions.amountMinor} end), 0)::bigint`
+      })
+      .from(goalContributions)
+      .where(and(eq(goalContributions.userId, userId), eq(goalContributions.goalId, goalId)));
+    return Number(row?.total ?? 0);
+  }
+
   /**
    * Worker sweep across tenants. Every follow-up read/write is still scoped by
    * the row's userId; this query only discovers active work, like the existing
@@ -160,4 +207,8 @@ export class GoalRepository {
 
 function toStoredGoal(row: typeof goals.$inferSelect): StoredGoal {
   return StoredGoalSchema.parse(stripNulls(row));
+}
+
+function toGoalContribution(row: typeof goalContributions.$inferSelect): GoalContribution {
+  return GoalContributionSchema.parse(stripNulls(row));
 }

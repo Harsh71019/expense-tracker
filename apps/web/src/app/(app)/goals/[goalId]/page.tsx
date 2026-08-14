@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 
 import { getAccounts } from "@/features/accounts/server/get-accounts";
 import { GoalDetail } from "@/features/goals";
-import { getGoal, getGoalPlan } from "@/features/goals/server/get-goals";
+import { getGoal, getGoalContributions, getGoalPlan } from "@/features/goals/server/get-goals";
 import { getTxnPage } from "@/features/transactions/server/get-txn-page";
 
 export default async function GoalDetailPage({
@@ -13,14 +13,21 @@ export default async function GoalDetailPage({
   const goal = await getGoal(goalId);
   if (goal === null) notFound();
 
+  const isManual = goal.fundingMode === "manual_envelope";
   const contributionFilters =
     goal.fundingMode === "linked_account"
       ? { accountId: goal.linkedAccountId, limit: 20 }
-      : { tag: goal.tag, limit: 20 };
-  const [plan, accounts, contributions] = await Promise.all([
+      : goal.fundingMode === "tagged"
+        ? { tag: goal.tag, limit: 20 }
+        : undefined;
+
+  const [plan, accounts, contributions, manualContributions] = await Promise.all([
     getGoalPlan(goal.id),
     getAccounts(),
-    getTxnPage(contributionFilters)
+    isManual || contributionFilters === undefined
+      ? Promise.resolve(undefined)
+      : getTxnPage(contributionFilters),
+    isManual ? getGoalContributions(goal.id) : Promise.resolve(undefined)
   ]);
 
   return (
@@ -30,6 +37,7 @@ export default async function GoalDetailPage({
       accounts={accounts}
       contributionFilters={contributionFilters}
       initialContributions={contributions}
+      initialManualContributions={manualContributions}
     />
   );
 }

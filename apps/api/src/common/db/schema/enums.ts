@@ -99,8 +99,13 @@ export const spendingWarningAnalysisStateStatusEnum = pgEnum("spending_warning_a
   "learning",
   "ready"
 ]);
-export const goalFundingModeEnum = pgEnum("goal_funding_mode", ["linked_account", "tagged"]);
+export const goalFundingModeEnum = pgEnum("goal_funding_mode", [
+  "linked_account",
+  "tagged",
+  "manual_envelope"
+]);
 export const goalStatusEnum = pgEnum("goal_status", ["active", "achieved", "abandoned"]);
+export const goalContributionTypeEnum = pgEnum("goal_contribution_type", ["deposit", "withdrawal"]);
 export const recurringReconciliationStatusEnum = pgEnum("recurring_reconciliation_status", [
   "auto_matched",
   "ambiguous",

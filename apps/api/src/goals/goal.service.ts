@@ -2,7 +2,9 @@ import { Inject, Injectable } from "@nestjs/common";
 import {
   GoalSchema,
   type CreateGoal,
+  type CreateGoalContribution,
   type Goal,
+  type GoalContribution,
   type GoalId,
   type GoalPlan,
   type GoalStatus,
@@ -142,11 +144,51 @@ export class GoalService {
     return null;
   }
 
+  recordContribution(userId: string, goalId: GoalId, input: CreateGoalContribution): Promise<Goal> {
+    return withTxn(this.db, (tx) => this.recordContributionInTx(userId, goalId, input, tx));
+  }
+
+  async recordContributionInTx(
+    userId: string,
+    goalId: GoalId,
+    input: CreateGoalContribution,
+    tx: DbTx
+  ): Promise<Goal> {
+    const goal = await this.goals.findById(userId, goalId, tx);
+    if (goal === null) throw new EntityNotFoundError("Goal");
+    if (goal.status !== "active") {
+      throw new Error("Cannot record contributions on inactive goals.");
+    }
+    if (goal.fundingMode !== "manual_envelope") {
+      throw new Error("Contributions can only be recorded on manual envelope goals.");
+    }
+
+    const contribution = await this.goals.createContribution(userId, goalId, input, tx);
+    await this.audit.record(userId, "goal.contribute", goalId, tx, {
+      contributionId: contribution.id,
+      type: contribution.type,
+      amountMinor: contribution.amountMinor,
+      occurredAt: contribution.occurredAt
+    });
+
+    return this.withProgress(userId, goal, tx);
+  }
+
+  async listContributions(userId: string, goalId: GoalId): Promise<GoalContribution[]> {
+    const goal = await this.goals.findById(userId, goalId);
+    if (goal === null) throw new EntityNotFoundError("Goal");
+    return this.goals.listContributions(userId, goalId);
+  }
+
   async getPlan(userId: string, goalId: GoalId, now: Date = new Date()): Promise<GoalPlan> {
     return calculateGoalPlan(await this.get(userId, goalId), now);
   }
 
   async getProgress(userId: string, goal: StoredGoal, tx?: DbTx): Promise<number> {
+    if (goal.fundingMode === "manual_envelope") {
+      return this.goals.sumManualContributions(userId, goal.id, tx);
+    }
+
     if (goal.fundingMode === "tagged") {
       if (goal.tag === undefined) {
         throw new Error("Tagged goal is missing its tag.");

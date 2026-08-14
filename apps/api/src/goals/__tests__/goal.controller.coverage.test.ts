@@ -129,4 +129,28 @@ describe("GoalController", () => {
       expect(abandonResponse.setHeader).toHaveBeenCalledTimes(replayed ? 1 : 0);
     }
   });
+
+  it("covers replay headers for recordContribution", async () => {
+    const mutations = {
+      recordContribution: vi
+        .fn()
+        .mockResolvedValueOnce({ result: GOAL, replayed: true })
+        .mockResolvedValueOnce({ result: GOAL, replayed: false })
+    };
+    // @ts-expect-error - focused service doubles.
+    const controller = new GoalController({}, mutations);
+
+    for (const replayed of [true, false]) {
+      const res = response();
+      await controller.recordContribution(
+        USER,
+        GOAL_ID,
+        { type: "deposit", amountMinor: 5_000 },
+        KEY,
+        // @ts-expect-error - focused response double.
+        res
+      );
+      expect(res.setHeader).toHaveBeenCalledTimes(replayed ? 1 : 0);
+    }
+  });
 });

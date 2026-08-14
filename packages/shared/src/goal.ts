@@ -12,8 +12,10 @@ const GoalNameSchema = z.string().trim().min(1).max(80);
 const GoalTagSchema = z.string().trim().min(1).max(40);
 
 export const GoalIdSchema = z.string().uuid("Goal id must be a UUID.");
-export const GoalFundingModeSchema = z.enum(["linked_account", "tagged"]);
+export const GoalFundingModeSchema = z.enum(["linked_account", "tagged", "manual_envelope"]);
 export const GoalStatusSchema = z.enum(["active", "achieved", "abandoned"]);
+export const GoalContributionTypeSchema = z.enum(["deposit", "withdrawal"]);
+export const GoalContributionNoteSchema = z.string().trim().max(200);
 
 const GoalCreateCommonShape = {
   name: GoalNameSchema,
@@ -34,6 +36,12 @@ export const CreateGoalSchema = z.discriminatedUnion("fundingMode", [
       ...GoalCreateCommonShape,
       fundingMode: z.literal("tagged"),
       tag: GoalTagSchema
+    })
+    .strict(),
+  z
+    .object({
+      ...GoalCreateCommonShape,
+      fundingMode: z.literal("manual_envelope")
     })
     .strict()
 ]);
@@ -67,6 +75,26 @@ export const ReorderGoalsSchema = z
     path: ["goalIds"]
   });
 
+export const CreateGoalContributionSchema = z
+  .object({
+    type: GoalContributionTypeSchema,
+    amountMinor: PositiveMinorSchema,
+    note: GoalContributionNoteSchema.optional(),
+    occurredAt: z.coerce.date().optional()
+  })
+  .strict();
+
+export const GoalContributionSchema = z.object({
+  id: z.string().uuid("Goal contribution id must be a UUID."),
+  userId: z.string().min(1),
+  goalId: GoalIdSchema,
+  type: GoalContributionTypeSchema,
+  amountMinor: PositiveMinorSchema,
+  note: GoalContributionNoteSchema.optional(),
+  occurredAt: z.coerce.date(),
+  createdAt: z.coerce.date()
+});
+
 export const StoredGoalSchema = z.object({
   id: GoalIdSchema,
   userId: z.string().min(1),
@@ -97,6 +125,9 @@ export const GoalPlanSchema = z.object({
 export type GoalId = z.infer<typeof GoalIdSchema>;
 export type GoalFundingMode = z.infer<typeof GoalFundingModeSchema>;
 export type GoalStatus = z.infer<typeof GoalStatusSchema>;
+export type GoalContributionType = z.infer<typeof GoalContributionTypeSchema>;
+export type CreateGoalContribution = z.infer<typeof CreateGoalContributionSchema>;
+export type GoalContribution = z.infer<typeof GoalContributionSchema>;
 export type CreateGoal = z.infer<typeof CreateGoalSchema>;
 export type UpdateGoal = z.infer<typeof UpdateGoalSchema>;
 export type ListGoalsQuery = z.infer<typeof ListGoalsQuerySchema>;

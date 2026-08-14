@@ -49,7 +49,9 @@ export function AppSidebar({
 
   return (
     <aside
-      className={`hidden shrink-0 gap-4 overflow-hidden border-r border-border bg-surface-elevated p-4 transition-[width] duration-300 ease-out motion-reduce:transition-none md:sticky md:top-0 md:flex md:h-screen md:flex-col ${compact ? "w-[84px]" : "w-64"}`}
+      className={`hidden shrink-0 gap-4 overflow-hidden border-r border-border bg-surface-elevated p-4 transition-[width] duration-500 ease-out motion-reduce:transition-none md:sticky md:top-0 md:flex md:h-screen md:flex-col ${
+        editMode ? "w-[420px] xl:w-[440px]" : compact ? "w-[84px]" : "w-64"
+      }`}
     >
       <button
         type="button"

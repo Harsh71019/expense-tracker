@@ -110,15 +110,18 @@ describe("AppSidebar", () => {
 
     const editBtn = screen.getByRole("button", { name: "Edit sidebar" });
     expect(editBtn).toBeVisible();
+    expect(screen.getByRole("complementary")).toHaveClass("w-64");
 
     await user.click(editBtn);
 
     expect(screen.getByRole("list", { name: "Reorder navigation items" })).toBeVisible();
+    expect(screen.getByRole("complementary")).toHaveClass("w-[420px]");
     const doneBtn = screen.getByRole("button", { name: "Done editing sidebar" });
     expect(doneBtn).toBeVisible();
 
     await user.click(doneBtn);
     expect(screen.queryByRole("list", { name: "Reorder navigation items" })).toBeNull();
+    expect(screen.getByRole("complementary")).toHaveClass("w-64");
     expect(screen.getByRole("navigation", { name: "Main navigation" })).toBeVisible();
   });
 

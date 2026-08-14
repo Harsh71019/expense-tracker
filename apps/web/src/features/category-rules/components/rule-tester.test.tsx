@@ -58,4 +58,13 @@ describe("RuleTester", () => {
       screen.getByText("No rule matches — this row would import uncategorized.")
     ).toBeVisible();
   });
+
+  it("populates input and evaluates when clicking a sample pill", async () => {
+    const user = userEvent.setup();
+    render(<RuleTester rules={[swiggyRule]} categories={[restaurants]} />);
+
+    await user.click(screen.getByRole("button", { name: "SWIGGY*ORDER 4821" }));
+    expect(screen.getByText("Would suggest")).toBeVisible();
+    expect(screen.getByText("Restaurants")).toBeVisible();
+  });
 });

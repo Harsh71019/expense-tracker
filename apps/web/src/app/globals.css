@@ -20,6 +20,14 @@
 
   --font-sans: var(--font-inter-tight), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-jetbrains-mono), ui-monospace, "SFMono-Regular", monospace;
+  --text-2xs: 0.625rem;
+  --text-2xs--line-height: 0.875rem;
+
+  /* Micro label size — the codebase's de facto smallest text step (uppercase mono
+     labels, stat-card captions, badges) collapsed from ad hoc arbitrary pixel
+     values (8-11.5px) into one token. */
+  --text-2xs: 0.625rem;
+  --text-2xs--line-height: 0.875rem;
 
   /* Micro label size — the codebase's de facto smallest text step (uppercase mono
      labels, stat-card captions, badges) collapsed from ad hoc arbitrary pixel

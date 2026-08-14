@@ -15,4 +15,7 @@ export * from "./command-palette";
 export * from "./keyboard-shortcuts-dialog";
 export * from "./select";
 export * from "./date-picker";
+export * from "./page-header";
+export * from "./page-shell";
+export * from "./section-header";
 export * from "./stat-card";

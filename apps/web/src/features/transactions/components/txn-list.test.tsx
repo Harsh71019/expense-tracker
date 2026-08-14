@@ -1,4 +1,5 @@
 import { render, screen, within } from "@testing-library/react";
+import type { PendingTransaction } from "@treasury-ops/shared";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -53,6 +54,9 @@ vi.mock("@/features/transfers/hooks/use-transfers", () => ({
 }));
 vi.mock("./transaction-insights-cards", () => ({
   TransactionInsightsCards: () => <div>insights</div>
+}));
+vi.mock("@/features/pending-transactions/components/pending-transactions-panel", () => ({
+  PendingTransactionsPanel: () => <div>pending-transactions</div>
 }));
 
 const transaction = {
@@ -116,13 +120,21 @@ vi.mock("./create-txn-sheet", () => ({
 
 describe("TxnList", () => {
   const page = { items: [], pageInfo: { nextCursor: null, hasMore: false, limit: 50 } };
+  const pendingTransactions: PendingTransaction[] = [];
 
   it("opens the detail drawer on row click, paginates, and surfaces refresh errors", async () => {
     const user = userEvent.setup();
     mocks.empty = false;
     mocks.hasNextPage = true;
     mocks.isError = true;
-    render(<TxnList filters={{ limit: 50 }} initialPage={page} initialInsights={null} />);
+    render(
+      <TxnList
+        filters={{ limit: 50 }}
+        initialPage={page}
+        initialInsights={null}
+        initialPendingTransactions={pendingTransactions}
+      />
+    );
 
     expect(screen.getByText("Description").parentElement?.parentElement).toHaveClass(
       "hidden",
@@ -138,13 +150,20 @@ describe("TxnList", () => {
     expect(screen.getByText(/Could not refresh/)).toBeVisible();
   });
 
-  it("opens the create sheet from the New entry button", async () => {
+  it("opens the create sheet from the Add transaction button", async () => {
     const user = userEvent.setup();
     mocks.empty = false;
     mocks.isError = false;
-    render(<TxnList filters={{ limit: 50 }} initialPage={page} initialInsights={null} />);
+    render(
+      <TxnList
+        filters={{ limit: 50 }}
+        initialPage={page}
+        initialInsights={null}
+        initialPendingTransactions={pendingTransactions}
+      />
+    );
 
-    await user.click(screen.getByRole("button", { name: /New entry/ }));
+    await user.click(screen.getByRole("button", { name: /Add transaction/ }));
     expect(screen.getByRole("dialog", { name: "create-sheet" })).toBeVisible();
   });
 
@@ -152,7 +171,14 @@ describe("TxnList", () => {
     const user = userEvent.setup();
     mocks.empty = false;
     mocks.isError = false;
-    render(<TxnList filters={{ limit: 50 }} initialPage={page} initialInsights={null} />);
+    render(
+      <TxnList
+        filters={{ limit: 50 }}
+        initialPage={page}
+        initialInsights={null}
+        initialPendingTransactions={pendingTransactions}
+      />
+    );
 
     const compactBtn = screen.getByRole("button", { name: "Compact" });
     await user.click(compactBtn);
@@ -163,7 +189,14 @@ describe("TxnList", () => {
     mocks.empty = true;
     mocks.hasNextPage = false;
     mocks.isError = false;
-    render(<TxnList filters={{ limit: 50 }} initialPage={page} initialInsights={null} />);
+    render(
+      <TxnList
+        filters={{ limit: 50 }}
+        initialPage={page}
+        initialInsights={null}
+        initialPendingTransactions={pendingTransactions}
+      />
+    );
     expect(screen.getByRole("heading", { name: "No transactions match" })).toBeVisible();
   });
 
@@ -172,7 +205,14 @@ describe("TxnList", () => {
     mocks.hasNextPage = true;
     mocks.isError = false;
     mocks.fetching = true;
-    render(<TxnList filters={{ limit: 50 }} initialPage={page} initialInsights={null} />);
+    render(
+      <TxnList
+        filters={{ limit: 50 }}
+        initialPage={page}
+        initialInsights={null}
+        initialPendingTransactions={pendingTransactions}
+      />
+    );
     expect(screen.getByRole("button", { name: "Loading entries…" })).toBeDisabled();
   });
 
@@ -185,7 +225,14 @@ describe("TxnList", () => {
       categoryId: "3fa85f64-5717-4562-b3fc-2c963f66be99",
       updatedCount: 1
     });
-    render(<TxnList filters={{ limit: 50 }} initialPage={page} initialInsights={null} />);
+    render(
+      <TxnList
+        filters={{ limit: 50 }}
+        initialPage={page}
+        initialInsights={null}
+        initialPendingTransactions={pendingTransactions}
+      />
+    );
 
     await user.click(screen.getByRole("checkbox", { name: "Select Refund" }));
     expect(screen.getByRole("region", { name: "Bulk category assignment" })).toBeVisible();

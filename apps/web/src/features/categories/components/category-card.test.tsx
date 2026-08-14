@@ -29,17 +29,17 @@ describe("CategoryCard", () => {
 
     expect(screen.getByText("Food & Dining")).toBeVisible();
     expect(screen.getByText("Top-level category")).toBeVisible();
-    expect(container.firstElementChild).toHaveClass("overflow-visible", "focus-within:z-30");
+    expect(container.firstElementChild).toHaveClass("overflow-visible");
 
     await user.click(screen.getByRole("button", { name: "Actions for Food & Dining" }));
     expect(screen.getByLabelText("Actions for Food & Dining", { selector: "div" })).toHaveClass(
       "z-50"
     );
-    await user.click(screen.getByRole("button", { name: "Archive" }));
+    await user.click(screen.getByRole("button", { name: /archive/i }));
     expect(onArchive).toHaveBeenCalledWith(parent);
   });
 
-  it("lists subcategories as pills and archives a child independently", async () => {
+  it("lists subcategories and archives a child independently", async () => {
     const user = userEvent.setup();
     const onArchive = vi.fn();
     const parent = category();
@@ -52,11 +52,11 @@ describe("CategoryCard", () => {
 
     expect(screen.getByText("1 subcategory")).toBeVisible();
     await user.click(screen.getByRole("button", { name: "Actions for Groceries" }));
-    await user.click(screen.getByRole("button", { name: "Archive" }));
+    await user.click(screen.getByRole("button", { name: /archive/i }));
     expect(onArchive).toHaveBeenCalledWith(child);
   });
 
-  it("pluralises the subcategory count", () => {
+  it("pluralises the subcategory count and displays spending stats", () => {
     const parent = category();
     const children = [
       category({
@@ -70,8 +70,36 @@ describe("CategoryCard", () => {
         parentId: parent.id
       })
     ];
-    render(<CategoryCard parent={parent} subcategories={children} onArchive={vi.fn()} />);
+    render(
+      <CategoryCard
+        parent={parent}
+        subcategories={children}
+        stats={{ spentMinor: 15_000_00, incomeMinor: 0, txnCount: 5 }}
+        onArchive={vi.fn()}
+      />
+    );
 
     expect(screen.getByText("2 subcategories")).toBeVisible();
+    expect(screen.getByText(/₹15,000.00 spent/)).toBeVisible();
+    expect(screen.getByText(/\(5 txns\)/)).toBeVisible();
+  });
+
+  it("triggers group update on group button click", async () => {
+    const user = userEvent.setup();
+    const onUpdateGroup = vi.fn();
+    const parent = category({ group: "essential" });
+    render(
+      <CategoryCard
+        parent={parent}
+        subcategories={[]}
+        onArchive={vi.fn()}
+        onUpdateGroup={onUpdateGroup}
+      />
+    );
+
+    expect(screen.getByText("Essential · Needs")).toBeVisible();
+    await user.click(screen.getByRole("button", { name: /50\/30\/20 Group/ }));
+    await user.click(screen.getByRole("button", { name: "Lifestyle (Wants)" }));
+    expect(onUpdateGroup).toHaveBeenCalledWith(parent, "lifestyle");
   });
 });

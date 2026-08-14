@@ -10,8 +10,10 @@ import { CreateCategorySheet } from "./create-category-sheet";
 const mocks = vi.hoisted(() => ({
   mutateAsync: vi.fn(),
   updateMutateAsync: vi.fn(),
+  updateGroupMutateAsync: vi.fn(),
   pending: false,
   updatePending: false,
+  updateGroupPending: false,
   toastError: vi.fn(),
   toastSuccess: vi.fn()
 }));
@@ -21,6 +23,10 @@ vi.mock("../hooks/use-category-mutations", () => ({
   useUpdateCategory: () => ({
     mutateAsync: mocks.updateMutateAsync,
     isPending: mocks.updatePending
+  }),
+  useUpdateCategoryGroup: () => ({
+    mutateAsync: mocks.updateGroupMutateAsync,
+    isPending: mocks.updateGroupPending
   })
 }));
 
@@ -52,8 +58,10 @@ describe("CreateCategorySheet", () => {
   beforeEach(() => {
     mocks.pending = false;
     mocks.updatePending = false;
+    mocks.updateGroupPending = false;
     mocks.mutateAsync.mockReset();
     mocks.updateMutateAsync.mockReset();
+    mocks.updateGroupMutateAsync.mockReset();
     mocks.toastError.mockReset();
     mocks.toastSuccess.mockReset();
   });
@@ -67,7 +75,7 @@ describe("CreateCategorySheet", () => {
     expect(screen.getByRole("button", { name: "Create category" })).toBeEnabled();
   });
 
-  it("creates a category with the selected kind, icon, colour, and parent", async () => {
+  it("creates a category with the selected kind, group, icon, colour, and parent", async () => {
     const user = userEvent.setup();
     mocks.mutateAsync.mockResolvedValue({});
     const onClose = vi.fn();
@@ -76,6 +84,7 @@ describe("CreateCategorySheet", () => {
     );
 
     await user.type(screen.getByLabelText("Name"), "Groceries: Meat");
+    await user.click(screen.getByRole("button", { name: /essential/i }));
     await user.click(screen.getByRole("combobox", { name: "Parent category" }));
     await user.click(screen.getByRole("option", { name: "Groceries" }));
     await user.click(screen.getByRole("button", { name: "utensils" }));
@@ -85,6 +94,7 @@ describe("CreateCategorySheet", () => {
     expect(mocks.mutateAsync).toHaveBeenCalledWith({
       name: "Groceries: Meat",
       kind: "expense",
+      group: "essential",
       parentId: groceries.id,
       icon: "utensils",
       color: "#f97316"

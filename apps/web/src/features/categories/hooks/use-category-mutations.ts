@@ -4,6 +4,7 @@ import { useMutation, useQueryClient, type UseMutationResult } from "@tanstack/r
 import {
   CategorySchema,
   type Category,
+  type CategoryGroup,
   type CreateCategory,
   type UpdateCategory
 } from "@treasury-ops/shared";
@@ -150,6 +151,43 @@ export function usePermanentlyDeleteCategory(): UseMutationResult<void, Error, s
           params: { path: { categoryId }, header: { "Idempotency-Key": key } }
         });
         if (result.error !== undefined) throw toAppError(result.error, result.response.status);
+      } catch (error: unknown) {
+        if (error instanceof Error) throw error;
+        throw toNetworkError(error);
+      }
+    },
+    onSuccess: () => {
+      setKey(generateRequestId());
+    },
+    onSettled: async () => {
+      await invalidateCategoryConsumers(client);
+    }
+  });
+}
+
+type UpdateCategoryGroupVariables = Readonly<{
+  categoryId: string;
+  group: CategoryGroup | null;
+}>;
+
+export function useUpdateCategoryGroup(): UseMutationResult<
+  Category,
+  Error,
+  UpdateCategoryGroupVariables
+> {
+  const client = useQueryClient();
+  const [key, setKey] = useState(generateRequestId);
+  return useMutation({
+    mutationFn: async ({ categoryId, group }): Promise<Category> => {
+      try {
+        const result = await apiClient.PATCH("/v1/categories/{categoryId}/group", {
+          body: { group },
+          params: { path: { categoryId }, header: { "Idempotency-Key": key } }
+        });
+        if (result.error !== undefined) throw toAppError(result.error, result.response.status);
+        const parsed = CategorySchema.safeParse(result.data);
+        if (!parsed.success) throw toAppError(undefined, result.response.status);
+        return parsed.data;
       } catch (error: unknown) {
         if (error instanceof Error) throw error;
         throw toNetworkError(error);

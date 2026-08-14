@@ -45,5 +45,6 @@ describe("query keys", () => {
       { filter: "spikes" }
     ]);
     expect(qk.monthlySpending()).toEqual(["dashboard", "monthly-spending"]);
+    expect(qk.monthlyRollups()).toEqual(["monthly-rollup"]);
   });
 });

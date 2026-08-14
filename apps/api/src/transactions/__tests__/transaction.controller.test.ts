@@ -175,25 +175,30 @@ describe("TransactionController", () => {
     expect(response.setHeader).toHaveBeenCalledWith("Idempotency-Replayed", "true");
   });
 
-  it("calls update on the transaction service with a validated patch", async () => {
+  it("updates metadata through the replay-aware mutation service", async () => {
     const updatedTransaction = { ...sampleTransaction, description: "Chai and biscuits" };
-    const mockService = {
-      update: vi.fn().mockResolvedValue(updatedTransaction)
+    const mockService = {};
+    const mockMutations = {
+      update: vi.fn().mockResolvedValue({ result: updatedTransaction, replayed: false })
     };
 
     // @ts-expect-error - mock TransactionService for unit testing
-    const controller = new TransactionController(mockService);
-    const result = await controller.update(user, "3fa85f64-5717-4562-b3fc-2c963f66beef", {
-      description: "Chai and biscuits"
-    });
+    const controller = new TransactionController(mockService, mockMutations);
+    const result = await controller.update(
+      user,
+      "3fa85f64-5717-4562-b3fc-2c963f66beef",
+      { description: "Chai and biscuits" },
+      "17171717-aaaa-4171-8171-171717171717"
+    );
 
     expect(result).toEqual(updatedTransaction);
-    expect(mockService.update).toHaveBeenCalledWith(
+    expect(mockMutations.update).toHaveBeenCalledWith(
       "user-1",
       "3fa85f64-5717-4562-b3fc-2c963f66beef",
       {
         description: "Chai and biscuits"
-      }
+      },
+      "17171717-aaaa-4171-8171-171717171717"
     );
   });
 
@@ -224,6 +229,53 @@ describe("TransactionController", () => {
       "16161616-aaaa-4161-8161-161616161616"
     );
     expect(response.setHeader).toHaveBeenCalledWith("Idempotency-Replayed", "true");
+  });
+
+  it("assigns a category to a validated transaction batch", async () => {
+    const input = {
+      transactionIds: ["3fa85f64-5717-4562-b3fc-2c963f66beef"],
+      categoryId: "3fa85f64-5717-4562-b3fc-2c963f66be99"
+    };
+    const batchResult = { ...input, updatedCount: 1 };
+    const mockMutations = {
+      assignCategory: vi.fn().mockResolvedValue({ result: batchResult, replayed: true })
+    };
+    // @ts-expect-error - focused controller collaborators
+    const controller = new TransactionController({}, mockMutations);
+    const response = mockResponse();
+
+    await expect(
+      controller.assignCategory(
+        user,
+        input,
+        "18181818-aaaa-4181-8181-181818181818",
+        // @ts-expect-error - mock Response for unit testing
+        response
+      )
+    ).resolves.toEqual(batchResult);
+    expect(mockMutations.assignCategory).toHaveBeenCalledWith(
+      "user-1",
+      input,
+      "18181818-aaaa-4181-8181-181818181818"
+    );
+    expect(response.setHeader).toHaveBeenCalledWith("Idempotency-Replayed", "true");
+  });
+
+  it("rejects an invalid category batch before invoking the mutation service", async () => {
+    const mockMutations = { assignCategory: vi.fn() };
+    // @ts-expect-error - focused controller collaborators
+    const controller = new TransactionController({}, mockMutations);
+
+    await expect(
+      controller.assignCategory(
+        user,
+        { transactionIds: [], categoryId: "not-a-category" },
+        "18181818-aaaa-4181-8181-181818181818",
+        // @ts-expect-error - response is unused when validation fails
+        mockResponse()
+      )
+    ).rejects.toThrow();
+    expect(mockMutations.assignCategory).not.toHaveBeenCalled();
   });
 
   it("calls list on the transaction service with validated query params", async () => {

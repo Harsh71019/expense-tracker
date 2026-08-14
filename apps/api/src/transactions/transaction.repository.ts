@@ -520,6 +520,34 @@ export class TransactionRepository {
     return row === undefined ? null : toTransaction(row);
   }
 
+  async findByIds(
+    userId: string,
+    transactionIds: readonly string[],
+    tx: DbTx
+  ): Promise<Transaction[]> {
+    if (transactionIds.length === 0) return [];
+    const rows = await tx
+      .select()
+      .from(transactions)
+      .where(and(eq(transactions.userId, userId), inArray(transactions.id, [...transactionIds])));
+    return rows.map(toTransaction);
+  }
+
+  async assignCategory(
+    userId: string,
+    transactionIds: readonly string[],
+    categoryId: string,
+    tx: DbTx
+  ): Promise<number> {
+    if (transactionIds.length === 0) return 0;
+    const rows = await tx
+      .update(transactions)
+      .set({ categoryId, updatedAt: new Date() })
+      .where(and(eq(transactions.userId, userId), inArray(transactions.id, [...transactionIds])))
+      .returning({ id: transactions.id });
+    return rows.length;
+  }
+
   async updateNonMonetaryFields(
     userId: string,
     transactionId: string,

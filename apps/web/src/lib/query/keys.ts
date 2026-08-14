@@ -47,6 +47,7 @@ export const qk = {
   importBatches: () => ["import-batches"] as const,
   importPreview: (batchId: string) => ["import-preview", batchId] as const,
   importMapping: (accountId: string) => ["import-mapping", accountId] as const,
+  monthlyRollups: () => ["monthly-rollup"] as const,
   monthlyRollup: (month: string) => ["monthly-rollup", month] as const,
   apiKeys: () => ["api-keys"] as const,
   spendingWarnings: () => spendingWarningRoot,

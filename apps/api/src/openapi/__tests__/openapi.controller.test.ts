@@ -55,6 +55,7 @@ describe("OpenApiController", () => {
         spec.paths?.["/v1/assets"]?.post,
         spec.paths?.["/v1/assets/{assetId}/close"]?.post,
         spec.paths?.["/v1/assets/{assetId}/valuations"]?.post,
+        spec.paths?.["/v1/transactions"]?.patch,
         spec.paths?.["/v1/transactions/{transactionId}"]?.patch,
         spec.paths?.["/v1/recurring"]?.post,
         spec.paths?.["/v1/recurring/{ruleId}"]?.patch,

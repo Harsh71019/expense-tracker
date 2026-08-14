@@ -7,6 +7,7 @@ import type { DrizzleDb } from "../../common/db/db.module.js";
 import { CategoryKindMismatchError } from "../../common/errors/category-kind-mismatch.error.js";
 
 import { EntityNotFoundError } from "../../common/errors/entity-not-found.error.js";
+import { TransferMetadataRequiresGroupError } from "../../common/errors/transfer-metadata-requires-group.error.js";
 import { focusedTestDouble } from "../../test/mock-drizzle.js";
 import type { TransactionRepository } from "../transaction.repository.js";
 
@@ -179,5 +180,120 @@ describe("TransactionService Unit Tests", () => {
 
     expect(mockTx.getInsights).toHaveBeenCalledWith("u1", "2026-08");
     vi.useRealTimers();
+  });
+
+  describe("assignCategoryInTx", () => {
+    const firstId = "3fa85f64-5717-4562-b3fc-2c963f66be01";
+    const secondId = "3fa85f64-5717-4562-b3fc-2c963f66be02";
+    const categoryId = "3fa85f64-5717-4562-b3fc-2c963f66be99";
+    const input = { transactionIds: [firstId, secondId], categoryId };
+
+    it("updates and audits the whole tenant-scoped batch", async () => {
+      const rows = [
+        { ...sampleTx, id: firstId, categoryId: undefined },
+        { ...sampleTx, id: secondId, categoryId: "3fa85f64-5717-4562-b3fc-2c963f66be88" }
+      ];
+      const mockCategories = {
+        findActiveById: vi.fn(async () => ({ id: categoryId, kind: "expense" }))
+      };
+      const mockTx = {
+        findByIds: vi.fn(async () => rows),
+        assignCategory: vi.fn(async () => 2)
+      };
+      const mockAudit = { recordMany: vi.fn(async () => undefined) };
+      const service = createService({ mockCategories, mockTx, mockAudit });
+
+      await expect(
+        service.assignCategoryInTx("u1", input, focusedTestDouble("db-tx"))
+      ).resolves.toEqual({
+        ...input,
+        updatedCount: 2
+      });
+      expect(mockTx.findByIds).toHaveBeenCalledWith("u1", input.transactionIds, "db-tx");
+      expect(mockTx.assignCategory).toHaveBeenCalledWith(
+        "u1",
+        input.transactionIds,
+        categoryId,
+        "db-tx"
+      );
+      expect(mockAudit.recordMany).toHaveBeenCalledWith(
+        "u1",
+        "transaction.update",
+        expect.arrayContaining([
+          expect.objectContaining({ entityId: firstId }),
+          expect.objectContaining({ entityId: secondId })
+        ]),
+        "db-tx"
+      );
+    });
+
+    it("rejects a missing category or transaction without writing", async () => {
+      const missingCategory = createService({
+        mockCategories: { findActiveById: vi.fn(async () => null) }
+      });
+      await expect(
+        missingCategory.assignCategoryInTx("u1", input, focusedTestDouble("db-tx"))
+      ).rejects.toThrow(EntityNotFoundError);
+
+      const assignCategory = vi.fn();
+      const missingTransaction = createService({
+        mockCategories: {
+          findActiveById: vi.fn(async () => ({ id: categoryId, kind: "expense" }))
+        },
+        mockTx: { findByIds: vi.fn(async () => [{ ...sampleTx, id: firstId }]), assignCategory }
+      });
+      await expect(
+        missingTransaction.assignCategoryInTx("u1", input, focusedTestDouble("db-tx"))
+      ).rejects.toThrow(EntityNotFoundError);
+      expect(assignCategory).not.toHaveBeenCalled();
+    });
+
+    it("rejects transfer legs and category-kind mismatches", async () => {
+      const category = { id: categoryId, kind: "expense" };
+      const transfer = createService({
+        mockCategories: { findActiveById: vi.fn(async () => category) },
+        mockTx: {
+          findByIds: vi.fn(async () => [
+            { ...sampleTx, id: firstId, transferGroupId: "group-1" },
+            { ...sampleTx, id: secondId }
+          ])
+        }
+      });
+      await expect(
+        transfer.assignCategoryInTx("u1", input, focusedTestDouble("db-tx"))
+      ).rejects.toThrow(TransferMetadataRequiresGroupError);
+
+      const wrongKind = createService({
+        mockCategories: { findActiveById: vi.fn(async () => category) },
+        mockTx: {
+          findByIds: vi.fn(async () => [
+            { ...sampleTx, id: firstId, type: "income" },
+            { ...sampleTx, id: secondId }
+          ])
+        }
+      });
+      await expect(
+        wrongKind.assignCategoryInTx("u1", input, focusedTestDouble("db-tx"))
+      ).rejects.toThrow(CategoryKindMismatchError);
+    });
+
+    it("rolls back when the bulk update does not cover the validated batch", async () => {
+      const service = createService({
+        mockCategories: {
+          findActiveById: vi.fn(async () => ({ id: categoryId, kind: "expense" }))
+        },
+        mockTx: {
+          findByIds: vi.fn(async () => [
+            { ...sampleTx, id: firstId },
+            { ...sampleTx, id: secondId }
+          ]),
+          assignCategory: vi.fn(async () => 1)
+        }
+      });
+
+      await expect(
+        service.assignCategoryInTx("u1", input, focusedTestDouble("db-tx"))
+      ).rejects.toThrow(EntityNotFoundError);
+    });
   });
 });

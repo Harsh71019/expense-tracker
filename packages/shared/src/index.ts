@@ -447,6 +447,8 @@ export {
 } from "./report.js";
 export type { AccountRollup, CategoryRollup, Month, MonthlyRollup } from "./report.js";
 export {
+  BatchCategorizeTransactionsResultSchema,
+  BatchCategorizeTransactionsSchema,
   CreateTransactionSchema,
   CreateTransferSchema,
   HighestMonthlyExpenseSchema,
@@ -466,6 +468,8 @@ export {
   UpdateTransactionSchema
 } from "./transaction.js";
 export type {
+  BatchCategorizeTransactions,
+  BatchCategorizeTransactionsResult,
   CreateTransaction,
   CreateTransfer,
   HighestMonthlyExpense,

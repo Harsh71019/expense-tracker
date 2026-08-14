@@ -5,10 +5,11 @@ import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 import { useReverseTxn } from "./use-reverse-txn";
+import { useBatchCategorize } from "./use-batch-categorize";
 import { useTransactionInsights } from "./use-transaction-insights";
 import { useTxnList } from "./use-txn-list";
 
-const mocks = vi.hoisted(() => ({ GET: vi.fn(), POST: vi.fn() }));
+const mocks = vi.hoisted(() => ({ GET: vi.fn(), PATCH: vi.fn(), POST: vi.fn() }));
 vi.mock("@/lib/api/client", () => ({ apiClient: mocks }));
 
 const timestamp = new Date("2026-07-16T00:00:00.000Z");
@@ -144,6 +145,26 @@ describe("transaction data hooks", () => {
     await expect(hook.result.current.mutateAsync(transaction.id)).rejects.toThrow(
       "Already reversed"
     );
+  });
+
+  it("assigns a category to a transaction batch with an idempotency key", async () => {
+    const categoryId = "3fa85f64-5717-4562-b3fc-2c963f66be99";
+    const input = { transactionIds: [transaction.id], categoryId };
+    mocks.PATCH.mockResolvedValue({
+      data: { ...input, updatedCount: 1 },
+      error: undefined,
+      response
+    });
+    const hook = renderHook(() => useBatchCategorize(), { wrapper });
+
+    await expect(hook.result.current.mutateAsync(input)).resolves.toEqual({
+      ...input,
+      updatedCount: 1
+    });
+    expect(mocks.PATCH).toHaveBeenCalledWith("/v1/transactions", {
+      body: input,
+      params: { header: { "Idempotency-Key": expect.any(String) } }
+    });
   });
 
   it("converts non-Error request failures into network errors", async () => {

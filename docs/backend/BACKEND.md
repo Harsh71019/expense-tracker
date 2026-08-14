@@ -505,6 +505,12 @@ user, and have the same kind as the transaction (`expense` or `income`). The
 same invariant is enforced when creating/updating recurring templates and
 again before committing staged import rows.
 
+Collection-level `PATCH /v1/transactions` assigns one category to 1–200 selected transaction IDs.
+The service validates the complete tenant-scoped batch, category kind, and transfer exclusion
+before issuing one bulk metadata update; any invalid ID rolls back the whole batch. Each changed
+transaction receives its own append-only audit row in the same database transaction, while one
+`Idempotency-Key` protects the logical batch and its stored response.
+
 ### 3.3 Transfers are two legs, one atom
 
 "Move ₹10,000 from HDFC to Cash" creates two transactions sharing a `transferGroupId` (expense leg + income leg), both balance updates, all in one Mongo transaction. Reverting a transfer reverts **both legs** — the API only accepts `transferGroupId` for transfer reverts, never a single leg.
@@ -766,6 +772,7 @@ All routes behind `AuthGuard`; validation via `zod` schemas shared with the fron
 
 ```
 POST   /transactions                    create (Idempotency-Key required)
+PATCH  /transactions                    assign one category to 1–200 selected transactions (Idempotency-Key required)
 GET    /transactions?from&to&accountId&categoryId&q&cursor   cursor-paginated
 GET    /transactions/insights        current IST-month activity, largest posted expense,
                                      top spending category, and logical lifetime count

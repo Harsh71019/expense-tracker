@@ -1,6 +1,8 @@
 import type { INestApplication } from "@nestjs/common";
 import {
   AccountSchema,
+  BatchCategorizeTransactionsResultSchema,
+  CategorySchema,
   CreditCardPaymentResultSchema,
   CreateApiKeyResponseSchema,
   ImportBatchSchema,
@@ -169,6 +171,76 @@ describe("production HTTP composition", () => {
     expect(
       (await parseResponse(insightsResponse, TransactionInsightsSchema)).lifetimeTransactionCount
     ).toBeGreaterThanOrEqual(2);
+  });
+
+  it("assigns one category to a selected transaction batch and replays safely", async () => {
+    const account = await createAccount(baseUrl, sessionA, "HTTP batch category");
+    const categoryResponse = await fetch(`${baseUrl}/api/v1/categories`, {
+      method: "POST",
+      headers: {
+        ...JSON_HEADERS,
+        cookie: sessionA,
+        "idempotency-key": crypto.randomUUID()
+      },
+      body: JSON.stringify({ name: "Batch dining", kind: "expense" })
+    });
+    expect(categoryResponse.status).toBe(201);
+    const category = await parseResponse(categoryResponse, CategorySchema);
+    const created = await Promise.all(
+      ["Batch lunch", "Batch dinner"].map(async (description, index) => {
+        const response = await fetch(`${baseUrl}/api/v1/transactions`, {
+          method: "POST",
+          headers: {
+            ...JSON_HEADERS,
+            cookie: sessionA,
+            "idempotency-key": crypto.randomUUID()
+          },
+          body: JSON.stringify({
+            accountId: account.id,
+            type: "expense",
+            amountMinor: 1_000 + index,
+            occurredAt: `2026-08-0${index + 1}T06:30:00.000Z`,
+            description,
+            tags: []
+          })
+        });
+        expect(response.status).toBe(201);
+        return parseResponse(response, TransactionSchema);
+      })
+    );
+    const body = {
+      transactionIds: created.map((transaction) => transaction.id),
+      categoryId: category.id
+    };
+    const key = crypto.randomUUID();
+
+    const assignedResponse = await fetch(`${baseUrl}/api/v1/transactions`, {
+      method: "PATCH",
+      headers: { ...JSON_HEADERS, cookie: sessionA, "idempotency-key": key },
+      body: JSON.stringify(body)
+    });
+    expect(assignedResponse.status).toBe(200);
+    expect(await parseResponse(assignedResponse, BatchCategorizeTransactionsResultSchema)).toEqual({
+      ...body,
+      updatedCount: 2
+    });
+
+    const replayResponse = await fetch(`${baseUrl}/api/v1/transactions`, {
+      method: "PATCH",
+      headers: { ...JSON_HEADERS, cookie: sessionA, "idempotency-key": key },
+      body: JSON.stringify(body)
+    });
+    expect(replayResponse.status).toBe(200);
+    expect(replayResponse.headers.get("idempotency-replayed")).toBe("true");
+
+    for (const transaction of created) {
+      const response = await fetch(`${baseUrl}/api/v1/transactions/${transaction.id}`, {
+        headers: { cookie: sessionA }
+      });
+      expect(await parseResponse(response, TransactionSchema)).toMatchObject({
+        categoryId: category.id
+      });
+    }
   });
 
   it("links an existing debit to a credit card without debiting the bank twice", async () => {

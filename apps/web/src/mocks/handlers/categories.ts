@@ -1,4 +1,5 @@
 import type { HttpHandler } from "msw";
+import { UpdateCategoryGroupSchema } from "@treasury-ops/shared";
 
 import { findCategory } from "../data/store";
 import { mockProblem } from "../data/problem";
@@ -180,6 +181,27 @@ export function categoryHandlers(http: MockHttp, store: MockStore): HttpHandler[
       if (index !== -1) store.categories.splice(index, 1);
       store.idempotency.categoryDelete.add(key);
       return response(204).empty();
+    }),
+
+    http.patch("/v1/categories/{categoryId}/group", async ({ params, request, response }) => {
+      const category = findCategory(store, params.categoryId);
+      if (category === undefined) {
+        return response(404).json(mockProblem(404, "common.not_found", "Category not found."));
+      }
+      const rawBody: unknown = await request.json();
+      const parsed = UpdateCategoryGroupSchema.safeParse(rawBody);
+      if (!parsed.success) {
+        return response(422).json(
+          mockProblem(422, "common.validation_failed", "Request body is required.")
+        );
+      }
+      if (parsed.data.group === null) {
+        delete category.group;
+      } else {
+        category.group = parsed.data.group;
+      }
+      category.updatedAt = new Date().toISOString();
+      return response(200).json(category);
     })
   ];
 }

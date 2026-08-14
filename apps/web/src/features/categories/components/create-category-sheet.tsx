@@ -4,6 +4,7 @@ import {
   CreateCategorySchema,
   UpdateCategorySchema,
   type Category,
+  type CategoryGroup,
   type CategoryKind
 } from "@treasury-ops/shared";
 import { useState } from "react";
@@ -16,12 +17,16 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { ConflictError, ValidationError } from "@/lib/errors";
 
-import { useCreateCategory, useUpdateCategory } from "../hooks/use-category-mutations";
+import {
+  useCreateCategory,
+  useUpdateCategory,
+  useUpdateCategoryGroup
+} from "../hooks/use-category-mutations";
 import { IconGlyph } from "./icon-glyph";
 import { ICON_CHOICES } from "../model/icon-registry";
 import { COLOR_CHOICES } from "../model/palette";
 
-type CategoryFormField = "name" | "kind" | "parentId" | "icon" | "color";
+type CategoryFormField = "name" | "kind" | "parentId" | "icon" | "color" | "group";
 
 function fieldErrorName(path: string): CategoryFormField | null {
   if (
@@ -29,7 +34,8 @@ function fieldErrorName(path: string): CategoryFormField | null {
     path === "kind" ||
     path === "parentId" ||
     path === "icon" ||
-    path === "color"
+    path === "color" ||
+    path === "group"
   ) {
     return path;
   }
@@ -37,16 +43,18 @@ function fieldErrorName(path: string): CategoryFormField | null {
 }
 
 type CreateCategorySheetProps = Readonly<{
-  defaultKind: CategoryKind;
+  defaultKind?: CategoryKind | undefined;
+  defaultParentId?: string | undefined;
   categories: readonly Category[];
-  category?: Category;
-  quickRename?: boolean;
+  category?: Category | undefined;
+  quickRename?: boolean | undefined;
   onClose: () => void;
-  onSaved?: (category: Category) => void | Promise<void>;
+  onSaved?: ((category: Category) => void | Promise<void>) | undefined;
 }>;
 
 export function CreateCategorySheet({
-  defaultKind,
+  defaultKind = "expense",
+  defaultParentId,
   categories,
   category,
   quickRename = false,
@@ -55,12 +63,14 @@ export function CreateCategorySheet({
 }: CreateCategorySheetProps): ReactNode {
   const create = useCreateCategory();
   const update = useUpdateCategory();
+  const updateGroup = useUpdateCategoryGroup();
   const editing = category !== undefined;
   const [kind, setKind] = useState<CategoryKind>(category?.kind ?? defaultKind);
   const [name, setName] = useState(category?.name ?? "");
-  const [parentId, setParentId] = useState(category?.parentId ?? "");
+  const [parentId, setParentId] = useState(category?.parentId ?? defaultParentId ?? "");
   const [icon, setIcon] = useState(category?.icon ?? "");
   const [color, setColor] = useState(category?.color ?? "");
+  const [group, setGroup] = useState<CategoryGroup | "">(category?.group ?? "");
   const [errors, setErrors] = useState<Partial<Record<CategoryFormField, string>>>({});
 
   const excludedParentIds =
@@ -77,6 +87,9 @@ export function CreateCategorySheet({
   function changeKind(next: CategoryKind): void {
     setKind(next);
     setParentId("");
+    if (next === "income") {
+      setGroup("");
+    }
   }
 
   async function submit(event: FormEvent<HTMLFormElement>): Promise<void> {
@@ -90,7 +103,8 @@ export function CreateCategorySheet({
           kind,
           ...(parentId === "" ? {} : { parentId }),
           ...(icon === "" ? {} : { icon }),
-          ...(color === "" ? {} : { color })
+          ...(color === "" ? {} : { color }),
+          ...(kind === "expense" && group !== "" ? { group } : {})
         });
         if (!parsed.success) {
           const next: Partial<Record<CategoryFormField, string>> = {};
@@ -119,6 +133,16 @@ export function CreateCategorySheet({
           return;
         }
         saved = await update.mutateAsync({ categoryId: category.id, patch: parsed.data });
+
+        // If group changed on an expense category, update group
+        const currentGroup = category.group ?? "";
+        const targetGroup = kind === "expense" ? group : "";
+        if (targetGroup !== currentGroup) {
+          saved = await updateGroup.mutateAsync({
+            categoryId: category.id,
+            group: targetGroup === "" ? null : targetGroup
+          });
+        }
       }
       toast.success(editing ? "Category updated" : "Category created");
       await onSaved?.(saved);
@@ -142,6 +166,7 @@ export function CreateCategorySheet({
 
   const previewGlyph = icon || name.trim().charAt(0).toUpperCase() || "?";
   const canSubmit = name.trim().length > 0;
+  const isPending = create.isPending || update.isPending || updateGroup.isPending;
 
   return (
     <DialogSurface variant="drawer" labelledBy="category-form-title" onClose={onClose}>
@@ -161,29 +186,29 @@ export function CreateCategorySheet({
       <p className="mt-1 text-sm text-foreground-muted">
         {quickRename
           ? "Choose a name that is not used by an active sibling. Saving will restore the category."
-          : "Set the name, icon, colour, and place in your category tree."}
+          : "Set the name, icon, colour, budget group, and place in your category tree."}
       </p>
 
       <form onSubmit={(event) => void submit(event)} className="mt-6 space-y-5">
         <div>
           <span className="mb-1.5 block font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
-            Kind
+            Pool Type
           </span>
           {editing ? (
             <div className="flex min-h-11 items-center rounded-lg border border-border bg-surface-muted px-3.5 text-sm font-semibold text-foreground">
-              {kind === "expense" ? "Expense" : "Income"}
+              {kind === "expense" ? "Expense Pool" : "Income Pool"}
             </div>
           ) : (
-            <div className="flex gap-2">
+            <div className="grid grid-cols-2 gap-2">
               {(["expense", "income"] as const).map((value) => (
                 <button
                   key={value}
                   type="button"
                   aria-pressed={kind === value}
                   onClick={() => changeKind(value)}
-                  className={`min-h-11 flex-1 rounded-lg border px-3 py-2.5 text-sm font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                  className={`min-h-11 rounded-lg border px-3 py-2.5 text-sm font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                     kind === value
-                      ? "border-accent bg-accent-glow text-accent"
+                      ? "border-accent bg-accent-glow text-accent shadow-xs"
                       : "border-border text-foreground-muted hover:text-foreground"
                   }`}
                 >
@@ -202,7 +227,7 @@ export function CreateCategorySheet({
             name="categoryName"
             autoComplete="off"
             maxLength={80}
-            placeholder="Groceries…"
+            placeholder="Groceries, Dining out, Salary…"
             onChange={(event) => setName(event.target.value)}
           />
           {errors.name === undefined ? null : (
@@ -211,6 +236,39 @@ export function CreateCategorySheet({
             </span>
           )}
         </div>
+
+        {kind === "expense" ? (
+          <div>
+            <div className="mb-1.5 flex items-center justify-between">
+              <span className="font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+                50/30/20 Grouping
+              </span>
+              <span className="text-[11px] text-foreground-muted">optional</span>
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { value: "essential" as const, label: "Essential", sub: "Needs" },
+                { value: "lifestyle" as const, label: "Lifestyle", sub: "Wants" },
+                { value: "" as const, label: "None", sub: "Unassigned" }
+              ].map((item) => (
+                <button
+                  key={item.value}
+                  type="button"
+                  aria-pressed={group === item.value}
+                  onClick={() => setGroup(item.value)}
+                  className={`flex flex-col items-center justify-center rounded-xl border p-2 text-center transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                    group === item.value
+                      ? "border-accent bg-accent-glow text-accent shadow-xs"
+                      : "border-border/80 bg-surface-muted/60 text-foreground-muted hover:border-accent/40 hover:text-foreground"
+                  }`}
+                >
+                  <span className="text-xs font-bold">{item.label}</span>
+                  <span className="text-[10px] font-medium opacity-80">{item.sub}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
 
         <div className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
           <span>
@@ -223,10 +281,10 @@ export function CreateCategorySheet({
             aria-label="Parent category"
             name="parentId"
             options={[
-              { value: "", label: "None (top-level)" },
+              { value: "", label: "None (top-level category)" },
               ...parentOptions.map((option) => ({ value: option.id, label: option.name }))
             ]}
-            placeholder="None (top-level)"
+            placeholder="None (top-level category)"
             value={parentId}
             onChange={setParentId}
           />
@@ -337,22 +395,42 @@ export function CreateCategorySheet({
           )}
         </div>
 
-        <div className="rounded-xl border border-border bg-surface-muted p-4">
-          <p className="font-mono text-[10px] font-bold tracking-widest text-foreground-muted uppercase">
-            Preview
+        <div className="rounded-2xl border border-border bg-surface-muted/60 p-4">
+          <p className="font-mono text-[9px] font-bold tracking-widest text-foreground-muted uppercase">
+            Live Preview
           </p>
-          <div className="mt-2.5 flex items-center gap-3">
-            <span
-              style={color === "" ? undefined : { backgroundColor: `${color}29` }}
-              className={`grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-lg text-base font-semibold text-foreground ${
-                color === "" ? "bg-surface-elevated" : ""
-              }`}
-            >
-              <IconGlyph value={previewGlyph} size={20} />
-            </span>
-            <span className="text-sm font-semibold text-foreground">
-              {name.trim() || "Category name"}
-            </span>
+          <div className="mt-3 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <span
+                style={color === "" ? undefined : { backgroundColor: color }}
+                className={`grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-xl text-base font-semibold text-white shadow-xs ${
+                  color === "" ? "bg-accent text-accent-foreground" : ""
+                }`}
+              >
+                <IconGlyph value={previewGlyph} size={22} />
+              </span>
+              <div>
+                <span className="block text-sm font-bold text-foreground">
+                  {name.trim() || "Category name"}
+                </span>
+                <span className="text-[11px] text-foreground-muted">
+                  {parentId !== ""
+                    ? `Subcategory of ${parentOptions.find((p) => p.id === parentId)?.name ?? "Parent"}`
+                    : "Top-level category"}
+                </span>
+              </div>
+            </div>
+            {kind === "expense" && group !== "" ? (
+              <span
+                className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+                  group === "essential"
+                    ? "bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                    : "bg-purple-500/10 text-purple-600 dark:text-purple-400"
+                }`}
+              >
+                {group === "essential" ? "Essential" : "Lifestyle"}
+              </span>
+            ) : null}
           </div>
         </div>
 
@@ -365,12 +443,8 @@ export function CreateCategorySheet({
           >
             Cancel
           </Button>
-          <Button
-            className="flex-1 sm:flex-none"
-            type="submit"
-            disabled={!canSubmit || create.isPending || update.isPending}
-          >
-            {create.isPending || update.isPending
+          <Button className="flex-1 sm:flex-none" type="submit" disabled={!canSubmit || isPending}>
+            {isPending
               ? editing
                 ? "Saving…"
                 : "Creating…"

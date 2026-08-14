@@ -20,6 +20,7 @@ const mocks = vi.hoisted(() => {
     unarchivePending: false,
     deleteMutateAsync: vi.fn(),
     deletePending: false,
+    updateGroupMutateAsync: vi.fn(),
     toastSuccess: vi.fn(),
     toastError: vi.fn()
   };
@@ -46,8 +47,13 @@ vi.mock("../hooks/use-category-mutations", () => ({
   usePermanentlyDeleteCategory: () => ({
     mutateAsync: mocks.deleteMutateAsync,
     isPending: mocks.deletePending
+  }),
+  useUpdateCategoryGroup: () => ({
+    mutateAsync: mocks.updateGroupMutateAsync,
+    isPending: false
   })
 }));
+
 vi.mock("@/lib/toast", () => ({
   toast: { success: mocks.toastSuccess, error: mocks.toastError }
 }));
@@ -77,13 +83,14 @@ describe("CategoryManager", () => {
     mocks.updateMutateAsync.mockReset();
     mocks.unarchiveMutateAsync.mockReset();
     mocks.deleteMutateAsync.mockReset();
+    mocks.updateGroupMutateAsync.mockReset();
     mocks.toastSuccess.mockReset();
     mocks.toastError.mockReset();
   });
 
   it("shows an empty state for the active kind when there are no categories", () => {
     render(<CategoryManager initialCategories={[]} />);
-    expect(screen.getByText("No expense categories yet")).toBeVisible();
+    expect(screen.getByText("No expense categories found")).toBeVisible();
   });
 
   it("groups categories by kind under parent cards and hides archived ones", async () => {
@@ -103,7 +110,7 @@ describe("CategoryManager", () => {
     expect(screen.queryByText("Old")).not.toBeInTheDocument();
     expect(screen.queryByText("Salary")).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: /Income/ }));
+    await user.click(screen.getByRole("button", { name: /Income Pools/ }));
     expect(screen.getByText("Salary")).toBeVisible();
     expect(screen.queryByText("Food & Dining")).not.toBeInTheDocument();
   });
@@ -124,7 +131,7 @@ describe("CategoryManager", () => {
     await user.click(closeButton);
 
     await user.click(screen.getByRole("button", { name: "Actions for Food & Dining" }));
-    await user.click(screen.getByRole("button", { name: "Archive" }));
+    await user.click(screen.getByRole("button", { name: /archive category/i }));
     expect(screen.getByText("Archive Food & Dining?")).toBeVisible();
 
     await user.click(screen.getByRole("button", { name: "Archive category" }));
@@ -195,5 +202,25 @@ describe("CategoryManager", () => {
     await user.type(screen.getByLabelText("Search categories"), "Food");
     expect(screen.getByText("Food & Dining")).toBeVisible();
     expect(screen.queryByText("Transportation")).not.toBeInTheDocument();
+  });
+
+  it("filters categories by 50/30/20 group", async () => {
+    const user = userEvent.setup();
+    mocks.categories = [
+      category({ id: "cat-1", name: "Rent & Utilities", group: "essential" }),
+      category({ id: "cat-2", name: "Entertainment", group: "lifestyle" })
+    ];
+    render(<CategoryManager initialCategories={mocks.categories} />);
+
+    expect(screen.getByText("Rent & Utilities")).toBeVisible();
+    expect(screen.getByText("Entertainment")).toBeVisible();
+
+    await user.click(screen.getByRole("button", { name: "Needs" }));
+    expect(screen.getByText("Rent & Utilities")).toBeVisible();
+    expect(screen.queryByText("Entertainment")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Wants" }));
+    expect(screen.getByText("Entertainment")).toBeVisible();
+    expect(screen.queryByText("Rent & Utilities")).not.toBeInTheDocument();
   });
 });

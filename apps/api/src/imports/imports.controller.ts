@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   Param,
@@ -134,6 +135,15 @@ export class ImportsController {
     @Param("importBatchId") importBatchId: string
   ): Promise<ImportBatch> {
     return this.imports.requestRevert(user.id, ImportBatchIdSchema.parse(importBatchId));
+  }
+
+  @Delete(":importBatchId")
+  @HttpCode(204)
+  delete(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("importBatchId") importBatchId: string
+  ): Promise<void> {
+    return this.imports.deleteBatch(user.id, ImportBatchIdSchema.parse(importBatchId));
   }
 }
 

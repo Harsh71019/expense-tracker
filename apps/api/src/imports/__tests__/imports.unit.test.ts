@@ -174,4 +174,60 @@ describe("ImportsService Unit Tests", () => {
     const res = await service.revertBatch("u1", "batch_1");
     expect(res.status).toBe("reverted");
   });
+
+  it("deleteBatch deletes staged rows and the batch row for a deletable status", async () => {
+    const mockBatches = {
+      findById: vi.fn(async () => sampleBatch),
+      delete: vi.fn(async () => true)
+    };
+    const mockStagedRows = { deleteAllForBatch: vi.fn(async () => undefined) };
+    const service = createService({ mockBatches, mockStagedRows });
+
+    await service.deleteBatch("u1", "batch_1");
+
+    expect(mockStagedRows.deleteAllForBatch).toHaveBeenCalledWith("u1", "batch_1", "tx1");
+    expect(mockBatches.delete).toHaveBeenCalledWith("u1", "batch_1", "tx1");
+  });
+
+  it("deleteBatch throws not-found when the batch doesn't exist", async () => {
+    const mockBatches = { findById: vi.fn(async () => null) };
+    const service = createService({ mockBatches });
+
+    await expect(service.deleteBatch("u1", "batch_1")).rejects.toThrow("Import batch not found.");
+  });
+
+  it("deleteBatch rejects a committed batch", async () => {
+    const committedBatch = { ...sampleBatch, status: "committed" as const };
+    const mockBatches = { findById: vi.fn(async () => committedBatch), delete: vi.fn() };
+    const service = createService({ mockBatches });
+
+    await expect(service.deleteBatch("u1", "batch_1")).rejects.toThrow(
+      'Only a non-committed, non-in-progress batch can be deleted (current status: "committed").'
+    );
+    expect(mockBatches.delete).not.toHaveBeenCalled();
+  });
+
+  it("deleteBatch rejects an in-progress batch", async () => {
+    const committingBatch = { ...sampleBatch, status: "committing" as const };
+    const mockBatches = { findById: vi.fn(async () => committingBatch), delete: vi.fn() };
+    const service = createService({ mockBatches });
+
+    await expect(service.deleteBatch("u1", "batch_1")).rejects.toThrow(
+      'Only a non-committed, non-in-progress batch can be deleted (current status: "committing").'
+    );
+    expect(mockBatches.delete).not.toHaveBeenCalled();
+  });
+
+  it("deleteBatch throws if the batch's status changed before the delete landed", async () => {
+    const mockBatches = {
+      findById: vi.fn(async () => sampleBatch),
+      delete: vi.fn(async () => false)
+    };
+    const mockStagedRows = { deleteAllForBatch: vi.fn(async () => undefined) };
+    const service = createService({ mockBatches, mockStagedRows });
+
+    await expect(service.deleteBatch("u1", "batch_1")).rejects.toThrow(
+      "The batch's status changed before the delete could complete."
+    );
+  });
 });

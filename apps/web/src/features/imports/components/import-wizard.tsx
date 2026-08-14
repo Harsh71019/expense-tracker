@@ -10,10 +10,12 @@ import { useAccounts } from "@/features/accounts";
 import { useCategories } from "@/features/categories";
 
 import { useCommitBatch } from "../hooks/use-commit-batch";
+import { useDeleteBatch } from "../hooks/use-delete-batch";
 import { useImportBatches } from "../hooks/use-import-batches";
 import { useRevertBatch } from "../hooks/use-revert-batch";
 import { useUploadImport } from "../hooks/use-upload-import";
 import { CommitConfirmDialog } from "./commit-confirm-dialog";
+import { DeleteConfirmDialog } from "./delete-confirm-dialog";
 import { ImportList } from "./import-list";
 import { ImportStepper } from "./import-stepper";
 import { MapStep } from "./map-step";
@@ -32,6 +34,7 @@ export function ImportWizard({
   const upload = useUploadImport();
   const commit = useCommitBatch();
   const revert = useRevertBatch();
+  const deleteBatch = useDeleteBatch();
 
   const [view, setView] = useState<"list" | "wizard">("list");
   const [step, setStep] = useState<WizardStep>(0);
@@ -43,6 +46,7 @@ export function ImportWizard({
   const [includedCount, setIncludedCount] = useState(0);
   const [commitOpen, setCommitOpen] = useState(false);
   const [revertTarget, setRevertTarget] = useState<ImportBatch>();
+  const [deleteTarget, setDeleteTarget] = useState<ImportBatch>();
 
   const batches = batchesQuery.data ?? initialBatches;
   const accountItems = accounts.data ?? [];
@@ -126,6 +130,17 @@ export function ImportWizard({
     }
   }
 
+  async function doDelete(): Promise<void> {
+    if (deleteTarget === undefined) return;
+    try {
+      await deleteBatch.mutateAsync(deleteTarget.id);
+      setDeleteTarget(undefined);
+      toast.success("Import deleted");
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Could not delete this import");
+    }
+  }
+
   const canLeaveUpload = accountId !== "" && file !== undefined;
   const canLeaveMap = mapping !== undefined;
   const nextEnabled = step === 0 ? canLeaveUpload : canLeaveMap;
@@ -161,6 +176,7 @@ export function ImportWizard({
             accounts={accountItems}
             onResume={resumeBatch}
             onRevert={setRevertTarget}
+            onDelete={setDeleteTarget}
           />
           {batchesQuery.isError ? (
             <p className="mt-3 text-sm text-expense">Could not refresh imports.</p>
@@ -244,6 +260,15 @@ export function ImportWizard({
           isPending={revert.isPending}
           onCancel={() => setRevertTarget(undefined)}
           onConfirm={() => void doRevert()}
+        />
+      )}
+
+      {deleteTarget === undefined ? null : (
+        <DeleteConfirmDialog
+          batch={deleteTarget}
+          isPending={deleteBatch.isPending}
+          onCancel={() => setDeleteTarget(undefined)}
+          onConfirm={() => void doDelete()}
         />
       )}
     </section>

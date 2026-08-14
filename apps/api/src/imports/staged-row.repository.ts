@@ -13,6 +13,7 @@ import { z } from "zod";
 
 import { DATABASE_CONNECTION } from "../common/db/db.module.js";
 import type { DrizzleDb } from "../common/db/db.module.js";
+import type { DbTx } from "../common/db/db-txn.js";
 import { importBatches, stagedRows } from "../common/db/schema/index.js";
 import { InvalidCursorError } from "../common/errors/invalid-cursor.error.js";
 
@@ -36,8 +37,9 @@ export class StagedRowRepository {
    * (or double-counting) a partial prior run — parse is idempotent by
    * "clear then rewrite," not by per-row skip logic.
    */
-  async deleteAllForBatch(userId: string, batchId: ImportBatchId): Promise<void> {
-    await this.db
+  async deleteAllForBatch(userId: string, batchId: ImportBatchId, tx?: DbTx): Promise<void> {
+    const executor = tx ?? this.db;
+    await executor
       .delete(stagedRows)
       .where(and(eq(stagedRows.batchId, batchId), this.ownedBatch(userId)));
   }

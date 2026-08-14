@@ -238,4 +238,17 @@ describe("ImportsController", () => {
       "3fa85f64-5717-4562-b3fc-2c963f66beef"
     );
   });
+
+  it("deletes a batch", async () => {
+    const mockService = { deleteBatch: vi.fn().mockResolvedValue(undefined) };
+    // @ts-expect-error - mock ImportsService for unit testing
+    const controller = new ImportsController(mockService);
+
+    await controller.delete(user, "3fa85f64-5717-4562-b3fc-2c963f66beef");
+
+    expect(mockService.deleteBatch).toHaveBeenCalledWith(
+      "user-1",
+      "3fa85f64-5717-4562-b3fc-2c963f66beef"
+    );
+  });
 });

@@ -36,6 +36,20 @@ const QUEUED_WORKFLOW_STATUSES = ["pending_parse", "commit_queued", "revert_queu
 const RUNNING_WORKFLOW_STATUSES = ["parsing", "committing", "reverting"] as const;
 const MAX_WORKFLOW_CLAIMS = 5;
 
+/**
+ * A batch is only deletable while it holds no live ledger effect and no
+ * in-flight workflow: never mid parse/commit/revert (a delete racing a
+ * worker could strand its claim), never "committed" (its rows are real
+ * posted transactions — per AGENTS.md §3.2 those are append-only), and never
+ * "reverted" either — a revert only appends compensating reversal entries,
+ * it never deletes the originals, so a reverted batch's id is still
+ * referenced by both the reversed originals and their reversals via
+ * `transactions.import_batch_id` (`ON DELETE` intentionally has no cascade
+ * there — see `delete()` below). Only a batch that never posted anything
+ * (pending, staged, failed) qualifies.
+ */
+export const DELETABLE_IMPORT_BATCH_STATUSES = ["pending", "staged", "failed"] as const;
+
 @Injectable()
 export class ImportBatchRepository {
   constructor(@Inject(DATABASE_CONNECTION) private readonly db: DrizzleDb) {}
@@ -492,6 +506,26 @@ export class ImportBatchRepository {
           eq(importBatches.status, "committed")
         )
       );
+  }
+
+  /**
+   * Re-checks `status in DELETABLE_IMPORT_BATCH_STATUSES` inside the same
+   * transaction as the row delete, so a batch a worker claims for
+   * commit/revert between the service's read and this write is left alone
+   * rather than deleted out from under it.
+   */
+  async delete(userId: string, batchId: ImportBatchId, tx: DbTx): Promise<boolean> {
+    const rows = await tx
+      .delete(importBatches)
+      .where(
+        and(
+          eq(importBatches.userId, userId),
+          eq(importBatches.id, batchId),
+          inArray(importBatches.status, DELETABLE_IMPORT_BATCH_STATUSES)
+        )
+      )
+      .returning({ id: importBatches.id });
+    return rows.length === 1;
   }
 }
 

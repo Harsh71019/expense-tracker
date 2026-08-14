@@ -40,6 +40,10 @@ type ManagerProps = Readonly<{
   initialStats: RecurringStats | null;
 }>;
 
+type StatusFilter = "all" | "active" | "paused";
+type TypeFilter = "all" | "expense" | "income";
+type FrequencyFilter = "all" | "daily" | "weekly" | "monthly" | "yearly";
+
 export function RecurringManager({
   initialRules,
   accounts = [],
@@ -54,7 +58,9 @@ export function RecurringManager({
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editing, setEditing] = useState<RecurringRule>();
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "paused">("all");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
+  const [frequencyFilter, setFrequencyFilter] = useState<FrequencyFilter>("all");
 
   const rawItems = rules.data ?? initialRules;
   const accountItems = accountQuery.data ?? accounts;
@@ -66,14 +72,35 @@ export function RecurringManager({
   let items = rawItems;
   if (searchQuery.trim() !== "") {
     const q = searchQuery.toLowerCase().trim();
-    items = items.filter((rule) => rule.template.description.toLowerCase().includes(q));
+    items = items.filter(
+      (rule) =>
+        rule.template.description.toLowerCase().includes(q) ||
+        (rule.template.categoryId !== undefined &&
+          categoryMap.get(rule.template.categoryId)?.name.toLowerCase().includes(q)) ||
+        accountMap.get(rule.template.accountId)?.name.toLowerCase().includes(q)
+    );
   }
 
   if (statusFilter !== "all") {
     items = items.filter((rule) => (statusFilter === "active" ? !rule.isPaused : rule.isPaused));
   }
 
-  const isFiltered = searchQuery.trim() !== "" || statusFilter !== "all";
+  if (typeFilter !== "all") {
+    items = items.filter((rule) => rule.template.type === typeFilter);
+  }
+
+  if (frequencyFilter !== "all") {
+    items = items.filter((rule) => {
+      const parsed = parseSchedule(rule.rrule, rule.startAt);
+      return parsed !== null && parsed.frequency === frequencyFilter;
+    });
+  }
+
+  const isFiltered =
+    searchQuery.trim() !== "" ||
+    statusFilter !== "all" ||
+    typeFilter !== "all" ||
+    frequencyFilter !== "all";
 
   function openCreate(): void {
     setEditing(undefined);
@@ -103,22 +130,32 @@ export function RecurringManager({
   }
 
   return (
-    <section className="space-y-7">
-      <header className="flex flex-col items-stretch gap-5 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
+    <section className="space-y-6 animate-fade-in">
+      {/* Automation Command Header */}
+      <header className="flex flex-col items-stretch gap-4 rounded-2xl border border-border/80 bg-surface-elevated/90 px-5 py-4.5 shadow-xs backdrop-blur-md sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <p className="font-mono text-[10px] font-bold tracking-[0.2em] text-accent uppercase">
-            Ledger · Automation
-          </p>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-md border border-accent/30 bg-accent-glow/40 px-2.5 py-0.5 font-mono text-[10px] font-bold tracking-wider text-accent uppercase">
+              <span
+                className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse"
+                aria-hidden="true"
+              />
+              Automation Engine
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-md border border-income/30 bg-income/10 px-2 py-0.5 font-mono text-[10px] font-bold text-income">
+              ● Active
+            </span>
+          </div>
+          <h1 className="mt-1.5 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
             Recurring
           </h1>
-          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-foreground-muted">
+          <p className="mt-1 max-w-2xl text-xs text-foreground-muted">
             Rent, salary, subscriptions — set the amount and schedule once, and each occurrence
-            posts itself. Pause anytime.
+            posts itself or reconciles against incoming transactions.
           </p>
         </div>
         <Button
-          className="w-full sm:w-auto"
+          className="w-full sm:w-auto shadow-glow"
           type="button"
           onClick={openCreate}
           disabled={accountItems.length === 0}
@@ -127,18 +164,22 @@ export function RecurringManager({
         </Button>
       </header>
 
+      {/* Analytics KPIs */}
       <RecurringStatsCards initialStats={initialStats} />
 
+      {/* Reconciliation Reviews */}
       <ReconciliationReviewPanel initialReconciliations={initialReconciliations} />
 
+      {/* Filter & Search Toolbar */}
       {rawItems.length > 0 && (
         <div
           className={`flex flex-wrap items-center gap-3 rounded-2xl border p-3.5 backdrop-blur transition-all duration-200 ${
             isFiltered
               ? "border-accent/40 bg-surface-elevated/90 shadow-sm"
-              : "border-border/80 bg-surface-elevated/90"
+              : "border-border/80 bg-surface-elevated/90 shadow-xs"
           }`}
         >
+          {/* Search Input */}
           <div className="flex min-w-0 flex-1 basis-full items-center gap-2.5 rounded-xl border border-border/80 bg-surface-muted/60 px-3.5 transition-colors focus-within:border-accent/60 focus-within:bg-surface-muted focus-within:ring-2 focus-within:ring-accent/20 sm:min-w-56 sm:basis-auto">
             <span className="text-foreground-muted/70 text-sm font-semibold" aria-hidden="true">
               ⌕
@@ -164,6 +205,7 @@ export function RecurringManager({
             )}
           </div>
 
+          {/* Status Filters */}
           <div className="flex gap-1 rounded-xl border border-border bg-surface-muted p-1">
             {(["all", "active", "paused"] as const).map((status) => {
               const active = statusFilter === status;
@@ -184,16 +226,60 @@ export function RecurringManager({
             })}
           </div>
 
+          {/* Type Filters */}
+          <div className="hidden gap-1 rounded-xl border border-border bg-surface-muted p-1 md:flex">
+            {(["all", "expense", "income"] as const).map((type) => {
+              const active = typeFilter === type;
+              return (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => setTypeFilter(type)}
+                  className={`min-h-9 rounded-lg px-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                    active
+                      ? "bg-surface-elevated text-foreground shadow-xs"
+                      : "text-foreground-muted hover:text-foreground"
+                  }`}
+                >
+                  {type === "all" ? "All Types" : type === "expense" ? "Expense" : "Income"}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Frequency Filters */}
+          <div className="hidden gap-1 rounded-xl border border-border bg-surface-muted p-1 lg:flex">
+            {(["all", "monthly", "weekly", "yearly"] as const).map((freq) => {
+              const active = frequencyFilter === freq;
+              return (
+                <button
+                  key={freq}
+                  type="button"
+                  onClick={() => setFrequencyFilter(freq)}
+                  className={`min-h-9 rounded-lg px-2.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                    active
+                      ? "bg-surface-elevated text-foreground shadow-xs"
+                      : "text-foreground-muted hover:text-foreground"
+                  }`}
+                >
+                  {freq === "all" ? "All Freq" : freq.charAt(0).toUpperCase() + freq.slice(1)}
+                </button>
+              );
+            })}
+          </div>
+
           {isFiltered ? (
             <button
               type="button"
               onClick={() => {
                 setSearchQuery("");
                 setStatusFilter("all");
+                setTypeFilter("all");
+                setFrequencyFilter("all");
               }}
               className="flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-border/80 bg-surface-muted/60 px-3.5 py-2 text-xs font-semibold text-foreground-muted transition-colors hover:border-expense/40 hover:bg-expense/10 hover:text-expense focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             >
-              <span>Clear</span>
+              <span>Reset</span>
             </button>
           ) : null}
         </div>
@@ -290,30 +376,32 @@ function RecurringRuleCard({
 
   return (
     <article
-      className={`rounded-2xl border bg-surface-elevated p-5 transition-colors sm:p-6 ${
-        rule.isPaused ? "border-border opacity-75" : "border-border hover:border-accent/35"
+      className={`glass-card rounded-2xl p-4.5 shadow-xs transition-all duration-200 sm:p-5.5 ${
+        rule.isPaused
+          ? "border-border opacity-75 hover:opacity-100"
+          : "border-border/80 hover:border-accent/40 hover:shadow-sm"
       }`}
     >
-      <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
-        <div className="flex min-w-0 items-start gap-4">
+      <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+        <div className="flex min-w-0 items-start gap-3.5 sm:gap-4">
           <span
             style={iconStyle}
-            className={`grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-xl border border-border text-lg ${
+            className={`grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-xl border border-border text-lg shadow-2xs ${
               category?.color === undefined ? "bg-surface-muted" : ""
             }`}
           >
             <IconGlyph value={icon} size={20} />
           </span>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="truncate text-base font-bold text-foreground">
+              <h2 className="truncate text-base font-bold tracking-tight text-foreground">
                 {rule.template.description}
               </h2>
               <span
                 className={`rounded-md px-2 py-0.5 font-mono text-[9px] font-bold tracking-wider uppercase ${
                   rule.template.type === "expense"
-                    ? "bg-expense/10 text-expense"
-                    : "bg-income/10 text-income"
+                    ? "bg-expense/10 text-expense border border-expense/20"
+                    : "bg-income/10 text-income border border-income/20"
                 }`}
               >
                 {rule.template.type}
@@ -322,8 +410,16 @@ function RecurringRuleCard({
                 <span className="rounded-md border border-border bg-surface-muted px-2 py-0.5 font-mono text-[9px] font-bold tracking-wider text-foreground-muted uppercase">
                   {isCompleted ? "Completed" : "Paused"}
                 </span>
-              ) : null}
-              {rule.autoPost ? null : (
+              ) : (
+                <span className="rounded-md border border-income/30 bg-income/10 px-2 py-0.5 font-mono text-[9px] font-bold tracking-wider text-income uppercase">
+                  Active
+                </span>
+              )}
+              {rule.autoPost ? (
+                <span className="rounded-md border border-border/80 bg-surface-muted/60 px-2 py-0.5 font-mono text-[9px] font-bold tracking-wider text-foreground-muted uppercase">
+                  ⚡ Auto-Post
+                </span>
+              ) : (
                 <span
                   title="No transaction is posted for you — link one from its detail panel, or it gets matched automatically."
                   className="rounded-md border border-accent/30 bg-accent-glow px-2 py-0.5 font-mono text-[9px] font-bold tracking-wider text-accent uppercase"
@@ -332,28 +428,50 @@ function RecurringRuleCard({
                 </span>
               )}
             </div>
-            <p className="mt-1.5 text-sm text-foreground-muted">
-              {scheduleLabel} <span aria-hidden="true">·</span> {account?.name ?? "Unknown account"}
-            </p>
-            <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 font-mono text-[10px] text-foreground-muted">
-              <span>
-                {rule.isPaused
-                  ? isCompleted
-                    ? "Schedule completed"
-                    : "No upcoming runs"
-                  : `Next ${dateFormatter.format(rule.nextRunAt)}`}
+
+            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-foreground-muted">
+              <span className="font-semibold text-foreground">{scheduleLabel}</span>
+              <span aria-hidden="true">·</span>
+              <span className="inline-flex items-center gap-1 rounded bg-surface-muted/80 px-1.5 py-0.5 font-mono text-[11px] text-foreground-muted border border-border/60">
+                🏦 {account?.name ?? "Unknown account"}
               </span>
+              {category !== undefined ? (
+                <>
+                  <span aria-hidden="true">·</span>
+                  <span className="font-medium text-foreground-muted">{category.name}</span>
+                </>
+              ) : null}
+            </div>
+
+            <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-[10px] text-foreground-muted">
+              <span className="inline-flex items-center gap-1">
+                <span className="text-foreground-muted/80">Next:</span>
+                <strong className={rule.isPaused ? "text-foreground-muted" : "text-accent"}>
+                  {rule.isPaused
+                    ? isCompleted
+                      ? "Schedule completed"
+                      : "No upcoming runs"
+                    : `Next ${dateFormatter.format(rule.nextRunAt)}`}
+                </strong>
+              </span>
+              <span>·</span>
               <span>
                 {rule.lastRunAt === undefined
                   ? "Not posted yet"
                   : `Last posted ${dateFormatter.format(rule.lastRunAt)}`}
               </span>
             </div>
-            {rule.autoPost ? null : <OccurrenceTickRow ruleId={rule.id} />}
+
+            {rule.autoPost ? null : (
+              <div className="mt-2">
+                <OccurrenceTickRow ruleId={rule.id} />
+              </div>
+            )}
           </div>
         </div>
 
-        <div className="flex flex-col items-stretch gap-3 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between sm:gap-5 md:flex-col md:items-end md:border-0 md:pt-0">
+        {/* Amount & Actions */}
+        <div className="flex flex-col items-stretch gap-3 border-t border-border/70 pt-3.5 sm:flex-row sm:items-center sm:justify-between sm:gap-5 md:flex-col md:items-end md:border-0 md:pt-0">
           <div className="text-left sm:text-right">
             <Money
               minor={rule.template.amountMinor}
@@ -361,7 +479,7 @@ function RecurringRuleCard({
               signed
               size="lg"
             />
-            <p className="mt-0.5 text-xs text-foreground-muted">per {period}</p>
+            <p className="mt-0.5 font-mono text-[11px] text-foreground-muted">per {period}</p>
           </div>
           <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
             {isCompleted ? null : (
@@ -369,7 +487,7 @@ function RecurringRuleCard({
                 type="button"
                 onClick={onTogglePause}
                 disabled={isUpdating}
-                className="min-h-11 rounded-lg border border-border px-3 py-2 text-xs font-semibold text-foreground-muted hover:border-accent/40 hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-50"
+                className="min-h-10 rounded-xl border border-border/80 bg-surface-muted/60 px-3 py-1.5 text-xs font-semibold text-foreground-muted transition-all hover:border-accent/40 hover:bg-surface-elevated hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-50"
               >
                 {isUpdating ? "Saving…" : rule.isPaused ? "Resume" : "Pause"}
               </button>
@@ -377,7 +495,7 @@ function RecurringRuleCard({
             <button
               type="button"
               onClick={onEdit}
-              className="min-h-11 rounded-lg border border-border px-3 py-2 text-xs font-semibold text-foreground hover:border-accent/40 hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              className="min-h-10 rounded-xl border border-border/80 bg-surface-muted/60 px-3 py-1.5 text-xs font-semibold text-foreground transition-all hover:border-accent/40 hover:bg-surface-elevated hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             >
               Edit
             </button>

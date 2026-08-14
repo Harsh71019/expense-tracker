@@ -66,6 +66,19 @@ Never format `amountMinor` by hand — use `<Money>`/`<SignedMoney>` (`src/compo
 
 Colocated `__tests__/` (components) or `*.test.ts(x)` next to the file. Route-level smoke tests (`src/app/routes.test.tsx`, `layout.test.tsx`, `app-layout.test.tsx`, `error-boundaries.test.tsx`) assert the App Router tree wires up correctly independent of any single feature. `e2e/` is Playwright-only and excluded from the Vitest run.
 
+### Page composition
+
+Every new top-level authenticated route chooses a documented page template and composes `PageShell`
+with `PageHeader`. `PageShell` owns the route width: `wide` for dashboards and dense indexes,
+`standard` for most pages, and `narrow` for focused tasks. The app layout continues to own outer
+responsive padding and mobile navigation clearance.
+
+`PageHeader` owns the single route `h1`, the ledger-line eyebrow, title scale, description, and
+responsive action placement. Use a stable factual taxonomy such as `Ledger / transactions`; do not
+invent decorative system-status copy. Use `size="compact"` only for focused tasks and details. Use
+`SectionHeader` for a major `h2` region with optional supporting copy or an action. Keep reusable
+visual composition in `components/ui`; feature components retain business-specific layout and copy.
+
 ### Design/reference docs
 
 `docs/frontend/*.md` (`FRONTEND.md`, `LOGGING-FRONTEND.md`, `PHASE2-UI-GUIDE.md`, etc.) are the target architecture/design docs this package was built against — treat them the same way the root `CLAUDE.md` treats `BACKEND.md`: useful for intent and direction, not a guaranteed description of current code.

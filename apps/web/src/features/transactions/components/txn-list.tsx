@@ -2,12 +2,14 @@
 
 import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
 import { Select } from "@/components/ui/select";
 import {
   BatchCategorizeTransactionsSchema,
   formatMinor,
   type Category,
   type ListTransactionsQuery,
+  type PendingTransaction,
   type Transaction,
   type TransactionInsights,
   type TransactionPage,
@@ -29,15 +31,18 @@ import { useCategories } from "@/features/categories";
 import { useReverseTransfer } from "@/features/transfers/hooks/use-transfers";
 import { downloadCsvFile, generateTransactionsCsv } from "../model/export-csv";
 import { toast } from "@/lib/toast";
+import { PendingTransactionsPanel } from "@/features/pending-transactions/components/pending-transactions-panel";
 
 export function TxnList({
   filters,
   initialPage,
-  initialInsights
+  initialInsights,
+  initialPendingTransactions
 }: Readonly<{
   filters: ListTransactionsQuery;
   initialPage: TransactionPage;
   initialInsights: TransactionInsights | null;
+  initialPendingTransactions: PendingTransaction[];
 }>): ReactNode {
   const list = useTxnList(filters, initialPage);
   const reverseTransfer = useReverseTransfer();
@@ -186,42 +191,32 @@ export function TxnList({
   }
 
   return (
-    <section className="animate-fade-in space-y-6">
-      {/* Header */}
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <p className="font-mono text-[11px] font-bold tracking-[0.2em] text-accent uppercase">
-            Ledger · Records
-          </p>
-          <h1 className="mt-1.5 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-            Transactions
-          </h1>
-          <p className="mt-2 max-w-xl text-sm leading-relaxed text-foreground-muted">
-            Every entry, append-only. Corrections happen by reversal, never by editing monetary
-            fields.
-          </p>
-        </div>
-        <div className="flex items-center gap-2.5">
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={handleExportCsv}
-            className="hidden sm:inline-flex"
-          >
-            Export CSV
-          </Button>
-          <Button
-            className="hidden sm:inline-flex"
-            type="button"
-            onClick={() => setCreateOpen(true)}
-          >
-            <span className="mr-1 text-base leading-none">+</span> New entry
-          </Button>
-        </div>
-      </header>
+    <section className="space-y-6">
+      <PageHeader
+        eyebrow="Ledger / transactions"
+        title="Transactions"
+        description="Review posted entries, categories, and reversals. Corrections are posted as reversals, never edits."
+        action={
+          <div className="flex gap-2 sm:items-center">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={handleExportCsv}
+              className="hidden sm:inline-flex"
+            >
+              Export CSV
+            </Button>
+            <Button className="w-full sm:w-auto" type="button" onClick={() => setCreateOpen(true)}>
+              <span className="mr-1 text-base leading-none">+</span> Add transaction
+            </Button>
+          </div>
+        }
+      />
 
       {/* Insights KPIs */}
       <TransactionInsightsCards initialInsights={initialInsights} />
+
+      <PendingTransactionsPanel initialPendingTransactions={initialPendingTransactions} />
 
       {/* Filter Bar */}
       <TxnFilters filters={filters} />

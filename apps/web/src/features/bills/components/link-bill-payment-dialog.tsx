@@ -87,7 +87,7 @@ export function LinkBillPaymentDialog({
     <DialogSurface variant="drawer" labelledBy="link-bill-payment-title" onClose={onClose}>
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="font-mono text-[10px] font-extrabold tracking-[0.22em] text-income uppercase">
+          <p className="font-mono text-2xs font-extrabold tracking-[0.22em] text-income uppercase">
             Balance correction
           </p>
           <h2 id="link-bill-payment-title" className="mt-1 text-xl font-bold text-foreground">
@@ -111,7 +111,7 @@ export function LinkBillPaymentDialog({
       <div className="mt-7 space-y-5">
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-xl border border-border bg-surface-muted p-4">
           <div className="min-w-0">
-            <p className="font-mono text-[9px] font-bold tracking-wider text-foreground-muted uppercase">
+            <p className="font-mono text-2xs font-bold tracking-wider text-foreground-muted uppercase">
               Existing debit
             </p>
             <p className="mt-1 truncate text-sm font-semibold text-foreground">
@@ -122,7 +122,7 @@ export function LinkBillPaymentDialog({
             →
           </span>
           <div className="min-w-0 text-right">
-            <p className="font-mono text-[9px] font-bold tracking-wider text-foreground-muted uppercase">
+            <p className="font-mono text-2xs font-bold tracking-wider text-foreground-muted uppercase">
               Card credit
             </p>
             <div className="mt-1">
@@ -157,7 +157,7 @@ export function LinkBillPaymentDialog({
 
             {card === undefined ? null : (
               <div className="rounded-xl border border-income/25 bg-income/5 p-4">
-                <p className="font-mono text-[9px] font-extrabold tracking-[0.2em] text-income uppercase">
+                <p className="font-mono text-2xs font-extrabold tracking-[0.2em] text-income uppercase">
                   Projected outstanding
                 </p>
                 <div className="mt-3 flex items-end justify-between gap-3">

@@ -52,7 +52,7 @@ export function ReportPage({ initialMonth, initialRollup }: ReportPageProps): Re
     <section>
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="font-mono text-[11px] font-bold tracking-[2px] text-accent">
+          <p className="font-mono text-2xs font-bold tracking-[2px] text-accent">
             LEDGER · REPORTS
           </p>
           <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">

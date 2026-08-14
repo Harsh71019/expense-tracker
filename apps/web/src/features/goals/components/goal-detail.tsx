@@ -90,11 +90,11 @@ export function GoalDetail({
           />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <span className="font-mono text-[10px] font-bold tracking-[0.2em] text-accent uppercase">
+              <span className="font-mono text-2xs font-bold tracking-[0.2em] text-accent uppercase">
                 {goal.status}
               </span>
               <span className="text-foreground-muted">•</span>
-              <span className="font-mono text-[10px] font-semibold text-foreground-muted uppercase">
+              <span className="font-mono text-2xs font-semibold text-foreground-muted uppercase">
                 {goal.fundingMode === "manual_envelope"
                   ? "Manual Envelope"
                   : goal.fundingMode === "linked_account"
@@ -204,7 +204,7 @@ export function GoalDetail({
 function Fact({ label, value }: Readonly<{ label: string; value: string }>): ReactNode {
   return (
     <div className="rounded-xl border border-border bg-surface-elevated p-4">
-      <p className="font-mono text-[9px] font-bold tracking-[0.18em] text-foreground-muted uppercase">
+      <p className="font-mono text-2xs font-bold tracking-[0.18em] text-foreground-muted uppercase">
         {label}
       </p>
       <p className="mt-2 text-sm font-semibold text-foreground">{value}</p>

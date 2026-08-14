@@ -69,7 +69,7 @@ export function PendingTransactionCard({
         <h3 id={headingId} className="truncate text-sm font-semibold text-foreground">
           {item.description}
         </h3>
-        <p className="mt-1 font-mono text-[10px] text-foreground-muted">
+        <p className="mt-1 font-mono text-2xs text-foreground-muted">
           {dateFormatter.format(item.occurredAt)} &middot; {item.type}
         </p>
       </header>
@@ -104,7 +104,7 @@ export function PendingTransactionCard({
       </footer>
 
       {confirm.isError || dismiss.isError ? (
-        <p className="mt-3 rounded-lg border border-expense/25 bg-expense/10 px-3 py-2 font-mono text-[11px] text-expense">
+        <p className="mt-3 rounded-lg border border-expense/25 bg-expense/10 px-3 py-2 font-mono text-2xs text-expense">
           {(confirm.error ?? dismiss.error)?.message || "Something went wrong."}
         </p>
       ) : null}

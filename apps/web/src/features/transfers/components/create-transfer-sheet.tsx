@@ -132,7 +132,7 @@ export function CreateTransferSheet({ onClose }: Readonly<{ onClose: () => void 
           onSubmit={form.handleSubmit((values) => void submit(values))}
           className="mt-6 flex flex-1 flex-col"
         >
-          <div className="mt-4 flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+          <div className="mt-4 flex flex-col gap-1.5 font-mono text-2xs font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
             <span>From account</span>
             <Select
               id="create-transfer-from"
@@ -164,7 +164,7 @@ export function CreateTransferSheet({ onClose }: Readonly<{ onClose: () => void 
             </button>
           </div>
 
-          <div className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+          <div className="flex flex-col gap-1.5 font-mono text-2xs font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
             <span>To account</span>
             <Select
               id="create-transfer-to"
@@ -192,7 +192,7 @@ export function CreateTransferSheet({ onClose }: Readonly<{ onClose: () => void 
 
           <label
             htmlFor="create-transfer-amount"
-            className="mt-5 block font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase"
+            className="mt-5 block font-mono text-2xs font-extrabold tracking-[0.25em] text-foreground-muted uppercase"
           >
             Amount
           </label>
@@ -221,12 +221,12 @@ export function CreateTransferSheet({ onClose }: Readonly<{ onClose: () => void 
             />
           </div>
           {form.formState.errors.amountMinor?.message === undefined ? null : (
-            <p className="mt-1.5 rounded-lg border border-expense/25 bg-expense/10 px-2.5 py-0.5 font-mono text-[10px] text-expense">
+            <p className="mt-1.5 rounded-lg border border-expense/25 bg-expense/10 px-2.5 py-0.5 font-mono text-2xs text-expense">
               {form.formState.errors.amountMinor.message}
             </p>
           )}
 
-          <div className="mt-5 flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+          <div className="mt-5 flex flex-col gap-1.5 font-mono text-2xs font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
             <span>Date & time</span>
             <DatePicker
               id="create-transfer-date"
@@ -253,7 +253,7 @@ export function CreateTransferSheet({ onClose }: Readonly<{ onClose: () => void 
               {...form.register("description")}
             />
             {form.formState.errors.description?.message === undefined ? null : (
-              <p className="mt-1.5 rounded-lg border border-expense/25 bg-expense/10 px-2.5 py-0.5 font-mono text-[10px] text-expense">
+              <p className="mt-1.5 rounded-lg border border-expense/25 bg-expense/10 px-2.5 py-0.5 font-mono text-2xs text-expense">
                 {form.formState.errors.description.message}
               </p>
             )}

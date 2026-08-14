@@ -1,15 +1,20 @@
 import { Injectable } from "@nestjs/common";
 import { fromNodeHeaders } from "better-auth/node";
-import type {
-  ApiKey,
-  ApiKeyPermissions,
-  CreateApiKey,
-  CreateApiKeyResponse,
-  UpdateApiKey
+import {
+  CreateApiKeyResponseSchema,
+  type ApiKey,
+  type ApiKeyPermissions,
+  type CreateApiKey,
+  type CreateApiKeyResponse,
+  type UpdateApiKey
 } from "@treasury-ops/shared";
 import type { Request } from "express";
 
 import { AuthService } from "../auth/auth.service.js";
+import {
+  IdempotencyPostgresService,
+  type IdempotentResult
+} from "../common/idempotency/idempotency-postgres.service.js";
 
 type PluginApiKey = Readonly<{
   id: string;
@@ -24,20 +29,35 @@ type PluginApiKey = Readonly<{
 
 @Injectable()
 export class ApiKeysService {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly idempotency: IdempotencyPostgresService
+  ) {}
 
-  async create(userId: string, input: CreateApiKey): Promise<CreateApiKeyResponse> {
-    const created = await this.authService.auth.api.createApiKey({
-      body: {
-        userId,
-        name: input.name,
-        permissions: toPluginPermissions(input.permissions),
-        prefix: "ak_",
-        ...(input.expiresAt === undefined ? {} : { expiresIn: secondsUntil(input.expiresAt) })
+  create(
+    userId: string,
+    input: CreateApiKey,
+    key: string
+  ): Promise<IdempotentResult<CreateApiKeyResponse>> {
+    return this.idempotency.execute(
+      userId,
+      "api-key.create",
+      key,
+      input,
+      CreateApiKeyResponseSchema,
+      async () => {
+        const created = await this.authService.auth.api.createApiKey({
+          body: {
+            userId,
+            name: input.name,
+            permissions: toPluginPermissions(input.permissions),
+            prefix: "ak_",
+            ...(input.expiresAt === undefined ? {} : { expiresIn: secondsUntil(input.expiresAt) })
+          }
+        });
+        return { ...toApiKey(created), key: created.key };
       }
-    });
-
-    return { ...toApiKey(created), key: created.key };
+    );
   }
 
   async list(request: Request): Promise<ApiKey[]> {

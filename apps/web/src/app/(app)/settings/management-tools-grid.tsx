@@ -101,7 +101,7 @@ export function ManagementToolsGrid({
                 >
                   {group.label}
                 </h3>
-                <span className="font-mono text-[9px] font-bold text-accent uppercase bg-accent-glow/50 border border-accent/20 px-2 py-0.5 rounded-full">
+                <span className="font-mono text-2xs font-bold text-accent uppercase bg-accent-glow/50 border border-accent/20 px-2 py-0.5 rounded-full">
                   {group.countTag}
                 </span>
               </div>
@@ -123,7 +123,7 @@ export function ManagementToolsGrid({
                       <span className="block text-xs font-bold tracking-tight text-foreground group-hover:text-accent transition-colors">
                         {item.label}
                       </span>
-                      <span className="mt-0.5 block truncate text-[11px] text-foreground-muted">
+                      <span className="mt-0.5 block truncate text-2xs text-foreground-muted">
                         {item.description}
                       </span>
                     </span>

@@ -334,7 +334,7 @@ export function TxnList({
               />
             </div>
             <div
-              className={`${TXN_ROW_GRID} flex-1 px-5 py-3 font-mono text-[10px] font-bold tracking-wider text-foreground-muted uppercase`}
+              className={`${TXN_ROW_GRID} flex-1 px-5 py-3 font-mono text-2xs font-bold tracking-wider text-foreground-muted uppercase`}
             >
               <div>Description</div>
               <div>Category</div>
@@ -528,7 +528,7 @@ function BatchCategoryBar({
           </div>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-          <label className="flex min-w-0 flex-1 flex-col gap-1 font-mono text-[9px] font-extrabold tracking-[0.2em] text-foreground-muted uppercase sm:min-w-64">
+          <label className="flex min-w-0 flex-1 flex-col gap-1 font-mono text-2xs font-extrabold tracking-[0.2em] text-foreground-muted uppercase sm:min-w-64">
             <span>{type} category</span>
             <Select
               aria-label={`Assign ${type} category`}

@@ -16,6 +16,17 @@ function pluginKey(overrides: Partial<Record<string, unknown>> = {}): Record<str
   };
 }
 
+function mockIdempotency(): {
+  execute: ReturnType<typeof vi.fn>;
+} {
+  return {
+    execute: vi.fn(async (_userId, _op, _key, _intent, _schema, work) => {
+      const result = await work({});
+      return { result, replayed: false };
+    })
+  };
+}
+
 describe("ApiKeysService", () => {
   it("creates a key, passing the caller's userId and the raw permissions through", async () => {
     const mockAuthService = {
@@ -24,12 +35,13 @@ describe("ApiKeysService", () => {
       }
     };
     // @ts-expect-error - mock AuthService for unit testing
-    const service = new ApiKeysService(mockAuthService);
+    const service = new ApiKeysService(mockAuthService, mockIdempotency());
 
-    const result = await service.create("user-1", {
-      name: "n8n",
-      permissions: { transactions: ["write"] }
-    });
+    const result = await service.create(
+      "user-1",
+      { name: "n8n", permissions: { transactions: ["write"] } },
+      "key-1"
+    );
 
     expect(mockAuthService.auth.api.createApiKey).toHaveBeenCalledWith({
       body: {
@@ -39,7 +51,7 @@ describe("ApiKeysService", () => {
         prefix: "ak_"
       }
     });
-    expect(result).toMatchObject({ id: "key-1", key: "ak_secret" });
+    expect(result.result).toMatchObject({ id: "key-1", key: "ak_secret" });
   });
 
   it("converts an expiresAt date into expiresIn seconds for createApiKey", async () => {
@@ -48,10 +60,14 @@ describe("ApiKeysService", () => {
       .mockResolvedValue({ ...pluginKey(), key: "ak_secret" });
     const mockAuthService = { auth: { api: { createApiKey } } };
     // @ts-expect-error - mock AuthService for unit testing
-    const service = new ApiKeysService(mockAuthService);
+    const service = new ApiKeysService(mockAuthService, mockIdempotency());
     const expiresAt = new Date(Date.now() + 3_600_000);
 
-    await service.create("user-1", { name: "n8n", permissions: { accounts: ["read"] }, expiresAt });
+    await service.create(
+      "user-1",
+      { name: "n8n", permissions: { accounts: ["read"] }, expiresAt },
+      "key-1"
+    );
 
     const call = createApiKey.mock.calls[0]?.[0];
     expect(call?.body.expiresIn).toBeGreaterThan(3_500);
@@ -63,7 +79,7 @@ describe("ApiKeysService", () => {
       auth: { api: { listApiKeys: vi.fn().mockResolvedValue({ apiKeys: [pluginKey()] }) } }
     };
     // @ts-expect-error - mock AuthService for unit testing
-    const service = new ApiKeysService(mockAuthService);
+    const service = new ApiKeysService(mockAuthService, mockIdempotency());
     const mockRequest = { headers: { cookie: "better-auth.session_token=abc" } };
 
     // @ts-expect-error - mock Express Request for unit testing
@@ -80,7 +96,7 @@ describe("ApiKeysService", () => {
       auth: { api: { updateApiKey: vi.fn().mockResolvedValue(pluginKey({ name: "renamed" })) } }
     };
     // @ts-expect-error - mock AuthService for unit testing
-    const service = new ApiKeysService(mockAuthService);
+    const service = new ApiKeysService(mockAuthService, mockIdempotency());
 
     const result = await service.update("user-1", "key-1", { name: "renamed" });
 
@@ -94,7 +110,7 @@ describe("ApiKeysService", () => {
     const updateApiKey = vi.fn().mockResolvedValue(pluginKey({ name: null }));
     const mockAuthService = { auth: { api: { updateApiKey } } };
     // @ts-expect-error - mock AuthService for unit testing
-    const service = new ApiKeysService(mockAuthService);
+    const service = new ApiKeysService(mockAuthService, mockIdempotency());
 
     const result = await service.update("user-1", "key-1", {
       permissions: { transactions: ["write"], categories: ["read"] }
@@ -114,13 +130,17 @@ describe("ApiKeysService", () => {
     const createApiKey = vi.fn().mockResolvedValue({ ...pluginKey(), key: "ak_secret" });
     const mockAuthService = { auth: { api: { createApiKey } } };
     // @ts-expect-error - mock AuthService for unit testing
-    const service = new ApiKeysService(mockAuthService);
+    const service = new ApiKeysService(mockAuthService, mockIdempotency());
 
-    await service.create("user-1", {
-      name: "expired",
-      permissions: {},
-      expiresAt: new Date(Date.now() - 1_000)
-    });
+    await service.create(
+      "user-1",
+      {
+        name: "expired",
+        permissions: {},
+        expiresAt: new Date(Date.now() - 1_000)
+      },
+      "key-1"
+    );
 
     expect(createApiKey).toHaveBeenCalledWith({
       body: expect.objectContaining({ expiresIn: 1 })
@@ -132,7 +152,7 @@ describe("ApiKeysService", () => {
       auth: { api: { updateApiKey: vi.fn().mockResolvedValue(pluginKey({ enabled: false })) } }
     };
     // @ts-expect-error - mock AuthService for unit testing
-    const service = new ApiKeysService(mockAuthService);
+    const service = new ApiKeysService(mockAuthService, mockIdempotency());
 
     await service.revoke("user-1", "key-1");
 

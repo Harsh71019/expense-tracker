@@ -28,7 +28,7 @@ export function ReconciliationReviewPanel({
   return (
     <section aria-label="Recurring reconciliations needing review" className="space-y-3">
       <div>
-        <p className="font-mono text-[10px] font-bold tracking-[0.2em] text-accent uppercase">
+        <p className="font-mono text-2xs font-bold tracking-[0.2em] text-accent uppercase">
           Needs your review
         </p>
         <h2 className="mt-1 text-lg font-bold text-foreground">

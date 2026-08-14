@@ -79,7 +79,7 @@ export function ApiKeyRow({ apiKey, onRevoke, onUpdate, isUpdating }: ApiKeyRowP
           onChange={(event) => setName(event.target.value)}
         />
         <fieldset className="flex flex-col gap-2">
-          <legend className="font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+          <legend className="font-mono text-2xs font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
             Scopes
           </legend>
           {SCOPE_OPTIONS.map((option) => (
@@ -133,13 +133,13 @@ export function ApiKeyRow({ apiKey, onRevoke, onUpdate, isUpdating }: ApiKeyRowP
         {scopeLabels(apiKey.permissions).map((label) => (
           <span
             key={label}
-            className="rounded-full border border-border bg-surface-muted px-2.5 py-1 text-[12px] font-semibold text-foreground-muted"
+            className="rounded-full border border-border bg-surface-muted px-2.5 py-1 text-xs font-semibold text-foreground-muted"
           >
             {label}
           </span>
         ))}
         {apiKey.enabled ? null : (
-          <span className="rounded-full border border-expense/40 bg-expense/10 px-2.5 py-1 text-[12px] font-semibold text-expense">
+          <span className="rounded-full border border-expense/40 bg-expense/10 px-2.5 py-1 text-xs font-semibold text-expense">
             Revoked
           </span>
         )}

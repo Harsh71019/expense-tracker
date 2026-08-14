@@ -106,13 +106,13 @@ export function TxnRow({
               </span>
             ) : null}
             {account !== undefined ? (
-              <span className="hidden sm:inline-flex items-center gap-1 rounded-md border border-border/70 bg-surface-muted/60 px-1.5 py-0.5 text-[10px] font-medium text-foreground-muted">
+              <span className="hidden sm:inline-flex items-center gap-1 rounded-md border border-border/70 bg-surface-muted/60 px-1.5 py-0.5 text-2xs font-medium text-foreground-muted">
                 <span aria-hidden="true">{ACCOUNT_TYPE_ICON[account.type] ?? "💳"}</span>
                 <span className="truncate max-w-28">{account.name}</span>
               </span>
             ) : null}
             {transaction.source === "manual" ? null : (
-              <span className="shrink-0 rounded-md border border-border bg-surface-muted px-1.5 py-0.5 font-mono text-[9px] font-bold tracking-wider text-foreground-muted uppercase">
+              <span className="shrink-0 rounded-md border border-border bg-surface-muted px-1.5 py-0.5 font-mono text-2xs font-bold tracking-wider text-foreground-muted uppercase">
                 {SOURCE_LABEL[transaction.source]}
               </span>
             )}
@@ -122,14 +122,14 @@ export function TxnRow({
           {!isCompact && (transaction.tags.length > 0 || isReversed || isReversal) ? (
             <div className="mt-1 flex flex-wrap items-center gap-1.5">
               {isReversed || isReversal ? (
-                <span className="rounded-md bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-bold text-amber-600 dark:text-amber-400">
+                <span className="rounded-md bg-amber-500/10 px-1.5 py-0.5 text-2xs font-bold text-amber-600 dark:text-amber-400">
                   {isReversed ? "Reversed" : "Reversal entry"}
                 </span>
               ) : null}
               {transaction.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="rounded-md border border-border/70 bg-surface-muted/60 px-1.5 py-0.2 font-mono text-[10px] font-medium text-foreground-muted"
+                  className="rounded-md border border-border/70 bg-surface-muted/60 px-1.5 py-0.2 font-mono text-2xs font-medium text-foreground-muted"
                 >
                   #{tag}
                 </span>
@@ -160,10 +160,10 @@ export function TxnRow({
       </div>
 
       {/* 3. Date & Time */}
-      <div className="col-start-2 row-start-2 text-right font-mono text-[11px] font-medium text-foreground-muted md:col-auto md:row-auto md:text-left md:text-[13px]">
+      <div className="col-start-2 row-start-2 text-right font-mono text-2xs font-medium text-foreground-muted md:col-auto md:row-auto md:text-left md:text-[13px]">
         <div>{dateFormatter.format(transaction.occurredAt)}</div>
         {!isCompact ? (
-          <div className="text-[10px] text-foreground-muted/70 hidden sm:block">
+          <div className="text-2xs text-foreground-muted/70 hidden sm:block">
             {timeFormatter.format(transaction.occurredAt)}
           </div>
         ) : null}

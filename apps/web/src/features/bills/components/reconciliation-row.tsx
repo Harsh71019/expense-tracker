@@ -69,7 +69,7 @@ export function ReconciliationRow({
         </div>
         <div className="text-right">
           {row.parsed === undefined ? null : <Money minor={row.parsed.amountMinor} />}
-          <p className="mt-1 font-mono text-[10px] font-bold tracking-wide text-foreground-muted uppercase">
+          <p className="mt-1 font-mono text-2xs font-bold tracking-wide text-foreground-muted uppercase">
             {row.matchStatus.replaceAll("_", " ")}
             {row.acknowledged ? " · acknowledged" : ""}
           </p>

@@ -89,7 +89,7 @@ export function QuickAddPanel({ accounts }: QuickAddPanelProps): ReactNode {
           onChange={setAmountMinor}
         />
 
-        <div className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+        <div className="flex flex-col gap-1.5 font-mono text-2xs font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
           <span>Account</span>
           <Select
             name="accountId"
@@ -127,7 +127,7 @@ export function QuickAddPanel({ accounts }: QuickAddPanelProps): ReactNode {
         >
           {justAdded ? "✓ Added" : create.isPending ? "Adding…" : "Add transaction"}
         </Button>
-        <p className="text-center font-mono text-[10px] text-foreground-muted">
+        <p className="text-center font-mono text-2xs text-foreground-muted">
           Safe to tap once — duplicate submits are ignored this session.
         </p>
       </form>

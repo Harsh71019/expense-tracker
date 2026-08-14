@@ -116,7 +116,7 @@ export function BudgetsPage({ initialPage, categories }: BudgetsPageProps): Reac
     <section className="space-y-7">
       <header className="flex flex-col items-stretch gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="font-mono text-[11px] font-bold tracking-[0.2em] text-accent uppercase">
+          <p className="font-mono text-2xs font-bold tracking-[0.2em] text-accent uppercase">
             Planning
           </p>
           <h1 className="mt-1.5 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">

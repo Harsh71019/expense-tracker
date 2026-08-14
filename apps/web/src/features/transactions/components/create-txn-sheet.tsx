@@ -130,7 +130,7 @@ export function CreateTxnSheet({ onClose }: Readonly<{ onClose: () => void }>): 
         <div className="flex flex-col gap-1.5">
           <label
             htmlFor="create-txn-amount"
-            className="font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase"
+            className="font-mono text-2xs font-extrabold tracking-[0.25em] text-foreground-muted uppercase"
           >
             Amount
           </label>
@@ -165,13 +165,13 @@ export function CreateTxnSheet({ onClose }: Readonly<{ onClose: () => void }>): 
             />
           </div>
           {form.formState.errors.amountMinor?.message === undefined ? null : (
-            <span className="self-start rounded-lg border border-expense/25 bg-expense/10 px-2.5 py-0.5 font-mono text-[10px] text-expense">
+            <span className="self-start rounded-lg border border-expense/25 bg-expense/10 px-2.5 py-0.5 font-mono text-2xs text-expense">
               {form.formState.errors.amountMinor.message}
             </span>
           )}
         </div>
 
-        <div className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+        <div className="flex flex-col gap-1.5 font-mono text-2xs font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
           <span>Account</span>
           <Select
             aria-label="Account"
@@ -185,14 +185,14 @@ export function CreateTxnSheet({ onClose }: Readonly<{ onClose: () => void }>): 
             onChange={(val) => form.setValue("accountId", val, { shouldValidate: true })}
           />
           {form.formState.errors.accountId?.message === undefined ? null : (
-            <span className="rounded-lg border border-expense/25 bg-expense/10 px-2.5 py-0.5 self-start font-mono text-[10px] normal-case text-expense">
+            <span className="rounded-lg border border-expense/25 bg-expense/10 px-2.5 py-0.5 self-start font-mono text-2xs normal-case text-expense">
               {form.formState.errors.accountId.message}
             </span>
           )}
         </div>
 
         <div className="flex flex-col gap-3 sm:flex-row">
-          <div className="flex min-w-0 flex-1 flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+          <div className="flex min-w-0 flex-1 flex-col gap-1.5 font-mono text-2xs font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
             <span>Date &amp; time</span>
             <DatePicker
               name="occurredAt"
@@ -207,7 +207,7 @@ export function CreateTxnSheet({ onClose }: Readonly<{ onClose: () => void }>): 
               }
             />
           </div>
-          <div className="flex min-w-0 flex-1 flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+          <div className="flex min-w-0 flex-1 flex-col gap-1.5 font-mono text-2xs font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
             <span>Category</span>
             <Select
               aria-label="Category"
@@ -238,7 +238,7 @@ export function CreateTxnSheet({ onClose }: Readonly<{ onClose: () => void }>): 
             {...form.register("description")}
           />
           {form.formState.errors.description?.message === undefined ? null : (
-            <span className="mt-1.5 self-start rounded-lg border border-expense/25 bg-expense/10 px-2.5 py-0.5 font-mono text-[10px] text-expense">
+            <span className="mt-1.5 self-start rounded-lg border border-expense/25 bg-expense/10 px-2.5 py-0.5 font-mono text-2xs text-expense">
               {form.formState.errors.description.message}
             </span>
           )}

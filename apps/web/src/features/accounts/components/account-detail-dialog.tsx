@@ -71,7 +71,7 @@ export function AccountDetailDialog({
     <DialogSurface labelledBy="account-detail-title" onClose={onClose} panelClassName="max-w-md">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <p className="font-mono text-[10px] font-bold tracking-[0.2em] text-accent uppercase">
+          <p className="font-mono text-2xs font-bold tracking-[0.2em] text-accent uppercase">
             {typeLabels[account.type]}
             {account.isArchived ? " · Archived" : ""}
           </p>
@@ -90,23 +90,23 @@ export function AccountDetailDialog({
       </div>
 
       <dl className="mt-5 grid grid-cols-[auto_1fr] items-center gap-x-5 gap-y-3 border-y border-border py-4.5">
-        <dt className="font-mono text-[10px] font-bold tracking-wider text-foreground-muted uppercase">
+        <dt className="font-mono text-2xs font-bold tracking-wider text-foreground-muted uppercase">
           Balance
         </dt>
         <dd className="text-right text-sm font-semibold text-foreground">
           <SignedMoney minor={account.balanceMinor} size="sm" />
         </dd>
-        <dt className="font-mono text-[10px] font-bold tracking-wider text-foreground-muted uppercase">
+        <dt className="font-mono text-2xs font-bold tracking-wider text-foreground-muted uppercase">
           Opening balance
         </dt>
         <dd className="text-right text-sm font-semibold text-foreground">
           <SignedMoney minor={account.openingBalanceMinor} size="sm" />
         </dd>
-        <dt className="font-mono text-[10px] font-bold tracking-wider text-foreground-muted uppercase">
+        <dt className="font-mono text-2xs font-bold tracking-wider text-foreground-muted uppercase">
           Currency
         </dt>
         <dd className="text-right text-sm font-semibold text-foreground">{account.currency}</dd>
-        <dt className="font-mono text-[10px] font-bold tracking-wider text-foreground-muted uppercase">
+        <dt className="font-mono text-2xs font-bold tracking-wider text-foreground-muted uppercase">
           Created
         </dt>
         <dd className="text-right text-sm font-semibold text-foreground">
@@ -115,7 +115,7 @@ export function AccountDetailDialog({
       </dl>
 
       <div className="mt-5">
-        <p className="font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+        <p className="font-mono text-2xs font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
           Account ID
         </p>
         <p className="mt-1.5 text-xs leading-relaxed text-foreground-muted">

@@ -3,10 +3,10 @@ import { renderHook, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
-import { useAccounts } from "./use-accounts";
-import { useCategories } from "./use-categories";
+import { useAccounts, useCreateAccount } from "@/features/accounts";
+import { useCategories } from "@/features/categories";
+
 import { useCreateTxn } from "./use-create-txn";
-import { useCreateAccount } from "./use-create-account";
 
 const mocks = vi.hoisted(() => ({ GET: vi.fn(), POST: vi.fn() }));
 vi.mock("@/lib/api/client", () => ({ apiClient: mocks }));

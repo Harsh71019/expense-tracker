@@ -128,7 +128,7 @@ export function UploadStep({
 
       {file === undefined ? null : (
         <div className="mt-4.5 flex items-center gap-3.5 rounded-xl border border-border bg-surface-muted px-4 py-3.5">
-          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-[10px] bg-accent-glow font-mono text-[11px] font-bold text-accent">
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-[10px] bg-accent-glow font-mono text-2xs font-bold text-accent">
             CSV
           </div>
           <div className="min-w-0 flex-1">

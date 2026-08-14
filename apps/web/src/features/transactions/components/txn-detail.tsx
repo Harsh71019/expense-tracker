@@ -280,7 +280,7 @@ export function TxnDetail({ initialTransaction }: { initialTransaction: Transact
                 value={description}
                 onChange={(event) => setDescription(event.target.value)}
               />
-              <div className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+              <div className="flex flex-col gap-1.5 font-mono text-2xs font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
                 <span>Category</span>
                 <Select
                   name="categoryId"

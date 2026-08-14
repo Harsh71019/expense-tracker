@@ -32,7 +32,7 @@ export function AssetHistoryDrawer({ asset, onClose }: AssetHistoryDrawerProps):
     <DialogSurface labelledBy="asset-history-title" onClose={onClose} variant="drawer">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="font-mono text-[11px] font-semibold tracking-wider text-foreground-muted">
+          <p className="font-mono text-2xs font-semibold tracking-wider text-foreground-muted">
             VALUATION HISTORY
           </p>
           <h2
@@ -86,7 +86,7 @@ export function AssetHistoryDrawer({ asset, onClose }: AssetHistoryDrawerProps):
                 </p>
               </div>
               <span
-                className={`rounded-[5px] border px-2 py-1 font-mono text-[10px] font-semibold tracking-wide ${
+                className={`rounded-[5px] border px-2 py-1 font-mono text-2xs font-semibold tracking-wide ${
                   projected
                     ? "border-amber-500/30 bg-amber-500/10 text-amber-500"
                     : "border-border bg-surface text-foreground-muted"

@@ -85,7 +85,7 @@ export function GoalContributionDrawer({
     >
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="font-mono text-[9px] font-bold tracking-[0.2em] text-accent uppercase">
+          <p className="font-mono text-2xs font-bold tracking-[0.2em] text-accent uppercase">
             Manual Envelope
           </p>
           <h2 id="goal-contribution-title" className="mt-1.5 text-xl font-bold text-foreground">
@@ -105,7 +105,7 @@ export function GoalContributionDrawer({
 
       <form onSubmit={(event) => void submit(event)} className="mt-7 space-y-5">
         <div>
-          <span className="mb-1.5 block font-mono text-[9px] font-extrabold tracking-[0.22em] text-foreground-muted uppercase">
+          <span className="mb-1.5 block font-mono text-2xs font-extrabold tracking-[0.22em] text-foreground-muted uppercase">
             Action
           </span>
           <div className="grid grid-cols-2 gap-2">
@@ -143,7 +143,7 @@ export function GoalContributionDrawer({
           onChange={setAmountMinor}
         />
 
-        <div className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+        <div className="flex flex-col gap-1.5 font-mono text-2xs font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
           <span>Date</span>
           <DatePicker
             id="contribution-date"

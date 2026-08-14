@@ -75,7 +75,7 @@ export function TransferRow({
             >
               {first.description}
             </span>
-            <span className="shrink-0 rounded-md bg-accent/10 px-1.5 py-0.5 font-mono text-[9px] font-bold tracking-wider text-accent uppercase">
+            <span className="shrink-0 rounded-md bg-accent/10 px-1.5 py-0.5 font-mono text-2xs font-bold tracking-wider text-accent uppercase">
               ⤢ Transfer
             </span>
             <PaymentRailBadge rail={paymentRail} />
@@ -91,7 +91,7 @@ export function TransferRow({
       <div className="pointer-events-none relative z-10 hidden text-xs font-medium text-foreground-muted md:block">
         Multiple legs
       </div>
-      <div className="pointer-events-none relative z-10 col-start-2 row-start-2 text-right font-mono text-[11px] font-medium text-foreground-muted md:col-auto md:row-auto md:text-left md:text-[12.5px]">
+      <div className="pointer-events-none relative z-10 col-start-2 row-start-2 text-right font-mono text-2xs font-medium text-foreground-muted md:col-auto md:row-auto md:text-left md:text-[12.5px]">
         {dateFormatter.format(first.occurredAt)}
       </div>
       <div className="pointer-events-none relative z-10 col-start-2 row-start-1 flex items-center justify-end gap-1.5 md:col-auto md:row-auto md:gap-2.5">

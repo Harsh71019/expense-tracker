@@ -22,7 +22,7 @@ export function BalanceCard({ accounts }: BalanceCardProps): ReactNode {
         aria-hidden="true"
       />
       <div className="relative">
-        <p className="font-mono text-[10px] font-bold tracking-[0.2em] text-foreground-muted uppercase">
+        <p className="font-mono text-2xs font-bold tracking-[0.2em] text-foreground-muted uppercase">
           Total balance · {active.length} active {active.length === 1 ? "account" : "accounts"}
         </p>
         <div className="mt-2.5">

@@ -58,12 +58,12 @@ export function BudgetCard({ progress, month, onEdit, onArchive }: BudgetCardPro
               <p className="mt-0.5 text-xs text-foreground-muted">Exact category · monthly</p>
             </div>
             {inactive ? (
-              <span className="rounded-md border border-border bg-surface-muted px-2 py-1 font-mono text-[9px] font-bold tracking-wide text-foreground-muted uppercase">
+              <span className="rounded-md border border-border bg-surface-muted px-2 py-1 font-mono text-2xs font-bold tracking-wide text-foreground-muted uppercase">
                 Inactive
               </span>
             ) : (
               <span
-                className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 font-mono text-[9px] font-bold tracking-wide uppercase ${statusClasses[progress.state]}`}
+                className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 font-mono text-2xs font-bold tracking-wide uppercase ${statusClasses[progress.state]}`}
               >
                 <span aria-hidden="true">{statusSymbols[progress.state]}</span>
                 {budgetStatusLabel(progress.state)}

@@ -11965,6 +11965,17 @@
             "cookieAuth": []
           }
         ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "Idempotency-Key",
+            "in": "header"
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -12013,6 +12024,92 @@
           }
         },
         "responses": {
+          "200": {
+            "description": "Idempotent replay of the created API key (raw key shown once)",
+            "headers": {
+              "Idempotency-Replayed": {
+                "schema": {
+                  "type": "string",
+                  "enum": ["true"]
+                },
+                "required": true
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "start": {
+                      "type": ["string", "null"]
+                    },
+                    "permissions": {
+                      "type": ["object", "null"],
+                      "properties": {
+                        "transactions": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": ["write"]
+                          }
+                        },
+                        "categories": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": ["read"]
+                          }
+                        },
+                        "accounts": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": ["read"]
+                          }
+                        }
+                      }
+                    },
+                    "enabled": {
+                      "type": "boolean"
+                    },
+                    "createdAt": {
+                      "type": ["string", "null"],
+                      "format": "date-time"
+                    },
+                    "expiresAt": {
+                      "type": ["string", "null"],
+                      "format": "date-time"
+                    },
+                    "lastRequest": {
+                      "type": ["string", "null"],
+                      "format": "date-time"
+                    },
+                    "key": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "start",
+                    "permissions",
+                    "enabled",
+                    "createdAt",
+                    "expiresAt",
+                    "lastRequest",
+                    "key"
+                  ]
+                }
+              }
+            }
+          },
           "201": {
             "description": "Created API key (raw key shown once)",
             "content": {
@@ -12092,6 +12189,16 @@
           },
           "401": {
             "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency key was already used for different request intent",
             "content": {
               "application/json": {
                 "schema": {

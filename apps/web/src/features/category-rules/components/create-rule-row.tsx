@@ -53,11 +53,11 @@ export function CreateRuleRow({
           <span className="grid h-5 w-5 place-items-center rounded bg-accent/15 text-xs text-accent font-bold">
             +
           </span>
-          <h3 className="font-mono text-[11px] font-bold uppercase tracking-wider text-foreground">
+          <h3 className="font-mono text-2xs font-bold uppercase tracking-wider text-foreground">
             Create Automation Rule
           </h3>
         </div>
-        <span className="text-[11px] text-foreground-muted hidden sm:inline">
+        <span className="text-2xs text-foreground-muted hidden sm:inline">
           Auto-assigns matching transaction descriptions
         </span>
       </div>

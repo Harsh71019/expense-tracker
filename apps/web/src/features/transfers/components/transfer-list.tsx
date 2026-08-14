@@ -66,7 +66,7 @@ export function TransferList({
     <section className="animate-fade-in">
       <header className="mb-7 flex flex-col items-stretch gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <p className="font-mono text-[11px] font-bold tracking-[0.2em] text-accent uppercase">
+          <p className="font-mono text-2xs font-bold tracking-[0.2em] text-accent uppercase">
             Ledger
           </p>
           <h1 className="mt-1.5 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
@@ -139,7 +139,7 @@ export function TransferList({
 
         {isFiltered && (
           <div className="flex w-full flex-wrap items-center gap-1.5 border-t border-border/60 pt-2.5">
-            <span className="font-mono text-[10px] font-semibold text-foreground-muted uppercase">
+            <span className="font-mono text-2xs font-semibold text-foreground-muted uppercase">
               Active:
             </span>
             {searchQuery !== "" && (

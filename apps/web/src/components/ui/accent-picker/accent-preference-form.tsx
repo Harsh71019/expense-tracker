@@ -148,7 +148,7 @@ function ThemePreview({
       className={`rounded-xl border p-4 ${dark ? "border-[#1c2320] bg-black" : "border-[#e2e8e3] bg-white"}`}
     >
       <p
-        className={`font-mono text-[9px] font-semibold tracking-[0.16em] uppercase ${dark ? "text-[#71817a]" : "text-[#6b7a72]"}`}
+        className={`font-mono text-2xs font-semibold tracking-[0.16em] uppercase ${dark ? "text-[#71817a]" : "text-[#6b7a72]"}`}
       >
         {label}
       </p>
@@ -257,7 +257,7 @@ export function AccentPreferenceForm({
                     </span>
                   ) : null}
                 </span>
-                <span className="text-[11px] leading-tight font-semibold">{option.label}</span>
+                <span className="text-2xs leading-tight font-semibold">{option.label}</span>
               </button>
             );
           })}
@@ -270,7 +270,7 @@ export function AccentPreferenceForm({
         <div className="flex items-center justify-between gap-3">
           <h3 className="text-sm font-semibold text-foreground">Custom color</h3>
           {selection === "custom" ? (
-            <span className="rounded-md border border-accent/30 bg-accent-glow px-2 py-0.5 font-mono text-[9px] font-semibold tracking-wider text-accent uppercase">
+            <span className="rounded-md border border-accent/30 bg-accent-glow px-2 py-0.5 font-mono text-2xs font-semibold tracking-wider text-accent uppercase">
               Staged
             </span>
           ) : null}
@@ -313,7 +313,7 @@ export function AccentPreferenceForm({
       </section>
 
       <section aria-label="Accent preview">
-        <p className="mb-2 font-mono text-[10px] font-semibold tracking-[0.14em] text-foreground-muted uppercase">
+        <p className="mb-2 font-mono text-2xs font-semibold tracking-[0.14em] text-foreground-muted uppercase">
           Preview · works in both themes
         </p>
         {preview === null ? (

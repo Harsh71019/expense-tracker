@@ -10,13 +10,13 @@ import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import { useAccounts } from "@/features/accounts";
+import { useCategories } from "@/features/categories";
 import { toDatetimeLocalValue } from "@/lib/datetime-local";
 import { userErrorMessage, ValidationError } from "@/lib/errors";
 import { generateRequestId } from "@/lib/request-id";
 import { toast } from "@/lib/toast";
 
-import { useAccounts } from "../hooks/use-accounts";
-import { useCategories } from "../hooks/use-categories";
 import { useCreateTxn } from "../hooks/use-create-txn";
 import { AccountSetup } from "./account-setup";
 
@@ -149,7 +149,7 @@ export function QuickAddForm(): ReactNode {
             : { error: form.formState.errors.amountMinor.message })}
         />
         <div className="grid gap-5 sm:grid-cols-2">
-          <div className="flex flex-col gap-1.5 font-mono text-[10px] font-bold tracking-wider text-foreground-muted uppercase">
+          <div className="flex flex-col gap-1.5 font-mono text-2xs font-bold tracking-wider text-foreground-muted uppercase">
             <span>Account</span>
             <Select
               aria-label="Account"
@@ -165,12 +165,12 @@ export function QuickAddForm(): ReactNode {
               onChange={(val) => form.setValue("accountId", val, { shouldValidate: true })}
             />
             {form.formState.errors.accountId?.message === undefined ? null : (
-              <span className="text-expense font-mono text-[10px] normal-case mt-1.5 rounded-lg border border-expense/25 bg-expense/10 px-2.5 py-0.5 self-start">
+              <span className="text-expense font-mono text-2xs normal-case mt-1.5 rounded-lg border border-expense/25 bg-expense/10 px-2.5 py-0.5 self-start">
                 {form.formState.errors.accountId.message}
               </span>
             )}
           </div>
-          <div className="flex flex-col gap-1.5 font-mono text-[10px] font-bold tracking-wider text-foreground-muted uppercase">
+          <div className="flex flex-col gap-1.5 font-mono text-2xs font-bold tracking-wider text-foreground-muted uppercase">
             <span>Category</span>
             <Select
               aria-label="Category"
@@ -199,7 +199,7 @@ export function QuickAddForm(): ReactNode {
             {...form.register("description")}
           />
           {form.formState.errors.description?.message === undefined ? null : (
-            <p className="text-expense font-mono text-[10px] mt-1.5 rounded-lg border border-expense/25 bg-expense/10 px-2.5 py-0.5 self-start">
+            <p className="text-expense font-mono text-2xs mt-1.5 rounded-lg border border-expense/25 bg-expense/10 px-2.5 py-0.5 self-start">
               {form.formState.errors.description.message}
             </p>
           )}
@@ -222,7 +222,7 @@ export function QuickAddForm(): ReactNode {
             )
           }
         />
-        <div className="flex flex-col gap-1.5 font-mono text-[10px] font-bold tracking-wider text-foreground-muted uppercase">
+        <div className="flex flex-col gap-1.5 font-mono text-2xs font-bold tracking-wider text-foreground-muted uppercase">
           <span>When</span>
           <DatePicker
             name="occurredAt"
@@ -240,7 +240,7 @@ export function QuickAddForm(): ReactNode {
         {create.isError && !(create.error instanceof ValidationError) ? (
           <p
             role="alert"
-            className="text-expense border border-expense/20 bg-expense/10 px-3.5 py-2.5 rounded-lg font-mono text-[11px] font-semibold text-center"
+            className="text-expense border border-expense/20 bg-expense/10 px-3.5 py-2.5 rounded-lg font-mono text-2xs font-semibold text-center"
           >
             Could not save. Your entry is still ready to retry.
           </p>
@@ -248,7 +248,7 @@ export function QuickAddForm(): ReactNode {
         {create.isSuccess ? (
           <p
             role="status"
-            className="text-income border border-income/20 bg-income/10 px-3.5 py-2.5 rounded-lg font-mono text-[11px] font-semibold text-center animate-fade-in"
+            className="text-income border border-income/20 bg-income/10 px-3.5 py-2.5 rounded-lg font-mono text-2xs font-semibold text-center animate-fade-in"
           >
             Saved to your ledger.
           </p>

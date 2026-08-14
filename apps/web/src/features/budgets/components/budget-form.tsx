@@ -87,7 +87,7 @@ export function BudgetForm({
     >
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="font-mono text-[9px] font-bold tracking-[0.2em] text-accent uppercase">
+          <p className="font-mono text-2xs font-bold tracking-[0.2em] text-accent uppercase">
             Monthly planning
           </p>
           <h2 id="budget-editor-title" className="mt-1.5 text-xl font-bold text-foreground">
@@ -105,7 +105,7 @@ export function BudgetForm({
       </div>
 
       <form onSubmit={(event) => void submit(event)} className="mt-7 space-y-5">
-        <div className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.22em] text-foreground-muted uppercase">
+        <div className="flex flex-col gap-1.5 font-mono text-2xs font-extrabold tracking-[0.22em] text-foreground-muted uppercase">
           <span>Expense category</span>
           <Select
             aria-label="Expense category"

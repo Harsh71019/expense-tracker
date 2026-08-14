@@ -84,7 +84,7 @@ export function ReconciliationReviewCard({
       className="rounded-2xl border border-border bg-surface-elevated p-5"
     >
       <header>
-        <span className="rounded-md bg-accent/10 px-2 py-0.5 font-mono text-[9px] font-bold tracking-wider text-accent uppercase">
+        <span className="rounded-md bg-accent/10 px-2 py-0.5 font-mono text-2xs font-bold tracking-wider text-accent uppercase">
           {status.label}
         </span>
         <h3 id={headingId} className="sr-only">
@@ -141,7 +141,7 @@ export function ReconciliationReviewCard({
       </footer>
 
       {resolve.isError ? (
-        <p className="mt-3 rounded-lg border border-expense/25 bg-expense/10 px-3 py-2 font-mono text-[11px] text-expense">
+        <p className="mt-3 rounded-lg border border-expense/25 bg-expense/10 px-3 py-2 font-mono text-2xs text-expense">
           {resolve.error.message || "Could not resolve this reconciliation."}
         </p>
       ) : null}
@@ -157,7 +157,7 @@ function TransactionRow({
   return (
     <div className="flex items-center justify-between gap-3">
       <div className="min-w-0">
-        <p className="font-mono text-[9px] font-bold tracking-wider text-foreground-muted uppercase">
+        <p className="font-mono text-2xs font-bold tracking-wider text-foreground-muted uppercase">
           {label}
         </p>
         <p
@@ -165,7 +165,7 @@ function TransactionRow({
         >
           {transaction.description}
         </p>
-        <p className="font-mono text-[10px] text-foreground-muted">
+        <p className="font-mono text-2xs text-foreground-muted">
           {dateFormatter.format(transaction.occurredAt)}
         </p>
       </div>

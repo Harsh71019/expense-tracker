@@ -193,7 +193,7 @@ export function CommandPalette({
             onKeyDown={handleKeyDown}
             className="w-full bg-transparent text-sm font-medium text-foreground placeholder:text-foreground-muted/60 focus:outline-none"
           />
-          <kbd className="rounded border border-border bg-surface-muted px-1.5 font-mono text-[10px] text-foreground-muted">
+          <kbd className="rounded border border-border bg-surface-muted px-1.5 font-mono text-2xs text-foreground-muted">
             ESC
           </kbd>
         </div>
@@ -238,7 +238,7 @@ export function CommandPalette({
 
                   <div className="flex items-center gap-2">
                     {cmd.shortcut !== undefined && (
-                      <kbd className="rounded border border-border/80 bg-surface-muted px-1.5 font-mono text-[10px] text-foreground-muted">
+                      <kbd className="rounded border border-border/80 bg-surface-muted px-1.5 font-mono text-2xs text-foreground-muted">
                         {cmd.shortcut}
                       </kbd>
                     )}
@@ -254,7 +254,7 @@ export function CommandPalette({
         </div>
 
         {/* Footer Hints */}
-        <div className="flex items-center justify-between border-t border-border bg-surface-muted/40 px-4 py-2 text-[10px] font-mono text-foreground-muted">
+        <div className="flex items-center justify-between border-t border-border bg-surface-muted/40 px-4 py-2 text-2xs font-mono text-foreground-muted">
           <span>
             Use <kbd className="font-semibold">↑</kbd> <kbd className="font-semibold">↓</kbd> to
             navigate

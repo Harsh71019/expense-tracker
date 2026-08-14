@@ -31,6 +31,7 @@ type TypeMeta = {
   filterLabel: string;
   icon: string;
   badgeStyle: string;
+  accentBorder: string;
 };
 
 const accountTypes: readonly TypeMeta[] = [
@@ -40,7 +41,8 @@ const accountTypes: readonly TypeMeta[] = [
     filterLabel: "Bank",
     icon: "🏦",
     badgeStyle:
-      "bg-gradient-to-br from-blue-500/15 to-cyan-500/15 text-cyan-600 dark:text-cyan-400 border border-cyan-500/25"
+      "bg-gradient-to-br from-blue-500/15 to-cyan-500/15 text-cyan-600 dark:text-cyan-400 border border-cyan-500/25",
+    accentBorder: "hover:border-cyan-500/40"
   },
   {
     value: "credit_card",
@@ -48,7 +50,8 @@ const accountTypes: readonly TypeMeta[] = [
     filterLabel: "Cards",
     icon: "💳",
     badgeStyle:
-      "bg-gradient-to-br from-amber-500/15 to-orange-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25"
+      "bg-gradient-to-br from-amber-500/15 to-orange-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25",
+    accentBorder: "hover:border-amber-500/40"
   },
   {
     value: "cash",
@@ -56,7 +59,8 @@ const accountTypes: readonly TypeMeta[] = [
     filterLabel: "Cash",
     icon: "💵",
     badgeStyle:
-      "bg-gradient-to-br from-emerald-500/15 to-teal-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25"
+      "bg-gradient-to-br from-emerald-500/15 to-teal-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25",
+    accentBorder: "hover:border-emerald-500/40"
   },
   {
     value: "wallet",
@@ -64,7 +68,8 @@ const accountTypes: readonly TypeMeta[] = [
     filterLabel: "Wallets",
     icon: "👛",
     badgeStyle:
-      "bg-gradient-to-br from-purple-500/15 to-indigo-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/25"
+      "bg-gradient-to-br from-purple-500/15 to-indigo-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/25",
+    accentBorder: "hover:border-purple-500/40"
   },
   {
     value: "investment",
@@ -72,7 +77,8 @@ const accountTypes: readonly TypeMeta[] = [
     filterLabel: "Investments",
     icon: "📈",
     badgeStyle:
-      "bg-gradient-to-br from-fuchsia-500/15 to-pink-500/15 text-fuchsia-600 dark:text-fuchsia-400 border border-fuchsia-500/25"
+      "bg-gradient-to-br from-fuchsia-500/15 to-pink-500/15 text-fuchsia-600 dark:text-fuchsia-400 border border-fuchsia-500/25",
+    accentBorder: "hover:border-fuchsia-500/40"
   }
 ];
 
@@ -88,8 +94,8 @@ const pillClasses = (active: boolean): string =>
   [
     "inline-flex items-center gap-1.5 min-h-10 rounded-xl px-3.5 py-2 text-xs font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent select-none",
     active
-      ? "border border-accent bg-accent-glow text-accent shadow-sm"
-      : "border border-border/70 bg-surface-elevated/50 text-foreground-muted hover:border-accent/40 hover:text-foreground"
+      ? "border border-accent/40 bg-accent-glow/50 text-accent shadow-xs font-bold"
+      : "border border-border/70 bg-surface-muted/60 text-foreground-muted hover:border-accent/40 hover:bg-surface-elevated hover:text-foreground"
   ].join(" ");
 
 export function AccountManager({ initialAccounts }: { initialAccounts: Account[] }): ReactNode {
@@ -240,26 +246,37 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
   }
 
   return (
-    <section className="space-y-8">
-      <header className="flex flex-col items-stretch gap-4 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
+    <section className="space-y-6 animate-fade-in">
+      {/* Executive Command Header */}
+      <header className="flex flex-col items-stretch gap-4 rounded-2xl border border-border/80 bg-surface-elevated/90 px-5 py-4.5 shadow-xs backdrop-blur-md sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <p className="font-mono text-[10px] font-bold tracking-[0.2em] text-accent uppercase">
-            Expense tracker
-          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-md border border-accent/30 bg-accent-glow/40 px-2.5 py-0.5 font-mono text-[10px] font-bold tracking-wider text-accent uppercase">
+              <span
+                className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse"
+                aria-hidden="true"
+              />
+              Capital Architecture
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-md border border-income/30 bg-income/10 px-2 py-0.5 font-mono text-[10px] font-bold text-income">
+              ● Ledger Synchronized
+            </span>
+          </div>
           <h1 className="mt-1.5 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
             Accounts
           </h1>
-          <p className="mt-1.5 max-w-md text-sm text-foreground-muted">
+          <p className="mt-1 max-w-md text-xs text-foreground-muted">
             The containers your money lives in. Balances update automatically as transactions post.
           </p>
         </div>
-        <Button className="w-full sm:w-auto" type="button" onClick={openCreate}>
+        <Button className="w-full sm:w-auto shadow-glow" type="button" onClick={openCreate}>
           <span className="mr-1 text-base leading-none">+</span> New account
         </Button>
       </header>
 
+      {/* Net Worth & Liquidity Overview Deck */}
       {items.length === 0 ? null : (
-        <div className="relative overflow-hidden rounded-2xl border border-border bg-surface-elevated/80 backdrop-blur p-6 sm:p-7 shadow-xs">
+        <div className="glass-card relative overflow-hidden rounded-2xl p-5.5 sm:p-6 shadow-xs">
           <div className="absolute -top-24 -right-24 h-48 w-48 rounded-full bg-accent-glow opacity-60 blur-3xl pointer-events-none" />
           <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-1">
@@ -267,7 +284,7 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
                 <p className="font-mono text-[10px] font-bold tracking-[0.15em] text-foreground-muted uppercase">
                   Net Worth Overview
                 </p>
-                <span className="inline-flex items-center rounded-full bg-accent-glow px-2 py-0.5 font-mono text-[10px] font-semibold text-accent">
+                <span className="inline-flex items-center rounded-md border border-accent/30 bg-accent-glow/50 px-2 py-0.5 font-mono text-[10px] font-semibold text-accent">
                   {active.length} {active.length === 1 ? "active account" : "active accounts"}
                 </span>
               </div>
@@ -276,25 +293,25 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-4">
-              <div className="flex-1 sm:flex-none min-w-[140px] rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3.5">
+            <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+              <div className="flex-1 sm:flex-none min-w-[145px] rounded-xl border border-emerald-500/25 bg-emerald-500/10 p-3.5 shadow-2xs">
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-mono text-[10px] font-bold tracking-wider text-emerald-600 dark:text-emerald-400 uppercase">
                     Assets
                   </span>
-                  <span className="text-xs text-emerald-500">↗</span>
+                  <span className="text-xs text-emerald-500 font-bold">↗</span>
                 </div>
                 <div className="mt-1">
                   <Money minor={assetsTotal} size="lg" />
                 </div>
               </div>
 
-              <div className="flex-1 sm:flex-none min-w-[140px] rounded-xl border border-rose-500/20 bg-rose-500/5 p-3.5">
+              <div className="flex-1 sm:flex-none min-w-[145px] rounded-xl border border-rose-500/25 bg-rose-500/10 p-3.5 shadow-2xs">
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-mono text-[10px] font-bold tracking-wider text-rose-600 dark:text-rose-400 uppercase">
                     Liabilities
                   </span>
-                  <span className="text-xs text-rose-500">↘</span>
+                  <span className="text-xs text-rose-500 font-bold">↘</span>
                 </div>
                 <div className="mt-1">
                   <Money
@@ -309,12 +326,13 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
         </div>
       )}
 
+      {/* Filter & Search Toolbar */}
       {items.length === 0 ? null : (
         <div
-          className={`mb-5 flex flex-wrap items-center gap-3.5 rounded-2xl border p-3.5 backdrop-blur transition-all duration-200 ${
+          className={`flex flex-wrap items-center gap-3.5 rounded-2xl border p-3.5 backdrop-blur transition-all duration-200 ${
             searchQuery.trim() !== "" || filter !== "all" || showArchived
               ? "border-accent/40 bg-surface-elevated/90 shadow-sm"
-              : "border-border/80 bg-surface-elevated/90"
+              : "border-border/80 bg-surface-elevated/90 shadow-xs"
           }`}
         >
           <div className="relative flex-1 min-w-[200px] sm:w-64 sm:flex-none">
@@ -360,12 +378,12 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
           </div>
 
           {hasArchived ? (
-            <label className="flex items-center gap-2 text-xs font-medium text-foreground-muted select-none cursor-pointer hover:text-foreground">
+            <label className="flex items-center gap-2 text-xs font-semibold text-foreground-muted select-none cursor-pointer hover:text-foreground transition-colors">
               <input
                 type="checkbox"
                 checked={showArchived}
                 onChange={(event) => setShowArchived(event.target.checked)}
-                className="h-4 w-4 rounded accent-accent"
+                className="h-4 w-4 rounded border-border accent-accent"
               />
               Show archived
             </label>
@@ -422,6 +440,7 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
         </div>
       )}
 
+      {/* Account Grid or Empty State */}
       {items.length === 0 ? (
         <EmptyState
           title="No accounts yet"
@@ -438,13 +457,13 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
           description="Try a different filter or search term."
         />
       ) : (
-        <div className="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4.5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {visible.map((account) => {
             const meta = typeMeta(account.type);
             return (
               <article
                 key={account.id}
-                className={`group relative flex flex-col justify-between rounded-2xl border border-border/80 bg-surface-elevated p-5 shadow-xs transition-all duration-200 hover:border-accent/40 hover:shadow-md ${
+                className={`glass-card group relative flex flex-col justify-between rounded-2xl p-5 shadow-xs transition-all duration-200 hover:border-accent/40 hover:shadow-md ${meta.accentBorder} ${
                   account.isArchived ? "opacity-60" : ""
                 }`}
               >
@@ -455,11 +474,11 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
                   className="absolute inset-0 z-0 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
                 />
 
-                <div className="pointer-events-none relative z-10 space-y-4">
+                <div className="pointer-events-none relative z-10 space-y-3.5">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex min-w-0 items-center gap-3">
                       <span
-                        className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl text-xl ${meta.badgeStyle}`}
+                        className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl text-xl shadow-2xs ${meta.badgeStyle}`}
                       >
                         {meta.icon}
                       </span>
@@ -479,7 +498,7 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
                     ) : null}
                   </div>
 
-                  <div className="rounded-xl border border-border/60 bg-surface-muted/50 p-3.5">
+                  <div className="rounded-xl border border-border/70 bg-surface-muted/60 p-3.5">
                     <p className="font-mono text-[9px] font-extrabold tracking-[0.15em] text-foreground-muted uppercase">
                       Current Balance
                     </p>
@@ -489,20 +508,20 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
                   </div>
                 </div>
 
-                <div className="pointer-events-none relative z-10 mt-4 border-t border-border/60 pt-3.5 flex flex-col gap-2">
+                <div className="pointer-events-none relative z-10 mt-3.5 border-t border-border/60 pt-3 flex flex-col gap-2">
                   <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
                     <span className="font-mono text-[10px] text-foreground-muted">
                       Opening <SignedMoney minor={account.openingBalanceMinor} size="sm" />
                     </span>
                     {account.type === "credit_card" && account.creditCardConfig !== undefined ? (
-                      <span className="inline-flex items-center rounded-md bg-accent-glow/50 px-2 py-0.5 font-mono text-[10px] text-accent">
+                      <span className="inline-flex items-center rounded-md border border-accent/25 bg-accent-glow/50 px-2 py-0.5 font-mono text-[10px] font-semibold text-accent">
                         Next stmt: {formatBillDate(account.creditCardConfig.nextStatementAt)}
                       </span>
                     ) : null}
                   </div>
 
                   {account.type === "credit_card" ? (
-                    <p className="text-xs text-foreground-muted">
+                    <p className="text-xs text-foreground-muted font-medium">
                       {account.creditCardConfig === undefined
                         ? "Billing cycle not configured"
                         : `Statement day ${account.creditCardConfig.statementDay} · due day ${account.creditCardConfig.dueDay}`}
@@ -518,7 +537,7 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
                             event.stopPropagation();
                             openCardConfig(account);
                           }}
-                          className="min-h-9 rounded-lg px-2.5 text-xs font-semibold text-accent hover:bg-accent-glow hover:text-accent-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                          className="min-h-9 rounded-lg px-2.5 text-xs font-semibold text-accent hover:bg-accent-glow/60 hover:text-accent-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent transition-colors"
                         >
                           {account.creditCardConfig === undefined
                             ? "Set billing cycle"
@@ -531,7 +550,7 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
                           event.stopPropagation();
                           setConfirming(account);
                         }}
-                        className="min-h-9 rounded-lg px-2.5 text-xs font-medium text-foreground-muted hover:bg-surface-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                        className="min-h-9 rounded-lg px-2.5 text-xs font-medium text-foreground-muted hover:bg-surface-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent transition-colors"
                       >
                         Archive
                       </button>
@@ -544,6 +563,7 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
         </div>
       )}
 
+      {/* Create Account Modal */}
       {createOpen ? (
         <DialogSurface
           labelledBy="create-account-title"
@@ -553,11 +573,11 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
           <h2 id="create-account-title" className="text-lg font-bold text-foreground">
             New account
           </h2>
-          <p className="mt-1 text-sm text-foreground-muted">
+          <p className="mt-1 text-xs text-foreground-muted">
             Name, type, and opening balance are set once and can&apos;t be changed later.
           </p>
 
-          <form className="mt-6 space-y-5" onSubmit={submit}>
+          <form className="mt-5 space-y-4.5" onSubmit={submit}>
             <Input
               id="account-name"
               label="Account name"
@@ -579,10 +599,10 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
                     key={meta.value}
                     type="button"
                     onClick={() => selectType(meta.value)}
-                    className={`flex min-h-11 flex-col items-center gap-1.5 rounded-xl border px-2 py-3 text-[11px] font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                    className={`flex min-h-11 flex-col items-center gap-1.5 rounded-xl border px-2 py-3 text-[11px] font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                       type === meta.value
-                        ? "border-accent bg-accent-glow text-accent"
-                        : "border-border bg-surface text-foreground-muted"
+                        ? "border-accent/40 bg-accent-glow/60 text-accent font-bold shadow-xs"
+                        : "border-border/80 bg-surface-muted/60 text-foreground-muted hover:border-accent/30 hover:bg-surface-elevated hover:text-foreground"
                     }`}
                   >
                     <span className="text-lg leading-none">{meta.icon}</span>
@@ -593,9 +613,9 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
             </div>
 
             {type === "credit_card" ? (
-              <div className="rounded-xl border border-border bg-surface-muted p-4">
-                <p className="text-sm font-semibold text-foreground">Billing cycle</p>
-                <div className="mt-3 grid grid-cols-2 gap-3">
+              <div className="rounded-xl border border-border/80 bg-surface-muted/60 p-4">
+                <p className="text-xs font-bold text-foreground">Billing cycle</p>
+                <div className="mt-2.5 grid grid-cols-2 gap-3">
                   <Input
                     id="statement-day"
                     label="Statement day"
@@ -621,7 +641,7 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
                     onChange={(event) => setDueDay(event.target.value)}
                   />
                 </div>
-                <p className="mt-2 text-xs leading-relaxed text-foreground-muted">
+                <p className="mt-2 text-[11px] leading-relaxed text-foreground-muted">
                   Days 29–31 automatically clamp to the last calendar day in shorter months.
                 </p>
               </div>
@@ -640,25 +660,25 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
                     key={value}
                     type="button"
                     onClick={() => setDirection(value)}
-                    className={`min-h-11 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                    className={`min-h-10 rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                       direction === value
                         ? value === "owed"
-                          ? "border border-expense/40 bg-expense/10 text-expense"
-                          : "border border-accent bg-accent-glow text-accent"
-                        : "border border-border text-foreground-muted"
+                          ? "border border-expense/40 bg-expense/10 text-expense font-bold shadow-xs"
+                          : "border border-accent/40 bg-accent-glow/60 text-accent font-bold shadow-xs"
+                        : "border border-border/80 bg-surface-muted/60 text-foreground-muted hover:text-foreground"
                     }`}
                   >
                     {value === "available" ? "+ Available" : "− Owed"}
                   </button>
                 ))}
               </div>
-              <p className="mt-2 text-center text-xs text-foreground-muted">
+              <p className="mt-2 text-center text-[11px] text-foreground-muted">
                 Use owed for accounts that start in debt, like a credit card.
               </p>
             </div>
 
             {error === undefined ? null : (
-              <p role="alert" className="text-sm text-expense">
+              <p role="alert" className="text-xs text-expense font-medium">
                 {error}
               </p>
             )}
@@ -672,7 +692,11 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
               >
                 Cancel
               </Button>
-              <Button className="w-full sm:w-auto" type="submit" disabled={createAccount.isPending}>
+              <Button
+                className="w-full sm:w-auto shadow-glow"
+                type="submit"
+                disabled={createAccount.isPending}
+              >
                 {createAccount.isPending ? "Creating…" : "Create account"}
               </Button>
             </div>
@@ -680,6 +704,7 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
         </DialogSurface>
       ) : null}
 
+      {/* Credit Card Billing Cycle Config Modal */}
       {configuring === undefined ? null : (
         <DialogSurface labelledBy="billing-cycle-title" onClose={() => setConfiguring(undefined)}>
           <div className="flex items-start justify-between gap-3">
@@ -687,18 +712,18 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
               <h2 id="billing-cycle-title" className="text-lg font-bold text-foreground">
                 Billing cycle
               </h2>
-              <p className="mt-1 text-sm text-foreground-muted">{configuring.name}</p>
+              <p className="mt-0.5 text-xs text-foreground-muted font-medium">{configuring.name}</p>
             </div>
             <button
               type="button"
               aria-label="Close billing cycle"
               onClick={() => setConfiguring(undefined)}
-              className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-foreground-muted hover:bg-surface-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-foreground-muted hover:bg-surface-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             >
               ✕
             </button>
           </div>
-          <form className="mt-5 space-y-4" onSubmit={saveCardConfig}>
+          <form className="mt-4 space-y-4" onSubmit={saveCardConfig}>
             <div className="grid grid-cols-2 gap-3">
               <Input
                 id="edit-statement-day"
@@ -725,11 +750,11 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
                 onChange={(event) => setDueDay(event.target.value)}
               />
             </div>
-            <p className="text-xs leading-relaxed text-foreground-muted">
+            <p className="text-[11px] leading-relaxed text-foreground-muted">
               This schedules future cycles. Existing generated bills are never recalculated.
             </p>
             {error === undefined ? null : (
-              <p role="alert" className="text-sm text-expense">
+              <p role="alert" className="text-xs text-expense font-medium">
                 {error}
               </p>
             )}
@@ -743,7 +768,7 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
                 Cancel
               </Button>
               <Button
-                className="w-full sm:w-auto"
+                className="w-full sm:w-auto shadow-glow"
                 type="submit"
                 disabled={updateCardConfig.isPending}
               >
@@ -754,12 +779,13 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
         </DialogSurface>
       )}
 
+      {/* Archive Account Confirmation Modal */}
       {confirming === undefined ? null : (
         <DialogSurface labelledBy="archive-account-title" onClose={() => setConfirming(undefined)}>
           <h2 id="archive-account-title" className="text-lg font-bold text-foreground">
             Archive {confirming.name}?
           </h2>
-          <p className="mt-2 text-sm text-foreground-muted">
+          <p className="mt-2 text-xs leading-relaxed text-foreground-muted">
             It drops out of active lists and totals, but its transaction history stays intact. This
             can&apos;t be undone — archiving is one-way.
           </p>
@@ -784,6 +810,7 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
         </DialogSurface>
       )}
 
+      {/* Account Detail Drawer/Modal */}
       {detailAccount === undefined ? null : (
         <AccountDetailDialog account={detailAccount} onClose={() => setDetailAccount(undefined)} />
       )}

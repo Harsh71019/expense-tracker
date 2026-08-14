@@ -2,6 +2,7 @@ import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
 import {
+  divideMinorAmount,
   formatMinor,
   formatMinorInput,
   formatSignedCompactMinor,
@@ -58,5 +59,11 @@ describe("INR money utilities", () => {
   it("sums through BigInt intermediates and rejects overflow", () => {
     expect(sumMinorAmounts([Number.MAX_SAFE_INTEGER - 1, 1])).toBe(Number.MAX_SAFE_INTEGER);
     expect(() => sumMinorAmounts([Number.MAX_SAFE_INTEGER, 1])).toThrow(RangeError);
+  });
+
+  it("divides paise with integer half-up rounding", () => {
+    expect(divideMinorAmount(4_060_000, 12)).toBe(338_333);
+    expect(divideMinorAmount(6, 4)).toBe(2);
+    expect(() => divideMinorAmount(100, 0)).toThrow(RangeError);
   });
 });

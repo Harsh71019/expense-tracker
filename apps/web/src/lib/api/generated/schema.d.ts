@@ -3064,7 +3064,7 @@ export interface paths {
       };
       requestBody?: never;
       responses: {
-        /** @description Recurring rule and next-30-days forecast statistics */
+        /** @description Recurring rule statistics with 30-day and rolling 12-month forecasts */
         200: {
           headers: {
             [name: string]: unknown;
@@ -7475,6 +7475,25 @@ export interface components {
         amountMinor: number;
         transactionCount: number;
       } | null;
+      twelveMonthForecast: {
+        /** @enum {number} */
+        forecastMonths: 12;
+        transactionCount: number;
+        expenseMinor: number;
+        incomeMinor: number;
+        netMinor: number;
+        monthlyExpenseAverageMinor: number;
+        ruleProjections: {
+          /** Format: uuid */
+          recurringRuleId: string;
+          description: string;
+          /** @enum {string} */
+          type: "expense" | "income";
+          amountMinor: number;
+          occurrenceCount: number;
+          projectedMinor: number;
+        }[];
+      };
     };
     RecurringOccurrence: {
       /** Format: uuid */

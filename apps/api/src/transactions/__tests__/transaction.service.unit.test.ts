@@ -7,6 +7,7 @@ import type { DrizzleDb } from "../../common/db/db.module.js";
 import { CategoryKindMismatchError } from "../../common/errors/category-kind-mismatch.error.js";
 
 import { EntityNotFoundError } from "../../common/errors/entity-not-found.error.js";
+import { focusedTestDouble } from "../../test/mock-drizzle.js";
 import type { TransactionRepository } from "../transaction.repository.js";
 
 import { TransactionService } from "../transaction.service.js";
@@ -35,6 +36,7 @@ describe("TransactionService Unit Tests", () => {
     mockTx?: unknown;
     mockAudit?: unknown;
     mockLogger?: unknown;
+    mockCreatedHook?: unknown;
   }) => {
     // @ts-expect-error mock db
     const db: DrizzleDb = opts.mockDb ?? {
@@ -50,8 +52,17 @@ describe("TransactionService Unit Tests", () => {
     const auditRepo: AuditRepository = opts.mockAudit ?? { record: vi.fn() };
     const logger = opts.mockLogger ?? { log: vi.fn(), warn: vi.fn() };
 
-    // @ts-expect-error mock logger
-    return new TransactionService(db, accountsRepo, categoriesRepo, txRepo, auditRepo, logger);
+    const createdHook = opts.mockCreatedHook;
+
+    return new TransactionService(
+      db,
+      accountsRepo,
+      categoriesRepo,
+      txRepo,
+      auditRepo,
+      focusedTestDouble(logger),
+      focusedTestDouble(createdHook)
+    );
   };
 
   describe("create", () => {
@@ -78,6 +89,38 @@ describe("TransactionService Unit Tests", () => {
       expect(res.transaction.description).toBe("Coffee");
       expect(res.replayed).toBe(false);
       expect(mockAccounts.applyBalanceDelta).toHaveBeenCalledWith("u1", "acc_1", -5000, "tx1");
+    });
+
+    it("runs API reconciliation inside the ledger transaction and propagates failures", async () => {
+      const failure = new Error("reconciliation failed");
+      const mockAccounts = { applyBalanceDelta: vi.fn(async () => "applied") };
+      const apiTransaction = { ...sampleTx, source: "api" as const };
+      const mockTx = { create: vi.fn(async () => apiTransaction) };
+      const mockCreatedHook = {
+        onTransactionCreatedInTx: vi.fn(async () => Promise.reject(failure))
+      };
+      const service = createService({ mockAccounts, mockTx, mockCreatedHook });
+
+      await expect(
+        service.create(
+          "u1",
+          {
+            accountId: "acc_1",
+            type: "expense",
+            amountMinor: 5000,
+            occurredAt: new Date("2026-01-01T00:00:00Z"),
+            description: "Coffee",
+            tags: []
+          },
+          undefined,
+          "api"
+        )
+      ).rejects.toBe(failure);
+      expect(mockCreatedHook.onTransactionCreatedInTx).toHaveBeenCalledWith(
+        "u1",
+        apiTransaction,
+        "tx1"
+      );
     });
 
     it("throws EntityNotFoundError if account does not exist on create", async () => {

@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import {
   computeNextOccurrence,
+  divideMinorAmount,
   RecurringStatsSchema,
   sumMinorAmounts,
   type Category,
@@ -11,9 +12,11 @@ import {
 } from "@treasury-ops/shared";
 
 import { CategoryRepository } from "../categories/category.repository.js";
+import { addMonthsInIST } from "../common/time/ist.js";
 import { RecurringRuleRepository } from "./recurring-rule.repository.js";
 
 const FORECAST_DAYS = 30;
+const ANNUAL_FORECAST_MONTHS = 12;
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 const UNCATEGORIZED_KEY = "uncategorized";
 
@@ -44,31 +47,60 @@ export function calculateRecurringStats(
   const expenseAmounts: number[] = [];
   const incomeAmounts: number[] = [];
   const windowEnd = new Date(now.getTime() + FORECAST_DAYS * ONE_DAY_MS);
+  const twelveMonthWindowEnd = addMonthsInIST(now, ANNUAL_FORECAST_MONTHS);
+  const annualExpenseAmounts: number[] = [];
+  const annualIncomeAmounts: number[] = [];
+  const ruleProjections: RecurringStats["twelveMonthForecast"]["ruleProjections"] = [];
   let upcomingTransactionCount = 0;
+  let annualTransactionCount = 0;
 
   for (const rule of activeRules) {
-    let occurrence: Date | null = rule.nextRunAt;
-    while (occurrence !== null && occurrence.getTime() <= windowEnd.getTime()) {
+    let occurrence: Date | null = firstOccurrenceAtOrAfter(rule, now);
+    const projectedAmounts: number[] = [];
+    let annualOccurrenceCount = 0;
+    while (occurrence !== null && occurrence.getTime() < twelveMonthWindowEnd.getTime()) {
       if (occurrence.getTime() >= now.getTime()) {
-        upcomingTransactionCount += 1;
+        annualTransactionCount += 1;
+        annualOccurrenceCount += 1;
+        projectedAmounts.push(rule.template.amountMinor);
+        const isWithinThirtyDays = occurrence.getTime() <= windowEnd.getTime();
         if (rule.template.type === "income") {
-          incomeAmounts.push(rule.template.amountMinor);
+          annualIncomeAmounts.push(rule.template.amountMinor);
+          if (isWithinThirtyDays) {
+            upcomingTransactionCount += 1;
+            incomeAmounts.push(rule.template.amountMinor);
+          }
         } else {
-          expenseAmounts.push(rule.template.amountMinor);
-          addCategorySpend(
-            spendingByCategory,
-            rule.template.categoryId,
-            categoriesById,
-            rule.template.amountMinor
-          );
+          annualExpenseAmounts.push(rule.template.amountMinor);
+          if (isWithinThirtyDays) {
+            upcomingTransactionCount += 1;
+            expenseAmounts.push(rule.template.amountMinor);
+            addCategorySpend(
+              spendingByCategory,
+              rule.template.categoryId,
+              categoriesById,
+              rule.template.amountMinor
+            );
+          }
         }
       }
       occurrence = computeNextOccurrence(rule.rrule, rule.startAt, occurrence);
     }
+
+    ruleProjections.push({
+      recurringRuleId: rule.id,
+      description: rule.template.description,
+      type: rule.template.type,
+      amountMinor: rule.template.amountMinor,
+      occurrenceCount: annualOccurrenceCount,
+      projectedMinor: sumMinorAmounts(projectedAmounts)
+    });
   }
 
   const upcomingExpenseMinor = sumMinorAmounts(expenseAmounts);
   const upcomingIncomeMinor = sumMinorAmounts(incomeAmounts);
+  const annualExpenseMinor = sumMinorAmounts(annualExpenseAmounts);
+  const annualIncomeMinor = sumMinorAmounts(annualIncomeAmounts);
   const topSpendingCategory = [...spendingByCategory.values()].sort(
     (left, right) =>
       compareMoneyDescending(left.amountMinor, right.amountMinor) ||
@@ -85,8 +117,34 @@ export function calculateRecurringStats(
     upcomingExpenseMinor,
     upcomingIncomeMinor,
     upcomingNetMinor: sumMinorAmounts([upcomingIncomeMinor, -upcomingExpenseMinor]),
-    topSpendingCategory: topSpendingCategory ?? null
+    topSpendingCategory: topSpendingCategory ?? null,
+    twelveMonthForecast: {
+      forecastMonths: ANNUAL_FORECAST_MONTHS,
+      transactionCount: annualTransactionCount,
+      expenseMinor: annualExpenseMinor,
+      incomeMinor: annualIncomeMinor,
+      netMinor: sumMinorAmounts([annualIncomeMinor, -annualExpenseMinor]),
+      monthlyExpenseAverageMinor: divideMinorAmount(annualExpenseMinor, ANNUAL_FORECAST_MONTHS),
+      ruleProjections: ruleProjections.sort(compareRuleProjections)
+    }
   });
+}
+
+function firstOccurrenceAtOrAfter(rule: RecurringRule, now: Date): Date | null {
+  if (rule.nextRunAt.getTime() >= now.getTime()) return rule.nextRunAt;
+  return computeNextOccurrence(rule.rrule, rule.startAt, new Date(now.getTime() - 1));
+}
+
+function compareRuleProjections(
+  left: RecurringStats["twelveMonthForecast"]["ruleProjections"][number],
+  right: RecurringStats["twelveMonthForecast"]["ruleProjections"][number]
+): number {
+  if (left.type !== right.type) return left.type === "expense" ? -1 : 1;
+  return (
+    compareMoneyDescending(left.projectedMinor, right.projectedMinor) ||
+    left.description.localeCompare(right.description) ||
+    left.recurringRuleId.localeCompare(right.recurringRuleId)
+  );
 }
 
 function compareMoneyDescending(left: number, right: number): number {

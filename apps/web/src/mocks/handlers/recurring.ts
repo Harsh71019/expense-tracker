@@ -1,4 +1,4 @@
-import { computeNextOccurrence, sumMinorAmounts } from "@treasury-ops/shared";
+import { computeNextOccurrence, divideMinorAmount, sumMinorAmounts } from "@treasury-ops/shared";
 import type { HttpHandler } from "msw";
 
 import { findAccount, findCategory, type RecurringStatsDto } from "../data/store";
@@ -84,37 +84,71 @@ export function recurringHandlers(http: MockHttp, store: MockStore): HttpHandler
 function recurringStats(store: MockStore): RecurringStatsDto {
   const now = new Date();
   const windowEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+  const twelveMonthWindowEnd = new Date(now);
+  twelveMonthWindowEnd.setUTCFullYear(twelveMonthWindowEnd.getUTCFullYear() + 1);
   const activeRules = store.recurringRules.filter((rule) => !rule.isPaused);
   const expenseAmounts: number[] = [];
   const incomeAmounts: number[] = [];
+  const annualExpenseAmounts: number[] = [];
+  const annualIncomeAmounts: number[] = [];
+  const ruleProjections: RecurringStatsDto["twelveMonthForecast"]["ruleProjections"] = [];
   const categoryTotals = new Map<string, { amountMinor: number; transactionCount: number }>();
   let upcomingTransactionCount = 0;
+  let annualTransactionCount = 0;
 
   for (const rule of activeRules) {
     if (rule.nextRunAt === null || rule.startAt === null) continue;
-    let occurrence: Date | null = new Date(rule.nextRunAt);
     const startAt = new Date(rule.startAt);
-    while (occurrence !== null && occurrence.getTime() <= windowEnd.getTime()) {
+    const storedNextRunAt = new Date(rule.nextRunAt);
+    let occurrence: Date | null =
+      storedNextRunAt.getTime() >= now.getTime()
+        ? storedNextRunAt
+        : computeNextOccurrence(rule.rrule, startAt, new Date(now.getTime() - 1));
+    const projectedAmounts: number[] = [];
+    let annualOccurrenceCount = 0;
+    while (occurrence !== null && occurrence.getTime() < twelveMonthWindowEnd.getTime()) {
       if (occurrence.getTime() >= now.getTime()) {
-        upcomingTransactionCount += 1;
+        annualTransactionCount += 1;
+        annualOccurrenceCount += 1;
+        projectedAmounts.push(rule.template.amountMinor);
+        const isWithinThirtyDays = occurrence.getTime() <= windowEnd.getTime();
         if (rule.template.type === "income") {
-          incomeAmounts.push(rule.template.amountMinor);
+          annualIncomeAmounts.push(rule.template.amountMinor);
+          if (isWithinThirtyDays) {
+            upcomingTransactionCount += 1;
+            incomeAmounts.push(rule.template.amountMinor);
+          }
         } else {
-          expenseAmounts.push(rule.template.amountMinor);
-          const key = rule.template.categoryId ?? "uncategorized";
-          const current = categoryTotals.get(key);
-          categoryTotals.set(key, {
-            amountMinor: sumMinorAmounts([current?.amountMinor ?? 0, rule.template.amountMinor]),
-            transactionCount: (current?.transactionCount ?? 0) + 1
-          });
+          annualExpenseAmounts.push(rule.template.amountMinor);
+          if (isWithinThirtyDays) {
+            upcomingTransactionCount += 1;
+            expenseAmounts.push(rule.template.amountMinor);
+            const key = rule.template.categoryId ?? "uncategorized";
+            const current = categoryTotals.get(key);
+            categoryTotals.set(key, {
+              amountMinor: sumMinorAmounts([current?.amountMinor ?? 0, rule.template.amountMinor]),
+              transactionCount: (current?.transactionCount ?? 0) + 1
+            });
+          }
         }
       }
       occurrence = computeNextOccurrence(rule.rrule, startAt, occurrence);
     }
+
+    ruleProjections.push({
+      recurringRuleId: rule.id,
+      description: rule.template.description,
+      type: rule.template.type,
+      amountMinor: rule.template.amountMinor,
+      occurrenceCount: annualOccurrenceCount,
+      projectedMinor: sumMinorAmounts(projectedAmounts)
+    });
   }
 
   const upcomingExpenseMinor = sumMinorAmounts(expenseAmounts);
   const upcomingIncomeMinor = sumMinorAmounts(incomeAmounts);
+  const annualExpenseMinor = sumMinorAmounts(annualExpenseAmounts);
+  const annualIncomeMinor = sumMinorAmounts(annualIncomeAmounts);
   const top = [...categoryTotals.entries()].sort(
     ([leftId, left], [rightId, right]) =>
       compareMoneyDescending(left.amountMinor, right.amountMinor) || leftId.localeCompare(rightId)
@@ -140,8 +174,29 @@ function recurringStats(store: MockStore): RecurringStatsDto {
             ...(category?.icon === undefined ? {} : { icon: category.icon }),
             amountMinor: top[1].amountMinor,
             transactionCount: top[1].transactionCount
-          }
+          },
+    twelveMonthForecast: {
+      forecastMonths: 12,
+      transactionCount: annualTransactionCount,
+      expenseMinor: annualExpenseMinor,
+      incomeMinor: annualIncomeMinor,
+      netMinor: sumMinorAmounts([annualIncomeMinor, -annualExpenseMinor]),
+      monthlyExpenseAverageMinor: divideMinorAmount(annualExpenseMinor, 12),
+      ruleProjections: ruleProjections.sort(compareRuleProjections)
+    }
   };
+}
+
+function compareRuleProjections(
+  left: RecurringStatsDto["twelveMonthForecast"]["ruleProjections"][number],
+  right: RecurringStatsDto["twelveMonthForecast"]["ruleProjections"][number]
+): number {
+  if (left.type !== right.type) return left.type === "expense" ? -1 : 1;
+  return (
+    compareMoneyDescending(left.projectedMinor, right.projectedMinor) ||
+    left.description.localeCompare(right.description) ||
+    left.recurringRuleId.localeCompare(right.recurringRuleId)
+  );
 }
 
 function compareMoneyDescending(left: number, right: number): number {

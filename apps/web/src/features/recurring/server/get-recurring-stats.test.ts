@@ -19,7 +19,16 @@ const response = {
   upcomingExpenseMinor: 250_000,
   upcomingIncomeMinor: 0,
   upcomingNetMinor: -250_000,
-  topSpendingCategory: null
+  topSpendingCategory: null,
+  twelveMonthForecast: {
+    forecastMonths: 12,
+    transactionCount: 12,
+    expenseMinor: 3_000_000,
+    incomeMinor: 0,
+    netMinor: -3_000_000,
+    monthlyExpenseAverageMinor: 250_000,
+    ruleProjections: []
+  }
 };
 
 describe("getRecurringStats", () => {

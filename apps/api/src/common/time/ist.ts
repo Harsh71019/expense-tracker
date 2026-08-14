@@ -89,6 +89,29 @@ export function addDaysUtc(date: Date, days: number): Date {
 }
 
 /**
+ * Adds whole calendar months in Asia/Kolkata while preserving the IST time of
+ * day. If the target month is shorter, the date clamps to its final day (for
+ * example, 29 February + 12 months becomes 28 February).
+ */
+export function addMonthsInIST(date: Date, months: number): Date {
+  if (!Number.isSafeInteger(months)) {
+    throw new RangeError("months must be a safe integer.");
+  }
+
+  const { year, month, day } = parseCalendarDateParts(toISTCalendarDate(date));
+  const targetMonthStart = new Date(Date.UTC(year, month - 1 + months, 1));
+  const targetYear = targetMonthStart.getUTCFullYear();
+  const targetMonthIndex = targetMonthStart.getUTCMonth();
+  const finalTargetDay = new Date(Date.UTC(targetYear, targetMonthIndex + 1, 0)).getUTCDate();
+  const targetDay = Math.min(day, finalTargetDay);
+  const targetDayStartUtc = new Date(
+    Date.UTC(targetYear, targetMonthIndex, targetDay) - IST_OFFSET_MS
+  );
+  const timeSinceISTMidnight = date.getTime() - istCalendarDateStartUtc(date).getTime();
+  return new Date(targetDayStartUtc.getTime() + timeSinceISTMidnight);
+}
+
+/**
  * The Monday-based ISO week start (YYYY-MM-DD, IST calendar) containing
  * `date`. Used only as a stable episode key for spending-warning
  * fingerprints (plan §5) — not a detection window boundary. Calendar

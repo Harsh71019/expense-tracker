@@ -113,3 +113,16 @@ export function sumMinorAmounts(values: Iterable<number>): number {
   }
   return parseSafeIntegerMinor(total);
 }
+
+/** Divides a non-negative paise amount and rounds an exact half upward. */
+export function divideMinorAmount(amountMinor: MinorAmount, divisor: number): MinorAmount {
+  if (!isMinorAmount(amountMinor)) {
+    throw new RangeError("Amount must be a non-negative integer in paise.");
+  }
+  if (!Number.isSafeInteger(divisor) || divisor <= 0) {
+    throw new RangeError("Money divisor must be a positive safe integer.");
+  }
+
+  const rounded = (BigInt(amountMinor) + BigInt(Math.floor(divisor / 2))) / BigInt(divisor);
+  return parseSafeIntegerMinor(rounded);
+}

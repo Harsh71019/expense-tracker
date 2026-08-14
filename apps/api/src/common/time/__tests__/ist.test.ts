@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   addDaysUtc,
+  addMonthsInIST,
   istCalendarDateStartUtc,
   istMonthBounds,
   listISTMonthDayKeys,
@@ -87,6 +88,18 @@ describe("addDaysUtc", () => {
   it("subtracts days for a negative count", () => {
     const start = new Date("2026-07-24T18:30:00.000Z");
     expect(addDaysUtc(start, -30).toISOString()).toBe("2026-06-24T18:30:00.000Z");
+  });
+});
+
+describe("addMonthsInIST", () => {
+  it("preserves the IST calendar time across a twelve-month horizon", () => {
+    const start = new Date("2026-08-03T19:15:30.000Z");
+    expect(addMonthsInIST(start, 12).toISOString()).toBe("2027-08-03T19:15:30.000Z");
+  });
+
+  it("clamps leap day to the final day of the target month", () => {
+    const leapDayInIST = new Date("2024-02-29T04:30:00.000Z");
+    expect(addMonthsInIST(leapDayInIST, 12).toISOString()).toBe("2025-02-28T04:30:00.000Z");
   });
 });
 

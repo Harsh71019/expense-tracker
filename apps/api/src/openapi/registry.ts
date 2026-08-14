@@ -775,7 +775,7 @@ registry.registerPath({
   security: secured,
   responses: {
     200: {
-      description: "Recurring rule and next-30-days forecast statistics",
+      description: "Recurring rule statistics with 30-day and rolling 12-month forecasts",
       ...json(RecurringStats)
     },
     ...problemResponses

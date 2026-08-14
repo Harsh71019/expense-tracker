@@ -728,17 +728,25 @@ leases failed, emits `scheduler.run_overlong`, emits `scheduler.run_missing` whe
 job exceeds its expected cadence, and removes terminal history older than 30 days. Operators can
 inspect `scheduled_job_runs` directly when reconstructing a missed or failed schedule window.
 
-| Job                            | Schedule                | What it does                                                                                                                                                                                                                              |
-| ------------------------------ | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `recurring.materialize`        | `0 1 * * *` (01:00)     | Finds `recurring_rules` with `nextRunAt <= now`, posts each templated txn **in its own transaction**, advances `nextRunAt` via rrule in the same txn. Idempotency key = `ruleId + scheduledDate` so a crashed run can't double-post rent. |
-| `rollups.refresh`              | `0 2 * * *` (02:00)     | Recomputes current + previous month `monthly_rollups` via aggregation pipeline. Dashboard reads rollups, never raw aggregation.                                                                                                           |
-| `balances.verify`              | `0 3 * * 0` (Sun 03:00) | Recomputes every account balance from `SUM(transactions)` and compares to the cached `balanceMinor`. Any drift → GlitchTip alert. This is the self-auditing safety net for the derived cache.                                             |
-| `budgets.alert`                | `0 8 * * *` (08:00)     | Evaluates budget thresholds against rollups; sends ntfy/Telegram push ("Food at 84% with 9 days left").                                                                                                                                   |
-| `backup.dump`                  | `0 4 * * *` (04:00)     | `mongodump` from Atlas → your NAS, gzip, keep 30 dailies + 12 monthlies. Atlas M0 has no PITR — this cron **is** your backup strategy. Test restore quarterly.                                                                            |
-| `recurring_detection.schedule` | `30 4 * * *` (04:30)    | Worker-only owner discovery enqueues bounded, retry-safe recurring inflow/outflow shadow analysis. No recurring rule, notification, or ledger transaction is created.                                                                     |
-| `staging.sweep`                | TTL index               | Mongo TTL index expires `staged_rows` after 7 days — no cron needed.                                                                                                                                                                      |
-| `month.report`                 | `0 9 1 * *`             | Renders last month's summary (top categories, MoM delta, biggest txns) → ntfy/email.                                                                                                                                                      |
-| `spending-warnings.schedule`   | `0 5 * * *` (05:00)     | Enqueues one `spending-warnings` BullMQ job per user with posted transactions (bounded attempts, exponential backoff). Each job re-runs the three spend-pattern detectors and reconciles `spending_warnings` — see §2.1 above.            |
+| Job                              | Schedule                | What it does                                                                                                                                                                                                                                                   |
+| -------------------------------- | ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `recurring.materialize`          | `0 1 * * *` (01:00)     | Finds `recurring_rules` with `nextRunAt <= now`, posts each templated txn **in its own transaction**, advances `nextRunAt` via rrule in the same txn. Idempotency key = `ruleId + scheduledDate` so a crashed run can't double-post rent.                      |
+| `recurring.reconciliation-sweep` | `15 1 * * *` (01:15)    | Worker-only recovery pass over recent unreconciled API transactions. It preserves the discovered owner `userId`, then re-enters tenant-scoped matching so email-before-materialization and historical hook failures cannot leave duplicate recurring postings. |
+| `rollups.refresh`                | `0 2 * * *` (02:00)     | Recomputes current + previous month `monthly_rollups` via aggregation pipeline. Dashboard reads rollups, never raw aggregation.                                                                                                                                |
+| `balances.verify`                | `0 3 * * 0` (Sun 03:00) | Recomputes every account balance from `SUM(transactions)` and compares to the cached `balanceMinor`. Any drift → GlitchTip alert. This is the self-auditing safety net for the derived cache.                                                                  |
+| `budgets.alert`                  | `0 8 * * *` (08:00)     | Evaluates budget thresholds against rollups; sends ntfy/Telegram push ("Food at 84% with 9 days left").                                                                                                                                                        |
+| `backup.dump`                    | `0 4 * * *` (04:00)     | `mongodump` from Atlas → your NAS, gzip, keep 30 dailies + 12 monthlies. Atlas M0 has no PITR — this cron **is** your backup strategy. Test restore quarterly.                                                                                                 |
+| `recurring_detection.schedule`   | `30 4 * * *` (04:30)    | Worker-only owner discovery enqueues bounded, retry-safe recurring inflow/outflow shadow analysis. No recurring rule, notification, or ledger transaction is created.                                                                                          |
+| `staging.sweep`                  | TTL index               | Mongo TTL index expires `staged_rows` after 7 days — no cron needed.                                                                                                                                                                                           |
+| `month.report`                   | `0 9 1 * *`             | Renders last month's summary (top categories, MoM delta, biggest txns) → ntfy/email.                                                                                                                                                                           |
+| `spending-warnings.schedule`     | `0 5 * * *` (05:00)     | Enqueues one `spending-warnings` BullMQ job per user with posted transactions (bounded attempts, exponential backoff). Each job re-runs the three spend-pattern detectors and reconciles `spending_warnings` — see §2.1 above.                                 |
+
+API-key transaction creation performs recurring reconciliation inside the same `withTxn` as the
+incoming ledger insert, balance delta, and audit row. A matching scheduled placeholder is reversed
+atomically; a reconciliation failure rolls the incoming write back so the source can retry with the
+same idempotency key. Automatic matching requires either a shared mandate/reference token or a
+strong normalized-counterparty match plus exact amount in the three-day occurrence window.
+Amount/date-only evidence is queued for review rather than silently reversing money.
 
 ---
 
@@ -775,8 +783,8 @@ GET    /assets/:id/valuations | POST /assets/:id/valuations
 GET    /net-worth
 GET    /profile                         read-only app profile
 GET    /recurring | POST /recurring | PATCH /recurring/:id
-GET    /recurring/stats                 rule counts + next-30-days transaction, cash-flow,
-                                        and highest-spend-category forecast
+GET    /recurring/stats                 rule counts + next-30-days cash-flow/category forecast
+                                        + rolling 12-month totals and per-rule projections
 GET    /budgets | PUT /budgets/:categoryId | PATCH /budgets/:budgetId/archive
 
 GET    /reports/monthly/:month          reads monthly_rollups

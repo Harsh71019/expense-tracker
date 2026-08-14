@@ -22,7 +22,7 @@ import { z } from "zod";
 import { InvalidCursorError } from "../common/errors/invalid-cursor.error.js";
 import { DATABASE_CONNECTION } from "../common/db/db.module.js";
 import type { DrizzleDb } from "../common/db/db.module.js";
-import { categories, transactions } from "../common/db/schema/index.js";
+import { categories, recurringReconciliations, transactions } from "../common/db/schema/index.js";
 import { stripNulls } from "../common/db/strip-nulls.js";
 import type { DbTx } from "../common/db/db-txn.js";
 import { istMonthBounds, listISTMonthDayKeys } from "../common/time/ist.js";
@@ -84,6 +84,37 @@ export class TransactionRepository {
       .returning();
     if (row === undefined) throw new Error("Transaction insert did not return a row.");
     return toTransaction(row);
+  }
+
+  /**
+   * Worker-only discovery for reconciliation recovery. This is intentionally
+   * a `system*` method because it scans across tenants; each returned row
+   * carries its owning userId, and every subsequent read/write is routed
+   * through tenant-scoped reconciliation methods.
+   */
+  async systemFindRecentUnreconciledApiTransactions(
+    occurredSince: Date,
+    limit: number
+  ): Promise<Transaction[]> {
+    const rows = await this.db
+      .select({ transaction: transactions })
+      .from(transactions)
+      .leftJoin(
+        recurringReconciliations,
+        eq(recurringReconciliations.incomingTransactionId, transactions.id)
+      )
+      .where(
+        and(
+          eq(transactions.source, "api"),
+          eq(transactions.status, "posted"),
+          gte(transactions.occurredAt, occurredSince),
+          isNull(transactions.recurringRuleId),
+          isNull(recurringReconciliations.id)
+        )
+      )
+      .orderBy(desc(transactions.occurredAt), desc(transactions.id))
+      .limit(limit);
+    return rows.map((row) => toTransaction(row.transaction));
   }
 
   async findMany(userId: string, query: ListTransactionsQuery): Promise<TransactionPage> {

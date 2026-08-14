@@ -13,7 +13,7 @@ import {
 
 import { user } from "../auth-schema.js";
 import { accounts } from "./account.js";
-import { goalFundingModeEnum, goalStatusEnum } from "./enums.js";
+import { goalContributionTypeEnum, goalFundingModeEnum, goalStatusEnum } from "./enums.js";
 
 export const goals = pgTable(
   "goals",
@@ -43,6 +43,8 @@ export const goals = pgTable(
         (${table.fundingMode} = 'linked_account' AND ${table.linkedAccountId} IS NOT NULL AND ${table.tag} IS NULL)
         OR
         (${table.fundingMode} = 'tagged' AND ${table.linkedAccountId} IS NULL AND ${table.tag} IS NOT NULL)
+        OR
+        (${table.fundingMode} = 'manual_envelope' AND ${table.linkedAccountId} IS NULL AND ${table.tag} IS NULL)
       )`
     ),
     uniqueIndex("goals_user_id_tag_unique")
@@ -52,5 +54,31 @@ export const goals = pgTable(
       .on(table.linkedAccountId)
       .where(sql`${table.status} = 'active' AND ${table.linkedAccountId} IS NOT NULL`),
     index("goals_user_id_status_priority").on(table.userId, table.status, table.priority)
+  ]
+);
+
+export const goalContributions = pgTable(
+  "goal_contributions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id),
+    goalId: uuid("goal_id")
+      .notNull()
+      .references(() => goals.id),
+    type: goalContributionTypeEnum("type").notNull(),
+    amountMinor: bigint("amount_minor", { mode: "number" }).notNull(),
+    note: text("note"),
+    occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull()
+  },
+  (table) => [
+    check("goal_contributions_amount_minor_positive", sql`${table.amountMinor} > 0`),
+    index("goal_contributions_user_id_goal_id_occurred_at").on(
+      table.userId,
+      table.goalId,
+      table.occurredAt
+    )
   ]
 );

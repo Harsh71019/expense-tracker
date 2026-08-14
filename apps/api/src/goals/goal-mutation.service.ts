@@ -2,6 +2,7 @@ import { Injectable } from "@nestjs/common";
 import {
   GoalSchema,
   type CreateGoal,
+  type CreateGoalContribution,
   type Goal,
   type GoalId,
   type ReorderGoals,
@@ -53,6 +54,22 @@ export class GoalMutationService {
   reorder(userId: string, input: ReorderGoals, key: string): Promise<IdempotentResult<null>> {
     return this.idempotency.execute(userId, "goal.reorder", key, input, z.null(), (tx) =>
       this.goals.reorderInTx(userId, input, tx)
+    );
+  }
+
+  recordContribution(
+    userId: string,
+    goalId: GoalId,
+    input: CreateGoalContribution,
+    key: string
+  ): Promise<IdempotentResult<Goal>> {
+    return this.idempotency.execute(
+      userId,
+      "goal.contribute",
+      key,
+      { goalId, input },
+      GoalSchema,
+      (tx) => this.goals.recordContributionInTx(userId, goalId, input, tx)
     );
   }
 }

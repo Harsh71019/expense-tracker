@@ -20,6 +20,7 @@ export type TransferReversalDto = components["schemas"]["TransferReversal"];
 export type RecurringRuleDto = components["schemas"]["RecurringRule"];
 export type RecurringStatsDto = components["schemas"]["RecurringStats"];
 export type GoalDto = components["schemas"]["Goal"];
+export type GoalContributionDto = components["schemas"]["GoalContribution"];
 export type BillDto = components["schemas"]["CreditCardBill"];
 export type BillStatementUploadDto = components["schemas"]["BillStatementUpload"];
 export type BillStatementRowDto = components["schemas"]["BillStatementRow"];
@@ -82,6 +83,7 @@ export interface MockStore {
   spendingWarnings: SpendingWarningDto[];
   spendingWarningAnalysis: SpendingWarningAnalysisDto;
   goals: GoalDto[];
+  goalContributions: GoalContributionDto[];
   bills: BillDto[];
   billStatementUploads: BillStatementUploadDto[];
   billStatementRows: BillStatementRowDto[];
@@ -104,6 +106,7 @@ export interface MockStore {
   nextRecurringRuleId: () => string;
   nextSpendingWarningId: () => string;
   nextGoalId: () => string;
+  nextGoalContributionId: () => string;
   nextBillId: () => string;
   nextBillStatementUploadId: () => string;
   nextBudgetId: () => string;
@@ -1801,6 +1804,7 @@ export function createMockStore(): MockStore {
   const nextRecurringRuleId = createIdGenerator("e0");
   const nextSpendingWarningId = createIdGenerator("5e");
   const nextGoalId = createIdGenerator("60");
+  const nextGoalContributionId = createIdGenerator("61");
   const nextBillId = createIdGenerator("b1");
   const nextBillStatementUploadId = createIdGenerator("b2");
   const nextBudgetId = createIdGenerator("b0");
@@ -1823,6 +1827,7 @@ export function createMockStore(): MockStore {
       baselineExpenseCount: 0
     },
     goals: [],
+    goalContributions: [],
     bills: [],
     billStatementUploads: [],
     billStatementRows: [],
@@ -1877,6 +1882,7 @@ export function createMockStore(): MockStore {
     nextRecurringRuleId,
     nextSpendingWarningId,
     nextGoalId,
+    nextGoalContributionId,
     nextBillId,
     nextBillStatementUploadId,
     nextBudgetId

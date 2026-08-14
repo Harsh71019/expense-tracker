@@ -20,6 +20,7 @@ export const qk = {
   goalList: (status: GoalStatus) => [...goalRoot, "list", status] as const,
   goal: (goalId: string) => [...goalRoot, "detail", goalId] as const,
   goalPlan: (goalId: string) => [...goalRoot, "plan", goalId] as const,
+  goalContributions: (goalId: string) => [...goalRoot, "contributions", goalId] as const,
   budgets: () => budgetRoot,
   budgetLists: () => [...budgetRoot, "list"] as const,
   budgetList: (filters: Readonly<{ includeArchived: boolean; limit: number }>) =>

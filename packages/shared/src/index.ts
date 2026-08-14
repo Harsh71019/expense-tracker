@@ -290,7 +290,11 @@ export type { ExportCsvQuery } from "./export.js";
 export { ProblemDetailsSchema, ProblemFieldErrorSchema } from "./errors/problem-details.js";
 export type { ProblemDetails, ProblemFieldError } from "./errors/problem-details.js";
 export {
+  CreateGoalContributionSchema,
   CreateGoalSchema,
+  GoalContributionNoteSchema,
+  GoalContributionSchema,
+  GoalContributionTypeSchema,
   GoalFundingModeSchema,
   GoalIdSchema,
   GoalPlanSchema,
@@ -303,7 +307,10 @@ export {
 } from "./goal.js";
 export type {
   CreateGoal,
+  CreateGoalContribution,
   Goal,
+  GoalContribution,
+  GoalContributionType,
   GoalFundingMode,
   GoalId,
   GoalPlan,

@@ -37,7 +37,7 @@ export function GoalEditorDrawer({ accounts, goal, onClose }: GoalEditorDrawerPr
   const [targetMinor, setTargetMinor] = useState(goal?.targetMinor ?? 0);
   const [targetDate, setTargetDate] = useState(dateToInput(goal?.targetDate));
   const [fundingMode, setFundingMode] = useState<GoalFundingMode>(
-    goal?.fundingMode ?? "linked_account"
+    goal?.fundingMode ?? "manual_envelope"
   );
   const [linkedAccountId, setLinkedAccountId] = useState(goal?.linkedAccountId ?? "");
   const [tag, setTag] = useState(goal?.tag ?? "");
@@ -59,23 +59,33 @@ export function GoalEditorDrawer({ accounts, goal, onClose }: GoalEditorDrawerPr
 
     try {
       if (goal === undefined) {
-        const parsed = CreateGoalSchema.safeParse(
-          fundingMode === "linked_account"
-            ? {
-                name,
-                targetMinor,
-                ...(parsedDate === undefined ? {} : { targetDate: parsedDate }),
-                fundingMode,
-                linkedAccountId
-              }
-            : {
-                name,
-                targetMinor,
-                ...(parsedDate === undefined ? {} : { targetDate: parsedDate }),
-                fundingMode,
-                tag
-              }
-        );
+        let payloadInput: unknown;
+        if (fundingMode === "linked_account") {
+          payloadInput = {
+            name,
+            targetMinor,
+            ...(parsedDate === undefined ? {} : { targetDate: parsedDate }),
+            fundingMode,
+            linkedAccountId
+          };
+        } else if (fundingMode === "tagged") {
+          payloadInput = {
+            name,
+            targetMinor,
+            ...(parsedDate === undefined ? {} : { targetDate: parsedDate }),
+            fundingMode,
+            tag
+          };
+        } else {
+          payloadInput = {
+            name,
+            targetMinor,
+            ...(parsedDate === undefined ? {} : { targetDate: parsedDate }),
+            fundingMode: "manual_envelope"
+          };
+        }
+
+        const parsed = CreateGoalSchema.safeParse(payloadInput);
         if (!parsed.success) {
           setError(parsed.error.issues[0]?.message ?? "Check the goal details.");
           return;
@@ -135,7 +145,7 @@ export function GoalEditorDrawer({ accounts, goal, onClose }: GoalEditorDrawerPr
           maxLength={80}
           name="name"
           autoComplete="off"
-          placeholder="Emergency fund…"
+          placeholder="Emergency fund, new laptop, vacation…"
           onChange={(event) => setName(event.target.value)}
         />
         <AmountInput
@@ -159,32 +169,47 @@ export function GoalEditorDrawer({ accounts, goal, onClose }: GoalEditorDrawerPr
 
         {goal === undefined ? (
           <div>
-            <span className={fieldLabel}>Track progress from</span>
-            <div className="grid grid-cols-2 gap-2">
-              {(["linked_account", "tagged"] as const).map((mode) => (
+            <span className={fieldLabel}>Funding mode</span>
+            <div className="grid grid-cols-3 gap-2">
+              {(
+                [
+                  { mode: "manual_envelope", label: "Manual Envelope" },
+                  { mode: "linked_account", label: "Account Balance" },
+                  { mode: "tagged", label: "Transaction Tag" }
+                ] as const
+              ).map(({ mode, label }) => (
                 <button
                   key={mode}
                   type="button"
                   aria-pressed={fundingMode === mode}
                   onClick={() => setFundingMode(mode)}
-                  className={`min-h-11 rounded-lg border px-3 py-2.5 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                  className={`min-h-12 rounded-lg border p-2 text-center text-xs font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                     fundingMode === mode
-                      ? "border-accent bg-accent-glow text-accent"
-                      : "border-border text-foreground-muted"
+                      ? "border-accent bg-accent-glow text-accent shadow-sm"
+                      : "border-border text-foreground-muted hover:bg-surface-muted hover:text-foreground"
                   }`}
                 >
-                  {mode === "linked_account" ? "Account balance" : "Transaction tag"}
+                  {label}
                 </button>
               ))}
             </div>
           </div>
         ) : (
           <p className="rounded-lg border border-border bg-surface-muted p-3 text-xs text-foreground-muted">
-            Progress source cannot be changed because it defines the goal’s history.
+            Funding mode cannot be changed because it defines the goal’s historical progress.
           </p>
         )}
 
-        {fundingMode === "linked_account" ? (
+        {fundingMode === "manual_envelope" ? (
+          <div className="rounded-xl border border-accent/20 bg-accent/5 p-3.5 text-xs text-foreground-muted">
+            <p className="font-semibold text-foreground">💡 Independent Contribution Tracking</p>
+            <p className="mt-1 text-[11px] leading-relaxed">
+              Ideal for cash savings, physical jars, or virtual sinking funds. Everyday bank
+              transactions won’t interfere with this goal. You can log deposits and withdrawals
+              directly.
+            </p>
+          </div>
+        ) : fundingMode === "linked_account" ? (
           <div className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.22em] text-foreground-muted uppercase">
             <span>Linked account</span>
             <Select
@@ -212,7 +237,7 @@ export function GoalEditorDrawer({ accounts, goal, onClose }: GoalEditorDrawerPr
             value={tag}
             maxLength={40}
             disabled={goal !== undefined}
-            placeholder="goal:laptop…"
+            placeholder="e.g. goal:laptop or vacation"
             onChange={(event) => setTag(event.target.value)}
           />
         )}

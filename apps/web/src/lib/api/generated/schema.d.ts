@@ -3997,6 +3997,14 @@ export interface paths {
                 /** @enum {string} */
                 fundingMode: "tagged";
                 tag: string;
+              }
+            | {
+                name: string;
+                targetMinor: number;
+                /** Format: date-time */
+                targetDate?: string | null;
+                /** @enum {string} */
+                fundingMode: "manual_envelope";
               };
         };
       };
@@ -4452,6 +4460,159 @@ export interface paths {
     };
     put?: never;
     post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/goals/{goalId}/contributions": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          goalId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Goal contributions list */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["GoalContribution"][];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Goal not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path: {
+          goalId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
+            /** @enum {string} */
+            type: "deposit" | "withdrawal";
+            amountMinor: number;
+            note?: string;
+            /** Format: date-time */
+            occurredAt?: string | null;
+          };
+        };
+      };
+      responses: {
+        /** @description Goal with updated progress after contribution recorded, or idempotent replay */
+        200: {
+          headers: {
+            "Idempotency-Replayed"?: "true";
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Goal"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Goal not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
     delete?: never;
     options?: never;
     head?: never;
@@ -8038,7 +8199,7 @@ export interface components {
       /** Format: date-time */
       targetDate?: string | null;
       /** @enum {string} */
-      fundingMode: "linked_account" | "tagged";
+      fundingMode: "linked_account" | "tagged" | "manual_envelope";
       /** Format: uuid */
       linkedAccountId?: string;
       tag?: string;
@@ -8060,6 +8221,21 @@ export interface components {
       requiredMonthlyMinor: number | null;
       /** Format: date-time */
       projectedCompletionDate: string | null;
+    };
+    GoalContribution: {
+      /** Format: uuid */
+      id: string;
+      userId: string;
+      /** Format: uuid */
+      goalId: string;
+      /** @enum {string} */
+      type: "deposit" | "withdrawal";
+      amountMinor: number;
+      note?: string;
+      /** Format: date-time */
+      occurredAt: string | null;
+      /** Format: date-time */
+      createdAt: string | null;
     };
     BudgetPage: {
       month: string;

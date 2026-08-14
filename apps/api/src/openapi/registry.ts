@@ -102,6 +102,8 @@ import {
   MonthlyRollupSchema,
   CreateRecurringRuleSchema,
   CreateGoalSchema,
+  CreateGoalContributionSchema,
+  GoalContributionSchema,
   GoalIdSchema,
   GoalPlanSchema,
   GoalSchema,
@@ -185,6 +187,7 @@ const DismissSpendingWarningResponse = DismissSpendingWarningResponseSchema.meta
 const Budget = BudgetSchema.meta({ id: "Budget" });
 const BudgetPage = BudgetPageSchema.meta({ id: "BudgetPage" });
 const Goal = GoalSchema.meta({ id: "Goal" });
+const GoalContribution = GoalContributionSchema.meta({ id: "GoalContribution" });
 const GoalPlan = GoalPlanSchema.meta({ id: "GoalPlan" });
 const PendingTransaction = PendingTransactionSchema.meta({ id: "PendingTransaction" });
 const DashboardSummary = DashboardSummarySchema.meta({ id: "DashboardSummary" });
@@ -1111,6 +1114,37 @@ registry.registerPath({
   responses: {
     200: { description: "Goal contribution plan", ...json(GoalPlan) },
     404: { description: "Goal not found", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "get",
+  path: "/v1/goals/{goalId}/contributions",
+  security: secured,
+  request: { params: goalId },
+  responses: {
+    200: { description: "Goal contributions list", ...json(z.array(GoalContribution)) },
+    404: { description: "Goal not found", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "post",
+  path: "/v1/goals/{goalId}/contributions",
+  security: secured,
+  request: {
+    params: goalId,
+    body: json(CreateGoalContributionSchema),
+    headers: idempotencyKeyHeaders
+  },
+  responses: {
+    200: {
+      description: "Goal with updated progress after contribution recorded, or idempotent replay",
+      headers: optionalReplayHeaders,
+      ...json(Goal)
+    },
+    404: { description: "Goal not found", ...json(ProblemDetails) },
+    ...idempotencyConflictResponse,
     ...problemResponses
   }
 });

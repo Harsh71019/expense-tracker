@@ -14,6 +14,8 @@ import { AbandonGoalDialog } from "./abandon-goal-dialog";
 import { GoalCard } from "./goal-card";
 import { GoalEditorDrawer } from "./goal-editor-drawer";
 
+import { Money } from "@/components/ui/money";
+
 type GoalManagerProps = Readonly<{
   initialActive: Goal[];
   initialAchieved: Goal[];
@@ -75,6 +77,13 @@ export function GoalManager({
 
   const active = activeQuery.data ?? initialActive;
   const achieved = achievedQuery.data ?? initialAchieved;
+
+  const totalTargetMinor = active.reduce((acc, goal) => acc + goal.targetMinor, 0);
+  const totalSavedMinor = active.reduce((acc, goal) => acc + Math.max(0, goal.progressMinor), 0);
+  const overallPercentage =
+    totalTargetMinor > 0
+      ? Math.min(100, Math.round((totalSavedMinor / totalTargetMinor) * 100))
+      : 0;
 
   useEffect(() => {
     setOrder((current) => {
@@ -138,13 +147,48 @@ export function GoalManager({
             Goals
           </h1>
           <p className="mt-2 max-w-xl text-sm leading-relaxed text-foreground-muted">
-            Turn an account balance or tagged ledger entries into a visible savings target.
+            Track savings with independent manual envelopes, account balances, or tagged expenses.
           </p>
         </div>
         <Button type="button" className="w-full sm:w-auto" onClick={() => setCreateOpen(true)}>
           <span className="mr-1 text-base leading-none">+</span> New goal
         </Button>
       </header>
+
+      {active.length > 0 ? (
+        <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-4">
+          <div className="rounded-2xl border border-border bg-surface-elevated p-4">
+            <p className="font-mono text-[9px] font-bold tracking-[0.2em] text-foreground-muted uppercase">
+              Total Target
+            </p>
+            <div className="mt-2">
+              <Money minor={totalTargetMinor} size="lg" />
+            </div>
+          </div>
+          <div className="rounded-2xl border border-border bg-surface-elevated p-4">
+            <p className="font-mono text-[9px] font-bold tracking-[0.2em] text-foreground-muted uppercase">
+              Total Saved
+            </p>
+            <div className="mt-2">
+              <Money minor={totalSavedMinor} size="lg" variant="income" />
+            </div>
+          </div>
+          <div className="rounded-2xl border border-border bg-surface-elevated p-4">
+            <p className="font-mono text-[9px] font-bold tracking-[0.2em] text-foreground-muted uppercase">
+              Overall Progress
+            </p>
+            <p className="mt-2 text-xl font-bold tracking-tight text-foreground">
+              {overallPercentage}%
+            </p>
+          </div>
+          <div className="rounded-2xl border border-border bg-surface-elevated p-4">
+            <p className="font-mono text-[9px] font-bold tracking-[0.2em] text-foreground-muted uppercase">
+              Active Goals
+            </p>
+            <p className="mt-2 text-xl font-bold tracking-tight text-accent">{active.length}</p>
+          </div>
+        </div>
+      ) : null}
 
       {active.length > 0 && (
         <div

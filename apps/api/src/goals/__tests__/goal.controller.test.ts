@@ -112,4 +112,51 @@ describe("GoalController", () => {
 
     expect(response.setHeader).toHaveBeenCalledWith("Idempotency-Replayed", "true");
   });
+
+  it("records a contribution through the idempotent mutation path", async () => {
+    const mutations = {
+      recordContribution: vi.fn().mockResolvedValue({ result: GOAL, replayed: false })
+    };
+    // @ts-expect-error - focused controller unit test uses service doubles.
+    const controller = new GoalController({}, mutations);
+    const response = mockResponse();
+
+    const result = await controller.recordContribution(
+      USER,
+      GOAL_ID,
+      { type: "deposit", amountMinor: 5_000_00, note: "Cash deposit" },
+      KEY,
+      // @ts-expect-error - focused response double implements the methods used by the controller.
+      response
+    );
+
+    expect(result).toEqual(GOAL);
+    expect(mutations.recordContribution).toHaveBeenCalledWith(
+      USER.id,
+      GOAL_ID,
+      { type: "deposit", amountMinor: 5_000_00, note: "Cash deposit" },
+      KEY
+    );
+  });
+
+  it("lists contributions for a goal", async () => {
+    const contributions = [
+      {
+        id: "c-1",
+        userId: USER.id,
+        goalId: GOAL_ID,
+        type: "deposit" as const,
+        amountMinor: 5_000_00,
+        occurredAt: new Date(),
+        createdAt: new Date()
+      }
+    ];
+    const service = { listContributions: vi.fn().mockResolvedValue(contributions) };
+    // @ts-expect-error - focused controller unit test uses service doubles.
+    const controller = new GoalController(service, {});
+
+    const result = await controller.listContributions(USER, GOAL_ID);
+    expect(result).toEqual(contributions);
+    expect(service.listContributions).toHaveBeenCalledWith(USER.id, GOAL_ID);
+  });
 });

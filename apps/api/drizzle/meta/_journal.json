@@ -176,6 +176,13 @@
       "when": 1786474055759,
       "tag": "0024_left_starbolt",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1786713027047,
+      "tag": "0025_chief_shadowcat",
+      "breakpoints": true
     }
   ]
 }

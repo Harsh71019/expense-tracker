@@ -40,9 +40,11 @@ export function GoalCard({
   const [menuOpen, setMenuOpen] = useState(false);
   const verdict = goalVerdict(goal, plan, new Date());
   const binding =
-    goal.fundingMode === "linked_account"
-      ? (accountName ?? "Linked account")
-      : `#${goal.tag ?? "tagged"}`;
+    goal.fundingMode === "manual_envelope"
+      ? "✉️ Manual envelope"
+      : goal.fundingMode === "linked_account"
+        ? `🏛️ ${accountName ?? "Linked account"}`
+        : `#${goal.tag ?? "tagged"}`;
 
   return (
     <article className="relative rounded-[18px] border border-border bg-surface-elevated p-5.5 animate-fade-in">

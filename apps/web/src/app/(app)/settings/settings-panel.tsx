@@ -110,7 +110,7 @@ function SettingsSectionHeader({
   return (
     <header className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-3.5">
       <div className="flex items-center gap-2.5">
-        <span className="inline-flex items-center gap-1 rounded-md border border-accent/25 bg-accent-glow/30 px-2 py-0.5 font-mono text-[10px] font-bold tracking-wider text-accent uppercase">
+        <span className="inline-flex items-center gap-1 rounded-md border border-accent/25 bg-accent-glow/30 px-2 py-0.5 font-mono text-2xs font-bold tracking-wider text-accent uppercase">
           {eyebrow}
         </span>
         <h2 className="text-lg font-bold tracking-tight text-foreground sm:text-xl">{title}</h2>
@@ -171,7 +171,7 @@ async function ProfileSettingsPanel(): Promise<ReactNode> {
               Signed in as <span className="text-accent font-bold">{displayName}</span>
             </h3>
           </div>
-          <p className="truncate font-mono text-[11px] text-foreground-muted">
+          <p className="truncate font-mono text-2xs text-foreground-muted">
             {email} · Active Browser Session
           </p>
         </div>
@@ -207,30 +207,28 @@ async function AppearanceSettingsPanel(): Promise<ReactNode> {
         <div className="space-y-4">
           <section className="glass-card rounded-2xl p-4 shadow-xs sm:p-5">
             <div className="flex items-center justify-between pb-2.5 border-b border-border/60">
-              <p className="font-mono text-[10px] font-bold tracking-wider text-foreground-muted uppercase">
+              <p className="font-mono text-2xs font-bold tracking-wider text-foreground-muted uppercase">
                 🎨 Live System Tokens
               </p>
-              <span className="font-mono text-[10px] font-semibold text-accent">
+              <span className="font-mono text-2xs font-semibold text-accent">
                 Active Theme Tokens
               </span>
             </div>
             <div className="mt-3 grid grid-cols-2 gap-2">
               <div className="flex flex-col gap-0.5 rounded-lg border border-accent/30 bg-accent-glow/30 p-2.5 text-center">
-                <span className="font-mono text-[9px] font-bold text-accent uppercase">Accent</span>
+                <span className="font-mono text-2xs font-bold text-accent uppercase">Accent</span>
                 <span className="text-xs font-semibold text-foreground">Interactive</span>
               </div>
               <div className="flex flex-col gap-0.5 rounded-lg border border-income/30 bg-income/10 p-2.5 text-center">
-                <span className="font-mono text-[9px] font-bold text-income uppercase">Income</span>
+                <span className="font-mono text-2xs font-bold text-income uppercase">Income</span>
                 <span className="text-xs font-semibold text-income">+ Positive</span>
               </div>
               <div className="flex flex-col gap-0.5 rounded-lg border border-expense/30 bg-expense/10 p-2.5 text-center">
-                <span className="font-mono text-[9px] font-bold text-expense uppercase">
-                  Expense
-                </span>
+                <span className="font-mono text-2xs font-bold text-expense uppercase">Expense</span>
                 <span className="text-xs font-semibold text-expense">- Outflow</span>
               </div>
               <div className="flex flex-col gap-0.5 rounded-lg border border-border bg-surface-muted p-2.5 text-center">
-                <span className="font-mono text-[9px] font-bold text-foreground-muted uppercase">
+                <span className="font-mono text-2xs font-bold text-foreground-muted uppercase">
                   Surface
                 </span>
                 <span className="text-xs font-semibold text-foreground-muted">Elevated</span>
@@ -240,7 +238,7 @@ async function AppearanceSettingsPanel(): Promise<ReactNode> {
 
           {/* Mini UI Card Preview */}
           <section className="glass-card rounded-2xl p-4 shadow-xs sm:p-5">
-            <p className="font-mono text-[10px] font-bold tracking-wider text-foreground-muted uppercase">
+            <p className="font-mono text-2xs font-bold tracking-wider text-foreground-muted uppercase">
               ✨ Live Interface Preview
             </p>
             <div className="mt-3 rounded-xl border border-border bg-surface-elevated p-3.5 shadow-2xs">
@@ -251,12 +249,12 @@ async function AppearanceSettingsPanel(): Promise<ReactNode> {
                   </span>
                   <div>
                     <p className="text-xs font-bold text-foreground">Treasury Balance</p>
-                    <p className="text-[10px] text-foreground-muted">Primary Account</p>
+                    <p className="text-2xs text-foreground-muted">Primary Account</p>
                   </div>
                 </div>
                 <div className="text-right">
                   <p className="font-mono text-xs font-bold text-emerald-500">+₹1,24,500.00</p>
-                  <span className="rounded-md bg-accent/10 px-1.5 py-0.5 font-mono text-[9px] font-bold text-accent">
+                  <span className="rounded-md bg-accent/10 px-1.5 py-0.5 font-mono text-2xs font-bold text-accent">
                     Active
                   </span>
                 </div>
@@ -303,13 +301,13 @@ function InvariantsSettingsPanel(): ReactNode {
           </div>
           <p className="mt-2 text-xs leading-relaxed text-foreground-muted">
             All monetary fields are stored and computed strictly as positive integer paise (
-            <code className="rounded bg-surface-muted px-1 py-0.5 font-mono text-[11px] text-accent">
+            <code className="rounded bg-surface-muted px-1 py-0.5 font-mono text-2xs text-accent">
               amountMinor
             </code>
             ). Floating-point arithmetic never touches money, completely preventing precision drift
             and rounding leaks.
           </p>
-          <div className="mt-3 rounded-xl border border-border/80 bg-surface-muted/50 p-2.5 font-mono text-[11px] text-foreground-muted">
+          <div className="mt-3 rounded-xl border border-border/80 bg-surface-muted/50 p-2.5 font-mono text-2xs text-foreground-muted">
             ₹1.00 = 100 paise · Zero IEEE 754 drift
           </div>
         </section>
@@ -325,12 +323,12 @@ function InvariantsSettingsPanel(): ReactNode {
           <p className="mt-2 text-xs leading-relaxed text-foreground-muted">
             The ledger is append-only. Monetary records are never edited or deleted. Corrections are
             strictly posted as paired compensating reversal entries via the{" "}
-            <code className="rounded bg-surface-muted px-1 py-0.5 font-mono text-[11px] text-accent">
+            <code className="rounded bg-surface-muted px-1 py-0.5 font-mono text-2xs text-accent">
               ReversalService
             </code>
             , creating an unbreakable historical audit trail.
           </p>
-          <div className="mt-3 rounded-xl border border-border/80 bg-surface-muted/50 p-2.5 font-mono text-[11px] text-foreground-muted">
+          <div className="mt-3 rounded-xl border border-border/80 bg-surface-muted/50 p-2.5 font-mono text-2xs text-foreground-muted">
             Immutable log · Reversal pairs preserve history
           </div>
         </section>
@@ -346,16 +344,16 @@ function InvariantsSettingsPanel(): ReactNode {
           <p className="mt-2 text-xs leading-relaxed text-foreground-muted">
             Every monetary mutation executes inside an atomic Postgres transaction with automatic
             retry on serialization and deadlock errors (
-            <code className="rounded bg-surface-muted px-1 py-0.5 font-mono text-[11px] text-accent">
+            <code className="rounded bg-surface-muted px-1 py-0.5 font-mono text-2xs text-accent">
               40001
             </code>
             /
-            <code className="rounded bg-surface-muted px-1 py-0.5 font-mono text-[11px] text-accent">
+            <code className="rounded bg-surface-muted px-1 py-0.5 font-mono text-2xs text-accent">
               40P01
             </code>
             ). Account balances and audit records update in tandem.
           </p>
-          <div className="mt-3 rounded-xl border border-border/80 bg-surface-muted/50 p-2.5 font-mono text-[11px] text-foreground-muted">
+          <div className="mt-3 rounded-xl border border-border/80 bg-surface-muted/50 p-2.5 font-mono text-2xs text-foreground-muted">
             ACID boundaries · withTxn orchestrator
           </div>
         </section>
@@ -371,12 +369,12 @@ function InvariantsSettingsPanel(): ReactNode {
           <p className="mt-2 text-xs leading-relaxed text-foreground-muted">
             All calendar boundaries, monthly rollup aggregations, cron triggers, and budget health
             cycles are anchored in{" "}
-            <code className="rounded bg-surface-muted px-1 py-0.5 font-mono text-[11px] text-accent">
+            <code className="rounded bg-surface-muted px-1 py-0.5 font-mono text-2xs text-accent">
               Asia/Kolkata
             </code>{" "}
             (UTC+5:30) rather than runtime host clock variables.
           </p>
-          <div className="mt-3 rounded-xl border border-border/80 bg-surface-muted/50 p-2.5 font-mono text-[11px] text-foreground-muted">
+          <div className="mt-3 rounded-xl border border-border/80 bg-surface-muted/50 p-2.5 font-mono text-2xs text-foreground-muted">
             Consistent monthly cycles · Deterministic rollups
           </div>
         </section>

@@ -9,7 +9,7 @@ import { useAccounts } from "@/features/accounts";
 import { useRecentActivity } from "../hooks/use-recent-activity";
 import { AccountsPanel } from "./accounts-panel";
 import { BalanceCard } from "./balance-card";
-import { CreateAccountModal } from "./create-account-modal";
+import { CreateAccountSheet } from "./create-account-sheet";
 import { QuickAddPanel } from "./quick-add-panel";
 import { RecentActivityPanel } from "./recent-activity-panel";
 import { ZeroState } from "./zero-state";
@@ -48,7 +48,7 @@ export function DashboardHome({
         <h1 className="text-xl font-semibold tracking-tight text-foreground">
           {isEmpty ? "Welcome to Ledger" : "Insights"}
         </h1>
-        <p className="truncate font-mono text-[11px] text-foreground-muted">{email}</p>
+        <p className="truncate font-mono text-2xs text-foreground-muted">{email}</p>
       </div>
 
       {isEmpty ? (
@@ -72,7 +72,7 @@ export function DashboardHome({
         </div>
       )}
 
-      <CreateAccountModal
+      <CreateAccountSheet
         open={modalOpen}
         initialType={modalType}
         onClose={() => setModalOpen(false)}

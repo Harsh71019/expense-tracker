@@ -7,7 +7,7 @@ import {
 } from "@/features/transactions";
 import { getTxnPage } from "@/features/transactions/server/get-txn-page";
 import { getTransactionInsights } from "@/features/transactions/server/get-transaction-insights";
-import { PendingTransactionsPanel } from "@/features/pending-transactions/components/pending-transactions-panel";
+import { PendingTransactionsPanel } from "@/features/pending-transactions";
 import { getPendingTransactions } from "@/features/pending-transactions/server/get-pending-transactions";
 
 export default async function TransactionsPage({

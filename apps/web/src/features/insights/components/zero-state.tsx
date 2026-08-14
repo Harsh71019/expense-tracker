@@ -1,7 +1,7 @@
 import type { AccountType } from "@treasury-ops/shared";
 import type { ReactNode } from "react";
 
-import { ACCOUNT_TYPE_META } from "./create-account-modal";
+import { ACCOUNT_TYPE_META } from "./create-account-sheet";
 
 const STARTER_KINDS: readonly AccountType[] = ["bank", "credit_card", "cash", "investment"];
 

@@ -83,7 +83,7 @@ export function ImportList({
                 <div className="font-mono text-lg font-semibold text-foreground">
                   {batch.stats.total}
                 </div>
-                <div className="mt-0.5 text-[11px] font-medium text-foreground-muted">rows</div>
+                <div className="mt-0.5 text-2xs font-medium text-foreground-muted">rows</div>
               </div>
               <div className="text-right">
                 <div
@@ -91,13 +91,13 @@ export function ImportList({
                 >
                   {batch.stats.duplicates}
                 </div>
-                <div className="mt-0.5 text-[11px] font-medium text-foreground-muted">dupes</div>
+                <div className="mt-0.5 text-2xs font-medium text-foreground-muted">dupes</div>
               </div>
               <div className="text-right">
                 <div className="font-mono text-lg font-semibold text-accent">
                   {batch.stats.committed}
                 </div>
-                <div className="mt-0.5 text-[11px] font-medium text-foreground-muted">posted</div>
+                <div className="mt-0.5 text-2xs font-medium text-foreground-muted">posted</div>
               </div>
             </div>
             <div className="flex shrink-0 gap-2">

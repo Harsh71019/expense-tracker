@@ -5,15 +5,15 @@ import type { ReactNode } from "react";
 
 import { Money, SignedMoney } from "@/components/ui/money";
 import { Skeleton } from "@/components/ui/skeleton";
+import { StatCard, StatCardLabel } from "@/components/ui/stat-card";
 import { IconGlyph } from "@/features/categories";
 
 import { useRecurringStats } from "../hooks/use-recurring-stats";
 
 const countFormatter = new Intl.NumberFormat("en-IN");
-const cardClass =
-  "glass-card min-w-0 rounded-2xl p-4.5 shadow-xs transition-all duration-200 hover:border-accent/40 sm:p-5";
-const labelClass =
-  "font-mono text-[10px] font-bold tracking-[0.14em] text-foreground-muted uppercase";
+// Still used by the <dt> labels inside TwelveMonthCostPanel, where StatCardLabel's
+// <p> markup wouldn't be valid inside a <dl>.
+const labelClass = "font-mono text-2xs font-bold tracking-[0.14em] text-foreground-muted uppercase";
 
 export function RecurringStatsCards({
   initialStats
@@ -40,9 +40,9 @@ export function RecurringStatsCards({
     <section aria-label="Recurring insights" className="space-y-4 animate-fade-in">
       <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
         {/* Card 1: Total Rules */}
-        <article className={cardClass}>
+        <StatCard padding="sm">
           <div className="flex items-center justify-between">
-            <p className={labelClass}>Total recurring rules</p>
+            <StatCardLabel>Total recurring rules</StatCardLabel>
             <span className="grid h-7 w-7 place-items-center rounded-lg border border-accent/25 bg-accent-glow/40 font-mono text-xs text-accent">
               ↻
             </span>
@@ -51,20 +51,20 @@ export function RecurringStatsCards({
             {countFormatter.format(stats.totalRules)}
           </p>
           <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-            <span className="inline-flex items-center gap-1 rounded-md border border-income/30 bg-income/10 px-2 py-0.5 font-mono text-[11px] font-semibold text-income">
+            <span className="inline-flex items-center gap-1 rounded-md border border-income/30 bg-income/10 px-2 py-0.5 font-mono text-2xs font-semibold text-income">
               <span className="h-1.5 w-1.5 rounded-full bg-income" aria-hidden="true" />
               <strong className="text-income">{stats.activeRules}</strong> active
             </span>
-            <span className="inline-flex items-center gap-1 rounded-md border border-border/80 bg-surface-muted/60 px-2 py-0.5 font-mono text-[11px] font-semibold text-foreground-muted">
+            <span className="inline-flex items-center gap-1 rounded-md border border-border/80 bg-surface-muted/60 px-2 py-0.5 font-mono text-2xs font-semibold text-foreground-muted">
               <strong className="text-foreground">{stats.pausedRules}</strong> paused
             </span>
           </div>
-        </article>
+        </StatCard>
 
         {/* Card 2: Upcoming Transactions */}
-        <article className={cardClass}>
+        <StatCard padding="sm">
           <div className="flex items-center justify-between">
-            <p className={labelClass}>Upcoming transactions · {stats.forecastDays} days</p>
+            <StatCardLabel>Upcoming transactions · {stats.forecastDays} days</StatCardLabel>
             <span className="grid h-7 w-7 place-items-center rounded-lg border border-border/80 bg-surface-muted font-mono text-xs text-foreground-muted">
               📅
             </span>
@@ -75,12 +75,12 @@ export function RecurringStatsCards({
           <p className="mt-3 text-xs leading-relaxed text-foreground-muted">
             Scheduled postings from active recurring rules.
           </p>
-        </article>
+        </StatCard>
 
         {/* Card 3: Forecast Cash Flow */}
-        <article className={cardClass}>
+        <StatCard padding="sm">
           <div className="flex items-center justify-between">
-            <p className={labelClass}>Forecast cash flow · {stats.forecastDays} days</p>
+            <StatCardLabel>Forecast cash flow · {stats.forecastDays} days</StatCardLabel>
             <span className="grid h-7 w-7 place-items-center rounded-lg border border-expense/25 bg-expense/10 font-mono text-xs text-expense">
               ⇄
             </span>
@@ -97,12 +97,12 @@ export function RecurringStatsCards({
               Net <SignedMoney minor={stats.upcomingNetMinor} size="sm" />
             </span>
           </div>
-        </article>
+        </StatCard>
 
         {/* Card 4: Top Spending Category */}
-        <article aria-label="Highest spending category forecast" className={cardClass}>
+        <StatCard aria-label="Highest spending category forecast" padding="sm">
           <div className="flex items-center justify-between">
-            <p className={labelClass}>Highest spending category · {stats.forecastDays} days</p>
+            <StatCardLabel>Highest spending category · {stats.forecastDays} days</StatCardLabel>
             <span className="grid h-7 w-7 place-items-center rounded-lg border border-border/80 bg-surface-muted font-mono text-xs text-foreground-muted">
               🏷
             </span>
@@ -133,7 +133,7 @@ export function RecurringStatsCards({
               </p>
             </>
           )}
-        </article>
+        </StatCard>
       </div>
 
       <TwelveMonthCostPanel forecast={stats.twelveMonthForecast} />
@@ -159,7 +159,7 @@ function TwelveMonthCostPanel({
         {/* Left Column: Annual Runway Overview */}
         <div className="border-b border-border/80 p-5.5 sm:p-6 lg:border-r lg:border-b-0 lg:p-7">
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1 rounded-md border border-expense/30 bg-expense/10 px-2 py-0.5 font-mono text-[10px] font-bold tracking-wider text-expense uppercase">
+            <span className="inline-flex items-center gap-1 rounded-md border border-expense/30 bg-expense/10 px-2 py-0.5 font-mono text-2xs font-bold tracking-wider text-expense uppercase">
               12-Month Runway
             </span>
           </div>
@@ -202,7 +202,7 @@ function TwelveMonthCostPanel({
             </p>
           )}
 
-          <p className="mt-4 text-[11px] leading-relaxed text-foreground-muted">
+          <p className="mt-4 text-2xs leading-relaxed text-foreground-muted">
             Projection uses active rules only. Paused rules and one-off spending are excluded.
           </p>
         </div>
@@ -245,7 +245,7 @@ function TwelveMonthCostPanel({
                     <div className="flex min-w-0 items-start gap-3">
                       <span
                         aria-hidden="true"
-                        className="grid h-7 w-7 shrink-0 place-items-center rounded-lg border border-border bg-surface-elevated font-mono text-[10px] font-bold text-foreground-muted group-hover:border-accent/30 group-hover:text-accent"
+                        className="grid h-7 w-7 shrink-0 place-items-center rounded-lg border border-border bg-surface-elevated font-mono text-2xs font-bold text-foreground-muted group-hover:border-accent/30 group-hover:text-accent"
                       >
                         {String(index + 1).padStart(2, "0")}
                       </span>
@@ -262,8 +262,8 @@ function TwelveMonthCostPanel({
                           </div>
                           <div className="shrink-0 sm:text-right">
                             <Money minor={projection.projectedMinor} variant="expense" size="md" />
-                            <span className="ml-1 text-[10px] text-foreground-muted">/ 12 mo</span>
-                            <span className="ml-1.5 inline-block font-mono text-[10px] font-semibold text-foreground-muted">
+                            <span className="ml-1 text-2xs text-foreground-muted">/ 12 mo</span>
+                            <span className="ml-1.5 inline-block font-mono text-2xs font-semibold text-foreground-muted">
                               ({percentage}%)
                             </span>
                           </div>
@@ -292,11 +292,11 @@ function RecurringStatsSkeleton(): ReactNode {
     <div aria-label="Loading recurring insights" className="space-y-4">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {Array.from({ length: 4 }, (_, index) => (
-          <div key={index} className={cardClass}>
+          <StatCard key={index} padding="sm" hoverable={false}>
             <Skeleton className="h-3 w-40" />
             <Skeleton className="mt-4 h-8 w-24" />
             <Skeleton className="mt-4 h-5 w-full" />
-          </div>
+          </StatCard>
         ))}
       </div>
       <div className="grid gap-5 rounded-2xl border border-border bg-surface-elevated p-6 lg:grid-cols-2">

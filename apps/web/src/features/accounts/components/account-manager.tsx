@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  CreateAccountSchema,
-  CreditCardConfigInputSchema,
-  type Account,
-  type AccountType
-} from "@treasury-ops/shared";
+import type { Account, AccountType } from "@treasury-ops/shared";
 import { useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 
@@ -23,6 +18,7 @@ import { useAccounts } from "../hooks/use-accounts";
 import { useArchiveAccount } from "../hooks/use-archive-account";
 import { useCreateAccount } from "../hooks/use-create-account";
 import { useUpdateCreditCardConfig } from "../hooks/use-update-credit-card-config";
+import { parseCreateAccountInput, parseCreditCardConfigInput } from "../model/account-form";
 import { AccountDetailDialog } from "./account-detail-dialog";
 
 type TypeMeta = {
@@ -146,18 +142,13 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
 
   async function submit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
-    const parsed = CreateAccountSchema.safeParse({
+    const parsed = parseCreateAccountInput({
       name,
       type,
-      openingBalanceMinor: direction === "owed" ? -amountMinor : amountMinor,
-      ...(type === "credit_card"
-        ? {
-            creditCardConfig: {
-              statementDay: Number(statementDay),
-              dueDay: Number(dueDay)
-            }
-          }
-        : {})
+      amountMinor,
+      direction,
+      statementDay,
+      dueDay
     });
     if (!parsed.success) {
       setError(parsed.error.issues[0]?.message ?? "Check the account details.");
@@ -185,10 +176,7 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
   async function saveCardConfig(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
     if (configuring === undefined) return;
-    const parsed = CreditCardConfigInputSchema.safeParse({
-      statementDay: Number(statementDay),
-      dueDay: Number(dueDay)
-    });
+    const parsed = parseCreditCardConfigInput({ statementDay, dueDay });
     if (!parsed.success) {
       setError(parsed.error.issues[0]?.message ?? "Check the billing cycle.");
       return;
@@ -251,14 +239,14 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
       <header className="flex flex-col items-stretch gap-4 rounded-2xl border border-border/80 bg-surface-elevated/90 px-5 py-4.5 shadow-xs backdrop-blur-md sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-md border border-accent/30 bg-accent-glow/40 px-2.5 py-0.5 font-mono text-[10px] font-bold tracking-wider text-accent uppercase">
+            <span className="inline-flex items-center gap-1.5 rounded-md border border-accent/30 bg-accent-glow/40 px-2.5 py-0.5 font-mono text-2xs font-bold tracking-wider text-accent uppercase">
               <span
                 className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse"
                 aria-hidden="true"
               />
               Capital Architecture
             </span>
-            <span className="inline-flex items-center gap-1.5 rounded-md border border-income/30 bg-income/10 px-2 py-0.5 font-mono text-[10px] font-bold text-income">
+            <span className="inline-flex items-center gap-1.5 rounded-md border border-income/30 bg-income/10 px-2 py-0.5 font-mono text-2xs font-bold text-income">
               ● Ledger Synchronized
             </span>
           </div>
@@ -281,10 +269,10 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
           <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <p className="font-mono text-[10px] font-bold tracking-[0.15em] text-foreground-muted uppercase">
+                <p className="font-mono text-2xs font-bold tracking-[0.15em] text-foreground-muted uppercase">
                   Net Worth Overview
                 </p>
-                <span className="inline-flex items-center rounded-md border border-accent/30 bg-accent-glow/50 px-2 py-0.5 font-mono text-[10px] font-semibold text-accent">
+                <span className="inline-flex items-center rounded-md border border-accent/30 bg-accent-glow/50 px-2 py-0.5 font-mono text-2xs font-semibold text-accent">
                   {active.length} {active.length === 1 ? "active account" : "active accounts"}
                 </span>
               </div>
@@ -296,7 +284,7 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
             <div className="flex flex-wrap items-center gap-3 sm:gap-4">
               <div className="flex-1 sm:flex-none min-w-[145px] rounded-xl border border-emerald-500/25 bg-emerald-500/10 p-3.5 shadow-2xs">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="font-mono text-[10px] font-bold tracking-wider text-emerald-600 dark:text-emerald-400 uppercase">
+                  <span className="font-mono text-2xs font-bold tracking-wider text-emerald-600 dark:text-emerald-400 uppercase">
                     Assets
                   </span>
                   <span className="text-xs text-emerald-500 font-bold">↗</span>
@@ -308,7 +296,7 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
 
               <div className="flex-1 sm:flex-none min-w-[145px] rounded-xl border border-rose-500/25 bg-rose-500/10 p-3.5 shadow-2xs">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="font-mono text-[10px] font-bold tracking-wider text-rose-600 dark:text-rose-400 uppercase">
+                  <span className="font-mono text-2xs font-bold tracking-wider text-rose-600 dark:text-rose-400 uppercase">
                     Liabilities
                   </span>
                   <span className="text-xs text-rose-500 font-bold">↘</span>
@@ -353,7 +341,7 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
               className={pillClasses(filter === "all")}
             >
               <span>All</span>
-              <span className="rounded-md bg-surface-muted px-1.5 py-0.5 font-mono text-[10px] text-foreground-muted">
+              <span className="rounded-md bg-surface-muted px-1.5 py-0.5 font-mono text-2xs text-foreground-muted">
                 {active.length}
               </span>
             </button>
@@ -368,7 +356,7 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
                 >
                   <span>{meta.filterLabel}</span>
                   {count > 0 ? (
-                    <span className="rounded-md bg-surface-muted px-1.5 py-0.5 font-mono text-[10px] text-foreground-muted">
+                    <span className="rounded-md bg-surface-muted px-1.5 py-0.5 font-mono text-2xs text-foreground-muted">
                       {count}
                     </span>
                   ) : null}
@@ -391,7 +379,7 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
 
           {(searchQuery.trim() !== "" || filter !== "all" || showArchived) && (
             <div className="flex w-full flex-wrap items-center gap-1.5 border-t border-border/60 pt-2.5">
-              <span className="font-mono text-[10px] font-semibold text-foreground-muted uppercase">
+              <span className="font-mono text-2xs font-semibold text-foreground-muted uppercase">
                 Active:
               </span>
               {searchQuery.trim() !== "" && (
@@ -486,20 +474,20 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
                         <p className="truncate text-base font-bold text-foreground tracking-tight">
                           {account.name}
                         </p>
-                        <p className="mt-0.5 font-mono text-[10px] font-semibold tracking-wider text-foreground-muted uppercase">
+                        <p className="mt-0.5 font-mono text-2xs font-semibold tracking-wider text-foreground-muted uppercase">
                           {meta.label}
                         </p>
                       </div>
                     </div>
                     {account.isArchived ? (
-                      <span className="shrink-0 rounded-md border border-border bg-surface-muted px-2 py-0.5 font-mono text-[9px] font-bold tracking-wider text-foreground-muted">
+                      <span className="shrink-0 rounded-md border border-border bg-surface-muted px-2 py-0.5 font-mono text-2xs font-bold tracking-wider text-foreground-muted">
                         ARCHIVED
                       </span>
                     ) : null}
                   </div>
 
                   <div className="rounded-xl border border-border/70 bg-surface-muted/60 p-3.5">
-                    <p className="font-mono text-[9px] font-extrabold tracking-[0.15em] text-foreground-muted uppercase">
+                    <p className="font-mono text-2xs font-extrabold tracking-[0.15em] text-foreground-muted uppercase">
                       Current Balance
                     </p>
                     <div className="mt-1">
@@ -510,11 +498,11 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
 
                 <div className="pointer-events-none relative z-10 mt-3.5 border-t border-border/60 pt-3 flex flex-col gap-2">
                   <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-                    <span className="font-mono text-[10px] text-foreground-muted">
+                    <span className="font-mono text-2xs text-foreground-muted">
                       Opening <SignedMoney minor={account.openingBalanceMinor} size="sm" />
                     </span>
                     {account.type === "credit_card" && account.creditCardConfig !== undefined ? (
-                      <span className="inline-flex items-center rounded-md border border-accent/25 bg-accent-glow/50 px-2 py-0.5 font-mono text-[10px] font-semibold text-accent">
+                      <span className="inline-flex items-center rounded-md border border-accent/25 bg-accent-glow/50 px-2 py-0.5 font-mono text-2xs font-semibold text-accent">
                         Next stmt: {formatBillDate(account.creditCardConfig.nextStatementAt)}
                       </span>
                     ) : null}
@@ -590,7 +578,7 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
             />
 
             <div>
-              <p className="font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+              <p className="font-mono text-2xs font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
                 Type
               </p>
               <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-5">
@@ -599,7 +587,7 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
                     key={meta.value}
                     type="button"
                     onClick={() => selectType(meta.value)}
-                    className={`flex min-h-11 flex-col items-center gap-1.5 rounded-xl border px-2 py-3 text-[11px] font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                    className={`flex min-h-11 flex-col items-center gap-1.5 rounded-xl border px-2 py-3 text-2xs font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                       type === meta.value
                         ? "border-accent/40 bg-accent-glow/60 text-accent font-bold shadow-xs"
                         : "border-border/80 bg-surface-muted/60 text-foreground-muted hover:border-accent/30 hover:bg-surface-elevated hover:text-foreground"
@@ -641,7 +629,7 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
                     onChange={(event) => setDueDay(event.target.value)}
                   />
                 </div>
-                <p className="mt-2 text-[11px] leading-relaxed text-foreground-muted">
+                <p className="mt-2 text-2xs leading-relaxed text-foreground-muted">
                   Days 29–31 automatically clamp to the last calendar day in shorter months.
                 </p>
               </div>
@@ -672,7 +660,7 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
                   </button>
                 ))}
               </div>
-              <p className="mt-2 text-center text-[11px] text-foreground-muted">
+              <p className="mt-2 text-center text-2xs text-foreground-muted">
                 Use owed for accounts that start in debt, like a credit card.
               </p>
             </div>
@@ -750,7 +738,7 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
                 onChange={(event) => setDueDay(event.target.value)}
               />
             </div>
-            <p className="text-[11px] leading-relaxed text-foreground-muted">
+            <p className="text-2xs leading-relaxed text-foreground-muted">
               This schedules future cycles. Existing generated bills are never recalculated.
             </p>
             {error === undefined ? null : (

@@ -2,31 +2,31 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { CreateAccountModal } from "./create-account-modal";
+import { CreateAccountSheet } from "./create-account-sheet";
 
 const mocks = vi.hoisted(() => ({ mutateAsync: vi.fn(), pending: false }));
 vi.mock("@/features/accounts", () => ({
   useCreateAccount: () => ({ mutateAsync: mocks.mutateAsync, isPending: mocks.pending })
 }));
 
-describe("CreateAccountModal", () => {
+describe("CreateAccountSheet", () => {
   beforeEach(() => {
     mocks.mutateAsync.mockReset();
     mocks.pending = false;
   });
 
   it("renders nothing when closed", () => {
-    render(<CreateAccountModal open={false} initialType="bank" onClose={vi.fn()} />);
+    render(<CreateAccountSheet open={false} initialType="bank" onClose={vi.fn()} />);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
   it("opens with the requested starter type preselected", () => {
-    render(<CreateAccountModal open initialType="investment" onClose={vi.fn()} />);
+    render(<CreateAccountSheet open initialType="investment" onClose={vi.fn()} />);
     expect(screen.getByRole("button", { name: /Investment/ })).toHaveClass("border-accent");
   });
 
   it("keeps the dialog scrollable within the mobile viewport", () => {
-    render(<CreateAccountModal open initialType="bank" onClose={vi.fn()} />);
+    render(<CreateAccountSheet open initialType="bank" onClose={vi.fn()} />);
 
     expect(screen.getByRole("presentation")).toHaveClass(
       "items-start",
@@ -42,7 +42,7 @@ describe("CreateAccountModal", () => {
 
   it("validates the account name before creating an account", async () => {
     const user = userEvent.setup();
-    render(<CreateAccountModal open initialType="bank" onClose={vi.fn()} />);
+    render(<CreateAccountSheet open initialType="bank" onClose={vi.fn()} />);
 
     await user.click(screen.getByRole("button", { name: "Create account" }));
 
@@ -54,7 +54,7 @@ describe("CreateAccountModal", () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
     mocks.mutateAsync.mockResolvedValue({});
-    render(<CreateAccountModal open initialType="credit_card" onClose={onClose} />);
+    render(<CreateAccountSheet open initialType="credit_card" onClose={onClose} />);
 
     await user.type(screen.getByLabelText("Account name"), "Axis Credit Card");
     await user.clear(screen.getByLabelText("Opening balance"));
@@ -73,7 +73,7 @@ describe("CreateAccountModal", () => {
   it("keeps a useful error when account creation fails", async () => {
     const user = userEvent.setup();
     mocks.mutateAsync.mockRejectedValue(new Error("Account name is already in use"));
-    render(<CreateAccountModal open initialType="bank" onClose={vi.fn()} />);
+    render(<CreateAccountSheet open initialType="bank" onClose={vi.fn()} />);
 
     await user.type(screen.getByLabelText("Account name"), "Cash");
     await user.click(screen.getByRole("button", { name: "Create account" }));
@@ -84,7 +84,7 @@ describe("CreateAccountModal", () => {
   it("closes without submitting when cancelled or the backdrop is clicked", async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
-    render(<CreateAccountModal open initialType="bank" onClose={onClose} />);
+    render(<CreateAccountSheet open initialType="bank" onClose={onClose} />);
 
     await user.click(screen.getByRole("button", { name: "Cancel" }));
     expect(onClose).toHaveBeenCalledOnce();
@@ -98,7 +98,7 @@ describe("CreateAccountModal", () => {
 
   it("disables submission while the account is being created", () => {
     mocks.pending = true;
-    render(<CreateAccountModal open initialType="bank" onClose={vi.fn()} />);
+    render(<CreateAccountSheet open initialType="bank" onClose={vi.fn()} />);
     expect(screen.getByRole("button", { name: "Creating…" })).toBeDisabled();
   });
 });

@@ -38,7 +38,7 @@ export function CategoryBreakdownPanel({
                   <IconGlyph value={meta.icon} size={14} />
                 </span>
                 <span className="text-sm font-semibold text-foreground">{meta.name}</span>
-                <span className="rounded-[5px] bg-surface-muted px-1.5 py-0.5 font-mono text-[11px] text-foreground-muted">
+                <span className="rounded-[5px] bg-surface-muted px-1.5 py-0.5 font-mono text-2xs text-foreground-muted">
                   {category.txnCount} txn{category.txnCount === 1 ? "" : "s"}
                 </span>
                 <div className="flex-1" />

@@ -78,7 +78,7 @@ export function ExportCsvForm(): ReactNode {
         onSubmit={submit}
       >
         <fieldset className="space-y-3">
-          <legend className="font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+          <legend className="font-mono text-2xs font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
             Date range
           </legend>
           <label className="flex min-h-11 items-center gap-3 rounded-lg border border-border px-4 text-sm">
@@ -102,7 +102,7 @@ export function ExportCsvForm(): ReactNode {
         </fieldset>
         {mode === "range" ? (
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+            <div className="flex flex-col gap-1.5 font-mono text-2xs font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
               <span>From (Asia/Kolkata)</span>
               <DatePicker
                 id="export-from"
@@ -112,7 +112,7 @@ export function ExportCsvForm(): ReactNode {
                 onChange={setFrom}
               />
             </div>
-            <div className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+            <div className="flex flex-col gap-1.5 font-mono text-2xs font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
               <span>To (Asia/Kolkata)</span>
               <DatePicker
                 id="export-to"

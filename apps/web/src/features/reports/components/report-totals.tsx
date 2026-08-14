@@ -10,9 +10,7 @@ export function ReportTotals({ rollup }: Readonly<{ rollup: MonthlyRollup }>): R
   return (
     <div className="mb-5.5 grid grid-cols-1 gap-4 sm:grid-cols-3">
       <div className="rounded-2xl border border-border bg-surface-elevated px-5.5 py-5">
-        <p className="font-mono text-[10px] font-bold tracking-[1.2px] text-foreground-muted">
-          SPENT
-        </p>
+        <p className="font-mono text-2xs font-bold tracking-[1.2px] text-foreground-muted">SPENT</p>
         <div className="mt-2.5">
           <Money minor={rollup.totalExpenseMinor} size="lg" />
         </div>
@@ -21,7 +19,7 @@ export function ReportTotals({ rollup }: Readonly<{ rollup: MonthlyRollup }>): R
         </p>
       </div>
       <div className="rounded-2xl border border-border bg-surface-elevated px-5.5 py-5">
-        <p className="font-mono text-[10px] font-bold tracking-[1.2px] text-foreground-muted">
+        <p className="font-mono text-2xs font-bold tracking-[1.2px] text-foreground-muted">
           RECEIVED
         </p>
         <div className="mt-2.5">
@@ -31,7 +29,7 @@ export function ReportTotals({ rollup }: Readonly<{ rollup: MonthlyRollup }>): R
       <div
         className={`rounded-2xl border bg-surface-elevated px-5.5 py-5 ${net >= 0 ? "border-accent/40" : "border-border"}`}
       >
-        <p className="font-mono text-[10px] font-bold tracking-[1.2px] text-foreground-muted">
+        <p className="font-mono text-2xs font-bold tracking-[1.2px] text-foreground-muted">
           NET FLOW
         </p>
         <div className="mt-2.5">

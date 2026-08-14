@@ -24,7 +24,7 @@ export function RangeTabs({ value, onChange, label }: RangeTabsProps): ReactNode
           type="button"
           aria-pressed={value === range}
           onClick={() => onChange(range)}
-          className={`min-h-11 flex-1 rounded-md px-2.5 py-1 font-mono text-[11px] font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:flex-none ${
+          className={`min-h-11 flex-1 rounded-md px-2.5 py-1 font-mono text-2xs font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:flex-none ${
             value === range
               ? "bg-surface-elevated text-accent shadow-sm"
               : "text-foreground-muted hover:text-foreground"

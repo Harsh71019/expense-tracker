@@ -22,7 +22,7 @@ export function ApiKeyReveal({
 
   return (
     <div className="rounded-xl border border-accent/40 bg-accent-glow/20 p-4.5 sm:p-5">
-      <p className="font-mono text-[9px] font-extrabold tracking-[0.25em] text-accent uppercase">
+      <p className="font-mono text-2xs font-extrabold tracking-[0.25em] text-accent uppercase">
         New API key
       </p>
       <p className="mt-2 text-sm leading-relaxed text-foreground-muted">

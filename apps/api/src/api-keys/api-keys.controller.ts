@@ -1,4 +1,16 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Req } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Headers,
+  HttpCode,
+  Param,
+  Patch,
+  Post,
+  Req,
+  Res
+} from "@nestjs/common";
 import {
   ApiKeyIdSchema,
   CreateApiKeySchema,
@@ -6,11 +18,14 @@ import {
   type ApiKey,
   type CreateApiKeyResponse
 } from "@treasury-ops/shared";
-import type { Request } from "express";
+import type { Request, Response } from "express";
+import { z } from "zod";
 
 import type { AuthenticatedUser } from "../auth/auth.guard.js";
 import { CurrentUser } from "../auth/current-user.decorator.js";
 import { ApiKeysService } from "./api-keys.service.js";
+
+const IdempotencyKeySchema = z.string().uuid();
 
 @Controller("v1/api-keys")
 export class ApiKeysController {
@@ -19,9 +34,17 @@ export class ApiKeysController {
   @Post()
   async create(
     @CurrentUser() user: AuthenticatedUser,
-    @Body() body: unknown
+    @Body() body: unknown,
+    @Headers("idempotency-key") key: string | undefined,
+    @Res({ passthrough: true }) response: Response
   ): Promise<CreateApiKeyResponse> {
-    return this.apiKeys.create(user.id, CreateApiKeySchema.parse(body));
+    const result = await this.apiKeys.create(
+      user.id,
+      CreateApiKeySchema.parse(body),
+      IdempotencyKeySchema.parse(key)
+    );
+    if (result.replayed) response.status(200).setHeader("Idempotency-Replayed", "true");
+    return result.result;
   }
 
   // listApiKeys requires a real better-auth session and resolves session.user.id

@@ -97,7 +97,7 @@ export function CategoryCard({
                     aria-label={`50/30/20 Group: ${parent.group ?? "Unassigned"}`}
                     aria-expanded={groupDropdownOpen}
                     onClick={() => setGroupDropdownOpen((open) => !open)}
-                    className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                    className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-2xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                       parent.group === "essential"
                         ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20"
                         : parent.group === "lifestyle"
@@ -112,12 +112,12 @@ export function CategoryCard({
                           ? "Lifestyle · Wants"
                           : "+ Set Group"}
                     </span>
-                    <span className="text-[9px] opacity-70">▾</span>
+                    <span className="text-2xs opacity-70">▾</span>
                   </button>
 
                   {groupDropdownOpen ? (
                     <div className="absolute top-7 left-0 z-50 w-48 overflow-hidden rounded-xl border border-border bg-surface-elevated p-1 shadow-xl animate-fade-in">
-                      <p className="px-2.5 py-1 text-[10px] font-mono font-bold uppercase tracking-wider text-foreground-muted">
+                      <p className="px-2.5 py-1 text-2xs font-mono font-bold uppercase tracking-wider text-foreground-muted">
                         50/30/20 Grouping
                       </p>
                       {[
@@ -146,7 +146,7 @@ export function CategoryCard({
                   ) : null}
                 </div>
               ) : (
-                <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-2xs font-semibold text-emerald-600 dark:text-emerald-400">
                   Income
                 </span>
               )}
@@ -197,7 +197,7 @@ export function CategoryCard({
       {/* Monthly Spend & Activity Row */}
       <div className="mt-3.5 flex flex-wrap items-center justify-between gap-2.5 rounded-xl border border-border/60 bg-surface-muted/40 px-3.5 py-2.5 text-xs">
         <div className="flex items-center gap-2">
-          <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-foreground-muted">
+          <span className="font-mono text-2xs font-bold uppercase tracking-wider text-foreground-muted">
             This month:
           </span>
           <span className="font-semibold text-foreground">
@@ -208,7 +208,7 @@ export function CategoryCard({
               : "No activity this month"}
           </span>
           {hasActivity ? (
-            <span className="text-foreground-muted font-mono text-[11px]">
+            <span className="text-foreground-muted font-mono text-2xs">
               ({txnCount} txn{txnCount === 1 ? "" : "s"})
             </span>
           ) : null}
@@ -228,7 +228,7 @@ export function CategoryCard({
       {/* Mini Budget Meter if budget exists */}
       {budget !== undefined ? (
         <div className="mt-2.5 rounded-xl border border-border/60 bg-surface-muted/30 p-2.5 text-xs">
-          <div className="flex items-center justify-between text-[11px]">
+          <div className="flex items-center justify-between text-2xs">
             <span className="font-medium text-foreground-muted">
               Monthly Budget:{" "}
               <span className="font-semibold text-foreground">
@@ -266,7 +266,7 @@ export function CategoryCard({
       {/* Subcategories Tree Section */}
       {subcategories.length === 0 ? null : (
         <div className="mt-4 space-y-1.5 border-t border-border/70 pt-3.5">
-          <p className="mb-2 font-mono text-[9px] font-bold uppercase tracking-wider text-foreground-muted">
+          <p className="mb-2 font-mono text-2xs font-bold uppercase tracking-wider text-foreground-muted">
             Subcategories ({subcategories.length})
           </p>
           {subcategories.map((child) => (
@@ -314,7 +314,7 @@ function CategoryTreeItem({
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <span
             style={swatchStyle(category.color)}
-            className={`grid h-6 w-6 shrink-0 place-items-center overflow-hidden rounded-md text-[10px] ${
+            className={`grid h-6 w-6 shrink-0 place-items-center overflow-hidden rounded-md text-2xs ${
               category.color === undefined ? "bg-accent text-accent-foreground" : "text-white"
             }`}
             aria-hidden="true"
@@ -336,7 +336,7 @@ function CategoryTreeItem({
           {txnCount > 0 ? (
             <Link
               href={`/transactions?categoryId=${category.id}`}
-              className="font-mono text-[11px] font-medium text-foreground-muted hover:text-accent hover:underline transition-colors"
+              className="font-mono text-2xs font-medium text-foreground-muted hover:text-accent hover:underline transition-colors"
             >
               {formatMinor(spentMinor)} ({txnCount})
             </Link>

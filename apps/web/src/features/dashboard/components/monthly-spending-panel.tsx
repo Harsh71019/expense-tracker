@@ -36,7 +36,7 @@ export function MonthlySpendingPanel({
     >
       <div className="flex flex-wrap items-end justify-between gap-3 border-b border-border px-5 py-5 sm:px-6">
         <div>
-          <p className="font-mono text-[10px] font-semibold tracking-[1.4px] text-accent">
+          <p className="font-mono text-2xs font-semibold tracking-[1.4px] text-accent">
             {monthFormatter.format(firstDay).toUpperCase()} · LIVE LEDGER
           </p>
           <h2
@@ -50,7 +50,7 @@ export function MonthlySpendingPanel({
             {asOfFormatter.format(spending.asOf)}.
           </p>
         </div>
-        <p className="font-mono text-[10px] tracking-[1px] text-foreground-muted">
+        <p className="font-mono text-2xs tracking-[1px] text-foreground-muted">
           {daysElapsed} OF {spending.daily.length} DAYS ELAPSED
         </p>
       </div>
@@ -61,7 +61,7 @@ export function MonthlySpendingPanel({
             className="absolute -right-12 -top-12 h-32 w-32 rounded-full bg-expense/10 blur-3xl"
             aria-hidden="true"
           />
-          <p className="relative font-mono text-[10px] font-semibold tracking-[1.4px] text-foreground-muted">
+          <p className="relative font-mono text-2xs font-semibold tracking-[1.4px] text-foreground-muted">
             TOTAL SPEND · MONTH TO DATE
           </p>
           <p className="relative mt-4 break-words font-mono text-[clamp(1.8rem,4vw,2.7rem)] font-bold tracking-[-0.05em] text-foreground">
@@ -70,7 +70,7 @@ export function MonthlySpendingPanel({
           <p className="relative mt-3 text-sm text-foreground-muted">
             Posted expenses through {asOfFormatter.format(spending.asOf)}.
           </p>
-          <div className="relative mt-7 flex items-center gap-2 border-t border-border pt-4 font-mono text-[10px] text-foreground-muted">
+          <div className="relative mt-7 flex items-center gap-2 border-t border-border pt-4 font-mono text-2xs text-foreground-muted">
             <span className="h-2 w-2 rounded-full bg-expense" aria-hidden="true" />
             CURRENT MONTH · IST
           </div>
@@ -101,7 +101,7 @@ export function MonthlySpendingPanel({
               One bar per day; upcoming dates stay muted.
             </p>
           </div>
-          <p className="font-mono text-[10px] text-foreground-muted">DAY OF MONTH →</p>
+          <p className="font-mono text-2xs text-foreground-muted">DAY OF MONTH →</p>
         </div>
         <div className="mt-4 overflow-x-auto pb-1">
           <DailySpendingChart

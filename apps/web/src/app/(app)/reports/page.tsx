@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
-import { ReportPage, getMonthlyRollup, reportMonthFromParam } from "@/features/reports";
+import { ReportPage, reportMonthFromParam } from "@/features/reports";
+import { getMonthlyRollup } from "@/features/reports/server/get-monthly-rollup";
 
 type ReportSearchParams = Record<string, string | string[] | undefined>;
 

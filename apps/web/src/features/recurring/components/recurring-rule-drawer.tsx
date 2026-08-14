@@ -38,7 +38,7 @@ import {
 const numberClasses =
   "min-h-11 w-full rounded-lg border border-border bg-surface-muted px-3.5 py-2.5 font-mono text-base font-semibold text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 sm:text-sm";
 const fieldLabelClasses =
-  "mb-1.5 block font-mono text-[9px] font-extrabold tracking-[0.22em] text-foreground-muted uppercase";
+  "mb-1.5 block font-mono text-2xs font-extrabold tracking-[0.22em] text-foreground-muted uppercase";
 
 const weekdayLabels: Record<Weekday, string> = {
   MO: "Mon",
@@ -206,7 +206,7 @@ export function RecurringRuleDrawer({
     >
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="font-mono text-[9px] font-bold tracking-[0.2em] text-accent uppercase">
+          <p className="font-mono text-2xs font-bold tracking-[0.2em] text-accent uppercase">
             Ledger automation
           </p>
           <h2 id="recurring-rule-title" className="mt-1.5 text-xl font-bold text-foreground">
@@ -257,7 +257,7 @@ export function RecurringRuleDrawer({
           />
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+            <div className="flex flex-col gap-1.5 font-mono text-2xs font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
               <span>Account</span>
               <Select
                 name="accountId"
@@ -274,7 +274,7 @@ export function RecurringRuleDrawer({
                 onChange={setAccountId}
               />
             </div>
-            <div className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+            <div className="flex flex-col gap-1.5 font-mono text-2xs font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
               <span>Category</span>
               <Select
                 name="categoryId"
@@ -355,7 +355,7 @@ export function RecurringRuleDrawer({
             </p>
           ) : null}
 
-          <div className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+          <div className="flex flex-col gap-1.5 font-mono text-2xs font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
             <span>Starts on</span>
             <DatePicker
               name="startDate"
@@ -453,7 +453,7 @@ export function RecurringRuleDrawer({
                     type="button"
                     aria-pressed={schedule.monthDays.includes(day)}
                     onClick={() => toggleMonthDay(day)}
-                    className={`min-h-11 rounded-md border font-mono text-[11px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                    className={`min-h-11 rounded-md border font-mono text-2xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                       schedule.monthDays.includes(day)
                         ? "border-accent bg-accent text-accent-foreground"
                         : "border-border bg-surface-muted text-foreground-muted"
@@ -470,7 +470,7 @@ export function RecurringRuleDrawer({
           ) : null}
 
           {schedule.frequency === "yearly" ? (
-            <div className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+            <div className="flex flex-col gap-1.5 font-mono text-2xs font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
               <span>In month</span>
               <Select
                 name="yearMonth"
@@ -508,13 +508,13 @@ export function RecurringRuleDrawer({
           <EndingField ending={schedule.ending} schedule={schedule} onChange={patchSchedule} />
 
           <div className="rounded-xl border border-border bg-surface-muted p-4">
-            <p className="font-mono text-[9px] font-bold tracking-[0.2em] text-foreground-muted uppercase">
+            <p className="font-mono text-2xs font-bold tracking-[0.2em] text-foreground-muted uppercase">
               Schedule summary
             </p>
             <p className="mt-2 text-sm font-semibold text-foreground">
               {scheduleResult.success ? scheduleResult.summary : scheduleResult.message}
             </p>
-            <p className="mt-2 break-all font-mono text-[10px] leading-relaxed text-foreground-muted">
+            <p className="mt-2 break-all font-mono text-2xs leading-relaxed text-foreground-muted">
               {scheduleResult.success ? scheduleResult.rrule : "RRULE pending"} · DTSTART=
               {schedule.startDate || "pending"}
             </p>
@@ -570,7 +570,7 @@ function EndingField({
 }>): ReactNode {
   if (ending === "until") {
     return (
-      <div className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+      <div className="flex flex-col gap-1.5 font-mono text-2xs font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
         <span>Last date</span>
         <DatePicker
           name="untilDate"

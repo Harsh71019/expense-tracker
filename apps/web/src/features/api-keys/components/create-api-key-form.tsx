@@ -63,7 +63,7 @@ export function CreateApiKeyForm({
         onChange={(event) => setName(event.target.value)}
       />
       <fieldset className="flex flex-col gap-2">
-        <legend className="font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+        <legend className="font-mono text-2xs font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
           Scopes
         </legend>
         {SCOPE_OPTIONS.map((option) => (
@@ -82,7 +82,7 @@ export function CreateApiKeyForm({
           </label>
         ))}
       </fieldset>
-      <div className="flex flex-col gap-1.5 font-mono text-[9px] font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+      <div className="flex flex-col gap-1.5 font-mono text-2xs font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
         <span>Expires (optional)</span>
         <DatePicker
           id="create-api-key-expiry"

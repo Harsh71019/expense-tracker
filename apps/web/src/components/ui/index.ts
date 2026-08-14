@@ -15,3 +15,4 @@ export * from "./command-palette";
 export * from "./keyboard-shortcuts-dialog";
 export * from "./select";
 export * from "./date-picker";
+export * from "./stat-card";

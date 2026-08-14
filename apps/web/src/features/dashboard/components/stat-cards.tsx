@@ -2,6 +2,7 @@ import type { DashboardStats } from "@treasury-ops/shared";
 import { formatSignedCompactMinor } from "@treasury-ops/shared";
 import type { ReactNode } from "react";
 
+import { StatCard, StatCardLabel, StatCardValue } from "@/components/ui/stat-card";
 import { Sparkline } from "@/features/assets";
 import { usePrivacy } from "@/lib/privacy/privacy-context";
 
@@ -72,16 +73,11 @@ export function StatCards({ stats }: Readonly<{ stats: DashboardStats }>): React
         const displayValue = privacyMode && stat.isMonetary ? "₹ ••••••" : stat.value;
 
         return (
-          <div
-            key={stat.label}
-            className="group rounded-2xl border border-border/80 bg-surface-elevated/90 p-5 backdrop-blur-md transition-all duration-200 hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-glow"
-          >
-            <p className="font-mono text-[10px] font-semibold tracking-[1.2px] text-foreground-muted transition-colors group-hover:text-accent">
+          <StatCard key={stat.label} as="div" className="group">
+            <StatCardLabel className="transition-colors group-hover:text-accent">
               {stat.label}
-            </p>
-            <p className="mt-2.5 font-mono text-[26px] font-bold tracking-tight text-foreground">
-              {displayValue}
-            </p>
+            </StatCardLabel>
+            <StatCardValue>{displayValue}</StatCardValue>
             <div className="mt-2.5 flex items-center justify-between gap-2">
               <span
                 className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 font-mono text-xs font-semibold ${
@@ -96,7 +92,7 @@ export function StatCards({ stats }: Readonly<{ stats: DashboardStats }>): React
                 <Sparkline values={stat.trend} color={color} width={70} height={30} />
               ) : null}
             </div>
-          </div>
+          </StatCard>
         );
       })}
     </div>

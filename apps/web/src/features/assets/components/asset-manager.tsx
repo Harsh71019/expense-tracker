@@ -67,7 +67,7 @@ export function AssetManager({ initialAssets, initialNetWorth }: AssetManagerPro
     <section className="space-y-7">
       <header className="flex flex-col items-stretch gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="font-mono text-[11px] font-bold tracking-[2px] text-accent">
+          <p className="font-mono text-2xs font-bold tracking-[2px] text-accent">
             LEDGER · NET WORTH
           </p>
           <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
@@ -131,7 +131,7 @@ export function AssetManager({ initialAssets, initialNetWorth }: AssetManagerPro
             >
               All
               <span
-                className={`rounded-[5px] px-1.5 py-0.5 font-mono text-[10px] font-semibold ${
+                className={`rounded-[5px] px-1.5 py-0.5 font-mono text-2xs font-semibold ${
                   filter === "all" ? "text-accent" : "bg-surface-muted text-foreground-muted"
                 }`}
               >
@@ -154,7 +154,7 @@ export function AssetManager({ initialAssets, initialNetWorth }: AssetManagerPro
                 >
                   {ASSET_KIND_SHORT_LABEL[kind]}
                   <span
-                    className={`rounded-[5px] px-1.5 py-0.5 font-mono text-[10px] font-semibold ${
+                    className={`rounded-[5px] px-1.5 py-0.5 font-mono text-2xs font-semibold ${
                       active ? "text-accent" : "bg-surface-muted text-foreground-muted"
                     }`}
                   >
@@ -167,7 +167,7 @@ export function AssetManager({ initialAssets, initialNetWorth }: AssetManagerPro
 
           {isFiltered && (
             <div className="flex w-full flex-wrap items-center gap-1.5 border-t border-border/60 pt-2.5">
-              <span className="font-mono text-[10px] font-semibold text-foreground-muted uppercase">
+              <span className="font-mono text-2xs font-semibold text-foreground-muted uppercase">
                 Active:
               </span>
               {searchQuery !== "" && (

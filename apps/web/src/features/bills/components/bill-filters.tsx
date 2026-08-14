@@ -106,7 +106,7 @@ export function BillFilters({
           className="flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-border/80 bg-surface-muted/60 px-3 py-2 text-xs font-semibold text-foreground-muted transition-colors hover:border-expense/40 hover:bg-expense/10 hover:text-expense focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         >
           <span>Clear</span>
-          <span className="rounded-full bg-accent/20 px-1.5 py-0.5 font-mono text-[10px] text-accent">
+          <span className="rounded-full bg-accent/20 px-1.5 py-0.5 font-mono text-2xs text-accent">
             {activeFilterCount}
           </span>
         </button>
@@ -114,7 +114,7 @@ export function BillFilters({
 
       {isFiltered ? (
         <div className="flex w-full flex-wrap items-center gap-1.5 border-t border-border/50 pt-2.5">
-          <span className="font-mono text-[10px] font-semibold text-foreground-muted uppercase">
+          <span className="font-mono text-2xs font-semibold text-foreground-muted uppercase">
             Active:
           </span>
           {filters.accountId !== undefined ? (

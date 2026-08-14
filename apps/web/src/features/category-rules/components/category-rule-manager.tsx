@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  CreateCategoryRuleSchema,
-  type Category,
-  type CategoryRule,
-  type TransactionType
-} from "@treasury-ops/shared";
+import type { Category, CategoryRule, TransactionType } from "@treasury-ops/shared";
 import { useMemo, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import { Select, type SelectOption } from "@/components/ui";
@@ -19,6 +14,7 @@ import {
   useCreateCategoryRule,
   useDeleteCategoryRule
 } from "../hooks/use-category-rules";
+import { parseCreateCategoryRuleInput } from "../model/rule-form";
 import { CreateRuleRow } from "./create-rule-row";
 import { DeleteRuleDialog } from "./delete-rule-dialog";
 import { RuleRow } from "./rule-row";
@@ -151,7 +147,7 @@ export function CategoryRuleManager({
   }, [filteredRules, rawCategories]);
 
   async function submitCreate(): Promise<void> {
-    const parsed = CreateCategoryRuleSchema.safeParse({ pattern, categoryId });
+    const parsed = parseCreateCategoryRuleInput({ pattern, categoryId });
     if (!parsed.success) {
       toast.error(parsed.error.issues[0]?.message ?? "Check the rule details");
       return;
@@ -192,7 +188,7 @@ export function CategoryRuleManager({
     <section className="w-full space-y-6">
       {/* Header */}
       <header>
-        <p className="font-mono text-[11px] font-bold tracking-[2px] text-accent">
+        <p className="font-mono text-2xs font-bold tracking-[2px] text-accent">
           LEDGER · AUTOMATION ENGINE
         </p>
         <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
@@ -207,7 +203,7 @@ export function CategoryRuleManager({
       {/* KPI Summary Analytics Cards */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
         <div className="rounded-2xl border border-border/80 bg-surface-elevated p-4 shadow-xs">
-          <p className="font-mono text-[10px] font-bold uppercase tracking-wider text-foreground-muted">
+          <p className="font-mono text-2xs font-bold uppercase tracking-wider text-foreground-muted">
             Active Rules
           </p>
           <p className="mt-2 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
@@ -217,7 +213,7 @@ export function CategoryRuleManager({
         </div>
 
         <div className="rounded-2xl border border-border/80 bg-surface-elevated p-4 shadow-xs">
-          <p className="font-mono text-[10px] font-bold uppercase tracking-wider text-foreground-muted">
+          <p className="font-mono text-2xs font-bold uppercase tracking-wider text-foreground-muted">
             Category Coverage
           </p>
           <div className="mt-2 flex items-baseline gap-2">
@@ -237,25 +233,25 @@ export function CategoryRuleManager({
         </div>
 
         <div className="rounded-2xl border border-border/80 bg-surface-elevated p-4 shadow-xs">
-          <p className="font-mono text-[10px] font-bold uppercase tracking-wider text-foreground-muted">
+          <p className="font-mono text-2xs font-bold uppercase tracking-wider text-foreground-muted">
             Rule Split
           </p>
           <div className="mt-2 flex items-center gap-3">
             <div>
               <span className="text-xl font-bold text-rose-500">{expenseRulesCount}</span>
-              <span className="ml-1 text-[11px] text-foreground-muted">Expense</span>
+              <span className="ml-1 text-2xs text-foreground-muted">Expense</span>
             </div>
             <div className="h-4 w-px bg-border" />
             <div>
               <span className="text-xl font-bold text-emerald-500">{incomeRulesCount}</span>
-              <span className="ml-1 text-[11px] text-foreground-muted">Income</span>
+              <span className="ml-1 text-2xs text-foreground-muted">Income</span>
             </div>
           </div>
           <p className="mt-1 text-xs text-foreground-muted">By category pool</p>
         </div>
 
         <div className="rounded-2xl border border-border/80 bg-surface-elevated p-4 shadow-xs">
-          <p className="font-mono text-[10px] font-bold uppercase tracking-wider text-foreground-muted">
+          <p className="font-mono text-2xs font-bold uppercase tracking-wider text-foreground-muted">
             Needs Rules
           </p>
           <p className="mt-2 text-2xl font-bold tracking-tight text-amber-500 sm:text-3xl">
@@ -271,11 +267,11 @@ export function CategoryRuleManager({
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <span className="text-amber-500 text-sm">💡</span>
-              <h3 className="font-mono text-[11px] font-bold uppercase tracking-wider text-foreground">
+              <h3 className="font-mono text-2xs font-bold uppercase tracking-wider text-foreground">
                 Categories without automation ({uncoveredCategories.length})
               </h3>
             </div>
-            <span className="text-[11px] text-foreground-muted">
+            <span className="text-2xs text-foreground-muted">
               Click any category to create a rule for it
             </span>
           </div>
@@ -290,7 +286,7 @@ export function CategoryRuleManager({
               >
                 <span
                   style={dotStyle(cat.color)}
-                  className={`grid h-4 w-4 place-items-center overflow-hidden rounded-full text-[10px] ${
+                  className={`grid h-4 w-4 place-items-center overflow-hidden rounded-full text-2xs ${
                     cat.color === undefined ? "bg-accent text-accent-foreground" : "text-white"
                   }`}
                   aria-hidden="true"
@@ -298,7 +294,7 @@ export function CategoryRuleManager({
                   <IconGlyph value={glyphFor(cat)} size={9} />
                 </span>
                 <span>{cat.name}</span>
-                <span className="text-accent text-[11px] font-bold">+</span>
+                <span className="text-accent text-2xs font-bold">+</span>
               </button>
             ))}
             {uncoveredCategories.length > 10 ? (
@@ -483,7 +479,7 @@ export function CategoryRuleManager({
                     <div>
                       <span className="text-sm font-bold text-foreground">{categoryName}</span>
                       <span
-                        className={`ml-2 rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase ${
+                        className={`ml-2 rounded-full px-2 py-0.5 text-2xs font-extrabold uppercase ${
                           kind === "income"
                             ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                             : "bg-rose-500/10 text-rose-600 dark:text-rose-400"

@@ -28,14 +28,14 @@ export function BillCard({
             {formatBillDate(bill.cycleStart)} – {formatBillDate(bill.cycleEnd)}
           </p>
         </div>
-        <span className="rounded-lg border border-border bg-surface-muted px-2 py-1 font-mono text-[10px] font-bold tracking-wide text-foreground-muted uppercase">
+        <span className="rounded-lg border border-border bg-surface-muted px-2 py-1 font-mono text-2xs font-bold tracking-wide text-foreground-muted uppercase">
           {statusText(bill)}
         </span>
       </div>
 
       <div className="mt-6 grid grid-cols-2 gap-4">
         <div>
-          <p className="font-mono text-[9px] font-bold tracking-wider text-foreground-muted uppercase">
+          <p className="font-mono text-2xs font-bold tracking-wider text-foreground-muted uppercase">
             Remaining
           </p>
           <div className="mt-1">
@@ -43,7 +43,7 @@ export function BillCard({
           </div>
         </div>
         <div className="text-right">
-          <p className="font-mono text-[9px] font-bold tracking-wider text-foreground-muted uppercase">
+          <p className="font-mono text-2xs font-bold tracking-wider text-foreground-muted uppercase">
             Due date
           </p>
           <p className="mt-1 text-sm font-semibold text-foreground">

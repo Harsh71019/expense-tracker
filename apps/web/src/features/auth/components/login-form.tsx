@@ -101,7 +101,7 @@ export function LoginForm(): ReactNode {
       {error === null ? null : (
         <p
           role="alert"
-          className="rounded-lg border border-expense/25 bg-expense/10 px-3 py-2 text-center font-mono text-[11px] font-semibold text-expense animate-fade-in"
+          className="rounded-lg border border-expense/25 bg-expense/10 px-3 py-2 text-center font-mono text-2xs font-semibold text-expense animate-fade-in"
         >
           {error}
         </p>

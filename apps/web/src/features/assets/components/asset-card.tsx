@@ -89,7 +89,7 @@ export function AssetCard({
             </span>
             <span
               style={badgeStyle}
-              className="rounded-[5px] px-1.5 py-0.5 font-mono text-[9px] font-semibold tracking-wide uppercase"
+              className="rounded-[5px] px-1.5 py-0.5 font-mono text-2xs font-semibold tracking-wide uppercase"
             >
               {ASSET_KIND_SHORT_LABEL[asset.kind]}
             </span>
@@ -109,7 +109,7 @@ export function AssetCard({
 
       <div className="mt-4.5 flex items-end justify-between gap-3.5">
         <div>
-          <p className="font-mono text-[10px] font-semibold tracking-wider text-foreground-muted">
+          <p className="font-mono text-2xs font-semibold tracking-wider text-foreground-muted">
             CURRENT VALUE
           </p>
           {valueMinor === undefined ? (
@@ -117,9 +117,9 @@ export function AssetCard({
           ) : (
             <SignedMoney minor={valueMinor} size="lg" />
           )}
-          <div className="mt-1.5 flex items-center gap-1.5 font-mono text-[11.5px] text-foreground-muted">
+          <div className="mt-1.5 flex items-center gap-1.5 font-mono text-2xs text-foreground-muted">
             {isProjected ? (
-              <span className="rounded-[4px] border border-amber-500/30 bg-amber-500/10 px-1 py-0.5 font-mono text-[8.5px] font-semibold text-amber-500">
+              <span className="rounded-[4px] border border-amber-500/30 bg-amber-500/10 px-1 py-0.5 font-mono text-2xs font-semibold text-amber-500">
                 ✦ PROJECTED
               </span>
             ) : null}

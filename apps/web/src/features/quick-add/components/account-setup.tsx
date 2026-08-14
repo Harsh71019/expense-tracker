@@ -1,16 +1,17 @@
 "use client";
 
-import { AccountTypeSchema, CreateAccountSchema, type AccountType } from "@treasury-ops/shared";
+import type { AccountType } from "@treasury-ops/shared";
 import { useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import { useCreateAccount } from "@/features/accounts";
 import { userErrorMessage } from "@/lib/errors";
 import { toast } from "@/lib/toast";
 
-import { useCreateAccount } from "../hooks/use-create-account";
+import { parseAccountSetupInput, parseAccountType } from "../model/account-setup-form";
 
 const accountTypes: readonly Readonly<{ value: AccountType; label: string }>[] = [
   { value: "cash", label: "Cash" },
@@ -28,7 +29,7 @@ export function AccountSetup(): ReactNode {
 
   async function submit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
-    const parsed = CreateAccountSchema.safeParse({ name, type, openingBalanceMinor: 0 });
+    const parsed = parseAccountSetupInput({ name, type });
     if (!parsed.success) {
       setError(parsed.error.issues[0]?.message ?? "Enter an account name.");
       return;
@@ -46,7 +47,7 @@ export function AccountSetup(): ReactNode {
 
   return (
     <section className="rounded-xl border border-border bg-surface-elevated p-6 sm:p-8">
-      <p className="font-mono text-[10px] font-bold tracking-widest text-foreground-muted uppercase">
+      <p className="font-mono text-2xs font-bold tracking-widest text-foreground-muted uppercase">
         First step
       </p>
       <h1 className="mt-1 text-xl font-semibold tracking-tight text-foreground">
@@ -64,7 +65,7 @@ export function AccountSetup(): ReactNode {
           onChange={(event) => setName(event.target.value)}
           autoFocus
         />
-        <div className="flex flex-col gap-1.5 font-mono text-[10px] font-bold tracking-wider text-foreground-muted uppercase">
+        <div className="flex flex-col gap-1.5 font-mono text-2xs font-bold tracking-wider text-foreground-muted uppercase">
           <span>Account type</span>
           <Select
             name="type"
@@ -72,7 +73,7 @@ export function AccountSetup(): ReactNode {
             options={accountTypes}
             value={type}
             onChange={(val) => {
-              const parsedType = AccountTypeSchema.safeParse(val);
+              const parsedType = parseAccountType(val);
               if (parsedType.success) {
                 setType(parsedType.data);
               }
@@ -82,7 +83,7 @@ export function AccountSetup(): ReactNode {
         {error === null ? null : (
           <p
             role="alert"
-            className="rounded-lg border border-expense/25 bg-expense/10 px-3 py-1 font-mono text-[11px] font-semibold text-expense animate-fade-in self-start"
+            className="rounded-lg border border-expense/25 bg-expense/10 px-3 py-1 font-mono text-2xs font-semibold text-expense animate-fade-in self-start"
           >
             {error}
           </p>

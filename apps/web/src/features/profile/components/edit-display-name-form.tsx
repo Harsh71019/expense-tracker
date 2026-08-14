@@ -68,7 +68,7 @@ export function EditDisplayNameForm({ initialProfile }: EditDisplayNameFormProps
             <span
               role="alert"
               aria-live="polite"
-              className="mt-1.5 inline-block rounded-lg border border-expense/25 bg-expense/10 px-2.5 py-0.5 font-mono text-[10px] text-expense"
+              className="mt-1.5 inline-block rounded-lg border border-expense/25 bg-expense/10 px-2.5 py-0.5 font-mono text-2xs text-expense"
             >
               {error}
             </span>

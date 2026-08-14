@@ -34,7 +34,7 @@ export function ManualGoalContributions({
     <section className="rounded-2xl border border-border bg-surface-elevated p-5 sm:p-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="font-mono text-[9px] font-bold tracking-[0.2em] text-accent uppercase">
+          <p className="font-mono text-2xs font-bold tracking-[0.2em] text-accent uppercase">
             Contribution Ledger
           </p>
           <h2 className="mt-1 text-lg font-bold text-foreground">History</h2>
@@ -80,7 +80,7 @@ export function ManualGoalContributions({
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <span
-                    className={`inline-flex rounded px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase ${
+                    className={`inline-flex rounded px-1.5 py-0.5 font-mono text-2xs font-bold uppercase ${
                       item.type === "deposit"
                         ? "bg-income/15 text-income"
                         : "bg-expense/15 text-expense"
@@ -93,7 +93,7 @@ export function ManualGoalContributions({
                       (item.type === "deposit" ? "Manual deposit" : "Manual withdrawal")}
                   </span>
                 </div>
-                <span className="mt-0.5 block font-mono text-[11px] text-foreground-muted">
+                <span className="mt-0.5 block font-mono text-2xs text-foreground-muted">
                   {dateFormatter.format(item.occurredAt)}
                 </span>
               </div>

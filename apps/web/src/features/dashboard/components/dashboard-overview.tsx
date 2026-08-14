@@ -57,7 +57,7 @@ export function DashboardOverview({
   return (
     <section className="flex flex-col gap-5">
       <header>
-        <p className="font-mono text-[11px] font-semibold tracking-[2px] text-accent">
+        <p className="font-mono text-2xs font-semibold tracking-[2px] text-accent">
           TREASURY OPS · DASHBOARD
         </p>
         <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground sm:text-[36px]">

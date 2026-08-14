@@ -74,9 +74,9 @@ export function Toaster({ theme = "system", ...props }: Readonly<ToasterProps>):
           description:
             "group-[.toast]:text-foreground-muted group-[.toast]:text-xs group-[.toast]:mt-1",
           actionButton:
-            "group-[.toast]:bg-accent group-[.toast]:text-accent-foreground group-[.toast]:font-bold group-[.toast]:text-[11px] group-[.toast]:uppercase group-[.toast]:tracking-wider group-[.toast]:rounded-lg group-[.toast]:px-3 group-[.toast]:py-1.5 transition-colors hover:bg-accent-strong",
+            "group-[.toast]:bg-accent group-[.toast]:text-accent-foreground group-[.toast]:font-bold group-[.toast]:text-2xs group-[.toast]:uppercase group-[.toast]:tracking-wider group-[.toast]:rounded-lg group-[.toast]:px-3 group-[.toast]:py-1.5 transition-colors hover:bg-accent-strong",
           cancelButton:
-            "group-[.toast]:bg-surface-muted group-[.toast]:text-foreground-muted group-[.toast]:font-semibold group-[.toast]:text-[11px] group-[.toast]:rounded-lg group-[.toast]:px-3 group-[.toast]:py-1.5 transition-colors hover:bg-surface-muted/80"
+            "group-[.toast]:bg-surface-muted group-[.toast]:text-foreground-muted group-[.toast]:font-semibold group-[.toast]:text-2xs group-[.toast]:rounded-lg group-[.toast]:px-3 group-[.toast]:py-1.5 transition-colors hover:bg-surface-muted/80"
         }
       }}
       {...props}

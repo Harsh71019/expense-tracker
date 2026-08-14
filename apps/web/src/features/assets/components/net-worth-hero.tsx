@@ -28,7 +28,7 @@ export function NetWorthHero({ netWorth }: Readonly<{ netWorth: NetWorth }>): Re
       />
       <div className="relative flex flex-wrap items-end justify-between gap-8">
         <div>
-          <p className="font-mono text-[11px] font-semibold tracking-[1.5px] text-foreground-muted">
+          <p className="font-mono text-2xs font-semibold tracking-[1.5px] text-foreground-muted">
             TOTAL NET WORTH
           </p>
           <div className="mt-2.5">
@@ -41,18 +41,18 @@ export function NetWorthHero({ netWorth }: Readonly<{ netWorth: NetWorth }>): Re
         </div>
         <div className="flex flex-wrap gap-3.5">
           <div className="min-w-32 rounded-2xl border border-border bg-surface-muted px-5 py-4">
-            <p className="font-mono text-[10px] font-semibold tracking-wider text-foreground-muted">
+            <p className="font-mono text-2xs font-semibold tracking-wider text-foreground-muted">
               ASSETS
             </p>
             <p className="mt-1.5 font-mono text-xl font-bold tracking-tight text-foreground">
               {formatSignedCompactMinor(assetsTotal)}
             </p>
-            <p className="mt-1 text-[11px] font-medium text-foreground-muted">
+            <p className="mt-1 text-2xs font-medium text-foreground-muted">
               {positiveAssets.length} open
             </p>
           </div>
           <div className="min-w-32 rounded-2xl border border-border bg-surface-muted px-5 py-4">
-            <p className="font-mono text-[10px] font-semibold tracking-wider text-foreground-muted">
+            <p className="font-mono text-2xs font-semibold tracking-wider text-foreground-muted">
               LIABILITIES
             </p>
             <p
@@ -60,7 +60,7 @@ export function NetWorthHero({ netWorth }: Readonly<{ netWorth: NetWorth }>): Re
             >
               {formatSignedCompactMinor(liabTotal)}
             </p>
-            <p className="mt-1 text-[11px] font-medium text-foreground-muted">
+            <p className="mt-1 text-2xs font-medium text-foreground-muted">
               {liabilities.length} loans owed
             </p>
           </div>

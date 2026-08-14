@@ -158,8 +158,10 @@ vi.mock("@/features/profile", () => ({
 vi.mock("@/features/profile/server/get-profile", () => ({ getProfile: async () => null }));
 vi.mock("@/features/reports", () => ({
   ReportPage: () => <h1>Monthly report</h1>,
-  getMonthlyRollup: async () => null,
   reportMonthFromParam: () => "2026-06"
+}));
+vi.mock("@/features/reports/server/get-monthly-rollup", () => ({
+  getMonthlyRollup: async () => null
 }));
 vi.mock("@/features/reports/components/pie-chart", () => ({
   PieChart: () => <svg role="img" aria-label="Spend mix pie chart" />
@@ -174,7 +176,7 @@ vi.mock("@/features/transactions/server/get-txn-page", () => ({
     pageInfo: { nextCursor: null, hasMore: false, limit: 50 }
   })
 }));
-vi.mock("@/features/pending-transactions/components/pending-transactions-panel", () => ({
+vi.mock("@/features/pending-transactions", () => ({
   PendingTransactionsPanel: () => null
 }));
 vi.mock("@/features/pending-transactions/server/get-pending-transactions", () => ({

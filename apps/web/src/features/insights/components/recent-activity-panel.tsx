@@ -32,7 +32,7 @@ export function RecentActivityPanel({ items }: RecentActivityPanelProps): ReactN
                   <p className="truncate text-sm font-semibold text-foreground">
                     {item.description}
                   </p>
-                  <p className="mt-0.5 font-mono text-[11px] text-foreground-muted">
+                  <p className="mt-0.5 font-mono text-2xs text-foreground-muted">
                     {item.accountName} · {dateFormatter.format(item.occurredAt)}
                   </p>
                 </div>

@@ -152,7 +152,7 @@ export function AmountInput({
     <div className="flex flex-col gap-2">
       <label
         htmlFor={id}
-        className="text-center font-mono text-[10px] font-bold tracking-wider text-foreground-muted uppercase"
+        className="text-center font-mono text-2xs font-bold tracking-wider text-foreground-muted uppercase"
       >
         {label}
       </label>
@@ -204,7 +204,7 @@ export function AmountInput({
           id={`${id}-error`}
           role="alert"
           aria-live="polite"
-          className="self-center rounded-lg border border-expense/25 bg-expense/10 px-3 py-1 font-mono text-[11px] font-semibold text-expense animate-fade-in motion-reduce:animate-none"
+          className="self-center rounded-lg border border-expense/25 bg-expense/10 px-3 py-1 font-mono text-2xs font-semibold text-expense animate-fade-in motion-reduce:animate-none"
         >
           {message}
         </p>

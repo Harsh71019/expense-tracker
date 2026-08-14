@@ -81,7 +81,7 @@ export function SettingsTabList({ activeTab }: Readonly<{ activeTab: SettingsTab
                   {tab.label}
                 </span>
                 <span
-                  className={`hidden truncate text-[11px] lg:block ${
+                  className={`hidden truncate text-2xs lg:block ${
                     active ? "text-accent/90 font-medium" : "text-foreground-muted"
                   }`}
                 >

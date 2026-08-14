@@ -150,9 +150,7 @@ export function ImportWizard({
     <section>
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="font-mono text-[11px] font-bold tracking-[2px] text-accent">
-            LEDGER · IMPORT
-          </p>
+          <p className="font-mono text-2xs font-bold tracking-[2px] text-accent">LEDGER · IMPORT</p>
           <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
             {view === "wizard" ? "New import" : "Imports"}
           </h1>

@@ -68,7 +68,7 @@ export function AppSidebar({
               <p className="truncate text-base leading-none font-bold tracking-tight text-foreground">
                 TreasuryOps
               </p>
-              <p className="mt-1.5 font-mono text-[8px] font-bold tracking-[0.2em] text-accent uppercase">
+              <p className="mt-1.5 font-mono text-2xs font-bold tracking-[0.2em] text-accent uppercase">
                 Expense tracker
               </p>
             </div>

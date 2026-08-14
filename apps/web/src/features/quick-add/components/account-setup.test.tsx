@@ -10,7 +10,7 @@ const mocks = vi.hoisted(() => ({
   toastSuccess: vi.fn(),
   toastError: vi.fn()
 }));
-vi.mock("../hooks/use-create-account", () => ({
+vi.mock("@/features/accounts", () => ({
   useCreateAccount: () => ({ mutateAsync: mocks.mutateAsync, isPending: mocks.pending })
 }));
 vi.mock("@/lib/toast", () => ({

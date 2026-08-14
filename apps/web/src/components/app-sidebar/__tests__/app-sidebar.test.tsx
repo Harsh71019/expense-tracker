@@ -73,6 +73,21 @@ describe("AppSidebar", () => {
     expect(screen.getByRole("link", { name: "Reports" })).toHaveAttribute("href", "/reports");
   });
 
+  it("includes every top-level desktop destination in the rearrangeable navigation", () => {
+    render(<AppSidebar email="harsh@example.com" theme="light" />);
+
+    expect(screen.getByRole("link", { name: "Add transaction" })).toHaveAttribute("href", "/add");
+    expect(screen.getByRole("link", { name: "Credit card bills" })).toHaveAttribute(
+      "href",
+      "/bills"
+    );
+    expect(screen.getByRole("link", { name: "Export" })).toHaveAttribute("href", "/export");
+    expect(screen.getByRole("link", { name: "API keys" })).toHaveAttribute(
+      "href",
+      "/settings/api-keys"
+    );
+  });
+
   it("shows recurring transactions and keeps Settings available when compact", async () => {
     const user = userEvent.setup();
     render(<AppSidebar email="harsh@example.com" theme="light" />);
@@ -105,6 +120,17 @@ describe("AppSidebar", () => {
     await user.click(doneBtn);
     expect(screen.queryByRole("list", { name: "Reorder navigation items" })).toBeNull();
     expect(screen.getByRole("navigation", { name: "Main navigation" })).toBeVisible();
+  });
+
+  it("expands the sidebar before entering edit mode so rearrangement controls fit", async () => {
+    const user = userEvent.setup();
+    window.localStorage.setItem("treasury-ops-sidebar-compact", "true");
+    render(<AppSidebar email="harsh@example.com" theme="light" />);
+
+    await user.click(screen.getByRole("button", { name: "Edit sidebar" }));
+
+    expect(screen.getByText("Dashboard")).toBeVisible();
+    expect(window.localStorage.getItem("treasury-ops-sidebar-compact")).toBe("false");
   });
 
   it("hides items configured as invisible in localStorage", () => {

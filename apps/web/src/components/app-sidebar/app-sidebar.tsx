@@ -39,9 +39,17 @@ export function AppSidebar({
     });
   }
 
+  function toggleEditMode(): void {
+    if (!editMode && compact) {
+      setCompact(false);
+      window.localStorage.setItem(SIDEBAR_COMPACT_KEY, "false");
+    }
+    setEditMode((current) => !current);
+  }
+
   return (
     <aside
-      className={`hidden shrink-0 border-r border-border bg-surface-elevated p-4 transition-[width] duration-200 ease-out md:sticky md:top-0 md:flex md:h-screen md:flex-col md:justify-between ${compact ? "w-[84px]" : "w-64"}`}
+      className={`hidden shrink-0 gap-4 overflow-hidden border-r border-border bg-surface-elevated p-4 transition-[width] duration-300 ease-out motion-reduce:transition-none md:sticky md:top-0 md:flex md:h-screen md:flex-col ${compact ? "w-[84px]" : "w-64"}`}
     >
       <button
         type="button"
@@ -58,7 +66,7 @@ export function AppSidebar({
         </span>
       </button>
 
-      <div className="flex flex-col gap-7">
+      <div className="flex min-h-0 flex-1 flex-col gap-7">
         <div className={`flex items-center gap-3 px-1 ${compact ? "justify-center" : ""}`}>
           <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-accent font-mono text-lg font-bold text-accent-foreground shadow-glow">
             ₹
@@ -74,26 +82,28 @@ export function AppSidebar({
             </div>
           )}
         </div>
-        {editMode ? (
-          <SidebarEditPanel
-            items={allOrderedItems}
-            compact={compact}
-            onReorder={reorder}
-            onToggle={toggleVisible}
-            onReset={reset}
-          />
-        ) : (
-          <AppNav items={orderedVisibleItems} orientation="sidebar" compact={compact} />
-        )}
+        <div className="min-h-0 flex-1 overflow-y-auto pr-1 custom-scrollbar">
+          {editMode ? (
+            <SidebarEditPanel
+              items={allOrderedItems}
+              compact={compact}
+              onReorder={reorder}
+              onToggle={toggleVisible}
+              onReset={reset}
+            />
+          ) : (
+            <AppNav items={orderedVisibleItems} orientation="sidebar" compact={compact} />
+          )}
+        </div>
       </div>
 
-      <div className="flex flex-col gap-2">
+      <div className="shrink-0 pt-1 flex flex-col gap-2">
         <div className={`flex gap-2 ${compact ? "flex-col" : ""}`}>
           <ThemeToggle current={theme} compact={compact} />
           <button
             type="button"
             id="sidebar-edit-toggle"
-            onClick={() => setEditMode((m) => !m)}
+            onClick={toggleEditMode}
             aria-label={editMode ? "Done editing sidebar" : "Edit sidebar"}
             aria-pressed={editMode}
             title={compact ? (editMode ? "Done" : "Edit sidebar") : undefined}

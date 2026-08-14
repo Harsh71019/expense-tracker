@@ -22,6 +22,15 @@ describe("MorePage", () => {
       "href",
       "/spending-warnings"
     );
+    expect(screen.getByRole("link", { name: /Credit card bills/ })).toHaveAttribute(
+      "href",
+      "/bills"
+    );
+    expect(screen.getByRole("link", { name: /Export/ })).toHaveAttribute("href", "/export");
+    expect(screen.getByRole("link", { name: /API keys/ })).toHaveAttribute(
+      "href",
+      "/settings/api-keys"
+    );
     expect(screen.getByRole("link", { name: /Settings/ })).toHaveAttribute("href", "/settings");
   });
 });

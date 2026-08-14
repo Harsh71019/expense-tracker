@@ -1,6 +1,6 @@
 # Sidebar Customization — Drag-and-Drop Reorder + Add/Remove Links
 
-> **Status**: Planning  
+> **Status**: Implemented
 > **Scope**: `apps/web` only (purely a client-side UX preference; no API or backend changes)  
 > **Guiding constraint**: Zero new runtime dependencies — we use the browser's native Drag and Drop API plus the existing `localStorage` pattern already present in the sidebar.
 
@@ -27,7 +27,7 @@ apps/web/src/components/
 │   └── app-sidebar.tsx          ← renders the aside, logo, AppNav, ThemeToggle, account link
 ├── app-nav/
 │   ├── app-nav.tsx              ← renders <nav> with Link items (sidebar + bottom orientations)
-│   ├── nav-items.ts             ← exports `mainNavItems` (readonly array of 15 NavItem)
+│   ├── nav-items.ts             ← exports all top-level desktop destinations as `mainNavItems`
 │   └── index.ts                 ← re-exports both
 └── mobile-bottom-nav/
     └── mobile-bottom-nav.tsx    ← fixed 5-slot mobile nav (independent, not affected)
@@ -35,7 +35,7 @@ apps/web/src/components/
 
 `AppSidebar` reads `compact` from `localStorage` on mount.  
 `AppNav` accepts `items: readonly NavItem[]` and renders them in order.  
-`mainNavItems` is a static `as const` tuple — the canonical source of truth for all available links.
+`mainNavItems` is a static `as const` tuple — the canonical source of truth for desktop links. Detail routes remain under their parent destination; the mobile-only `/more` route is not duplicated in the sidebar.
 
 ---
 
@@ -99,7 +99,9 @@ Follows the existing naming convention (`treasury-ops-sidebar-compact`).
 | No prefs stored | Use `mainNavItems` order, all visible |
 | New item added to `mainNavItems` that isn't in stored prefs | Append it as `visible: true` at the end |
 | Item removed from `mainNavItems` but still in stored prefs | Silently drop it (keep the rest) |
+| Duplicate href in stored prefs | Keep the first occurrence and repair the stored value |
 | `version` mismatch | Reset to defaults and re-save |
+| User tries to hide the final visible item | Keep it visible so the sidebar always has a destination |
 
 ---
 
@@ -494,7 +496,7 @@ Three additions to the existing ~97-line file:
 
 ### 6.3 Compact mode
 
-In compact mode, the edit panel shows icon + drag handle + ↑↓ + visibility toggle. Labels hidden, full label readable from the drag-handle area's `title` attribute on the parent `div`.
+Opening Edit mode from a compact sidebar expands it first and saves the expanded preference. This gives each row enough room for its label, drag handle, move controls, and visibility control. The editable list scrolls independently, so the reset action remains reachable on short screens.
 
 ---
 

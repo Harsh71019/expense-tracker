@@ -18,8 +18,9 @@ export function AppNav({
   onNavigate?: () => void;
 }>): ReactNode {
   const pathname = usePathname() ?? "";
+  const hasExactMatch = items.some((item) => item.href === pathname);
   const isActive = (href: string): boolean =>
-    pathname === href || (href !== "/" && pathname.startsWith(`${href}/`));
+    pathname === href || (!hasExactMatch && href !== "/" && pathname.startsWith(`${href}/`));
 
   if (orientation === "sidebar") {
     return (

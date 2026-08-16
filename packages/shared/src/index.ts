@@ -302,6 +302,50 @@ export type { ExportCsvQuery } from "./export.js";
 export { ProblemDetailsSchema, ProblemFieldErrorSchema } from "./errors/problem-details.js";
 export type { ProblemDetails, ProblemFieldError } from "./errors/problem-details.js";
 export {
+  AnnualIncrementBpsSchema,
+  CreateSalaryVersionSchema,
+  FinancialDataQualitySchema,
+  FinancialProfileSchema,
+  FinancialProfileStateSchema,
+  FinancialProfileUpdateSchema,
+  IncomeStabilitySchema,
+  ListSalaryVersionsQuerySchema,
+  MAX_ANNUAL_INCREMENT_BPS,
+  MAX_MONTHLY_WORK_MINUTES,
+  MINUTES_PER_HOUR,
+  MONTHS_PER_YEAR,
+  MonthlyWorkMinutesSchema,
+  SalaryCreditDaySchema,
+  SalarySourceSchema,
+  SalaryStatisticsAssumptionsSchema,
+  SalaryStatisticsQuerySchema,
+  SalaryStatisticsSchema,
+  SalaryVersionIdSchema,
+  SalaryVersionPageSchema,
+  SalaryVersionSchema,
+  STANDARD_WORKDAY_MINUTES,
+  SUGGESTED_MONTHLY_WORK_HOURS,
+  SUGGESTED_MONTHLY_WORK_MINUTES,
+  monthlyWorkHoursFromMinutes,
+  monthlyWorkMinutesFromHours
+} from "./financial-profile.js";
+export type {
+  CreateSalaryVersion,
+  FinancialDataQuality,
+  FinancialProfile,
+  FinancialProfileState,
+  FinancialProfileUpdate,
+  IncomeStability,
+  ListSalaryVersionsQuery,
+  SalarySource,
+  SalaryStatistics,
+  SalaryStatisticsAssumptions,
+  SalaryStatisticsQuery,
+  SalaryVersion,
+  SalaryVersionId,
+  SalaryVersionPage
+} from "./financial-profile.js";
+export {
   CreateGoalContributionSchema,
   CreateGoalSchema,
   GoalContributionNoteSchema,

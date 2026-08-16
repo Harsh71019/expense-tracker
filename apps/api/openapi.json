@@ -160,6 +160,8 @@
               "bill.invalid_payment_source",
               "bill.payment_amount_mismatch",
               "bill.payment_account_mismatch",
+              "financial_profile.not_configured",
+              "financial_profile.duplicate_effective_date",
               "recurring.no_occurrences",
               "recurring.reconciliation_already_resolved",
               "recurring.invalid_reconciliation_resolution",
@@ -2232,6 +2234,436 @@
           }
         },
         "required": ["userId", "displayName", "locale", "timezone", "createdAt", "updatedAt"]
+      },
+      "FinancialProfileState": {
+        "type": "object",
+        "properties": {
+          "configured": {
+            "type": "boolean"
+          },
+          "profile": {
+            "type": ["object", "null"],
+            "properties": {
+              "userId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "monthlyWorkMinutes": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 44640
+              },
+              "salaryCreditDay": {
+                "type": ["integer", "null"],
+                "minimum": 1,
+                "maximum": 31
+              },
+              "expectedAnnualIncrementBps": {
+                "type": ["integer", "null"],
+                "minimum": 0,
+                "maximum": 100000
+              },
+              "incomeStability": {
+                "type": "string",
+                "enum": ["stable", "variable", "irregular"]
+              },
+              "createdAt": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              },
+              "updatedAt": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "userId",
+              "monthlyWorkMinutes",
+              "salaryCreditDay",
+              "expectedAnnualIncrementBps",
+              "incomeStability",
+              "createdAt",
+              "updatedAt"
+            ]
+          },
+          "currentSalaryVersion": {
+            "type": ["object", "null"],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "userId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "netMonthlySalaryMinor": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              "annualCtcMinor": {
+                "type": ["integer", "null"],
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              "effectiveFrom": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              },
+              "source": {
+                "type": "string",
+                "enum": ["manually_confirmed"]
+              },
+              "createdAt": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "id",
+              "userId",
+              "netMonthlySalaryMinor",
+              "annualCtcMinor",
+              "effectiveFrom",
+              "source",
+              "createdAt"
+            ]
+          },
+          "upcomingSalaryVersion": {
+            "type": ["object", "null"],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "userId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "netMonthlySalaryMinor": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              "annualCtcMinor": {
+                "type": ["integer", "null"],
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              "effectiveFrom": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              },
+              "source": {
+                "type": "string",
+                "enum": ["manually_confirmed"]
+              },
+              "createdAt": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "id",
+              "userId",
+              "netMonthlySalaryMinor",
+              "annualCtcMinor",
+              "effectiveFrom",
+              "source",
+              "createdAt"
+            ]
+          },
+          "suggestedMonthlyWorkMinutes": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 44640
+          },
+          "asOf": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "configured",
+          "profile",
+          "currentSalaryVersion",
+          "upcomingSalaryVersion",
+          "suggestedMonthlyWorkMinutes",
+          "asOf"
+        ]
+      },
+      "FinancialProfile": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "monthlyWorkMinutes": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 44640
+          },
+          "salaryCreditDay": {
+            "type": ["integer", "null"],
+            "minimum": 1,
+            "maximum": 31
+          },
+          "expectedAnnualIncrementBps": {
+            "type": ["integer", "null"],
+            "minimum": 0,
+            "maximum": 100000
+          },
+          "incomeStability": {
+            "type": "string",
+            "enum": ["stable", "variable", "irregular"]
+          },
+          "createdAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "userId",
+          "monthlyWorkMinutes",
+          "salaryCreditDay",
+          "expectedAnnualIncrementBps",
+          "incomeStability",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "SalaryVersionPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "userId": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "netMonthlySalaryMinor": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                "annualCtcMinor": {
+                  "type": ["integer", "null"],
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                "effectiveFrom": {
+                  "type": ["string", "null"],
+                  "format": "date-time"
+                },
+                "source": {
+                  "type": "string",
+                  "enum": ["manually_confirmed"]
+                },
+                "createdAt": {
+                  "type": ["string", "null"],
+                  "format": "date-time"
+                }
+              },
+              "required": [
+                "id",
+                "userId",
+                "netMonthlySalaryMinor",
+                "annualCtcMinor",
+                "effectiveFrom",
+                "source",
+                "createdAt"
+              ]
+            }
+          },
+          "pageInfo": {
+            "type": "object",
+            "properties": {
+              "nextCursor": {
+                "type": ["string", "null"]
+              },
+              "hasMore": {
+                "type": "boolean"
+              },
+              "limit": {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              }
+            },
+            "required": ["nextCursor", "hasMore", "limit"]
+          }
+        },
+        "required": ["items", "pageInfo"]
+      },
+      "SalaryVersion": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "userId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "netMonthlySalaryMinor": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "annualCtcMinor": {
+            "type": ["integer", "null"],
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "effectiveFrom": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "source": {
+            "type": "string",
+            "enum": ["manually_confirmed"]
+          },
+          "createdAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "netMonthlySalaryMinor",
+          "annualCtcMinor",
+          "effectiveFrom",
+          "source",
+          "createdAt"
+        ]
+      },
+      "SalaryStatistics": {
+        "type": "object",
+        "properties": {
+          "currentNetMonthlySalaryMinor": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "annualizedNetIncomeMinor": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "netHourlyWageMinor": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "eightHourWorkdayEquivalentMinor": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "effectiveFrom": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "monthlyWorkMinutes": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 44640
+          },
+          "salaryVersionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "computedAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "formulaVersion": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "dataQuality": {
+            "type": "string",
+            "enum": ["complete", "limited", "stale", "unavailable"]
+          },
+          "assumptions": {
+            "type": "object",
+            "properties": {
+              "monthsPerYear": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "minutesPerHour": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "standardWorkdayMinutes": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "monthlyWorkMinutes": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 44640
+              },
+              "incomeStability": {
+                "type": "string",
+                "enum": ["stable", "variable", "irregular"]
+              },
+              "expectedAnnualIncrementBps": {
+                "type": ["integer", "null"],
+                "minimum": 0,
+                "maximum": 100000
+              },
+              "rounding": {
+                "type": "string",
+                "enum": ["half_up"]
+              }
+            },
+            "required": [
+              "monthsPerYear",
+              "minutesPerHour",
+              "standardWorkdayMinutes",
+              "monthlyWorkMinutes",
+              "incomeStability",
+              "expectedAnnualIncrementBps",
+              "rounding"
+            ]
+          },
+          "limitations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "currentNetMonthlySalaryMinor",
+          "annualizedNetIncomeMinor",
+          "netHourlyWageMinor",
+          "eightHourWorkdayEquivalentMinor",
+          "effectiveFrom",
+          "monthlyWorkMinutes",
+          "salaryVersionId",
+          "computedAt",
+          "formulaVersion",
+          "dataQuality",
+          "assumptions",
+          "limitations"
+        ]
       },
       "RecurringRule": {
         "type": "object",
@@ -10423,6 +10855,432 @@
           },
           "422": {
             "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/financial-profile": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Salary and work profile state, or an explicit unconfigured setup state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FinancialProfileState"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "Idempotency-Key",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "monthlyWorkMinutes": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 44640
+                  },
+                  "incomeStability": {
+                    "type": "string",
+                    "enum": ["stable", "variable", "irregular"]
+                  },
+                  "salaryCreditDay": {
+                    "type": ["integer", "null"],
+                    "minimum": 1,
+                    "maximum": 31,
+                    "default": null
+                  },
+                  "expectedAnnualIncrementBps": {
+                    "type": ["integer", "null"],
+                    "minimum": 0,
+                    "maximum": 100000,
+                    "default": null
+                  }
+                },
+                "required": ["monthlyWorkMinutes", "incomeStability"],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved work profile, or idempotent replay",
+            "headers": {
+              "Idempotency-Replayed": {
+                "schema": {
+                  "type": "string",
+                  "enum": ["true"]
+                },
+                "required": false
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FinancialProfile"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency key was already used for different request intent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/financial-profile/salary-versions": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": false,
+            "name": "cursor",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Salary version history, newest effective date first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SalaryVersionPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid cursor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "Idempotency-Key",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "netMonthlySalaryMinor": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  },
+                  "annualCtcMinor": {
+                    "type": ["integer", "null"],
+                    "minimum": 1,
+                    "maximum": 9007199254740991,
+                    "default": null
+                  },
+                  "effectiveFrom": {
+                    "type": ["string", "null"],
+                    "format": "date-time"
+                  }
+                },
+                "required": ["netMonthlySalaryMinor", "effectiveFrom"],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Idempotent replay of the appended salary version",
+            "headers": {
+              "Idempotency-Replayed": {
+                "schema": {
+                  "type": "string",
+                  "enum": ["true"]
+                },
+                "required": true
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SalaryVersion"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Appended salary version",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SalaryVersion"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A salary version already exists for this effective date, or the idempotency key was reused with a different request intent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/financial-profile/salary-statistics": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": ["string", "null"],
+              "format": "date-time"
+            },
+            "required": false,
+            "name": "asOf",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Derived net-salary statistics for the effective salary version",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SalaryStatistics"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed, or the salary and work profile has not been set up yet",
             "content": {
               "application/json": {
                 "schema": {

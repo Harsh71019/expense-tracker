@@ -191,8 +191,17 @@ export function CreateTransferSheet({ onClose }: Readonly<{ onClose: () => void 
               id="create-transfer-amount"
               name="amount"
               autoComplete="off"
-              value={amountDraft}
-              onChange={(event) => setAmountDraft(event.target.value.replace(/[^0-9.]/g, ""))}
+              onChange={(event) => {
+                const nextDraft = event.target.value.replace(/[^0-9.]/g, "");
+                setAmountDraft(nextDraft);
+                try {
+                  form.setValue("amountMinor", nextDraft === "" ? 0 : parseMinor(nextDraft), {
+                    shouldValidate: true
+                  });
+                } catch {
+                  // Partial entry
+                }
+              }}
               onBlur={() => {
                 try {
                   form.setValue("amountMinor", amountDraft === "" ? 0 : parseMinor(amountDraft), {

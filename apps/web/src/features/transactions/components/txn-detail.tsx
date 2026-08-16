@@ -287,10 +287,16 @@ export function TxnDetail({ initialTransaction }: { initialTransaction: Transact
                   aria-label="Category"
                   options={[
                     { value: "", label: "No category" },
-                    ...(categories.data ?? []).map((category) => ({
-                      value: category.id,
-                      label: `${category.name} · ${category.kind}`
-                    }))
+                    ...(categories.data ?? [])
+                      .filter(
+                        (category) =>
+                          category.kind === transaction.type &&
+                          (!category.isArchived || category.id === transaction.categoryId)
+                      )
+                      .map((category) => ({
+                        value: category.id,
+                        label: category.name
+                      }))
                   ]}
                   placeholder="No category"
                   value={categoryId}

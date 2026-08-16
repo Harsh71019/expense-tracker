@@ -232,20 +232,16 @@ export function TxnList({
           <div className="hidden flex-wrap items-center gap-3 text-xs text-foreground-muted sm:flex">
             <span>
               Inflow:{" "}
-              <span className="font-mono font-bold text-emerald-500">
-                +{formatMinor(totalInflow)}
-              </span>
+              <span className="font-mono font-bold text-income">+{formatMinor(totalInflow)}</span>
             </span>
             <span>
               Outflow:{" "}
-              <span className="font-mono font-bold text-rose-500">
-                −{formatMinor(totalOutflow)}
-              </span>
+              <span className="font-mono font-bold text-expense">−{formatMinor(totalOutflow)}</span>
             </span>
             <span>
               Net:{" "}
               <span
-                className={`font-mono font-bold ${netFlow >= 0 ? "text-emerald-500" : "text-rose-500"}`}
+                className={`font-mono font-bold ${netFlow >= 0 ? "text-income" : "text-expense"}`}
               >
                 {netFlow >= 0 ? "+" : "−"}
                 {formatMinor(Math.abs(netFlow))}

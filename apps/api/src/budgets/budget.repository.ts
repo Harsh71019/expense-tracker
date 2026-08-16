@@ -228,7 +228,10 @@ export class BudgetRepository {
     asOf: Date
   ): Promise<DailyCategorySpend[]> {
     if (categoryIds.length === 0) return [];
-    const istDay = sql<string>`to_char(${transactions.occurredAt} AT TIME ZONE ${IST_TIME_ZONE}, 'YYYY-MM-DD')`;
+    // Keep the time zone literal inside the expression. Drizzle emits a new
+    // bind parameter for every reuse of a SQL fragment; PostgreSQL then sees
+    // SELECT/GROUP BY as different expressions and rejects the aggregate.
+    const istDay = sql<string>`to_char(${transactions.occurredAt} AT TIME ZONE 'Asia/Kolkata', 'YYYY-MM-DD')`;
     const rows = await this.db
       .select({
         categoryId: transactions.categoryId,

@@ -1,16 +1,22 @@
 "use client";
 
 import {
+  AlertTriangle,
+  ArrowLeftRight,
   ArrowRight,
   ChartPie,
+  Coins,
+  CreditCard,
   Eye,
   EyeOff,
   House,
   Landmark,
   Plus,
   ReceiptText,
+  Repeat,
   Search,
   Settings,
+  Sliders,
   Sparkles,
   Tag,
   Target,
@@ -63,11 +69,39 @@ export function CommandPalette({
       perform: () => router.push("/transactions")
     },
     {
+      id: "nav-transfers",
+      label: "Go to Transfers",
+      category: "Navigation",
+      icon: ArrowLeftRight,
+      perform: () => router.push("/transfers")
+    },
+    {
+      id: "nav-recurring",
+      label: "Go to Recurring Transactions",
+      category: "Navigation",
+      icon: Repeat,
+      perform: () => router.push("/recurring")
+    },
+    {
+      id: "nav-bills",
+      label: "Go to Bills & Statements",
+      category: "Navigation",
+      icon: CreditCard,
+      perform: () => router.push("/bills")
+    },
+    {
       id: "nav-accounts",
       label: "Go to Accounts",
       category: "Navigation",
       icon: Landmark,
       perform: () => router.push("/accounts")
+    },
+    {
+      id: "nav-assets",
+      label: "Go to Assets & Net Worth",
+      category: "Navigation",
+      icon: Coins,
+      perform: () => router.push("/assets")
     },
     {
       id: "nav-insights",
@@ -105,6 +139,20 @@ export function CommandPalette({
       perform: () => router.push("/categories")
     },
     {
+      id: "nav-category-rules",
+      label: "Go to Category Rules",
+      category: "Navigation",
+      icon: Sliders,
+      perform: () => router.push("/category-rules")
+    },
+    {
+      id: "nav-spending-warnings",
+      label: "Go to Spending Patterns & Warnings",
+      category: "Navigation",
+      icon: AlertTriangle,
+      perform: () => router.push("/spending-warnings")
+    },
+    {
       id: "nav-imports",
       label: "Go to Imports",
       category: "Navigation",
@@ -123,7 +171,6 @@ export function CommandPalette({
       label: "Post New Transaction",
       category: "Actions",
       icon: Plus,
-      shortcut: "⌘N",
       perform: () => {
         onOpenCreateTxn();
       }
@@ -175,20 +222,25 @@ export function CommandPalette({
 
   return (
     <DialogSurface
-      labelledBy="command-palette-title"
+      labelledBy="command-palette-heading"
       onClose={onClose}
       panelClassName="sm:max-w-lg p-0 overflow-hidden"
     >
       <div className="flex flex-col">
+        <h2 id="command-palette-heading" className="sr-only">
+          Command Palette
+        </h2>
         {/* Search Header Input */}
         <div className="flex items-center gap-3 border-b border-border px-4 py-3.5">
           <Search size={18} className="shrink-0 text-foreground-muted" />
           <input
             ref={inputRef}
-            id="command-palette-title"
             type="text"
-            placeholder="Type a command or search page..."
+            placeholder="Type a command or search page…"
             value={query}
+            autoComplete="off"
+            spellCheck={false}
+            aria-label="Command search"
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             className="w-full bg-transparent text-sm font-medium text-foreground placeholder:text-foreground-muted/60 focus:outline-none"

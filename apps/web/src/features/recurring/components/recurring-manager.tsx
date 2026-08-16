@@ -5,7 +5,8 @@ import type {
   Category,
   RecurringReconciliationReviewItem,
   RecurringRule,
-  RecurringStats
+  RecurringStats,
+  DetectedStreamPage
 } from "@treasury-ops/shared";
 import { useState } from "react";
 import type { ReactNode } from "react";
@@ -24,6 +25,7 @@ import { OccurrenceTickRow } from "./occurrence-tick-row";
 import { ReconciliationReviewPanel } from "./reconciliation-review-panel";
 import { RecurringRuleDrawer } from "./recurring-rule-drawer";
 import { RecurringStatsCards } from "./recurring-stats-cards";
+import { DetectedStreamReviewPanel } from "./detected-stream-review-panel";
 
 const dateFormatter = new Intl.DateTimeFormat("en-IN", {
   day: "numeric",
@@ -38,6 +40,7 @@ type ManagerProps = Readonly<{
   categories: Category[];
   initialReconciliations: RecurringReconciliationReviewItem[];
   initialStats: RecurringStats | null;
+  initialDetectedStreams?: DetectedStreamPage;
 }>;
 
 type StatusFilter = "all" | "active" | "paused";
@@ -49,7 +52,8 @@ export function RecurringManager({
   accounts = [],
   categories = [],
   initialReconciliations = [],
-  initialStats = null
+  initialStats = null,
+  initialDetectedStreams = { items: [], nextCursor: null }
 }: ManagerProps): ReactNode {
   const rules = useRecurringRules(initialRules);
   const accountQuery = useAccounts(accounts.length === 0 ? undefined : accounts);
@@ -130,28 +134,15 @@ export function RecurringManager({
   }
 
   return (
-    <section className="space-y-6 animate-fade-in">
-      {/* Automation Command Header */}
-      <header className="flex flex-col items-stretch gap-4 rounded-2xl border border-border/80 bg-surface-elevated/90 px-5 py-4.5 shadow-xs backdrop-blur-md sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
+    <section className="space-y-4.5 animate-fade-in">
+      {/* Recurring Header */}
+      <header className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-baseline sm:justify-between">
         <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-md border border-accent/30 bg-accent-glow/40 px-2.5 py-0.5 font-mono text-2xs font-bold tracking-wider text-accent uppercase">
-              <span
-                className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse"
-                aria-hidden="true"
-              />
-              Automation Engine
-            </span>
-            <span className="inline-flex items-center gap-1.5 rounded-md border border-income/30 bg-income/10 px-2 py-0.5 font-mono text-2xs font-bold text-income">
-              ● Active
-            </span>
-          </div>
-          <h1 className="mt-1.5 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+          <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
             Recurring
           </h1>
-          <p className="mt-1 max-w-2xl text-xs text-foreground-muted">
-            Rent, salary, subscriptions — set the amount and schedule once, and each occurrence
-            posts itself or reconciles against incoming transactions.
+          <p className="mt-0.5 text-xs text-foreground-muted">
+            Scheduled transactions, subscriptions, and recurring salary/rent schedules.
           </p>
         </div>
         <Button
@@ -166,6 +157,8 @@ export function RecurringManager({
 
       {/* Analytics KPIs */}
       <RecurringStatsCards initialStats={initialStats} />
+
+      <DetectedStreamReviewPanel initialPage={initialDetectedStreams} accounts={accountItems} />
 
       {/* Reconciliation Reviews */}
       <ReconciliationReviewPanel initialReconciliations={initialReconciliations} />

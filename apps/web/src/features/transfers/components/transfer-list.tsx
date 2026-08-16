@@ -63,18 +63,14 @@ export function TransferList({
   ];
 
   return (
-    <section className="animate-fade-in">
-      <header className="mb-7 flex flex-col items-stretch gap-4 sm:flex-row sm:items-start sm:justify-between">
+    <section className="animate-fade-in space-y-4.5">
+      <header className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-baseline sm:justify-between">
         <div className="min-w-0">
-          <p className="font-mono text-2xs font-bold tracking-[0.2em] text-accent uppercase">
-            Ledger
-          </p>
-          <h1 className="mt-1.5 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+          <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
             Transfers
           </h1>
-          <p className="mt-2 max-w-md text-sm text-foreground-muted">
-            Move money between your own accounts. Each transfer posts as two linked legs — an
-            expense on one side, income on the other.
+          <p className="mt-0.5 text-xs text-foreground-muted">
+            Paired ledger transfers between accounts.
           </p>
         </div>
         <Button className="w-full sm:w-auto" type="button" onClick={() => setCreateOpen(true)}>

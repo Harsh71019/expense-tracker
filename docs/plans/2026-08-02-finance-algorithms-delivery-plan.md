@@ -199,6 +199,12 @@ PR 11 follows PR 10 and owns presentation:
 - liquid cash excludes investments and available credit;
 - generated typed API client only.
 
+The delivered UI remains read-only: it presents immutable snapshots and never triggers a ledger
+write, notification, transfer, or financial recommendation. A 60/90-day tab is shown only when
+that horizon's snapshot reports both backend eligibility and measured coverage; otherwise the UI
+keeps the longer horizon hidden rather than implying unsupported precision. Liquid cash is the
+backend-provided cash base and excludes investments and available credit.
+
 ### Wave 4 — personal decisions
 
 PR 12 may start after PRs 03 and 04, independently of forecasting:

@@ -298,19 +298,15 @@ export function CategoryManager({
   }
 
   return (
-    <section className="space-y-6">
+    <section className="space-y-4.5">
       {/* Header */}
-      <header className="flex flex-col items-stretch gap-4 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
+      <header className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-baseline sm:justify-between">
         <div className="min-w-0">
-          <p className="font-mono text-2xs font-bold tracking-[0.2em] text-accent uppercase">
-            Treasury Classification
-          </p>
-          <h1 className="mt-1.5 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-            Categories & Spending Pools
+          <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+            Categories
           </h1>
-          <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-foreground-muted">
-            Structure how expenses and income are categorized. Organize parent pools, subcategories,
-            50/30/20 Needs vs Wants classification, and monthly budget limits.
+          <p className="mt-0.5 text-xs text-foreground-muted">
+            Organize parent pools, subcategories, and 50/30/20 groupings.
           </p>
         </div>
         <Button
@@ -342,7 +338,7 @@ export function CategoryManager({
             <p className="font-mono text-2xs font-bold tracking-wider text-foreground-muted uppercase">
               This Month Spend
             </p>
-            <p className="mt-1.5 font-mono text-2xl font-bold text-rose-600 dark:text-rose-400">
+            <p className="mt-1.5 font-mono text-2xl font-bold text-expense">
               {formatMinor(totalMonthlyExpenseSpent)}
             </p>
             <p className="mt-1 text-2xs text-foreground-muted">Across active expense pools</p>
@@ -353,12 +349,12 @@ export function CategoryManager({
               50/30/20 Breakdown
             </p>
             <div className="mt-1.5 flex items-baseline gap-2">
-              <span className="font-mono text-2xl font-bold text-blue-600 dark:text-blue-400">
+              <span className="font-mono text-2xl font-bold text-accent">
                 {essentialExpenseItems.length}
               </span>
               <span className="text-xs font-semibold text-foreground-muted">Needs</span>
               <span className="text-xs text-border">/</span>
-              <span className="font-mono text-2xl font-bold text-purple-600 dark:text-purple-400">
+              <span className="font-mono text-2xl font-bold text-foreground">
                 {lifestyleExpenseItems.length}
               </span>
               <span className="text-xs font-semibold text-foreground-muted">Wants</span>
@@ -370,7 +366,7 @@ export function CategoryManager({
             <p className="font-mono text-2xs font-bold tracking-wider text-foreground-muted uppercase">
               Budget Coverage
             </p>
-            <p className="mt-1.5 font-mono text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+            <p className="mt-1.5 font-mono text-2xl font-bold text-income">
               {budgetedExpenseCount} / {totalExpense}
             </p>
             <p className="mt-1 text-2xs text-foreground-muted">

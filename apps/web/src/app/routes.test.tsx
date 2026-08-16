@@ -137,6 +137,7 @@ vi.mock("@/features/recurring", () => ({
   getRecurringRules: async () => [],
   getRecurringReconciliations: async () => [],
   getRecurringStats: async () => null,
+  getDetectedStreams: async () => ({ items: [], nextCursor: null }),
   RecurringManager: () => <h1>Recurring</h1>
 }));
 vi.mock("@/features/goals", () => ({

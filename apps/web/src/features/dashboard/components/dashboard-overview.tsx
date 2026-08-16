@@ -55,17 +55,16 @@ export function DashboardOverview({
   const investments = investmentsQuery.data ?? initialInvestments;
 
   return (
-    <section className="flex flex-col gap-5">
-      <header>
-        <p className="font-mono text-2xs font-semibold tracking-[2px] text-accent">
-          TREASURY OPS · DASHBOARD
-        </p>
-        <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground sm:text-[36px]">
-          Financial overview
-        </h1>
-        <p className="mt-2 max-w-xl text-sm text-foreground-muted">
-          Where your money went this month, what&apos;s growing, and what&apos;s committed ahead.
-        </p>
+    <section className="flex flex-col gap-4.5">
+      <header className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
+        <div>
+          <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+            Financial overview
+          </h1>
+          <p className="text-xs text-foreground-muted">
+            Live cash flow, spending distribution, and upcoming commitments.
+          </p>
+        </div>
       </header>
 
       {stats === null ? null : <StatCards stats={stats} />}

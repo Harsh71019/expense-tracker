@@ -34,7 +34,7 @@ export function ReverseConfirmDialog({
           type="button"
           onClick={onConfirm}
           disabled={isPending}
-          className="w-full border border-amber-500/30 bg-amber-500/10 text-amber-500 hover:bg-amber-500/15 sm:w-auto"
+          className="w-full border border-warning/30 bg-warning/10 text-warning hover:bg-warning/15 sm:w-auto"
         >
           {isPending ? "Posting reversal…" : "↺ Post reversal"}
         </Button>

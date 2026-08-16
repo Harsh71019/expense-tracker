@@ -87,7 +87,7 @@ export function ImportList({
               </div>
               <div className="text-right">
                 <div
-                  className={`font-mono text-lg font-semibold ${batch.stats.duplicates > 0 ? "text-amber-500" : "text-foreground-muted"}`}
+                  className={`font-mono text-lg font-semibold ${batch.stats.duplicates > 0 ? "text-warning" : "text-foreground-muted"}`}
                 >
                   {batch.stats.duplicates}
                 </div>

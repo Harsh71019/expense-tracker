@@ -58,6 +58,14 @@ export class RecurringRuleService {
     return this.rules.list(userId);
   }
 
+  findEquivalentInTxn(
+    userId: string,
+    input: CreateRecurringRule,
+    tx: DbTx
+  ): Promise<RecurringRule | null> {
+    return this.rules.findEquivalent(userId, input, tx);
+  }
+
   async update(
     userId: string,
     ruleId: RecurringRuleId,

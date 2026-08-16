@@ -72,7 +72,7 @@ export function WarningCard({
                     +{percentAboveBaseline(evidence.ratioBasisPoints)}% vs median
                   </span>
                 ) : (
-                  <span className="inline-flex items-center rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 font-mono text-2xs font-bold text-amber-600 dark:text-amber-400">
+                  <span className="inline-flex items-center rounded-md border border-warning/30 bg-warning/10 px-2 py-0.5 font-mono text-2xs font-bold text-warning">
                     IQR Outlier
                   </span>
                 )}

@@ -36,6 +36,11 @@ import { RecurringStatsService } from "./recurring-stats.service.js";
     RecurringReconciliationService,
     RecurringReconciliationSweepService
   ],
-  exports: [RecurringRuleRepository, RecurringReconciliationService, RecurringOccurrenceService]
+  exports: [
+    RecurringRuleRepository,
+    RecurringRuleService,
+    RecurringReconciliationService,
+    RecurringOccurrenceService
+  ]
 })
 export class RecurringModule {}

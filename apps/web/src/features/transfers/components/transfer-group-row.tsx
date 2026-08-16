@@ -39,7 +39,7 @@ export function TransferGroupRow({ legs, accounts, onOpen }: TransferGroupRowPro
       }`}
     >
       <span
-        className={`absolute inset-y-3.5 left-0 w-[3px] rounded-sm ${isReversal ? "bg-amber-500" : "bg-accent"}`}
+        className={`absolute inset-y-3.5 left-0 w-[3px] rounded-sm ${isReversal ? "bg-warning" : "bg-accent"}`}
         aria-hidden="true"
       />
       <div className="flex min-w-0 items-center gap-3">
@@ -69,7 +69,7 @@ export function TransferGroupRow({ legs, accounts, onOpen }: TransferGroupRowPro
             </span>
           ) : null}
           {isReversal ? (
-            <span className="rounded-md border border-border bg-surface-muted px-1.5 py-0.5 font-mono text-2xs font-bold tracking-wider text-amber-500 uppercase">
+            <span className="rounded-md border border-warning/30 bg-warning/10 px-1.5 py-0.5 font-mono text-2xs font-bold tracking-wider text-warning uppercase">
               Reversal
             </span>
           ) : null}

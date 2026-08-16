@@ -185,18 +185,14 @@ export function CategoryRuleManager({
   ];
 
   return (
-    <section className="w-full space-y-6">
+    <section className="w-full space-y-4.5">
       {/* Header */}
       <header>
-        <p className="font-mono text-2xs font-bold tracking-[2px] text-accent">
-          LEDGER · AUTOMATION ENGINE
-        </p>
-        <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+        <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
           Category rules
         </h1>
-        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-foreground-muted">
-          Define automatic merchant and narration keyword rules. During CSV import staging, matched
-          transactions receive an instant category suggestion with 100% confidence.
+        <p className="mt-0.5 text-xs text-foreground-muted">
+          Auto-categorize transactions on import by keyword and merchant pattern.
         </p>
       </header>
 
@@ -238,12 +234,12 @@ export function CategoryRuleManager({
           </p>
           <div className="mt-2 flex items-center gap-3">
             <div>
-              <span className="text-xl font-bold text-rose-500">{expenseRulesCount}</span>
+              <span className="text-xl font-bold text-expense">{expenseRulesCount}</span>
               <span className="ml-1 text-2xs text-foreground-muted">Expense</span>
             </div>
             <div className="h-4 w-px bg-border" />
             <div>
-              <span className="text-xl font-bold text-emerald-500">{incomeRulesCount}</span>
+              <span className="text-xl font-bold text-income">{incomeRulesCount}</span>
               <span className="ml-1 text-2xs text-foreground-muted">Income</span>
             </div>
           </div>
@@ -254,7 +250,7 @@ export function CategoryRuleManager({
           <p className="font-mono text-2xs font-bold uppercase tracking-wider text-foreground-muted">
             Needs Rules
           </p>
-          <p className="mt-2 text-2xl font-bold tracking-tight text-amber-500 sm:text-3xl">
+          <p className="mt-2 text-2xl font-bold tracking-tight text-warning sm:text-3xl">
             {uncoveredCategories.length}
           </p>
           <p className="mt-1 text-xs text-foreground-muted">Categories unassigned</p>
@@ -266,7 +262,7 @@ export function CategoryRuleManager({
         <div className="rounded-2xl border border-border/80 bg-surface-muted/50 p-4 sm:p-5">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <span className="text-amber-500 text-sm">💡</span>
+              <span className="text-warning text-sm">💡</span>
               <h3 className="font-mono text-2xs font-bold uppercase tracking-wider text-foreground">
                 Categories without automation ({uncoveredCategories.length})
               </h3>
@@ -479,10 +475,10 @@ export function CategoryRuleManager({
                     <div>
                       <span className="text-sm font-bold text-foreground">{categoryName}</span>
                       <span
-                        className={`ml-2 rounded-full px-2 py-0.5 text-2xs font-extrabold uppercase ${
+                        className={`ml-2 rounded-full border px-2 py-0.5 text-2xs font-extrabold uppercase ${
                           kind === "income"
-                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                            : "bg-rose-500/10 text-rose-600 dark:text-rose-400"
+                            ? "border-income/30 bg-income/10 text-income"
+                            : "border-expense/30 bg-expense/10 text-expense"
                         }`}
                       >
                         {kind}

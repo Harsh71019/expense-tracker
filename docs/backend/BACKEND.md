@@ -954,3 +954,11 @@ dev (laptop, mongodb-memory-server) → staging (LXC, Atlas db: treasury-ops-stg
 - **RPO: 24h** (nightly mongodump; tighten to 1h later via Atlas M10 PITR if this ever holds money-critical data). **RTO: 1h** — documented restore: new Atlas cluster → `mongorestore` → update env → redeploy.
 - **Quarterly restore drill** (calendar reminder): restore latest dump to `treasury-ops-drill` db, run the balance-verify job against it, confirm zero drift, tear down. A backup that's never been restored is a rumor.
 - **Failure matrix documented in-repo:** LXC dies (rebuild from compose + env from Vaultwarden, ~20 min), Atlas region outage (wait — accepted risk for personal), NAS dies (dumps also rclone'd to B2/Drive weekly), repo dies (GitHub + local remote).
+
+## 20. Cash-flow forecast (read-only rollout)
+
+`GET /api/v1/insights/cash-flow-forecast?days=30|60|90` returns the latest immutable worker snapshot, or `null` while there is no evaluated snapshot. The initial operational horizon is 30 days. A 60/90-day result is not promoted unless its own rolling-origin evaluation satisfies the versioned accuracy gate.
+
+The worker reads no more than 365 days/5,000 posted rows per tenant and writes only one retry-safe snapshot key (`user`, deterministic `asOf`, horizon, model version, input digest). It excludes transfers, investment balances, credit-card purchases, and already-linked card payments from variable cash spending; unpaid card bills are added once at their due date. Mature recurring-detection streams supply known inflows/outflows. Forecast snapshots, including range coverage and input watermark, are append-only and never create notifications, transfers, or ledger entries.
+
+Candidate variable-spend models are chronological seasonal-naive, trailing median, and fixed-point SES. Croston/SBA/TSB are considered only for sufficiently long, intermittent personal histories. Ranges are empirical residual quantiles labelled `historical_range`; observed coverage is published instead of making a probabilistic or financial-advice claim. If history, row budget, or evaluation is insufficient, the snapshot abstains from variable-spend forecasting and retains known cash flow only.

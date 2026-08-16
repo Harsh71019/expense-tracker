@@ -52,10 +52,10 @@ export function RuleRow({ rule, category, onDelete, onTestPattern }: RuleRowProp
           </span>
           <span>{categoryName}</span>
           <span
-            className={`rounded-full px-1.5 py-0.2 text-2xs font-extrabold uppercase ${
+            className={`rounded-full border px-1.5 py-0.2 text-2xs font-extrabold uppercase ${
               kind === "income"
-                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                : "bg-rose-500/10 text-rose-600 dark:text-rose-400"
+                ? "border-income/30 bg-income/10 text-income"
+                : "border-expense/30 bg-expense/10 text-expense"
             }`}
           >
             {kind}

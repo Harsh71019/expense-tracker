@@ -116,16 +116,20 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
   ];
 
   function applyPreset(preset: "this-month" | "30-days" | "this-year"): void {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth();
-    const today = new Date(Date.UTC(year, month, now.getDate()));
+    const todayStr = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(
+      new Date()
+    );
+    const [yStr, mStr, dStr] = todayStr.split("-");
+    const year = Number(yStr);
+    const month = (Number(mStr) || 1) - 1;
+    const day = Number(dStr) || 1;
+    const today = new Date(Date.UTC(year, month, day));
 
     let fromDate: Date;
     if (preset === "this-month") {
       fromDate = new Date(Date.UTC(year, month, 1));
     } else if (preset === "30-days") {
-      fromDate = new Date(Date.UTC(year, month, now.getDate() - 30));
+      fromDate = new Date(Date.UTC(year, month, day - 30));
     } else {
       fromDate = new Date(Date.UTC(year, 0, 1));
     }
@@ -149,6 +153,7 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
           value={query}
           name="transactionSearch"
           autoComplete="off"
+          spellCheck={false}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Search description…"
           aria-label="Search description"

@@ -191,11 +191,11 @@ export function TxnList({
   }
 
   return (
-    <section className="space-y-6">
+    <section className="space-y-4.5">
       <PageHeader
         eyebrow="Ledger / transactions"
         title="Transactions"
-        description="Review posted entries, categories, and reversals. Corrections are posted as reversals, never edits."
+        description="Posted entries, categories, and compensating reversals."
         action={
           <div className="flex gap-2 sm:items-center">
             <Button
@@ -232,20 +232,16 @@ export function TxnList({
           <div className="hidden flex-wrap items-center gap-3 text-xs text-foreground-muted sm:flex">
             <span>
               Inflow:{" "}
-              <span className="font-mono font-bold text-emerald-500">
-                +{formatMinor(totalInflow)}
-              </span>
+              <span className="font-mono font-bold text-income">+{formatMinor(totalInflow)}</span>
             </span>
             <span>
               Outflow:{" "}
-              <span className="font-mono font-bold text-rose-500">
-                −{formatMinor(totalOutflow)}
-              </span>
+              <span className="font-mono font-bold text-expense">−{formatMinor(totalOutflow)}</span>
             </span>
             <span>
               Net:{" "}
               <span
-                className={`font-mono font-bold ${netFlow >= 0 ? "text-emerald-500" : "text-rose-500"}`}
+                className={`font-mono font-bold ${netFlow >= 0 ? "text-income" : "text-expense"}`}
               >
                 {netFlow >= 0 ? "+" : "−"}
                 {formatMinor(Math.abs(netFlow))}

@@ -18,7 +18,7 @@
  *    includes them under components.
  */
 
-import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
+import { extendZodWithOpenApi, OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import {
   BatchCategorizeTransactionsResultSchema,
   BatchCategorizeTransactionsSchema,
@@ -35,6 +35,8 @@ import {
   BillStatementUploadSchema,
   CashflowQuerySchema,
   CashflowResponseSchema,
+  CashflowForecastQuerySchema,
+  CashflowForecastSnapshotSchema,
   CategoryIdSchema,
   CategorySchema,
   CategoryRuleIdSchema,
@@ -131,6 +133,11 @@ import {
   RecurringReconciliationSchema,
   RecurringRuleIdSchema,
   RecurringRuleSchema,
+  AcceptDetectedStreamSchema,
+  DetectedRecurringStreamIdSchema,
+  DetectedStreamPageSchema,
+  DetectedStreamReviewSchema,
+  RejectDetectedStreamSchema,
   RecurringStatsSchema,
   ResolveRecurringReconciliationSchema,
   LinkBillPaymentSchema,
@@ -152,6 +159,8 @@ import {
   PendingTransactionSchema
 } from "@treasury-ops/shared";
 import { z } from "zod";
+
+extendZodWithOpenApi(z);
 
 const registry = new OpenAPIRegistry();
 
@@ -183,6 +192,8 @@ const SalaryVersionPage = SalaryVersionPageSchema.meta({ id: "SalaryVersionPage"
 const SalaryStatistics = SalaryStatisticsSchema.meta({ id: "SalaryStatistics" });
 const MonthlyRollup = MonthlyRollupSchema.meta({ id: "MonthlyRollup" });
 const RecurringRule = RecurringRuleSchema.meta({ id: "RecurringRule" });
+const DetectedStreamPage = DetectedStreamPageSchema.meta({ id: "DetectedStreamPage" });
+const DetectedStreamReview = DetectedStreamReviewSchema.meta({ id: "DetectedStreamReview" });
 const RecurringStats = RecurringStatsSchema.meta({ id: "RecurringStats" });
 const RecurringReconciliation = RecurringReconciliationSchema.meta({
   id: "RecurringReconciliation"
@@ -208,6 +219,9 @@ const DashboardSummary = DashboardSummarySchema.meta({ id: "DashboardSummary" })
 const RecentActivityItem = RecentActivityItemSchema.meta({ id: "RecentActivityItem" });
 const DashboardStats = DashboardStatsSchema.meta({ id: "DashboardStats" });
 const CashflowResponse = CashflowResponseSchema.meta({ id: "CashflowResponse" });
+const CashflowForecastSnapshot = CashflowForecastSnapshotSchema.meta({
+  id: "CashflowForecastSnapshot"
+});
 const MonthlySpending = MonthlySpendingSchema.meta({ id: "MonthlySpending" });
 const TopSpendingItem = TopSpendingItemSchema.meta({ id: "TopSpendingItem" });
 const SpendMix = SpendMixSchema.meta({ id: "SpendMix" });
@@ -237,6 +251,25 @@ const importBatchAndRowId = z.object({
 });
 const month = z.object({ month: MonthSchema });
 const recurringRuleId = z.object({ ruleId: RecurringRuleIdSchema });
+const detectedStreamId = z.object({ streamId: DetectedRecurringStreamIdSchema });
+const detectedStreamsQuery = z.object({
+  cursor: z
+    .string()
+    .uuid()
+    .optional()
+    .openapi({ param: { name: "cursor", in: "query" } }),
+  limit: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(200)
+    .default(50)
+    .openapi({ param: { name: "limit", in: "query" } }),
+  state: z
+    .enum(["candidate", "mature", "stale"])
+    .optional()
+    .openapi({ param: { name: "state", in: "query" } })
+});
 const recurringRuleAndOccurrenceId = z.object({
   ruleId: RecurringRuleIdSchema,
   occurrenceId: RecurringOccurrenceIdSchema
@@ -913,6 +946,57 @@ registry.registerPath({
 });
 registry.registerPath({
   method: "get",
+  path: "/v1/recurring/detected",
+  security: secured,
+  request: { query: detectedStreamsQuery },
+  responses: {
+    200: {
+      description: "Pending detected recurring streams, newest first",
+      ...json(DetectedStreamPage)
+    },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "post",
+  path: "/v1/recurring/detected/{streamId}/accept",
+  security: secured,
+  request: {
+    params: detectedStreamId,
+    body: json(AcceptDetectedStreamSchema),
+    headers: idempotencyKeyHeaders
+  },
+  responses: {
+    200: {
+      description: "Accepted recurring rule or idempotent replay",
+      headers: optionalReplayHeaders,
+      ...json(RecurringRule)
+    },
+    ...idempotencyConflictResponse,
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "post",
+  path: "/v1/recurring/detected/{streamId}/reject",
+  security: secured,
+  request: {
+    params: detectedStreamId,
+    body: json(RejectDetectedStreamSchema),
+    headers: idempotencyKeyHeaders
+  },
+  responses: {
+    200: {
+      description: "Rejected stream decision or idempotent replay",
+      headers: optionalReplayHeaders,
+      ...json(DetectedStreamReview)
+    },
+    ...idempotencyConflictResponse,
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "get",
   path: "/v1/recurring/stats",
   security: secured,
   responses: {
@@ -1374,6 +1458,20 @@ registry.registerPath({
     200: {
       description: "Income/expense buckets over the requested range",
       ...json(CashflowResponse)
+    },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "get",
+  path: "/v1/insights/cash-flow-forecast",
+  security: secured,
+  request: { query: CashflowForecastQuerySchema },
+  responses: {
+    200: {
+      description:
+        "Latest immutable, read-only cash-flow forecast snapshot; null while worker evidence is unavailable",
+      ...json(CashflowForecastSnapshot.nullable())
     },
     ...problemResponses
   }

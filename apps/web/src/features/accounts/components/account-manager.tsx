@@ -36,45 +36,40 @@ const accountTypes: readonly TypeMeta[] = [
     label: "Bank",
     filterLabel: "Bank",
     icon: "🏦",
-    badgeStyle:
-      "bg-gradient-to-br from-blue-500/15 to-cyan-500/15 text-cyan-600 dark:text-cyan-400 border border-cyan-500/25",
-    accentBorder: "hover:border-cyan-500/40"
+    badgeStyle: "bg-surface-muted text-foreground-muted border border-border",
+    accentBorder: "hover:border-accent/40"
   },
   {
     value: "credit_card",
     label: "Credit card",
     filterLabel: "Cards",
     icon: "💳",
-    badgeStyle:
-      "bg-gradient-to-br from-amber-500/15 to-orange-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25",
-    accentBorder: "hover:border-amber-500/40"
+    badgeStyle: "bg-expense/10 text-expense border border-expense/25",
+    accentBorder: "hover:border-expense/40"
   },
   {
     value: "cash",
     label: "Cash",
     filterLabel: "Cash",
     icon: "💵",
-    badgeStyle:
-      "bg-gradient-to-br from-emerald-500/15 to-teal-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25",
-    accentBorder: "hover:border-emerald-500/40"
+    badgeStyle: "bg-income/10 text-income border border-income/25",
+    accentBorder: "hover:border-income/40"
   },
   {
     value: "wallet",
     label: "Wallet",
     filterLabel: "Wallets",
     icon: "👛",
-    badgeStyle:
-      "bg-gradient-to-br from-purple-500/15 to-indigo-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/25",
-    accentBorder: "hover:border-purple-500/40"
+    badgeStyle: "bg-accent/10 text-accent border border-accent/25",
+    accentBorder: "hover:border-accent/40"
   },
   {
     value: "investment",
     label: "Investment",
     filterLabel: "Investments",
     icon: "📈",
-    badgeStyle:
-      "bg-gradient-to-br from-fuchsia-500/15 to-pink-500/15 text-fuchsia-600 dark:text-fuchsia-400 border border-fuchsia-500/25",
-    accentBorder: "hover:border-fuchsia-500/40"
+    badgeStyle: "bg-surface-muted text-foreground border border-border",
+    accentBorder: "hover:border-accent/40"
   }
 ];
 
@@ -234,27 +229,13 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
   }
 
   return (
-    <section className="space-y-6 animate-fade-in">
-      {/* Executive Command Header */}
-      <header className="flex flex-col items-stretch gap-4 rounded-2xl border border-border/80 bg-surface-elevated/90 px-5 py-4.5 shadow-xs backdrop-blur-md sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
+    <section className="space-y-4.5 animate-fade-in">
+      {/* Accounts Header */}
+      <header className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-baseline sm:justify-between">
         <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-md border border-accent/30 bg-accent-glow/40 px-2.5 py-0.5 font-mono text-2xs font-bold tracking-wider text-accent uppercase">
-              <span
-                className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse"
-                aria-hidden="true"
-              />
-              Capital Architecture
-            </span>
-            <span className="inline-flex items-center gap-1.5 rounded-md border border-income/30 bg-income/10 px-2 py-0.5 font-mono text-2xs font-bold text-income">
-              ● Ledger Synchronized
-            </span>
-          </div>
-          <h1 className="mt-1.5 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-            Accounts
-          </h1>
-          <p className="mt-1 max-w-md text-xs text-foreground-muted">
-            The containers your money lives in. Balances update automatically as transactions post.
+          <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">Accounts</h1>
+          <p className="mt-0.5 text-xs text-foreground-muted">
+            Active balances, asset allocation, and liability accounts.
           </p>
         </div>
         <Button className="w-full sm:w-auto shadow-glow" type="button" onClick={openCreate}>
@@ -264,7 +245,7 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
 
       {/* Net Worth & Liquidity Overview Deck */}
       {items.length === 0 ? null : (
-        <div className="glass-card relative overflow-hidden rounded-2xl p-5.5 sm:p-6 shadow-xs">
+        <div className="glass-card relative overflow-hidden rounded-2xl p-4.5 sm:p-5 shadow-xs">
           <div className="absolute -top-24 -right-24 h-48 w-48 rounded-full bg-accent-glow opacity-60 blur-3xl pointer-events-none" />
           <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-1">
@@ -282,24 +263,24 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
             </div>
 
             <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-              <div className="flex-1 sm:flex-none min-w-[145px] rounded-xl border border-emerald-500/25 bg-emerald-500/10 p-3.5 shadow-2xs">
+              <div className="flex-1 sm:flex-none min-w-[145px] rounded-xl border border-income/25 bg-income/10 p-3.5 shadow-2xs">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="font-mono text-2xs font-bold tracking-wider text-emerald-600 dark:text-emerald-400 uppercase">
+                  <span className="font-mono text-2xs font-bold tracking-wider text-income uppercase">
                     Assets
                   </span>
-                  <span className="text-xs text-emerald-500 font-bold">↗</span>
+                  <span className="text-xs text-income font-bold">↗</span>
                 </div>
                 <div className="mt-1">
                   <Money minor={assetsTotal} size="lg" />
                 </div>
               </div>
 
-              <div className="flex-1 sm:flex-none min-w-[145px] rounded-xl border border-rose-500/25 bg-rose-500/10 p-3.5 shadow-2xs">
+              <div className="flex-1 sm:flex-none min-w-[145px] rounded-xl border border-expense/25 bg-expense/10 p-3.5 shadow-2xs">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="font-mono text-2xs font-bold tracking-wider text-rose-600 dark:text-rose-400 uppercase">
+                  <span className="font-mono text-2xs font-bold tracking-wider text-expense uppercase">
                     Liabilities
                   </span>
-                  <span className="text-xs text-rose-500 font-bold">↘</span>
+                  <span className="text-xs text-expense font-bold">↘</span>
                 </div>
                 <div className="mt-1">
                   <Money

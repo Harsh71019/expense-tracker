@@ -16,8 +16,8 @@ describe("PageHeader", () => {
 
     expect(screen.getByText("Ledger / transactions")).toHaveClass("font-mono", "text-2xs");
     expect(screen.getByRole("heading", { level: 1, name: "Transactions" })).toHaveClass(
-      "text-3xl",
-      "sm:text-4xl"
+      "text-2xl",
+      "sm:text-3xl"
     );
     expect(screen.getByText("Review posted entries and reversals.")).toHaveClass("max-w-xl");
     expect(screen.getByRole("button", { name: "Add transaction" })).toBeVisible();
@@ -27,8 +27,8 @@ describe("PageHeader", () => {
     render(<PageHeader eyebrow="Capture / quick add" size="compact" title="Add transaction" />);
 
     expect(screen.getByRole("heading", { level: 1, name: "Add transaction" })).toHaveClass(
-      "text-2xl",
-      "sm:text-3xl"
+      "text-xl",
+      "sm:text-2xl"
     );
   });
 });

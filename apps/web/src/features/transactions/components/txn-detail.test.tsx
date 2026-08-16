@@ -23,7 +23,15 @@ vi.mock("@/features/accounts", () => ({
     ]
   })
 }));
-vi.mock("@/features/categories", () => ({ useCategories: () => ({ data: [] }) }));
+vi.mock("@/features/categories", () => ({
+  useCategories: () => ({
+    data: [
+      { id: "cat-exp-1", name: "Food", kind: "expense", isArchived: false },
+      { id: "cat-exp-archived", name: "Old Food", kind: "expense", isArchived: true },
+      { id: "cat-inc-1", name: "Salary", kind: "income", isArchived: false }
+    ]
+  })
+}));
 vi.mock("@/features/transfers/hooks/use-transfers", () => ({
   useReverseTransfer: () => ({ mutate: vi.fn(), isPending: false })
 }));
@@ -61,6 +69,20 @@ describe("TxnDetail", () => {
     mocks.update.mockReset();
     mocks.toastSuccess.mockReset();
     mocks.toastError.mockReset();
+  });
+
+  it("filters categories to active matching kind in the editor", async () => {
+    const user = userEvent.setup();
+    render(<TxnDetail initialTransaction={transaction} />);
+
+    await user.click(screen.getByRole("button", { name: "Edit metadata" }));
+    const select = screen.getByRole("combobox", { name: "Category" });
+    expect(select).toBeInTheDocument();
+    await user.click(select);
+    expect(screen.getByRole("option", { name: "No category" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Food" })).toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: "Salary" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: "Old Food" })).not.toBeInTheDocument();
   });
 
   it("toasts a successful metadata update", async () => {

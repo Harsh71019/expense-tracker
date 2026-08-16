@@ -82,6 +82,14 @@ export const DetectedStreamEvidenceSchema = z
   .readonly();
 
 export const DetectedRecurringStreamIdSchema = z.string().uuid();
+export const DetectedStreamReviewDecisionSchema = z.enum(["accepted", "rejected"]);
+
+export const DetectedStreamCursorSchema = z.string().uuid();
+export const ListDetectedStreamsQuerySchema = z.object({
+  cursor: z.string().uuid().optional(),
+  limit: z.coerce.number().int().min(1).max(200).default(50),
+  state: z.enum(["candidate", "mature", "stale"]).optional()
+});
 
 export const DetectedRecurringStreamSchema = z
   .object({
@@ -156,6 +164,40 @@ export const RecurringDetectionPromotionDecisionSchema = z
   })
   .readonly();
 
+export const DetectedStreamReviewSchema = z
+  .object({
+    streamId: DetectedRecurringStreamIdSchema,
+    detectorVersion: SafePositiveIntegerSchema,
+    decision: DetectedStreamReviewDecisionSchema,
+    recurringRuleId: z.string().uuid().nullable(),
+    decidedAt: z.coerce.date()
+  })
+  .readonly();
+
+export const DetectedStreamReviewItemSchema = z
+  .object({
+    stream: DetectedRecurringStreamSchema,
+    review: DetectedStreamReviewSchema.nullable(),
+    latestRunStatus: RecurringDetectionRunStatusSchema.nullable()
+  })
+  .readonly();
+
+export const DetectedStreamPageSchema = z
+  .object({
+    items: z.array(DetectedStreamReviewItemSchema),
+    nextCursor: DetectedStreamCursorSchema.nullable()
+  })
+  .readonly();
+
+export const AcceptDetectedStreamSchema = z
+  .object({
+    accountId: z.string().uuid(),
+    autoPost: z.boolean().default(false)
+  })
+  .readonly();
+
+export const RejectDetectedStreamSchema = z.object({}).readonly();
+
 export type DetectedStreamCadence = z.infer<typeof DetectedStreamCadenceSchema>;
 export type DetectedStreamState = z.infer<typeof DetectedStreamStateSchema>;
 export type DetectedStreamAmountBehavior = z.infer<typeof DetectedStreamAmountBehaviorSchema>;
@@ -169,9 +211,15 @@ export type RecurringDetectionInputWatermark = z.infer<
 export type DetectedStreamCadenceEvidence = z.infer<typeof DetectedStreamCadenceEvidenceSchema>;
 export type DetectedStreamEvidence = z.infer<typeof DetectedStreamEvidenceSchema>;
 export type DetectedRecurringStreamId = z.infer<typeof DetectedRecurringStreamIdSchema>;
+export type DetectedStreamReviewDecision = z.infer<typeof DetectedStreamReviewDecisionSchema>;
+export type ListDetectedStreamsQuery = z.infer<typeof ListDetectedStreamsQuerySchema>;
 export type DetectedRecurringStream = z.infer<typeof DetectedRecurringStreamSchema>;
 export type DetectedStreamMember = z.infer<typeof DetectedStreamMemberSchema>;
 export type RecurringDetectionRunResult = z.infer<typeof RecurringDetectionRunResultSchema>;
 export type RecurringDetectionPromotionDecision = z.infer<
   typeof RecurringDetectionPromotionDecisionSchema
 >;
+export type DetectedStreamReview = z.infer<typeof DetectedStreamReviewSchema>;
+export type DetectedStreamReviewItem = z.infer<typeof DetectedStreamReviewItemSchema>;
+export type DetectedStreamPage = z.infer<typeof DetectedStreamPageSchema>;
+export type AcceptDetectedStream = z.infer<typeof AcceptDetectedStreamSchema>;

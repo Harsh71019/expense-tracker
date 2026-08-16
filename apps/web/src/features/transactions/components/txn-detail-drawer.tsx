@@ -151,7 +151,7 @@ export function TxnDetailDrawer({
         </div>
 
         {isReversed || isReversal ? (
-          <p className="mt-5 rounded-xl border border-amber-500/25 bg-amber-500/10 px-4 py-3.5 text-sm leading-relaxed text-amber-500">
+          <p className="mt-5 rounded-xl border border-warning/25 bg-warning/10 px-4 py-3.5 text-sm leading-relaxed text-warning">
             {isReversed
               ? "This transaction was reversed. It stays on record but no longer affects balances."
               : "This is a reversal entry compensating an earlier transaction. It cannot itself be reversed."}
@@ -243,19 +243,19 @@ export function TxnDetailDrawer({
             {transaction.reversalOf ? (
               <Link
                 href={`/transactions/${transaction.reversalOf}`}
-                className="flex items-center justify-between gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 p-2 font-medium text-foreground hover:bg-amber-500/10"
+                className="flex items-center justify-between gap-2 rounded-lg border border-warning/20 bg-warning/5 p-2 font-medium text-foreground hover:bg-warning/10"
               >
                 <span>↺ Compensating Reversal of Earlier Entry</span>
-                <span className="font-mono text-2xs text-amber-500">View Original →</span>
+                <span className="font-mono text-2xs text-warning">View Original →</span>
               </Link>
             ) : null}
             {transaction.reversedBy ? (
               <Link
                 href={`/transactions/${transaction.reversedBy}`}
-                className="flex items-center justify-between gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 p-2 font-medium text-foreground hover:bg-amber-500/10"
+                className="flex items-center justify-between gap-2 rounded-lg border border-warning/20 bg-warning/5 p-2 font-medium text-foreground hover:bg-warning/10"
               >
                 <span>↺ Compensated by Reversal Entry</span>
-                <span className="font-mono text-2xs text-amber-500">View Reversal →</span>
+                <span className="font-mono text-2xs text-warning">View Reversal →</span>
               </Link>
             ) : null}
           </div>
@@ -405,7 +405,7 @@ export function TxnDetailDrawer({
             <button
               type="button"
               onClick={() => setReverseOpen(true)}
-              className="min-h-11 flex-1 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-2.5 text-sm font-semibold text-amber-500 hover:bg-amber-500/15 sm:flex-none"
+              className="min-h-11 flex-1 rounded-lg border border-warning/30 bg-warning/10 px-4 py-2.5 text-sm font-semibold text-warning hover:bg-warning/15 sm:flex-none"
             >
               ↺ Reverse &amp; repost
             </button>

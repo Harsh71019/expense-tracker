@@ -97,12 +97,12 @@ export function CategoryCard({
                     aria-label={`50/30/20 Group: ${parent.group ?? "Unassigned"}`}
                     aria-expanded={groupDropdownOpen}
                     onClick={() => setGroupDropdownOpen((open) => !open)}
-                    className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-2xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                    className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-2xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                       parent.group === "essential"
-                        ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20"
+                        ? "border-accent/30 bg-accent/10 text-accent hover:bg-accent/20"
                         : parent.group === "lifestyle"
-                          ? "bg-purple-500/10 text-purple-600 dark:text-purple-400 hover:bg-purple-500/20"
-                          : "bg-surface-muted text-foreground-muted hover:bg-surface-muted/80 hover:text-foreground"
+                          ? "border-border bg-surface-muted text-foreground-muted hover:bg-surface-muted/80 hover:text-foreground"
+                          : "border-border bg-surface-muted text-foreground-muted hover:bg-surface-muted/80 hover:text-foreground"
                     }`}
                   >
                     <span>
@@ -146,7 +146,7 @@ export function CategoryCard({
                   ) : null}
                 </div>
               ) : (
-                <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-2xs font-semibold text-emerald-600 dark:text-emerald-400">
+                <span className="rounded-full border border-income/30 bg-income/10 px-2 py-0.5 text-2xs font-semibold text-income">
                   Income
                 </span>
               )}
@@ -239,10 +239,10 @@ export function CategoryCard({
             <span
               className={`font-mono font-bold ${
                 budgetOver
-                  ? "text-rose-600 dark:text-rose-400"
+                  ? "text-expense"
                   : budget.state === "approaching"
-                    ? "text-amber-600 dark:text-amber-400"
-                    : "text-emerald-600 dark:text-emerald-400"
+                    ? "text-warning"
+                    : "text-income"
               }`}
             >
               {budgetOver ? "Exceeded" : `${budgetUtilization}%`}
@@ -253,10 +253,10 @@ export function CategoryCard({
               style={{ width: `${budgetUtilization}%` }}
               className={`h-full rounded-full transition-all duration-300 ${
                 budgetOver
-                  ? "bg-rose-500"
+                  ? "bg-expense"
                   : budget.state === "approaching"
-                    ? "bg-amber-500"
-                    : "bg-emerald-500"
+                    ? "bg-warning"
+                    : "bg-income"
               }`}
             />
           </div>

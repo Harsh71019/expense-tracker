@@ -4,18 +4,27 @@ import {
   AlgorithmSufficiencySchema,
   RecurringDetectionInputWatermarkSchema,
   RecurringDetectionRunResultSchema,
+  DetectedRecurringStreamSchema,
+  DetectedStreamPageSchema,
+  DetectedStreamReviewSchema,
+  type DetectedRecurringStream,
+  type DetectedStreamPage,
+  type DetectedStreamReview,
+  type ListDetectedStreamsQuery,
   TransactionTypeSchema,
   type RecurringDetectionRunResult
 } from "@treasury-ops/shared";
-import { and, asc, eq, gte, isNull, lt, lte, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, isNull, lt, lte, or, sql, type SQL } from "drizzle-orm";
 import { z } from "zod";
 
 import { DATABASE_CONNECTION } from "../common/db/db.module.js";
 import type { DrizzleDb } from "../common/db/db.module.js";
 import { withTxn } from "../common/db/db-txn.js";
+import type { DbTx } from "../common/db/db-txn.js";
 import {
   detectedRecurringStreamMembers,
   detectedRecurringStreams,
+  detectedRecurringStreamReviews,
   recurringDetectionRuns,
   transactions
 } from "../common/db/schema/index.js";
@@ -339,6 +348,120 @@ export class RecurringDetectionRepository {
       );
   }
 
+  async listForReview(
+    userId: string,
+    query: ListDetectedStreamsQuery
+  ): Promise<DetectedStreamPage> {
+    const cursor = query.cursor === undefined ? null : await this.findCursor(userId, query.cursor);
+    const conditions: SQL<unknown>[] = [eq(detectedRecurringStreams.userId, userId)];
+    if (query.state !== undefined) conditions.push(eq(detectedRecurringStreams.state, query.state));
+    else conditions.push(eq(detectedRecurringStreams.state, "mature"));
+    if (cursor !== null) {
+      const cursorCondition = or(
+        lt(detectedRecurringStreams.computedAt, cursor.computedAt),
+        and(
+          eq(detectedRecurringStreams.computedAt, cursor.computedAt),
+          lt(detectedRecurringStreams.id, cursor.id)
+        )
+      );
+      if (cursorCondition === undefined)
+        throw new Error("Detected stream cursor condition was empty.");
+      conditions.push(cursorCondition);
+    }
+    const rows = await this.db
+      .select({ stream: detectedRecurringStreams, review: detectedRecurringStreamReviews })
+      .from(detectedRecurringStreams)
+      .leftJoin(
+        detectedRecurringStreamReviews,
+        and(
+          eq(detectedRecurringStreamReviews.userId, userId),
+          eq(detectedRecurringStreamReviews.streamId, detectedRecurringStreams.id),
+          eq(
+            detectedRecurringStreamReviews.detectorVersion,
+            detectedRecurringStreams.detectorVersion
+          )
+        )
+      )
+      .where(and(...conditions, isNull(detectedRecurringStreamReviews.id)))
+      .orderBy(desc(detectedRecurringStreams.computedAt), desc(detectedRecurringStreams.id))
+      .limit(query.limit + 1);
+    const pageRows = rows.slice(0, query.limit);
+    const [latestRun] = await this.db
+      .select({ status: recurringDetectionRuns.status })
+      .from(recurringDetectionRuns)
+      .where(eq(recurringDetectionRuns.userId, userId))
+      .orderBy(desc(recurringDetectionRuns.startedAt))
+      .limit(1);
+    const items = pageRows.map((row) => ({
+      stream: toDetectedStream(row.stream),
+      review: row.review === null ? null : toReview(row.review),
+      latestRunStatus: latestRun?.status ?? null
+    }));
+    const last = pageRows.at(-1);
+    return DetectedStreamPageSchema.parse({
+      items,
+      nextCursor: rows.length > query.limit && last !== undefined ? last.stream.id : null
+    });
+  }
+
+  async findForReview(
+    userId: string,
+    streamId: string,
+    tx?: DbTx
+  ): Promise<DetectedRecurringStream | null> {
+    const executor = tx ?? this.db;
+    const [row] = await executor
+      .select()
+      .from(detectedRecurringStreams)
+      .where(
+        and(eq(detectedRecurringStreams.userId, userId), eq(detectedRecurringStreams.id, streamId))
+      );
+    return row === undefined ? null : toDetectedStream(row);
+  }
+
+  async recordReview(
+    userId: string,
+    review: DetectedStreamReview,
+    tx: DbTx
+  ): Promise<DetectedStreamReview> {
+    const [row] = await tx
+      .insert(detectedRecurringStreamReviews)
+      .values({
+        userId,
+        streamId: review.streamId,
+        detectorVersion: review.detectorVersion,
+        decision: review.decision,
+        recurringRuleId: review.recurringRuleId,
+        decidedAt: review.decidedAt
+      })
+      .onConflictDoNothing()
+      .returning();
+    if (row !== undefined) return toReview(row);
+    const [existing] = await tx
+      .select()
+      .from(detectedRecurringStreamReviews)
+      .where(
+        and(
+          eq(detectedRecurringStreamReviews.userId, userId),
+          eq(detectedRecurringStreamReviews.streamId, review.streamId),
+          eq(detectedRecurringStreamReviews.detectorVersion, review.detectorVersion)
+        )
+      );
+    if (existing === undefined) throw new Error("Detected stream review conflict was not found.");
+    return toReview(existing);
+  }
+
+  private async findCursor(
+    userId: string,
+    id: string
+  ): Promise<{ id: string; computedAt: Date } | null> {
+    const [row] = await this.db
+      .select({ id: detectedRecurringStreams.id, computedAt: detectedRecurringStreams.computedAt })
+      .from(detectedRecurringStreams)
+      .where(and(eq(detectedRecurringStreams.userId, userId), eq(detectedRecurringStreams.id, id)));
+    return row ?? null;
+  }
+
   private async updateRunProgress(userId: string, runId: string): Promise<void> {
     await this.db
       .update(recurringDetectionRuns)
@@ -347,6 +470,22 @@ export class RecurringDetectionRepository {
       })
       .where(and(eq(recurringDetectionRuns.id, runId), eq(recurringDetectionRuns.userId, userId)));
   }
+}
+
+function toDetectedStream(
+  row: typeof detectedRecurringStreams.$inferSelect
+): DetectedRecurringStream {
+  return DetectedRecurringStreamSchema.parse(row);
+}
+
+function toReview(row: typeof detectedRecurringStreamReviews.$inferSelect): DetectedStreamReview {
+  return DetectedStreamReviewSchema.parse({
+    streamId: row.streamId,
+    detectorVersion: row.detectorVersion,
+    decision: row.decision,
+    recurringRuleId: row.recurringRuleId,
+    decidedAt: row.decidedAt
+  });
 }
 
 type DetectionRunRow = typeof recurringDetectionRuns.$inferSelect;

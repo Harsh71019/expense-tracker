@@ -119,7 +119,7 @@ export function AssetCard({
           )}
           <div className="mt-1.5 flex items-center gap-1.5 font-mono text-2xs text-foreground-muted">
             {isProjected ? (
-              <span className="rounded-[4px] border border-amber-500/30 bg-amber-500/10 px-1 py-0.5 font-mono text-2xs font-semibold text-amber-500">
+              <span className="rounded-[4px] border border-warning/30 bg-warning/10 px-1 py-0.5 font-mono text-2xs font-semibold text-warning">
                 ✦ PROJECTED
               </span>
             ) : null}

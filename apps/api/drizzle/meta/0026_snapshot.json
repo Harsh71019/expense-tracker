@@ -1,5 +1,5 @@
 {
-  "id": "ea6b4d2b-3cce-4e2d-bf08-2ac0d633e623",
+  "id": "faf8f699-b653-4d07-b06b-ca1d8c49aea7",
   "prevId": "68c54f57-7197-4aac-9334-7801ff4ea7e0",
   "version": "7",
   "dialect": "postgresql",
@@ -4389,6 +4389,139 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.detected_recurring_stream_reviews": {
+      "name": "detected_recurring_stream_reviews",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "stream_id": {
+          "name": "stream_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "detector_version": {
+          "name": "detector_version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "decision": {
+          "name": "decision",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "recurring_rule_id": {
+          "name": "recurring_rule_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "decided_at": {
+          "name": "decided_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "detected_stream_reviews_user_stream_version": {
+          "name": "detected_stream_reviews_user_stream_version",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "stream_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "detector_version",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "detected_stream_reviews_user_decided": {
+          "name": "detected_stream_reviews_user_decided",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "decided_at",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "detected_recurring_stream_reviews_user_id_user_id_fk": {
+          "name": "detected_recurring_stream_reviews_user_id_user_id_fk",
+          "tableFrom": "detected_recurring_stream_reviews",
+          "tableTo": "user",
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "detected_recurring_stream_reviews_stream_id_detected_recurring_streams_id_fk": {
+          "name": "detected_recurring_stream_reviews_stream_id_detected_recurring_streams_id_fk",
+          "tableFrom": "detected_recurring_stream_reviews",
+          "tableTo": "detected_recurring_streams",
+          "columnsFrom": ["stream_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "detected_recurring_stream_reviews_recurring_rule_id_recurring_rules_id_fk": {
+          "name": "detected_recurring_stream_reviews_recurring_rule_id_recurring_rules_id_fk",
+          "tableFrom": "detected_recurring_stream_reviews",
+          "tableTo": "recurring_rules",
+          "columnsFrom": ["recurring_rule_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.detected_recurring_streams": {
       "name": "detected_recurring_streams",
       "schema": "",
@@ -4862,210 +4995,6 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.financial_profiles": {
-      "name": "financial_profiles",
-      "schema": "",
-      "columns": {
-        "user_id": {
-          "name": "user_id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "monthly_work_minutes": {
-          "name": "monthly_work_minutes",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "salary_credit_day": {
-          "name": "salary_credit_day",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "expected_annual_increment_bps": {
-          "name": "expected_annual_increment_bps",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "income_stability": {
-          "name": "income_stability",
-          "type": "income_stability",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "financial_profiles_user_id_user_id_fk": {
-          "name": "financial_profiles_user_id_user_id_fk",
-          "tableFrom": "financial_profiles",
-          "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "financial_profiles_monthly_work_minutes_valid": {
-          "name": "financial_profiles_monthly_work_minutes_valid",
-          "value": "\"financial_profiles\".\"monthly_work_minutes\" > 0 AND \"financial_profiles\".\"monthly_work_minutes\" <= 44640"
-        },
-        "financial_profiles_salary_credit_day_valid": {
-          "name": "financial_profiles_salary_credit_day_valid",
-          "value": "\"financial_profiles\".\"salary_credit_day\" IS NULL OR (\"financial_profiles\".\"salary_credit_day\" >= 1 AND \"financial_profiles\".\"salary_credit_day\" <= 31)"
-        },
-        "financial_profiles_increment_bps_valid": {
-          "name": "financial_profiles_increment_bps_valid",
-          "value": "\"financial_profiles\".\"expected_annual_increment_bps\" IS NULL OR (\"financial_profiles\".\"expected_annual_increment_bps\" >= 0 AND \"financial_profiles\".\"expected_annual_increment_bps\" <= 100000)"
-        }
-      },
-      "isRLSEnabled": false
-    },
-    "public.salary_versions": {
-      "name": "salary_versions",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "net_monthly_salary_minor": {
-          "name": "net_monthly_salary_minor",
-          "type": "bigint",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "annual_ctc_minor": {
-          "name": "annual_ctc_minor",
-          "type": "bigint",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "effective_from": {
-          "name": "effective_from",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "source": {
-          "name": "source",
-          "type": "salary_source",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {
-        "salary_versions_user_id_effective_from_unique": {
-          "name": "salary_versions_user_id_effective_from_unique",
-          "columns": [
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "effective_from",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "salary_versions_user_id_effective_from_id": {
-          "name": "salary_versions_user_id_effective_from_id",
-          "columns": [
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "effective_from",
-              "isExpression": false,
-              "asc": false,
-              "nulls": "last"
-            },
-            {
-              "expression": "id",
-              "isExpression": false,
-              "asc": false,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "salary_versions_user_id_user_id_fk": {
-          "name": "salary_versions_user_id_user_id_fk",
-          "tableFrom": "salary_versions",
-          "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "salary_versions_net_monthly_salary_minor_positive": {
-          "name": "salary_versions_net_monthly_salary_minor_positive",
-          "value": "\"salary_versions\".\"net_monthly_salary_minor\" > 0"
-        },
-        "salary_versions_annual_ctc_minor_positive": {
-          "name": "salary_versions_annual_ctc_minor_positive",
-          "value": "\"salary_versions\".\"annual_ctc_minor\" IS NULL OR \"salary_versions\".\"annual_ctc_minor\" > 0"
-        }
-      },
       "isRLSEnabled": false
     },
     "public.account": {
@@ -5683,11 +5612,6 @@
       "schema": "public",
       "values": ["parse", "commit", "revert"]
     },
-    "public.income_stability": {
-      "name": "income_stability",
-      "schema": "public",
-      "values": ["stable", "variable", "irregular"]
-    },
     "public.notification_status": {
       "name": "notification_status",
       "schema": "public",
@@ -5728,11 +5652,6 @@
       "name": "recurring_reconciliation_status",
       "schema": "public",
       "values": ["auto_matched", "ambiguous", "amount_mismatch"]
-    },
-    "public.salary_source": {
-      "name": "salary_source",
-      "schema": "public",
-      "values": ["manually_confirmed"]
     },
     "public.scheduled_run_status": {
       "name": "scheduled_run_status",

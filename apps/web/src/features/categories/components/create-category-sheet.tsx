@@ -422,10 +422,10 @@ export function CreateCategorySheet({
             </div>
             {kind === "expense" && group !== "" ? (
               <span
-                className={`rounded-full px-2.5 py-0.5 text-2xs font-semibold ${
+                className={`rounded-full border px-2.5 py-0.5 font-mono text-2xs font-semibold ${
                   group === "essential"
-                    ? "bg-blue-500/10 text-blue-600 dark:text-blue-400"
-                    : "bg-purple-500/10 text-purple-600 dark:text-purple-400"
+                    ? "border-accent/30 bg-accent/10 text-accent"
+                    : "border-border bg-surface-muted text-foreground-muted"
                 }`}
               >
                 {group === "essential" ? "Essential" : "Lifestyle"}

@@ -25,17 +25,13 @@ export function SpendingWarningsPage({
   const hasLoadError = list.isError && list.data === undefined;
 
   return (
-    <section className="w-full space-y-6">
+    <section className="w-full space-y-4.5">
       <header>
-        <p className="font-mono text-2xs font-bold tracking-[0.2em] text-accent uppercase">
-          Insights
-        </p>
-        <h1 className="mt-1.5 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+        <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
           Spending patterns
         </h1>
-        <p className="mt-2 max-w-xl text-sm leading-relaxed text-foreground-muted">
-          Comparisons are based on your recent posted expenses. They are not fraud alerts, budgets,
-          or financial advice.
+        <p className="mt-0.5 text-xs text-foreground-muted">
+          Statistical anomaly detection and repeated merchant frequency warnings.
         </p>
       </header>
 

@@ -153,6 +153,7 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
           value={query}
           name="transactionSearch"
           autoComplete="off"
+          spellCheck={false}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Search description…"
           aria-label="Search description"

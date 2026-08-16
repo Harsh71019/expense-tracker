@@ -31,6 +31,23 @@ const progress: BudgetProgress = {
   spentMinor: 630_000,
   remainingMinor: -130_000,
   utilizationBps: 12_600,
+  pace: {
+    method: "linear_calendar",
+    version: 1,
+    asOf: new Date(),
+    inputWatermark: new Date(),
+    historyMonths: 0,
+    isSufficient: false,
+    evidence: ["insufficient_history"],
+    confidenceBps: 2500,
+    expectedSpentMinor: 0,
+    paceDeltaMinor: 0,
+    paceRatioBps: 0,
+    projectedMonthEndMinor: 0,
+    projectedRangeLowMinor: null,
+    projectedRangeHighMinor: null,
+    projectedUtilizationBps: 0
+  },
   state: "reached",
   isEffective: true
 };

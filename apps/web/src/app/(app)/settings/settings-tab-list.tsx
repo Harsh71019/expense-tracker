@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutGrid, Palette, ShieldCheck, User } from "lucide-react";
+import { Briefcase, LayoutGrid, Palette, ShieldCheck, User } from "lucide-react";
 import Link from "next/link";
 import type { ComponentType, KeyboardEvent, ReactNode } from "react";
 
@@ -14,6 +14,7 @@ const tabIcons: Record<
   User,
   Palette,
   LayoutGrid,
+  Briefcase,
   ShieldCheck
 };
 

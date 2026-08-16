@@ -47,6 +47,7 @@ function createService(
     listPage: vi.fn(),
     listAllWithCategory: vi.fn(),
     categorySpendForMonth: vi.fn(),
+    categoryDailySpendHistory: vi.fn().mockResolvedValue([]),
     findByCategoryId: vi.fn().mockResolvedValue(options?.before ?? null),
     upsert: vi.fn().mockResolvedValue(BUDGET),
     archive: vi.fn().mockResolvedValue(BUDGET)

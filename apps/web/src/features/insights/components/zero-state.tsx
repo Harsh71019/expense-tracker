@@ -1,4 +1,5 @@
 import type { AccountType } from "@treasury-ops/shared";
+import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { ACCOUNT_TYPE_META } from "./create-account-sheet";
@@ -50,6 +51,19 @@ export function ZeroState({ onOpenCreate }: ZeroStateProps): ReactNode {
             );
           })}
         </div>
+
+        {/* Salary is the other half of the foundation — a quiet secondary CTA,
+            not a competing primary action. */}
+        <p className="mt-6 text-xs text-foreground-muted">
+          Already know your income?{" "}
+          <Link
+            href="/settings?tab=income"
+            className="font-semibold text-accent underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          >
+            Set up your salary &amp; work profile
+          </Link>{" "}
+          to unlock hourly and annual figures.
+        </p>
       </div>
     </div>
   );

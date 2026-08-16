@@ -28,6 +28,32 @@ export const BudgetSchema = z.object({
 });
 
 export const BudgetProgressStateSchema = z.enum(["under", "approaching", "reached"]);
+export const BudgetPaceMethodSchema = z.enum(["historical_curve", "linear_calendar", "abstain"]);
+export const BudgetPaceEvidenceSchema = z.enum([
+  "eligible_history",
+  "insufficient_history",
+  "ineffective_budget",
+  "resource_limit"
+]);
+
+/** Read-only pacing output. It never schedules alerts or modifies a budget. */
+export const BudgetPaceSchema = z.object({
+  method: BudgetPaceMethodSchema,
+  version: z.literal(1),
+  asOf: z.coerce.date(),
+  inputWatermark: z.coerce.date(),
+  historyMonths: z.number().int().min(0),
+  isSufficient: z.boolean(),
+  evidence: z.array(BudgetPaceEvidenceSchema),
+  confidenceBps: z.number().int().min(0).max(10_000),
+  expectedSpentMinor: NonNegativeMinorSchema.nullable(),
+  paceDeltaMinor: SignedMinorSchema.nullable(),
+  paceRatioBps: z.number().int().min(0).nullable(),
+  projectedMonthEndMinor: NonNegativeMinorSchema.nullable(),
+  projectedRangeLowMinor: NonNegativeMinorSchema.nullable(),
+  projectedRangeHighMinor: NonNegativeMinorSchema.nullable(),
+  projectedUtilizationBps: z.number().int().min(0).nullable()
+});
 
 export const BudgetCategorySchema = z.object({
   id: CategoryIdSchema,
@@ -43,6 +69,7 @@ export const BudgetProgressSchema = z.object({
   spentMinor: NonNegativeMinorSchema,
   remainingMinor: SignedMinorSchema,
   utilizationBps: z.number().int().min(0),
+  pace: BudgetPaceSchema,
   state: BudgetProgressStateSchema,
   isEffective: z.boolean()
 });
@@ -88,6 +115,8 @@ export type Budget = z.infer<typeof BudgetSchema>;
 export type BudgetProgressState = z.infer<typeof BudgetProgressStateSchema>;
 export type BudgetCategory = z.infer<typeof BudgetCategorySchema>;
 export type BudgetProgress = z.infer<typeof BudgetProgressSchema>;
+export type BudgetPace = z.infer<typeof BudgetPaceSchema>;
+export type BudgetPaceMethod = z.infer<typeof BudgetPaceMethodSchema>;
 export type BudgetOverview = z.infer<typeof BudgetOverviewSchema>;
 export type BudgetAlertPolicy = z.infer<typeof BudgetAlertPolicySchema>;
 export type ListBudgetsQuery = z.infer<typeof ListBudgetsQuerySchema>;

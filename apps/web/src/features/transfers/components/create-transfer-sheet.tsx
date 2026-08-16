@@ -191,6 +191,7 @@ export function CreateTransferSheet({ onClose }: Readonly<{ onClose: () => void 
               id="create-transfer-amount"
               name="amount"
               autoComplete="off"
+              spellCheck={false}
               onChange={(event) => {
                 const nextDraft = event.target.value.replace(/[^0-9.]/g, "");
                 setAmountDraft(nextDraft);

@@ -22,3 +22,4 @@ export * from "./scheduled-run.js";
 export * from "./pending-transaction.js";
 export * from "./detected-recurring-stream.js";
 export * from "./cashflow-forecast.js";
+export * from "./financial-profile.js";

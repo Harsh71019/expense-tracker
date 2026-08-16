@@ -71,6 +71,23 @@ const page: BudgetPage = {
       spentMinor: 630_000,
       remainingMinor: -130_000,
       utilizationBps: 12_600,
+      pace: {
+        method: "historical_curve",
+        version: 1,
+        asOf: new Date("2026-07-25T05:00:00.000Z"),
+        inputWatermark: new Date("2026-07-25T05:00:00.000Z"),
+        historyMonths: 3,
+        isSufficient: true,
+        evidence: ["eligible_history"],
+        confidenceBps: 6500,
+        expectedSpentMinor: 400_000,
+        paceDeltaMinor: 230_000,
+        paceRatioBps: 15_750,
+        projectedMonthEndMinor: 700_000,
+        projectedRangeLowMinor: 600_000,
+        projectedRangeHighMinor: 800_000,
+        projectedUtilizationBps: 14_000
+      },
       state: "reached",
       isEffective: true
     }
@@ -105,6 +122,8 @@ describe("BudgetsPage", () => {
     expect(screen.getByRole("heading", { name: "Needs attention" })).toBeVisible();
     expect(screen.getByText("Limit reached")).toBeVisible();
     expect(screen.getByText("Over planned amount")).toBeVisible();
+    expect(screen.getByText("Informational month-end projection")).toBeVisible();
+    expect(screen.getByText("₹7,000.00")).toBeVisible();
     expect(screen.getByRole("meter")).toHaveAttribute("aria-valuenow", "100");
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });

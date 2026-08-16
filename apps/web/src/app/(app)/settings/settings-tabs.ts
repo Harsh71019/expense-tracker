@@ -22,6 +22,12 @@ export const SETTINGS_TABS = [
     label: "Invariants",
     description: "Double-entry rules & zero-drift math",
     iconName: "ShieldCheck"
+  },
+  {
+    id: "income",
+    label: "Salary & Work",
+    description: "Net in-hand income & schedule",
+    iconName: "Briefcase"
   }
 ] as const;
 

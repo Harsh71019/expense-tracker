@@ -75,7 +75,11 @@ export class ImportBatchRepository {
         status: workflow === undefined ? "pending" : "pending_parse",
         workflowOperation: workflow === undefined ? null : "parse",
         workflowCorrelationId: workflow?.correlationId ?? null,
-        workflowAvailableAt: workflow === undefined ? null : sql`statement_timestamp()`,
+        // NULL is the durable representation of "available immediately".
+        // Comparing a database timestamp to the dispatcher's application-clock
+        // `now` can otherwise leave a just-created workflow unclaimable when
+        // the clocks differ by even a millisecond.
+        workflowAvailableAt: null,
         workflowError: null,
         statsTotal: 0,
         statsStaged: 0,

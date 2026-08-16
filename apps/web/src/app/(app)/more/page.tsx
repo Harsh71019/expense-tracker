@@ -18,7 +18,7 @@ export default function MorePage(): ReactNode {
           <Link
             key={item.href}
             href={item.href}
-            className="flex flex-col items-start gap-2 rounded-xl border border-border bg-surface-elevated p-4 transition-colors duration-150 hover:border-accent/40 hover:bg-surface-muted/60"
+            className="flex flex-col items-start gap-2 rounded-xl border border-border bg-surface-elevated p-4 transition-colors duration-150 hover:border-accent/40 hover:bg-surface-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
             <span
               className="grid h-9 w-9 place-items-center rounded-lg bg-accent-glow text-lg text-accent"

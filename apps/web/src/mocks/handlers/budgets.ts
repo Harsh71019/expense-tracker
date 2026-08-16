@@ -113,6 +113,23 @@ export function budgetHandlers(http: MockHttp, store: MockStore): HttpHandler[] 
               spentMinor,
               remainingMinor: budget.limitMinor - spentMinor,
               utilizationBps,
+              pace: {
+                method: "abstain" as const,
+                version: 1 as const,
+                asOf: new Date().toISOString(),
+                inputWatermark: new Date().toISOString(),
+                historyMonths: 0,
+                isSufficient: false,
+                evidence: ["insufficient_history" as const],
+                confidenceBps: 0,
+                expectedSpentMinor: null,
+                paceDeltaMinor: null,
+                paceRatioBps: null,
+                projectedMonthEndMinor: null,
+                projectedRangeLowMinor: null,
+                projectedRangeHighMinor: null,
+                projectedUtilizationBps: null
+              },
               state:
                 utilizationBps >= 10_000
                   ? ("reached" as const)

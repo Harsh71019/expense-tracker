@@ -7323,6 +7323,610 @@
           "createdAt",
           "updatedAt"
         ]
+      },
+      "ReviewInboxPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "userId": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "sourceType": {
+                  "type": "string",
+                  "enum": [
+                    "category_suggestion",
+                    "recurring_stream",
+                    "recurring_change",
+                    "spending_regime"
+                  ]
+                },
+                "sourceId": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "sourceVersion": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                "status": {
+                  "type": "string",
+                  "enum": ["active", "dismissed", "resolved", "stale", "superseded"]
+                },
+                "priorityScore": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 10000
+                },
+                "priorityFactors": {
+                  "type": "object",
+                  "properties": {
+                    "uncertaintyBps": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 10000
+                    },
+                    "amountSignificanceBps": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 10000
+                    },
+                    "downstreamImpactBps": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 10000
+                    },
+                    "stalenessBps": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 10000
+                    },
+                    "compositeScore": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 10000
+                    },
+                    "explanation": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 500
+                    }
+                  },
+                  "required": [
+                    "uncertaintyBps",
+                    "amountSignificanceBps",
+                    "downstreamImpactBps",
+                    "stalenessBps",
+                    "compositeScore",
+                    "explanation"
+                  ]
+                },
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                },
+                "subtitle": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 500
+                },
+                "amountMinor": {
+                  "type": ["integer", "null"],
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                "confidenceBps": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 10000
+                },
+                "evidence": {
+                  "type": "object",
+                  "additionalProperties": {}
+                },
+                "inputWatermark": {
+                  "type": "object",
+                  "additionalProperties": {}
+                },
+                "supersedesItemId": {
+                  "type": ["string", "null"],
+                  "format": "uuid"
+                },
+                "occurredAt": {
+                  "type": ["string", "null"],
+                  "format": "date-time"
+                },
+                "dismissedAt": {
+                  "type": ["string", "null"],
+                  "format": "date-time"
+                },
+                "dismissReason": {
+                  "type": ["string", "null"],
+                  "enum": [
+                    "not_relevant",
+                    "incorrect",
+                    "already_handled",
+                    "wont_change",
+                    "other",
+                    null
+                  ]
+                },
+                "resolvedAt": {
+                  "type": ["string", "null"],
+                  "format": "date-time"
+                },
+                "feedbackAction": {
+                  "type": ["string", "null"],
+                  "enum": ["accepted", "rejected", "modified", null]
+                },
+                "createdAt": {
+                  "type": ["string", "null"],
+                  "format": "date-time"
+                },
+                "updatedAt": {
+                  "type": ["string", "null"],
+                  "format": "date-time"
+                }
+              },
+              "required": [
+                "id",
+                "userId",
+                "sourceType",
+                "sourceId",
+                "sourceVersion",
+                "status",
+                "priorityScore",
+                "priorityFactors",
+                "title",
+                "subtitle",
+                "amountMinor",
+                "confidenceBps",
+                "evidence",
+                "inputWatermark",
+                "supersedesItemId",
+                "occurredAt",
+                "dismissedAt",
+                "dismissReason",
+                "resolvedAt",
+                "feedbackAction",
+                "createdAt",
+                "updatedAt"
+              ]
+            }
+          },
+          "nextCursor": {
+            "type": ["string", "null"],
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "totalActive": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": ["items", "nextCursor", "totalActive"]
+      },
+      "ReviewInboxSummary": {
+        "type": "object",
+        "properties": {
+          "activeCount": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "categorySuggestionCount": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "recurringStreamCount": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "recurringChangeCount": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "spendingRegimeCount": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "highestPriorityScore": {
+            "type": ["integer", "null"],
+            "minimum": 0,
+            "maximum": 10000
+          },
+          "oldestActiveDate": {
+            "type": ["string", "null"],
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          }
+        },
+        "required": [
+          "activeCount",
+          "categorySuggestionCount",
+          "recurringStreamCount",
+          "recurringChangeCount",
+          "spendingRegimeCount",
+          "highestPriorityScore",
+          "oldestActiveDate"
+        ]
+      },
+      "DismissReviewItemResponse": {
+        "type": "object",
+        "properties": {
+          "item": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "userId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "sourceType": {
+                "type": "string",
+                "enum": [
+                  "category_suggestion",
+                  "recurring_stream",
+                  "recurring_change",
+                  "spending_regime"
+                ]
+              },
+              "sourceId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "sourceVersion": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              "status": {
+                "type": "string",
+                "enum": ["active", "dismissed", "resolved", "stale", "superseded"]
+              },
+              "priorityScore": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 10000
+              },
+              "priorityFactors": {
+                "type": "object",
+                "properties": {
+                  "uncertaintyBps": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 10000
+                  },
+                  "amountSignificanceBps": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 10000
+                  },
+                  "downstreamImpactBps": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 10000
+                  },
+                  "stalenessBps": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 10000
+                  },
+                  "compositeScore": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 10000
+                  },
+                  "explanation": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "uncertaintyBps",
+                  "amountSignificanceBps",
+                  "downstreamImpactBps",
+                  "stalenessBps",
+                  "compositeScore",
+                  "explanation"
+                ]
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "subtitle": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500
+              },
+              "amountMinor": {
+                "type": ["integer", "null"],
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              "confidenceBps": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 10000
+              },
+              "evidence": {
+                "type": "object",
+                "additionalProperties": {}
+              },
+              "inputWatermark": {
+                "type": "object",
+                "additionalProperties": {}
+              },
+              "supersedesItemId": {
+                "type": ["string", "null"],
+                "format": "uuid"
+              },
+              "occurredAt": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              },
+              "dismissedAt": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              },
+              "dismissReason": {
+                "type": ["string", "null"],
+                "enum": [
+                  "not_relevant",
+                  "incorrect",
+                  "already_handled",
+                  "wont_change",
+                  "other",
+                  null
+                ]
+              },
+              "resolvedAt": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              },
+              "feedbackAction": {
+                "type": ["string", "null"],
+                "enum": ["accepted", "rejected", "modified", null]
+              },
+              "createdAt": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              },
+              "updatedAt": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "id",
+              "userId",
+              "sourceType",
+              "sourceId",
+              "sourceVersion",
+              "status",
+              "priorityScore",
+              "priorityFactors",
+              "title",
+              "subtitle",
+              "amountMinor",
+              "confidenceBps",
+              "evidence",
+              "inputWatermark",
+              "supersedesItemId",
+              "occurredAt",
+              "dismissedAt",
+              "dismissReason",
+              "resolvedAt",
+              "feedbackAction",
+              "createdAt",
+              "updatedAt"
+            ]
+          }
+        },
+        "required": ["item"]
+      },
+      "SubmitReviewFeedbackResponse": {
+        "type": "object",
+        "properties": {
+          "item": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "userId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "sourceType": {
+                "type": "string",
+                "enum": [
+                  "category_suggestion",
+                  "recurring_stream",
+                  "recurring_change",
+                  "spending_regime"
+                ]
+              },
+              "sourceId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "sourceVersion": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              "status": {
+                "type": "string",
+                "enum": ["active", "dismissed", "resolved", "stale", "superseded"]
+              },
+              "priorityScore": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 10000
+              },
+              "priorityFactors": {
+                "type": "object",
+                "properties": {
+                  "uncertaintyBps": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 10000
+                  },
+                  "amountSignificanceBps": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 10000
+                  },
+                  "downstreamImpactBps": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 10000
+                  },
+                  "stalenessBps": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 10000
+                  },
+                  "compositeScore": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 10000
+                  },
+                  "explanation": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "uncertaintyBps",
+                  "amountSignificanceBps",
+                  "downstreamImpactBps",
+                  "stalenessBps",
+                  "compositeScore",
+                  "explanation"
+                ]
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "subtitle": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500
+              },
+              "amountMinor": {
+                "type": ["integer", "null"],
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              "confidenceBps": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 10000
+              },
+              "evidence": {
+                "type": "object",
+                "additionalProperties": {}
+              },
+              "inputWatermark": {
+                "type": "object",
+                "additionalProperties": {}
+              },
+              "supersedesItemId": {
+                "type": ["string", "null"],
+                "format": "uuid"
+              },
+              "occurredAt": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              },
+              "dismissedAt": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              },
+              "dismissReason": {
+                "type": ["string", "null"],
+                "enum": [
+                  "not_relevant",
+                  "incorrect",
+                  "already_handled",
+                  "wont_change",
+                  "other",
+                  null
+                ]
+              },
+              "resolvedAt": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              },
+              "feedbackAction": {
+                "type": ["string", "null"],
+                "enum": ["accepted", "rejected", "modified", null]
+              },
+              "createdAt": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              },
+              "updatedAt": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "id",
+              "userId",
+              "sourceType",
+              "sourceId",
+              "sourceVersion",
+              "status",
+              "priorityScore",
+              "priorityFactors",
+              "title",
+              "subtitle",
+              "amountMinor",
+              "confidenceBps",
+              "evidence",
+              "inputWatermark",
+              "supersedesItemId",
+              "occurredAt",
+              "dismissedAt",
+              "dismissReason",
+              "resolvedAt",
+              "feedbackAction",
+              "createdAt",
+              "updatedAt"
+            ]
+          },
+          "feedbackRecorded": {
+            "type": "boolean"
+          }
+        },
+        "required": ["item", "feedbackRecorded"]
       }
     },
     "parameters": {}
@@ -16856,6 +17460,459 @@
           },
           "404": {
             "description": "Pending transaction not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency key was already used for different request intent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/review-inbox": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "required": false,
+            "name": "cursor",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["active", "dismissed", "resolved", "stale", "superseded"],
+              "default": "active"
+            },
+            "required": false,
+            "name": "status",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "category_suggestion",
+                "recurring_stream",
+                "recurring_change",
+                "spending_regime"
+              ]
+            },
+            "required": false,
+            "name": "sourceType",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Prioritized list of review inbox items",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewInboxPage"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/review-inbox/summary": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Summary counts and urgency statistics for the review inbox",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewInboxSummary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/review-inbox/sync": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Triggered synchronization of review items",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "syncedCount": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["syncedCount"]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/review-inbox/{id}/dismiss": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "Idempotency-Key",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string",
+                    "enum": [
+                      "not_relevant",
+                      "incorrect",
+                      "already_handled",
+                      "wont_change",
+                      "other"
+                    ],
+                    "default": "not_relevant"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Dismissed review item",
+            "headers": {
+              "Idempotency-Replayed": {
+                "schema": {
+                  "type": "string",
+                  "enum": ["true"]
+                },
+                "required": false
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DismissReviewItemResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Review item not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency key was already used for different request intent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/review-inbox/{id}/feedback": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "Idempotency-Key",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "action": {
+                    "type": "string",
+                    "enum": ["accepted", "rejected", "modified"]
+                  },
+                  "feedbackRating": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 5
+                  },
+                  "notes": {
+                    "type": "string",
+                    "maxLength": 200
+                  }
+                },
+                "required": ["action"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Resolved review item with user feedback",
+            "headers": {
+              "Idempotency-Replayed": {
+                "schema": {
+                  "type": "string",
+                  "enum": ["true"]
+                },
+                "required": false
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubmitReviewFeedbackResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Review item not found",
             "content": {
               "application/json": {
                 "schema": {

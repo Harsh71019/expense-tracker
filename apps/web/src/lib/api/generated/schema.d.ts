@@ -7758,6 +7758,389 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/v1/review-inbox": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: {
+          cursor?: string;
+          limit?: number;
+          status?: "active" | "dismissed" | "resolved" | "stale" | "superseded";
+          sourceType?:
+            "category_suggestion" | "recurring_stream" | "recurring_change" | "spending_regime";
+        };
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Prioritized list of review inbox items */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ReviewInboxPage"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/review-inbox/summary": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Summary counts and urgency statistics for the review inbox */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ReviewInboxSummary"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/review-inbox/sync": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Triggered synchronization of review items */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": {
+              syncedCount: number;
+            };
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/review-inbox/{id}/dismiss": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path: {
+          id: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
+            /**
+             * @default not_relevant
+             * @enum {string}
+             */
+            reason?: "not_relevant" | "incorrect" | "already_handled" | "wont_change" | "other";
+          };
+        };
+      };
+      responses: {
+        /** @description Dismissed review item */
+        200: {
+          headers: {
+            "Idempotency-Replayed"?: "true";
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["DismissReviewItemResponse"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Review item not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/review-inbox/{id}/feedback": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path: {
+          id: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
+            /** @enum {string} */
+            action: "accepted" | "rejected" | "modified";
+            feedbackRating?: number;
+            notes?: string;
+          };
+        };
+      };
+      responses: {
+        /** @description Resolved review item with user feedback */
+        200: {
+          headers: {
+            "Idempotency-Replayed"?: "true";
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["SubmitReviewFeedbackResponse"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Review item not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -10088,6 +10471,168 @@ export interface components {
       createdAt: string | null;
       /** Format: date-time */
       updatedAt: string | null;
+    };
+    ReviewInboxPage: {
+      items: {
+        /** Format: uuid */
+        id: string;
+        userId: string;
+        /** @enum {string} */
+        sourceType:
+          "category_suggestion" | "recurring_stream" | "recurring_change" | "spending_regime";
+        sourceId: string;
+        sourceVersion: number;
+        /** @enum {string} */
+        status: "active" | "dismissed" | "resolved" | "stale" | "superseded";
+        priorityScore: number;
+        priorityFactors: {
+          uncertaintyBps: number;
+          amountSignificanceBps: number;
+          downstreamImpactBps: number;
+          stalenessBps: number;
+          compositeScore: number;
+          explanation: string;
+        };
+        title: string;
+        subtitle: string;
+        amountMinor: number | null;
+        confidenceBps: number;
+        evidence: {
+          [key: string]: unknown;
+        };
+        inputWatermark: {
+          [key: string]: unknown;
+        };
+        /** Format: uuid */
+        supersedesItemId: string | null;
+        /** Format: date-time */
+        occurredAt: string | null;
+        /** Format: date-time */
+        dismissedAt: string | null;
+        /** @enum {string|null} */
+        dismissReason:
+          "not_relevant" | "incorrect" | "already_handled" | "wont_change" | "other" | null;
+        /** Format: date-time */
+        resolvedAt: string | null;
+        /** @enum {string|null} */
+        feedbackAction: "accepted" | "rejected" | "modified" | null;
+        /** Format: date-time */
+        createdAt: string | null;
+        /** Format: date-time */
+        updatedAt: string | null;
+      }[];
+      nextCursor: string | null;
+      totalActive: number;
+    };
+    ReviewInboxSummary: {
+      activeCount: number;
+      categorySuggestionCount: number;
+      recurringStreamCount: number;
+      recurringChangeCount: number;
+      spendingRegimeCount: number;
+      highestPriorityScore: number | null;
+      oldestActiveDate: string | null;
+    };
+    DismissReviewItemResponse: {
+      item: {
+        /** Format: uuid */
+        id: string;
+        userId: string;
+        /** @enum {string} */
+        sourceType:
+          "category_suggestion" | "recurring_stream" | "recurring_change" | "spending_regime";
+        sourceId: string;
+        sourceVersion: number;
+        /** @enum {string} */
+        status: "active" | "dismissed" | "resolved" | "stale" | "superseded";
+        priorityScore: number;
+        priorityFactors: {
+          uncertaintyBps: number;
+          amountSignificanceBps: number;
+          downstreamImpactBps: number;
+          stalenessBps: number;
+          compositeScore: number;
+          explanation: string;
+        };
+        title: string;
+        subtitle: string;
+        amountMinor: number | null;
+        confidenceBps: number;
+        evidence: {
+          [key: string]: unknown;
+        };
+        inputWatermark: {
+          [key: string]: unknown;
+        };
+        /** Format: uuid */
+        supersedesItemId: string | null;
+        /** Format: date-time */
+        occurredAt: string | null;
+        /** Format: date-time */
+        dismissedAt: string | null;
+        /** @enum {string|null} */
+        dismissReason:
+          "not_relevant" | "incorrect" | "already_handled" | "wont_change" | "other" | null;
+        /** Format: date-time */
+        resolvedAt: string | null;
+        /** @enum {string|null} */
+        feedbackAction: "accepted" | "rejected" | "modified" | null;
+        /** Format: date-time */
+        createdAt: string | null;
+        /** Format: date-time */
+        updatedAt: string | null;
+      };
+    };
+    SubmitReviewFeedbackResponse: {
+      item: {
+        /** Format: uuid */
+        id: string;
+        userId: string;
+        /** @enum {string} */
+        sourceType:
+          "category_suggestion" | "recurring_stream" | "recurring_change" | "spending_regime";
+        sourceId: string;
+        sourceVersion: number;
+        /** @enum {string} */
+        status: "active" | "dismissed" | "resolved" | "stale" | "superseded";
+        priorityScore: number;
+        priorityFactors: {
+          uncertaintyBps: number;
+          amountSignificanceBps: number;
+          downstreamImpactBps: number;
+          stalenessBps: number;
+          compositeScore: number;
+          explanation: string;
+        };
+        title: string;
+        subtitle: string;
+        amountMinor: number | null;
+        confidenceBps: number;
+        evidence: {
+          [key: string]: unknown;
+        };
+        inputWatermark: {
+          [key: string]: unknown;
+        };
+        /** Format: uuid */
+        supersedesItemId: string | null;
+        /** Format: date-time */
+        occurredAt: string | null;
+        /** Format: date-time */
+        dismissedAt: string | null;
+        /** @enum {string|null} */
+        dismissReason:
+          "not_relevant" | "incorrect" | "already_handled" | "wont_change" | "other" | null;
+        /** Format: date-time */
+        resolvedAt: string | null;
+        /** @enum {string|null} */
+        feedbackAction: "accepted" | "rejected" | "modified" | null;
+        /** Format: date-time */
+        createdAt: string | null;
+        /** Format: date-time */
+        updatedAt: string | null;
+      };
+      feedbackRecorded: boolean;
     };
   };
   responses: never;

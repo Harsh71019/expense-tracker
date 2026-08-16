@@ -165,3 +165,16 @@ export const spendingChangeRunStatusEnum = pgEnum("spending_change_run_status", 
   "abstained",
   "failed"
 ]);
+export const reviewItemSourceTypeEnum = pgEnum("review_item_source_type", [
+  "category_suggestion",
+  "recurring_stream",
+  "recurring_change",
+  "spending_regime"
+]);
+export const reviewItemStatusEnum = pgEnum("review_item_status", [
+  "active",
+  "dismissed",
+  "resolved",
+  "stale",
+  "superseded"
+]);

@@ -682,3 +682,35 @@ export type {
   SpendingRegimeType,
   SpendingChangeDetectionRunResult
 } from "./spending-change-detection.js";
+export {
+  DismissReviewItemRequestSchema,
+  DismissReviewItemResponseSchema,
+  ListReviewInboxQuerySchema,
+  ReviewInboxPageSchema,
+  ReviewInboxSummarySchema,
+  ReviewItemIdSchema,
+  ReviewItemDismissReasonSchema,
+  ReviewItemFeedbackActionSchema,
+  ReviewItemPriorityFactorsSchema,
+  ReviewItemSchema,
+  ReviewItemSourceTypeSchema,
+  ReviewItemStatusSchema,
+  SubmitReviewFeedbackRequestSchema,
+  SubmitReviewFeedbackResponseSchema
+} from "./review-inbox.js";
+export type {
+  DismissReviewItemRequest,
+  DismissReviewItemResponse,
+  ListReviewInboxQuery,
+  ReviewInboxPage,
+  ReviewInboxSummary,
+  ReviewItemId,
+  ReviewItemDismissReason,
+  ReviewItemFeedbackAction,
+  ReviewItemPriorityFactors,
+  ReviewItem,
+  ReviewItemSourceType,
+  ReviewItemStatus,
+  SubmitReviewFeedbackRequest,
+  SubmitReviewFeedbackResponse
+} from "./review-inbox.js";

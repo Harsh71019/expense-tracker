@@ -2,32 +2,32 @@ export const SETTINGS_TABS = [
   {
     id: "profile",
     label: "Profile",
-    description: "Identity & session security",
-    icon: "◉"
+    description: "Operator identity & session security",
+    iconName: "User"
   },
   {
     id: "appearance",
     label: "Appearance",
-    description: "Theme & color studio",
-    icon: "◐"
+    description: "Theme & interface color studio",
+    iconName: "Palette"
   },
   {
     id: "management",
     label: "Management",
-    description: "12 ledger subsystems",
-    icon: "▦"
+    description: "12 ledger modules & pipelines",
+    iconName: "LayoutGrid"
   },
   {
     id: "invariants",
     label: "Invariants",
-    description: "Double-entry rules & math",
-    icon: "⛨"
+    description: "Double-entry rules & zero-drift math",
+    iconName: "ShieldCheck"
   },
   {
     id: "income",
     label: "Salary & Work",
     description: "Net in-hand income & schedule",
-    icon: "₹"
+    iconName: "Briefcase"
   }
 ] as const;
 

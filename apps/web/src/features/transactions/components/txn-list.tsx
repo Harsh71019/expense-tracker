@@ -191,11 +191,11 @@ export function TxnList({
   }
 
   return (
-    <section className="space-y-6">
+    <section className="space-y-4.5">
       <PageHeader
         eyebrow="Ledger / transactions"
         title="Transactions"
-        description="Review posted entries, categories, and reversals. Corrections are posted as reversals, never edits."
+        description="Posted entries, categories, and compensating reversals."
         action={
           <div className="flex gap-2 sm:items-center">
             <Button

@@ -137,17 +137,12 @@ export function GoalManager({
   }
 
   return (
-    <section className="space-y-7">
-      <header className="flex flex-col items-stretch gap-4 sm:flex-row sm:items-start sm:justify-between">
+    <section className="space-y-4.5">
+      <header className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-baseline sm:justify-between">
         <div>
-          <p className="font-mono text-2xs font-bold tracking-[0.2em] text-accent uppercase">
-            Plan · Build · Reach
-          </p>
-          <h1 className="mt-1.5 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-            Goals
-          </h1>
-          <p className="mt-2 max-w-xl text-sm leading-relaxed text-foreground-muted">
-            Track savings with independent manual envelopes, account balances, or tagged expenses.
+          <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">Goals</h1>
+          <p className="mt-0.5 text-xs text-foreground-muted">
+            Target savings, funded progress, and milestones.
           </p>
         </div>
         <Button type="button" className="w-full sm:w-auto" onClick={() => setCreateOpen(true)}>

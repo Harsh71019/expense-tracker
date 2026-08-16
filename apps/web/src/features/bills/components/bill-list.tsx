@@ -33,17 +33,14 @@ export function BillList({
     .sort((left, right) => left.dueDate.getTime() - right.dueDate.getTime())[0];
 
   return (
-    <section className="space-y-7">
-      <header className="flex flex-col items-stretch gap-4 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
+    <section className="space-y-4.5">
+      <header className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-baseline sm:justify-between">
         <div className="min-w-0">
-          <p className="font-mono text-2xs font-bold tracking-[0.2em] text-accent uppercase">
-            Card control centre
-          </p>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+          <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
             Credit card bills
           </h1>
-          <p className="mt-2 max-w-xl text-sm text-foreground-muted">
-            Verify each issuer statement against your ledger before money moves.
+          <p className="mt-0.5 text-xs text-foreground-muted">
+            Statement reconciliations, outstanding balances, and due dates.
           </p>
         </div>
         <BillFilters filters={filters} cards={cards} />

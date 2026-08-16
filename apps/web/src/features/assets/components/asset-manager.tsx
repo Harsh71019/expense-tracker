@@ -64,18 +64,14 @@ export function AssetManager({ initialAssets, initialNetWorth }: AssetManagerPro
   }
 
   return (
-    <section className="space-y-7">
-      <header className="flex flex-col items-stretch gap-4 sm:flex-row sm:items-start sm:justify-between">
+    <section className="space-y-4.5">
+      <header className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-baseline sm:justify-between">
         <div>
-          <p className="font-mono text-2xs font-bold tracking-[2px] text-accent">
-            LEDGER · NET WORTH
-          </p>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+          <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
             Assets &amp; net worth
           </h1>
-          <p className="mt-2 max-w-xl text-sm leading-relaxed text-foreground-muted">
-            Everything of value beyond your day-to-day accounts — loans, deposits, metals,
-            investments — valued over time and rolled into one number.
+          <p className="mt-0.5 text-xs text-foreground-muted">
+            Valuations, investment holdings, deposits, and total net worth tracking.
           </p>
         </div>
         <Button type="button" className="w-full sm:w-auto" onClick={() => setCreateOpen(true)}>

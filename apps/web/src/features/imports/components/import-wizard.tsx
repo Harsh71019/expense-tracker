@@ -147,17 +147,16 @@ export function ImportWizard({
   const backLabel = step === 0 ? "Cancel" : step === 1 ? "Back" : "Save & exit";
 
   return (
-    <section>
-      <header className="flex flex-wrap items-start justify-between gap-4">
+    <section className="space-y-4.5">
+      <header className="flex flex-wrap items-baseline justify-between gap-3">
         <div>
-          <p className="font-mono text-2xs font-bold tracking-[2px] text-accent">LEDGER · IMPORT</p>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+          <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
             {view === "wizard" ? "New import" : "Imports"}
           </h1>
-          <p className="mt-2 max-w-xl text-sm leading-relaxed text-foreground-muted">
+          <p className="mt-0.5 text-xs text-foreground-muted">
             {view === "wizard"
-              ? "Turn a bank CSV into posted transactions. Nothing is final until the commit step."
-              : "Bring in a bank statement CSV. Review every row in a safe sandbox, then commit — and revert the whole batch if you need to."}
+              ? "Parse columns, map categories, and stage statement rows."
+              : "Statement CSV staging, reviews, and batch revert management."}
           </p>
         </div>
         {view === "list" ? (

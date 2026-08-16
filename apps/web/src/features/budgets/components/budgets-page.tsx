@@ -113,24 +113,16 @@ export function BudgetsPage({ initialPage, categories }: BudgetsPageProps): Reac
   }
 
   return (
-    <section className="space-y-7">
-      <header className="flex flex-col items-stretch gap-4 sm:flex-row sm:items-start sm:justify-between">
+    <section className="space-y-4.5">
+      <header className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-baseline sm:justify-between">
         <div>
-          <p className="font-mono text-2xs font-bold tracking-[0.2em] text-accent uppercase">
-            Planning
-          </p>
-          <h1 className="mt-1.5 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+          <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
             Monthly budgets
           </h1>
-          <p className="mt-2 max-w-xl text-sm leading-relaxed text-foreground-muted">
-            Set limits for individual expense categories and compare them with posted spending this
-            month.
+          <p className="mt-0.5 text-xs text-foreground-muted">
+            Category spending limits and live utilization
+            {firstPage === undefined ? "" : ` · ${monthLabel(firstPage.month)}`}.
           </p>
-          {firstPage === undefined ? null : (
-            <p className="mt-2 font-mono text-xs font-semibold text-accent">
-              {monthLabel(firstPage.month)}
-            </p>
-          )}
         </div>
         <Button
           type="button"
@@ -141,11 +133,6 @@ export function BudgetsPage({ initialPage, categories }: BudgetsPageProps): Reac
           <span className="mr-1 text-base leading-none">+</span> Add budget
         </Button>
       </header>
-
-      <p className="rounded-xl border border-border bg-surface-muted p-4 text-sm leading-relaxed text-foreground-muted">
-        A budget counts posted expenses assigned directly to that category. Transfers and reversed
-        transactions do not count.
-      </p>
 
       {firstPage === undefined && query.isPending ? (
         <p className="py-16 text-center text-sm text-foreground-muted">Loading budgets…</p>

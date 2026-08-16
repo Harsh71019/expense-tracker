@@ -16,13 +16,11 @@ export async function IncomeSection(): Promise<ReactNode> {
   ]);
 
   return (
-    <section id="income" className="scroll-mt-20">
-      <SalaryWorkPanel
-        initialState={state}
-        initialStatistics={statistics}
-        initialHistory={history}
-        historyPageSize={SALARY_HISTORY_PAGE_SIZE}
-      />
-    </section>
+    <SalaryWorkPanel
+      initialState={state}
+      initialStatistics={statistics}
+      initialHistory={history}
+      historyPageSize={SALARY_HISTORY_PAGE_SIZE}
+    />
   );
 }

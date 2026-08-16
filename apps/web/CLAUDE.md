@@ -98,4 +98,4 @@ visual composition in `components/ui`; feature components retain business-specif
 
 ### Design/reference docs
 
-`docs/frontend/*.md` (`FRONTEND.md`, `LOGGING-FRONTEND.md`, `PHASE2-UI-GUIDE.md`, etc.) are the target architecture/design docs this package was built against — treat them the same way the root `CLAUDE.md` treats `BACKEND.md`: useful for intent and direction, not a guaranteed description of current code.
+`docs/frontend/*.md` (`FRONTEND.md`, `LOGGING-FRONTEND.md`, `FRONTEND-EXTENSIONS.md`, etc.) are the target architecture/design docs this package was built against — treat them the same way the root `CLAUDE.md` treats `BACKEND.md`: useful for intent and direction, not a guaranteed description of current code. Completed phase/implementation guides (e.g. the old `PHASE2-UI-GUIDE.md`) have moved to `docs/archived/frontend/`.

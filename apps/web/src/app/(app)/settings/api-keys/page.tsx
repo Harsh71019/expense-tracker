@@ -1,7 +1,13 @@
 import type { ReactNode } from "react";
 
+import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { ApiKeyManager, getApiKeys } from "@/features/api-keys";
 
 export default async function ApiKeysPage(): Promise<ReactNode> {
-  return <ApiKeyManager initialApiKeys={await getApiKeys()} />;
+  return (
+    <div className="mx-auto max-w-[940px] space-y-4">
+      <Breadcrumbs items={[{ label: "Settings", href: "/settings" }, { label: "API keys" }]} />
+      <ApiKeyManager initialApiKeys={await getApiKeys()} />
+    </div>
+  );
 }

@@ -57,7 +57,7 @@ export function ZeroState({ onOpenCreate }: ZeroStateProps): ReactNode {
         <p className="mt-6 text-xs text-foreground-muted">
           Already know your income?{" "}
           <Link
-            href="/settings?tab=income"
+            href="/settings#income"
             className="font-semibold text-accent underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
             Set up your salary &amp; work profile

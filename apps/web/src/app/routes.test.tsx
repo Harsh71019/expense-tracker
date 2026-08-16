@@ -11,6 +11,7 @@ import type {
   TopSpendingItem
 } from "@treasury-ops/shared";
 import { describe, expect, it, vi } from "vitest";
+import type { ReactNode } from "react";
 
 import AddTransactionPage from "./(app)/add/page";
 import BudgetsRoute from "./(app)/budgets/page";
@@ -148,15 +149,27 @@ vi.mock("@/features/goals/server/get-goals", () => ({
   getGoalPlan: async () => null
 }));
 vi.mock("@/features/profile", () => ({
-  ProfileSummary: ({ email }: { email: string }) => (
+  ProfileSummary: ({ email, action }: { email: string; action?: ReactNode }) => (
     <section>
-      <p>Signed in as</p>
       <p>{email}</p>
+      {action}
     </section>
   ),
   EditDisplayNameForm: () => null
 }));
 vi.mock("@/features/profile/server/get-profile", () => ({ getProfile: async () => null }));
+vi.mock("@/features/financial-profile", () => ({
+  SalaryWorkPanel: () => <h2>Salary &amp; work</h2>
+}));
+vi.mock("@/features/financial-profile/server/get-financial-profile", () => ({
+  SALARY_HISTORY_PAGE_SIZE: 10,
+  getFinancialProfileState: async () => null,
+  getSalaryStatistics: async () => null,
+  getSalaryVersionPage: async () => null
+}));
+vi.mock("@/features/api-keys", () => ({
+  getApiKeys: async () => []
+}));
 vi.mock("@/features/reports", () => ({
   ReportPage: () => <h1>Monthly report</h1>,
   reportMonthFromParam: () => "2026-06"
@@ -194,14 +207,23 @@ describe("route shells", () => {
     render(await InsightsPage());
     expect(screen.getByRole("heading", { name: "Welcome to Ledger" })).toBeVisible();
     expect(screen.getByText("harsh@example.com")).toBeVisible();
+  });
 
-    const settings = render(await SettingsPage({ searchParams: Promise.resolve({}) }));
-    const settingsHeading = screen.getByRole("heading", { name: "Settings & Workspace" });
-    expect(settingsHeading).toBeVisible();
-    expect(settings.container.firstElementChild).toHaveClass("w-full");
-    expect(settings.container.firstElementChild).not.toHaveClass("max-w-[920px]");
-    expect(screen.getAllByText("Signed in as")).toHaveLength(2);
-    expect(screen.getAllByText("harsh@example.com")).toHaveLength(3);
+  it("renders the settings page with profile, appearance, income, and developer sections", async () => {
+    render(await SettingsPage());
+
+    expect(screen.getByRole("heading", { name: "Settings" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Profile" })).toBeVisible();
+    expect(screen.getByText("harsh@example.com")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Sign out" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Appearance" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Accent color" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Salary & work" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Developer access" })).toBeVisible();
+    expect(screen.getByRole("link", { name: /API keys/ })).toHaveAttribute(
+      "href",
+      "/settings/api-keys"
+    );
   });
 
   it("renders the dashboard's financial overview panels", async () => {
@@ -305,55 +327,6 @@ describe("route shells", () => {
     mocks.topSpending = [];
     mocks.recurringForecast = { range: "1M", inMinor: 0, outMinor: 0, netMinor: 0, upcoming: [] };
     mocks.investments = { items: [] };
-  });
-
-  it("renders the selected settings section from the URL", async () => {
-    render(
-      await SettingsPage({
-        searchParams: Promise.resolve({ tab: "appearance" })
-      })
-    );
-
-    expect(screen.getByRole("tab", { name: /Appearance/ })).toHaveAttribute(
-      "aria-selected",
-      "true"
-    );
-    expect(screen.getByRole("tabpanel")).toHaveAccessibleName("Appearance");
-    expect(screen.getByRole("heading", { name: "Accent color" })).toBeVisible();
-    expect(screen.queryByText("Signed in as")).not.toBeInTheDocument();
-  });
-
-  it("groups management tools by purpose and keeps key destinations easy to find", async () => {
-    render(
-      await SettingsPage({
-        searchParams: Promise.resolve({ tab: "management" })
-      })
-    );
-
-    expect(screen.getByRole("heading", { name: "Money & ledger" })).toBeVisible();
-    expect(screen.getByRole("heading", { name: "Planning & automation" })).toBeVisible();
-    expect(screen.getByRole("heading", { name: "Data & access" })).toBeVisible();
-    expect(screen.getByRole("link", { name: /Credit card bills/ })).toHaveAttribute(
-      "href",
-      "/bills"
-    );
-    expect(screen.getByRole("link", { name: /Goals/ })).toHaveAttribute("href", "/goals");
-    expect(screen.getByRole("link", { name: /API keys/ })).toHaveAttribute(
-      "href",
-      "/settings/api-keys"
-    );
-  });
-
-  it("falls back to the profile tab for an unknown settings section", async () => {
-    render(
-      await SettingsPage({
-        searchParams: Promise.resolve({ tab: "not-a-section" })
-      })
-    );
-
-    expect(screen.getByRole("tab", { name: /Profile/ })).toHaveAttribute("aria-selected", "true");
-    expect(screen.getByRole("tabpanel")).toHaveAccessibleName("Profile");
-    expect(screen.getAllByText("Signed in as")).toHaveLength(2);
   });
 
   it("renders the current balance for active accounts", async () => {

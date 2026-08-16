@@ -298,19 +298,15 @@ export function CategoryManager({
   }
 
   return (
-    <section className="space-y-6">
+    <section className="space-y-4.5">
       {/* Header */}
-      <header className="flex flex-col items-stretch gap-4 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
+      <header className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-baseline sm:justify-between">
         <div className="min-w-0">
-          <p className="font-mono text-2xs font-bold tracking-[0.2em] text-accent uppercase">
-            Treasury Classification
-          </p>
-          <h1 className="mt-1.5 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-            Categories & Spending Pools
+          <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+            Categories
           </h1>
-          <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-foreground-muted">
-            Structure how expenses and income are categorized. Organize parent pools, subcategories,
-            50/30/20 Needs vs Wants classification, and monthly budget limits.
+          <p className="mt-0.5 text-xs text-foreground-muted">
+            Organize parent pools, subcategories, and 50/30/20 groupings.
           </p>
         </div>
         <Button

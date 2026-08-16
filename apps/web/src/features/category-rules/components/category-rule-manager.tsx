@@ -185,18 +185,14 @@ export function CategoryRuleManager({
   ];
 
   return (
-    <section className="w-full space-y-6">
+    <section className="w-full space-y-4.5">
       {/* Header */}
       <header>
-        <p className="font-mono text-2xs font-bold tracking-[2px] text-accent">
-          LEDGER · AUTOMATION ENGINE
-        </p>
-        <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+        <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
           Category rules
         </h1>
-        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-foreground-muted">
-          Define automatic merchant and narration keyword rules. During CSV import staging, matched
-          transactions receive an instant category suggestion with 100% confidence.
+        <p className="mt-0.5 text-xs text-foreground-muted">
+          Auto-categorize transactions on import by keyword and merchant pattern.
         </p>
       </header>
 

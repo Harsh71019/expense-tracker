@@ -10,9 +10,9 @@ import { PieChart } from "@/features/reports/components/pie-chart";
 import { useSpendMix } from "../hooks/use-spend-mix";
 import { RangeTabs } from "./range-tabs";
 
-const ESSENTIAL_COLOR = "#3b82f6";
-const LIFESTYLE_COLOR = "#ec4899";
-const UNCATEGORIZED_COLOR = "#71817a";
+const ESSENTIAL_COLOR = "var(--color-accent)";
+const LIFESTYLE_COLOR = "var(--color-warning)";
+const UNCATEGORIZED_COLOR = "var(--color-foreground-muted)";
 
 type SpendMixPanelProps = Readonly<{
   initialSpendMix: SpendMix;

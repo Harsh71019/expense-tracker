@@ -108,7 +108,7 @@ export function ReviewStep({ batchId, categories, onCountsChange }: ReviewStepPr
             <div className="mt-0.5 text-2xs font-medium text-foreground-muted">will post</div>
           </div>
           <div>
-            <div className="font-mono text-3xl font-bold tracking-tight text-amber-500">
+            <div className="font-mono text-3xl font-bold tracking-tight text-warning">
               {duplicates}
             </div>
             <div className="mt-0.5 text-2xs font-medium text-foreground-muted">
@@ -162,7 +162,7 @@ export function ReviewStep({ batchId, categories, onCountsChange }: ReviewStepPr
           return (
             <div
               key={row.id}
-              className={`grid grid-cols-[2.75rem_minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2 border-t border-border p-4 md:flex md:items-center md:gap-3.5 md:px-5 md:py-3.5 ${parsed === undefined ? "opacity-60" : ""} ${row.isDuplicate ? "bg-amber-500/5" : ""}`}
+              className={`grid grid-cols-[2.75rem_minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2 border-t border-border p-4 md:flex md:items-center md:gap-3.5 md:px-5 md:py-3.5 ${parsed === undefined ? "opacity-60" : ""} ${row.isDuplicate ? "bg-warning/5" : ""}`}
             >
               <label className="col-start-1 row-span-3 grid h-11 w-11 cursor-pointer place-items-center rounded-lg hover:bg-surface-muted focus-within:ring-2 focus-within:ring-accent md:h-auto md:w-4">
                 <span className="sr-only">Include row {row.rowNumber}</span>
@@ -189,7 +189,7 @@ export function ReviewStep({ batchId, categories, onCountsChange }: ReviewStepPr
                 {row.isDuplicate || row.problems.length > 0 ? (
                   <div className="mt-1 flex flex-wrap gap-1.5">
                     {row.isDuplicate ? (
-                      <span className="rounded-[5px] border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 font-mono text-2xs font-semibold tracking-wide text-amber-500 uppercase">
+                      <span className="rounded-[5px] border border-warning/30 bg-warning/10 px-1.5 py-0.5 font-mono text-2xs font-semibold tracking-wide text-warning uppercase">
                         Likely duplicate
                       </span>
                     ) : null}

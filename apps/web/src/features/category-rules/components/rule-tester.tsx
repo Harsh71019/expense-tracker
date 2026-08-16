@@ -136,10 +136,10 @@ export function RuleTester({ rules, categories, initialValue = "" }: RuleTesterP
                   </span>
                   <span>{primaryCategory?.name ?? "Unavailable category"}</span>
                   <span
-                    className={`rounded-full px-2 py-0.5 text-2xs font-extrabold uppercase ${
+                    className={`rounded-full border px-2 py-0.5 text-2xs font-extrabold uppercase ${
                       primaryCategory?.kind === "income"
-                        ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                        : "bg-rose-500/10 text-rose-600 dark:text-rose-400"
+                        ? "border-income/30 bg-income/10 text-income"
+                        : "border-expense/30 bg-expense/10 text-expense"
                     }`}
                   >
                     {primaryCategory?.kind ?? "expense"}
@@ -165,7 +165,7 @@ export function RuleTester({ rules, categories, initialValue = "" }: RuleTesterP
 
               {/* Overlapping matches notification */}
               {matches.length > 1 ? (
-                <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-600 dark:text-amber-400">
+                <div className="rounded-xl border border-warning/30 bg-warning/10 p-3 text-xs text-warning">
                   <span className="font-semibold">⚠️ Multi-rule match:</span> {matches.length} rules
                   match this description ({matches.map((m) => `"${m.pattern}"`).join(", ")}). The
                   top rule{" "}
@@ -176,7 +176,7 @@ export function RuleTester({ rules, categories, initialValue = "" }: RuleTesterP
             </div>
           ) : (
             <div className="flex items-center gap-2 text-sm text-foreground-muted">
-              <span className="text-amber-500 font-semibold" aria-hidden="true">
+              <span className="text-warning font-semibold" aria-hidden="true">
                 ⓘ
               </span>
               <span>No rule matches — this row would import uncategorized.</span>

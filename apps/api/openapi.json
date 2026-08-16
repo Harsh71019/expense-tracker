@@ -165,6 +165,7 @@
               "recurring.invalid_reconciliation_resolution",
               "recurring.invalid_occurrence_source",
               "recurring.occurrence_already_confirmed",
+              "recurring.detected_stream_not_reviewable",
               "pending_transaction.already_resolved"
             ]
           },
@@ -2324,6 +2325,405 @@
           "createdAt",
           "updatedAt"
         ]
+      },
+      "DetectedStreamPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "stream": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "userId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "logicalKey": {
+                      "type": "string",
+                      "pattern": "^[a-f0-9]{64}$"
+                    },
+                    "fingerprint": {
+                      "type": "string",
+                      "pattern": "^[a-f0-9]{64}$"
+                    },
+                    "detectorVersion": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 9007199254740991
+                    },
+                    "transactionType": {
+                      "type": "string",
+                      "enum": ["expense", "income"]
+                    },
+                    "counterpartyKey": {
+                      "type": ["string", "null"],
+                      "minLength": 1
+                    },
+                    "cadence": {
+                      "type": "string",
+                      "enum": [
+                        "weekly",
+                        "biweekly",
+                        "semimonthly",
+                        "monthly",
+                        "quarterly",
+                        "annual"
+                      ]
+                    },
+                    "state": {
+                      "type": "string",
+                      "enum": ["candidate", "mature", "stale"]
+                    },
+                    "amountBehavior": {
+                      "type": "string",
+                      "enum": ["fixed", "variable", "unknown"]
+                    },
+                    "confidenceBps": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 10000
+                    },
+                    "sufficiency": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "status": {
+                              "type": "string",
+                              "enum": ["sufficient"]
+                            },
+                            "observationCount": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "minimumRequired": {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 9007199254740991
+                            }
+                          },
+                          "required": ["status", "observationCount", "minimumRequired"]
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "status": {
+                              "type": "string",
+                              "enum": ["insufficient"]
+                            },
+                            "reason": {
+                              "type": "string",
+                              "enum": [
+                                "insufficient_history",
+                                "ambiguous",
+                                "resource_limit",
+                                "timeout",
+                                "unsupported_series"
+                              ]
+                            },
+                            "observationCount": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "minimumRequired": {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 9007199254740991
+                            }
+                          },
+                          "required": ["status", "reason", "observationCount", "minimumRequired"]
+                        }
+                      ]
+                    },
+                    "evidence": {
+                      "type": "object",
+                      "properties": {
+                        "cadenceScore": {
+                          "type": "object",
+                          "properties": {
+                            "coverageBps": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 10000
+                            },
+                            "dateStabilityBps": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 10000
+                            },
+                            "amountStabilityBps": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 10000
+                            },
+                            "textStabilityBps": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 10000
+                            },
+                            "missPenaltyBps": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 10000
+                            },
+                            "cadenceMarginBps": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 10000
+                            },
+                            "expectedSlotCount": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "matchedSlotCount": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "recentMissCount": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            }
+                          },
+                          "required": [
+                            "coverageBps",
+                            "dateStabilityBps",
+                            "amountStabilityBps",
+                            "textStabilityBps",
+                            "missPenaltyBps",
+                            "cadenceMarginBps",
+                            "expectedSlotCount",
+                            "matchedSlotCount",
+                            "recentMissCount"
+                          ]
+                        },
+                        "confidenceBps": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 10000
+                        },
+                        "medianAmountMinor": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991
+                        },
+                        "madAmountMinor": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "intervalMedianDays": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "intervalMadDays": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "memberCount": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991
+                        },
+                        "observationSpanDays": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "normalizerVersion": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991
+                        },
+                        "scoringPolicyVersion": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "cadenceScore",
+                        "confidenceBps",
+                        "medianAmountMinor",
+                        "madAmountMinor",
+                        "intervalMedianDays",
+                        "intervalMadDays",
+                        "memberCount",
+                        "observationSpanDays",
+                        "normalizerVersion",
+                        "scoringPolicyVersion"
+                      ]
+                    },
+                    "medianAmountMinor": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 9007199254740991
+                    },
+                    "madAmountMinor": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "nextExpectedDate": {
+                      "type": ["string", "null"],
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                    },
+                    "inputWatermark": {
+                      "type": "object",
+                      "properties": {
+                        "asOf": {
+                          "type": ["string", "null"],
+                          "format": "date-time"
+                        },
+                        "latestOccurredAt": {
+                          "type": ["string", "null"],
+                          "format": "date-time"
+                        },
+                        "latestUpdatedAt": {
+                          "type": ["string", "null"],
+                          "format": "date-time"
+                        },
+                        "lastTransactionId": {
+                          "type": ["string", "null"],
+                          "format": "uuid"
+                        },
+                        "rowCount": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "digest": {
+                          "type": "string",
+                          "pattern": "^[a-f0-9]{64}$"
+                        }
+                      },
+                      "required": [
+                        "asOf",
+                        "latestOccurredAt",
+                        "latestUpdatedAt",
+                        "lastTransactionId",
+                        "rowCount",
+                        "digest"
+                      ]
+                    },
+                    "supersedesStreamId": {
+                      "type": ["string", "null"],
+                      "format": "uuid"
+                    },
+                    "computedAt": {
+                      "type": ["string", "null"],
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "userId",
+                    "logicalKey",
+                    "fingerprint",
+                    "detectorVersion",
+                    "transactionType",
+                    "counterpartyKey",
+                    "cadence",
+                    "state",
+                    "amountBehavior",
+                    "confidenceBps",
+                    "sufficiency",
+                    "evidence",
+                    "medianAmountMinor",
+                    "madAmountMinor",
+                    "nextExpectedDate",
+                    "inputWatermark",
+                    "supersedesStreamId",
+                    "computedAt"
+                  ]
+                },
+                "review": {
+                  "type": ["object", "null"],
+                  "properties": {
+                    "streamId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "detectorVersion": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 9007199254740991
+                    },
+                    "decision": {
+                      "type": "string",
+                      "enum": ["accepted", "rejected"]
+                    },
+                    "recurringRuleId": {
+                      "type": ["string", "null"],
+                      "format": "uuid"
+                    },
+                    "decidedAt": {
+                      "type": ["string", "null"],
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "streamId",
+                    "detectorVersion",
+                    "decision",
+                    "recurringRuleId",
+                    "decidedAt"
+                  ]
+                },
+                "latestRunStatus": {
+                  "type": ["string", "null"],
+                  "enum": ["running", "completed", "degraded", "abstained", "failed", null]
+                }
+              },
+              "required": ["stream", "review", "latestRunStatus"]
+            }
+          },
+          "nextCursor": {
+            "type": ["string", "null"],
+            "format": "uuid"
+          }
+        },
+        "required": ["items", "nextCursor"]
+      },
+      "DetectedStreamReview": {
+        "type": "object",
+        "properties": {
+          "streamId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "detectorVersion": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "decision": {
+            "type": "string",
+            "enum": ["accepted", "rejected"]
+          },
+          "recurringRuleId": {
+            "type": ["string", "null"],
+            "format": "uuid"
+          },
+          "decidedAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          }
+        },
+        "required": ["streamId", "detectorVersion", "decision", "recurringRuleId", "decidedAt"]
       },
       "RecurringStats": {
         "type": "object",
@@ -9838,6 +10238,298 @@
           },
           "404": {
             "description": "Account or category not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency key was already used for different request intent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/recurring/detected": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": false,
+            "name": "cursor",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["candidate", "mature", "stale"]
+            },
+            "required": false,
+            "name": "state",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pending detected recurring streams, newest first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetectedStreamPage"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/recurring/detected/{streamId}/accept": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "streamId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "Idempotency-Key",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "accountId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "autoPost": {
+                    "type": "boolean",
+                    "default": false
+                  }
+                },
+                "required": ["accountId"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Accepted recurring rule or idempotent replay",
+            "headers": {
+              "Idempotency-Replayed": {
+                "schema": {
+                  "type": "string",
+                  "enum": ["true"]
+                },
+                "required": false
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecurringRule"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency key was already used for different request intent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/recurring/detected/{streamId}/reject": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "streamId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "Idempotency-Key",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {}
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Rejected stream decision or idempotent replay",
+            "headers": {
+              "Idempotency-Replayed": {
+                "schema": {
+                  "type": "string",
+                  "enum": ["true"]
+                },
+                "required": false
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetectedStreamReview"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
             "content": {
               "application/json": {
                 "schema": {

@@ -21,6 +21,7 @@ import {
   transactionTypeEnum
 } from "./enums.js";
 import { transactions } from "./transaction.js";
+import { recurringRules } from "./recurring.js";
 
 export const detectedRecurringStreams = pgTable(
   "detected_recurring_streams",
@@ -132,5 +133,30 @@ export const recurringDetectionRuns = pgTable(
     ),
     index("recurring_detection_runs_user_completed").on(table.userId, table.completedAt.desc()),
     index("recurring_detection_runs_status_started").on(table.status, table.startedAt)
+  ]
+);
+
+export const detectedRecurringStreamReviews = pgTable(
+  "detected_recurring_stream_reviews",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id),
+    streamId: uuid("stream_id")
+      .notNull()
+      .references(() => detectedRecurringStreams.id),
+    detectorVersion: integer("detector_version").notNull(),
+    decision: text("decision").notNull(),
+    recurringRuleId: uuid("recurring_rule_id").references(() => recurringRules.id),
+    decidedAt: timestamp("decided_at", { withTimezone: true }).notNull()
+  },
+  (table) => [
+    uniqueIndex("detected_stream_reviews_user_stream_version").on(
+      table.userId,
+      table.streamId,
+      table.detectorVersion
+    ),
+    index("detected_stream_reviews_user_decided").on(table.userId, table.decidedAt.desc())
   ]
 );

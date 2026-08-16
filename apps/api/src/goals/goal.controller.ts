@@ -13,12 +13,14 @@ import {
 import {
   CreateGoalContributionSchema,
   CreateGoalSchema,
+  GoalFeasibilityQuerySchema,
   GoalIdSchema,
   ListGoalsQuerySchema,
   ReorderGoalsSchema,
   UpdateGoalSchema,
   type Goal,
   type GoalContribution,
+  type GoalFeasibilityReport,
   type GoalPlan
 } from "@treasury-ops/shared";
 import type { Response } from "express";
@@ -37,6 +39,15 @@ export class GoalController {
     private readonly goals: GoalService,
     private readonly mutations: GoalMutationService
   ) {}
+
+  @Get("feasibility")
+  getFeasibility(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query() query: unknown
+  ): Promise<GoalFeasibilityReport> {
+    const parsed = GoalFeasibilityQuerySchema.parse(query);
+    return this.goals.getFeasibilityReport(user.id, parsed.asOf);
+  }
 
   @Post()
   async create(

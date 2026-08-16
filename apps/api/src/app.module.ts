@@ -45,6 +45,7 @@ import { SpendingChangeDetectionModule } from "./spending-change-detection/spend
 import { TransactionReconciliationHookModule } from "./recurring/transaction-reconciliation-hook.module.js";
 import { ReportsModule } from "./reports/reports.module.js";
 import { ReviewInboxModule } from "./review-inbox/review-inbox.module.js";
+import { SafetyBufferModule } from "./safety-buffer/safety-buffer.module.js";
 import { SpendingWarningsModule } from "./spending-warnings/spending-warnings.module.js";
 import { UserProfilesModule } from "./user-profiles/user-profiles.module.js";
 import { TransactionsModule } from "./transactions/transactions.module.js";
@@ -98,6 +99,7 @@ function isUnthrottledPath(context: ExecutionContext): boolean {
     ReportsModule,
     SpendingWarningsModule,
     ReviewInboxModule,
+    SafetyBufferModule,
     GoalsModule,
     PendingTransactionsModule,
     BudgetsModule,

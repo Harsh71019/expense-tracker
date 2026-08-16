@@ -246,6 +246,82 @@ export function goalHandlers(http: MockHttp, store: MockStore): HttpHandler[] {
       const live = liveGoal(store, goal);
       store.idempotency.goals.set(key, live);
       return response(200).json(live);
+    }),
+
+    http.get("/v1/goals/feasibility", ({ response }) => {
+      const activeGoals = store.goals.filter((g) => g.status === "active");
+      const allocations = activeGoals.map((g, index) => ({
+        goalId: g.id,
+        goalName: g.name,
+        priority: g.priority ?? index,
+        targetDate: g.targetDate ?? null,
+        targetMinor: g.targetMinor,
+        progressMinor: g.progressMinor,
+        remainingMinor: Math.max(0, g.targetMinor - g.progressMinor),
+        requiredMonthlyMinor: 1_000_000,
+        allocatedMonthlyMinor: 1_000_000,
+        projectedRange: {
+          optimisticDate: "2026-11-01T00:00:00.000Z",
+          baselineDate: "2026-12-01T00:00:00.000Z",
+          pessimisticDate: "2027-01-01T00:00:00.000Z"
+        },
+        status: "feasible" as const,
+        isFullyFunded: true,
+        shortfallMinor: 0,
+        monthlyFundingGapMinor: 0,
+        monthlyFundingSurplusMinor: 0,
+        explainability: "Fully funded at 100% required pace."
+      }));
+
+      return response(200).json({
+        asOf: new Date().toISOString(),
+        forecastSnapshotId: null,
+        forecastModel: "trailing_median",
+        forecastComputedAt: null,
+        isForecastStale: false,
+        isForecastSufficient: true,
+        safetyBufferVersion: 1,
+        safetyBufferMode: "essential_months",
+        safetyBufferTargetMinor: 15_000_000,
+        liquidBalanceMinor: 20_000_000,
+        liquidBufferGapMinor: 0,
+        conservativeAvailableMonthlyMinor: 5_000_000,
+        totalRequiredMonthlyMinor: 3_000_000,
+        monthlySurplusMinor: 2_000_000,
+        assumptions: {
+          knownRecurringOutflowMinor: 2_000_000,
+          creditCardBillsDueMinor: 1_000_000,
+          monthlyEssentialOutflowMinor: 3_000_000,
+          isBufferDeficitDeducted: false
+        },
+        scenarios: [
+          {
+            scenarioType: "priority_order",
+            name: "Priority Order",
+            description: "Allocates monthly cash flow strictly according to user priority rank.",
+            totalAllocatedMonthlyMinor: 3_000_000,
+            unallocatedSurplusMinor: 0,
+            allocations
+          },
+          {
+            scenarioType: "target_date_order",
+            name: "Target Date Order",
+            description: "Prioritizes goals with nearest deadlines first.",
+            totalAllocatedMonthlyMinor: 3_000_000,
+            unallocatedSurplusMinor: 0,
+            allocations
+          },
+          {
+            scenarioType: "proportional",
+            name: "Proportional Allocation",
+            description:
+              "Distributes available monthly cash flow proportionally to remaining targets.",
+            totalAllocatedMonthlyMinor: 3_000_000,
+            unallocatedSurplusMinor: 0,
+            allocations
+          }
+        ]
+      });
     })
   ];
 }

@@ -1,10 +1,12 @@
 import { Inject, Injectable } from "@nestjs/common";
 import {
+  GoalFeasibilityReportSchema,
   GoalSchema,
   type CreateGoal,
   type CreateGoalContribution,
   type Goal,
   type GoalContribution,
+  type GoalFeasibilityReport,
   type GoalId,
   type GoalPlan,
   type GoalStatus,
@@ -23,6 +25,9 @@ import { postgresConstraint } from "../common/db/postgres-error.js";
 import { EntityNotFoundError } from "../common/errors/entity-not-found.error.js";
 import { GoalFundingSourceInUseError } from "../common/errors/goal-funding-source-in-use.error.js";
 import { InvalidGoalOrderError } from "../common/errors/invalid-goal-order.error.js";
+import { ForecastingService } from "../insights/forecasting/forecasting.service.js";
+import { SafetyBufferService } from "../safety-buffer/safety-buffer.service.js";
+import { generateFeasibilityReport } from "./calculate-goal-feasibility.js";
 import { calculateGoalPlan } from "./goal-plan.js";
 import { GoalRepository } from "./goal.repository.js";
 
@@ -37,7 +42,9 @@ export class GoalService {
     @Inject(DATABASE_CONNECTION) private readonly db: DrizzleDb,
     private readonly goals: GoalRepository,
     private readonly accounts: AccountRepository,
-    private readonly audit: AuditRepository
+    private readonly audit: AuditRepository,
+    private readonly forecasting: ForecastingService,
+    private readonly safetyBuffer: SafetyBufferService
   ) {}
 
   create(userId: string, input: CreateGoal): Promise<Goal> {
@@ -182,6 +189,33 @@ export class GoalService {
 
   async getPlan(userId: string, goalId: GoalId, now: Date = new Date()): Promise<GoalPlan> {
     return calculateGoalPlan(await this.get(userId, goalId), now);
+  }
+
+  async getFeasibilityReport(
+    userId: string,
+    asOf: Date = new Date()
+  ): Promise<GoalFeasibilityReport> {
+    const [activeGoals, forecast, safetyBufferPreference, userAccounts] = await Promise.all([
+      this.list(userId, "active"),
+      this.forecasting.getLatest(userId, 30),
+      this.safetyBuffer.getEffective(userId, asOf),
+      this.accounts.list(userId)
+    ]);
+
+    const liquidAccounts = userAccounts.filter(
+      (a) => !a.isArchived && a.type !== "credit_card" && a.type !== "investment"
+    );
+    const liquidBalanceMinor = liquidAccounts.reduce((sum, a) => sum + a.balanceMinor, 0);
+
+    const report = generateFeasibilityReport({
+      goals: activeGoals,
+      forecast,
+      safetyBufferPreference,
+      liquidBalanceMinor,
+      asOf
+    });
+
+    return GoalFeasibilityReportSchema.parse(report);
   }
 
   async getProgress(userId: string, goal: StoredGoal, tx?: DbTx): Promise<number> {

@@ -164,7 +164,13 @@ import {
   ReviewInboxSummarySchema,
   ReviewItemIdSchema,
   SubmitReviewFeedbackRequestSchema,
-  SubmitReviewFeedbackResponseSchema
+  SubmitReviewFeedbackResponseSchema,
+  GoalFeasibilityQuerySchema,
+  GoalFeasibilityReportSchema,
+  CreateSafetyBufferPreferenceSchema,
+  SafetyBufferPreferenceSchema,
+  SafetyBufferStateSchema,
+  SafetyBufferVersionPageSchema
 } from "@treasury-ops/shared";
 import { z } from "zod";
 
@@ -252,6 +258,12 @@ const DismissReviewItemResponse = DismissReviewItemResponseSchema.meta({
 });
 const SubmitReviewFeedbackResponse = SubmitReviewFeedbackResponseSchema.meta({
   id: "SubmitReviewFeedbackResponse"
+});
+const GoalFeasibilityReport = GoalFeasibilityReportSchema.meta({ id: "GoalFeasibilityReport" });
+const SafetyBufferPreference = SafetyBufferPreferenceSchema.meta({ id: "SafetyBufferPreference" });
+const SafetyBufferState = SafetyBufferStateSchema.meta({ id: "SafetyBufferState" });
+const SafetyBufferVersionPage = SafetyBufferVersionPageSchema.meta({
+  id: "SafetyBufferVersionPage"
 });
 
 const reviewItemId = z.object({ id: ReviewItemIdSchema });
@@ -1208,6 +1220,19 @@ registry.registerPath({
 
 registry.registerPath({
   method: "get",
+  path: "/v1/goals/feasibility",
+  security: secured,
+  request: { query: GoalFeasibilityQuerySchema },
+  responses: {
+    200: {
+      description: "Goal feasibility report and deterministic scenarios",
+      ...json(GoalFeasibilityReport)
+    },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "get",
   path: "/v1/goals",
   security: secured,
   request: { query: ListGoalsQuerySchema },
@@ -1929,6 +1954,53 @@ registry.registerPath({
     },
     404: { description: "Review item not found", ...json(ProblemDetails) },
     ...idempotencyConflictResponse,
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/v1/safety-buffer",
+  security: secured,
+  responses: {
+    200: { description: "Current safety buffer state and preferences", ...json(SafetyBufferState) },
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/v1/safety-buffer",
+  security: secured,
+  request: { body: json(CreateSafetyBufferPreferenceSchema), headers: idempotencyKeyHeaders },
+  responses: {
+    200: {
+      description: "Idempotent replay of the safety buffer preference",
+      headers: replayedHeaders,
+      ...json(SafetyBufferPreference)
+    },
+    201: {
+      description: "Created safety buffer preference version",
+      ...json(SafetyBufferPreference)
+    },
+    404: { description: "Linked emergency fund goal not found", ...json(ProblemDetails) },
+    ...idempotencyConflictResponse,
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/v1/safety-buffer/versions",
+  security: secured,
+  request: {
+    query: z.object({
+      cursor: z.string().optional(),
+      limit: z.coerce.number().int().min(1).max(200).default(50).optional()
+    })
+  },
+  responses: {
+    200: { description: "Safety buffer version history", ...json(SafetyBufferVersionPage) },
     ...problemResponses
   }
 });

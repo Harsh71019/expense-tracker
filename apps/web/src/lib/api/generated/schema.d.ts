@@ -4488,6 +4488,70 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/v1/goals/feasibility": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: {
+          asOf?: string | null;
+        };
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Goal feasibility report and deterministic scenarios */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["GoalFeasibilityReport"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/v1/goals": {
     parameters: {
       query?: never;
@@ -8141,6 +8205,222 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/v1/safety-buffer": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Current safety buffer state and preferences */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["SafetyBufferState"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
+            /** @enum {string} */
+            mode: "fixed_amount" | "essential_months" | "emergency_fund_goal";
+            amountMinor?: number;
+            months?: number;
+            /** Format: uuid */
+            emergencyFundGoalId?: string;
+            /** Format: date-time */
+            effectiveFrom?: string | null;
+          };
+        };
+      };
+      responses: {
+        /** @description Idempotent replay of the safety buffer preference */
+        200: {
+          headers: {
+            "Idempotency-Replayed": "true";
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["SafetyBufferPreference"];
+          };
+        };
+        /** @description Created safety buffer preference version */
+        201: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["SafetyBufferPreference"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Linked emergency fund goal not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/safety-buffer/versions": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: {
+          cursor?: string;
+          limit?: number;
+        };
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Safety buffer version history */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["SafetyBufferVersionPage"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -9482,6 +9762,72 @@ export interface components {
       /** Format: date-time */
       dismissedAt: string | null;
     };
+    GoalFeasibilityReport: {
+      /** Format: date-time */
+      asOf: string | null;
+      /** Format: uuid */
+      forecastSnapshotId: string | null;
+      /** @enum {string|null} */
+      forecastModel:
+        | "known_cashflow_only"
+        | "seasonal_naive"
+        | "trailing_median"
+        | "ses"
+        | "croston"
+        | "sba"
+        | "tsb"
+        | null;
+      /** Format: date-time */
+      forecastComputedAt: string | null;
+      isForecastStale: boolean;
+      isForecastSufficient: boolean;
+      safetyBufferVersion: number | null;
+      /** @enum {string} */
+      safetyBufferMode: "fixed_amount" | "essential_months" | "emergency_fund_goal";
+      safetyBufferTargetMinor: number;
+      liquidBalanceMinor: number;
+      liquidBufferGapMinor: number;
+      conservativeAvailableMonthlyMinor: number;
+      totalRequiredMonthlyMinor: number;
+      monthlySurplusMinor: number;
+      scenarios: {
+        /** @enum {string} */
+        scenarioType: "priority_order" | "target_date_order" | "proportional";
+        name: string;
+        description: string;
+        allocations: {
+          /** Format: uuid */
+          goalId: string;
+          goalName: string;
+          priority: number;
+          /** Format: date-time */
+          targetDate: string | null;
+          targetMinor: number;
+          progressMinor: number;
+          remainingMinor: number;
+          requiredMonthlyMinor: number | null;
+          allocatedMonthlyMinor: number;
+          monthlyFundingGapMinor: number;
+          monthlyFundingSurplusMinor: number;
+          /** @enum {string} */
+          status: "feasible" | "delayed" | "at_risk" | "overdue" | "achieved" | "indeterminate";
+          projectedRange: {
+            /** Format: date-time */
+            optimisticDate: string | null;
+            /** Format: date-time */
+            baselineDate: string | null;
+            /** Format: date-time */
+            pessimisticDate: string | null;
+          };
+          explainability: string;
+        }[];
+        totalAllocatedMonthlyMinor: number;
+        unallocatedSurplusMinor: number;
+      }[];
+      assumptions: {
+        [key: string]: unknown;
+      };
+    };
     Goal: {
       /** Format: uuid */
       id: string;
@@ -10633,6 +10979,70 @@ export interface components {
         updatedAt: string | null;
       };
       feedbackRecorded: boolean;
+    };
+    SafetyBufferState: {
+      preference: {
+        /** Format: uuid */
+        id: string;
+        userId: string;
+        version: number;
+        /** @enum {string} */
+        mode: "fixed_amount" | "essential_months" | "emergency_fund_goal";
+        amountMinor: number | null;
+        months: number | null;
+        /** Format: uuid */
+        emergencyFundGoalId: string | null;
+        /** Format: date-time */
+        effectiveFrom: string | null;
+        /** Format: date-time */
+        createdAt: string | null;
+      } | null;
+      isFallback: boolean;
+      fallbackPolicy: string | null;
+      targetMinor: number;
+      liquidBalanceMinor: number;
+      bufferGapMinor: number;
+      bufferSurplusMinor: number;
+      monthlyEssentialOutflowMinor: number;
+    };
+    SafetyBufferPreference: {
+      /** Format: uuid */
+      id: string;
+      userId: string;
+      version: number;
+      /** @enum {string} */
+      mode: "fixed_amount" | "essential_months" | "emergency_fund_goal";
+      amountMinor: number | null;
+      months: number | null;
+      /** Format: uuid */
+      emergencyFundGoalId: string | null;
+      /** Format: date-time */
+      effectiveFrom: string | null;
+      /** Format: date-time */
+      createdAt: string | null;
+    };
+    SafetyBufferVersionPage: {
+      items: {
+        /** Format: uuid */
+        id: string;
+        userId: string;
+        version: number;
+        /** @enum {string} */
+        mode: "fixed_amount" | "essential_months" | "emergency_fund_goal";
+        amountMinor: number | null;
+        months: number | null;
+        /** Format: uuid */
+        emergencyFundGoalId: string | null;
+        /** Format: date-time */
+        effectiveFrom: string | null;
+        /** Format: date-time */
+        createdAt: string | null;
+      }[];
+      pageInfo: {
+        nextCursor: string | null;
+        hasMore: boolean;
+        limit: number;
+      };
     };
   };
   responses: never;

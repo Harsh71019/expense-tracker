@@ -14,6 +14,6 @@ import { ForecastingService } from "./forecasting.service.js";
     ForecastingQueue,
     ForecastingScheduleService
   ],
-  exports: [ForecastingService, ForecastingQueue]
+  exports: [ForecastingService, ForecastingRepository, ForecastingQueue]
 })
 export class ForecastingModule {}

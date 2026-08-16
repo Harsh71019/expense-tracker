@@ -209,21 +209,43 @@ describe("route shells", () => {
     expect(screen.getByText("harsh@example.com")).toBeVisible();
   });
 
-  it("renders the settings page with profile, appearance, income, and developer sections", async () => {
-    render(await SettingsPage());
+  it("renders the settings page's profile tab by default", async () => {
+    render(await SettingsPage({ searchParams: Promise.resolve({}) }));
 
     expect(screen.getByRole("heading", { name: "Settings" })).toBeVisible();
-    expect(screen.getByRole("heading", { name: "Profile" })).toBeVisible();
+    expect(screen.getByRole("tab", { name: "Profile" })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByText("harsh@example.com")).toBeVisible();
     expect(screen.getByRole("button", { name: "Sign out" })).toBeVisible();
-    expect(screen.getByRole("heading", { name: "Appearance" })).toBeVisible();
+  });
+
+  it("switches to the appearance tab from the URL", async () => {
+    render(await SettingsPage({ searchParams: Promise.resolve({ tab: "appearance" }) }));
+    expect(screen.getByRole("tab", { name: "Appearance" })).toHaveAttribute(
+      "aria-selected",
+      "true"
+    );
     expect(screen.getByRole("heading", { name: "Accent color" })).toBeVisible();
+  });
+
+  it("switches to the income tab from the URL", async () => {
+    render(await SettingsPage({ searchParams: Promise.resolve({ tab: "income" }) }));
+    expect(screen.getByRole("tab", { name: "Income" })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByRole("heading", { name: "Salary & work" })).toBeVisible();
-    expect(screen.getByRole("heading", { name: "Developer access" })).toBeVisible();
-    expect(screen.getByRole("link", { name: /API keys/ })).toHaveAttribute(
+  });
+
+  it("switches to the API keys tab from the URL", async () => {
+    render(await SettingsPage({ searchParams: Promise.resolve({ tab: "api-keys" }) }));
+    expect(screen.getByRole("tab", { name: "API keys" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("link", { name: /Manage API keys/ })).toHaveAttribute(
       "href",
       "/settings/api-keys"
     );
+  });
+
+  it("falls back to the profile tab for an unknown settings section", async () => {
+    render(await SettingsPage({ searchParams: Promise.resolve({ tab: "not-a-section" }) }));
+    expect(screen.getByRole("tab", { name: "Profile" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByText("harsh@example.com")).toBeVisible();
   });
 
   it("renders the dashboard's financial overview panels", async () => {

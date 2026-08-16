@@ -7,15 +7,31 @@ import { AppearanceSection } from "./sections/appearance-section";
 import { DeveloperAccessSection } from "./sections/developer-access-section";
 import { IncomeSection } from "./sections/income-section";
 import { ProfileSection } from "./sections/profile-section";
-import { SettingsJumpNav } from "./settings-jump-nav";
+import { SettingsTabList } from "./settings-tab-list";
+import { settingsTabFromParam } from "./settings-tabs";
+import type { SettingsTab } from "./settings-tabs";
 
-export default async function SettingsPage(): Promise<ReactNode> {
-  const [profile, appearance, income, developer] = await Promise.all([
-    ProfileSection(),
-    AppearanceSection(),
-    IncomeSection(),
-    DeveloperAccessSection()
-  ]);
+interface SettingsSearchParams {
+  tab?: string | string[];
+}
+
+async function renderTab(tab: SettingsTab): Promise<ReactNode> {
+  if (tab === "appearance") {
+    return AppearanceSection();
+  }
+  if (tab === "income") {
+    return IncomeSection();
+  }
+  if (tab === "api-keys") {
+    return DeveloperAccessSection();
+  }
+  return ProfileSection();
+}
+
+export default async function SettingsPage({
+  searchParams
+}: Readonly<{ searchParams: Promise<SettingsSearchParams> }>): Promise<ReactNode> {
+  const activeTab = settingsTabFromParam((await searchParams).tab);
 
   return (
     <PageShell width="standard" className="animate-fade-in">
@@ -25,19 +41,17 @@ export default async function SettingsPage(): Promise<ReactNode> {
         description="Your profile, appearance, income, and API access."
       />
 
-      <SettingsJumpNav />
+      <SettingsTabList activeTab={activeTab} />
 
-      <div className="space-y-10">
-        {profile}
-        {appearance}
-        {income}
-        {developer}
+      <div
+        id={`settings-panel-${activeTab}`}
+        role="tabpanel"
+        aria-labelledby={`settings-tab-${activeTab}`}
+        tabIndex={0}
+        className="min-w-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+      >
+        {await renderTab(activeTab)}
       </div>
-
-      <p className="border-t border-border/60 pt-5 text-xs leading-relaxed text-foreground-muted">
-        Money is stored as integer paise and never edited after posting — corrections are recorded
-        as reversal entries. Dates, budgets, and schedules use Asia/Kolkata (IST).
-      </p>
     </PageShell>
   );
 }

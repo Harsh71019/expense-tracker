@@ -2,6 +2,7 @@ import {
   BudgetProgressSchema,
   type Budget,
   type BudgetCategory,
+  type BudgetPace,
   type BudgetProgress,
   type BudgetProgressState
 } from "@treasury-ops/shared";
@@ -35,7 +36,24 @@ export function budgetProgressState(utilizationBps: number): BudgetProgressState
 export function buildBudgetProgress(
   budget: Budget,
   category: BudgetCategory,
-  spentMinorWhenEffective: number
+  spentMinorWhenEffective: number,
+  pace: BudgetPace = {
+    method: "abstain",
+    version: 1,
+    asOf: new Date(0),
+    inputWatermark: new Date(0),
+    historyMonths: 0,
+    isSufficient: false,
+    evidence: ["ineffective_budget"],
+    confidenceBps: 0,
+    expectedSpentMinor: null,
+    paceDeltaMinor: null,
+    paceRatioBps: null,
+    projectedMonthEndMinor: null,
+    projectedRangeLowMinor: null,
+    projectedRangeHighMinor: null,
+    projectedUtilizationBps: null
+  }
 ): BudgetProgress {
   const isEffective = !budget.isArchived && !category.isArchived;
   const spentMinor = isEffective ? spentMinorWhenEffective : 0;
@@ -47,6 +65,7 @@ export function buildBudgetProgress(
     spentMinor,
     remainingMinor: budget.limitMinor - spentMinor,
     utilizationBps,
+    pace,
     state: budgetProgressState(utilizationBps),
     isEffective
   });

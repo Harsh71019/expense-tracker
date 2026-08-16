@@ -18,7 +18,14 @@ import { withTxn } from "../common/db/db-txn.js";
 import type { DbTx } from "../common/db/db-txn.js";
 import { CategoryKindMismatchError } from "../common/errors/category-kind-mismatch.error.js";
 import { EntityNotFoundError } from "../common/errors/entity-not-found.error.js";
-import { toISTMonth } from "../common/time/ist.js";
+import { addMonthsInIST, toISTMonth } from "../common/time/ist.js";
+import {
+  BUDGET_PACE_LOOKBACK_MONTHS,
+  BUDGET_PACE_MAX_CATEGORIES,
+  BUDGET_PACE_MAX_DAILY_ROWS,
+  buildBudgetPace,
+  type DailyCategorySpend
+} from "./budget-pacing.js";
 import { ALERT_THRESHOLDS_BPS, buildBudgetProgress } from "./budget-progress.js";
 import { encodeCursor, type BudgetWithCategory } from "./budget.repository.js";
 import { BudgetRepository } from "./budget.repository.js";
@@ -37,18 +44,41 @@ export class BudgetService {
     const [page, all, spendByCategory] = await Promise.all([
       this.budgets.listPage(userId, query),
       this.budgets.listAllWithCategory(userId),
-      this.budgets.categorySpendForMonth(userId, month)
+      this.budgets.categorySpendForMonth(userId, month, undefined, now)
     ]);
 
+    const pacedCategoryIds = page.items
+      .slice(0, BUDGET_PACE_MAX_CATEGORIES)
+      .map((row) => row.category.id);
+    const history = await this.budgets.categoryDailySpendHistory(
+      userId,
+      pacedCategoryIds,
+      addMonthsInIST(now, -BUDGET_PACE_LOOKBACK_MONTHS),
+      now
+    );
+    const resourceLimited = history.length > BUDGET_PACE_MAX_DAILY_ROWS;
+    const historyByCategory = groupHistory(history);
     const last = page.items.at(-1);
     return BudgetPageSchema.parse({
       month,
       computedAt: now,
       alertPolicy: { thresholdsBps: ALERT_THRESHOLDS_BPS },
       overview: buildOverview(all, spendByCategory),
-      items: page.items.map((row) =>
-        buildBudgetProgress(row.budget, row.category, spendByCategory.get(row.category.id) ?? 0)
-      ),
+      items: page.items.map((row, index) => {
+        const spentMinor = spendByCategory.get(row.category.id) ?? 0;
+        const effective = !row.budget.isArchived && !row.category.isArchived;
+        const pace = buildBudgetPace({
+          categoryId: row.category.id,
+          month,
+          asOf: now,
+          spentMinor,
+          limitMinor: row.budget.limitMinor,
+          effective,
+          rows: historyByCategory.get(row.category.id) ?? [],
+          resourceLimited: resourceLimited || index >= BUDGET_PACE_MAX_CATEGORIES
+        });
+        return buildBudgetProgress(row.budget, row.category, spentMinor, pace);
+      }),
       pageInfo: {
         nextCursor:
           page.hasMore && last !== undefined
@@ -95,6 +125,15 @@ export class BudgetService {
     await this.audit.record(userId, "budget.archive", budgetId, tx);
     return archived;
   }
+}
+
+function groupHistory(
+  rows: readonly DailyCategorySpend[]
+): ReadonlyMap<string, readonly DailyCategorySpend[]> {
+  const grouped = new Map<string, DailyCategorySpend[]>();
+  for (const row of rows)
+    grouped.set(row.categoryId, [...(grouped.get(row.categoryId) ?? []), row]);
+  return grouped;
 }
 
 /**

@@ -4003,6 +4003,101 @@
                   "type": "integer",
                   "minimum": 0
                 },
+                "pace": {
+                  "type": "object",
+                  "properties": {
+                    "method": {
+                      "type": "string",
+                      "enum": ["historical_curve", "linear_calendar", "abstain"]
+                    },
+                    "version": {
+                      "type": "number",
+                      "enum": [1]
+                    },
+                    "asOf": {
+                      "type": ["string", "null"],
+                      "format": "date-time"
+                    },
+                    "inputWatermark": {
+                      "type": ["string", "null"],
+                      "format": "date-time"
+                    },
+                    "historyMonths": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "isSufficient": {
+                      "type": "boolean"
+                    },
+                    "evidence": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "eligible_history",
+                          "insufficient_history",
+                          "ineffective_budget",
+                          "resource_limit"
+                        ]
+                      }
+                    },
+                    "confidenceBps": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 10000
+                    },
+                    "expectedSpentMinor": {
+                      "type": ["integer", "null"],
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "paceDeltaMinor": {
+                      "type": ["integer", "null"],
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "paceRatioBps": {
+                      "type": ["integer", "null"],
+                      "minimum": 0
+                    },
+                    "projectedMonthEndMinor": {
+                      "type": ["integer", "null"],
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "projectedRangeLowMinor": {
+                      "type": ["integer", "null"],
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "projectedRangeHighMinor": {
+                      "type": ["integer", "null"],
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "projectedUtilizationBps": {
+                      "type": ["integer", "null"],
+                      "minimum": 0
+                    }
+                  },
+                  "required": [
+                    "method",
+                    "version",
+                    "asOf",
+                    "inputWatermark",
+                    "historyMonths",
+                    "isSufficient",
+                    "evidence",
+                    "confidenceBps",
+                    "expectedSpentMinor",
+                    "paceDeltaMinor",
+                    "paceRatioBps",
+                    "projectedMonthEndMinor",
+                    "projectedRangeLowMinor",
+                    "projectedRangeHighMinor",
+                    "projectedUtilizationBps"
+                  ]
+                },
                 "state": {
                   "type": "string",
                   "enum": ["under", "approaching", "reached"]
@@ -4017,6 +4112,7 @@
                 "spentMinor",
                 "remainingMinor",
                 "utilizationBps",
+                "pace",
                 "state",
                 "isEffective"
               ]

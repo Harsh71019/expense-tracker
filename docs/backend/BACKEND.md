@@ -332,6 +332,16 @@ budget attached to it "ineffective" (zeroed progress, no alerts) without
 touching the budget row itself, so restoring the category or re-pointing a
 new budget at it recovers cleanly.
 
+`GET /v1/budgets` also returns an informational, read-only `pace` result for
+each item. It uses at most 12 completed Asia/Kolkata months and 100 categories
+per page, with a 10,000 grouped-day row cap. Three eligible positive-spend
+months select the discrete-median historical curve; fewer use explicitly
+labelled linear calendar pacing. A resource bound or ineffective budget returns
+an abstention instead of partial data. The result includes method, policy
+version, `asOf`, input watermark, sufficiency, evidence, confidence, range and
+current/projected utilization. It writes no ledger, budget, alert event, or
+outbox data; notification rollout remains disabled.
+
 `PUT /v1/budgets/:categoryId` creates, updates, or restores the one lifetime
 row for that category in a single statement (Postgres `ON CONFLICT DO
 UPDATE` on the `(userId, categoryId)` unique index) — there is no separate

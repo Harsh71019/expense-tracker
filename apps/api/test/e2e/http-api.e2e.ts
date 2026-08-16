@@ -313,7 +313,7 @@ describe("production HTTP composition", () => {
 
     const keyResponse = await fetch(`${baseUrl}/api/v1/api-keys`, {
       method: "POST",
-      headers: { ...JSON_HEADERS, cookie: sessionA },
+      headers: { ...JSON_HEADERS, cookie: sessionA, "idempotency-key": crypto.randomUUID() },
       body: JSON.stringify({
         name: "read-only e2e",
         permissions: { accounts: ["read"] }
@@ -347,7 +347,7 @@ describe("production HTTP composition", () => {
     const account = await createAccount(baseUrl, sessionA, "Pending transactions account");
     const keyResponse = await fetch(`${baseUrl}/api/v1/api-keys`, {
       method: "POST",
-      headers: { ...JSON_HEADERS, cookie: sessionA },
+      headers: { ...JSON_HEADERS, cookie: sessionA, "idempotency-key": crypto.randomUUID() },
       body: JSON.stringify({
         name: "n8n e2e",
         permissions: { transactions: ["write"] }

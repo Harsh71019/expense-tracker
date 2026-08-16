@@ -50,7 +50,7 @@ export function EditDisplayNameForm({ initialProfile }: EditDisplayNameFormProps
     <section className="glass-card rounded-2xl p-4 shadow-xs sm:p-5">
       <header className="flex items-center justify-between pb-2">
         <h2 className="text-sm font-bold tracking-tight text-foreground sm:text-base">
-          Display Name
+          Display name
         </h2>
       </header>
 

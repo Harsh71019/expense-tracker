@@ -146,6 +146,41 @@ export const incomeStabilityEnum = pgEnum("income_stability", ["stable", "variab
 // Only manual entry exists today; salary detection sources arrive with later
 // features and will extend this enum additively.
 export const salarySourceEnum = pgEnum("salary_source", ["manually_confirmed"]);
+// Employer-provided cover stays a distinct value from independently held
+// cover: employer cover usually ends with the employment, so the two can never
+// collapse into one "covered" state.
+export const termCoverStatusEnum = pgEnum("term_cover_status", [
+  "independent",
+  "employer_only",
+  "both",
+  "none",
+  "not_sure",
+  "not_applicable"
+]);
+export const healthCoverStatusEnum = pgEnum("health_cover_status", [
+  "independent",
+  "employer_only",
+  "both",
+  "none",
+  "not_sure"
+]);
+// A closed list, never free text — "why term cover does not apply" must stay
+// structured rather than becoming an unreviewed place to type personal detail.
+export const termNotApplicableReasonEnum = pgEnum("term_not_applicable_reason", [
+  "no_financial_dependants",
+  "covered_by_existing_family_arrangement",
+  "other_personal_reason"
+]);
+export const declaredDebtKindEnum = pgEnum("declared_debt_kind", [
+  "credit_card",
+  "bnpl",
+  "personal_loan",
+  "consumer_loan",
+  "other"
+]);
+// "resolved" means "stop counting this in planning", never "this was paid" —
+// an actual payoff is a ledger transaction, not a status change here.
+export const declaredDebtStatusEnum = pgEnum("declared_debt_status", ["active", "resolved"]);
 export const recurringDetectionRunStatusEnum = pgEnum("recurring_detection_run_status", [
   "running",
   "completed",

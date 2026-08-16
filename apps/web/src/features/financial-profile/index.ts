@@ -1,4 +1,12 @@
 export { AddSalaryChangeSheet } from "./components/add-salary-change-sheet";
+export { DebtFormSheet } from "./components/debt-form-sheet";
+export { DebtInventory } from "./components/debt-inventory";
+export { ProtectionDataNotice } from "./components/protection-data-notice";
+export { ProtectionDebtPanel } from "./components/protection-debt-panel";
+export type { ProtectionDebtPanelProps } from "./components/protection-debt-panel";
+export { ProtectionProfileForm } from "./components/protection-profile-form";
+export { ProtectionSummary } from "./components/protection-summary";
+export { ResolveDebtDialog } from "./components/resolve-debt-dialog";
 export { SalaryHistory } from "./components/salary-history";
 export { SalaryProfileForm } from "./components/salary-profile-form";
 export { SalaryStatisticsPanel } from "./components/salary-statistics-panel";

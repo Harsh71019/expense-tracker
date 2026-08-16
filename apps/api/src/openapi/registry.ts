@@ -109,6 +109,15 @@ import {
   SalaryStatisticsSchema,
   SalaryVersionPageSchema,
   SalaryVersionSchema,
+  CreateDeclaredDebtSchema,
+  DeclaredDebtIdSchema,
+  DeclaredDebtPageSchema,
+  DeclaredDebtSchema,
+  ListDeclaredDebtsQuerySchema,
+  ProtectionSnapshotSchema,
+  ProtectionStateSchema,
+  UpdateDeclaredDebtSchema,
+  UpsertProtectionSchema,
   MonthSchema,
   MonthlyRollupSchema,
   CreateRecurringRuleSchema,
@@ -204,6 +213,10 @@ const FinancialProfileState = FinancialProfileStateSchema.meta({ id: "FinancialP
 const SalaryVersion = SalaryVersionSchema.meta({ id: "SalaryVersion" });
 const SalaryVersionPage = SalaryVersionPageSchema.meta({ id: "SalaryVersionPage" });
 const SalaryStatistics = SalaryStatisticsSchema.meta({ id: "SalaryStatistics" });
+const ProtectionState = ProtectionStateSchema.meta({ id: "ProtectionState" });
+const ProtectionSnapshot = ProtectionSnapshotSchema.meta({ id: "ProtectionSnapshot" });
+const DeclaredDebt = DeclaredDebtSchema.meta({ id: "DeclaredDebt" });
+const DeclaredDebtPage = DeclaredDebtPageSchema.meta({ id: "DeclaredDebtPage" });
 const MonthlyRollup = MonthlyRollupSchema.meta({ id: "MonthlyRollup" });
 const RecurringRule = RecurringRuleSchema.meta({ id: "RecurringRule" });
 const DetectedStreamPage = DetectedStreamPageSchema.meta({ id: "DetectedStreamPage" });
@@ -313,6 +326,7 @@ const billAndRowId = z.object({
   rowId: BillStatementRowIdSchema
 });
 const budgetId = z.object({ budgetId: BudgetIdSchema });
+const declaredDebtId = z.object({ debtId: DeclaredDebtIdSchema });
 const pendingTransactionId = z.object({ id: PendingTransactionIdSchema });
 const json = (schema: z.ZodType): { content: { "application/json": { schema: z.ZodType } } } => ({
   content: { "application/json": { schema } }
@@ -960,6 +974,104 @@ registry.registerPath({
     ...problemResponses,
     422: {
       description: "Validation failed, or the salary and work profile has not been set up yet",
+      ...json(ProblemDetails)
+    }
+  }
+});
+registry.registerPath({
+  method: "get",
+  path: "/v1/financial-profile/protection",
+  security: secured,
+  responses: {
+    200: {
+      description:
+        "Protection state: the effective snapshot, any future-dated snapshot, and explicit per-cover states. An unconfigured user gets configured=false, never a safe default.",
+      ...json(ProtectionState)
+    },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "put",
+  path: "/v1/financial-profile/protection",
+  security: secured,
+  request: { body: json(UpsertProtectionSchema), headers: idempotencyKeyHeaders },
+  responses: {
+    200: {
+      description: "Idempotent replay of the appended protection snapshot",
+      headers: replayedHeaders,
+      ...json(ProtectionSnapshot)
+    },
+    201: {
+      description: "Appended effective-dated protection snapshot",
+      ...json(ProtectionSnapshot)
+    },
+    ...idempotencyConflictResponse,
+    ...problemResponses,
+    409: {
+      description:
+        "A protection snapshot already exists for this effective date, or the idempotency key was reused with a different request intent",
+      ...json(ProblemDetails)
+    }
+  }
+});
+registry.registerPath({
+  method: "get",
+  path: "/v1/financial-profile/debts",
+  security: secured,
+  request: { query: ListDeclaredDebtsQuerySchema },
+  responses: {
+    200: {
+      description:
+        "Declared debts, newest first, defaulting to active. Linked debts derive their outstanding amount from the linked loan-liability asset's latest valuation; declared amounts are flagged as estimates.",
+      ...json(DeclaredDebtPage)
+    },
+    400: { description: "Invalid cursor", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "post",
+  path: "/v1/financial-profile/debts",
+  security: secured,
+  request: { body: json(CreateDeclaredDebtSchema), headers: idempotencyKeyHeaders },
+  responses: {
+    200: {
+      description: "Idempotent replay of the declared debt",
+      headers: replayedHeaders,
+      ...json(DeclaredDebt)
+    },
+    201: { description: "Declared debt", ...json(DeclaredDebt) },
+    404: {
+      description: "The asset to link is not an open loan liability owned by this user",
+      ...json(ProblemDetails)
+    },
+    ...idempotencyConflictResponse,
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "patch",
+  path: "/v1/financial-profile/debts/{debtId}",
+  security: secured,
+  request: {
+    params: declaredDebtId,
+    body: json(UpdateDeclaredDebtSchema),
+    headers: idempotencyKeyHeaders
+  },
+  responses: {
+    200: {
+      description:
+        "Updated debt metadata, or the same debt resolved. Resolving removes the debt from active planning checks; it moves no money and changes no asset.",
+      headers: optionalReplayHeaders,
+      ...json(DeclaredDebt)
+    },
+    404: { description: "Declared debt not found", ...json(ProblemDetails) },
+    ...idempotencyConflictResponse,
+    ...problemResponses,
+    409: {
+      description:
+        "The debt is already resolved, its amount is derived from a linked asset, or the idempotency key was reused with a different request intent",
       ...json(ProblemDetails)
     }
   }

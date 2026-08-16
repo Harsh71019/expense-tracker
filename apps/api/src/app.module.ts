@@ -34,6 +34,7 @@ import { ExportModule } from "./export/export.module.js";
 import { HealthModule } from "./health/health.module.js";
 import { GoalsModule } from "./goals/goals.module.js";
 import { ImportsModule } from "./imports/imports.module.js";
+import { ForecastingModule } from "./insights/forecasting/forecasting.module.js";
 import { NotificationsModule } from "./notifications/notifications.module.js";
 import { OpenApiModule } from "./openapi/openapi.module.js";
 import { PendingTransactionsModule } from "./pending-transactions/pending-transactions.module.js";
@@ -84,6 +85,7 @@ function isUnthrottledPath(context: ExecutionContext): boolean {
     BillsModule,
     AssetsModule,
     ImportsModule,
+    ForecastingModule,
     ExportModule,
     RecurringModule,
     RecurringDetectionModule,

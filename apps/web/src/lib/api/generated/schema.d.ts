@@ -5675,6 +5675,70 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/v1/insights/cash-flow-forecast": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: {
+          days?: 30 | 60 | 90;
+        };
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Latest immutable, read-only cash-flow forecast snapshot; null while worker evidence is unavailable */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["CashflowForecastSnapshot"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/v1/dashboard/monthly-spending": {
     parameters: {
       query?: never;
@@ -8732,6 +8796,123 @@ export interface components {
         expenseMinor: number;
       }[];
     };
+    CashflowForecastSnapshot: {
+      /** Format: uuid */
+      id: string;
+      /** Format: date-time */
+      asOf: string | null;
+      horizonDays: 30 | 60 | 90;
+      modelVersion: number;
+      inputWatermark: {
+        /** Format: date-time */
+        asOf: string | null;
+        /** Format: date-time */
+        latestOccurredAt: string | null;
+        /** Format: date-time */
+        latestUpdatedAt: string | null;
+        rowCount: number;
+        digest: string;
+      };
+      sufficiency:
+        | {
+            /** @enum {string} */
+            status: "sufficient";
+            observationCount: number;
+            minimumRequired: number;
+          }
+        | {
+            /** @enum {string} */
+            status: "insufficient";
+            /** @enum {string} */
+            reason:
+              | "insufficient_history"
+              | "ambiguous"
+              | "resource_limit"
+              | "timeout"
+              | "unsupported_series";
+            observationCount: number;
+            minimumRequired: number;
+          };
+      resources: {
+        rowsScanned: number;
+        runtimeMs: number;
+        rowBudgetHit: boolean;
+        timedOut: boolean;
+        outcome:
+          | {
+              /** @enum {string} */
+              status: "completed";
+            }
+          | {
+              /** @enum {string} */
+              status: "degraded";
+              /** @enum {string} */
+              reason:
+                | "insufficient_history"
+                | "ambiguous"
+                | "resource_limit"
+                | "timeout"
+                | "unsupported_series";
+            }
+          | {
+              /** @enum {string} */
+              status: "abstained";
+              /** @enum {string} */
+              reason:
+                | "insufficient_history"
+                | "ambiguous"
+                | "resource_limit"
+                | "timeout"
+                | "unsupported_series";
+            };
+      };
+      /** @enum {string} */
+      model:
+        | "known_cashflow_only"
+        | "seasonal_naive"
+        | "trailing_median"
+        | "ses"
+        | "croston"
+        | "sba"
+        | "tsb";
+      pointBalanceMinor: number;
+      range: {
+        lowerMinor: number;
+        upperMinor: number;
+        observedCoverageBps: number | null;
+        /** @enum {string} */
+        label: "historical_range";
+      };
+      assumptions: {
+        liquidBalanceMinor: number;
+        knownRecurringInflowMinor: number;
+        knownRecurringOutflowMinor: number;
+        creditCardBillsDueMinor: number;
+        excludedCreditCardPurchaseCount: number;
+        excludedTransferCount: number;
+        variableSpendExcludedRecurringCount: number;
+        /** @enum {boolean} */
+        asOfDeterministic: true;
+      };
+      metrics: {
+        evaluatedOriginCount: number;
+        maeMinor: number | null;
+        maseBps: number | null;
+        baselineMaeMinor: number | null;
+        residualCount: number;
+        observedCoverageBps: number | null;
+        eligibleForHorizon: boolean;
+      };
+      shortfall: {
+        hasPotentialShortfall: boolean;
+        firstPotentialShortfallDate: string | null;
+        conservativeBalanceMinor: number;
+        /** @enum {string} */
+        mode: "read_only";
+      };
+      /** Format: date-time */
+      computedAt: string | null;
+    } | null;
     MonthlySpending: {
       period: string;
       /** Format: date-time */

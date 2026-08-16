@@ -3043,6 +3043,353 @@ export interface paths {
     };
     trace?: never;
   };
+  "/v1/financial-profile": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Salary and work profile state, or an explicit unconfigured setup state */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["FinancialProfileState"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
+            monthlyWorkMinutes: number;
+            /** @enum {string} */
+            incomeStability: "stable" | "variable" | "irregular";
+            /** @default null */
+            salaryCreditDay?: number | null;
+            /** @default null */
+            expectedAnnualIncrementBps?: number | null;
+          };
+        };
+      };
+      responses: {
+        /** @description Saved work profile, or idempotent replay */
+        200: {
+          headers: {
+            "Idempotency-Replayed"?: "true";
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["FinancialProfile"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    trace?: never;
+  };
+  "/v1/financial-profile/salary-versions": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: {
+          cursor?: string;
+          limit?: number;
+        };
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Salary version history, newest effective date first */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["SalaryVersionPage"];
+          };
+        };
+        /** @description Invalid cursor */
+        400: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
+            netMonthlySalaryMinor: number;
+            /** @default null */
+            annualCtcMinor?: number | null;
+            /** Format: date-time */
+            effectiveFrom: string | null;
+          };
+        };
+      };
+      responses: {
+        /** @description Idempotent replay of the appended salary version */
+        200: {
+          headers: {
+            "Idempotency-Replayed": "true";
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["SalaryVersion"];
+          };
+        };
+        /** @description Appended salary version */
+        201: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["SalaryVersion"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description A salary version already exists for this effective date, or the idempotency key was reused with a different request intent */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/financial-profile/salary-statistics": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: {
+          asOf?: string | null;
+        };
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Derived net-salary statistics for the effective salary version */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["SalaryStatistics"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed, or the salary and work profile has not been set up yet */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/v1/recurring": {
     parameters: {
       query?: never;
@@ -7186,6 +7533,8 @@ export interface components {
         | "bill.invalid_payment_source"
         | "bill.payment_amount_mismatch"
         | "bill.payment_account_mismatch"
+        | "financial_profile.not_configured"
+        | "financial_profile.duplicate_effective_date"
         | "recurring.no_occurrences"
         | "recurring.reconciliation_already_resolved"
         | "recurring.invalid_reconciliation_resolution"
@@ -7880,6 +8229,123 @@ export interface components {
       createdAt: string | null;
       /** Format: date-time */
       updatedAt: string | null;
+    };
+    FinancialProfileState: {
+      configured: boolean;
+      profile: {
+        userId: string;
+        monthlyWorkMinutes: number;
+        salaryCreditDay: number | null;
+        expectedAnnualIncrementBps: number | null;
+        /** @enum {string} */
+        incomeStability: "stable" | "variable" | "irregular";
+        /** Format: date-time */
+        createdAt: string | null;
+        /** Format: date-time */
+        updatedAt: string | null;
+      } | null;
+      currentSalaryVersion: {
+        /** Format: uuid */
+        id: string;
+        userId: string;
+        netMonthlySalaryMinor: number;
+        annualCtcMinor: number | null;
+        /** Format: date-time */
+        effectiveFrom: string | null;
+        /** @enum {string} */
+        source: "manually_confirmed";
+        /** Format: date-time */
+        createdAt: string | null;
+      } | null;
+      upcomingSalaryVersion: {
+        /** Format: uuid */
+        id: string;
+        userId: string;
+        netMonthlySalaryMinor: number;
+        annualCtcMinor: number | null;
+        /** Format: date-time */
+        effectiveFrom: string | null;
+        /** @enum {string} */
+        source: "manually_confirmed";
+        /** Format: date-time */
+        createdAt: string | null;
+      } | null;
+      suggestedMonthlyWorkMinutes: number;
+      /** Format: date-time */
+      asOf: string | null;
+    };
+    FinancialProfile: {
+      userId: string;
+      monthlyWorkMinutes: number;
+      salaryCreditDay: number | null;
+      expectedAnnualIncrementBps: number | null;
+      /** @enum {string} */
+      incomeStability: "stable" | "variable" | "irregular";
+      /** Format: date-time */
+      createdAt: string | null;
+      /** Format: date-time */
+      updatedAt: string | null;
+    };
+    SalaryVersionPage: {
+      items: {
+        /** Format: uuid */
+        id: string;
+        userId: string;
+        netMonthlySalaryMinor: number;
+        annualCtcMinor: number | null;
+        /** Format: date-time */
+        effectiveFrom: string | null;
+        /** @enum {string} */
+        source: "manually_confirmed";
+        /** Format: date-time */
+        createdAt: string | null;
+      }[];
+      pageInfo: {
+        nextCursor: string | null;
+        hasMore: boolean;
+        limit: number;
+      };
+    };
+    SalaryVersion: {
+      /** Format: uuid */
+      id: string;
+      userId: string;
+      netMonthlySalaryMinor: number;
+      annualCtcMinor: number | null;
+      /** Format: date-time */
+      effectiveFrom: string | null;
+      /** @enum {string} */
+      source: "manually_confirmed";
+      /** Format: date-time */
+      createdAt: string | null;
+    };
+    SalaryStatistics: {
+      currentNetMonthlySalaryMinor: number;
+      annualizedNetIncomeMinor: number;
+      netHourlyWageMinor: number;
+      eightHourWorkdayEquivalentMinor: number;
+      /** Format: date-time */
+      effectiveFrom: string | null;
+      monthlyWorkMinutes: number;
+      /** Format: uuid */
+      salaryVersionId: string;
+      /** Format: date-time */
+      computedAt: string | null;
+      formulaVersion: number;
+      /** @enum {string} */
+      dataQuality: "complete" | "limited" | "stale" | "unavailable";
+      assumptions: {
+        monthsPerYear: number;
+        minutesPerHour: number;
+        standardWorkdayMinutes: number;
+        monthlyWorkMinutes: number;
+        /** @enum {string} */
+        incomeStability: "stable" | "variable" | "irregular";
+        expectedAnnualIncrementBps: number | null;
+        /** @enum {string} */
+        rounding: "half_up";
+      };
+      limitations: string[];
     };
     RecurringRule: {
       /** Format: uuid */

@@ -24,6 +24,15 @@ Add `financial_profiles` for stable preferences and `salary_versions` for effect
 
 Mutations require idempotency keys. Missing profile returns an explicit setup state rather than fabricated defaults; only work hours may be proposed as a client default and must be confirmed.
 
+### As implemented
+
+- `GET /api/v1/financial-profile` returns a `FinancialProfileState` envelope — `configured`, `profile`, `currentSalaryVersion`, `upcomingSalaryVersion`, `suggestedMonthlyWorkMinutes` (9600, the 160-hour suggestion), and `asOf` — rather than a bare profile plus a 404. An unconfigured user is a state the client renders, not an error it handles.
+- `PATCH /api/v1/financial-profile` upserts the complete four-field preference set (`monthlyWorkMinutes`, `incomeStability`, and the nullable `salaryCreditDay` / `expectedAnnualIncrementBps`). The profile has no other fields, so a full replace is unambiguous and keeps the idempotency fingerprint stable; clearing an optional fact is an explicit `null`.
+- Request bodies are strict: an unknown key is a 422, so a salary can never be smuggled into the profile route.
+- `effectiveFrom` is normalized to the start of its `Asia/Kolkata` calendar day before storage, so "effective 1 April" is one instant regardless of the time component the client sent. The unique index therefore protects one version per user per IST calendar day.
+- Failure codes: `financial_profile.not_configured` (422, statistics before setup) and `financial_profile.duplicate_effective_date` (409). Invalid salary, work minutes, credit day, and basis points are `common.validation_failed` (422) from the shared Zod schemas; an unsafe integer calculation is `money.out_of_range` (422).
+- `dataQuality` is `stale` when the effective version predates `asOf` by more than 18 months, `limited` when income stability is not `stable`, and `complete` otherwise. Statistics never mutate; they are recomputed per request from the effective version.
+
 ## Files to create
 
 - `packages/shared/src/financial-profile.ts`

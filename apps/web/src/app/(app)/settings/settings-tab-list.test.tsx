@@ -30,6 +30,10 @@ describe("SettingsTabList", () => {
       "href",
       "/settings?tab=invariants"
     );
+    expect(screen.getByRole("tab", { name: /Salary & Work/ })).toHaveAttribute(
+      "href",
+      "/settings?tab=income"
+    );
     expect(
       screen.getByRole("tab", { name: /Management/ }).querySelector('[aria-hidden="true"]')
     ).toHaveTextContent("▦");
@@ -40,19 +44,19 @@ describe("SettingsTabList", () => {
     render(<SettingsTabList activeTab="profile" />);
     const profile = screen.getByRole("tab", { name: /Profile/ });
     const appearance = screen.getByRole("tab", { name: /Appearance/ });
-    const invariants = screen.getByRole("tab", { name: /Invariants/ });
+    const income = screen.getByRole("tab", { name: /Salary & Work/ });
 
     profile.focus();
     await user.keyboard("{ArrowRight}");
     expect(appearance).toHaveFocus();
 
     await user.keyboard("{End}");
-    expect(invariants).toHaveFocus();
+    expect(income).toHaveFocus();
 
     await user.keyboard("{Home}");
     expect(profile).toHaveFocus();
 
     await user.keyboard("{ArrowLeft}");
-    expect(invariants).toHaveFocus();
+    expect(income).toHaveFocus();
   });
 });

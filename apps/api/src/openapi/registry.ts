@@ -98,6 +98,15 @@ import {
   UpdateStagedRowSchema,
   UserProfileSchema,
   UserProfileUpdateSchema,
+  CreateSalaryVersionSchema,
+  FinancialProfileSchema,
+  FinancialProfileStateSchema,
+  FinancialProfileUpdateSchema,
+  ListSalaryVersionsQuerySchema,
+  SalaryStatisticsQuerySchema,
+  SalaryStatisticsSchema,
+  SalaryVersionPageSchema,
+  SalaryVersionSchema,
   MonthSchema,
   MonthlyRollupSchema,
   CreateRecurringRuleSchema,
@@ -167,6 +176,11 @@ const AccountImportMapping = AccountImportMappingSchema.meta({ id: "AccountImpor
 const StagedRow = StagedRowSchema.meta({ id: "StagedRow" });
 const StagedRowPage = StagedRowPageSchema.meta({ id: "StagedRowPage" });
 const UserProfile = UserProfileSchema.meta({ id: "UserProfile" });
+const FinancialProfile = FinancialProfileSchema.meta({ id: "FinancialProfile" });
+const FinancialProfileState = FinancialProfileStateSchema.meta({ id: "FinancialProfileState" });
+const SalaryVersion = SalaryVersionSchema.meta({ id: "SalaryVersion" });
+const SalaryVersionPage = SalaryVersionPageSchema.meta({ id: "SalaryVersionPage" });
+const SalaryStatistics = SalaryStatisticsSchema.meta({ id: "SalaryStatistics" });
 const MonthlyRollup = MonthlyRollupSchema.meta({ id: "MonthlyRollup" });
 const RecurringRule = RecurringRuleSchema.meta({ id: "RecurringRule" });
 const RecurringStats = RecurringStatsSchema.meta({ id: "RecurringStats" });
@@ -805,6 +819,86 @@ registry.registerPath({
     200: { description: "Updated user profile", ...json(UserProfile) },
     404: { description: "Profile not found", ...json(ProblemDetails) },
     ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/v1/financial-profile",
+  security: secured,
+  responses: {
+    200: {
+      description: "Salary and work profile state, or an explicit unconfigured setup state",
+      ...json(FinancialProfileState)
+    },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "patch",
+  path: "/v1/financial-profile",
+  security: secured,
+  request: { body: json(FinancialProfileUpdateSchema), headers: idempotencyKeyHeaders },
+  responses: {
+    200: {
+      description: "Saved work profile, or idempotent replay",
+      headers: optionalReplayHeaders,
+      ...json(FinancialProfile)
+    },
+    ...idempotencyConflictResponse,
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "get",
+  path: "/v1/financial-profile/salary-versions",
+  security: secured,
+  request: { query: ListSalaryVersionsQuerySchema },
+  responses: {
+    200: {
+      description: "Salary version history, newest effective date first",
+      ...json(SalaryVersionPage)
+    },
+    400: { description: "Invalid cursor", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "post",
+  path: "/v1/financial-profile/salary-versions",
+  security: secured,
+  request: { body: json(CreateSalaryVersionSchema), headers: idempotencyKeyHeaders },
+  responses: {
+    200: {
+      description: "Idempotent replay of the appended salary version",
+      headers: replayedHeaders,
+      ...json(SalaryVersion)
+    },
+    201: { description: "Appended salary version", ...json(SalaryVersion) },
+    ...idempotencyConflictResponse,
+    ...problemResponses,
+    409: {
+      description:
+        "A salary version already exists for this effective date, or the idempotency key was reused with a different request intent",
+      ...json(ProblemDetails)
+    }
+  }
+});
+registry.registerPath({
+  method: "get",
+  path: "/v1/financial-profile/salary-statistics",
+  security: secured,
+  request: { query: SalaryStatisticsQuerySchema },
+  responses: {
+    200: {
+      description: "Derived net-salary statistics for the effective salary version",
+      ...json(SalaryStatistics)
+    },
+    ...problemResponses,
+    422: {
+      description: "Validation failed, or the salary and work profile has not been set up yet",
+      ...json(ProblemDetails)
+    }
   }
 });
 

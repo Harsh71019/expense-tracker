@@ -4,6 +4,13 @@ import type { ReactNode } from "react";
 import { AccentPicker } from "@/components/ui/accent-picker";
 import { ThemePreferenceForm } from "@/components/ui/theme-toggle";
 import { SignOutButton } from "@/features/auth";
+import { SalaryWorkPanel } from "@/features/financial-profile";
+import {
+  SALARY_HISTORY_PAGE_SIZE,
+  getFinancialProfileState,
+  getSalaryStatistics,
+  getSalaryVersionPage
+} from "@/features/financial-profile/server/get-financial-profile";
 import { EditDisplayNameForm, ProfileSummary } from "@/features/profile";
 import { getProfile } from "@/features/profile/server/get-profile";
 import { getStoredAccent } from "@/lib/accent-server";
@@ -281,6 +288,31 @@ function ManagementSettingsPanel(): ReactNode {
   );
 }
 
+async function IncomeSettingsPanel(): Promise<ReactNode> {
+  const [state, statistics, history] = await Promise.all([
+    getFinancialProfileState(),
+    getSalaryStatistics(),
+    getSalaryVersionPage()
+  ]);
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <SettingsSectionHeader
+        eyebrow="Income Foundation"
+        title="Salary &amp; Work"
+        description="Net in-hand salary, work schedule, and effective-dated salary history."
+      />
+
+      <SalaryWorkPanel
+        initialState={state}
+        initialStatistics={statistics}
+        initialHistory={history}
+        historyPageSize={SALARY_HISTORY_PAGE_SIZE}
+      />
+    </div>
+  );
+}
+
 function InvariantsSettingsPanel(): ReactNode {
   return (
     <div className="space-y-6 animate-fade-in">
@@ -394,6 +426,9 @@ export async function SettingsPanel({
   }
   if (activeTab === "invariants") {
     return <InvariantsSettingsPanel />;
+  }
+  if (activeTab === "income") {
+    return IncomeSettingsPanel();
   }
   return ProfileSettingsPanel();
 }

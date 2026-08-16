@@ -32,6 +32,8 @@ export const ErrorCodes = [
   "bill.invalid_payment_source",
   "bill.payment_amount_mismatch",
   "bill.payment_account_mismatch",
+  "financial_profile.not_configured",
+  "financial_profile.duplicate_effective_date",
   "recurring.no_occurrences",
   "recurring.reconciliation_already_resolved",
   "recurring.invalid_reconciliation_resolution",

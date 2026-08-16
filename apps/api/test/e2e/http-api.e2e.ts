@@ -5,9 +5,14 @@ import {
   CategorySchema,
   CreditCardPaymentResultSchema,
   CreateApiKeyResponseSchema,
+  FinancialProfileSchema,
+  FinancialProfileStateSchema,
   ImportBatchSchema,
   PendingTransactionSchema,
   ProblemDetailsSchema,
+  SalaryStatisticsSchema,
+  SalaryVersionPageSchema,
+  SalaryVersionSchema,
   TransactionInsightsSchema,
   TransactionSchema
 } from "@treasury-ops/shared";
@@ -313,7 +318,7 @@ describe("production HTTP composition", () => {
 
     const keyResponse = await fetch(`${baseUrl}/api/v1/api-keys`, {
       method: "POST",
-      headers: { ...JSON_HEADERS, cookie: sessionA },
+      headers: { ...JSON_HEADERS, cookie: sessionA, "idempotency-key": crypto.randomUUID() },
       body: JSON.stringify({
         name: "read-only e2e",
         permissions: { accounts: ["read"] }
@@ -347,7 +352,7 @@ describe("production HTTP composition", () => {
     const account = await createAccount(baseUrl, sessionA, "Pending transactions account");
     const keyResponse = await fetch(`${baseUrl}/api/v1/api-keys`, {
       method: "POST",
-      headers: { ...JSON_HEADERS, cookie: sessionA },
+      headers: { ...JSON_HEADERS, cookie: sessionA, "idempotency-key": crypto.randomUUID() },
       body: JSON.stringify({
         name: "n8n e2e",
         permissions: { transactions: ["write"] }
@@ -446,6 +451,178 @@ describe("production HTTP composition", () => {
     });
   });
 
+  it("stores salary and work facts, derives statistics, and keeps history append-only", async () => {
+    const setupState = await parseResponse(
+      await fetch(`${baseUrl}/api/v1/financial-profile`, { headers: { cookie: sessionA } }),
+      FinancialProfileStateSchema
+    );
+    expect(setupState).toMatchObject({
+      configured: false,
+      profile: null,
+      currentSalaryVersion: null,
+      suggestedMonthlyWorkMinutes: 9_600
+    });
+
+    const notConfigured = await fetch(`${baseUrl}/api/v1/financial-profile/salary-statistics`, {
+      headers: { cookie: sessionA }
+    });
+    expect(notConfigured.status).toBe(422);
+    expect(await parseResponse(notConfigured, ProblemDetailsSchema)).toMatchObject({
+      code: "financial_profile.not_configured",
+      status: 422
+    });
+
+    const profileKey = crypto.randomUUID();
+    const profileBody = {
+      monthlyWorkMinutes: 9_600,
+      incomeStability: "stable",
+      salaryCreditDay: 1
+    };
+    const savedProfile = await fetch(`${baseUrl}/api/v1/financial-profile`, {
+      method: "PATCH",
+      headers: { ...JSON_HEADERS, cookie: sessionA, "idempotency-key": profileKey },
+      body: JSON.stringify(profileBody)
+    });
+    expect(savedProfile.status).toBe(200);
+    expect(await parseResponse(savedProfile, FinancialProfileSchema)).toMatchObject({
+      monthlyWorkMinutes: 9_600,
+      salaryCreditDay: 1,
+      expectedAnnualIncrementBps: null,
+      incomeStability: "stable"
+    });
+
+    const profileReplay = await fetch(`${baseUrl}/api/v1/financial-profile`, {
+      method: "PATCH",
+      headers: { ...JSON_HEADERS, cookie: sessionA, "idempotency-key": profileKey },
+      body: JSON.stringify(profileBody)
+    });
+    expect(profileReplay.headers.get("idempotency-replayed")).toBe("true");
+
+    const salaryKey = crypto.randomUUID();
+    const salaryBody = {
+      netMonthlySalaryMinor: 12_50_000,
+      annualCtcMinor: 2_40_00_000,
+      effectiveFrom: "2026-04-01T00:00:00.000Z"
+    };
+    const createdSalary = await fetch(`${baseUrl}/api/v1/financial-profile/salary-versions`, {
+      method: "POST",
+      headers: { ...JSON_HEADERS, cookie: sessionA, "idempotency-key": salaryKey },
+      body: JSON.stringify(salaryBody)
+    });
+    expect(createdSalary.status).toBe(201);
+    const salary = await parseResponse(createdSalary, SalaryVersionSchema);
+    expect(salary.source).toBe("manually_confirmed");
+
+    const salaryReplay = await fetch(`${baseUrl}/api/v1/financial-profile/salary-versions`, {
+      method: "POST",
+      headers: { ...JSON_HEADERS, cookie: sessionA, "idempotency-key": salaryKey },
+      body: JSON.stringify(salaryBody)
+    });
+    expect(salaryReplay.status).toBe(200);
+    expect(salaryReplay.headers.get("idempotency-replayed")).toBe("true");
+    expect((await parseResponse(salaryReplay, SalaryVersionSchema)).id).toBe(salary.id);
+
+    const duplicateDate = await fetch(`${baseUrl}/api/v1/financial-profile/salary-versions`, {
+      method: "POST",
+      headers: { ...JSON_HEADERS, cookie: sessionA, "idempotency-key": crypto.randomUUID() },
+      body: JSON.stringify({ ...salaryBody, netMonthlySalaryMinor: 13_00_000 })
+    });
+    expect(duplicateDate.status).toBe(409);
+    expect(await parseResponse(duplicateDate, ProblemDetailsSchema)).toMatchObject({
+      code: "financial_profile.duplicate_effective_date",
+      status: 409
+    });
+
+    const futureSalary = await fetch(`${baseUrl}/api/v1/financial-profile/salary-versions`, {
+      method: "POST",
+      headers: { ...JSON_HEADERS, cookie: sessionA, "idempotency-key": crypto.randomUUID() },
+      body: JSON.stringify({
+        netMonthlySalaryMinor: 20_00_000,
+        effectiveFrom: "2099-01-01T00:00:00.000Z"
+      })
+    });
+    expect(futureSalary.status).toBe(201);
+
+    const statistics = await parseResponse(
+      await fetch(
+        `${baseUrl}/api/v1/financial-profile/salary-statistics?asOf=2026-08-16T00:00:00.000Z`,
+        { headers: { cookie: sessionA } }
+      ),
+      SalaryStatisticsSchema
+    );
+    expect(statistics).toMatchObject({
+      currentNetMonthlySalaryMinor: 12_50_000,
+      annualizedNetIncomeMinor: 1_50_00_000,
+      netHourlyWageMinor: 7_813,
+      eightHourWorkdayEquivalentMinor: 62_500,
+      salaryVersionId: salary.id,
+      formulaVersion: 1
+    });
+
+    const history = await parseResponse(
+      await fetch(`${baseUrl}/api/v1/financial-profile/salary-versions?limit=1`, {
+        headers: { cookie: sessionA }
+      }),
+      SalaryVersionPageSchema
+    );
+    expect(history.items).toHaveLength(1);
+    expect(history.items[0]?.netMonthlySalaryMinor).toBe(20_00_000);
+    expect(history.pageInfo.hasMore).toBe(true);
+
+    const nextCursor = history.pageInfo.nextCursor;
+    if (nextCursor === null) throw new Error("Expected a salary history cursor.");
+    const secondPage = await parseResponse(
+      await fetch(
+        `${baseUrl}/api/v1/financial-profile/salary-versions?limit=1&cursor=${encodeURIComponent(nextCursor)}`,
+        { headers: { cookie: sessionA } }
+      ),
+      SalaryVersionPageSchema
+    );
+    expect(secondPage.items[0]?.id).toBe(salary.id);
+    expect(secondPage.items[0]?.netMonthlySalaryMinor).toBe(12_50_000);
+
+    const invalidSalary = await fetch(`${baseUrl}/api/v1/financial-profile/salary-versions`, {
+      method: "POST",
+      headers: { ...JSON_HEADERS, cookie: sessionA, "idempotency-key": crypto.randomUUID() },
+      body: JSON.stringify({ netMonthlySalaryMinor: 0, effectiveFrom: "2027-04-01T00:00:00.000Z" })
+    });
+    expect(invalidSalary.status).toBe(422);
+    expect(await parseResponse(invalidSalary, ProblemDetailsSchema)).toMatchObject({
+      code: "common.validation_failed"
+    });
+  });
+
+  it("never leaks one user's salary profile or history to another", async () => {
+    const foreignState = await parseResponse(
+      await fetch(`${baseUrl}/api/v1/financial-profile`, { headers: { cookie: sessionB } }),
+      FinancialProfileStateSchema
+    );
+    expect(foreignState.configured).toBe(false);
+    expect(foreignState.currentSalaryVersion).toBeNull();
+
+    const foreignHistory = await parseResponse(
+      await fetch(`${baseUrl}/api/v1/financial-profile/salary-versions`, {
+        headers: { cookie: sessionB }
+      }),
+      SalaryVersionPageSchema
+    );
+    expect(foreignHistory.items).toHaveLength(0);
+
+    const foreignStatistics = await fetch(`${baseUrl}/api/v1/financial-profile/salary-statistics`, {
+      headers: { cookie: sessionB }
+    });
+    expect(foreignStatistics.status).toBe(422);
+
+    for (const path of [
+      "/api/v1/financial-profile",
+      "/api/v1/financial-profile/salary-versions",
+      "/api/v1/financial-profile/salary-statistics"
+    ]) {
+      const unauthenticated = await fetch(`${baseUrl}${path}`);
+      expect(unauthenticated.status).toBe(401);
+    }
+  });
+
   it("automatically probes every secured OpenAPI operation for an auth boundary", async () => {
     const spec = new OpenApiController().getSpec();
     const securedOperations = Object.entries(spec.paths ?? {}).flatMap(([path, pathItem]) =>
@@ -454,6 +631,15 @@ describe("production HTTP composition", () => {
         .map(([method]) => ({ method, path }))
     );
     expect(securedOperations.length).toBeGreaterThan(30);
+    expect(securedOperations).toEqual(
+      expect.arrayContaining([
+        { method: "get", path: "/v1/financial-profile" },
+        { method: "patch", path: "/v1/financial-profile" },
+        { method: "get", path: "/v1/financial-profile/salary-versions" },
+        { method: "post", path: "/v1/financial-profile/salary-versions" },
+        { method: "get", path: "/v1/financial-profile/salary-statistics" }
+      ])
+    );
 
     for (const operation of securedOperations) {
       const method = operation.method.toUpperCase();

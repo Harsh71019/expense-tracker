@@ -8,6 +8,7 @@ const goalRoot = ["goals"] as const;
 const budgetRoot = ["budgets"] as const;
 const dashboardRoot = ["dashboard"] as const;
 const billRoot = ["bills"] as const;
+const financialProfileRoot = ["financial-profile"] as const;
 
 export const qk = {
   transactions: () => transactionRoot,
@@ -56,6 +57,11 @@ export const qk = {
   spendingWarningList: (filters: SpendingWarningFilters) =>
     [...spendingWarningRoot, "list", filters] as const,
   profile: () => ["profile"] as const,
+  financialProfile: () => financialProfileRoot,
+  financialProfileState: () => [...financialProfileRoot, "state"] as const,
+  salaryStatistics: () => [...financialProfileRoot, "salary-statistics"] as const,
+  salaryVersions: (limit: number) =>
+    [...financialProfileRoot, "salary-versions", { limit }] as const,
   dashboard: () => dashboardRoot,
   recentActivity: (limit: number) => [...dashboardRoot, "recent-activity", limit] as const,
   dashboardStats: (period?: string) => [...dashboardRoot, "stats", period ?? "current"] as const,

@@ -9,6 +9,7 @@ describe("settings tabs", () => {
     ["appearance", "appearance"],
     ["management", "management"],
     ["invariants", "invariants"],
+    ["income", "income"],
     ["unknown", "profile"],
     [["appearance", "management"], "profile"]
   ] as const)("resolves %j to %s", (value, expected) => {
@@ -20,5 +21,6 @@ describe("settings tabs", () => {
     expect(settingsTabHref("appearance")).toBe("/settings?tab=appearance");
     expect(settingsTabHref("management")).toBe("/settings?tab=management");
     expect(settingsTabHref("invariants")).toBe("/settings?tab=invariants");
+    expect(settingsTabHref("income")).toBe("/settings?tab=income");
   });
 });

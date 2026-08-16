@@ -142,6 +142,10 @@ export const detectedStreamAmountBehaviorEnum = pgEnum("detected_stream_amount_b
   "variable",
   "unknown"
 ]);
+export const incomeStabilityEnum = pgEnum("income_stability", ["stable", "variable", "irregular"]);
+// Only manual entry exists today; salary detection sources arrive with later
+// features and will extend this enum additively.
+export const salarySourceEnum = pgEnum("salary_source", ["manually_confirmed"]);
 export const recurringDetectionRunStatusEnum = pgEnum("recurring_detection_run_status", [
   "running",
   "completed",

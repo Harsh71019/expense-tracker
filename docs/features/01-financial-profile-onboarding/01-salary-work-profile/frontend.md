@@ -16,6 +16,14 @@ Use a server component for initial profile/version/statistics loading and a clie
 - `AddSalaryChangeSheet`: creates a future/current version with an idempotency UUID generated on mount.
 - `SalaryDataNotice`: distinguishes user-entered, detected, and confirmed values.
 
+### As implemented
+
+- The editor lives behind a dedicated **Salary & Work** Settings tab (`/settings?tab=income`) rather than inside an existing tab: the form, statistics, history, and sheet are too much to graft onto Profile. The dashboard zero state carries a small secondary link to it.
+- `SalaryWorkPanel` is the client container that composes the four planned components from server-loaded initial data; the plan's file list did not name a container.
+- `SalaryDataNotice` was not built as a separate component. Only one source exists today (`manually_confirmed`), so the data-source and data-quality labels live in `SalaryStatisticsPanel`'s metadata row. Split it out when detection sources land.
+- `SalaryProfileForm` shows salary and effective-date fields only while no salary version exists. Once one does, the form edits the work schedule alone and pay changes go through `AddSalaryChangeSheet` — history is append-only, so there is deliberately no inline edit path.
+- Hours-to-minutes, percent-to-basis-points, and calendar-date conversions all live in `model/salary-form.ts` and return the id of the first offending field so the form can move focus to it.
+
 ## Files to create
 
 - `apps/web/src/features/financial-profile/components/salary-profile-form.tsx`

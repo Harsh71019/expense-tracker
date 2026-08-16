@@ -16,7 +16,11 @@ import {
   SalaryVersionPageSchema,
   SalaryVersionSchema,
   TransactionInsightsSchema,
-  TransactionSchema
+  TransactionSchema,
+  GoalFeasibilityReportSchema,
+  SafetyBufferPreferenceSchema,
+  SafetyBufferStateSchema,
+  SafetyBufferVersionPageSchema
 } from "@treasury-ops/shared";
 import { GenericContainer } from "testcontainers";
 import type { StartedTestContainer } from "testcontainers";
@@ -647,6 +651,69 @@ describe("production HTTP composition", () => {
     expect(summary.activeCount).toBeGreaterThanOrEqual(0);
 
     for (const path of ["/api/v1/review-inbox", "/api/v1/review-inbox/summary"]) {
+      const unauthenticated = await fetch(`${baseUrl}${path}`);
+      expect(unauthenticated.status).toBe(401);
+    }
+  });
+
+  it("serves safety buffer and goal feasibility endpoints with tenancy boundaries", async () => {
+    // 1. Get initial safety buffer state (fallback)
+    const initialState = await parseResponse(
+      await fetch(`${baseUrl}/api/v1/safety-buffer`, { headers: { cookie: sessionA } }),
+      SafetyBufferStateSchema
+    );
+    expect(initialState.isFallback).toBe(true);
+
+    // 2. Create a safety buffer version
+    const createdPref = await parseResponse(
+      await fetch(`${baseUrl}/api/v1/safety-buffer`, {
+        method: "POST",
+        headers: {
+          ...JSON_HEADERS,
+          cookie: sessionA,
+          "idempotency-key": crypto.randomUUID()
+        },
+        body: JSON.stringify({
+          mode: "fixed_amount",
+          amountMinor: 5_000_000
+        })
+      }),
+      SafetyBufferPreferenceSchema
+    );
+    expect(createdPref.version).toBe(1);
+
+    // 3. List safety buffer versions
+    const versions = await parseResponse(
+      await fetch(`${baseUrl}/api/v1/safety-buffer/versions`, { headers: { cookie: sessionA } }),
+      SafetyBufferVersionPageSchema
+    );
+    expect(versions.items).toHaveLength(1);
+
+    // 4. Get goal feasibility report
+    const feasibility = await parseResponse(
+      await fetch(`${baseUrl}/api/v1/goals/feasibility`, { headers: { cookie: sessionA } }),
+      GoalFeasibilityReportSchema
+    );
+    expect(feasibility.scenarios).toHaveLength(3);
+
+    // Tenant isolation: sessionB should see fallback and 0 versions
+    const foreignState = await parseResponse(
+      await fetch(`${baseUrl}/api/v1/safety-buffer`, { headers: { cookie: sessionB } }),
+      SafetyBufferStateSchema
+    );
+    expect(foreignState.isFallback).toBe(true);
+
+    const foreignVersions = await parseResponse(
+      await fetch(`${baseUrl}/api/v1/safety-buffer/versions`, { headers: { cookie: sessionB } }),
+      SafetyBufferVersionPageSchema
+    );
+    expect(foreignVersions.items).toHaveLength(0);
+
+    for (const path of [
+      "/api/v1/safety-buffer",
+      "/api/v1/safety-buffer/versions",
+      "/api/v1/goals/feasibility"
+    ]) {
       const unauthenticated = await fetch(`${baseUrl}${path}`);
       expect(unauthenticated.status).toBe(401);
     }

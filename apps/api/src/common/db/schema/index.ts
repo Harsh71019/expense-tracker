@@ -25,3 +25,4 @@ export * from "./cashflow-forecast.js";
 export * from "./financial-profile.js";
 export * from "./spending-change-detection.js";
 export * from "./review-inbox.js";
+export * from "./safety-buffer.js";

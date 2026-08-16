@@ -39,6 +39,8 @@ type Overrides = Readonly<{
   goals?: Double;
   accounts?: Double;
   audit?: Double;
+  forecasting?: Double;
+  safetyBuffer?: Double;
 }>;
 
 function createService(overrides: Overrides = {}) {
@@ -55,13 +57,17 @@ function createService(overrides: Overrides = {}) {
         sumTaggedContributions: vi.fn().mockResolvedValue(25_000)
       } satisfies Record<string, unknown>),
     accounts: overrides.accounts ?? {},
-    audit: overrides.audit ?? { record: vi.fn().mockResolvedValue(undefined) }
+    audit: overrides.audit ?? { record: vi.fn().mockResolvedValue(undefined) },
+    forecasting: overrides.forecasting ?? {},
+    safetyBuffer: overrides.safetyBuffer ?? {}
   };
   const service = new GoalService(
     focusedTestDouble(collaborators.db),
     focusedTestDouble(collaborators.goals),
     focusedTestDouble(collaborators.accounts),
-    focusedTestDouble(collaborators.audit)
+    focusedTestDouble(collaborators.audit),
+    focusedTestDouble(collaborators.forecasting),
+    focusedTestDouble(collaborators.safetyBuffer)
   );
   return { service, tx, ...collaborators };
 }

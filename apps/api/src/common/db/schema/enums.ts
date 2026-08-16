@@ -178,3 +178,8 @@ export const reviewItemStatusEnum = pgEnum("review_item_status", [
   "stale",
   "superseded"
 ]);
+export const safetyBufferModeEnum = pgEnum("safety_buffer_mode", [
+  "fixed_amount",
+  "essential_months",
+  "emergency_fund_goal"
+]);

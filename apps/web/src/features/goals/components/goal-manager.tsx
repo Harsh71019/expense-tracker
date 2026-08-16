@@ -1,11 +1,20 @@
 "use client";
 
-import type { Account, Goal, GoalPlan } from "@treasury-ops/shared";
+import type {
+  Account,
+  Goal,
+  GoalFeasibilityReport,
+  GoalPlan,
+  GoalScenarioAllocation,
+  GoalScenarioType,
+  SafetyBufferState
+} from "@treasury-ops/shared";
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Money } from "@/components/ui/money";
 import { toast } from "@/lib/toast";
 
 import { useGoalPlan } from "../hooks/use-goal-plan";
@@ -13,20 +22,22 @@ import { useAbandonGoal, useGoals, useReorderGoals } from "../hooks/use-goals";
 import { AbandonGoalDialog } from "./abandon-goal-dialog";
 import { GoalCard } from "./goal-card";
 import { GoalEditorDrawer } from "./goal-editor-drawer";
-
-import { Money } from "@/components/ui/money";
+import { GoalFeasibilityStudio } from "./goal-feasibility-studio";
 
 type GoalManagerProps = Readonly<{
   initialActive: Goal[];
   initialAchieved: Goal[];
   initialPlans: GoalPlan[];
   accounts: Account[];
+  feasibility?: GoalFeasibilityReport | null | undefined;
+  safetyBuffer?: SafetyBufferState | null | undefined;
 }>;
 
 type ActiveGoalCardProps = Readonly<{
   goal: Goal;
   initialPlan: GoalPlan | undefined;
   accountName: string | undefined;
+  allocation?: GoalScenarioAllocation | undefined;
   canMoveUp: boolean;
   canMoveDown: boolean;
   onMoveUp: () => void;
@@ -38,6 +49,7 @@ function ActiveGoalCard({
   goal,
   initialPlan,
   accountName,
+  allocation,
   canMoveUp,
   canMoveDown,
   onMoveUp,
@@ -50,6 +62,7 @@ function ActiveGoalCard({
       goal={goal}
       plan={plan.data}
       accountName={accountName}
+      allocation={allocation}
       canMoveUp={canMoveUp}
       canMoveDown={canMoveDown}
       onMoveUp={onMoveUp}
@@ -63,7 +76,9 @@ export function GoalManager({
   initialActive,
   initialAchieved,
   initialPlans,
-  accounts
+  accounts,
+  feasibility = null,
+  safetyBuffer = null
 }: GoalManagerProps): ReactNode {
   const activeQuery = useGoals("active", initialActive);
   const achievedQuery = useGoals("achieved", initialAchieved);
@@ -74,9 +89,18 @@ export function GoalManager({
   const [abandonTarget, setAbandonTarget] = useState<Goal>();
   const [searchQuery, setSearchQuery] = useState("");
   const [order, setOrder] = useState(() => initialActive.map((goal) => goal.id));
+  const [selectedScenarioType, setSelectedScenarioType] =
+    useState<GoalScenarioType>("priority_order");
 
   const active = activeQuery.data ?? initialActive;
   const achieved = achievedQuery.data ?? initialAchieved;
+
+  const currentScenario =
+    feasibility?.scenarios.find((s) => s.scenarioType === selectedScenarioType) ??
+    feasibility?.scenarios[0];
+  const scenarioAllocationsMap = new Map(
+    currentScenario?.allocations.map((a) => [a.goalId, a]) ?? []
+  );
 
   const totalTargetMinor = active.reduce((acc, goal) => acc + goal.targetMinor, 0);
   const totalSavedMinor = active.reduce((acc, goal) => acc + Math.max(0, goal.progressMinor), 0);
@@ -185,6 +209,14 @@ export function GoalManager({
         </div>
       ) : null}
 
+      <GoalFeasibilityStudio
+        feasibility={feasibility}
+        safetyBuffer={safetyBuffer}
+        activeGoals={active}
+        selectedScenarioType={selectedScenarioType}
+        onSelectScenarioType={setSelectedScenarioType}
+      />
+
       {active.length > 0 && (
         <div
           className={`mb-5 flex flex-wrap items-center gap-3.5 rounded-2xl border p-3.5 backdrop-blur transition-all duration-200 ${
@@ -237,6 +269,7 @@ export function GoalManager({
               key={goal.id}
               goal={goal}
               initialPlan={initialPlans.find((plan) => plan.goalId === goal.id)}
+              allocation={scenarioAllocationsMap.get(goal.id)}
               accountName={
                 goal.linkedAccountId === undefined
                   ? undefined

@@ -1,6 +1,11 @@
 "use client";
 
-import type { Goal, GoalPlan } from "@treasury-ops/shared";
+import {
+  formatMinor,
+  type Goal,
+  type GoalPlan,
+  type GoalScenarioAllocation
+} from "@treasury-ops/shared";
 import Link from "next/link";
 import { useState } from "react";
 import type { ReactNode } from "react";
@@ -14,11 +19,12 @@ type GoalCardProps = Readonly<{
   goal: Goal;
   plan: GoalPlan | undefined;
   accountName: string | undefined;
-  canMoveUp?: boolean;
-  canMoveDown?: boolean;
-  onMoveUp?: () => void;
-  onMoveDown?: () => void;
-  onAbandon?: (goal: Goal) => void;
+  allocation?: GoalScenarioAllocation | undefined;
+  canMoveUp?: boolean | undefined;
+  canMoveDown?: boolean | undefined;
+  onMoveUp?: (() => void) | undefined;
+  onMoveDown?: (() => void) | undefined;
+  onAbandon?: ((goal: Goal) => void) | undefined;
 }>;
 
 const toneClasses = {
@@ -27,10 +33,29 @@ const toneClasses = {
   muted: "border-border bg-surface-muted text-foreground-muted"
 } as const;
 
+const feasibilityBadgeStyles = {
+  feasible: "border-income/30 bg-income/10 text-income",
+  delayed: "border-warning/30 bg-warning/10 text-warning",
+  at_risk: "border-expense/30 bg-expense/10 text-expense",
+  overdue: "border-expense/40 bg-expense/15 text-expense font-bold",
+  achieved: "border-accent/30 bg-accent/10 text-accent",
+  indeterminate: "border-border bg-surface-muted text-foreground-muted"
+} as const;
+
+const feasibilityLabels = {
+  feasible: "Feasible",
+  delayed: "Delayed",
+  at_risk: "At Risk",
+  overdue: "Overdue",
+  achieved: "Achieved",
+  indeterminate: "Pending Forecast"
+} as const;
+
 export function GoalCard({
   goal,
   plan,
   accountName,
+  allocation,
   canMoveUp = false,
   canMoveDown = false,
   onMoveUp,
@@ -93,11 +118,44 @@ export function GoalCard({
             <Money minor={goal.targetMinor} size="sm" />
           </div>
 
-          <span
-            className={`mt-3 inline-flex max-w-full rounded-md border px-2 py-1 font-mono text-2xs leading-relaxed font-bold tracking-wide uppercase ${toneClasses[verdict.tone]}`}
-          >
-            {verdict.label}
-          </span>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <span
+              className={`inline-flex max-w-full rounded-md border px-2 py-1 font-mono text-2xs leading-relaxed font-bold tracking-wide uppercase ${toneClasses[verdict.tone]}`}
+            >
+              {verdict.label}
+            </span>
+
+            {allocation ? (
+              <span
+                className={`inline-flex rounded-md border px-2 py-1 font-mono text-2xs leading-relaxed font-bold tracking-wide uppercase ${feasibilityBadgeStyles[allocation.status]}`}
+              >
+                {feasibilityLabels[allocation.status]}
+              </span>
+            ) : null}
+          </div>
+
+          {allocation && allocation.allocatedMonthlyMinor > 0 ? (
+            <div className="mt-2.5 flex flex-wrap items-center gap-2 text-2xs text-foreground-muted">
+              <span>Allocated:</span>
+              <span className="font-semibold text-foreground">
+                {formatMinor(allocation.allocatedMonthlyMinor)}/mo
+              </span>
+              {allocation.projectedRange.baselineDate ? (
+                <span>
+                  • Est.{" "}
+                  {new Date(
+                    allocation.projectedRange.optimisticDate ??
+                      allocation.projectedRange.baselineDate
+                  ).toLocaleDateString("en-IN", { month: "short", year: "numeric" })}{" "}
+                  –{" "}
+                  {new Date(
+                    allocation.projectedRange.pessimisticDate ??
+                      allocation.projectedRange.baselineDate
+                  ).toLocaleDateString("en-IN", { month: "short", year: "numeric" })}
+                </span>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       </div>
 

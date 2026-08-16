@@ -4150,6 +4150,244 @@
         },
         "required": ["id", "status", "dismissedAt"]
       },
+      "GoalFeasibilityReport": {
+        "type": "object",
+        "properties": {
+          "asOf": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "forecastSnapshotId": {
+            "type": ["string", "null"],
+            "format": "uuid"
+          },
+          "forecastModel": {
+            "type": ["string", "null"],
+            "enum": [
+              "known_cashflow_only",
+              "seasonal_naive",
+              "trailing_median",
+              "ses",
+              "croston",
+              "sba",
+              "tsb",
+              null
+            ]
+          },
+          "forecastComputedAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "isForecastStale": {
+            "type": "boolean"
+          },
+          "isForecastSufficient": {
+            "type": "boolean"
+          },
+          "safetyBufferVersion": {
+            "type": ["integer", "null"],
+            "exclusiveMinimum": 0
+          },
+          "safetyBufferMode": {
+            "type": "string",
+            "enum": ["fixed_amount", "essential_months", "emergency_fund_goal"]
+          },
+          "safetyBufferTargetMinor": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "liquidBalanceMinor": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "liquidBufferGapMinor": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "conservativeAvailableMonthlyMinor": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "totalRequiredMonthlyMinor": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "monthlySurplusMinor": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "scenarios": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "scenarioType": {
+                  "type": "string",
+                  "enum": ["priority_order", "target_date_order", "proportional"]
+                },
+                "name": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "allocations": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "goalId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "goalName": {
+                        "type": "string"
+                      },
+                      "priority": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "targetDate": {
+                        "type": ["string", "null"],
+                        "format": "date-time"
+                      },
+                      "targetMinor": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "progressMinor": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      },
+                      "remainingMinor": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "requiredMonthlyMinor": {
+                        "type": ["integer", "null"],
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "allocatedMonthlyMinor": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "monthlyFundingGapMinor": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "monthlyFundingSurplusMinor": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "feasible",
+                          "delayed",
+                          "at_risk",
+                          "overdue",
+                          "achieved",
+                          "indeterminate"
+                        ]
+                      },
+                      "projectedRange": {
+                        "type": "object",
+                        "properties": {
+                          "optimisticDate": {
+                            "type": ["string", "null"],
+                            "format": "date-time"
+                          },
+                          "baselineDate": {
+                            "type": ["string", "null"],
+                            "format": "date-time"
+                          },
+                          "pessimisticDate": {
+                            "type": ["string", "null"],
+                            "format": "date-time"
+                          }
+                        },
+                        "required": ["optimisticDate", "baselineDate", "pessimisticDate"]
+                      },
+                      "explainability": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "goalId",
+                      "goalName",
+                      "priority",
+                      "targetDate",
+                      "targetMinor",
+                      "progressMinor",
+                      "remainingMinor",
+                      "requiredMonthlyMinor",
+                      "allocatedMonthlyMinor",
+                      "monthlyFundingGapMinor",
+                      "monthlyFundingSurplusMinor",
+                      "status",
+                      "projectedRange",
+                      "explainability"
+                    ]
+                  }
+                },
+                "totalAllocatedMonthlyMinor": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "unallocatedSurplusMinor": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": [
+                "scenarioType",
+                "name",
+                "description",
+                "allocations",
+                "totalAllocatedMonthlyMinor",
+                "unallocatedSurplusMinor"
+              ]
+            }
+          },
+          "assumptions": {
+            "type": "object",
+            "additionalProperties": {}
+          }
+        },
+        "required": [
+          "asOf",
+          "forecastSnapshotId",
+          "forecastModel",
+          "forecastComputedAt",
+          "isForecastStale",
+          "isForecastSufficient",
+          "safetyBufferVersion",
+          "safetyBufferMode",
+          "safetyBufferTargetMinor",
+          "liquidBalanceMinor",
+          "liquidBufferGapMinor",
+          "conservativeAvailableMonthlyMinor",
+          "totalRequiredMonthlyMinor",
+          "monthlySurplusMinor",
+          "scenarios",
+          "assumptions"
+        ]
+      },
       "Goal": {
         "type": "object",
         "properties": {
@@ -7927,6 +8165,239 @@
           }
         },
         "required": ["item", "feedbackRecorded"]
+      },
+      "SafetyBufferState": {
+        "type": "object",
+        "properties": {
+          "preference": {
+            "type": ["object", "null"],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "userId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "version": {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              },
+              "mode": {
+                "type": "string",
+                "enum": ["fixed_amount", "essential_months", "emergency_fund_goal"]
+              },
+              "amountMinor": {
+                "type": ["integer", "null"],
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "months": {
+                "type": ["integer", "null"],
+                "minimum": 1,
+                "maximum": 36
+              },
+              "emergencyFundGoalId": {
+                "type": ["string", "null"],
+                "format": "uuid"
+              },
+              "effectiveFrom": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              },
+              "createdAt": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "id",
+              "userId",
+              "version",
+              "mode",
+              "amountMinor",
+              "months",
+              "emergencyFundGoalId",
+              "effectiveFrom",
+              "createdAt"
+            ]
+          },
+          "isFallback": {
+            "type": "boolean"
+          },
+          "fallbackPolicy": {
+            "type": ["string", "null"]
+          },
+          "targetMinor": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "liquidBalanceMinor": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "bufferGapMinor": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "bufferSurplusMinor": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "monthlyEssentialOutflowMinor": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "preference",
+          "isFallback",
+          "fallbackPolicy",
+          "targetMinor",
+          "liquidBalanceMinor",
+          "bufferGapMinor",
+          "bufferSurplusMinor",
+          "monthlyEssentialOutflowMinor"
+        ]
+      },
+      "SafetyBufferPreference": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "userId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "version": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          },
+          "mode": {
+            "type": "string",
+            "enum": ["fixed_amount", "essential_months", "emergency_fund_goal"]
+          },
+          "amountMinor": {
+            "type": ["integer", "null"],
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "months": {
+            "type": ["integer", "null"],
+            "minimum": 1,
+            "maximum": 36
+          },
+          "emergencyFundGoalId": {
+            "type": ["string", "null"],
+            "format": "uuid"
+          },
+          "effectiveFrom": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "version",
+          "mode",
+          "amountMinor",
+          "months",
+          "emergencyFundGoalId",
+          "effectiveFrom",
+          "createdAt"
+        ]
+      },
+      "SafetyBufferVersionPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "userId": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "version": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0
+                },
+                "mode": {
+                  "type": "string",
+                  "enum": ["fixed_amount", "essential_months", "emergency_fund_goal"]
+                },
+                "amountMinor": {
+                  "type": ["integer", "null"],
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "months": {
+                  "type": ["integer", "null"],
+                  "minimum": 1,
+                  "maximum": 36
+                },
+                "emergencyFundGoalId": {
+                  "type": ["string", "null"],
+                  "format": "uuid"
+                },
+                "effectiveFrom": {
+                  "type": ["string", "null"],
+                  "format": "date-time"
+                },
+                "createdAt": {
+                  "type": ["string", "null"],
+                  "format": "date-time"
+                }
+              },
+              "required": [
+                "id",
+                "userId",
+                "version",
+                "mode",
+                "amountMinor",
+                "months",
+                "emergencyFundGoalId",
+                "effectiveFrom",
+                "createdAt"
+              ]
+            }
+          },
+          "pageInfo": {
+            "type": "object",
+            "properties": {
+              "nextCursor": {
+                "type": ["string", "null"]
+              },
+              "hasMore": {
+                "type": "boolean"
+              },
+              "limit": {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              }
+            },
+            "required": ["nextCursor", "hasMore", "limit"]
+          }
+        },
+        "required": ["items", "pageInfo"]
       }
     },
     "parameters": {}
@@ -13364,6 +13835,68 @@
         }
       }
     },
+    "/v1/goals/feasibility": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": ["string", "null"],
+              "format": "date-time"
+            },
+            "required": false,
+            "name": "asOf",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Goal feasibility report and deterministic scenarios",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoalFeasibilityReport"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/goals": {
       "get": {
         "security": [
@@ -17923,6 +18456,262 @@
           },
           "409": {
             "description": "Idempotency key was already used for different request intent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/safety-buffer": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current safety buffer state and preferences",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SafetyBufferState"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "Idempotency-Key",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "mode": {
+                    "type": "string",
+                    "enum": ["fixed_amount", "essential_months", "emergency_fund_goal"]
+                  },
+                  "amountMinor": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "months": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 36
+                  },
+                  "emergencyFundGoalId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "effectiveFrom": {
+                    "type": ["string", "null"],
+                    "format": "date-time"
+                  }
+                },
+                "required": ["mode"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Idempotent replay of the safety buffer preference",
+            "headers": {
+              "Idempotency-Replayed": {
+                "schema": {
+                  "type": "string",
+                  "enum": ["true"]
+                },
+                "required": true
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SafetyBufferPreference"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created safety buffer preference version",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SafetyBufferPreference"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Linked emergency fund goal not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency key was already used for different request intent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/safety-buffer/versions": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "cursor",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Safety buffer version history",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SafetyBufferVersionPage"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
             "content": {
               "application/json": {
                 "schema": {

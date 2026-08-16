@@ -714,3 +714,36 @@ export type {
   SubmitReviewFeedbackRequest,
   SubmitReviewFeedbackResponse
 } from "./review-inbox.js";
+export {
+  SafetyBufferModeSchema,
+  SafetyBufferPreferenceIdSchema,
+  SafetyBufferPreferenceSchema,
+  CreateSafetyBufferPreferenceSchema,
+  SafetyBufferStateSchema,
+  SafetyBufferVersionPageSchema
+} from "./safety-buffer.js";
+export type {
+  SafetyBufferMode,
+  SafetyBufferPreference,
+  CreateSafetyBufferPreference,
+  SafetyBufferState,
+  SafetyBufferVersionPage
+} from "./safety-buffer.js";
+export {
+  GoalFeasibilityStatusSchema,
+  GoalScenarioTypeSchema,
+  ProjectedCompletionRangeSchema,
+  GoalScenarioAllocationSchema,
+  GoalFeasibilityScenarioSchema,
+  GoalFeasibilityReportSchema,
+  GoalFeasibilityQuerySchema
+} from "./goal-feasibility.js";
+export type {
+  GoalFeasibilityStatus,
+  GoalScenarioType,
+  ProjectedCompletionRange,
+  GoalScenarioAllocation,
+  GoalFeasibilityScenario,
+  GoalFeasibilityReport,
+  GoalFeasibilityQuery
+} from "./goal-feasibility.js";

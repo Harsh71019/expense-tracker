@@ -17,6 +17,10 @@ import { GoalMutationService } from "../../../src/goals/goal-mutation.service.js
 import { GoalRepository } from "../../../src/goals/goal.repository.js";
 import { GoalService } from "../../../src/goals/goal.service.js";
 import { GoalsProgressCron } from "../../../src/goals/goals-progress.cron.js";
+import { ForecastingRepository } from "../../../src/insights/forecasting/forecasting.repository.js";
+import { ForecastingService } from "../../../src/insights/forecasting/forecasting.service.js";
+import { SafetyBufferRepository } from "../../../src/safety-buffer/safety-buffer.repository.js";
+import { SafetyBufferService } from "../../../src/safety-buffer/safety-buffer.service.js";
 import { NotificationOutboxRepository } from "../../../src/notifications/notification-outbox.repository.js";
 import { TransactionRepository } from "../../../src/transactions/transaction.repository.js";
 import { TransactionService } from "../../../src/transactions/transaction.service.js";
@@ -64,11 +68,30 @@ describe("GoalService", () => {
     accounts = new AccountRepository(testDb.db);
     goals = new GoalRepository(testDb.db);
     const audit = new AuditRepository(testDb.db);
-    service = new GoalService(testDb.db, goals, accounts, audit);
-    mutations = new GoalMutationService(
-      service,
-      new IdempotencyPostgresService(testDb.db, new IdempotencyPostgresRepository(testDb.db))
+    const forecastingRepo = new ForecastingRepository(testDb.db);
+    const forecastingService = new ForecastingService(forecastingRepo);
+    const safetyBufferRepo = new SafetyBufferRepository(testDb.db);
+    const idempotencyService = new IdempotencyPostgresService(
+      testDb.db,
+      new IdempotencyPostgresRepository(testDb.db)
     );
+    const safetyBufferService = new SafetyBufferService(
+      testDb.db,
+      safetyBufferRepo,
+      audit,
+      accounts,
+      forecastingRepo,
+      idempotencyService
+    );
+    service = new GoalService(
+      testDb.db,
+      goals,
+      accounts,
+      audit,
+      forecastingService,
+      safetyBufferService
+    );
+    mutations = new GoalMutationService(service, idempotencyService);
     const transactionRepository = new TransactionRepository(testDb.db);
     transactions = new TransactionService(
       testDb.db,

@@ -5,6 +5,7 @@ import type {
   ForecastDecisionMetrics,
   RecurrenceDecisionMetrics,
   ShortfallDecisionMetrics,
+  SpendingChangeDecisionMetrics,
   WarningDecisionMetrics
 } from "@treasury-ops/shared";
 
@@ -59,6 +60,14 @@ export interface BudgetDecisionObservation {
   readonly predictedBreach: boolean;
   /** Positive before the breach; negative when the warning came too late. */
   readonly warningLeadDays: number | null;
+}
+
+export interface SpendingChangeDecisionObservation {
+  readonly actualChange: boolean;
+  readonly predictedChange: boolean;
+  readonly lagDays: number | null;
+  readonly actualNewMedianMinor: number | null;
+  readonly predictedNewMedianMinor: number | null;
 }
 
 export interface WarningDecisionObservation {
@@ -427,5 +436,53 @@ export function calculateWarningDecisionMetrics(
       totalAmountAtRiskMinor,
       "warning totalAmountAtRiskMinor"
     )
+  };
+}
+
+export function calculateSpendingChangeDecisionMetrics(
+  observations: readonly SpendingChangeDecisionObservation[]
+): SpendingChangeDecisionMetrics {
+  const binaryObservations: BinaryDecisionObservation[] = [];
+  const lagDaysList: number[] = [];
+  const magnitudeErrorsMinor: number[] = [];
+  let falsePositiveCount = 0;
+
+  for (const observation of observations) {
+    binaryObservations.push({
+      actual: observation.actualChange,
+      predicted: observation.predictedChange
+    });
+
+    if (!observation.actualChange && observation.predictedChange) {
+      falsePositiveCount += 1;
+    }
+
+    if (observation.actualChange && observation.predictedChange) {
+      if (observation.lagDays !== null) {
+        requireSafeInteger(observation.lagDays, "change detection lagDays");
+        lagDaysList.push(Math.abs(observation.lagDays));
+      }
+      if (
+        observation.actualNewMedianMinor !== null &&
+        observation.predictedNewMedianMinor !== null
+      ) {
+        requireSafeInteger(observation.actualNewMedianMinor, "actualNewMedianMinor");
+        requireSafeInteger(observation.predictedNewMedianMinor, "predictedNewMedianMinor");
+        magnitudeErrorsMinor.push(
+          Math.abs(observation.actualNewMedianMinor - observation.predictedNewMedianMinor)
+        );
+      }
+    }
+  }
+
+  const binary = calculateBinaryDecisionMetrics(binaryObservations);
+  const falseChangePointRateBps =
+    observations.length > 0 ? ratioBasisPoints(falsePositiveCount, observations.length) : null;
+
+  return {
+    changeDecision: binary,
+    meanLagDays: roundedMean(lagDaysList, "change detection lag days"),
+    meanMagnitudeErrorMinor: roundedMean(magnitudeErrorsMinor, "change magnitude error"),
+    falseChangePointRateBps
   };
 }

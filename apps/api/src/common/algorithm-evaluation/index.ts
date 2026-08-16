@@ -5,6 +5,7 @@ export {
   calculateForecastDecisionMetrics,
   calculateRecurrenceDecisionMetrics,
   calculateShortfallDecisionMetrics,
+  calculateSpendingChangeDecisionMetrics,
   calculateWarningDecisionMetrics
 } from "./decision-metrics.js";
 export type {
@@ -14,6 +15,7 @@ export type {
   ForecastDecisionObservation,
   RecurrenceDecisionObservation,
   ShortfallDecisionObservation,
+  SpendingChangeDecisionObservation,
   WarningDecisionObservation
 } from "./decision-metrics.js";
 export { buildChronologicalHoldout, buildRollingOriginPlan } from "./rolling-origin.js";

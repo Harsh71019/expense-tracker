@@ -23,3 +23,4 @@ export * from "./pending-transaction.js";
 export * from "./detected-recurring-stream.js";
 export * from "./cashflow-forecast.js";
 export * from "./financial-profile.js";
+export * from "./spending-change-detection.js";

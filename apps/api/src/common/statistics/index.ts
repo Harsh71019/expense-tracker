@@ -9,5 +9,10 @@ export {
   safeIntegerFromBigInt
 } from "./fixed-point.js";
 export { discreteMedian, discreteQuantile, medianAbsoluteDeviation } from "./integer-statistics.js";
-export { INITIAL_CUSUM_STATE, nextCusumState, tabularCusum } from "./cusum.js";
-export type { CusumParameters, CusumState } from "./cusum.js";
+export {
+  INITIAL_CUSUM_STATE,
+  calibrateCusumParameters,
+  nextCusumState,
+  tabularCusum
+} from "./cusum.js";
+export type { CalibrateCusumOptions, CusumParameters, CusumState } from "./cusum.js";

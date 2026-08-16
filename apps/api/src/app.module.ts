@@ -41,6 +41,7 @@ import { OpenApiModule } from "./openapi/openapi.module.js";
 import { PendingTransactionsModule } from "./pending-transactions/pending-transactions.module.js";
 import { RecurringModule } from "./recurring/recurring.module.js";
 import { RecurringDetectionModule } from "./recurring-detection/recurring-detection.module.js";
+import { SpendingChangeDetectionModule } from "./spending-change-detection/spending-change-detection.module.js";
 import { TransactionReconciliationHookModule } from "./recurring/transaction-reconciliation-hook.module.js";
 import { ReportsModule } from "./reports/reports.module.js";
 import { SpendingWarningsModule } from "./spending-warnings/spending-warnings.module.js";
@@ -91,6 +92,7 @@ function isUnthrottledPath(context: ExecutionContext): boolean {
     ExportModule,
     RecurringModule,
     RecurringDetectionModule,
+    SpendingChangeDetectionModule,
     TransactionReconciliationHookModule,
     ReportsModule,
     SpendingWarningsModule,

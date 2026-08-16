@@ -163,6 +163,8 @@ export function AmountInput({
           value={draft}
           type="text"
           inputMode="decimal"
+          autoComplete="off"
+          spellCheck={false}
           aria-invalid={message === undefined || message === null ? undefined : true}
           aria-describedby={message === undefined || message === null ? undefined : `${id}-error`}
           onChange={(event) => setDraft(event.target.value)}

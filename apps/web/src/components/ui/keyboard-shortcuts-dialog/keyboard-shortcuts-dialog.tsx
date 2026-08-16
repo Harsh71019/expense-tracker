@@ -12,7 +12,6 @@ type ShortcutEntry = {
 
 const SHORTCUTS: ShortcutEntry[] = [
   { keys: ["⌘", "K"], description: "Open Command Palette / Search" },
-  { keys: ["⌘", "N"], description: "Post New Transaction" },
   { keys: ["⌘", "P"], description: "Toggle Privacy Mode (hide balances)" },
   { keys: ["?"], description: "Show Keyboard Shortcuts Cheat Sheet" },
   { keys: ["ESC"], description: "Close Modals / Sheets / Command Palette" }

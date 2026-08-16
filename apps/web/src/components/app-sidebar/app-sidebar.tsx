@@ -58,7 +58,7 @@ export function AppSidebar({
         onClick={toggleCompact}
         title={compact ? "Expand sidebar" : "Collapse sidebar"}
         aria-label={compact ? "Expand sidebar" : "Collapse sidebar"}
-        className="absolute top-[30px] -right-[13px] z-10 grid h-[26px] w-[26px] place-items-center rounded-full border border-border bg-surface-elevated text-foreground-muted shadow-sm transition-colors duration-150 hover:text-foreground"
+        className="absolute top-[30px] -right-[13px] z-10 grid h-[26px] w-[26px] place-items-center rounded-full border border-border bg-surface-elevated text-foreground-muted shadow-sm transition-colors duration-150 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
       >
         <span
           className={`inline-block text-base leading-none transition-transform duration-200 ${compact ? "rotate-180" : "rotate-0"}`}

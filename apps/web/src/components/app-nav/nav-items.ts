@@ -5,6 +5,7 @@ export const mainNavItems: readonly NavItem[] = [
   { href: "/add", label: "Add transaction", icon: "+" },
   { href: "/accounts", label: "Accounts", icon: "▣" },
   { href: "/insights", label: "Insights", icon: "✦" },
+  { href: "/cash-flow", label: "Cash-flow forecast", icon: "⌁" },
   { href: "/transactions", label: "Transactions", icon: "≡" },
   { href: "/recurring", label: "Recurring transactions", icon: "↻" },
   { href: "/transfers", label: "Transfers", icon: "⤢" },

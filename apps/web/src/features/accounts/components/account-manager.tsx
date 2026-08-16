@@ -36,45 +36,40 @@ const accountTypes: readonly TypeMeta[] = [
     label: "Bank",
     filterLabel: "Bank",
     icon: "🏦",
-    badgeStyle:
-      "bg-gradient-to-br from-blue-500/15 to-cyan-500/15 text-cyan-600 dark:text-cyan-400 border border-cyan-500/25",
-    accentBorder: "hover:border-cyan-500/40"
+    badgeStyle: "bg-surface-muted text-foreground-muted border border-border",
+    accentBorder: "hover:border-accent/40"
   },
   {
     value: "credit_card",
     label: "Credit card",
     filterLabel: "Cards",
     icon: "💳",
-    badgeStyle:
-      "bg-gradient-to-br from-amber-500/15 to-orange-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25",
-    accentBorder: "hover:border-amber-500/40"
+    badgeStyle: "bg-expense/10 text-expense border border-expense/25",
+    accentBorder: "hover:border-expense/40"
   },
   {
     value: "cash",
     label: "Cash",
     filterLabel: "Cash",
     icon: "💵",
-    badgeStyle:
-      "bg-gradient-to-br from-emerald-500/15 to-teal-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25",
-    accentBorder: "hover:border-emerald-500/40"
+    badgeStyle: "bg-income/10 text-income border border-income/25",
+    accentBorder: "hover:border-income/40"
   },
   {
     value: "wallet",
     label: "Wallet",
     filterLabel: "Wallets",
     icon: "👛",
-    badgeStyle:
-      "bg-gradient-to-br from-purple-500/15 to-indigo-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/25",
-    accentBorder: "hover:border-purple-500/40"
+    badgeStyle: "bg-accent/10 text-accent border border-accent/25",
+    accentBorder: "hover:border-accent/40"
   },
   {
     value: "investment",
     label: "Investment",
     filterLabel: "Investments",
     icon: "📈",
-    badgeStyle:
-      "bg-gradient-to-br from-fuchsia-500/15 to-pink-500/15 text-fuchsia-600 dark:text-fuchsia-400 border border-fuchsia-500/25",
-    accentBorder: "hover:border-fuchsia-500/40"
+    badgeStyle: "bg-surface-muted text-foreground border border-border",
+    accentBorder: "hover:border-accent/40"
   }
 ];
 

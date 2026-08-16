@@ -76,7 +76,7 @@ export function CashFlowChart({ buckets }: CashFlowChartProps): ReactNode {
       />
       {expensePoints.map(([x, y], index) => (
         <circle
-          key={`expense-${buckets[index]?.label ?? index}`}
+          key={`expense-${index}-${buckets[index]?.label ?? ""}`}
           cx={x}
           cy={y}
           r={3}
@@ -85,7 +85,7 @@ export function CashFlowChart({ buckets }: CashFlowChartProps): ReactNode {
       ))}
       {incomePoints.map(([x, y], index) => (
         <circle
-          key={`income-${buckets[index]?.label ?? index}`}
+          key={`income-${index}-${buckets[index]?.label ?? ""}`}
           cx={x}
           cy={y}
           r={3}

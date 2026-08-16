@@ -51,6 +51,27 @@ describe("TransactionInsightsCards", () => {
     expect(screen.getByText("1,234")).toBeVisible();
   });
 
+  it("renders a glyph icon for category Lucide icon keys like percent", () => {
+    mocks.data = {
+      ...baseInsights,
+      topSpendingCategory: {
+        categoryId: "3fa85f64-5717-4562-b3fc-2c963f66beef",
+        name: "Investment",
+        color: "#22c55e",
+        icon: "percent",
+        amountMinor: 5_650_000,
+        transactionCount: 4
+      }
+    };
+
+    render(<TransactionInsightsCards initialInsights={mocks.data} />);
+
+    expect(screen.getByText("Investment")).toBeVisible();
+    expect(screen.getByText("₹56,500.00")).toBeVisible();
+    // Lucide Percent icon renders an svg with aria-hidden, not the raw text "percent"
+    expect(screen.queryByText("percent")).not.toBeInTheDocument();
+  });
+
   it("shows directed empty states when the month has no spending", () => {
     mocks.data = {
       ...baseInsights,

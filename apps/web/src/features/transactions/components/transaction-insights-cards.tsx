@@ -4,6 +4,7 @@ import { formatMinor, type TransactionInsights } from "@treasury-ops/shared";
 import type { ReactNode } from "react";
 
 import { Skeleton } from "@/components/ui/skeleton";
+import { IconGlyph } from "@/features/categories";
 import { usePrivacy } from "@/lib/privacy/privacy-context";
 
 import { useTransactionInsights } from "../hooks/use-transaction-insights";
@@ -99,7 +100,7 @@ export function TransactionInsightsCards({
                 className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-border bg-surface-muted text-sm"
                 style={topCategory.color === undefined ? undefined : { color: topCategory.color }}
               >
-                {topCategory.icon ?? "●"}
+                <IconGlyph value={topCategory.icon ?? "●"} size={16} />
               </span>
               <p className="truncate text-lg font-bold tracking-tight text-foreground">
                 {topCategory.name}

@@ -1,7 +1,9 @@
+import { ArrowRight, KeyRound, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { AccentPicker } from "@/components/ui/accent-picker";
+import { Badge } from "@/components/ui/badge";
 import { ThemePreferenceForm } from "@/components/ui/theme-toggle";
 import { SignOutButton } from "@/features/auth";
 import { EditDisplayNameForm, ProfileSummary } from "@/features/profile";
@@ -10,97 +12,124 @@ import { getStoredAccent } from "@/lib/accent-server";
 import { getSession } from "@/lib/api/session";
 import { getStoredTheme } from "@/lib/theme-server";
 
-import { ManagementToolsGrid } from "./management-tools-grid";
+import {
+  InvariantPaiseCalculator,
+  InvariantReversalSimulator
+} from "./invariants-interactive-tools";
+import { LiveUiPreview } from "./live-ui-preview";
+import { ManagementToolsGrid, type ManagementGroup } from "./management-tools-grid";
 import type { SettingsTab } from "./settings-tabs";
 
-const managementGroups = [
+const managementGroups: readonly ManagementGroup[] = [
   {
     id: "ledger",
     label: "Money & ledger",
-    countTag: "5 Ledger Tools",
-    description: "Set up where money lives and how double-entry records are organized.",
+    countTag: "5 Core Subsystems",
+    description: "Account balances, taxonomies, atomic transfers, and net worth registry.",
     items: [
       {
         href: "/accounts",
         label: "Accounts",
-        description: "Bank, card, cash, and wallets",
-        icon: "▦"
+        description: "Bank, credit card, cash & digital wallet balances",
+        iconName: "Landmark",
+        badge: "Double-Entry"
       },
       {
         href: "/categories",
         label: "Categories",
-        description: "Transaction classification taxonomy",
-        icon: "◎"
+        description: "Transaction classification hierarchy & tax mix",
+        iconName: "Tag",
+        badge: "Taxonomy"
       },
       {
         href: "/transfers",
         label: "Transfers",
-        description: "Move money between accounts safely",
-        icon: "⤢"
+        description: "Atomic double-entry funds movement between accounts",
+        iconName: "ArrowLeftRight",
+        badge: "Atomic Pair"
       },
       {
         href: "/bills",
         label: "Credit card bills",
-        description: "Statements, reconciliation, and payments",
-        icon: "▤"
+        description: "Statements, payment reconciliation & unbilled balances",
+        iconName: "CreditCard",
+        badge: "Reconciliation"
       },
       {
         href: "/assets",
         label: "Assets & Net Worth",
-        description: "Valuations, physical assets, and equity",
-        icon: "◈"
+        description: "Physical assets, investments, equity & valuations",
+        iconName: "Building2",
+        badge: "Valuations"
       }
     ]
   },
   {
     id: "planning",
     label: "Planning & automation",
-    countTag: "4 Automations",
-    description: "Plan ahead and eliminate repetitive expense tracker work.",
+    countTag: "4 Rule Engines",
+    description: "Monthly spending envelopes, target funds, and recurring engines.",
     items: [
       {
         href: "/budgets",
         label: "Budgets",
-        description: "Monthly spending limits & health",
-        icon: "◫"
+        description: "Monthly category envelopes & real-time threshold health",
+        iconName: "PieChart",
+        badge: "Envelopes"
       },
       {
         href: "/goals",
         label: "Goals",
-        description: "Virtual envelope and target tracking",
-        icon: "◎"
+        description: "Target fund tracking & virtual envelope progress",
+        iconName: "Target",
+        badge: "Target Funds"
       },
       {
         href: "/recurring",
         label: "Recurring Rules",
-        description: "Scheduled transaction engines",
-        icon: "↻"
+        description: "Scheduled recurring streams & subscription reconciliation",
+        iconName: "Repeat",
+        badge: "Engines"
       },
       {
         href: "/category-rules",
         label: "Category rules",
-        description: "Automatic classification engine",
-        icon: "⌁"
+        description: "Automatic classification pattern engine for imports",
+        iconName: "Sparkles",
+        badge: "Classification"
       }
     ]
   },
   {
     id: "data",
     label: "Data & access",
-    countTag: "3 Integrations",
-    description: "Bring CSV data in, export structured ledger files, or issue API tokens.",
+    countTag: "3 Integration Tools",
+    description: "CSV statement parsing, ledger export, and scoped REST tokens.",
     items: [
-      { href: "/imports", label: "Imports", description: "CSV statement import parser", icon: "↧" },
-      { href: "/export", label: "Export", description: "Download ledger data as CSV", icon: "↥" },
+      {
+        href: "/imports",
+        label: "Imports",
+        description: "Multi-bank CSV parser with duplicate detection",
+        iconName: "FileSpreadsheet",
+        badge: "CSV Pipeline"
+      },
+      {
+        href: "/export",
+        label: "Export",
+        description: "Formula-safe sanitized CSV dumps of transaction history",
+        iconName: "Download",
+        badge: "Sanitized CSV"
+      },
       {
         href: "/settings/api-keys",
         label: "API keys",
-        description: "Personal access tokens for external scripts",
-        icon: "⚿"
+        description: "Scoped personal access tokens for automation scripts",
+        iconName: "KeyRound",
+        badge: "REST Tokens"
       }
     ]
   }
-] as const;
+];
 
 function SettingsSectionHeader({
   eyebrow,
@@ -108,16 +137,18 @@ function SettingsSectionHeader({
   description
 }: Readonly<{ eyebrow: string; title: string; description?: string }>): ReactNode {
   return (
-    <header className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-3.5">
-      <div className="flex items-center gap-2.5">
-        <span className="inline-flex items-center gap-1 rounded-md border border-accent/25 bg-accent-glow/30 px-2 py-0.5 font-mono text-2xs font-bold tracking-wider text-accent uppercase">
-          {eyebrow}
-        </span>
-        <h2 className="text-lg font-bold tracking-tight text-foreground sm:text-xl">{title}</h2>
+    <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-3.5">
+      <div className="space-y-1">
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center gap-1 rounded-md border border-accent/25 bg-accent-glow/40 px-2 py-0.5 font-mono text-2xs font-bold tracking-wider text-accent uppercase">
+            {eyebrow}
+          </span>
+          <h2 className="text-lg font-bold tracking-tight text-foreground sm:text-xl">{title}</h2>
+        </div>
+        {description !== undefined ? (
+          <p className="text-xs text-foreground-muted">{description}</p>
+        ) : null}
       </div>
-      {description !== undefined ? (
-        <p className="text-xs text-foreground-muted">{description}</p>
-      ) : null}
     </header>
   );
 }
@@ -130,51 +161,123 @@ async function ProfileSettingsPanel(): Promise<ReactNode> {
   return (
     <div className="space-y-6 animate-fade-in">
       <SettingsSectionHeader
-        eyebrow="Identity & Credentials"
-        title="Profile & Session"
-        description="Manage your treasury operator persona and active credentials."
+        eyebrow="Identity & Security"
+        title="Operator Profile & Authentication"
+        description="Manage your treasury operator persona, display credentials, and session security."
       />
 
+      {/* Operator Summary Hero Card */}
       <div className="grid gap-4 md:grid-cols-2">
         <ProfileSummary profile={profile} email={email} />
         <EditDisplayNameForm initialProfile={profile} />
       </div>
 
-      {/* Developer API Token Quick-Access Banner */}
-      <section className="glass-card flex flex-col gap-3.5 rounded-2xl p-4 shadow-xs sm:flex-row sm:items-center sm:justify-between sm:px-5">
-        <div className="flex items-center gap-3">
-          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-accent/30 bg-accent-glow/40 text-lg text-accent">
-            ⚿
+      {/* Quick Navigation Shortcuts */}
+      <section className="glass-card flex flex-col justify-between rounded-2xl p-4 sm:p-5 shadow-xs">
+        <header className="flex items-center justify-between pb-2 border-b border-border/60">
+          <h3 className="text-xs font-bold tracking-wider uppercase text-foreground-muted">
+            Quick Ledger Navigation
+          </h3>
+          <span className="font-mono text-2xs text-accent font-semibold">Fast Jump</span>
+        </header>
+
+        <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <Link
+            href="/goals"
+            className="flex items-center justify-between rounded-xl border border-border/70 bg-surface-muted/60 p-2.5 text-xs font-bold text-foreground transition-all hover:border-accent/40 hover:bg-surface-elevated hover:text-accent"
+          >
+            <span>Goals</span>
+            <span className="text-foreground-muted text-2xs">→</span>
+          </Link>
+          <Link
+            href="/transfers"
+            className="flex items-center justify-between rounded-xl border border-border/70 bg-surface-muted/60 p-2.5 text-xs font-bold text-foreground transition-all hover:border-accent/40 hover:bg-surface-elevated hover:text-accent"
+          >
+            <span>Transfers</span>
+            <span className="text-foreground-muted text-2xs">→</span>
+          </Link>
+          <Link
+            href="/accounts"
+            className="flex items-center justify-between rounded-xl border border-border/70 bg-surface-muted/60 p-2.5 text-xs font-bold text-foreground transition-all hover:border-accent/40 hover:bg-surface-elevated hover:text-accent"
+          >
+            <span>Accounts</span>
+            <span className="text-foreground-muted text-2xs">→</span>
+          </Link>
+          <Link
+            href="/imports"
+            className="flex items-center justify-between rounded-xl border border-border/70 bg-surface-muted/60 p-2.5 text-xs font-bold text-foreground transition-all hover:border-accent/40 hover:bg-surface-elevated hover:text-accent"
+          >
+            <span>Imports</span>
+            <span className="text-foreground-muted text-2xs">→</span>
+          </Link>
+        </div>
+      </section>
+
+      {/* Developer API Token Card */}
+      <section className="glass-card flex flex-col gap-4 rounded-2xl p-4 sm:p-5 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-accent-glow text-accent ring-1 ring-accent/25">
+              <KeyRound className="h-5 w-5" aria-hidden={true} />
+            </span>
+            <div>
+              <h3 className="text-sm font-bold text-foreground">
+                Developer API Access &amp; Tokens
+              </h3>
+              <p className="text-xs text-foreground-muted">
+                Provision scoped API keys for automation scripts, Raycast extensions, and cron
+                syncs.
+              </p>
+            </div>
+          </div>
+
+          <Link
+            href="/settings/api-keys"
+            className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-border/80 bg-surface-muted/80 px-4 py-2 text-xs font-bold text-foreground transition-all hover:border-accent/40 hover:bg-surface-elevated hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent shrink-0"
+          >
+            <span>Manage API Keys</span>
+            <ArrowRight className="h-3.5 w-3.5" aria-hidden={true} />
+          </Link>
+        </div>
+
+        <div className="grid gap-2 sm:grid-cols-3 border-t border-border/50 pt-3">
+          <div className="rounded-xl border border-border/60 bg-surface-muted/40 p-2.5 font-mono text-2xs">
+            <span className="font-bold text-foreground">read:transactions</span>
+            <p className="text-foreground-muted mt-0.5">Read ledger balances &amp; txn rows</p>
+          </div>
+          <div className="rounded-xl border border-border/60 bg-surface-muted/40 p-2.5 font-mono text-2xs">
+            <span className="font-bold text-foreground">write:transactions</span>
+            <p className="text-foreground-muted mt-0.5">Post new append-only transactions</p>
+          </div>
+          <div className="rounded-xl border border-border/60 bg-surface-muted/40 p-2.5 font-mono text-2xs">
+            <span className="font-bold text-foreground">export:csv</span>
+            <p className="text-foreground-muted mt-0.5">Stream formula-safe ledger CSV dumps</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Session Security & Sign Out Card */}
+      <section className="glass-card flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl p-4 sm:p-5 shadow-xs">
+        <div className="flex items-center gap-3.5">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-income/30 bg-income/10 text-income">
+            <ShieldCheck className="h-5 w-5" aria-hidden={true} />
           </span>
-          <div>
-            <h3 className="text-sm font-bold text-foreground">Personal API Access Tokens</h3>
-            <p className="text-xs text-foreground-muted">
-              Provision scoped API keys for programmatic automation, shortcuts, and CLI scripts.
+          <div className="min-w-0 space-y-0.5">
+            <div className="flex items-center gap-2">
+              <span
+                className="h-2 w-2 rounded-full bg-income shadow-glow animate-pulse"
+                aria-hidden="true"
+              />
+              <h3 className="truncate text-xs font-semibold text-foreground sm:text-sm">
+                Signed in as <span className="text-accent font-bold">{displayName}</span>
+              </h3>
+            </div>
+            <p className="truncate font-mono text-2xs text-foreground-muted">
+              {email} · Active Browser Session
             </p>
           </div>
         </div>
-        <Link
-          href="/settings/api-keys"
-          className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-border/80 bg-surface-muted/60 px-4 py-2 text-xs font-bold text-foreground transition-all hover:border-accent/40 hover:bg-surface-elevated hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-        >
-          <span>Manage API Keys</span>
-          <span aria-hidden="true">→</span>
-        </Link>
-      </section>
 
-      {/* Account Session Security Card */}
-      <section className="glass-card flex flex-col gap-3 rounded-2xl p-4 shadow-xs sm:flex-row sm:items-center sm:justify-between sm:px-5">
-        <div className="min-w-0 space-y-0.5">
-          <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-income shadow-glow" aria-hidden="true" />
-            <h3 className="truncate text-xs font-semibold text-foreground sm:text-sm">
-              Signed in as <span className="text-accent font-bold">{displayName}</span>
-            </h3>
-          </div>
-          <p className="truncate font-mono text-2xs text-foreground-muted">
-            {email} · Active Browser Session
-          </p>
-        </div>
         <SignOutButton />
       </section>
     </div>
@@ -187,77 +290,52 @@ async function AppearanceSettingsPanel(): Promise<ReactNode> {
   return (
     <div className="space-y-6 animate-fade-in">
       <SettingsSectionHeader
-        eyebrow="Visual Engineering"
-        title="Workspace Appearance"
-        description="Tailor the theme system and active interface palette."
+        eyebrow="Visual System"
+        title="Appearance &amp; Theme Studio"
+        description="Personalize your color system, theme modes, and view real-time ledger component rendering."
       />
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <section className="glass-card space-y-4 rounded-2xl p-4 shadow-xs sm:p-5">
-          <div className="rounded-xl border border-border/80 bg-surface-muted/40 p-3.5">
-            <ThemePreferenceForm current={theme} />
-          </div>
-
-          <div>
-            <AccentPicker current={accent} />
-          </div>
-        </section>
-
-        {/* Live Color System Tokens & UI Preview */}
-        <div className="space-y-4">
-          <section className="glass-card rounded-2xl p-4 shadow-xs sm:p-5">
-            <div className="flex items-center justify-between pb-2.5 border-b border-border/60">
-              <p className="font-mono text-2xs font-bold tracking-wider text-foreground-muted uppercase">
-                🎨 Live System Tokens
-              </p>
-              <span className="font-mono text-2xs font-semibold text-accent">
-                Active Theme Tokens
-              </span>
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Left Column: Theme & Accent Selectors */}
+        <div className="space-y-6">
+          <section className="glass-card space-y-4 rounded-2xl p-4 sm:p-5 shadow-xs">
+            <div className="rounded-xl border border-border/80 bg-surface-muted/40 p-3.5">
+              <ThemePreferenceForm current={theme} />
             </div>
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              <div className="flex flex-col gap-0.5 rounded-lg border border-accent/30 bg-accent-glow/30 p-2.5 text-center">
-                <span className="font-mono text-2xs font-bold text-accent uppercase">Accent</span>
-                <span className="text-xs font-semibold text-foreground">Interactive</span>
-              </div>
-              <div className="flex flex-col gap-0.5 rounded-lg border border-income/30 bg-income/10 p-2.5 text-center">
-                <span className="font-mono text-2xs font-bold text-income uppercase">Income</span>
-                <span className="text-xs font-semibold text-income">+ Positive</span>
-              </div>
-              <div className="flex flex-col gap-0.5 rounded-lg border border-expense/30 bg-expense/10 p-2.5 text-center">
-                <span className="font-mono text-2xs font-bold text-expense uppercase">Expense</span>
-                <span className="text-xs font-semibold text-expense">- Outflow</span>
-              </div>
-              <div className="flex flex-col gap-0.5 rounded-lg border border-border bg-surface-muted p-2.5 text-center">
-                <span className="font-mono text-2xs font-bold text-foreground-muted uppercase">
-                  Surface
-                </span>
-                <span className="text-xs font-semibold text-foreground-muted">Elevated</span>
-              </div>
+
+            <div>
+              <AccentPicker current={accent} />
             </div>
           </section>
+        </div>
 
-          {/* Mini UI Card Preview */}
-          <section className="glass-card rounded-2xl p-4 shadow-xs sm:p-5">
-            <p className="font-mono text-2xs font-bold tracking-wider text-foreground-muted uppercase">
-              ✨ Live Interface Preview
-            </p>
-            <div className="mt-3 rounded-xl border border-border bg-surface-elevated p-3.5 shadow-2xs">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <span className="grid h-8 w-8 place-items-center rounded-lg bg-accent text-accent-foreground font-mono text-xs font-bold shadow-xs">
-                    ₹
-                  </span>
-                  <div>
-                    <p className="text-xs font-bold text-foreground">Treasury Balance</p>
-                    <p className="text-2xs text-foreground-muted">Primary Account</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="font-mono text-xs font-bold text-income">+₹1,24,500.00</p>
-                  <span className="rounded-md bg-accent/10 px-1.5 py-0.5 font-mono text-2xs font-bold text-accent">
-                    Active
-                  </span>
-                </div>
+        {/* Right Column: Live Dynamic UI Preview & Typography Specs */}
+        <div className="space-y-6">
+          <LiveUiPreview />
+
+          {/* Typography & Display Specifications */}
+          <section className="glass-card rounded-2xl p-4 sm:p-5 shadow-xs">
+            <header className="flex items-center justify-between pb-2 border-b border-border/60">
+              <p className="font-mono text-2xs font-bold tracking-wider text-foreground-muted uppercase">
+                📐 Interface Engineering Specs
+              </p>
+              <span className="font-mono text-2xs font-semibold text-accent">
+                WCAG AAA Compliant
+              </span>
+            </header>
+
+            <div className="mt-3 space-y-2.5 text-xs text-foreground-muted">
+              <div className="flex items-center justify-between rounded-lg border border-border/60 bg-surface-muted/40 p-2.5 font-mono text-2xs">
+                <span className="font-bold text-foreground">Tabular Numbers</span>
+                <span>font-variant-numeric: tabular-nums</span>
+              </div>
+              <div className="flex items-center justify-between rounded-lg border border-border/60 bg-surface-muted/40 p-2.5 font-mono text-2xs">
+                <span className="font-bold text-foreground">Money Precision</span>
+                <span>Integer Minor Units (1 INR = 100 Paise)</span>
+              </div>
+              <div className="flex items-center justify-between rounded-lg border border-border/60 bg-surface-muted/40 p-2.5 font-mono text-2xs">
+                <span className="font-bold text-foreground">Timezone Standard</span>
+                <span>Asia/Kolkata (IST · UTC+5:30)</span>
               </div>
             </div>
           </section>
@@ -272,8 +350,8 @@ function ManagementSettingsPanel(): ReactNode {
     <div className="space-y-6 animate-fade-in">
       <SettingsSectionHeader
         eyebrow="Modules Directory"
-        title="Manage TreasuryOps"
-        description="All 12 ledger modules, rules, and integration endpoints."
+        title="Ledger Subsystems &amp; Tools Directory"
+        description="Unified directory for all 12 accounting subsystems, automation rules, and data pipelines."
       />
 
       <ManagementToolsGrid groups={managementGroups} />
@@ -285,97 +363,168 @@ function InvariantsSettingsPanel(): ReactNode {
   return (
     <div className="space-y-6 animate-fade-in">
       <SettingsSectionHeader
-        eyebrow="Ledger Invariants"
-        title="Double-Entry Rules &amp; Money Invariants"
-        description="Architectural safety guarantees ensuring mathematical ledger truth."
+        eyebrow="Mathematical Guarantees"
+        title="Double-Entry Rules &amp; Ledger Invariants"
+        description="Non-negotiable architectural safety guarantees ensuring mathematical correctness and tamper-evident history."
       />
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        {/* Invariant 1 */}
-        <section className="glass-card rounded-2xl p-4 shadow-xs sm:p-5">
-          <div className="flex items-center gap-2.5">
-            <span className="grid h-8 w-8 place-items-center rounded-lg border border-accent/30 bg-accent-glow/40 font-mono text-xs font-bold text-accent">
-              01
-            </span>
-            <h3 className="text-sm font-bold text-foreground">Exact Integer Minor Units</h3>
+      {/* Overview Banner */}
+      <div className="glass-card relative overflow-hidden rounded-2xl border-l-4 border-l-accent p-4 sm:p-5 shadow-xs">
+        <div className="flex items-start gap-3.5">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-accent-glow text-accent ring-1 ring-accent/25">
+            <ShieldCheck className="h-5 w-5" aria-hidden={true} />
+          </span>
+          <div className="space-y-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-sm font-bold text-foreground">Zero-Drift Ledger Architecture</h3>
+              <Badge variant="success" pulse>
+                100% Invariant Compliant
+              </Badge>
+            </div>
+            <p className="text-xs text-foreground-muted leading-relaxed">
+              Every financial mutation in TreasuryOps is mathematically bounded by strict ACID
+              transactions, integer minor units, and append-only compensating reversal records.
+              Money records are never mutated or destroyed.
+            </p>
           </div>
-          <p className="mt-2 text-xs leading-relaxed text-foreground-muted">
-            All monetary fields are stored and computed strictly as positive integer paise (
-            <code className="rounded bg-surface-muted px-1 py-0.5 font-mono text-2xs text-accent">
+        </div>
+      </div>
+
+      {/* Grid of Invariants */}
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Invariant 1: Exact Integer Minor Units */}
+        <section className="glass-card space-y-3.5 rounded-2xl p-4 sm:p-5 shadow-xs">
+          <div className="flex items-center justify-between pb-2 border-b border-border/60">
+            <div className="flex items-center gap-2.5">
+              <span className="grid h-8 w-8 place-items-center rounded-lg bg-accent-glow font-mono text-xs font-bold text-accent ring-1 ring-accent/25">
+                01
+              </span>
+              <div>
+                <h3 className="text-sm font-bold text-foreground">Exact Integer Minor Units</h3>
+                <p className="text-2xs text-foreground-muted">Zero IEEE-754 floating-point drift</p>
+              </div>
+            </div>
+            <span className="rounded bg-surface-muted px-2 py-0.5 font-mono text-2xs font-bold text-accent">
               amountMinor
-            </code>
-            ). Floating-point arithmetic never touches money, completely preventing precision drift
-            and rounding leaks.
-          </p>
-          <div className="mt-3 rounded-xl border border-border/80 bg-surface-muted/50 p-2.5 font-mono text-2xs text-foreground-muted">
-            ₹1.00 = 100 paise · Zero IEEE 754 drift
+            </span>
           </div>
+
+          <p className="text-xs leading-relaxed text-foreground-muted">
+            All monetary values are stored strictly as positive integer paise. Floating-point
+            arithmetic never touches money in backend services or database columns, eliminating
+            precision leakages permanently.
+          </p>
+
+          <InvariantPaiseCalculator />
         </section>
 
-        {/* Invariant 2 */}
-        <section className="glass-card rounded-2xl p-4 shadow-xs sm:p-5">
-          <div className="flex items-center gap-2.5">
-            <span className="grid h-8 w-8 place-items-center rounded-lg border border-accent/30 bg-accent-glow/40 font-mono text-xs font-bold text-accent">
-              02
-            </span>
-            <h3 className="text-sm font-bold text-foreground">Append-Only Immutability</h3>
-          </div>
-          <p className="mt-2 text-xs leading-relaxed text-foreground-muted">
-            The ledger is append-only. Monetary records are never edited or deleted. Corrections are
-            strictly posted as paired compensating reversal entries via the{" "}
-            <code className="rounded bg-surface-muted px-1 py-0.5 font-mono text-2xs text-accent">
+        {/* Invariant 2: Append-Only Immutability */}
+        <section className="glass-card space-y-3.5 rounded-2xl p-4 sm:p-5 shadow-xs">
+          <div className="flex items-center justify-between pb-2 border-b border-border/60">
+            <div className="flex items-center gap-2.5">
+              <span className="grid h-8 w-8 place-items-center rounded-lg bg-accent-glow font-mono text-xs font-bold text-accent ring-1 ring-accent/25">
+                02
+              </span>
+              <div>
+                <h3 className="text-sm font-bold text-foreground">Append-Only Immutability</h3>
+                <p className="text-2xs text-foreground-muted">
+                  Paired compensating reversal entries
+                </p>
+              </div>
+            </div>
+            <span className="rounded bg-surface-muted px-2 py-0.5 font-mono text-2xs font-bold text-accent">
               ReversalService
-            </code>
-            , creating an unbreakable historical audit trail.
-          </p>
-          <div className="mt-3 rounded-xl border border-border/80 bg-surface-muted/50 p-2.5 font-mono text-2xs text-foreground-muted">
-            Immutable log · Reversal pairs preserve history
+            </span>
           </div>
+
+          <p className="text-xs leading-relaxed text-foreground-muted">
+            The ledger is append-only. Monetary fields are never updated or deleted. Corrections are
+            strictly posted as paired compensating reversals, preserving complete immutable audit
+            history.
+          </p>
+
+          <InvariantReversalSimulator />
         </section>
 
-        {/* Invariant 3 */}
-        <section className="glass-card rounded-2xl p-4 shadow-xs sm:p-5">
-          <div className="flex items-center gap-2.5">
-            <span className="grid h-8 w-8 place-items-center rounded-lg border border-accent/30 bg-accent-glow/40 font-mono text-xs font-bold text-accent">
-              03
+        {/* Invariant 3: Atomic Transaction Isolation */}
+        <section className="glass-card space-y-3.5 rounded-2xl p-4 sm:p-5 shadow-xs">
+          <div className="flex items-center justify-between pb-2 border-b border-border/60">
+            <div className="flex items-center gap-2.5">
+              <span className="grid h-8 w-8 place-items-center rounded-lg bg-accent-glow font-mono text-xs font-bold text-accent ring-1 ring-accent/25">
+                03
+              </span>
+              <div>
+                <h3 className="text-sm font-bold text-foreground">Atomic Transaction Isolation</h3>
+                <p className="text-2xs text-foreground-muted">
+                  ACID boundaries with deadlock auto-retry
+                </p>
+              </div>
+            </div>
+            <span className="rounded bg-surface-muted px-2 py-0.5 font-mono text-2xs font-bold text-accent">
+              withTxn
             </span>
-            <h3 className="text-sm font-bold text-foreground">Atomic Transaction Isolation</h3>
           </div>
-          <p className="mt-2 text-xs leading-relaxed text-foreground-muted">
-            Every monetary mutation executes inside an atomic Postgres transaction with automatic
-            retry on serialization and deadlock errors (
-            <code className="rounded bg-surface-muted px-1 py-0.5 font-mono text-2xs text-accent">
+
+          <p className="text-xs leading-relaxed text-foreground-muted">
+            Every monetary mutation executes in an atomic Postgres transaction with automatic retry
+            on serialization (
+            <code className="rounded bg-surface-muted px-1 font-mono text-2xs text-accent">
               40001
             </code>
-            /
-            <code className="rounded bg-surface-muted px-1 py-0.5 font-mono text-2xs text-accent">
+            ) and deadlock (
+            <code className="rounded bg-surface-muted px-1 font-mono text-2xs text-accent">
               40P01
             </code>
-            ). Account balances and audit records update in tandem.
+            ) errors. Balance cache and audit log update in tandem.
           </p>
-          <div className="mt-3 rounded-xl border border-border/80 bg-surface-muted/50 p-2.5 font-mono text-2xs text-foreground-muted">
-            ACID boundaries · withTxn orchestrator
+
+          <div className="rounded-xl border border-border/80 bg-surface-muted/50 p-3 font-mono text-2xs text-foreground-muted space-y-1">
+            <div className="flex items-center justify-between text-foreground">
+              <span className="font-bold">Transaction Isolation:</span>
+              <span>READ COMMITTED + Retry Loop</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span>Max Batch Size:</span>
+              <span>≤ 200 rows per transaction</span>
+            </div>
           </div>
         </section>
 
-        {/* Invariant 4 */}
-        <section className="glass-card rounded-2xl p-4 shadow-xs sm:p-5">
-          <div className="flex items-center gap-2.5">
-            <span className="grid h-8 w-8 place-items-center rounded-lg border border-accent/30 bg-accent-glow/40 font-mono text-xs font-bold text-accent">
-              04
+        {/* Invariant 4: Timezone Anchor */}
+        <section className="glass-card space-y-3.5 rounded-2xl p-4 sm:p-5 shadow-xs">
+          <div className="flex items-center justify-between pb-2 border-b border-border/60">
+            <div className="flex items-center gap-2.5">
+              <span className="grid h-8 w-8 place-items-center rounded-lg bg-accent-glow font-mono text-xs font-bold text-accent ring-1 ring-accent/25">
+                04
+              </span>
+              <div>
+                <h3 className="text-sm font-bold text-foreground">Deterministic Timezone Anchor</h3>
+                <p className="text-2xs text-foreground-muted">Asia/Kolkata (IST · UTC+5:30)</p>
+              </div>
+            </div>
+            <span className="rounded bg-surface-muted px-2 py-0.5 font-mono text-2xs font-bold text-accent">
+              common/time.ts
             </span>
-            <h3 className="text-sm font-bold text-foreground">Timezone Anchor (IST)</h3>
           </div>
-          <p className="mt-2 text-xs leading-relaxed text-foreground-muted">
-            All calendar boundaries, monthly rollup aggregations, cron triggers, and budget health
-            cycles are anchored in{" "}
-            <code className="rounded bg-surface-muted px-1 py-0.5 font-mono text-2xs text-accent">
+
+          <p className="text-xs leading-relaxed text-foreground-muted">
+            All calendar boundaries, monthly rollup aggregations, cron triggers, and billing cycles
+            are computed strictly in{" "}
+            <code className="rounded bg-surface-muted px-1 font-mono text-2xs text-accent">
               Asia/Kolkata
             </code>{" "}
-            (UTC+5:30) rather than runtime host clock variables.
+            rather than host server clock variables.
           </p>
-          <div className="mt-3 rounded-xl border border-border/80 bg-surface-muted/50 p-2.5 font-mono text-2xs text-foreground-muted">
-            Consistent monthly cycles · Deterministic rollups
+
+          <div className="rounded-xl border border-border/80 bg-surface-muted/50 p-3 font-mono text-2xs text-foreground-muted space-y-1">
+            <div className="flex items-center justify-between text-foreground">
+              <span className="font-bold">Wire Format:</span>
+              <span>ISO 8601 UTC</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span>Aggregation Calendar:</span>
+              <span>Asia/Kolkata (IST)</span>
+            </div>
           </div>
         </section>
       </div>

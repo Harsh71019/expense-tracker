@@ -31,8 +31,8 @@ describe("SettingsTabList", () => {
       "/settings?tab=invariants"
     );
     expect(
-      screen.getByRole("tab", { name: /Management/ }).querySelector('[aria-hidden="true"]')
-    ).toHaveTextContent("▦");
+      screen.getByRole("tab", { name: /Management/ }).querySelector("svg")
+    ).toBeInTheDocument();
   });
 
   it("moves focus with arrow, Home, and End keys", async () => {

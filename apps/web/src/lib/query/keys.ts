@@ -1,4 +1,9 @@
-import type { DashboardRange, GoalStatus, ListTransactionsQuery } from "@treasury-ops/shared";
+import type {
+  DashboardRange,
+  DeclaredDebtStatus,
+  GoalStatus,
+  ListTransactionsQuery
+} from "@treasury-ops/shared";
 
 import type { SpendingWarningFilters } from "@/features/spending-warnings/model/filters";
 
@@ -62,6 +67,10 @@ export const qk = {
   salaryStatistics: () => [...financialProfileRoot, "salary-statistics"] as const,
   salaryVersions: (limit: number) =>
     [...financialProfileRoot, "salary-versions", { limit }] as const,
+  protection: () => [...financialProfileRoot, "protection"] as const,
+  declaredDebts: () => [...financialProfileRoot, "debts"] as const,
+  declaredDebtList: (filters: Readonly<{ status: DeclaredDebtStatus; limit: number }>) =>
+    [...financialProfileRoot, "debts", "list", filters] as const,
   dashboard: () => dashboardRoot,
   recentActivity: (limit: number) => [...dashboardRoot, "recent-activity", limit] as const,
   dashboardStats: (period?: string) => [...dashboardRoot, "stats", period ?? "current"] as const,

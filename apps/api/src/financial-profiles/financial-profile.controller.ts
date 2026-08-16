@@ -1,11 +1,32 @@
-import { Body, Controller, Get, Headers, HttpCode, Patch, Post, Query, Res } from "@nestjs/common";
 import {
+  Body,
+  Controller,
+  Get,
+  Headers,
+  HttpCode,
+  Param,
+  Patch,
+  Post,
+  Put,
+  Query,
+  Res
+} from "@nestjs/common";
+import {
+  CreateDeclaredDebtSchema,
   CreateSalaryVersionSchema,
+  DeclaredDebtIdSchema,
   FinancialProfileUpdateSchema,
+  ListDeclaredDebtsQuerySchema,
   ListSalaryVersionsQuerySchema,
   SalaryStatisticsQuerySchema,
+  UpdateDeclaredDebtSchema,
+  UpsertProtectionSchema,
+  type DeclaredDebt,
+  type DeclaredDebtPage,
   type FinancialProfile,
   type FinancialProfileState,
+  type ProtectionSnapshot,
+  type ProtectionState,
   type SalaryStatistics,
   type SalaryVersion,
   type SalaryVersionPage
@@ -15,13 +36,19 @@ import { z } from "zod";
 
 import type { AuthenticatedUser } from "../auth/auth.guard.js";
 import { CurrentUser } from "../auth/current-user.decorator.js";
+import { DebtProfileService } from "./debt-profile.service.js";
 import { FinancialProfileService } from "./financial-profile.service.js";
+import { ProtectionService } from "./protection.service.js";
 
 const IdempotencyKeySchema = z.string().uuid();
 
 @Controller("v1/financial-profile")
 export class FinancialProfileController {
-  constructor(private readonly profiles: FinancialProfileService) {}
+  constructor(
+    private readonly profiles: FinancialProfileService,
+    private readonly protection: ProtectionService,
+    private readonly debts: DebtProfileService
+  ) {}
 
   @Get()
   getState(@CurrentUser() user: AuthenticatedUser): Promise<FinancialProfileState> {
@@ -82,5 +109,81 @@ export class FinancialProfileController {
     return asOf === undefined
       ? this.profiles.getStatistics(user.id)
       : this.profiles.getStatistics(user.id, asOf);
+  }
+
+  @Get("protection")
+  getProtection(@CurrentUser() user: AuthenticatedUser): Promise<ProtectionState> {
+    return this.protection.getState(user.id);
+  }
+
+  /**
+   * Appends an effective-dated protection snapshot. `PUT` reads as "set my
+   * protection answers", but it never overwrites history — a new effective date
+   * appends, and the same date twice is a conflict.
+   */
+  @Put("protection")
+  @HttpCode(201)
+  async putProtection(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() body: unknown,
+    @Headers("idempotency-key") key?: string,
+    @Res({ passthrough: true }) response?: Response
+  ): Promise<ProtectionSnapshot> {
+    const result = await this.protection.upsertProtection(
+      user.id,
+      UpsertProtectionSchema.parse(body),
+      IdempotencyKeySchema.parse(key)
+    );
+    if (result.replayed && response !== undefined) {
+      response.status(200).setHeader("Idempotency-Replayed", "true");
+    }
+    return result.result;
+  }
+
+  @Get("debts")
+  listDebts(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query() query: unknown
+  ): Promise<DeclaredDebtPage> {
+    return this.debts.list(user.id, ListDeclaredDebtsQuerySchema.parse(query));
+  }
+
+  @Post("debts")
+  @HttpCode(201)
+  async createDebt(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() body: unknown,
+    @Headers("idempotency-key") key?: string,
+    @Res({ passthrough: true }) response?: Response
+  ): Promise<DeclaredDebt> {
+    const result = await this.debts.create(
+      user.id,
+      CreateDeclaredDebtSchema.parse(body),
+      IdempotencyKeySchema.parse(key)
+    );
+    if (result.replayed && response !== undefined) {
+      response.status(200).setHeader("Idempotency-Replayed", "true");
+    }
+    return result.result;
+  }
+
+  @Patch("debts/:debtId")
+  async updateDebt(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("debtId") debtId: string,
+    @Body() body: unknown,
+    @Headers("idempotency-key") key?: string,
+    @Res({ passthrough: true }) response?: Response
+  ): Promise<DeclaredDebt> {
+    const result = await this.debts.update(
+      user.id,
+      DeclaredDebtIdSchema.parse(debtId),
+      UpdateDeclaredDebtSchema.parse(body),
+      IdempotencyKeySchema.parse(key)
+    );
+    if (result.replayed && response !== undefined) {
+      response.setHeader("Idempotency-Replayed", "true");
+    }
+    return result.result;
   }
 }

@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import type {
   Account,
@@ -127,6 +128,38 @@ vi.mock("@/features/dashboard/hooks/use-investments", () => ({
   useInvestments: () => ({ data: mocks.investments })
 }));
 vi.mock("@/features/categories/server/get-categories", () => ({ getCategories: async () => [] }));
+vi.mock("@/features/assets/server/get-assets", () => ({ getAssets: async () => [] }));
+vi.mock("@/features/financial-profile/server/get-protection-profile", () => ({
+  DEBT_PAGE_SIZE: 50,
+  getProtectionState: async () => ({
+    configured: false,
+    currentSnapshot: null,
+    upcomingSnapshot: null,
+    asOf: new Date("2026-08-16T00:00:00.000Z"),
+    dataQuality: "unavailable",
+    termCover: {
+      state: "not_configured",
+      expiryState: "not_applicable",
+      expiresOn: null,
+      hasIndependentCover: false,
+      hasEmployerCover: false
+    },
+    healthCover: {
+      state: "not_configured",
+      expiryState: "not_applicable",
+      expiresOn: null,
+      hasIndependentCover: false,
+      hasEmployerCover: false
+    },
+    expiringSoonDays: 90,
+    limitations: []
+  }),
+  getDeclaredDebtPage: async () => ({
+    items: [],
+    pageInfo: { nextCursor: null, hasMore: false, limit: 50 },
+    highCost: { thresholdBps: 1_200, comparison: "greater_than", highCostCount: 0 }
+  })
+}));
 vi.mock("@/features/budgets", () => ({
   BudgetsPage: () => <h1>Monthly budgets</h1>,
   BudgetDashboardPanel: () => <h2>Monthly budgets</h2>
@@ -159,7 +192,14 @@ vi.mock("@/features/profile", () => ({
 }));
 vi.mock("@/features/profile/server/get-profile", () => ({ getProfile: async () => null }));
 vi.mock("@/features/financial-profile", () => ({
-  SalaryWorkPanel: () => <h2>Salary &amp; work</h2>
+  SalaryWorkPanel: () => <h2>Salary &amp; work</h2>,
+  ProtectionDebtPanel: () => (
+    <div>
+      <h2>Protection &amp; Debt</h2>
+      <p>Protection not recorded yet</p>
+      <p>No debts declared</p>
+    </div>
+  )
 }));
 vi.mock("@/features/financial-profile/server/get-financial-profile", () => ({
   SALARY_HISTORY_PAGE_SIZE: 10,
@@ -351,6 +391,58 @@ describe("route shells", () => {
     mocks.investments = { items: [] };
   });
 
+  it("renders the settings tabs and defaults to profile", async () => {
+    render(await SettingsPage({ searchParams: Promise.resolve({}) }));
+    expect(screen.getByRole("tab", { name: "Profile" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByText("harsh@example.com")).toBeVisible();
+  });
+
+  it("switches to the appearance tab from the URL", async () => {
+    render(await SettingsPage({ searchParams: Promise.resolve({ tab: "appearance" }) }));
+    expect(screen.getByRole("tab", { name: "Appearance" })).toHaveAttribute(
+      "aria-selected",
+      "true"
+    );
+    expect(screen.getByRole("heading", { name: "Accent color" })).toBeVisible();
+  });
+
+  it("switches to the income tab from the URL", async () => {
+    render(await SettingsPage({ searchParams: Promise.resolve({ tab: "income" }) }));
+    expect(screen.getByRole("tab", { name: "Income" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("heading", { name: "Salary & work" })).toBeVisible();
+  });
+
+  it("renders the Protection & Debt settings section from the URL", async () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={queryClient}>
+        {await SettingsPage({ searchParams: Promise.resolve({ tab: "protection" }) })}
+      </QueryClientProvider>
+    );
+
+    expect(screen.getByRole("tab", { name: /Protection & Debt/ })).toHaveAttribute(
+      "aria-selected",
+      "true"
+    );
+    expect(screen.getByRole("heading", { name: /Protection & Debt/, level: 2 })).toBeVisible();
+    expect(screen.getByText("Protection not recorded yet")).toBeVisible();
+    expect(screen.getByText("No debts declared")).toBeVisible();
+  });
+
+  it("switches to the API keys tab from the URL", async () => {
+    render(await SettingsPage({ searchParams: Promise.resolve({ tab: "api-keys" }) }));
+    expect(screen.getByRole("tab", { name: "API keys" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("link", { name: /Manage API keys/ })).toHaveAttribute(
+      "href",
+      "/settings/api-keys"
+    );
+  });
+
+  it("falls back to the profile tab for an unknown settings section", async () => {
+    render(await SettingsPage({ searchParams: Promise.resolve({ tab: "not-a-section" }) }));
+    expect(screen.getByRole("tab", { name: "Profile" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByText("harsh@example.com")).toBeVisible();
+  });
   it("renders the current balance for active accounts", async () => {
     mocks.accounts = [
       {

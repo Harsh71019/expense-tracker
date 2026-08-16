@@ -1,6 +1,6 @@
 {
-  "id": "66f69e5a-2878-453e-897a-d40df7b164f6",
-  "prevId": "097919c5-1074-4be4-94f5-1b91e04bd7ef",
+  "id": "908265ba-d7bf-4205-bb15-c29feacd1e5c",
+  "prevId": "c2657ebb-95fb-4451-94a9-805452372990",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -53,8 +53,12 @@
           "name": "user_profiles_user_id_user_id_fk",
           "tableFrom": "user_profiles",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -180,8 +184,12 @@
           "name": "accounts_user_id_user_id_fk",
           "tableFrom": "accounts",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -337,8 +345,12 @@
           "name": "categories_user_id_user_id_fk",
           "tableFrom": "categories",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -482,8 +494,12 @@
           "name": "budget_alert_events_user_id_user_id_fk",
           "tableFrom": "budget_alert_events",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -491,8 +507,12 @@
           "name": "budget_alert_events_budget_id_budgets_id_fk",
           "tableFrom": "budget_alert_events",
           "tableTo": "budgets",
-          "columnsFrom": ["budget_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "budget_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -622,8 +642,12 @@
           "name": "budgets_user_id_user_id_fk",
           "tableFrom": "budgets",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -631,8 +655,12 @@
           "name": "budgets_category_id_categories_id_fk",
           "tableFrom": "budgets",
           "tableTo": "categories",
-          "columnsFrom": ["category_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "category_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1019,8 +1047,12 @@
           "name": "transactions_user_id_user_id_fk",
           "tableFrom": "transactions",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1028,8 +1060,12 @@
           "name": "transactions_account_id_accounts_id_fk",
           "tableFrom": "transactions",
           "tableTo": "accounts",
-          "columnsFrom": ["account_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "account_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1037,8 +1073,12 @@
           "name": "transactions_category_id_categories_id_fk",
           "tableFrom": "transactions",
           "tableTo": "categories",
-          "columnsFrom": ["category_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "category_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1046,8 +1086,12 @@
           "name": "transactions_reversal_of_transactions_id_fk",
           "tableFrom": "transactions",
           "tableTo": "transactions",
-          "columnsFrom": ["reversal_of"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "reversal_of"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1055,8 +1099,12 @@
           "name": "transactions_reversed_by_transactions_id_fk",
           "tableFrom": "transactions",
           "tableTo": "transactions",
-          "columnsFrom": ["reversed_by"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "reversed_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1064,8 +1112,12 @@
           "name": "transactions_import_batch_id_import_batches_id_fk",
           "tableFrom": "transactions",
           "tableTo": "import_batches",
-          "columnsFrom": ["import_batch_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "import_batch_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1073,8 +1125,12 @@
           "name": "transactions_bill_id_credit_card_bills_id_fk",
           "tableFrom": "transactions",
           "tableTo": "credit_card_bills",
-          "columnsFrom": ["bill_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "bill_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1082,8 +1138,12 @@
           "name": "transactions_recurring_rule_id_recurring_rules_id_fk",
           "tableFrom": "transactions",
           "tableTo": "recurring_rules",
-          "columnsFrom": ["recurring_rule_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "recurring_rule_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1164,8 +1224,12 @@
           "name": "audit_log_user_id_user_id_fk",
           "tableFrom": "audit_log",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1259,8 +1323,12 @@
           "name": "asset_valuations_user_id_user_id_fk",
           "tableFrom": "asset_valuations",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1268,8 +1336,12 @@
           "name": "asset_valuations_asset_id_net_worth_assets_id_fk",
           "tableFrom": "asset_valuations",
           "tableTo": "net_worth_assets",
-          "columnsFrom": ["asset_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "asset_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1382,8 +1454,12 @@
           "name": "net_worth_assets_user_id_user_id_fk",
           "tableFrom": "net_worth_assets",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1613,8 +1689,12 @@
           "name": "import_batches_user_id_user_id_fk",
           "tableFrom": "import_batches",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1622,8 +1702,12 @@
           "name": "import_batches_account_id_accounts_id_fk",
           "tableFrom": "import_batches",
           "tableTo": "accounts",
-          "columnsFrom": ["account_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "account_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1817,8 +1901,12 @@
           "name": "staged_rows_batch_id_import_batches_id_fk",
           "tableFrom": "staged_rows",
           "tableTo": "import_batches",
-          "columnsFrom": ["batch_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "batch_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1826,8 +1914,12 @@
           "name": "staged_rows_suggested_category_id_categories_id_fk",
           "tableFrom": "staged_rows",
           "tableTo": "categories",
-          "columnsFrom": ["suggested_category_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "suggested_category_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1835,8 +1927,12 @@
           "name": "staged_rows_suggestion_category_id_categories_id_fk",
           "tableFrom": "staged_rows",
           "tableTo": "categories",
-          "columnsFrom": ["suggestion_category_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "suggestion_category_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1911,8 +2007,12 @@
           "name": "category_rules_user_id_user_id_fk",
           "tableFrom": "category_rules",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1920,8 +2020,12 @@
           "name": "category_rules_category_id_categories_id_fk",
           "tableFrom": "category_rules",
           "tableTo": "categories",
-          "columnsFrom": ["category_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "category_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2102,8 +2206,12 @@
           "name": "notification_outbox_user_id_user_id_fk",
           "tableFrom": "notification_outbox",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2183,8 +2291,12 @@
           "name": "idempotency_records_user_id_user_id_fk",
           "tableFrom": "idempotency_records",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2192,7 +2304,11 @@
       "compositePrimaryKeys": {
         "idempotency_records_user_id_operation_key_pk": {
           "name": "idempotency_records_user_id_operation_key_pk",
-          "columns": ["user_id", "operation", "key"]
+          "columns": [
+            "user_id",
+            "operation",
+            "key"
+          ]
         }
       },
       "uniqueConstraints": {},
@@ -2349,8 +2465,12 @@
           "name": "recurring_rules_user_id_user_id_fk",
           "tableFrom": "recurring_rules",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -2358,8 +2478,12 @@
           "name": "recurring_rules_template_account_id_accounts_id_fk",
           "tableFrom": "recurring_rules",
           "tableTo": "accounts",
-          "columnsFrom": ["template_account_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "template_account_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -2367,8 +2491,12 @@
           "name": "recurring_rules_template_category_id_categories_id_fk",
           "tableFrom": "recurring_rules",
           "tableTo": "categories",
-          "columnsFrom": ["template_category_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "template_category_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2497,8 +2625,12 @@
           "name": "recurring_reconciliations_user_id_user_id_fk",
           "tableFrom": "recurring_reconciliations",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -2506,8 +2638,12 @@
           "name": "recurring_reconciliations_incoming_transaction_id_transactions_id_fk",
           "tableFrom": "recurring_reconciliations",
           "tableTo": "transactions",
-          "columnsFrom": ["incoming_transaction_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "incoming_transaction_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -2515,8 +2651,12 @@
           "name": "recurring_reconciliations_recurring_rule_id_recurring_rules_id_fk",
           "tableFrom": "recurring_reconciliations",
           "tableTo": "recurring_rules",
-          "columnsFrom": ["recurring_rule_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "recurring_rule_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -2524,8 +2664,12 @@
           "name": "recurring_reconciliations_recurring_transaction_id_transactions_id_fk",
           "tableFrom": "recurring_reconciliations",
           "tableTo": "transactions",
-          "columnsFrom": ["recurring_transaction_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "recurring_transaction_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2683,8 +2827,12 @@
           "name": "recurring_occurrences_user_id_user_id_fk",
           "tableFrom": "recurring_occurrences",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -2692,8 +2840,12 @@
           "name": "recurring_occurrences_recurring_rule_id_recurring_rules_id_fk",
           "tableFrom": "recurring_occurrences",
           "tableTo": "recurring_rules",
-          "columnsFrom": ["recurring_rule_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "recurring_rule_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -2701,8 +2853,12 @@
           "name": "recurring_occurrences_confirmed_transaction_id_transactions_id_fk",
           "tableFrom": "recurring_occurrences",
           "tableTo": "transactions",
-          "columnsFrom": ["confirmed_transaction_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "confirmed_transaction_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2766,8 +2922,12 @@
           "name": "monthly_rollups_user_id_user_id_fk",
           "tableFrom": "monthly_rollups",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2775,7 +2935,10 @@
       "compositePrimaryKeys": {
         "monthly_rollups_user_id_month_pk": {
           "name": "monthly_rollups_user_id_month_pk",
-          "columns": ["user_id", "month"]
+          "columns": [
+            "user_id",
+            "month"
+          ]
         }
       },
       "uniqueConstraints": {},
@@ -2939,8 +3102,12 @@
           "name": "credit_card_bills_user_id_user_id_fk",
           "tableFrom": "credit_card_bills",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -2948,8 +3115,12 @@
           "name": "credit_card_bills_account_id_accounts_id_fk",
           "tableFrom": "credit_card_bills",
           "tableTo": "accounts",
-          "columnsFrom": ["account_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "account_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -3152,8 +3323,12 @@
           "name": "bill_statement_rows_user_id_user_id_fk",
           "tableFrom": "bill_statement_rows",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -3161,8 +3336,12 @@
           "name": "bill_statement_rows_upload_id_bill_statement_uploads_id_fk",
           "tableFrom": "bill_statement_rows",
           "tableTo": "bill_statement_uploads",
-          "columnsFrom": ["upload_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "upload_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -3170,8 +3349,12 @@
           "name": "bill_statement_rows_matched_transaction_id_transactions_id_fk",
           "tableFrom": "bill_statement_rows",
           "tableTo": "transactions",
-          "columnsFrom": ["matched_transaction_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "matched_transaction_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -3370,8 +3553,12 @@
           "name": "bill_statement_uploads_user_id_user_id_fk",
           "tableFrom": "bill_statement_uploads",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -3379,8 +3566,12 @@
           "name": "bill_statement_uploads_bill_id_credit_card_bills_id_fk",
           "tableFrom": "bill_statement_uploads",
           "tableTo": "credit_card_bills",
-          "columnsFrom": ["bill_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "bill_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -3451,8 +3642,12 @@
           "name": "spending_warning_analysis_state_user_id_user_id_fk",
           "tableFrom": "spending_warning_analysis_state",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -3629,8 +3824,12 @@
           "name": "spending_warnings_user_id_user_id_fk",
           "tableFrom": "spending_warnings",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -3638,8 +3837,12 @@
           "name": "spending_warnings_category_id_categories_id_fk",
           "tableFrom": "spending_warnings",
           "tableTo": "categories",
-          "columnsFrom": ["category_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "category_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -3647,8 +3850,12 @@
           "name": "spending_warnings_transaction_id_transactions_id_fk",
           "tableFrom": "spending_warnings",
           "tableTo": "transactions",
-          "columnsFrom": ["transaction_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "transaction_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -3748,8 +3955,12 @@
           "name": "goal_contributions_user_id_user_id_fk",
           "tableFrom": "goal_contributions",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -3757,8 +3968,12 @@
           "name": "goal_contributions_goal_id_goals_id_fk",
           "tableFrom": "goal_contributions",
           "tableTo": "goals",
-          "columnsFrom": ["goal_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "goal_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -3932,8 +4147,12 @@
           "name": "goals_user_id_user_id_fk",
           "tableFrom": "goals",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -3941,8 +4160,12 @@
           "name": "goals_linked_account_id_accounts_id_fk",
           "tableFrom": "goals",
           "tableTo": "accounts",
-          "columnsFrom": ["linked_account_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "linked_account_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -4210,8 +4433,12 @@
           "name": "pending_transactions_user_id_user_id_fk",
           "tableFrom": "pending_transactions",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -4219,8 +4446,12 @@
           "name": "pending_transactions_account_id_accounts_id_fk",
           "tableFrom": "pending_transactions",
           "tableTo": "accounts",
-          "columnsFrom": ["account_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "account_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -4228,8 +4459,12 @@
           "name": "pending_transactions_resulting_transaction_id_transactions_id_fk",
           "tableFrom": "pending_transactions",
           "tableTo": "transactions",
-          "columnsFrom": ["resulting_transaction_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "resulting_transaction_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -4359,8 +4594,12 @@
           "name": "detected_recurring_stream_members_user_id_user_id_fk",
           "tableFrom": "detected_recurring_stream_members",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -4368,8 +4607,12 @@
           "name": "detected_recurring_stream_members_stream_id_detected_recurring_streams_id_fk",
           "tableFrom": "detected_recurring_stream_members",
           "tableTo": "detected_recurring_streams",
-          "columnsFrom": ["stream_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "stream_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -4377,8 +4620,12 @@
           "name": "detected_recurring_stream_members_transaction_id_transactions_id_fk",
           "tableFrom": "detected_recurring_stream_members",
           "tableTo": "transactions",
-          "columnsFrom": ["transaction_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "transaction_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -4492,8 +4739,12 @@
           "name": "detected_recurring_stream_reviews_user_id_user_id_fk",
           "tableFrom": "detected_recurring_stream_reviews",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -4501,8 +4752,12 @@
           "name": "detected_recurring_stream_reviews_stream_id_detected_recurring_streams_id_fk",
           "tableFrom": "detected_recurring_stream_reviews",
           "tableTo": "detected_recurring_streams",
-          "columnsFrom": ["stream_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "stream_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -4510,8 +4765,12 @@
           "name": "detected_recurring_stream_reviews_recurring_rule_id_recurring_rules_id_fk",
           "tableFrom": "detected_recurring_stream_reviews",
           "tableTo": "recurring_rules",
-          "columnsFrom": ["recurring_rule_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "recurring_rule_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -4761,8 +5020,12 @@
           "name": "detected_recurring_streams_user_id_user_id_fk",
           "tableFrom": "detected_recurring_streams",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -4770,8 +5033,12 @@
           "name": "detected_recurring_streams_supersedes_stream_id_detected_recurring_streams_id_fk",
           "tableFrom": "detected_recurring_streams",
           "tableTo": "detected_recurring_streams",
-          "columnsFrom": ["supersedes_stream_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "supersedes_stream_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -4985,8 +5252,12 @@
           "name": "recurring_detection_runs_user_id_user_id_fk",
           "tableFrom": "recurring_detection_runs",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -5172,8 +5443,12 @@
           "name": "cashflow_forecast_snapshots_user_id_user_id_fk",
           "tableFrom": "cashflow_forecast_snapshots",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -5238,8 +5513,12 @@
           "name": "financial_profiles_user_id_user_id_fk",
           "tableFrom": "financial_profiles",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -5367,8 +5646,12 @@
           "name": "salary_versions_user_id_user_id_fk",
           "tableFrom": "salary_versions",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -5555,8 +5838,12 @@
           "name": "detected_recurring_stream_changes_user_id_user_id_fk",
           "tableFrom": "detected_recurring_stream_changes",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -5564,8 +5851,12 @@
           "name": "detected_recurring_stream_changes_stream_id_detected_recurring_streams_id_fk",
           "tableFrom": "detected_recurring_stream_changes",
           "tableTo": "detected_recurring_streams",
-          "columnsFrom": ["stream_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "stream_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -5573,8 +5864,12 @@
           "name": "detected_recurring_stream_changes_supersedes_stream_id_detected_recurring_streams_id_fk",
           "tableFrom": "detected_recurring_stream_changes",
           "tableTo": "detected_recurring_streams",
-          "columnsFrom": ["supersedes_stream_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "supersedes_stream_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -5582,8 +5877,12 @@
           "name": "detected_recurring_stream_changes_change_transaction_id_transactions_id_fk",
           "tableFrom": "detected_recurring_stream_changes",
           "tableTo": "transactions",
-          "columnsFrom": ["change_transaction_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "change_transaction_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -5776,8 +6075,12 @@
           "name": "spending_change_detection_runs_user_id_user_id_fk",
           "tableFrom": "spending_change_detection_runs",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -5986,8 +6289,12 @@
           "name": "spending_regimes_user_id_user_id_fk",
           "tableFrom": "spending_regimes",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -5995,8 +6302,12 @@
           "name": "spending_regimes_supersedes_regime_id_spending_regimes_id_fk",
           "tableFrom": "spending_regimes",
           "tableTo": "spending_regimes",
-          "columnsFrom": ["supersedes_regime_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "supersedes_regime_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -6005,6 +6316,836 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.review_inbox_items": {
+      "name": "review_inbox_items",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_type": {
+          "name": "source_type",
+          "type": "review_item_source_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_id": {
+          "name": "source_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_version": {
+          "name": "source_version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "review_item_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'active'"
+        },
+        "priority_score": {
+          "name": "priority_score",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "priority_factors": {
+          "name": "priority_factors",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "subtitle": {
+          "name": "subtitle",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "amount_minor": {
+          "name": "amount_minor",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "confidence_bps": {
+          "name": "confidence_bps",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "evidence": {
+          "name": "evidence",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "input_watermark": {
+          "name": "input_watermark",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "supersedes_item_id": {
+          "name": "supersedes_item_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "occurred_at": {
+          "name": "occurred_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "dismissed_at": {
+          "name": "dismissed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dismiss_reason": {
+          "name": "dismiss_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "resolved_at": {
+          "name": "resolved_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "feedback_action": {
+          "name": "feedback_action",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "review_inbox_user_source_version": {
+          "name": "review_inbox_user_source_version",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "source_type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "source_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "source_version",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "review_inbox_user_status_priority_cursor": {
+          "name": "review_inbox_user_status_priority_cursor",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "priority_score",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            },
+            {
+              "expression": "occurred_at",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "review_inbox_user_status_source": {
+          "name": "review_inbox_user_status_source",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "source_type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "review_inbox_user_supersedes": {
+          "name": "review_inbox_user_supersedes",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "supersedes_item_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "review_inbox_items_user_id_user_id_fk": {
+          "name": "review_inbox_items_user_id_user_id_fk",
+          "tableFrom": "review_inbox_items",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "review_inbox_items_supersedes_item_id_review_inbox_items_id_fk": {
+          "name": "review_inbox_items_supersedes_item_id_review_inbox_items_id_fk",
+          "tableFrom": "review_inbox_items",
+          "tableTo": "review_inbox_items",
+          "columnsFrom": [
+            "supersedes_item_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.safety_buffer_preferences": {
+      "name": "safety_buffer_preferences",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "mode": {
+          "name": "mode",
+          "type": "safety_buffer_mode",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "amount_minor": {
+          "name": "amount_minor",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "months": {
+          "name": "months",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "emergency_fund_goal_id": {
+          "name": "emergency_fund_goal_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "effective_from": {
+          "name": "effective_from",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "safety_buffer_preferences_user_version_idx": {
+          "name": "safety_buffer_preferences_user_version_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "version",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "safety_buffer_preferences_user_effective_idx": {
+          "name": "safety_buffer_preferences_user_effective_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "effective_from",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            },
+            {
+              "expression": "version",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "safety_buffer_preferences_user_id_user_id_fk": {
+          "name": "safety_buffer_preferences_user_id_user_id_fk",
+          "tableFrom": "safety_buffer_preferences",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "safety_buffer_preferences_emergency_fund_goal_id_goals_id_fk": {
+          "name": "safety_buffer_preferences_emergency_fund_goal_id_goals_id_fk",
+          "tableFrom": "safety_buffer_preferences",
+          "tableTo": "goals",
+          "columnsFrom": [
+            "emergency_fund_goal_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "safety_buffer_preferences_amount_minor_valid": {
+          "name": "safety_buffer_preferences_amount_minor_valid",
+          "value": "\"safety_buffer_preferences\".\"amount_minor\" IS NULL OR \"safety_buffer_preferences\".\"amount_minor\" >= 0"
+        },
+        "safety_buffer_preferences_months_valid": {
+          "name": "safety_buffer_preferences_months_valid",
+          "value": "\"safety_buffer_preferences\".\"months\" IS NULL OR (\"safety_buffer_preferences\".\"months\" >= 1 AND \"safety_buffer_preferences\".\"months\" <= 36)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.declared_debts": {
+      "name": "declared_debts",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kind": {
+          "name": "kind",
+          "type": "declared_debt_kind",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "declared_outstanding_minor": {
+          "name": "declared_outstanding_minor",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "annual_rate_bps": {
+          "name": "annual_rate_bps",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "minimum_payment_minor": {
+          "name": "minimum_payment_minor",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "linked_asset_id": {
+          "name": "linked_asset_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "declared_debt_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "resolved_at": {
+          "name": "resolved_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "declared_debts_user_id_status_created_at_id": {
+          "name": "declared_debts_user_id_status_created_at_id",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "declared_debts_user_id_linked_asset_id": {
+          "name": "declared_debts_user_id_linked_asset_id",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "linked_asset_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "declared_debts_user_id_user_id_fk": {
+          "name": "declared_debts_user_id_user_id_fk",
+          "tableFrom": "declared_debts",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "declared_debts_linked_asset_id_net_worth_assets_id_fk": {
+          "name": "declared_debts_linked_asset_id_net_worth_assets_id_fk",
+          "tableFrom": "declared_debts",
+          "tableTo": "net_worth_assets",
+          "columnsFrom": [
+            "linked_asset_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "declared_debts_annual_rate_bps_valid": {
+          "name": "declared_debts_annual_rate_bps_valid",
+          "value": "\"declared_debts\".\"annual_rate_bps\" >= 0 AND \"declared_debts\".\"annual_rate_bps\" <= 100000"
+        },
+        "declared_debts_amounts_positive": {
+          "name": "declared_debts_amounts_positive",
+          "value": "(\"declared_debts\".\"declared_outstanding_minor\" IS NULL OR \"declared_debts\".\"declared_outstanding_minor\" > 0)\n        AND (\"declared_debts\".\"minimum_payment_minor\" IS NULL OR \"declared_debts\".\"minimum_payment_minor\" > 0)"
+        },
+        "declared_debts_amount_source_valid": {
+          "name": "declared_debts_amount_source_valid",
+          "value": "(\"declared_debts\".\"linked_asset_id\" IS NULL) = (\"declared_debts\".\"declared_outstanding_minor\" IS NOT NULL)"
+        },
+        "declared_debts_resolved_at_valid": {
+          "name": "declared_debts_resolved_at_valid",
+          "value": "(\"declared_debts\".\"status\" = 'resolved') = (\"declared_debts\".\"resolved_at\" IS NOT NULL)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.protection_snapshots": {
+      "name": "protection_snapshots",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "effective_from": {
+          "name": "effective_from",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "term_cover_status": {
+          "name": "term_cover_status",
+          "type": "term_cover_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "independent_term_cover_minor": {
+          "name": "independent_term_cover_minor",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "employer_term_cover_minor": {
+          "name": "employer_term_cover_minor",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "independent_term_expires_on": {
+          "name": "independent_term_expires_on",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "term_not_applicable_reason": {
+          "name": "term_not_applicable_reason",
+          "type": "term_not_applicable_reason",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "health_cover_status": {
+          "name": "health_cover_status",
+          "type": "health_cover_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "independent_health_base_cover_minor": {
+          "name": "independent_health_base_cover_minor",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "independent_health_super_top_up_minor": {
+          "name": "independent_health_super_top_up_minor",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "employer_health_cover_minor": {
+          "name": "employer_health_cover_minor",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "independent_health_expires_on": {
+          "name": "independent_health_expires_on",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dependant_count": {
+          "name": "dependant_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "protection_snapshots_user_id_effective_from_unique": {
+          "name": "protection_snapshots_user_id_effective_from_unique",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "effective_from",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "protection_snapshots_user_id_effective_from_id": {
+          "name": "protection_snapshots_user_id_effective_from_id",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "effective_from",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "protection_snapshots_user_id_user_id_fk": {
+          "name": "protection_snapshots_user_id_user_id_fk",
+          "tableFrom": "protection_snapshots",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "protection_snapshots_dependant_count_valid": {
+          "name": "protection_snapshots_dependant_count_valid",
+          "value": "\"protection_snapshots\".\"dependant_count\" >= 0 AND \"protection_snapshots\".\"dependant_count\" <= 20"
+        },
+        "protection_snapshots_cover_amounts_positive": {
+          "name": "protection_snapshots_cover_amounts_positive",
+          "value": "(\"protection_snapshots\".\"independent_term_cover_minor\" IS NULL OR \"protection_snapshots\".\"independent_term_cover_minor\" > 0)\n        AND (\"protection_snapshots\".\"employer_term_cover_minor\" IS NULL OR \"protection_snapshots\".\"employer_term_cover_minor\" > 0)\n        AND (\"protection_snapshots\".\"independent_health_base_cover_minor\" IS NULL OR \"protection_snapshots\".\"independent_health_base_cover_minor\" > 0)\n        AND (\"protection_snapshots\".\"independent_health_super_top_up_minor\" IS NULL OR \"protection_snapshots\".\"independent_health_super_top_up_minor\" > 0)\n        AND (\"protection_snapshots\".\"employer_health_cover_minor\" IS NULL OR \"protection_snapshots\".\"employer_health_cover_minor\" > 0)"
+        },
+        "protection_snapshots_not_applicable_reason_valid": {
+          "name": "protection_snapshots_not_applicable_reason_valid",
+          "value": "(\"protection_snapshots\".\"term_cover_status\" = 'not_applicable') = (\"protection_snapshots\".\"term_not_applicable_reason\" IS NOT NULL)"
+        },
+        "protection_snapshots_term_cover_source_valid": {
+          "name": "protection_snapshots_term_cover_source_valid",
+          "value": "(\"protection_snapshots\".\"term_cover_status\" IN ('independent', 'both')\n          OR (\"protection_snapshots\".\"independent_term_cover_minor\" IS NULL AND \"protection_snapshots\".\"independent_term_expires_on\" IS NULL))\n        AND (\"protection_snapshots\".\"term_cover_status\" IN ('employer_only', 'both') OR \"protection_snapshots\".\"employer_term_cover_minor\" IS NULL)"
+        },
+        "protection_snapshots_health_cover_source_valid": {
+          "name": "protection_snapshots_health_cover_source_valid",
+          "value": "(\"protection_snapshots\".\"health_cover_status\" IN ('independent', 'both')\n          OR (\"protection_snapshots\".\"independent_health_base_cover_minor\" IS NULL\n            AND \"protection_snapshots\".\"independent_health_super_top_up_minor\" IS NULL\n            AND \"protection_snapshots\".\"independent_health_expires_on\" IS NULL))\n        AND (\"protection_snapshots\".\"health_cover_status\" IN ('employer_only', 'both') OR \"protection_snapshots\".\"employer_health_cover_minor\" IS NULL)"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.account": {
@@ -6113,8 +7254,12 @@
           "name": "account_user_id_user_id_fk",
           "tableFrom": "account",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -6289,8 +7434,12 @@
           "name": "apikey_reference_id_user_id_fk",
           "tableFrom": "apikey",
           "tableTo": "user",
-          "columnsFrom": ["reference_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "reference_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -6377,8 +7526,12 @@
           "name": "session_user_id_user_id_fk",
           "tableFrom": "session",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -6388,7 +7541,9 @@
         "session_token_unique": {
           "name": "session_token_unique",
           "nullsNotDistinct": false,
-          "columns": ["token"]
+          "columns": [
+            "token"
+          ]
         }
       },
       "policies": {},
@@ -6452,7 +7607,9 @@
         "user_email_unique": {
           "name": "user_email_unique",
           "nullsNotDistinct": false,
-          "columns": ["email"]
+          "columns": [
+            "email"
+          ]
         }
       },
       "policies": {},
@@ -6531,7 +7688,13 @@
     "public.account_type": {
       "name": "account_type",
       "schema": "public",
-      "values": ["bank", "credit_card", "cash", "wallet", "investment"]
+      "values": [
+        "bank",
+        "credit_card",
+        "cash",
+        "wallet",
+        "investment"
+      ]
     },
     "public.asset_kind": {
       "name": "asset_kind",
@@ -6548,57 +7711,130 @@
     "public.bill_reconciliation_status": {
       "name": "bill_reconciliation_status",
       "schema": "public",
-      "values": ["awaiting_statement", "reconciled"]
+      "values": [
+        "awaiting_statement",
+        "reconciled"
+      ]
     },
     "public.bill_statement_row_match_status": {
       "name": "bill_statement_row_match_status",
       "schema": "public",
-      "values": ["matched", "missing_from_ledger", "ambiguous"]
+      "values": [
+        "matched",
+        "missing_from_ledger",
+        "ambiguous"
+      ]
     },
     "public.bill_statement_upload_status": {
       "name": "bill_statement_upload_status",
       "schema": "public",
-      "values": ["pending", "staged", "failed"]
+      "values": [
+        "pending",
+        "staged",
+        "failed"
+      ]
     },
     "public.category_group": {
       "name": "category_group",
       "schema": "public",
-      "values": ["essential", "lifestyle"]
+      "values": [
+        "essential",
+        "lifestyle"
+      ]
     },
     "public.category_kind": {
       "name": "category_kind",
       "schema": "public",
-      "values": ["expense", "income"]
+      "values": [
+        "expense",
+        "income"
+      ]
+    },
+    "public.declared_debt_kind": {
+      "name": "declared_debt_kind",
+      "schema": "public",
+      "values": [
+        "credit_card",
+        "bnpl",
+        "personal_loan",
+        "consumer_loan",
+        "other"
+      ]
+    },
+    "public.declared_debt_status": {
+      "name": "declared_debt_status",
+      "schema": "public",
+      "values": [
+        "active",
+        "resolved"
+      ]
     },
     "public.detected_stream_amount_behavior": {
       "name": "detected_stream_amount_behavior",
       "schema": "public",
-      "values": ["fixed", "variable", "unknown"]
+      "values": [
+        "fixed",
+        "variable",
+        "unknown"
+      ]
     },
     "public.detected_stream_cadence": {
       "name": "detected_stream_cadence",
       "schema": "public",
-      "values": ["weekly", "biweekly", "semimonthly", "monthly", "quarterly", "annual"]
+      "values": [
+        "weekly",
+        "biweekly",
+        "semimonthly",
+        "monthly",
+        "quarterly",
+        "annual"
+      ]
     },
     "public.detected_stream_state": {
       "name": "detected_stream_state",
       "schema": "public",
-      "values": ["candidate", "mature", "stale"]
+      "values": [
+        "candidate",
+        "mature",
+        "stale"
+      ]
     },
     "public.goal_contribution_type": {
       "name": "goal_contribution_type",
       "schema": "public",
-      "values": ["deposit", "withdrawal"]
+      "values": [
+        "deposit",
+        "withdrawal"
+      ]
     },
     "public.goal_funding_mode": {
       "name": "goal_funding_mode",
       "schema": "public",
-      "values": ["linked_account", "tagged", "manual_envelope"]
+      "values": [
+        "linked_account",
+        "tagged",
+        "manual_envelope"
+      ]
     },
     "public.goal_status": {
       "name": "goal_status",
       "schema": "public",
-      "values": ["active", "achieved", "abandoned"]
+      "values": [
+        "active",
+        "achieved",
+        "abandoned"
+      ]
+    },
+    "public.health_cover_status": {
+      "name": "health_cover_status",
+      "schema": "public",
+      "values": [
+        "independent",
+        "employer_only",
+        "both",
+        "none",
+        "not_sure"
+      ]
     },
     "public.import_batch_status": {
       "name": "import_batch_status",
@@ -6620,17 +7856,29 @@
     "public.import_workflow_operation": {
       "name": "import_workflow_operation",
       "schema": "public",
-      "values": ["parse", "commit", "revert"]
+      "values": [
+        "parse",
+        "commit",
+        "revert"
+      ]
     },
     "public.income_stability": {
       "name": "income_stability",
       "schema": "public",
-      "values": ["stable", "variable", "irregular"]
+      "values": [
+        "stable",
+        "variable",
+        "irregular"
+      ]
     },
     "public.notification_status": {
       "name": "notification_status",
       "schema": "public",
-      "values": ["pending", "delivering", "sent"]
+      "values": [
+        "pending",
+        "delivering",
+        "sent"
+      ]
     },
     "public.notification_type": {
       "name": "notification_type",
@@ -6646,92 +7894,209 @@
     "public.pending_transaction_status": {
       "name": "pending_transaction_status",
       "schema": "public",
-      "values": ["pending", "confirmed", "dismissed"]
+      "values": [
+        "pending",
+        "confirmed",
+        "dismissed"
+      ]
     },
     "public.recurring_detection_run_status": {
       "name": "recurring_detection_run_status",
       "schema": "public",
-      "values": ["running", "completed", "degraded", "abstained", "failed"]
+      "values": [
+        "running",
+        "completed",
+        "degraded",
+        "abstained",
+        "failed"
+      ]
     },
     "public.recurring_occurrence_status": {
       "name": "recurring_occurrence_status",
       "schema": "public",
-      "values": ["expected", "confirmed"]
+      "values": [
+        "expected",
+        "confirmed"
+      ]
     },
     "public.recurring_reconciliation_resolution": {
       "name": "recurring_reconciliation_resolution",
       "schema": "public",
-      "values": ["confirmed_duplicate", "confirmed_distinct"]
+      "values": [
+        "confirmed_duplicate",
+        "confirmed_distinct"
+      ]
     },
     "public.recurring_reconciliation_status": {
       "name": "recurring_reconciliation_status",
       "schema": "public",
-      "values": ["auto_matched", "ambiguous", "amount_mismatch"]
+      "values": [
+        "auto_matched",
+        "ambiguous",
+        "amount_mismatch"
+      ]
+    },
+    "public.review_item_source_type": {
+      "name": "review_item_source_type",
+      "schema": "public",
+      "values": [
+        "category_suggestion",
+        "recurring_stream",
+        "recurring_change",
+        "spending_regime"
+      ]
+    },
+    "public.review_item_status": {
+      "name": "review_item_status",
+      "schema": "public",
+      "values": [
+        "active",
+        "dismissed",
+        "resolved",
+        "stale",
+        "superseded"
+      ]
+    },
+    "public.safety_buffer_mode": {
+      "name": "safety_buffer_mode",
+      "schema": "public",
+      "values": [
+        "fixed_amount",
+        "essential_months",
+        "emergency_fund_goal"
+      ]
     },
     "public.salary_source": {
       "name": "salary_source",
       "schema": "public",
-      "values": ["manually_confirmed"]
+      "values": [
+        "manually_confirmed"
+      ]
     },
     "public.scheduled_run_status": {
       "name": "scheduled_run_status",
       "schema": "public",
-      "values": ["running", "completed", "failed"]
+      "values": [
+        "running",
+        "completed",
+        "failed"
+      ]
     },
     "public.spending_change_direction": {
       "name": "spending_change_direction",
       "schema": "public",
-      "values": ["increase", "decrease"]
+      "values": [
+        "increase",
+        "decrease"
+      ]
     },
     "public.spending_change_run_status": {
       "name": "spending_change_run_status",
       "schema": "public",
-      "values": ["running", "completed", "degraded", "abstained", "failed"]
+      "values": [
+        "running",
+        "completed",
+        "degraded",
+        "abstained",
+        "failed"
+      ]
     },
     "public.spending_regime_type": {
       "name": "spending_regime_type",
       "schema": "public",
-      "values": ["variable_spending"]
+      "values": [
+        "variable_spending"
+      ]
     },
     "public.spending_warning_analysis_status": {
       "name": "spending_warning_analysis_status",
       "schema": "public",
-      "values": ["learning", "ready"]
+      "values": [
+        "learning",
+        "ready"
+      ]
     },
     "public.spending_warning_kind": {
       "name": "spending_warning_kind",
       "schema": "public",
-      "values": ["overall_spend_spike", "category_spend_spike", "unusually_large_expense"]
+      "values": [
+        "overall_spend_spike",
+        "category_spend_spike",
+        "unusually_large_expense"
+      ]
     },
     "public.spending_warning_severity": {
       "name": "spending_warning_severity",
       "schema": "public",
-      "values": ["attention", "high"]
+      "values": [
+        "attention",
+        "high"
+      ]
     },
     "public.spending_warning_status": {
       "name": "spending_warning_status",
       "schema": "public",
-      "values": ["active", "dismissed", "resolved"]
+      "values": [
+        "active",
+        "dismissed",
+        "resolved"
+      ]
+    },
+    "public.term_cover_status": {
+      "name": "term_cover_status",
+      "schema": "public",
+      "values": [
+        "independent",
+        "employer_only",
+        "both",
+        "none",
+        "not_sure",
+        "not_applicable"
+      ]
+    },
+    "public.term_not_applicable_reason": {
+      "name": "term_not_applicable_reason",
+      "schema": "public",
+      "values": [
+        "no_financial_dependants",
+        "covered_by_existing_family_arrangement",
+        "other_personal_reason"
+      ]
     },
     "public.transaction_source": {
       "name": "transaction_source",
       "schema": "public",
-      "values": ["manual", "csv_import", "recurring", "api"]
+      "values": [
+        "manual",
+        "csv_import",
+        "recurring",
+        "api"
+      ]
     },
     "public.transaction_status": {
       "name": "transaction_status",
       "schema": "public",
-      "values": ["posted", "reversed", "reversal"]
+      "values": [
+        "posted",
+        "reversed",
+        "reversal"
+      ]
     },
     "public.transaction_type": {
       "name": "transaction_type",
       "schema": "public",
-      "values": ["expense", "income"]
+      "values": [
+        "expense",
+        "income"
+      ]
     },
     "public.valuation_source": {
       "name": "valuation_source",
       "schema": "public",
-      "values": ["manual", "maturity_projection"]
+      "values": [
+        "manual",
+        "maturity_projection"
+      ]
     }
   },
   "schemas": {},

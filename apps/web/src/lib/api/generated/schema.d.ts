@@ -3390,6 +3390,444 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/v1/financial-profile/protection": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Protection state: the effective snapshot, any future-dated snapshot, and explicit per-cover states. An unconfigured user gets configured=false, never a safe default. */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProtectionState"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
+            /** Format: date-time */
+            effectiveFrom: string | null;
+            /** @enum {string} */
+            termCoverStatus:
+              "independent" | "employer_only" | "both" | "none" | "not_sure" | "not_applicable";
+            /** @default null */
+            independentTermCoverMinor?: number | null;
+            /** @default null */
+            employerTermCoverMinor?: number | null;
+            /**
+             * Format: date-time
+             * @default null
+             */
+            independentTermExpiresOn?: string | null;
+            /**
+             * @default null
+             * @enum {string|null}
+             */
+            termNotApplicableReason?:
+              | "no_financial_dependants"
+              | "covered_by_existing_family_arrangement"
+              | "other_personal_reason"
+              | null;
+            /** @enum {string} */
+            healthCoverStatus: "independent" | "employer_only" | "both" | "none" | "not_sure";
+            /** @default null */
+            independentHealthBaseCoverMinor?: number | null;
+            /** @default null */
+            independentHealthSuperTopUpMinor?: number | null;
+            /** @default null */
+            employerHealthCoverMinor?: number | null;
+            /**
+             * Format: date-time
+             * @default null
+             */
+            independentHealthExpiresOn?: string | null;
+            dependantCount: number;
+          };
+        };
+      };
+      responses: {
+        /** @description Idempotent replay of the appended protection snapshot */
+        200: {
+          headers: {
+            "Idempotency-Replayed": "true";
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProtectionSnapshot"];
+          };
+        };
+        /** @description Appended effective-dated protection snapshot */
+        201: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProtectionSnapshot"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description A protection snapshot already exists for this effective date, or the idempotency key was reused with a different request intent */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/financial-profile/debts": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: {
+          cursor?: string;
+          limit?: number;
+          status?: "active" | "resolved";
+        };
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Declared debts, newest first, defaulting to active. Linked debts derive their outstanding amount from the linked loan-liability asset's latest valuation; declared amounts are flagged as estimates. */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["DeclaredDebtPage"];
+          };
+        };
+        /** @description Invalid cursor */
+        400: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
+            name: string;
+            /** @enum {string} */
+            kind: "credit_card" | "bnpl" | "personal_loan" | "consumer_loan" | "other";
+            /** @default null */
+            declaredOutstandingMinor?: number | null;
+            annualRateBps: number;
+            /** @default null */
+            minimumPaymentMinor?: number | null;
+            /**
+             * Format: uuid
+             * @default null
+             */
+            linkedAssetId?: string | null;
+          };
+        };
+      };
+      responses: {
+        /** @description Idempotent replay of the declared debt */
+        200: {
+          headers: {
+            "Idempotency-Replayed": "true";
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["DeclaredDebt"];
+          };
+        };
+        /** @description Declared debt */
+        201: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["DeclaredDebt"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description The asset to link is not an open loan liability owned by this user */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/financial-profile/debts/{debtId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path: {
+          debtId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
+            name?: string;
+            /** @enum {string} */
+            kind?: "credit_card" | "bnpl" | "personal_loan" | "consumer_loan" | "other";
+            declaredOutstandingMinor?: number;
+            annualRateBps?: number;
+            minimumPaymentMinor?: number | null;
+            /** @enum {string} */
+            status?: "resolved";
+          };
+        };
+      };
+      responses: {
+        /** @description Updated debt metadata, or the same debt resolved. Resolving removes the debt from active planning checks; it moves no money and changes no asset. */
+        200: {
+          headers: {
+            "Idempotency-Replayed"?: "true";
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["DeclaredDebt"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Declared debt not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description The debt is already resolved, its amount is derived from a linked asset, or the idempotency key was reused with a different request intent */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    trace?: never;
+  };
   "/v1/recurring": {
     parameters: {
       query?: never;
@@ -8493,6 +8931,12 @@ export interface components {
         | "bill.payment_account_mismatch"
         | "financial_profile.not_configured"
         | "financial_profile.duplicate_effective_date"
+        | "financial_profile.duplicate_protection_effective_date"
+        | "financial_profile.invalid_protection_combination"
+        | "financial_profile.linked_asset_unavailable"
+        | "financial_profile.linked_asset_not_loan_liability"
+        | "financial_profile.declared_debt_not_found"
+        | "financial_profile.declared_debt_not_editable"
         | "recurring.no_occurrences"
         | "recurring.reconciliation_already_resolved"
         | "recurring.invalid_reconciliation_resolution"
@@ -9305,6 +9749,210 @@ export interface components {
         rounding: "half_up";
       };
       limitations: string[];
+    };
+    ProtectionState: {
+      configured: boolean;
+      currentSnapshot: {
+        /** Format: uuid */
+        id: string;
+        userId: string;
+        /** Format: date-time */
+        effectiveFrom: string | null;
+        /** @enum {string} */
+        termCoverStatus:
+          "independent" | "employer_only" | "both" | "none" | "not_sure" | "not_applicable";
+        independentTermCoverMinor: number | null;
+        employerTermCoverMinor: number | null;
+        /** Format: date-time */
+        independentTermExpiresOn: string | null;
+        /** @enum {string|null} */
+        termNotApplicableReason:
+          | "no_financial_dependants"
+          | "covered_by_existing_family_arrangement"
+          | "other_personal_reason"
+          | null;
+        /** @enum {string} */
+        healthCoverStatus: "independent" | "employer_only" | "both" | "none" | "not_sure";
+        independentHealthBaseCoverMinor: number | null;
+        independentHealthSuperTopUpMinor: number | null;
+        employerHealthCoverMinor: number | null;
+        /** Format: date-time */
+        independentHealthExpiresOn: string | null;
+        dependantCount: number;
+        /** Format: date-time */
+        createdAt: string | null;
+      } | null;
+      upcomingSnapshot: {
+        /** Format: uuid */
+        id: string;
+        userId: string;
+        /** Format: date-time */
+        effectiveFrom: string | null;
+        /** @enum {string} */
+        termCoverStatus:
+          "independent" | "employer_only" | "both" | "none" | "not_sure" | "not_applicable";
+        independentTermCoverMinor: number | null;
+        employerTermCoverMinor: number | null;
+        /** Format: date-time */
+        independentTermExpiresOn: string | null;
+        /** @enum {string|null} */
+        termNotApplicableReason:
+          | "no_financial_dependants"
+          | "covered_by_existing_family_arrangement"
+          | "other_personal_reason"
+          | null;
+        /** @enum {string} */
+        healthCoverStatus: "independent" | "employer_only" | "both" | "none" | "not_sure";
+        independentHealthBaseCoverMinor: number | null;
+        independentHealthSuperTopUpMinor: number | null;
+        employerHealthCoverMinor: number | null;
+        /** Format: date-time */
+        independentHealthExpiresOn: string | null;
+        dependantCount: number;
+        /** Format: date-time */
+        createdAt: string | null;
+      } | null;
+      /** Format: date-time */
+      asOf: string | null;
+      /** @enum {string} */
+      dataQuality: "complete" | "limited" | "stale" | "unavailable";
+      termCover: {
+        /** @enum {string} */
+        state:
+          | "not_configured"
+          | "complete"
+          | "incomplete"
+          | "unknown"
+          | "employer_only"
+          | "none_declared"
+          | "not_applicable";
+        /** @enum {string} */
+        expiryState: "not_applicable" | "active" | "expiring" | "expired";
+        /** Format: date-time */
+        expiresOn: string | null;
+        hasIndependentCover: boolean;
+        hasEmployerCover: boolean;
+      };
+      healthCover: {
+        /** @enum {string} */
+        state:
+          | "not_configured"
+          | "complete"
+          | "incomplete"
+          | "unknown"
+          | "employer_only"
+          | "none_declared"
+          | "not_applicable";
+        /** @enum {string} */
+        expiryState: "not_applicable" | "active" | "expiring" | "expired";
+        /** Format: date-time */
+        expiresOn: string | null;
+        hasIndependentCover: boolean;
+        hasEmployerCover: boolean;
+      };
+      expiringSoonDays: number;
+      limitations: string[];
+    };
+    ProtectionSnapshot: {
+      /** Format: uuid */
+      id: string;
+      userId: string;
+      /** Format: date-time */
+      effectiveFrom: string | null;
+      /** @enum {string} */
+      termCoverStatus:
+        "independent" | "employer_only" | "both" | "none" | "not_sure" | "not_applicable";
+      independentTermCoverMinor: number | null;
+      employerTermCoverMinor: number | null;
+      /** Format: date-time */
+      independentTermExpiresOn: string | null;
+      /** @enum {string|null} */
+      termNotApplicableReason:
+        | "no_financial_dependants"
+        | "covered_by_existing_family_arrangement"
+        | "other_personal_reason"
+        | null;
+      /** @enum {string} */
+      healthCoverStatus: "independent" | "employer_only" | "both" | "none" | "not_sure";
+      independentHealthBaseCoverMinor: number | null;
+      independentHealthSuperTopUpMinor: number | null;
+      employerHealthCoverMinor: number | null;
+      /** Format: date-time */
+      independentHealthExpiresOn: string | null;
+      dependantCount: number;
+      /** Format: date-time */
+      createdAt: string | null;
+    };
+    DeclaredDebtPage: {
+      items: {
+        /** Format: uuid */
+        id: string;
+        userId: string;
+        name: string;
+        /** @enum {string} */
+        kind: "credit_card" | "bnpl" | "personal_loan" | "consumer_loan" | "other";
+        declaredOutstandingMinor: number | null;
+        outstandingMinor: number | null;
+        annualRateBps: number;
+        minimumPaymentMinor: number | null;
+        /** Format: uuid */
+        linkedAssetId: string | null;
+        linkedAssetName: string | null;
+        /** @enum {string} */
+        amountSource: "declared" | "linked_asset";
+        /** Format: date-time */
+        valuationAsOf: string | null;
+        isEstimate: boolean;
+        isHighCost: boolean;
+        /** @enum {string} */
+        status: "active" | "resolved";
+        /** Format: date-time */
+        createdAt: string | null;
+        /** Format: date-time */
+        updatedAt: string | null;
+        /** Format: date-time */
+        resolvedAt: string | null;
+      }[];
+      pageInfo: {
+        nextCursor: string | null;
+        hasMore: boolean;
+        limit: number;
+      };
+      highCost: {
+        thresholdBps: number;
+        /** @enum {string} */
+        comparison: "greater_than";
+        highCostCount: number;
+      };
+    };
+    DeclaredDebt: {
+      /** Format: uuid */
+      id: string;
+      userId: string;
+      name: string;
+      /** @enum {string} */
+      kind: "credit_card" | "bnpl" | "personal_loan" | "consumer_loan" | "other";
+      declaredOutstandingMinor: number | null;
+      outstandingMinor: number | null;
+      annualRateBps: number;
+      minimumPaymentMinor: number | null;
+      /** Format: uuid */
+      linkedAssetId: string | null;
+      linkedAssetName: string | null;
+      /** @enum {string} */
+      amountSource: "declared" | "linked_asset";
+      /** Format: date-time */
+      valuationAsOf: string | null;
+      isEstimate: boolean;
+      isHighCost: boolean;
+      /** @enum {string} */
+      status: "active" | "resolved";
+      /** Format: date-time */
+      createdAt: string | null;
+      /** Format: date-time */
+      updatedAt: string | null;
+      /** Format: date-time */
+      resolvedAt: string | null;
     };
     RecurringRule: {
       /** Format: uuid */

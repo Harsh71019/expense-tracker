@@ -1,10 +1,13 @@
 import type { INestApplication } from "@nestjs/common";
 import {
   AccountSchema,
+  AssetSchema,
   BatchCategorizeTransactionsResultSchema,
   CategorySchema,
   CreditCardPaymentResultSchema,
   CreateApiKeyResponseSchema,
+  DeclaredDebtPageSchema,
+  DeclaredDebtSchema,
   FinancialProfileSchema,
   FinancialProfileStateSchema,
   ImportBatchSchema,
@@ -12,6 +15,8 @@ import {
   ProblemDetailsSchema,
   ReviewInboxPageSchema,
   ReviewInboxSummarySchema,
+  ProtectionSnapshotSchema,
+  ProtectionStateSchema,
   SalaryStatisticsSchema,
   SalaryVersionPageSchema,
   SalaryVersionSchema,
@@ -598,6 +603,283 @@ describe("production HTTP composition", () => {
     });
   });
 
+  it("records protection facts as append-only effective-dated snapshots", async () => {
+    const initial = await parseResponse(
+      await fetch(`${baseUrl}/api/v1/financial-profile/protection`, {
+        headers: { cookie: sessionA }
+      }),
+      ProtectionStateSchema
+    );
+    expect(initial).toMatchObject({
+      configured: false,
+      currentSnapshot: null,
+      dataQuality: "unavailable",
+      termCover: { state: "not_configured" },
+      healthCover: { state: "not_configured" }
+    });
+
+    const protectionKey = crypto.randomUUID();
+    const protectionBody = {
+      effectiveFrom: "2026-04-01T00:00:00.000Z",
+      termCoverStatus: "employer_only",
+      employerTermCoverMinor: 50_00_000,
+      healthCoverStatus: "not_sure",
+      dependantCount: 2
+    };
+    const created = await fetch(`${baseUrl}/api/v1/financial-profile/protection`, {
+      method: "PUT",
+      headers: { ...JSON_HEADERS, cookie: sessionA, "idempotency-key": protectionKey },
+      body: JSON.stringify(protectionBody)
+    });
+    expect(created.status).toBe(201);
+    const snapshot = await parseResponse(created, ProtectionSnapshotSchema);
+    expect(snapshot).toMatchObject({
+      termCoverStatus: "employer_only",
+      employerTermCoverMinor: 50_00_000,
+      independentTermCoverMinor: null,
+      healthCoverStatus: "not_sure",
+      dependantCount: 2
+    });
+
+    const replay = await fetch(`${baseUrl}/api/v1/financial-profile/protection`, {
+      method: "PUT",
+      headers: { ...JSON_HEADERS, cookie: sessionA, "idempotency-key": protectionKey },
+      body: JSON.stringify(protectionBody)
+    });
+    expect(replay.status).toBe(200);
+    expect(replay.headers.get("idempotency-replayed")).toBe("true");
+    expect((await parseResponse(replay, ProtectionSnapshotSchema)).id).toBe(snapshot.id);
+
+    const duplicateDate = await fetch(`${baseUrl}/api/v1/financial-profile/protection`, {
+      method: "PUT",
+      headers: { ...JSON_HEADERS, cookie: sessionA, "idempotency-key": crypto.randomUUID() },
+      body: JSON.stringify({ ...protectionBody, dependantCount: 3 })
+    });
+    expect(duplicateDate.status).toBe(409);
+    expect(await parseResponse(duplicateDate, ProblemDetailsSchema)).toMatchObject({
+      code: "financial_profile.duplicate_protection_effective_date",
+      status: 409
+    });
+
+    const state = await parseResponse(
+      await fetch(`${baseUrl}/api/v1/financial-profile/protection`, {
+        headers: { cookie: sessionA }
+      }),
+      ProtectionStateSchema
+    );
+    expect(state).toMatchObject({
+      configured: true,
+      dataQuality: "limited",
+      termCover: { state: "employer_only", hasEmployerCover: true, hasIndependentCover: false },
+      healthCover: { state: "unknown" }
+    });
+    expect(state.limitations).toContain(
+      "Term life cover is employer-provided only and may end with your employment."
+    );
+
+    const invalidCombination = await fetch(`${baseUrl}/api/v1/financial-profile/protection`, {
+      method: "PUT",
+      headers: { ...JSON_HEADERS, cookie: sessionA, "idempotency-key": crypto.randomUUID() },
+      body: JSON.stringify({
+        effectiveFrom: "2026-05-01T00:00:00.000Z",
+        termCoverStatus: "none",
+        independentTermCoverMinor: 10_00_000,
+        healthCoverStatus: "none",
+        dependantCount: 0
+      })
+    });
+    expect(invalidCombination.status).toBe(422);
+    expect(await parseResponse(invalidCombination, ProblemDetailsSchema)).toMatchObject({
+      code: "common.validation_failed"
+    });
+  });
+
+  it("declares, lists, links, and resolves debts without touching the ledger", async () => {
+    const empty = await parseResponse(
+      await fetch(`${baseUrl}/api/v1/financial-profile/debts`, { headers: { cookie: sessionA } }),
+      DeclaredDebtPageSchema
+    );
+    expect(empty.items).toEqual([]);
+    expect(empty.highCost).toMatchObject({ thresholdBps: 1_200, comparison: "greater_than" });
+
+    const debtKey = crypto.randomUUID();
+    const debtBody = {
+      name: "Amex revolve",
+      kind: "credit_card",
+      declaredOutstandingMinor: 85_000_00,
+      annualRateBps: 4_200
+    };
+    const createdDebt = await fetch(`${baseUrl}/api/v1/financial-profile/debts`, {
+      method: "POST",
+      headers: { ...JSON_HEADERS, cookie: sessionA, "idempotency-key": debtKey },
+      body: JSON.stringify(debtBody)
+    });
+    expect(createdDebt.status).toBe(201);
+    const debt = await parseResponse(createdDebt, DeclaredDebtSchema);
+    expect(debt).toMatchObject({
+      amountSource: "declared",
+      isEstimate: true,
+      isHighCost: true,
+      outstandingMinor: 85_000_00,
+      status: "active"
+    });
+
+    const debtReplay = await fetch(`${baseUrl}/api/v1/financial-profile/debts`, {
+      method: "POST",
+      headers: { ...JSON_HEADERS, cookie: sessionA, "idempotency-key": debtKey },
+      body: JSON.stringify(debtBody)
+    });
+    expect(debtReplay.status).toBe(200);
+    expect(debtReplay.headers.get("idempotency-replayed")).toBe("true");
+    expect((await parseResponse(debtReplay, DeclaredDebtSchema)).id).toBe(debt.id);
+
+    // A loan liability created through the real asset routes backs a linked debt.
+    const loan = await parseResponse(
+      await fetch(`${baseUrl}/api/v1/assets`, {
+        method: "POST",
+        headers: { ...JSON_HEADERS, cookie: sessionA, "idempotency-key": crypto.randomUUID() },
+        body: JSON.stringify({
+          kind: "loan_liability",
+          name: "Car loan",
+          openedAt: "2026-01-01T00:00:00.000Z",
+          openingValueMinor: -4_00_000_00
+        })
+      }),
+      AssetSchema
+    );
+
+    const linkedDebt = await parseResponse(
+      await fetch(`${baseUrl}/api/v1/financial-profile/debts`, {
+        method: "POST",
+        headers: { ...JSON_HEADERS, cookie: sessionA, "idempotency-key": crypto.randomUUID() },
+        body: JSON.stringify({
+          name: "Car loan",
+          kind: "consumer_loan",
+          annualRateBps: 900,
+          linkedAssetId: loan.id
+        })
+      }),
+      DeclaredDebtSchema
+    );
+    expect(linkedDebt).toMatchObject({
+      amountSource: "linked_asset",
+      isEstimate: false,
+      isHighCost: false,
+      linkedAssetName: "Car loan",
+      outstandingMinor: 4_00_000_00,
+      declaredOutstandingMinor: null
+    });
+
+    const foreignAsset = await parseResponse(
+      await fetch(`${baseUrl}/api/v1/assets`, {
+        method: "POST",
+        headers: { ...JSON_HEADERS, cookie: sessionB, "idempotency-key": crypto.randomUUID() },
+        body: JSON.stringify({
+          kind: "loan_liability",
+          name: "B's loan",
+          openedAt: "2026-01-01T00:00:00.000Z",
+          openingValueMinor: -1_00_000_00
+        })
+      }),
+      AssetSchema
+    );
+    const crossTenantLink = await fetch(`${baseUrl}/api/v1/financial-profile/debts`, {
+      method: "POST",
+      headers: { ...JSON_HEADERS, cookie: sessionA, "idempotency-key": crypto.randomUUID() },
+      body: JSON.stringify({
+        name: "Not mine",
+        kind: "personal_loan",
+        annualRateBps: 1_100,
+        linkedAssetId: foreignAsset.id
+      })
+    });
+    expect(crossTenantLink.status).toBe(404);
+    expect(await parseResponse(crossTenantLink, ProblemDetailsSchema)).toMatchObject({
+      code: "financial_profile.linked_asset_unavailable"
+    });
+
+    const page = await parseResponse(
+      await fetch(`${baseUrl}/api/v1/financial-profile/debts?limit=1`, {
+        headers: { cookie: sessionA }
+      }),
+      DeclaredDebtPageSchema
+    );
+    expect(page.items).toHaveLength(1);
+    expect(page.pageInfo.hasMore).toBe(true);
+    expect(page.highCost.highCostCount).toBe(1);
+
+    const resolveKey = crypto.randomUUID();
+    const resolved = await fetch(`${baseUrl}/api/v1/financial-profile/debts/${debt.id}`, {
+      method: "PATCH",
+      headers: { ...JSON_HEADERS, cookie: sessionA, "idempotency-key": resolveKey },
+      body: JSON.stringify({ status: "resolved" })
+    });
+    expect(resolved.status).toBe(200);
+    expect((await parseResponse(resolved, DeclaredDebtSchema)).status).toBe("resolved");
+
+    const resolveReplay = await fetch(`${baseUrl}/api/v1/financial-profile/debts/${debt.id}`, {
+      method: "PATCH",
+      headers: { ...JSON_HEADERS, cookie: sessionA, "idempotency-key": resolveKey },
+      body: JSON.stringify({ status: "resolved" })
+    });
+    expect(resolveReplay.headers.get("idempotency-replayed")).toBe("true");
+
+    // The linked asset is untouched by any of the above.
+    const assetsAfter = await parseResponse(
+      await fetch(`${baseUrl}/api/v1/assets`, { headers: { cookie: sessionA } }),
+      z.array(AssetSchema)
+    );
+    expect(assetsAfter.find((asset) => asset.id === loan.id)).toMatchObject({ isClosed: false });
+
+    const reopen = await fetch(`${baseUrl}/api/v1/financial-profile/debts/${debt.id}`, {
+      method: "PATCH",
+      headers: { ...JSON_HEADERS, cookie: sessionA, "idempotency-key": crypto.randomUUID() },
+      body: JSON.stringify({ name: "Reopened" })
+    });
+    expect(reopen.status).toBe(409);
+    expect(await parseResponse(reopen, ProblemDetailsSchema)).toMatchObject({
+      code: "financial_profile.declared_debt_not_editable"
+    });
+  });
+
+  it("never leaks one user's protection or debt data to another", async () => {
+    const foreignProtection = await parseResponse(
+      await fetch(`${baseUrl}/api/v1/financial-profile/protection`, {
+        headers: { cookie: sessionB }
+      }),
+      ProtectionStateSchema
+    );
+    expect(foreignProtection.configured).toBe(false);
+    expect(foreignProtection.currentSnapshot).toBeNull();
+
+    const foreignDebts = await parseResponse(
+      await fetch(`${baseUrl}/api/v1/financial-profile/debts`, { headers: { cookie: sessionB } }),
+      DeclaredDebtPageSchema
+    );
+    expect(foreignDebts.items).toEqual([]);
+
+    const ownDebts = await parseResponse(
+      await fetch(`${baseUrl}/api/v1/financial-profile/debts`, { headers: { cookie: sessionA } }),
+      DeclaredDebtPageSchema
+    );
+    const target = ownDebts.items[0];
+    if (target === undefined) throw new Error("Expected user A to own a debt.");
+
+    const foreignPatch = await fetch(`${baseUrl}/api/v1/financial-profile/debts/${target.id}`, {
+      method: "PATCH",
+      headers: { ...JSON_HEADERS, cookie: sessionB, "idempotency-key": crypto.randomUUID() },
+      body: JSON.stringify({ name: "Stolen" })
+    });
+    expect(foreignPatch.status).toBe(404);
+
+    for (const path of [
+      "/api/v1/financial-profile/protection",
+      "/api/v1/financial-profile/debts"
+    ]) {
+      expect((await fetch(`${baseUrl}${path}`)).status).toBe(401);
+    }
+  });
+
   it("never leaks one user's salary profile or history to another", async () => {
     const foreignState = await parseResponse(
       await fetch(`${baseUrl}/api/v1/financial-profile`, { headers: { cookie: sessionB } }),
@@ -733,7 +1015,12 @@ describe("production HTTP composition", () => {
         { method: "patch", path: "/v1/financial-profile" },
         { method: "get", path: "/v1/financial-profile/salary-versions" },
         { method: "post", path: "/v1/financial-profile/salary-versions" },
-        { method: "get", path: "/v1/financial-profile/salary-statistics" }
+        { method: "get", path: "/v1/financial-profile/salary-statistics" },
+        { method: "get", path: "/v1/financial-profile/protection" },
+        { method: "put", path: "/v1/financial-profile/protection" },
+        { method: "get", path: "/v1/financial-profile/debts" },
+        { method: "post", path: "/v1/financial-profile/debts" },
+        { method: "patch", path: "/v1/financial-profile/debts/{debtId}" }
       ])
     );
 

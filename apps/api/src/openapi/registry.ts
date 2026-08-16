@@ -35,6 +35,8 @@ import {
   BillStatementUploadSchema,
   CashflowQuerySchema,
   CashflowResponseSchema,
+  CashflowForecastQuerySchema,
+  CashflowForecastSnapshotSchema,
   CategoryIdSchema,
   CategorySchema,
   CategoryRuleIdSchema,
@@ -203,6 +205,9 @@ const DashboardSummary = DashboardSummarySchema.meta({ id: "DashboardSummary" })
 const RecentActivityItem = RecentActivityItemSchema.meta({ id: "RecentActivityItem" });
 const DashboardStats = DashboardStatsSchema.meta({ id: "DashboardStats" });
 const CashflowResponse = CashflowResponseSchema.meta({ id: "CashflowResponse" });
+const CashflowForecastSnapshot = CashflowForecastSnapshotSchema.meta({
+  id: "CashflowForecastSnapshot"
+});
 const MonthlySpending = MonthlySpendingSchema.meta({ id: "MonthlySpending" });
 const TopSpendingItem = TopSpendingItemSchema.meta({ id: "TopSpendingItem" });
 const SpendMix = SpendMixSchema.meta({ id: "SpendMix" });
@@ -1359,6 +1364,20 @@ registry.registerPath({
     200: {
       description: "Income/expense buckets over the requested range",
       ...json(CashflowResponse)
+    },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "get",
+  path: "/v1/insights/cash-flow-forecast",
+  security: secured,
+  request: { query: CashflowForecastQuerySchema },
+  responses: {
+    200: {
+      description:
+        "Latest immutable, read-only cash-flow forecast snapshot; null while worker evidence is unavailable",
+      ...json(CashflowForecastSnapshot.nullable())
     },
     ...problemResponses
   }

@@ -36,6 +36,18 @@ export {
   ShortfallDecisionMetricsSchema,
   WarningDecisionMetricsSchema
 } from "./algorithm-evaluation.js";
+export {
+  CashflowForecastHorizonSchema,
+  CashflowForecastModelSchema,
+  CashflowForecastRangeSchema,
+  CashflowForecastAssumptionsSchema,
+  CashflowForecastMetricsSchema,
+  CashflowForecastInputWatermarkSchema,
+  CashflowForecastShortfallSchema,
+  CashflowForecastSnapshotSchema,
+  CashflowForecastQuerySchema
+} from "./cashflow-forecast.js";
+export type { CashflowForecastSnapshot, CashflowForecastQuery } from "./cashflow-forecast.js";
 export type {
   AlgorithmAbstentionReason,
   AlgorithmComplexity,

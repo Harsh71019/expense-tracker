@@ -4267,6 +4267,386 @@
         },
         "required": ["range", "buckets"]
       },
+      "CashflowForecastSnapshot": {
+        "type": ["object", "null"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "asOf": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "horizonDays": {
+            "anyOf": [
+              {
+                "type": "number",
+                "enum": [30]
+              },
+              {
+                "type": "number",
+                "enum": [60]
+              },
+              {
+                "type": "number",
+                "enum": [90]
+              }
+            ]
+          },
+          "modelVersion": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          },
+          "inputWatermark": {
+            "type": "object",
+            "properties": {
+              "asOf": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              },
+              "latestOccurredAt": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              },
+              "latestUpdatedAt": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              },
+              "rowCount": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "digest": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              }
+            },
+            "required": ["asOf", "latestOccurredAt", "latestUpdatedAt", "rowCount", "digest"]
+          },
+          "sufficiency": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": ["sufficient"]
+                  },
+                  "observationCount": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "minimumRequired": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": ["status", "observationCount", "minimumRequired"]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": ["insufficient"]
+                  },
+                  "reason": {
+                    "type": "string",
+                    "enum": [
+                      "insufficient_history",
+                      "ambiguous",
+                      "resource_limit",
+                      "timeout",
+                      "unsupported_series"
+                    ]
+                  },
+                  "observationCount": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "minimumRequired": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": ["status", "reason", "observationCount", "minimumRequired"]
+              }
+            ]
+          },
+          "resources": {
+            "type": "object",
+            "properties": {
+              "rowsScanned": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "runtimeMs": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "rowBudgetHit": {
+                "type": "boolean"
+              },
+              "timedOut": {
+                "type": "boolean"
+              },
+              "outcome": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string",
+                        "enum": ["completed"]
+                      }
+                    },
+                    "required": ["status"]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string",
+                        "enum": ["degraded"]
+                      },
+                      "reason": {
+                        "type": "string",
+                        "enum": [
+                          "insufficient_history",
+                          "ambiguous",
+                          "resource_limit",
+                          "timeout",
+                          "unsupported_series"
+                        ]
+                      }
+                    },
+                    "required": ["status", "reason"]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string",
+                        "enum": ["abstained"]
+                      },
+                      "reason": {
+                        "type": "string",
+                        "enum": [
+                          "insufficient_history",
+                          "ambiguous",
+                          "resource_limit",
+                          "timeout",
+                          "unsupported_series"
+                        ]
+                      }
+                    },
+                    "required": ["status", "reason"]
+                  }
+                ]
+              }
+            },
+            "required": ["rowsScanned", "runtimeMs", "rowBudgetHit", "timedOut", "outcome"]
+          },
+          "model": {
+            "type": "string",
+            "enum": [
+              "known_cashflow_only",
+              "seasonal_naive",
+              "trailing_median",
+              "ses",
+              "croston",
+              "sba",
+              "tsb"
+            ]
+          },
+          "pointBalanceMinor": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "range": {
+            "type": "object",
+            "properties": {
+              "lowerMinor": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "upperMinor": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "observedCoverageBps": {
+                "type": ["integer", "null"],
+                "minimum": 0,
+                "maximum": 10000
+              },
+              "label": {
+                "type": "string",
+                "enum": ["historical_range"]
+              }
+            },
+            "required": ["lowerMinor", "upperMinor", "observedCoverageBps", "label"]
+          },
+          "assumptions": {
+            "type": "object",
+            "properties": {
+              "liquidBalanceMinor": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "knownRecurringInflowMinor": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "knownRecurringOutflowMinor": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "creditCardBillsDueMinor": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "excludedCreditCardPurchaseCount": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "excludedTransferCount": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "variableSpendExcludedRecurringCount": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "asOfDeterministic": {
+                "type": "boolean",
+                "enum": [true]
+              }
+            },
+            "required": [
+              "liquidBalanceMinor",
+              "knownRecurringInflowMinor",
+              "knownRecurringOutflowMinor",
+              "creditCardBillsDueMinor",
+              "excludedCreditCardPurchaseCount",
+              "excludedTransferCount",
+              "variableSpendExcludedRecurringCount",
+              "asOfDeterministic"
+            ]
+          },
+          "metrics": {
+            "type": "object",
+            "properties": {
+              "evaluatedOriginCount": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "maeMinor": {
+                "type": ["integer", "null"],
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "maseBps": {
+                "type": ["integer", "null"],
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "baselineMaeMinor": {
+                "type": ["integer", "null"],
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "residualCount": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "observedCoverageBps": {
+                "type": ["integer", "null"],
+                "minimum": 0,
+                "maximum": 10000
+              },
+              "eligibleForHorizon": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "evaluatedOriginCount",
+              "maeMinor",
+              "maseBps",
+              "baselineMaeMinor",
+              "residualCount",
+              "observedCoverageBps",
+              "eligibleForHorizon"
+            ]
+          },
+          "shortfall": {
+            "type": "object",
+            "properties": {
+              "hasPotentialShortfall": {
+                "type": "boolean"
+              },
+              "firstPotentialShortfallDate": {
+                "type": ["string", "null"],
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+              },
+              "conservativeBalanceMinor": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "mode": {
+                "type": "string",
+                "enum": ["read_only"]
+              }
+            },
+            "required": [
+              "hasPotentialShortfall",
+              "firstPotentialShortfallDate",
+              "conservativeBalanceMinor",
+              "mode"
+            ]
+          },
+          "computedAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "asOf",
+          "horizonDays",
+          "modelVersion",
+          "inputWatermark",
+          "sufficiency",
+          "resources",
+          "model",
+          "pointBalanceMinor",
+          "range",
+          "assumptions",
+          "metrics",
+          "shortfall",
+          "computedAt"
+        ]
+      },
       "MonthlySpending": {
         "type": "object",
         "properties": {
@@ -13460,6 +13840,81 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CashflowResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/insights/cash-flow-forecast": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "enum": [30]
+                },
+                {
+                  "type": "number",
+                  "enum": [60]
+                },
+                {
+                  "type": "number",
+                  "enum": [90]
+                }
+              ],
+              "default": 30
+            },
+            "required": false,
+            "name": "days",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Latest immutable, read-only cash-flow forecast snapshot; null while worker evidence is unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CashflowForecastSnapshot"
                 }
               }
             }

@@ -11,6 +11,8 @@ import { LoggingContextService } from "./common/logging/logging-context.service.
 import { withDeadline } from "./common/process/deadline.js";
 import { RedisService } from "./common/redis/redis.service.js";
 import { ImportsService } from "./imports/imports.service.js";
+import { startForecastingWorker } from "./insights/forecasting/forecasting.processor.js";
+import { ForecastingService } from "./insights/forecasting/forecasting.service.js";
 import { startImportsWorker } from "./imports/imports.processor.js";
 import { NotificationDeliveryService } from "./notifications/notification-delivery.service.js";
 import { startNotificationsWorker } from "./notifications/notifications.processor.js";
@@ -65,6 +67,7 @@ async function bootstrapWorker(): Promise<void> {
     logger,
     loggingContext
   );
+  const forecastingWorker = startForecastingWorker(config, app.get(ForecastingService), logger);
   logger.log({ event: "worker.started" }, "worker process started");
 
   let isShuttingDown = false;
@@ -84,7 +87,8 @@ async function bootstrapWorker(): Promise<void> {
             notificationsWorker.close(),
             billStatementsWorker.close(),
             spendingWarningsWorker.close(),
-            recurringDetectionWorker.close()
+            recurringDetectionWorker.close(),
+            forecastingWorker.close()
           ]);
           for (const result of results) {
             if (result.status === "rejected") {

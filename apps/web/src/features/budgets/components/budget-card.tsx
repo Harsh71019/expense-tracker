@@ -94,6 +94,28 @@ export function BudgetCard({ progress, month, onEdit, onArchive }: BudgetCardPro
           <div className="mt-4">
             <BudgetMeter progress={progress} />
           </div>
+          <div className="mt-4 rounded-lg border border-border bg-surface-muted p-3 text-sm">
+            {progress.pace.projectedMonthEndMinor === null ? (
+              <p className="text-foreground-muted">
+                Month-end projection is unavailable until enough eligible history is available.
+              </p>
+            ) : (
+              <>
+                <p className="text-xs text-foreground-muted">Informational month-end projection</p>
+                <Money
+                  minor={progress.pace.projectedMonthEndMinor}
+                  size="md"
+                  className="mt-1 block"
+                />
+                <p className="mt-1 text-xs text-foreground-muted">
+                  {progress.pace.method === "historical_curve"
+                    ? "Based on your historical monthly pace."
+                    : "Using linear calendar pacing while history builds."}
+                  {` ${utilizationPercent(progress.pace.projectedUtilizationBps ?? 0)}% of this budget.`}
+                </p>
+              </>
+            )}
+          </div>
           <div className="mt-3 flex items-center justify-between gap-3 text-xs">
             <span className={over ? "font-semibold text-expense" : "text-foreground-muted"}>
               {over ? "Over by " : "Remaining "}

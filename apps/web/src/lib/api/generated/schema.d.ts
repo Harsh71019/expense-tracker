@@ -9185,6 +9185,29 @@ export interface components {
         spentMinor: number;
         remainingMinor: number;
         utilizationBps: number;
+        pace: {
+          /** @enum {string} */
+          method: "historical_curve" | "linear_calendar" | "abstain";
+          /** @enum {number} */
+          version: 1;
+          /** Format: date-time */
+          asOf: string | null;
+          /** Format: date-time */
+          inputWatermark: string | null;
+          historyMonths: number;
+          isSufficient: boolean;
+          evidence: (
+            "eligible_history" | "insufficient_history" | "ineffective_budget" | "resource_limit"
+          )[];
+          confidenceBps: number;
+          expectedSpentMinor: number | null;
+          paceDeltaMinor: number | null;
+          paceRatioBps: number | null;
+          projectedMonthEndMinor: number | null;
+          projectedRangeLowMinor: number | null;
+          projectedRangeHighMinor: number | null;
+          projectedUtilizationBps: number | null;
+        };
         /** @enum {string} */
         state: "under" | "approaching" | "reached";
         isEffective: boolean;

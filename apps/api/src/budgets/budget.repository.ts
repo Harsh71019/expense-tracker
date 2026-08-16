@@ -5,7 +5,7 @@ import {
   type BudgetCategory,
   type BudgetId
 } from "@treasury-ops/shared";
-import { and, asc, eq, gte, lt, sql } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, lt, lte, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import { DATABASE_CONNECTION } from "../common/db/db.module.js";
@@ -14,6 +14,7 @@ import type { DbTx } from "../common/db/db-txn.js";
 import { budgetAlertEvents, budgets, categories, transactions } from "../common/db/schema/index.js";
 import { InvalidCursorError } from "../common/errors/invalid-cursor.error.js";
 import { stripNulls } from "../common/db/strip-nulls.js";
+import type { DailyCategorySpend } from "./budget-pacing.js";
 
 const IST_TIME_ZONE = "Asia/Kolkata";
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
@@ -185,7 +186,8 @@ export class BudgetRepository {
   async categorySpendForMonth(
     userId: string,
     month: string,
-    tx?: DbTx
+    tx?: DbTx,
+    asOf?: Date
   ): Promise<Map<string | null, number>> {
     const executor = tx ?? this.db;
     const { roughStart, roughEnd } = roughMonthBounds(month);
@@ -205,12 +207,57 @@ export class BudgetRepository {
           sql`${transactions.transferGroupId} IS NULL`,
           gte(transactions.occurredAt, roughStart),
           lt(transactions.occurredAt, roughEnd),
+          ...(asOf === undefined ? [] : [lte(transactions.occurredAt, asOf)]),
           sql`${istMonth} = ${month}`
         )
       )
       .groupBy(transactions.categoryId);
 
     return new Map(rows.map((row) => [row.categoryId, Number(row.spentMinor)]));
+  }
+
+  /**
+   * Bounded daily expense totals for pace analysis. `asOf` is a hard upper
+   * bound, preventing future rows from leaking into a historical evaluation.
+   * The caller limits category count and consumes at most MAX_DAILY_ROWS.
+   */
+  async categoryDailySpendHistory(
+    userId: string,
+    categoryIds: readonly string[],
+    start: Date,
+    asOf: Date
+  ): Promise<DailyCategorySpend[]> {
+    if (categoryIds.length === 0) return [];
+    // Keep the time zone literal inside the expression. Drizzle emits a new
+    // bind parameter for every reuse of a SQL fragment; PostgreSQL then sees
+    // SELECT/GROUP BY as different expressions and rejects the aggregate.
+    const istDay = sql<string>`to_char(${transactions.occurredAt} AT TIME ZONE 'Asia/Kolkata', 'YYYY-MM-DD')`;
+    const rows = await this.db
+      .select({
+        categoryId: transactions.categoryId,
+        day: istDay,
+        spentMinor: sql<string>`coalesce(sum(${transactions.amountMinor}), 0)::bigint`
+      })
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.userId, userId),
+          inArray(transactions.categoryId, [...categoryIds]),
+          eq(transactions.status, "posted"),
+          eq(transactions.type, "expense"),
+          sql`${transactions.transferGroupId} IS NULL`,
+          gte(transactions.occurredAt, start),
+          lte(transactions.occurredAt, asOf)
+        )
+      )
+      .groupBy(transactions.categoryId, istDay)
+      .orderBy(asc(istDay))
+      .limit(10_001);
+    return rows.flatMap((row) =>
+      row.categoryId === null
+        ? []
+        : [{ categoryId: row.categoryId, day: row.day, spentMinor: Number(row.spentMinor) }]
+    );
   }
 
   async findRecordedThresholds(

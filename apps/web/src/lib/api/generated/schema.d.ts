@@ -3203,6 +3203,237 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/v1/recurring/detected": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: {
+          cursor?: string;
+          limit?: number;
+          state?: "candidate" | "mature" | "stale";
+        };
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Pending detected recurring streams, newest first */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["DetectedStreamPage"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/recurring/detected/{streamId}/accept": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path: {
+          streamId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": {
+            /** Format: uuid */
+            accountId: string;
+            /** @default false */
+            autoPost?: boolean;
+          };
+        };
+      };
+      responses: {
+        /** @description Accepted recurring rule or idempotent replay */
+        200: {
+          headers: {
+            "Idempotency-Replayed"?: "true";
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["RecurringRule"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/recurring/detected/{streamId}/reject": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: {
+      parameters: {
+        query?: never;
+        header: {
+          "Idempotency-Key": string;
+        };
+        path: {
+          streamId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: {
+        content: {
+          "application/json": Record<string, never>;
+        };
+      };
+      responses: {
+        /** @description Rejected stream decision or idempotent replay */
+        200: {
+          headers: {
+            "Idempotency-Replayed"?: "true";
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["DetectedStreamReview"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Idempotency key was already used for different request intent */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/v1/recurring/stats": {
     parameters: {
       query?: never;
@@ -7191,6 +7422,7 @@ export interface components {
         | "recurring.invalid_reconciliation_resolution"
         | "recurring.invalid_occurrence_source"
         | "recurring.occurrence_already_confirmed"
+        | "recurring.detected_stream_not_reviewable"
         | "pending_transaction.already_resolved";
       reqId: string;
       /** Format: date-time */
@@ -7911,6 +8143,115 @@ export interface components {
       createdAt: string | null;
       /** Format: date-time */
       updatedAt: string | null;
+    };
+    DetectedStreamPage: {
+      items: {
+        stream: {
+          /** Format: uuid */
+          id: string;
+          userId: string;
+          logicalKey: string;
+          fingerprint: string;
+          detectorVersion: number;
+          /** @enum {string} */
+          transactionType: "expense" | "income";
+          counterpartyKey: string | null;
+          /** @enum {string} */
+          cadence: "weekly" | "biweekly" | "semimonthly" | "monthly" | "quarterly" | "annual";
+          /** @enum {string} */
+          state: "candidate" | "mature" | "stale";
+          /** @enum {string} */
+          amountBehavior: "fixed" | "variable" | "unknown";
+          confidenceBps: number;
+          sufficiency:
+            | {
+                /** @enum {string} */
+                status: "sufficient";
+                observationCount: number;
+                minimumRequired: number;
+              }
+            | {
+                /** @enum {string} */
+                status: "insufficient";
+                /** @enum {string} */
+                reason:
+                  | "insufficient_history"
+                  | "ambiguous"
+                  | "resource_limit"
+                  | "timeout"
+                  | "unsupported_series";
+                observationCount: number;
+                minimumRequired: number;
+              };
+          evidence: {
+            cadenceScore: {
+              coverageBps: number;
+              dateStabilityBps: number;
+              amountStabilityBps: number;
+              textStabilityBps: number;
+              missPenaltyBps: number;
+              cadenceMarginBps: number;
+              expectedSlotCount: number;
+              matchedSlotCount: number;
+              recentMissCount: number;
+            };
+            confidenceBps: number;
+            medianAmountMinor: number;
+            madAmountMinor: number;
+            intervalMedianDays: number;
+            intervalMadDays: number;
+            memberCount: number;
+            observationSpanDays: number;
+            normalizerVersion: number;
+            scoringPolicyVersion: number;
+          };
+          medianAmountMinor: number;
+          madAmountMinor: number;
+          nextExpectedDate: string | null;
+          inputWatermark: {
+            /** Format: date-time */
+            asOf: string | null;
+            /** Format: date-time */
+            latestOccurredAt: string | null;
+            /** Format: date-time */
+            latestUpdatedAt: string | null;
+            /** Format: uuid */
+            lastTransactionId: string | null;
+            rowCount: number;
+            digest: string;
+          };
+          /** Format: uuid */
+          supersedesStreamId: string | null;
+          /** Format: date-time */
+          computedAt: string | null;
+        };
+        review: {
+          /** Format: uuid */
+          streamId: string;
+          detectorVersion: number;
+          /** @enum {string} */
+          decision: "accepted" | "rejected";
+          /** Format: uuid */
+          recurringRuleId: string | null;
+          /** Format: date-time */
+          decidedAt: string | null;
+        } | null;
+        /** @enum {string|null} */
+        latestRunStatus: "running" | "completed" | "degraded" | "abstained" | "failed" | null;
+      }[];
+      /** Format: uuid */
+      nextCursor: string | null;
+    };
+    DetectedStreamReview: {
+      /** Format: uuid */
+      streamId: string;
+      detectorVersion: number;
+      /** @enum {string} */
+      decision: "accepted" | "rejected";
+      /** Format: uuid */
+      recurringRuleId: string | null;
+      /** Format: date-time */
+      decidedAt: string | null;
     };
     RecurringStats: {
       /** @enum {number} */

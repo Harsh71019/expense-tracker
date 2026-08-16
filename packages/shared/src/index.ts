@@ -550,6 +550,11 @@ export type {
 export {
   DetectedRecurringStreamIdSchema,
   DetectedRecurringStreamSchema,
+  DetectedStreamCursorSchema,
+  DetectedStreamPageSchema,
+  DetectedStreamReviewDecisionSchema,
+  DetectedStreamReviewItemSchema,
+  DetectedStreamReviewSchema,
   DetectedStreamAmountBehaviorSchema,
   DetectedStreamCadenceEvidenceSchema,
   DetectedStreamCadenceSchema,
@@ -560,11 +565,20 @@ export {
   RecurringDetectionInputWatermarkSchema,
   RecurringDetectionPromotionDecisionSchema,
   RecurringDetectionRunStatusSchema,
-  RecurringDetectionRunResultSchema
+  RecurringDetectionRunResultSchema,
+  AcceptDetectedStreamSchema,
+  ListDetectedStreamsQuerySchema,
+  RejectDetectedStreamSchema
 } from "./recurring-detection.js";
 export type {
   DetectedRecurringStream,
   DetectedRecurringStreamId,
+  DetectedStreamPage,
+  DetectedStreamReview,
+  DetectedStreamReviewDecision,
+  DetectedStreamReviewItem,
+  ListDetectedStreamsQuery,
+  AcceptDetectedStream,
   DetectedStreamAmountBehavior,
   DetectedStreamCadence,
   DetectedStreamCadenceEvidence,

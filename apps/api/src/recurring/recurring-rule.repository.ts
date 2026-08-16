@@ -70,6 +70,28 @@ export class RecurringRuleRepository {
     return row === undefined ? null : toRecurringRule(row);
   }
 
+  async findEquivalent(
+    userId: string,
+    input: CreateRecurringRule,
+    tx: DbTx
+  ): Promise<RecurringRule | null> {
+    const [row] = await tx
+      .select()
+      .from(recurringRules)
+      .where(
+        and(
+          eq(recurringRules.userId, userId),
+          eq(recurringRules.templateAccountId, input.template.accountId),
+          eq(recurringRules.templateType, input.template.type),
+          eq(recurringRules.templateAmountMinor, input.template.amountMinor),
+          eq(recurringRules.rrule, input.rrule),
+          eq(recurringRules.isPaused, false)
+        )
+      )
+      .limit(1);
+    return row === undefined ? null : toRecurringRule(row);
+  }
+
   /**
    * `nextRunAt === undefined` leaves the field untouched (a template/isPaused
    * -only patch); a Date reseeds it (the rrule changed). Every other field is

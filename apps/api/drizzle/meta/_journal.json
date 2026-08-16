@@ -183,6 +183,13 @@
       "when": 1786713027047,
       "tag": "0025_chief_shadowcat",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1786864268473,
+      "tag": "0026_low_jocasta",
+      "breakpoints": true
     }
   ]
 }

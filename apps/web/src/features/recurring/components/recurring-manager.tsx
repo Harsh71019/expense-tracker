@@ -5,7 +5,8 @@ import type {
   Category,
   RecurringReconciliationReviewItem,
   RecurringRule,
-  RecurringStats
+  RecurringStats,
+  DetectedStreamPage
 } from "@treasury-ops/shared";
 import { useState } from "react";
 import type { ReactNode } from "react";
@@ -24,6 +25,7 @@ import { OccurrenceTickRow } from "./occurrence-tick-row";
 import { ReconciliationReviewPanel } from "./reconciliation-review-panel";
 import { RecurringRuleDrawer } from "./recurring-rule-drawer";
 import { RecurringStatsCards } from "./recurring-stats-cards";
+import { DetectedStreamReviewPanel } from "./detected-stream-review-panel";
 
 const dateFormatter = new Intl.DateTimeFormat("en-IN", {
   day: "numeric",
@@ -38,6 +40,7 @@ type ManagerProps = Readonly<{
   categories: Category[];
   initialReconciliations: RecurringReconciliationReviewItem[];
   initialStats: RecurringStats | null;
+  initialDetectedStreams?: DetectedStreamPage;
 }>;
 
 type StatusFilter = "all" | "active" | "paused";
@@ -49,7 +52,8 @@ export function RecurringManager({
   accounts = [],
   categories = [],
   initialReconciliations = [],
-  initialStats = null
+  initialStats = null,
+  initialDetectedStreams = { items: [], nextCursor: null }
 }: ManagerProps): ReactNode {
   const rules = useRecurringRules(initialRules);
   const accountQuery = useAccounts(accounts.length === 0 ? undefined : accounts);
@@ -166,6 +170,8 @@ export function RecurringManager({
 
       {/* Analytics KPIs */}
       <RecurringStatsCards initialStats={initialStats} />
+
+      <DetectedStreamReviewPanel initialPage={initialDetectedStreams} accounts={accountItems} />
 
       {/* Reconciliation Reviews */}
       <ReconciliationReviewPanel initialReconciliations={initialReconciliations} />

@@ -153,3 +153,15 @@ export const recurringDetectionRunStatusEnum = pgEnum("recurring_detection_run_s
   "abstained",
   "failed"
 ]);
+export const spendingChangeDirectionEnum = pgEnum("spending_change_direction", [
+  "increase",
+  "decrease"
+]);
+export const spendingRegimeTypeEnum = pgEnum("spending_regime_type", ["variable_spending"]);
+export const spendingChangeRunStatusEnum = pgEnum("spending_change_run_status", [
+  "running",
+  "completed",
+  "degraded",
+  "abstained",
+  "failed"
+]);

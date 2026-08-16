@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { INITIAL_CUSUM_STATE, nextCusumState, tabularCusum } from "../cusum.js";
+import {
+  INITIAL_CUSUM_STATE,
+  calibrateCusumParameters,
+  nextCusumState,
+  tabularCusum
+} from "../cusum.js";
 
 describe("fixed-point tabular CUSUM", () => {
   const parameters = { referenceAllowanceMinor: 3, decisionThresholdMinor: 10 };
@@ -70,5 +75,38 @@ describe("fixed-point tabular CUSUM", () => {
       expect(state.upperTriggered).toBe(state.upperMinor >= 5_000);
       expect(state.lowerTriggered).toBe(state.lowerMinor <= -5_000);
     }
+  });
+
+  describe("calibrateCusumParameters", () => {
+    it("calibrates reference allowance and decision threshold from MAD", () => {
+      const params = calibrateCusumParameters(2_000, 50_000);
+      // allowance: 2_000 * 50% = 1_000
+      // threshold: 2_000 * 400% = 8_000
+      expect(params.referenceAllowanceMinor).toBe(1_000);
+      expect(params.decisionThresholdMinor).toBe(8_000);
+    });
+
+    it("applies zero-MAD fallback when series has zero MAD", () => {
+      // baseline = 100_000 (1000 INR), zero-MAD ratio 1% = 1_000
+      // allowance: 1_000 * 50% = 500
+      // threshold: 1_000 * 400% = 4_000
+      const params = calibrateCusumParameters(0, 100_000);
+      expect(params.referenceAllowanceMinor).toBe(500);
+      expect(params.decisionThresholdMinor).toBe(4_000);
+    });
+
+    it("respects minimum floor values", () => {
+      const params = calibrateCusumParameters(10, 100, {
+        floorAllowanceMinor: 200,
+        floorThresholdMinor: 1_500
+      });
+      expect(params.referenceAllowanceMinor).toBe(200);
+      expect(params.decisionThresholdMinor).toBe(1_500);
+    });
+
+    it("rejects negative inputs", () => {
+      expect(() => calibrateCusumParameters(-1, 50_000)).toThrow(RangeError);
+      expect(() => calibrateCusumParameters(1_000, -50)).toThrow(RangeError);
+    });
   });
 });

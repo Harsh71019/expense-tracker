@@ -15,6 +15,7 @@ export type CategorySuggestionMetricOutcome =
 export type StatementAssignmentMetricOutcome =
   "matched" | "ambiguous" | "missing_from_ledger" | "resource_limit";
 export type RecurringDetectionMetricOutcome = "completed" | "degraded" | "abstained" | "failed";
+export type SpendingChangeMetricOutcome = "completed" | "degraded" | "abstained" | "failed";
 
 const RecurringDetectionMetricSnapshotSchema = z.object({
   completedRuns: z.number().int().nonnegative(),
@@ -34,8 +35,24 @@ export type RecurringDetectionMetricSnapshot = z.infer<
   typeof RecurringDetectionMetricSnapshotSchema
 >;
 
+const SpendingChangeMetricSnapshotSchema = z.object({
+  completedRuns: z.number().int().nonnegative(),
+  degradedRuns: z.number().int().nonnegative(),
+  abstainedRuns: z.number().int().nonnegative(),
+  failedRuns: z.number().int().nonnegative(),
+  recurringChangesCount: z.number().int().nonnegative(),
+  regimesCount: z.number().int().nonnegative(),
+  abstainedCount: z.number().int().nonnegative(),
+  rowsScanned: z.number().int().nonnegative(),
+  runtimeMsSum: z.number().int().nonnegative(),
+  runtimeCount: z.number().int().nonnegative(),
+  rowBudgetHits: z.number().int().nonnegative()
+});
+export type SpendingChangeMetricSnapshot = z.infer<typeof SpendingChangeMetricSnapshotSchema>;
+
 const BALANCE_DRIFT_METRIC_KEY = "treasury-ops:metrics:balance-verification";
 const RECURRING_DETECTION_METRIC_KEY = "treasury-ops:metrics:recurring-detection";
+const SPENDING_CHANGE_METRIC_KEY = "treasury-ops:metrics:spending-change-detection";
 const BalanceVerificationMetricSchema = z.object({
   driftCount: z.number().int().nonnegative(),
   observedAt: z.iso.datetime({ offset: true })
@@ -161,6 +178,53 @@ export class MetricsService {
     });
   }
 
+  async recordSpendingChangeDetectionRun(
+    outcome: SpendingChangeMetricOutcome,
+    recurringChangesCount: number,
+    regimesCount: number,
+    abstainedCount: number,
+    resources: AlgorithmResourceUsage
+  ): Promise<void> {
+    requireMetricCount(recurringChangesCount, "Spending change recurring changes");
+    requireMetricCount(regimesCount, "Spending change regimes");
+    requireMetricCount(abstainedCount, "Spending change abstained count");
+    requireMetricCount(resources.rowsScanned, "Spending change rows scanned");
+    requireMetricCount(resources.runtimeMs, "Spending change runtime");
+    await Promise.all([
+      this.redis.hashIncrementBy(SPENDING_CHANGE_METRIC_KEY, `runs:${outcome}`, 1),
+      this.redis.hashIncrementBy(
+        SPENDING_CHANGE_METRIC_KEY,
+        "recurring_changes",
+        recurringChangesCount
+      ),
+      this.redis.hashIncrementBy(SPENDING_CHANGE_METRIC_KEY, "regimes", regimesCount),
+      this.redis.hashIncrementBy(SPENDING_CHANGE_METRIC_KEY, "abstained", abstainedCount),
+      this.redis.hashIncrementBy(SPENDING_CHANGE_METRIC_KEY, "rows_scanned", resources.rowsScanned),
+      this.redis.hashIncrementBy(SPENDING_CHANGE_METRIC_KEY, "runtime_ms_sum", resources.runtimeMs),
+      this.redis.hashIncrementBy(SPENDING_CHANGE_METRIC_KEY, "runtime_count", 1),
+      ...(resources.rowBudgetHit
+        ? [this.redis.hashIncrementBy(SPENDING_CHANGE_METRIC_KEY, "row_budget_hits", 1)]
+        : [])
+    ]);
+  }
+
+  async readSpendingChangeDetectionMetrics(): Promise<SpendingChangeMetricSnapshot> {
+    const values = await this.redis.hashGetAll(SPENDING_CHANGE_METRIC_KEY);
+    return SpendingChangeMetricSnapshotSchema.parse({
+      completedRuns: metricHashInteger(values, "runs:completed"),
+      degradedRuns: metricHashInteger(values, "runs:degraded"),
+      abstainedRuns: metricHashInteger(values, "runs:abstained"),
+      failedRuns: metricHashInteger(values, "runs:failed"),
+      recurringChangesCount: metricHashInteger(values, "recurring_changes"),
+      regimesCount: metricHashInteger(values, "regimes"),
+      abstainedCount: metricHashInteger(values, "abstained"),
+      rowsScanned: metricHashInteger(values, "rows_scanned"),
+      runtimeMsSum: metricHashInteger(values, "runtime_ms_sum"),
+      runtimeCount: metricHashInteger(values, "runtime_count"),
+      rowBudgetHits: metricHashInteger(values, "row_budget_hits")
+    });
+  }
+
   async recordBalanceVerification(
     driftCount: number,
     observedAt: Date = new Date()
@@ -184,7 +248,8 @@ export class MetricsService {
     workerHeartbeatAgeSeconds: number | null,
     balanceVerification: BalanceVerificationMetric | null,
     now: Date = new Date(),
-    recurringDetection: RecurringDetectionMetricSnapshot = emptyRecurringDetectionMetrics()
+    recurringDetection: RecurringDetectionMetricSnapshot = emptyRecurringDetectionMetrics(),
+    spendingChangeDetection: SpendingChangeMetricSnapshot = emptySpendingChangeMetrics()
   ): string {
     const lines = [
       "# HELP treasuryops_http_requests_total HTTP requests by method, route, and status code.",
@@ -256,6 +321,28 @@ export class MetricsService {
       "# TYPE treasuryops_recurring_detection_promotion_decisions_total counter",
       `treasuryops_recurring_detection_promotion_decisions_total{decision="eligible"} ${recurringDetection.promotionEligible}`,
       `treasuryops_recurring_detection_promotion_decisions_total{decision="held"} ${recurringDetection.promotionHeld}`,
+      "# HELP treasuryops_spending_change_runs_total Shadow spending-change-detection runs by outcome.",
+      "# TYPE treasuryops_spending_change_runs_total counter",
+      `treasuryops_spending_change_runs_total{outcome="completed"} ${spendingChangeDetection.completedRuns}`,
+      `treasuryops_spending_change_runs_total{outcome="degraded"} ${spendingChangeDetection.degradedRuns}`,
+      `treasuryops_spending_change_runs_total{outcome="abstained"} ${spendingChangeDetection.abstainedRuns}`,
+      `treasuryops_spending_change_runs_total{outcome="failed"} ${spendingChangeDetection.failedRuns}`,
+      "# HELP treasuryops_spending_change_recurring_changes_total Detected recurring stream price changes.",
+      "# TYPE treasuryops_spending_change_recurring_changes_total counter",
+      `treasuryops_spending_change_recurring_changes_total ${spendingChangeDetection.recurringChangesCount}`,
+      "# HELP treasuryops_spending_change_regimes_total Detected personal spending regime shifts.",
+      "# TYPE treasuryops_spending_change_regimes_total counter",
+      `treasuryops_spending_change_regimes_total ${spendingChangeDetection.regimesCount}`,
+      "# HELP treasuryops_spending_change_rows_scanned_total Rows scanned by spending change detection runs.",
+      "# TYPE treasuryops_spending_change_rows_scanned_total counter",
+      `treasuryops_spending_change_rows_scanned_total ${spendingChangeDetection.rowsScanned}`,
+      "# HELP treasuryops_spending_change_runtime_ms Spending change detector runtime in milliseconds.",
+      "# TYPE treasuryops_spending_change_runtime_ms summary",
+      `treasuryops_spending_change_runtime_ms_sum ${spendingChangeDetection.runtimeMsSum}`,
+      `treasuryops_spending_change_runtime_ms_count ${spendingChangeDetection.runtimeCount}`,
+      "# HELP treasuryops_spending_change_row_budget_hits_total Spending change detection runs hitting row ceiling.",
+      "# TYPE treasuryops_spending_change_row_budget_hits_total counter",
+      `treasuryops_spending_change_row_budget_hits_total ${spendingChangeDetection.rowBudgetHits}`,
       "# HELP treasuryops_queue_jobs Current BullMQ jobs by queue and state.",
       "# TYPE treasuryops_queue_jobs gauge"
     );
@@ -314,6 +401,22 @@ function emptyRecurringDetectionMetrics(): RecurringDetectionMetricSnapshot {
     rowBudgetHits: 0,
     promotionEligible: 0,
     promotionHeld: 0
+  };
+}
+
+function emptySpendingChangeMetrics(): SpendingChangeMetricSnapshot {
+  return {
+    completedRuns: 0,
+    degradedRuns: 0,
+    abstainedRuns: 0,
+    failedRuns: 0,
+    recurringChangesCount: 0,
+    regimesCount: 0,
+    abstainedCount: 0,
+    rowsScanned: 0,
+    runtimeMsSum: 0,
+    runtimeCount: 0,
+    rowBudgetHits: 0
   };
 }
 

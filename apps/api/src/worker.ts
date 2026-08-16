@@ -20,6 +20,8 @@ import { SpendingWarningsService } from "./spending-warnings/spending-warnings.s
 import { startSpendingWarningsWorker } from "./spending-warnings/spending-warnings.processor.js";
 import { startRecurringDetectionWorker } from "./recurring-detection/recurring-detection.processor.js";
 import { RecurringDetectionService } from "./recurring-detection/recurring-detection.service.js";
+import { startSpendingChangeDetectionWorker } from "./spending-change-detection/spending-change-detection.processor.js";
+import { SpendingChangeDetectionService } from "./spending-change-detection/spending-change-detection.service.js";
 
 async function bootstrapWorker(): Promise<void> {
   const app = await NestFactory.createApplicationContext(AppModule);
@@ -67,6 +69,12 @@ async function bootstrapWorker(): Promise<void> {
     logger,
     loggingContext
   );
+  const spendingChangeDetectionWorker = startSpendingChangeDetectionWorker(
+    app.get(RuntimeConfigService),
+    app.get(SpendingChangeDetectionService),
+    logger,
+    loggingContext
+  );
   const forecastingWorker = startForecastingWorker(config, app.get(ForecastingService), logger);
   logger.log({ event: "worker.started" }, "worker process started");
 
@@ -88,6 +96,7 @@ async function bootstrapWorker(): Promise<void> {
             billStatementsWorker.close(),
             spendingWarningsWorker.close(),
             recurringDetectionWorker.close(),
+            spendingChangeDetectionWorker.close(),
             forecastingWorker.close()
           ]);
           for (const result of results) {

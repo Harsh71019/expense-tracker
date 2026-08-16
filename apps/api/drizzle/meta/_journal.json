@@ -204,6 +204,13 @@
       "when": 1786870170602,
       "tag": "0028_slim_mac_gargan",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1786871931889,
+      "tag": "0029_zippy_gunslinger",
+      "breakpoints": true
     }
   ]
 }

@@ -652,3 +652,33 @@ export type {
   RecurringDetectionRunStatus,
   RecurringDetectionRunResult
 } from "./recurring-detection.js";
+export {
+  CusumPointEvidenceSchema,
+  DetectedRecurringStreamChangeSchema,
+  RecurringAmountChangeEvidenceSchema,
+  SpendingChangeAbstentionReasonSchema,
+  SpendingChangeDecisionMetricsSchema,
+  SpendingChangeDirectionSchema,
+  SpendingChangeInputWatermarkSchema,
+  SpendingChangePromotionDecisionSchema,
+  SpendingChangeRunStatusSchema,
+  SpendingRegimeEvidenceSchema,
+  SpendingRegimeSchema,
+  SpendingRegimeTypeSchema,
+  SpendingChangeDetectionRunResultSchema
+} from "./spending-change-detection.js";
+export type {
+  CusumPointEvidence,
+  DetectedRecurringStreamChange,
+  RecurringAmountChangeEvidence,
+  SpendingChangeAbstentionReason,
+  SpendingChangeDecisionMetrics,
+  SpendingChangeDirection,
+  SpendingChangeInputWatermark,
+  SpendingChangePromotionDecision,
+  SpendingChangeRunStatus,
+  SpendingRegime,
+  SpendingRegimeEvidence,
+  SpendingRegimeType,
+  SpendingChangeDetectionRunResult
+} from "./spending-change-detection.js";

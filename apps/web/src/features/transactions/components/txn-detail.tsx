@@ -209,29 +209,25 @@ export function TxnDetail({ initialTransaction }: { initialTransaction: Transact
             {transaction.reversalOf ? (
               <Link
                 href={`/transactions/${transaction.reversalOf}`}
-                className="flex items-center justify-between gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3.5 font-medium text-foreground hover:bg-amber-500/10"
+                className="flex items-center justify-between gap-3 rounded-xl border border-warning/30 bg-warning/5 p-3.5 font-medium text-foreground hover:bg-warning/10"
               >
                 <div>
                   <span className="block text-sm font-semibold">↺ Compensating Reversal</span>
-                  <span className="font-mono text-xs text-amber-600 dark:text-amber-400">
-                    Reversal of original
-                  </span>
+                  <span className="font-mono text-xs text-warning">Reversal of original</span>
                 </div>
-                <span className="font-mono text-xs font-bold text-amber-500">View Original →</span>
+                <span className="font-mono text-xs font-bold text-warning">View Original →</span>
               </Link>
             ) : null}
             {transaction.reversedBy ? (
               <Link
                 href={`/transactions/${transaction.reversedBy}`}
-                className="flex items-center justify-between gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3.5 font-medium text-foreground hover:bg-amber-500/10"
+                className="flex items-center justify-between gap-3 rounded-xl border border-warning/30 bg-warning/5 p-3.5 font-medium text-foreground hover:bg-warning/10"
               >
                 <div>
                   <span className="block text-sm font-semibold">↺ Compensated Entry</span>
-                  <span className="font-mono text-xs text-amber-600 dark:text-amber-400">
-                    Reversed by entry
-                  </span>
+                  <span className="font-mono text-xs text-warning">Reversed by entry</span>
                 </div>
-                <span className="font-mono text-xs font-bold text-amber-500">View Reversal →</span>
+                <span className="font-mono text-xs font-bold text-warning">View Reversal →</span>
               </Link>
             ) : null}
           </div>

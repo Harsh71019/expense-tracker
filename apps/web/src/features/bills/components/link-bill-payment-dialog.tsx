@@ -132,7 +132,7 @@ export function LinkBillPaymentDialog({
         </div>
 
         {cardAccounts.length === 0 ? (
-          <p className="rounded-xl border border-amber-500/25 bg-amber-500/10 p-3 text-sm text-amber-500">
+          <p className="rounded-xl border border-warning/25 bg-warning/10 p-3 text-sm text-warning">
             Create an active credit-card account before marking this payment.
           </p>
         ) : (

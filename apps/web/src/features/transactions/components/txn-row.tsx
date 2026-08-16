@@ -122,7 +122,7 @@ export function TxnRow({
           {!isCompact && (transaction.tags.length > 0 || isReversed || isReversal) ? (
             <div className="mt-1 flex flex-wrap items-center gap-1.5">
               {isReversed || isReversal ? (
-                <span className="rounded-md bg-amber-500/10 px-1.5 py-0.5 text-2xs font-bold text-amber-600 dark:text-amber-400">
+                <span className="rounded-md border border-warning/30 bg-warning/10 px-1.5 py-0.5 text-2xs font-bold text-warning">
                   {isReversed ? "Reversed" : "Reversal entry"}
                 </span>
               ) : null}

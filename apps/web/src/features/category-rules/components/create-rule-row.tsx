@@ -119,7 +119,7 @@ export function CreateRuleRow({
       </div>
 
       {exactDuplicate !== undefined ? (
-        <p className="mt-2 text-xs font-semibold text-amber-600 dark:text-amber-400">
+        <p className="mt-2 text-xs font-semibold text-warning">
           ⚠️ Note: A rule matching &quot;{exactDuplicate.pattern}&quot; already exists.
         </p>
       ) : null}

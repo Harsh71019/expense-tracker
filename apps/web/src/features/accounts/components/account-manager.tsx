@@ -277,24 +277,24 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
             </div>
 
             <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-              <div className="flex-1 sm:flex-none min-w-[145px] rounded-xl border border-emerald-500/25 bg-emerald-500/10 p-3.5 shadow-2xs">
+              <div className="flex-1 sm:flex-none min-w-[145px] rounded-xl border border-income/25 bg-income/10 p-3.5 shadow-2xs">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="font-mono text-2xs font-bold tracking-wider text-emerald-600 dark:text-emerald-400 uppercase">
+                  <span className="font-mono text-2xs font-bold tracking-wider text-income uppercase">
                     Assets
                   </span>
-                  <span className="text-xs text-emerald-500 font-bold">↗</span>
+                  <span className="text-xs text-income font-bold">↗</span>
                 </div>
                 <div className="mt-1">
                   <Money minor={assetsTotal} size="lg" />
                 </div>
               </div>
 
-              <div className="flex-1 sm:flex-none min-w-[145px] rounded-xl border border-rose-500/25 bg-rose-500/10 p-3.5 shadow-2xs">
+              <div className="flex-1 sm:flex-none min-w-[145px] rounded-xl border border-expense/25 bg-expense/10 p-3.5 shadow-2xs">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="font-mono text-2xs font-bold tracking-wider text-rose-600 dark:text-rose-400 uppercase">
+                  <span className="font-mono text-2xs font-bold tracking-wider text-expense uppercase">
                     Liabilities
                   </span>
-                  <span className="text-xs text-rose-500 font-bold">↘</span>
+                  <span className="text-xs text-expense font-bold">↘</span>
                 </div>
                 <div className="mt-1">
                   <Money

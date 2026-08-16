@@ -76,7 +76,7 @@ export function AssetHistoryDrawer({ asset, onClose }: AssetHistoryDrawerProps):
             >
               <span
                 style={{ background: projected ? undefined : color }}
-                className={`h-2.5 w-2.5 shrink-0 rounded-full ${projected ? "bg-amber-500" : ""}`}
+                className={`h-2.5 w-2.5 shrink-0 rounded-full ${projected ? "bg-warning" : ""}`}
                 aria-hidden="true"
               />
               <div className="flex-1">
@@ -88,7 +88,7 @@ export function AssetHistoryDrawer({ asset, onClose }: AssetHistoryDrawerProps):
               <span
                 className={`rounded-[5px] border px-2 py-1 font-mono text-2xs font-semibold tracking-wide ${
                   projected
-                    ? "border-amber-500/30 bg-amber-500/10 text-amber-500"
+                    ? "border-warning/30 bg-warning/10 text-warning"
                     : "border-border bg-surface text-foreground-muted"
                 }`}
               >

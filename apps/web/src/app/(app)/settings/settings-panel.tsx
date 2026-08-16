@@ -253,7 +253,7 @@ async function AppearanceSettingsPanel(): Promise<ReactNode> {
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="font-mono text-xs font-bold text-emerald-500">+₹1,24,500.00</p>
+                  <p className="font-mono text-xs font-bold text-income">+₹1,24,500.00</p>
                   <span className="rounded-md bg-accent/10 px-1.5 py-0.5 font-mono text-2xs font-bold text-accent">
                     Active
                   </span>

@@ -156,7 +156,15 @@ import {
   CreatePendingTransactionSchema,
   ListPendingTransactionsQuerySchema,
   PendingTransactionIdSchema,
-  PendingTransactionSchema
+  PendingTransactionSchema,
+  DismissReviewItemRequestSchema,
+  DismissReviewItemResponseSchema,
+  ListReviewInboxQuerySchema,
+  ReviewInboxPageSchema,
+  ReviewInboxSummarySchema,
+  ReviewItemIdSchema,
+  SubmitReviewFeedbackRequestSchema,
+  SubmitReviewFeedbackResponseSchema
 } from "@treasury-ops/shared";
 import { z } from "zod";
 
@@ -237,6 +245,16 @@ const BillPaymentResult = BillPaymentResultSchema.meta({ id: "BillPaymentResult"
 const CreditCardPaymentResult = CreditCardPaymentResultSchema.meta({
   id: "CreditCardPaymentResult"
 });
+const ReviewInboxPage = ReviewInboxPageSchema.meta({ id: "ReviewInboxPage" });
+const ReviewInboxSummary = ReviewInboxSummarySchema.meta({ id: "ReviewInboxSummary" });
+const DismissReviewItemResponse = DismissReviewItemResponseSchema.meta({
+  id: "DismissReviewItemResponse"
+});
+const SubmitReviewFeedbackResponse = SubmitReviewFeedbackResponseSchema.meta({
+  id: "SubmitReviewFeedbackResponse"
+});
+
+const reviewItemId = z.object({ id: ReviewItemIdSchema });
 
 const accountId = z.object({ accountId: AccountIdSchema });
 const categoryId = z.object({ categoryId: CategoryIdSchema });
@@ -1816,6 +1834,100 @@ registry.registerPath({
       headers: optionalReplayHeaders
     },
     404: { description: "Pending transaction not found", ...json(ProblemDetails) },
+    ...idempotencyConflictResponse,
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/v1/review-inbox",
+  security: secured,
+  request: { query: ListReviewInboxQuerySchema },
+  responses: {
+    200: {
+      description: "Prioritized list of review inbox items",
+      ...json(ReviewInboxPage)
+    },
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/v1/review-inbox/summary",
+  security: secured,
+  responses: {
+    200: {
+      description: "Summary counts and urgency statistics for the review inbox",
+      ...json(ReviewInboxSummary)
+    },
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/v1/review-inbox/sync",
+  security: secured,
+  responses: {
+    200: {
+      description: "Triggered synchronization of review items",
+      ...json(z.object({ syncedCount: z.number().int() }))
+    },
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/v1/review-inbox/{id}/dismiss",
+  security: secured,
+  request: {
+    params: reviewItemId,
+    headers: idempotencyKeyHeaders,
+    body: {
+      content: {
+        "application/json": {
+          schema: DismissReviewItemRequestSchema
+        }
+      }
+    }
+  },
+  responses: {
+    200: {
+      description: "Dismissed review item",
+      headers: optionalReplayHeaders,
+      ...json(DismissReviewItemResponse)
+    },
+    404: { description: "Review item not found", ...json(ProblemDetails) },
+    ...idempotencyConflictResponse,
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/v1/review-inbox/{id}/feedback",
+  security: secured,
+  request: {
+    params: reviewItemId,
+    headers: idempotencyKeyHeaders,
+    body: {
+      content: {
+        "application/json": {
+          schema: SubmitReviewFeedbackRequestSchema
+        }
+      }
+    }
+  },
+  responses: {
+    200: {
+      description: "Resolved review item with user feedback",
+      headers: optionalReplayHeaders,
+      ...json(SubmitReviewFeedbackResponse)
+    },
+    404: { description: "Review item not found", ...json(ProblemDetails) },
     ...idempotencyConflictResponse,
     ...problemResponses
   }

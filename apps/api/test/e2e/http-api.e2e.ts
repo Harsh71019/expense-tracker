@@ -10,6 +10,8 @@ import {
   ImportBatchSchema,
   PendingTransactionSchema,
   ProblemDetailsSchema,
+  ReviewInboxPageSchema,
+  ReviewInboxSummarySchema,
   SalaryStatisticsSchema,
   SalaryVersionPageSchema,
   SalaryVersionSchema,
@@ -618,6 +620,33 @@ describe("production HTTP composition", () => {
       "/api/v1/financial-profile/salary-versions",
       "/api/v1/financial-profile/salary-statistics"
     ]) {
+      const unauthenticated = await fetch(`${baseUrl}${path}`);
+      expect(unauthenticated.status).toBe(401);
+    }
+  });
+
+  it("serves review inbox and summary endpoints with tenancy boundaries", async () => {
+    const syncRes = await fetch(`${baseUrl}/api/v1/review-inbox/sync`, {
+      method: "POST",
+      headers: { cookie: sessionA }
+    });
+    expect(syncRes.status).toBe(200);
+    const syncJson = await syncRes.json();
+    expect(syncJson).toHaveProperty("syncedCount");
+
+    const inboxPage = await parseResponse(
+      await fetch(`${baseUrl}/api/v1/review-inbox`, { headers: { cookie: sessionA } }),
+      ReviewInboxPageSchema
+    );
+    expect(inboxPage.items).toBeDefined();
+
+    const summary = await parseResponse(
+      await fetch(`${baseUrl}/api/v1/review-inbox/summary`, { headers: { cookie: sessionA } }),
+      ReviewInboxSummarySchema
+    );
+    expect(summary.activeCount).toBeGreaterThanOrEqual(0);
+
+    for (const path of ["/api/v1/review-inbox", "/api/v1/review-inbox/summary"]) {
       const unauthenticated = await fetch(`${baseUrl}${path}`);
       expect(unauthenticated.status).toBe(401);
     }

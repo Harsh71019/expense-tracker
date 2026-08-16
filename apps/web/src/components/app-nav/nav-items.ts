@@ -19,6 +19,7 @@ export const mainNavItems: readonly NavItem[] = [
   { href: "/budgets", label: "Budgets", icon: "◫" },
   { href: "/reports", label: "Reports", icon: "◔" },
   { href: "/spending-warnings", label: "Patterns", icon: "△" },
+  { href: "/review", label: "Review inbox", icon: "✓" },
   { href: "/settings/api-keys", label: "API keys", icon: "⚿" },
   { href: "/settings", label: "Settings", icon: "⚙" }
 ] as const;

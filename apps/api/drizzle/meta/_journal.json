@@ -211,6 +211,13 @@
       "when": 1786871931889,
       "tag": "0029_zippy_gunslinger",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1786888554688,
+      "tag": "0030_sad_sunfire",
+      "breakpoints": true
     }
   ]
 }

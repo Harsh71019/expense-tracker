@@ -1,6 +1,6 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { ASSET_VALUATION_FRESHNESS_DAYS, AssetKindSchema } from "@treasury-ops/shared";
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, lte } from "drizzle-orm";
 import { z } from "zod";
 
 import { DATABASE_CONNECTION } from "../common/db/db.module.js";
@@ -79,7 +79,13 @@ export class AssetDiagnosticReadService {
         valuedAt: assetValuations.valuedAt
       })
       .from(assetValuations)
-      .where(and(eq(assetValuations.userId, userId), inArray(assetValuations.assetId, assetIds)))
+      .where(
+        and(
+          eq(assetValuations.userId, userId),
+          inArray(assetValuations.assetId, assetIds),
+          lte(assetValuations.valuedAt, asOf)
+        )
+      )
       .orderBy(assetValuations.assetId, desc(assetValuations.valuedAt), desc(assetValuations.id));
 
     const latestValuations = new Map<string, Date>();

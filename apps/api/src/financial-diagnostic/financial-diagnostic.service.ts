@@ -1,5 +1,9 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { FinancialDiagnosticSchema, type FinancialDiagnostic } from "@treasury-ops/shared";
+import {
+  FinancialDiagnosticSchema,
+  type DeclaredDebtPage,
+  type FinancialDiagnostic
+} from "@treasury-ops/shared";
 import { Logger } from "nestjs-pino";
 
 import { AccountDiagnosticReadService } from "../accounts/account-diagnostic-read.service.js";
@@ -63,7 +67,7 @@ export class FinancialDiagnosticService {
       this.goals.getGoalDiagnosticFacts(userId),
       this.profiles.getState(userId, asOf),
       this.protection.getState(userId, asOf),
-      this.debts.list(userId, { status: "active", limit: 200 }),
+      this.loadAllActiveDebts(userId),
       this.safetyBuffer.getState(userId, asOf)
     ]);
 
@@ -99,5 +103,42 @@ export class FinancialDiagnosticService {
     );
 
     return parsed;
+  }
+
+  private async loadAllActiveDebts(userId: string): Promise<DeclaredDebtPage> {
+    const firstPage = await this.debts.list(userId, { status: "active", limit: 200 });
+    if (!firstPage.pageInfo.hasMore || firstPage.pageInfo.nextCursor === null) {
+      return firstPage;
+    }
+
+    const allItems = [...firstPage.items];
+    let nextCursor: string | null = firstPage.pageInfo.nextCursor;
+    let hasMore: boolean = firstPage.pageInfo.hasMore;
+
+    while (hasMore && nextCursor !== null) {
+      const nextPage: DeclaredDebtPage = await this.debts.list(userId, {
+        status: "active",
+        limit: 200,
+        cursor: nextCursor
+      });
+      allItems.push(...nextPage.items);
+      nextCursor = nextPage.pageInfo.nextCursor;
+      hasMore = nextPage.pageInfo.hasMore;
+    }
+
+    const highCostCount = allItems.filter((d) => d.isHighCost).length;
+
+    return {
+      items: allItems,
+      pageInfo: {
+        nextCursor: null,
+        hasMore: false,
+        limit: allItems.length
+      },
+      highCost: {
+        ...firstPage.highCost,
+        highCostCount
+      }
+    };
   }
 }

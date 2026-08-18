@@ -338,6 +338,11 @@ describe("evaluateFinancialReadiness pure evaluator", () => {
     const protItem = resultEmployer.items.find((i) => i.key === "protection");
     expect(protItem?.status).toBe("ready");
     expect(protItem?.attention).toBe("warning");
+    expect(protItem?.limitationKeys).toContain("protection.employer_only_job_change_risk");
+    expect(resultEmployer.limitations).toContain("protection.employer_only_job_change_risk");
+    expect(resultEmployer.limitations).not.toContain(
+      "Employer-only cover may lapse upon job change."
+    );
 
     // None declared: ready data + blocking attention
     const inputNone = createFixture({
@@ -353,6 +358,7 @@ describe("evaluateFinancialReadiness pure evaluator", () => {
     const protNoneItem = resultNone.items.find((i) => i.key === "protection");
     expect(protNoneItem?.status).toBe("ready");
     expect(protNoneItem?.attention).toBe("blocking");
+    expect(protNoneItem?.limitationKeys).toContain("protection.unprotected_gap");
   });
 
   it("handles high cost debt: estimated or ready readiness + blocking attention", () => {
@@ -554,6 +560,9 @@ describe("evaluateFinancialReadiness pure evaluator", () => {
 
     const result = evaluateFinancialReadiness(input);
     expect(result.overallStatus).toBe("ready");
+    expect(result.readyCount).toBe(6);
+    expect(result.totalRequiredCount).toBe(6);
+    expect(result.readyCount).toBe(result.totalRequiredCount);
     expect(result.availableCapabilities).toContain("salary_statistics");
     expect(result.availableCapabilities).toContain("life_hour");
     expect(result.availableCapabilities).toContain("essential_burn");

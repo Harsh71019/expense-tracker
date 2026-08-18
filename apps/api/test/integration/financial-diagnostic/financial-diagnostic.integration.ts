@@ -111,7 +111,7 @@ describe("FinancialDiagnosticService Integration", () => {
       safetyBufferService
     );
 
-    for (const userId of ["user-a", "user-b"]) {
+    for (const userId of ["user-a", "user-b", "user-cold"]) {
       await insertTestUser(db, userId);
     }
   }, 60_000);
@@ -122,7 +122,7 @@ describe("FinancialDiagnosticService Integration", () => {
   });
 
   it("returns cold-start diagnostic for an unconfigured user", async () => {
-    const diagnostic = await service.getDiagnostic("user-a", ASOF);
+    const diagnostic = await service.getDiagnostic("user-cold", ASOF);
 
     expect(diagnostic.overallStatus).toBe("setup_required");
     expect(diagnostic.nextAction).toBe("configure_salary");

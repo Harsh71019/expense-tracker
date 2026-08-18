@@ -25,4 +25,16 @@ describe("FinancialDiagnosticController", () => {
     await controller.getDiagnostic(user, { asOf: asOfStr });
     expect(diagnosticService.getDiagnostic).toHaveBeenCalledWith("user-1", new Date(asOfStr));
   });
+
+  it("rejects invalid asOf query parameter and does not call diagnostic service", async () => {
+    const diagnosticService = {
+      getDiagnostic: vi.fn()
+    };
+
+    // @ts-expect-error - mock FinancialDiagnosticService for unit testing
+    const controller = new FinancialDiagnosticController(diagnosticService);
+
+    expect(() => controller.getDiagnostic(user, { asOf: "invalid-date" })).toThrow();
+    expect(diagnosticService.getDiagnostic).not.toHaveBeenCalled();
+  });
 });

@@ -71,7 +71,7 @@ export function DashboardOverview({
         </div>
       </header>
 
-      {initialDiagnostic ? <DataReadinessPanel initialDiagnostic={initialDiagnostic} /> : null}
+      <DataReadinessPanel initialDiagnostic={initialDiagnostic} />
 
       {stats === null ? null : <StatCards stats={stats} />}
 

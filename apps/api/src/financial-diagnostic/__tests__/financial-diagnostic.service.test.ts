@@ -227,4 +227,189 @@ describe("FinancialDiagnosticService", () => {
 
     await expect(service.getDiagnostic("user-1", ASOF)).rejects.toThrow("Database connection lost");
   });
+
+  it("pages through multiple active debt pages when hasMore is true", async () => {
+    const loggerMock = { log: vi.fn(), error: vi.fn() };
+    const debt1 = {
+      id: "debt-1",
+      userId: "user-1",
+      name: "Credit Card 1",
+      kind: "credit_card",
+      status: "active" as const,
+      amountSource: "declared" as const,
+      isEstimate: true,
+      isHighCost: true,
+      declaredOutstandingMinor: 50_000,
+      annualRateBps: 3600,
+      monthlyPaymentMinor: null,
+      notes: null,
+      assetId: null,
+      assetValuationStale: false,
+      resolvedAt: null,
+      createdAt: ASOF,
+      updatedAt: ASOF
+    };
+    const debt2 = {
+      id: "debt-2",
+      userId: "user-1",
+      name: "Personal Loan",
+      kind: "personal_loan",
+      status: "active" as const,
+      amountSource: "declared" as const,
+      isEstimate: true,
+      isHighCost: false,
+      declaredOutstandingMinor: 100_000,
+      annualRateBps: 1000,
+      monthlyPaymentMinor: null,
+      notes: null,
+      assetId: null,
+      assetValuationStale: false,
+      resolvedAt: null,
+      createdAt: ASOF,
+      updatedAt: ASOF
+    };
+
+    const debtServiceMock = {
+      list: vi
+        .fn()
+        .mockResolvedValueOnce({
+          items: [debt1],
+          pageInfo: { nextCursor: "debt-1", hasMore: true, limit: 1 },
+          highCost: { thresholdBps: 1200, comparison: "greater_than", highCostCount: 1 }
+        })
+        .mockResolvedValueOnce({
+          items: [debt2],
+          pageInfo: { nextCursor: null, hasMore: false, limit: 1 },
+          highCost: { thresholdBps: 1200, comparison: "greater_than", highCostCount: 0 }
+        })
+    };
+
+    const service = new FinancialDiagnosticService(
+      loggerMock,
+      // @ts-expect-error - mock services for unit testing
+      {
+        getAccountDiagnosticFacts: vi
+          .fn()
+          .mockResolvedValue({
+            activeCount: 0,
+            nonCreditCardCount: 0,
+            creditCardCount: 0,
+            creditCardOnly: false,
+            liquidCount: 0,
+            lastUpdatedAt: null
+          })
+      },
+      {
+        getCategoryDiagnosticFacts: vi
+          .fn()
+          .mockResolvedValue({
+            activeExpenseCategoryCount: 0,
+            essentialExpenseCategoryCount: 0,
+            totalActiveCategoryCount: 0,
+            lastUpdatedAt: null
+          })
+      },
+      {
+        getLedgerHistoryDiagnosticFacts: vi
+          .fn()
+          .mockResolvedValue({
+            completeMonthCount: 0,
+            qualifyingTransactionCount: 0,
+            latestExpenseAt: null,
+            oldestExpenseAt: null
+          })
+      },
+      {
+        getAssetDiagnosticFacts: vi
+          .fn()
+          .mockResolvedValue({
+            activeAssetCount: 0,
+            missingValuationCount: 0,
+            staleValuationCount: 0,
+            latestValuationAt: null,
+            hasActiveAssets: false,
+            lastUpdatedAt: null
+          })
+      },
+      {
+        getGoalDiagnosticFacts: vi
+          .fn()
+          .mockResolvedValue({
+            activeGoalCount: 0,
+            targetDatedGoalCount: 0,
+            hasEmergencyFundGoal: false,
+            lastUpdatedAt: null
+          })
+      },
+      {
+        getState: vi
+          .fn()
+          .mockResolvedValue({
+            configured: false,
+            profile: null,
+            currentSalaryVersion: null,
+            upcomingSalaryVersion: null,
+            suggestedMonthlyWorkMinutes: 9600,
+            asOf: ASOF
+          })
+      },
+      {
+        getState: vi
+          .fn()
+          .mockResolvedValue({
+            configured: false,
+            currentSnapshot: null,
+            upcomingSnapshot: null,
+            asOf: ASOF,
+            dataQuality: "unavailable",
+            termCover: {
+              state: "not_configured",
+              expiryState: "not_applicable",
+              expiresOn: null,
+              hasIndependentCover: false,
+              hasEmployerCover: false
+            },
+            healthCover: {
+              state: "not_configured",
+              expiryState: "not_applicable",
+              expiresOn: null,
+              hasIndependentCover: false,
+              hasEmployerCover: false
+            },
+            expiringSoonDays: 90,
+            limitations: []
+          })
+      },
+      debtServiceMock,
+      {
+        getState: vi
+          .fn()
+          .mockResolvedValue({
+            isFallback: true,
+            fallbackPolicy: "zero_balance_default",
+            targetMinor: 0,
+            liquidBalanceMinor: 0,
+            bufferGapMinor: 0,
+            bufferSurplusMinor: 0,
+            monthlyEssentialOutflowMinor: 0
+          })
+      }
+    );
+
+    const diagnostic = await service.getDiagnostic("user-1", ASOF);
+    expect(debtServiceMock.list).toHaveBeenCalledTimes(2);
+    expect(debtServiceMock.list).toHaveBeenNthCalledWith(1, "user-1", {
+      status: "active",
+      limit: 200
+    });
+    expect(debtServiceMock.list).toHaveBeenNthCalledWith(2, "user-1", {
+      status: "active",
+      limit: 200,
+      cursor: "debt-1"
+    });
+
+    const debtItem = diagnostic.items.find((i) => i.key === "debt_inventory");
+    expect(debtItem?.evidence.activeCount).toBe(2);
+    expect(debtItem?.evidence.highCostDebtCount).toBe(1);
+  });
 });

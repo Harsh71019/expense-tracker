@@ -7,11 +7,30 @@ describe("LedgerHistoryDiagnosticReadService", () => {
     const asOf = new Date("2026-08-18T10:00:00.000Z"); // current month: 2026-08
 
     const mockRows = [
-      { occurredAt: new Date("2026-08-05T00:00:00.000Z") }, // current month
-      { occurredAt: new Date("2026-07-20T00:00:00.000Z") }, // month 2026-07
-      { occurredAt: new Date("2026-07-05T00:00:00.000Z") }, // month 2026-07
-      { occurredAt: new Date("2026-06-15T00:00:00.000Z") }, // month 2026-06
-      { occurredAt: new Date("2026-05-10T00:00:00.000Z") } // month 2026-05
+      {
+        month: "2026-08",
+        transactionCount: 1,
+        latestExpenseAt: new Date("2026-08-05T00:00:00.000Z"),
+        oldestExpenseAt: new Date("2026-08-05T00:00:00.000Z")
+      },
+      {
+        month: "2026-07",
+        transactionCount: 2,
+        latestExpenseAt: new Date("2026-07-20T00:00:00.000Z"),
+        oldestExpenseAt: new Date("2026-07-05T00:00:00.000Z")
+      },
+      {
+        month: "2026-06",
+        transactionCount: 1,
+        latestExpenseAt: new Date("2026-06-15T00:00:00.000Z"),
+        oldestExpenseAt: new Date("2026-06-15T00:00:00.000Z")
+      },
+      {
+        month: "2026-05",
+        transactionCount: 1,
+        latestExpenseAt: new Date("2026-05-10T00:00:00.000Z"),
+        oldestExpenseAt: new Date("2026-05-10T00:00:00.000Z")
+      }
     ];
 
     const dbMock = {
@@ -19,7 +38,7 @@ describe("LedgerHistoryDiagnosticReadService", () => {
         from: vi.fn().mockReturnValue({
           innerJoin: vi.fn().mockReturnValue({
             where: vi.fn().mockReturnValue({
-              orderBy: vi.fn().mockResolvedValue(mockRows)
+              groupBy: vi.fn().mockResolvedValue(mockRows)
             })
           })
         })

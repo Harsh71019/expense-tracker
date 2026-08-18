@@ -105,4 +105,56 @@ describe("AssetDiagnosticReadService", () => {
     expect(result.staleValuationCount).toBe(0);
     expect(result.latestValuationAt).toBeNull();
   });
+
+  it("excludes valuations that occurred after asOf date", async () => {
+    const asOf = new Date("2026-05-01T00:00:00.000Z");
+
+    const mockAssets = [
+      {
+        id: "asset-1",
+        kind: "investment",
+        updatedAt: new Date("2026-04-01T00:00:00.000Z"),
+        createdAt: new Date("2026-04-01T00:00:00.000Z")
+      }
+    ];
+
+    // Valuations query mock returns only valuations <= asOf (as filtered by SQL)
+    const mockValuations = [
+      {
+        assetId: "asset-1",
+        valuedAt: new Date("2026-04-15T00:00:00.000Z")
+      }
+    ];
+
+    let selectCallCount = 0;
+    const dbMock = {
+      select: vi.fn().mockImplementation(() => {
+        selectCallCount += 1;
+        if (selectCallCount === 1) {
+          return {
+            from: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({
+                orderBy: vi.fn().mockResolvedValue(mockAssets)
+              })
+            })
+          };
+        }
+        return {
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              orderBy: vi.fn().mockResolvedValue(mockValuations)
+            })
+          })
+        };
+      })
+    };
+
+    // @ts-expect-error - mock database connection for unit testing
+    const service = new AssetDiagnosticReadService(dbMock);
+    const result = await service.getAssetDiagnosticFacts("user-1", asOf);
+
+    expect(result.activeAssetCount).toBe(1);
+    expect(result.missingValuationCount).toBe(0);
+    expect(result.latestValuationAt).toEqual(new Date("2026-04-15T00:00:00.000Z"));
+  });
 });

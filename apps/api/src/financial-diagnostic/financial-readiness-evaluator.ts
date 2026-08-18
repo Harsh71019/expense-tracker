@@ -5,6 +5,7 @@ import {
   type FinancialCapabilityKey,
   type FinancialDiagnostic,
   type FinancialDiagnosticActionKey,
+  type FinancialDiagnosticEvidence,
   type FinancialDiagnosticOverallStatus,
   type FinancialProfileState,
   type FinancialReadinessItem,
@@ -39,6 +40,25 @@ export interface ReadinessEvaluatorInput {
 }
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
+function createEvidence(
+  overrides: Partial<FinancialDiagnosticEvidence> = {}
+): FinancialDiagnosticEvidence {
+  return {
+    observedCount: null,
+    requiredCount: null,
+    completeMonthCount: null,
+    activeCount: null,
+    estimatedCount: null,
+    staleCount: null,
+    highCostDebtCount: null,
+    missingValuationCount: null,
+    latestObservedAt: null,
+    oldestRelevantAt: null,
+    freshnessThresholdDays: null,
+    ...overrides
+  };
+}
 
 /**
  * Pure, deterministic, versioned evaluator that produces the authoritative
@@ -88,19 +108,10 @@ export function evaluateFinancialReadiness(input: ReadinessEvaluatorInput): Fina
       "projections"
     ],
     action: hasEffectiveSalary ? null : "configure_salary",
-    evidence: {
-      observedCount: null,
-      requiredCount: null,
-      completeMonthCount: null,
+    evidence: createEvidence({
       activeCount: hasEffectiveSalary ? 1 : 0,
-      estimatedCount: null,
-      staleCount: null,
-      highCostDebtCount: null,
-      missingValuationCount: null,
-      latestObservedAt: financialProfileState.currentSalaryVersion?.effectiveFrom ?? null,
-      oldestRelevantAt: null,
-      freshnessThresholdDays: null
-    },
+      latestObservedAt: financialProfileState.currentSalaryVersion?.effectiveFrom ?? null
+    }),
     summaryKey: hasEffectiveSalary ? "salary.ready" : "salary.missing",
     limitationKeys: hasEffectiveSalary ? [] : ["salary.not_configured"]
   });
@@ -122,19 +133,9 @@ export function evaluateFinancialReadiness(input: ReadinessEvaluatorInput): Fina
     lastUpdatedAt: financialProfileState.profile?.updatedAt ?? null,
     requiredFor: ["life_hour"],
     action: hasConfirmedWorkSchedule ? null : "configure_salary",
-    evidence: {
-      observedCount: financialProfileState.profile?.monthlyWorkMinutes ?? null,
-      requiredCount: null,
-      completeMonthCount: null,
-      activeCount: null,
-      estimatedCount: null,
-      staleCount: null,
-      highCostDebtCount: null,
-      missingValuationCount: null,
-      latestObservedAt: null,
-      oldestRelevantAt: null,
-      freshnessThresholdDays: null
-    },
+    evidence: createEvidence({
+      observedCount: financialProfileState.profile?.monthlyWorkMinutes ?? null
+    }),
     summaryKey: hasConfirmedWorkSchedule ? "work_schedule.ready" : "work_schedule.missing",
     limitationKeys: hasConfirmedWorkSchedule ? [] : ["work_schedule.not_confirmed"]
   });
@@ -175,19 +176,10 @@ export function evaluateFinancialReadiness(input: ReadinessEvaluatorInput): Fina
       "wealth_allocation"
     ],
     action: accountsStatus === "ready" ? null : "create_account",
-    evidence: {
+    evidence: createEvidence({
       observedCount: accountFacts.nonCreditCardCount,
-      requiredCount: null,
-      completeMonthCount: null,
-      activeCount: accountFacts.activeCount,
-      estimatedCount: null,
-      staleCount: null,
-      highCostDebtCount: null,
-      missingValuationCount: null,
-      latestObservedAt: null,
-      oldestRelevantAt: null,
-      freshnessThresholdDays: null
-    },
+      activeCount: accountFacts.activeCount
+    }),
     summaryKey: accountsSummaryKey,
     limitationKeys: accountsLimitationKeys
   });
@@ -222,19 +214,10 @@ export function evaluateFinancialReadiness(input: ReadinessEvaluatorInput): Fina
     lastUpdatedAt: categoryFacts.lastUpdatedAt,
     requiredFor: ["essential_burn", "financial_runway"],
     action: categoriesStatus === "ready" ? null : "review_categories",
-    evidence: {
+    evidence: createEvidence({
       observedCount: categoryFacts.activeExpenseCategoryCount,
-      requiredCount: null,
-      completeMonthCount: null,
-      activeCount: categoryFacts.essentialExpenseCategoryCount,
-      estimatedCount: null,
-      staleCount: null,
-      highCostDebtCount: null,
-      missingValuationCount: null,
-      latestObservedAt: null,
-      oldestRelevantAt: null,
-      freshnessThresholdDays: null
-    },
+      activeCount: categoryFacts.essentialExpenseCategoryCount
+    }),
     summaryKey: categoriesSummaryKey,
     limitationKeys: categoriesLimitationKeys
   });
@@ -279,19 +262,13 @@ export function evaluateFinancialReadiness(input: ReadinessEvaluatorInput): Fina
     lastUpdatedAt: ledgerHistoryFacts.latestExpenseAt,
     requiredFor: ["essential_burn", "financial_runway"],
     action: burnStatus === "ready" ? null : "review_transactions",
-    evidence: {
-      observedCount: null,
+    evidence: createEvidence({
       requiredCount: BURN_HISTORY_REQUIRED_MONTHS,
       completeMonthCount: ledgerHistoryFacts.completeMonthCount,
-      activeCount: null,
-      estimatedCount: null,
-      staleCount: null,
-      highCostDebtCount: null,
-      missingValuationCount: null,
       latestObservedAt: ledgerHistoryFacts.latestExpenseAt,
       oldestRelevantAt: ledgerHistoryFacts.oldestExpenseAt,
       freshnessThresholdDays: BURN_HISTORY_FRESHNESS_DAYS
-    },
+    }),
     summaryKey: burnSummaryKey,
     limitationKeys: burnLimitationKeys
   });
@@ -305,39 +282,49 @@ export function evaluateFinancialReadiness(input: ReadinessEvaluatorInput): Fina
   let protectionReadiness: FinancialReadinessStatus;
   let protectionAttention: FinancialAttentionLevel;
   let protectionSummaryKey: string;
+  const protectionLimitationKeys: string[] = [];
 
   if (!protectionState.configured) {
     protectionReadiness = "missing";
     protectionAttention = "blocking";
     protectionSummaryKey = "protection.not_configured";
-  } else if (termExpiry === "expired" || healthExpiry === "expired") {
-    protectionReadiness = "stale";
-    protectionAttention = "blocking";
-    protectionSummaryKey = "protection.expired";
-  } else if (termState === "unknown" || healthState === "unknown") {
-    protectionReadiness = "limited";
-    protectionAttention = "warning";
-    protectionSummaryKey = "protection.unknown";
-  } else if (termState === "incomplete" || healthState === "incomplete") {
-    protectionReadiness = "limited";
-    protectionAttention = "warning";
-    protectionSummaryKey = "protection.incomplete";
-  } else if (termState === "none_declared" || healthState === "none_declared") {
-    protectionReadiness = "ready";
-    protectionAttention = "blocking";
-    protectionSummaryKey = "protection.none_declared";
-  } else if (termState === "employer_only" || healthState === "employer_only") {
-    protectionReadiness = "ready";
-    protectionAttention = "warning";
-    protectionSummaryKey = "protection.employer_only";
-  } else if (termExpiry === "expiring" || healthExpiry === "expiring") {
-    protectionReadiness = "ready";
-    protectionAttention = "warning";
-    protectionSummaryKey = "protection.expiring";
+    protectionLimitationKeys.push("protection.not_configured");
   } else {
-    protectionReadiness = "ready";
-    protectionAttention = "none";
-    protectionSummaryKey = "protection.ready";
+    if (termExpiry === "expired" || healthExpiry === "expired") {
+      protectionReadiness = "stale";
+      protectionAttention = "blocking";
+      protectionSummaryKey = "protection.expired";
+      protectionLimitationKeys.push("protection.cover_expired");
+    } else if (termState === "unknown" || healthState === "unknown") {
+      protectionReadiness = "limited";
+      protectionAttention = "warning";
+      protectionSummaryKey = "protection.unknown";
+      protectionLimitationKeys.push("protection.unknown_cover");
+    } else if (termState === "incomplete" || healthState === "incomplete") {
+      protectionReadiness = "limited";
+      protectionAttention = "warning";
+      protectionSummaryKey = "protection.incomplete";
+      protectionLimitationKeys.push("protection.incomplete_cover");
+    } else if (termState === "none_declared" || healthState === "none_declared") {
+      protectionReadiness = "ready";
+      protectionAttention = "blocking";
+      protectionSummaryKey = "protection.none_declared";
+      protectionLimitationKeys.push("protection.unprotected_gap");
+    } else if (termState === "employer_only" || healthState === "employer_only") {
+      protectionReadiness = "ready";
+      protectionAttention = "warning";
+      protectionSummaryKey = "protection.employer_only";
+      protectionLimitationKeys.push("protection.employer_only_job_change_risk");
+    } else if (termExpiry === "expiring" || healthExpiry === "expiring") {
+      protectionReadiness = "ready";
+      protectionAttention = "warning";
+      protectionSummaryKey = "protection.expiring";
+      protectionLimitationKeys.push("protection.cover_expiring_soon");
+    } else {
+      protectionReadiness = "ready";
+      protectionAttention = "none";
+      protectionSummaryKey = "protection.ready";
+    }
   }
 
   const protectionCoverCount =
@@ -359,21 +346,13 @@ export function evaluateFinancialReadiness(input: ReadinessEvaluatorInput): Fina
       protectionReadiness === "ready" && protectionAttention === "none"
         ? null
         : "configure_protection",
-    evidence: {
+    evidence: createEvidence({
       observedCount: protectionCoverCount,
-      requiredCount: null,
-      completeMonthCount: null,
-      activeCount: null,
-      estimatedCount: null,
-      staleCount: null,
-      highCostDebtCount: null,
-      missingValuationCount: null,
       latestObservedAt: protectionState.currentSnapshot?.effectiveFrom ?? null,
-      oldestRelevantAt: null,
       freshnessThresholdDays: protectionState.expiringSoonDays
-    },
+    }),
     summaryKey: protectionSummaryKey,
-    limitationKeys: protectionState.limitations
+    limitationKeys: protectionLimitationKeys
   });
 
   // 7. Debt Inventory
@@ -422,19 +401,13 @@ export function evaluateFinancialReadiness(input: ReadinessEvaluatorInput): Fina
     }, null),
     requiredFor: ["safety_ladder", "payday_plan"],
     action: debtStatus === "ready" && debtAttention === "none" ? null : "review_debts",
-    evidence: {
+    evidence: createEvidence({
       observedCount: linkedDebts.length,
-      requiredCount: null,
-      completeMonthCount: null,
       activeCount: activeDebts.length,
       estimatedCount: declaredOnlyDebts.length,
-      staleCount: null,
       highCostDebtCount: highCostCount,
-      missingValuationCount: debtsWithMissingValuation.length,
-      latestObservedAt: null,
-      oldestRelevantAt: null,
-      freshnessThresholdDays: null
-    },
+      missingValuationCount: debtsWithMissingValuation.length
+    }),
     summaryKey: debtSummaryKey,
     limitationKeys: debtLimitationKeys
   });
@@ -469,19 +442,10 @@ export function evaluateFinancialReadiness(input: ReadinessEvaluatorInput): Fina
     lastUpdatedAt: safetyBufferState.preference?.createdAt ?? null,
     requiredFor: ["financial_runway", "safety_ladder", "goal_feasibility"],
     action: safetyBufferStatus === "ready" ? null : "configure_safety_buffer",
-    evidence: {
+    evidence: createEvidence({
       observedCount: safetyBufferState.preference?.version ?? null,
-      requiredCount: null,
-      completeMonthCount: null,
-      activeCount: safetyBufferState.preference ? 1 : 0,
-      estimatedCount: null,
-      staleCount: null,
-      highCostDebtCount: null,
-      missingValuationCount: null,
-      latestObservedAt: safetyBufferState.preference?.effectiveFrom ?? null,
-      oldestRelevantAt: null,
-      freshnessThresholdDays: null
-    },
+      activeCount: safetyBufferState.preference ? 1 : 0
+    }),
     summaryKey: safetyBufferSummaryKey,
     limitationKeys: safetyBufferLimitationKeys
   });
@@ -499,19 +463,9 @@ export function evaluateFinancialReadiness(input: ReadinessEvaluatorInput): Fina
     lastUpdatedAt: assetFacts.lastUpdatedAt,
     requiredFor: ["wealth_allocation"],
     action: assetsStatus === "ready" ? null : "review_assets",
-    evidence: {
-      observedCount: null,
-      requiredCount: null,
-      completeMonthCount: null,
-      activeCount: assetFacts.activeAssetCount,
-      estimatedCount: null,
-      staleCount: null,
-      highCostDebtCount: null,
-      missingValuationCount: null,
-      latestObservedAt: null,
-      oldestRelevantAt: null,
-      freshnessThresholdDays: null
-    },
+    evidence: createEvidence({
+      activeCount: assetFacts.activeAssetCount
+    }),
     summaryKey: assetsStatus === "ready" ? "assets.ready" : "assets.none",
     limitationKeys: assetsStatus === "ready" ? [] : ["assets.none_recorded"]
   });
@@ -550,19 +504,12 @@ export function evaluateFinancialReadiness(input: ReadinessEvaluatorInput): Fina
     lastUpdatedAt: assetFacts.latestValuationAt,
     requiredFor: ["wealth_allocation"],
     action: valuationsStatus === "ready" ? null : "refresh_asset_valuations",
-    evidence: {
-      observedCount: null,
-      requiredCount: null,
-      completeMonthCount: null,
+    evidence: createEvidence({
       activeCount: assetFacts.activeAssetCount,
-      estimatedCount: null,
       staleCount: assetFacts.staleValuationCount,
-      highCostDebtCount: null,
       missingValuationCount: assetFacts.missingValuationCount,
-      latestObservedAt: assetFacts.latestValuationAt,
-      oldestRelevantAt: null,
-      freshnessThresholdDays: null
-    },
+      latestObservedAt: assetFacts.latestValuationAt
+    }),
     summaryKey: valuationsSummaryKey,
     limitationKeys: valuationsLimitationKeys
   });
@@ -578,19 +525,9 @@ export function evaluateFinancialReadiness(input: ReadinessEvaluatorInput): Fina
     lastUpdatedAt: goalFacts.lastUpdatedAt,
     requiredFor: ["goal_feasibility"],
     action: goalsStatus === "ready" ? null : "create_goal",
-    evidence: {
-      observedCount: null,
-      requiredCount: null,
-      completeMonthCount: null,
-      activeCount: goalFacts.activeGoalCount,
-      estimatedCount: null,
-      staleCount: null,
-      highCostDebtCount: null,
-      missingValuationCount: null,
-      latestObservedAt: null,
-      oldestRelevantAt: null,
-      freshnessThresholdDays: null
-    },
+    evidence: createEvidence({
+      activeCount: goalFacts.activeGoalCount
+    }),
     summaryKey: goalsStatus === "ready" ? "goals.ready" : "goals.none",
     limitationKeys: goalsStatus === "ready" ? [] : ["goals.none_recorded"]
   });
@@ -705,7 +642,7 @@ export function evaluateFinancialReadiness(input: ReadinessEvaluatorInput): Fina
     overallStatus = "ready";
   }
 
-  const readyCount = items.filter((i) => i.status === "ready").length;
+  const readyCount = coreItems.filter((i) => i.status === "ready").length;
   const totalRequiredCount = coreItemKeys.length;
 
   const limitations = items.flatMap((i) => i.limitationKeys);

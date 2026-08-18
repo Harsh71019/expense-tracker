@@ -18,5 +18,4 @@ export { OnboardingWizard } from "./components/onboarding-wizard";
 export { ReadinessItemCard } from "./components/readiness-item";
 export { AvailableCapabilitiesCard } from "./components/available-capabilities";
 export { useFinancialDiagnostic } from "./hooks/use-financial-diagnostic";
-export { getFinancialDiagnostic } from "./server/get-financial-diagnostic";
 export { DIAGNOSTIC_ACTION_MAP, getDiagnosticActionConfig } from "./model/diagnostic-actions";

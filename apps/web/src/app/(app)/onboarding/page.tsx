@@ -4,7 +4,8 @@ import type { ReactNode } from "react";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageShell } from "@/components/ui/page-shell";
-import { getFinancialDiagnostic, OnboardingWizard } from "@/features/financial-profile";
+import { OnboardingWizard } from "@/features/financial-profile";
+import { getFinancialDiagnostic } from "@/features/financial-profile/server/get-financial-diagnostic";
 
 export const metadata: Metadata = {
   title: "Financial Readiness & Onboarding | TreasuryOps",

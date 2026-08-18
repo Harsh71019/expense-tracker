@@ -202,7 +202,9 @@ vi.mock("@/features/financial-profile", () => ({
     </div>
   ),
   DataReadinessPanel: () => <h2>Data Readiness</h2>,
-  OnboardingWizard: () => <h1>Onboarding Wizard</h1>,
+  OnboardingWizard: () => <h1>Onboarding Wizard</h1>
+}));
+vi.mock("@/features/financial-profile/server/get-financial-diagnostic", () => ({
   getFinancialDiagnostic: async () => null
 }));
 vi.mock("@/features/financial-profile/server/get-financial-profile", () => ({

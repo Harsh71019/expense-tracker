@@ -14,7 +14,7 @@ import {
   getStats,
   getTopSpending
 } from "@/features/dashboard";
-import { getFinancialDiagnostic } from "@/features/financial-profile";
+import { getFinancialDiagnostic } from "@/features/financial-profile/server/get-financial-diagnostic";
 
 export default async function DashboardPage(): Promise<ReactNode> {
   const [

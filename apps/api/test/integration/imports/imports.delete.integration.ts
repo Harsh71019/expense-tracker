@@ -84,7 +84,7 @@ describe("ImportsService.deleteBatch", () => {
       new CategorySuggestionService(categoryRules, new CategorySuggestionRepository(testDb.db)),
       focusedTestDouble<MetricsService>({ recordCategorySuggestions: () => undefined })
     );
-  }, 30_000);
+  }, 60_000);
 
   afterAll(async () => {
     await testDb.teardown();

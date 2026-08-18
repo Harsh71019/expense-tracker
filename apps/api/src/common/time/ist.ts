@@ -1,4 +1,4 @@
-import type { Month } from "@treasury-ops/shared";
+import { MonthSchema, type Month } from "@treasury-ops/shared";
 
 const IST_TIME_ZONE = "Asia/Kolkata";
 
@@ -125,4 +125,25 @@ export function toISTWeekStart(date: Date): string {
   const daysSinceMonday = (dayOfWeek + 6) % 7;
   asUtc.setUTCDate(asUtc.getUTCDate() - daysSinceMonday);
   return asUtc.toISOString().slice(0, 10);
+}
+
+/**
+ * Returns the 3 preceding complete Asia/Kolkata calendar month keys (YYYY-MM)
+ * strictly before the IST month containing `asOf`, ordered oldest first.
+ */
+export function getPrecedingISTMonths(asOf: Date, count = 3): [Month, Month, Month] {
+  if (!Number.isSafeInteger(count) || count !== 3) {
+    throw new RangeError("count must be exactly 3.");
+  }
+  const currentMonth = toISTMonth(asOf);
+  const { year, month } = parseCalendarDateParts(`${currentMonth}-01`);
+
+  const result: string[] = [];
+  for (let i = count; i >= 1; i--) {
+    const targetDate = new Date(Date.UTC(year, month - 1 - i, 1));
+    const targetYear = targetDate.getUTCFullYear();
+    const targetMonth = String(targetDate.getUTCMonth() + 1).padStart(2, "0");
+    result.push(`${targetYear}-${targetMonth}`);
+  }
+  return [MonthSchema.parse(result[0]), MonthSchema.parse(result[1]), MonthSchema.parse(result[2])];
 }

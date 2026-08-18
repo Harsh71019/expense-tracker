@@ -181,7 +181,9 @@ import {
   SafetyBufferStateSchema,
   SafetyBufferVersionPageSchema,
   FinancialDiagnosticQuerySchema,
-  FinancialDiagnosticSchema
+  FinancialDiagnosticSchema,
+  EssentialBurnQuerySchema,
+  EssentialBurnResponseSchema
 } from "@treasury-ops/shared";
 import { z } from "zod";
 
@@ -281,6 +283,7 @@ const SafetyBufferVersionPage = SafetyBufferVersionPageSchema.meta({
   id: "SafetyBufferVersionPage"
 });
 const FinancialDiagnostic = FinancialDiagnosticSchema.meta({ id: "FinancialDiagnostic" });
+const EssentialBurnResponse = EssentialBurnResponseSchema.meta({ id: "EssentialBurnResponse" });
 
 const reviewItemId = z.object({ id: ReviewItemIdSchema });
 
@@ -2130,6 +2133,20 @@ registry.registerPath({
   },
   responses: {
     200: { description: "Safety buffer version history", ...json(SafetyBufferVersionPage) },
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/v1/financial-safety/essential-burn",
+  security: secured,
+  request: { query: EssentialBurnQuerySchema },
+  responses: {
+    200: {
+      description: "Trailing essential burn baseline derived from append-only ledger history",
+      ...json(EssentialBurnResponse)
+    },
     ...problemResponses
   }
 });

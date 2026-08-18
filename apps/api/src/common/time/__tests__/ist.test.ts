@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   addDaysUtc,
   addMonthsInIST,
+  getPrecedingISTMonths,
   istCalendarDateStartUtc,
   istMonthBounds,
   listISTMonthDayKeys,
@@ -115,5 +116,25 @@ describe("toISTWeekStart", () => {
   it("rolls to the next Monday once the IST calendar date crosses into the next week", () => {
     const nextMonday = new Date("2026-07-27T03:00:00.000Z");
     expect(toISTWeekStart(nextMonday)).toBe("2026-07-27");
+  });
+});
+
+describe("getPrecedingISTMonths", () => {
+  it("returns the 3 preceding complete IST months oldest first", () => {
+    // In August 2026 IST
+    const asOf = new Date("2026-08-18T10:00:00.000Z");
+    expect(getPrecedingISTMonths(asOf)).toEqual(["2026-05", "2026-06", "2026-07"]);
+  });
+
+  it("handles year rollover across December and January", () => {
+    // In January 2026 IST
+    const asOfJan = new Date("2026-01-15T10:00:00.000Z");
+    expect(getPrecedingISTMonths(asOfJan)).toEqual(["2025-10", "2025-11", "2025-12"]);
+  });
+
+  it("handles leap year February", () => {
+    // In March 2024 IST
+    const asOfMar2024 = new Date("2024-03-10T10:00:00.000Z");
+    expect(getPrecedingISTMonths(asOfMar2024)).toEqual(["2023-12", "2024-01", "2024-02"]);
   });
 });

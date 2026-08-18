@@ -15,6 +15,7 @@ import {
   getTopSpending
 } from "@/features/dashboard";
 import { getFinancialDiagnostic } from "@/features/financial-profile/server/get-financial-diagnostic";
+import { getEssentialBurn } from "@/features/financial-safety/server/get-essential-burn";
 
 export default async function DashboardPage(): Promise<ReactNode> {
   const [
@@ -26,7 +27,8 @@ export default async function DashboardPage(): Promise<ReactNode> {
     recurringForecast,
     investments,
     budgets,
-    diagnostic
+    diagnostic,
+    essentialBurn
   ] = await Promise.all([
     getStats(),
     getMonthlySpending(),
@@ -36,7 +38,8 @@ export default async function DashboardPage(): Promise<ReactNode> {
     getRecurringForecast(DEFAULT_PANEL_RANGE),
     getInvestments(),
     getBudgetPage(false, 200),
-    getFinancialDiagnostic()
+    getFinancialDiagnostic(),
+    getEssentialBurn()
   ]);
 
   return (
@@ -50,6 +53,7 @@ export default async function DashboardPage(): Promise<ReactNode> {
       initialInvestments={investments}
       initialBudgets={budgets}
       initialDiagnostic={diagnostic}
+      initialEssentialBurn={essentialBurn}
     />
   );
 }

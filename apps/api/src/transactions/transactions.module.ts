@@ -5,6 +5,7 @@ import { CategoriesModule } from "../categories/categories.module.js";
 import { TransactionController } from "./transaction.controller.js";
 import { TransactionRepository } from "./transaction.repository.js";
 import { TransactionService } from "./transaction.service.js";
+import { LedgerHistoryDiagnosticReadService } from "./ledger-history-diagnostic-read.service.js";
 import { TransactionMutationService } from "./transaction-mutation.service.js";
 import { TransferController } from "./transfer.controller.js";
 import { TransferService } from "./transfer.service.js";
@@ -16,8 +17,14 @@ import { TransferService } from "./transfer.service.js";
     TransactionRepository,
     TransactionService,
     TransactionMutationService,
-    TransferService
+    TransferService,
+    LedgerHistoryDiagnosticReadService
   ],
-  exports: [TransactionRepository, TransactionService, TransferService]
+  exports: [
+    TransactionRepository,
+    TransactionService,
+    TransferService,
+    LedgerHistoryDiagnosticReadService
+  ]
 })
 export class TransactionsModule {}

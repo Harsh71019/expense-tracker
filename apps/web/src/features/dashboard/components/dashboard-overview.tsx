@@ -5,6 +5,7 @@ import type {
   BudgetPage,
   DashboardInvestments,
   DashboardStats,
+  FinancialDiagnostic,
   MonthlySpending,
   RecurringForecast,
   SpendMix,
@@ -13,6 +14,7 @@ import type {
 import type { ReactNode } from "react";
 
 import { BudgetDashboardPanel } from "@/features/budgets";
+import { DataReadinessPanel } from "@/features/financial-profile";
 
 import { useInvestments } from "../hooks/use-investments";
 import { useMonthlySpending } from "../hooks/use-monthly-spending";
@@ -35,6 +37,7 @@ type DashboardOverviewProps = Readonly<{
   initialRecurringForecast: RecurringForecast;
   initialInvestments: DashboardInvestments;
   initialBudgets: BudgetPage | null;
+  initialDiagnostic?: FinancialDiagnostic | null;
 }>;
 
 export function DashboardOverview({
@@ -45,7 +48,8 @@ export function DashboardOverview({
   initialTopSpending,
   initialRecurringForecast,
   initialInvestments,
-  initialBudgets
+  initialBudgets,
+  initialDiagnostic = null
 }: DashboardOverviewProps): ReactNode {
   const statsQuery = useStats(initialStats);
   const monthlySpendingQuery = useMonthlySpending(initialMonthlySpending);
@@ -66,6 +70,8 @@ export function DashboardOverview({
           </p>
         </div>
       </header>
+
+      <DataReadinessPanel initialDiagnostic={initialDiagnostic} />
 
       {stats === null ? null : <StatCards stats={stats} />}
 

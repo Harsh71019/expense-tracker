@@ -27,6 +27,11 @@ import { ProtectionService } from "./protection.service.js";
     DeclaredDebtRepository,
     DebtProfileService
   ],
-  exports: [FinancialProfileRepository, FinancialProfileService, ProtectionService]
+  exports: [
+    FinancialProfileRepository,
+    FinancialProfileService,
+    ProtectionService,
+    DebtProfileService
+  ]
 })
 export class FinancialProfilesModule {}

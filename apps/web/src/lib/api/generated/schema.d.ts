@@ -3828,6 +3828,70 @@ export interface paths {
     };
     trace?: never;
   };
+  "/v1/financial-profile/diagnostic": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: {
+          asOf?: string | null;
+        };
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Composed server-authoritative financial readiness diagnostic measuring data completeness and available capabilities */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["FinancialDiagnostic"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/v1/recurring": {
     parameters: {
       query?: never;
@@ -9953,6 +10017,142 @@ export interface components {
       updatedAt: string | null;
       /** Format: date-time */
       resolvedAt: string | null;
+    };
+    FinancialDiagnostic: {
+      /** Format: date-time */
+      computedAt: string | null;
+      /** Format: date-time */
+      sourceThrough: string | null;
+      formulaVersion: number;
+      policyVersion: number;
+      /** @enum {string} */
+      overallStatus: "setup_required" | "limited" | "ready";
+      readyCount: number;
+      totalRequiredCount: number;
+      availableCapabilities: (
+        | "salary_statistics"
+        | "life_hour"
+        | "essential_burn"
+        | "financial_runway"
+        | "safety_ladder"
+        | "goal_feasibility"
+        | "payday_plan"
+        | "wealth_allocation"
+        | "projections"
+      )[];
+      unavailableCapabilities: (
+        | "salary_statistics"
+        | "life_hour"
+        | "essential_burn"
+        | "financial_runway"
+        | "safety_ladder"
+        | "goal_feasibility"
+        | "payday_plan"
+        | "wealth_allocation"
+        | "projections"
+      )[];
+      /** @enum {string|null} */
+      nextAction:
+        | "configure_salary"
+        | "configure_protection"
+        | "review_debts"
+        | "create_account"
+        | "review_categories"
+        | "review_transactions"
+        | "configure_safety_buffer"
+        | "review_assets"
+        | "refresh_asset_valuations"
+        | "create_goal"
+        | null;
+      items: {
+        /** @enum {string} */
+        key:
+          | "salary"
+          | "work_schedule"
+          | "accounts"
+          | "essential_categories"
+          | "burn_history"
+          | "protection"
+          | "debt_inventory"
+          | "safety_buffer"
+          | "assets"
+          | "asset_valuations"
+          | "goals";
+        /** @enum {string} */
+        status: "missing" | "estimated" | "limited" | "ready" | "stale";
+        /** @enum {string} */
+        attention: "none" | "information" | "warning" | "blocking";
+        /** @enum {string} */
+        source:
+          | "financial_profile"
+          | "protection_profile"
+          | "debt_profile"
+          | "accounts"
+          | "categories"
+          | "ledger"
+          | "safety_buffer"
+          | "assets"
+          | "goals";
+        /** Format: date-time */
+        lastUpdatedAt: string | null;
+        requiredFor: (
+          | "salary_statistics"
+          | "life_hour"
+          | "essential_burn"
+          | "financial_runway"
+          | "safety_ladder"
+          | "goal_feasibility"
+          | "payday_plan"
+          | "wealth_allocation"
+          | "projections"
+        )[];
+        /** @enum {string|null} */
+        action:
+          | "configure_salary"
+          | "configure_protection"
+          | "review_debts"
+          | "create_account"
+          | "review_categories"
+          | "review_transactions"
+          | "configure_safety_buffer"
+          | "review_assets"
+          | "refresh_asset_valuations"
+          | "create_goal"
+          | null;
+        evidence: {
+          /** @default null */
+          observedCount: number | null;
+          /** @default null */
+          requiredCount: number | null;
+          /** @default null */
+          completeMonthCount: number | null;
+          /** @default null */
+          activeCount: number | null;
+          /** @default null */
+          estimatedCount: number | null;
+          /** @default null */
+          staleCount: number | null;
+          /** @default null */
+          highCostDebtCount: number | null;
+          /** @default null */
+          missingValuationCount: number | null;
+          /**
+           * Format: date-time
+           * @default null
+           */
+          latestObservedAt: string | null;
+          /**
+           * Format: date-time
+           * @default null
+           */
+          oldestRelevantAt: string | null;
+          /** @default null */
+          freshnessThresholdDays: number | null;
+        };
+        summaryKey: string;
+        limitationKeys: string[];
+      }[];
+      limitations: string[];
     };
     RecurringRule: {
       /** Format: uuid */

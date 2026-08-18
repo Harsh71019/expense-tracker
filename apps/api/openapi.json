@@ -3318,6 +3318,275 @@
           "resolvedAt"
         ]
       },
+      "FinancialDiagnostic": {
+        "type": "object",
+        "properties": {
+          "computedAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "sourceThrough": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "formulaVersion": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "policyVersion": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "overallStatus": {
+            "type": "string",
+            "enum": ["setup_required", "limited", "ready"]
+          },
+          "readyCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "totalRequiredCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "availableCapabilities": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "salary_statistics",
+                "life_hour",
+                "essential_burn",
+                "financial_runway",
+                "safety_ladder",
+                "goal_feasibility",
+                "payday_plan",
+                "wealth_allocation",
+                "projections"
+              ]
+            }
+          },
+          "unavailableCapabilities": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "salary_statistics",
+                "life_hour",
+                "essential_burn",
+                "financial_runway",
+                "safety_ladder",
+                "goal_feasibility",
+                "payday_plan",
+                "wealth_allocation",
+                "projections"
+              ]
+            }
+          },
+          "nextAction": {
+            "type": ["string", "null"],
+            "enum": [
+              "configure_salary",
+              "configure_protection",
+              "review_debts",
+              "create_account",
+              "review_categories",
+              "review_transactions",
+              "configure_safety_buffer",
+              "review_assets",
+              "refresh_asset_valuations",
+              "create_goal",
+              null
+            ]
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string",
+                  "enum": [
+                    "salary",
+                    "work_schedule",
+                    "accounts",
+                    "essential_categories",
+                    "burn_history",
+                    "protection",
+                    "debt_inventory",
+                    "safety_buffer",
+                    "assets",
+                    "asset_valuations",
+                    "goals"
+                  ]
+                },
+                "status": {
+                  "type": "string",
+                  "enum": ["missing", "estimated", "limited", "ready", "stale"]
+                },
+                "attention": {
+                  "type": "string",
+                  "enum": ["none", "information", "warning", "blocking"]
+                },
+                "source": {
+                  "type": "string",
+                  "enum": [
+                    "financial_profile",
+                    "protection_profile",
+                    "debt_profile",
+                    "accounts",
+                    "categories",
+                    "ledger",
+                    "safety_buffer",
+                    "assets",
+                    "goals"
+                  ]
+                },
+                "lastUpdatedAt": {
+                  "type": ["string", "null"],
+                  "format": "date-time"
+                },
+                "requiredFor": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "salary_statistics",
+                      "life_hour",
+                      "essential_burn",
+                      "financial_runway",
+                      "safety_ladder",
+                      "goal_feasibility",
+                      "payday_plan",
+                      "wealth_allocation",
+                      "projections"
+                    ]
+                  }
+                },
+                "action": {
+                  "type": ["string", "null"],
+                  "enum": [
+                    "configure_salary",
+                    "configure_protection",
+                    "review_debts",
+                    "create_account",
+                    "review_categories",
+                    "review_transactions",
+                    "configure_safety_buffer",
+                    "review_assets",
+                    "refresh_asset_valuations",
+                    "create_goal",
+                    null
+                  ]
+                },
+                "evidence": {
+                  "type": "object",
+                  "properties": {
+                    "observedCount": {
+                      "type": ["integer", "null"],
+                      "minimum": 0,
+                      "default": null
+                    },
+                    "requiredCount": {
+                      "type": ["integer", "null"],
+                      "minimum": 0,
+                      "default": null
+                    },
+                    "completeMonthCount": {
+                      "type": ["integer", "null"],
+                      "minimum": 0,
+                      "default": null
+                    },
+                    "activeCount": {
+                      "type": ["integer", "null"],
+                      "minimum": 0,
+                      "default": null
+                    },
+                    "estimatedCount": {
+                      "type": ["integer", "null"],
+                      "minimum": 0,
+                      "default": null
+                    },
+                    "staleCount": {
+                      "type": ["integer", "null"],
+                      "minimum": 0,
+                      "default": null
+                    },
+                    "highCostDebtCount": {
+                      "type": ["integer", "null"],
+                      "minimum": 0,
+                      "default": null
+                    },
+                    "missingValuationCount": {
+                      "type": ["integer", "null"],
+                      "minimum": 0,
+                      "default": null
+                    },
+                    "latestObservedAt": {
+                      "type": ["string", "null"],
+                      "format": "date-time",
+                      "default": null
+                    },
+                    "oldestRelevantAt": {
+                      "type": ["string", "null"],
+                      "format": "date-time",
+                      "default": null
+                    },
+                    "freshnessThresholdDays": {
+                      "type": ["integer", "null"],
+                      "minimum": 0,
+                      "default": null
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "summaryKey": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "limitationKeys": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": [
+                "key",
+                "status",
+                "attention",
+                "source",
+                "lastUpdatedAt",
+                "requiredFor",
+                "action",
+                "evidence",
+                "summaryKey",
+                "limitationKeys"
+              ]
+            }
+          },
+          "limitations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "computedAt",
+          "sourceThrough",
+          "formulaVersion",
+          "policyVersion",
+          "overallStatus",
+          "readyCount",
+          "totalRequiredCount",
+          "availableCapabilities",
+          "unavailableCapabilities",
+          "nextAction",
+          "items",
+          "limitations"
+        ]
+      },
       "RecurringRule": {
         "type": "object",
         "properties": {
@@ -13703,6 +13972,68 @@
           },
           "409": {
             "description": "The debt is already resolved, its amount is derived from a linked asset, or the idempotency key was reused with a different request intent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/financial-profile/diagnostic": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": ["string", "null"],
+              "format": "date-time"
+            },
+            "required": false,
+            "name": "asOf",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Composed server-authoritative financial readiness diagnostic measuring data completeness and available capabilities",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FinancialDiagnostic"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
             "content": {
               "application/json": {
                 "schema": {

@@ -62,7 +62,14 @@ export function ZeroState({ onOpenCreate }: ZeroStateProps): ReactNode {
           >
             Set up your salary &amp; work profile
           </Link>{" "}
-          to unlock hourly and annual figures.
+          or run the{" "}
+          <Link
+            href="/onboarding"
+            className="font-semibold text-accent underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          >
+            Readiness Diagnostic
+          </Link>{" "}
+          to complete your setup.
         </p>
       </div>
     </div>

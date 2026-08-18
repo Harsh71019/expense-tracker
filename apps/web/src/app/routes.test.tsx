@@ -19,6 +19,7 @@ import BudgetsRoute from "./(app)/budgets/page";
 import DashboardPage from "./(app)/page";
 import GoalsPage from "./(app)/goals/page";
 import InsightsPage from "./(app)/insights/page";
+import OnboardingPage from "./(app)/onboarding/page";
 import ReportsPage from "./(app)/reports/page";
 import RecurringPage from "./(app)/recurring/page";
 import SettingsPage from "./(app)/settings/page";
@@ -199,7 +200,12 @@ vi.mock("@/features/financial-profile", () => ({
       <p>Protection not recorded yet</p>
       <p>No debts declared</p>
     </div>
-  )
+  ),
+  DataReadinessPanel: () => <h2>Data Readiness</h2>,
+  OnboardingWizard: () => <h1>Onboarding Wizard</h1>
+}));
+vi.mock("@/features/financial-profile/server/get-financial-diagnostic", () => ({
+  getFinancialDiagnostic: async () => null
 }));
 vi.mock("@/features/financial-profile/server/get-financial-profile", () => ({
   SALARY_HISTORY_PAGE_SIZE: 10,
@@ -521,6 +527,9 @@ describe("route shells", () => {
 
     render(await GoalsPage());
     expect(screen.getByRole("heading", { name: "Goals" })).toBeVisible();
+
+    render(await OnboardingPage());
+    expect(screen.getByRole("heading", { name: "Financial Readiness Diagnostic" })).toBeVisible();
 
     render(await BudgetsRoute());
     expect(screen.getByRole("heading", { name: "Monthly budgets" })).toBeVisible();

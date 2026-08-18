@@ -3,6 +3,7 @@ import type {
   CashflowResponse,
   DashboardInvestments,
   DashboardStats,
+  EssentialBurnResponse,
   MonthlySpending,
   RecurringForecast,
   SpendMix,
@@ -38,6 +39,10 @@ vi.mock("@/features/reports/components/pie-chart", () => ({
 vi.mock("@/features/financial-profile", () => ({
   DataReadinessPanel: ({ initialDiagnostic }: { initialDiagnostic: unknown }) =>
     initialDiagnostic ? <div>Copilot Data Readiness</div> : null
+}));
+vi.mock("@/features/financial-safety", () => ({
+  EssentialBurnCard: ({ initialData }: { initialData: unknown }) =>
+    initialData ? <div>Essential Monthly Burn Card</div> : null
 }));
 
 const stats: DashboardStats = {
@@ -166,5 +171,58 @@ describe("DashboardOverview", () => {
     );
 
     expect(screen.getByText("Copilot Data Readiness")).toBeVisible();
+  });
+
+  it("renders EssentialBurnCard when initialEssentialBurn is provided", () => {
+    setup();
+    const essentialBurn: EssentialBurnResponse = {
+      computedAt: new Date("2026-08-18T10:00:00.000Z"),
+      asOf: new Date("2026-08-18T10:00:00.000Z"),
+      sourceThrough: new Date("2026-08-18T10:00:00.000Z"),
+      formulaVersion: 1,
+      timezone: "Asia/Kolkata",
+      requiredCompleteMonths: 3,
+      observedCompleteMonthCount: 3,
+      averageMonthlyEssentialMinor: 50_000,
+      quality: "complete",
+      completeMonths: [],
+      currentPartialMonth: {
+        month: "2026-08",
+        essentialTotalMinor: 0,
+        eligibleExpenseTransactionCount: 0,
+        essentialTransactionCount: 0,
+        excludedFromBaseline: true
+      },
+      classification: {
+        eligibleExpenseTransactionCount: 0,
+        essentialExpenseTransactionCount: 0,
+        lifestyleExpenseTransactionCount: 0,
+        uncategorizedExpenseCount: 0,
+        uncategorizedExpenseMinor: 0,
+        ungroupedExpenseCount: 0,
+        ungroupedExpenseMinor: 0,
+        categorizedExpenseMinor: 0,
+        unclassifiedExpenseMinor: 0,
+        coverageRatioBps: 10000,
+        currentCategoryMetadataInUse: true
+      },
+      limitations: []
+    };
+
+    render(
+      <DashboardOverview
+        initialStats={stats}
+        initialMonthlySpending={monthlySpending}
+        initialCashflow={cashflow}
+        initialSpendMix={spendMix}
+        initialTopSpending={topSpending}
+        initialRecurringForecast={recurringForecast}
+        initialInvestments={investments}
+        initialBudgets={null}
+        initialEssentialBurn={essentialBurn}
+      />
+    );
+
+    expect(screen.getByText("Essential Monthly Burn Card")).toBeVisible();
   });
 });

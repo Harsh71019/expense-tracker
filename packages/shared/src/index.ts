@@ -836,3 +836,26 @@ export type {
   FinancialReadinessItem,
   FinancialReadinessStatus
 } from "./financial-diagnostic.js";
+export {
+  ESSENTIAL_BURN_FORMULA_VERSION,
+  ESSENTIAL_BURN_REQUIRED_MONTHS,
+  ESSENTIAL_BURN_TIMEZONE,
+  EssentialBurnClassificationSchema,
+  EssentialBurnCurrentMonthSchema,
+  EssentialBurnLimitationKeySchema,
+  EssentialBurnMonthSchema,
+  EssentialBurnObservationStatusSchema,
+  EssentialBurnQualitySchema,
+  EssentialBurnQuerySchema,
+  EssentialBurnResponseSchema
+} from "./financial-safety.js";
+export type {
+  EssentialBurnClassification,
+  EssentialBurnCurrentMonth,
+  EssentialBurnLimitationKey,
+  EssentialBurnMonth,
+  EssentialBurnObservationStatus,
+  EssentialBurnQuality,
+  EssentialBurnQuery,
+  EssentialBurnResponse
+} from "./financial-safety.js";

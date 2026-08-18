@@ -6,6 +6,7 @@ import type {
   DashboardInvestments,
   DashboardStats,
   FinancialDiagnostic,
+  EssentialBurnResponse,
   MonthlySpending,
   RecurringForecast,
   SpendMix,
@@ -15,6 +16,7 @@ import type { ReactNode } from "react";
 
 import { BudgetDashboardPanel } from "@/features/budgets";
 import { DataReadinessPanel } from "@/features/financial-profile";
+import { EssentialBurnCard } from "@/features/financial-safety";
 
 import { useInvestments } from "../hooks/use-investments";
 import { useMonthlySpending } from "../hooks/use-monthly-spending";
@@ -38,6 +40,7 @@ type DashboardOverviewProps = Readonly<{
   initialInvestments: DashboardInvestments;
   initialBudgets: BudgetPage | null;
   initialDiagnostic?: FinancialDiagnostic | null;
+  initialEssentialBurn?: EssentialBurnResponse | null;
 }>;
 
 export function DashboardOverview({
@@ -49,7 +52,8 @@ export function DashboardOverview({
   initialRecurringForecast,
   initialInvestments,
   initialBudgets,
-  initialDiagnostic = null
+  initialDiagnostic = null,
+  initialEssentialBurn = null
 }: DashboardOverviewProps): ReactNode {
   const statsQuery = useStats(initialStats);
   const monthlySpendingQuery = useMonthlySpending(initialMonthlySpending);
@@ -72,6 +76,8 @@ export function DashboardOverview({
       </header>
 
       <DataReadinessPanel initialDiagnostic={initialDiagnostic} />
+
+      <EssentialBurnCard initialData={initialEssentialBurn} />
 
       {stats === null ? null : <StatCards stats={stats} />}
 

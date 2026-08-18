@@ -207,6 +207,12 @@ vi.mock("@/features/financial-profile", () => ({
 vi.mock("@/features/financial-profile/server/get-financial-diagnostic", () => ({
   getFinancialDiagnostic: async () => null
 }));
+vi.mock("@/features/financial-safety", () => ({
+  EssentialBurnCard: () => <h2>Essential Monthly Burn</h2>
+}));
+vi.mock("@/features/financial-safety/server/get-essential-burn", () => ({
+  getEssentialBurn: async () => null
+}));
 vi.mock("@/features/financial-profile/server/get-financial-profile", () => ({
   SALARY_HISTORY_PAGE_SIZE: 10,
   getFinancialProfileState: async () => null,

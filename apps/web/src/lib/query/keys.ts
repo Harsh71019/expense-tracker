@@ -14,6 +14,7 @@ const budgetRoot = ["budgets"] as const;
 const dashboardRoot = ["dashboard"] as const;
 const billRoot = ["bills"] as const;
 const financialProfileRoot = ["financial-profile"] as const;
+const financialSafetyRoot = ["financial-safety"] as const;
 
 export const qk = {
   transactions: () => transactionRoot,
@@ -66,6 +67,8 @@ export const qk = {
   financialProfileState: () => [...financialProfileRoot, "state"] as const,
   financialDiagnostic: (asOf?: string) =>
     [...financialProfileRoot, "diagnostic", asOf ?? "latest"] as const,
+  essentialBurn: (asOf?: string) =>
+    [...financialSafetyRoot, "essential-burn", asOf ?? "latest"] as const,
   salaryStatistics: () => [...financialProfileRoot, "salary-statistics"] as const,
   salaryVersions: (limit: number) =>
     [...financialProfileRoot, "salary-versions", { limit }] as const,

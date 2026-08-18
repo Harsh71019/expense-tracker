@@ -26,7 +26,8 @@ import {
   SafetyBufferPreferenceSchema,
   SafetyBufferStateSchema,
   SafetyBufferVersionPageSchema,
-  FinancialDiagnosticSchema
+  FinancialDiagnosticSchema,
+  EssentialBurnResponseSchema
 } from "@treasury-ops/shared";
 import { GenericContainer } from "testcontainers";
 import type { StartedTestContainer } from "testcontainers";
@@ -1025,6 +1026,20 @@ describe("production HTTP composition", () => {
       const unauthenticated = await fetch(`${baseUrl}${path}`);
       expect(unauthenticated.status).toBe(401);
     }
+  });
+
+  it("serves essential burn baseline endpoint with auth and valid schema", async () => {
+    const unauthenticated = await fetch(`${baseUrl}/api/v1/financial-safety/essential-burn`);
+    expect(unauthenticated.status).toBe(401);
+
+    const authenticated = await fetch(`${baseUrl}/api/v1/financial-safety/essential-burn`, {
+      headers: { cookie: sessionA }
+    });
+    expect(authenticated.status).toBe(200);
+    const body = await parseResponse(authenticated, EssentialBurnResponseSchema);
+    expect(body.requiredCompleteMonths).toBe(3);
+    expect(body.completeMonths).toHaveLength(3);
+    expect(body.currentPartialMonth.excludedFromBaseline).toBe(true);
   });
 
   it("automatically probes every secured OpenAPI operation for an auth boundary", async () => {

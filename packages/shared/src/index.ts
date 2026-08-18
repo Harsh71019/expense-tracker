@@ -802,3 +802,37 @@ export type {
   GoalFeasibilityReport,
   GoalFeasibilityQuery
 } from "./goal-feasibility.js";
+export {
+  ASSET_VALUATION_FRESHNESS_DAYS,
+  BURN_HISTORY_FRESHNESS_DAYS,
+  BURN_HISTORY_REQUIRED_MONTHS,
+  FINANCIAL_ATTENTION_LEVELS,
+  FINANCIAL_CAPABILITY_KEYS,
+  FINANCIAL_DIAGNOSTIC_ACTION_KEYS,
+  FINANCIAL_DIAGNOSTIC_KEYS,
+  FINANCIAL_READINESS_STATUSES,
+  FinancialAttentionLevelSchema,
+  FinancialCapabilityKeySchema,
+  FinancialDiagnosticActionKeySchema,
+  FinancialDiagnosticEvidenceSchema,
+  FinancialDiagnosticKeySchema,
+  FinancialDiagnosticOverallStatusSchema,
+  FinancialDiagnosticQuerySchema,
+  FinancialDiagnosticSchema,
+  FinancialDiagnosticSourceKeySchema,
+  FinancialReadinessItemSchema,
+  FinancialReadinessStatusSchema
+} from "./financial-diagnostic.js";
+export type {
+  FinancialAttentionLevel,
+  FinancialCapabilityKey,
+  FinancialDiagnostic,
+  FinancialDiagnosticActionKey,
+  FinancialDiagnosticEvidence,
+  FinancialDiagnosticKey,
+  FinancialDiagnosticOverallStatus,
+  FinancialDiagnosticQuery,
+  FinancialDiagnosticSourceKey,
+  FinancialReadinessItem,
+  FinancialReadinessStatus
+} from "./financial-diagnostic.js";

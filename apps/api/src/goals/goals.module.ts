@@ -5,6 +5,7 @@ import { TransactionsModule } from "../transactions/transactions.module.js";
 import { ForecastingModule } from "../insights/forecasting/forecasting.module.js";
 import { SafetyBufferModule } from "../safety-buffer/safety-buffer.module.js";
 import { GoalController } from "./goal.controller.js";
+import { GoalDiagnosticReadService } from "./goal-diagnostic-read.service.js";
 import { GoalMutationService } from "./goal-mutation.service.js";
 import { GoalRepository } from "./goal.repository.js";
 import { GoalService } from "./goal.service.js";
@@ -13,7 +14,13 @@ import { GoalsProgressCron } from "./goals-progress.cron.js";
 @Module({
   imports: [AccountsModule, TransactionsModule, ForecastingModule, SafetyBufferModule],
   controllers: [GoalController],
-  providers: [GoalRepository, GoalService, GoalMutationService, GoalsProgressCron],
-  exports: [GoalService, GoalRepository]
+  providers: [
+    GoalRepository,
+    GoalService,
+    GoalMutationService,
+    GoalsProgressCron,
+    GoalDiagnosticReadService
+  ],
+  exports: [GoalService, GoalRepository, GoalDiagnosticReadService]
 })
 export class GoalsModule {}

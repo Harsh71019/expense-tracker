@@ -25,7 +25,8 @@ import {
   GoalFeasibilityReportSchema,
   SafetyBufferPreferenceSchema,
   SafetyBufferStateSchema,
-  SafetyBufferVersionPageSchema
+  SafetyBufferVersionPageSchema,
+  FinancialDiagnosticSchema
 } from "@treasury-ops/shared";
 import { GenericContainer } from "testcontainers";
 import type { StartedTestContainer } from "testcontainers";
@@ -901,10 +902,35 @@ describe("production HTTP composition", () => {
     });
     expect(foreignStatistics.status).toBe(422);
 
+    const rawDiagnosticA = await fetch(`${baseUrl}/api/v1/financial-profile/diagnostic`, {
+      headers: { cookie: sessionA }
+    });
+    if (rawDiagnosticA.status !== 200) {
+      throw new Error(
+        `Diagnostic A failed with ${rawDiagnosticA.status}: ${await rawDiagnosticA.text()}`
+      );
+    }
+    const diagnosticA = await parseResponse(rawDiagnosticA, FinancialDiagnosticSchema);
+    expect(diagnosticA.items.length).toBe(11);
+    expect(diagnosticA.readyCount).toBeGreaterThanOrEqual(1);
+
+    const rawDiagnosticB = await fetch(`${baseUrl}/api/v1/financial-profile/diagnostic`, {
+      headers: { cookie: sessionB }
+    });
+    if (rawDiagnosticB.status !== 200) {
+      throw new Error(
+        `Diagnostic B failed with ${rawDiagnosticB.status}: ${await rawDiagnosticB.text()}`
+      );
+    }
+    const diagnosticB = await parseResponse(rawDiagnosticB, FinancialDiagnosticSchema);
+    expect(diagnosticB.overallStatus).toBe("setup_required");
+    expect(diagnosticB.readyCount).toBeLessThanOrEqual(diagnosticA.readyCount);
+
     for (const path of [
       "/api/v1/financial-profile",
       "/api/v1/financial-profile/salary-versions",
-      "/api/v1/financial-profile/salary-statistics"
+      "/api/v1/financial-profile/salary-statistics",
+      "/api/v1/financial-profile/diagnostic"
     ]) {
       const unauthenticated = await fetch(`${baseUrl}${path}`);
       expect(unauthenticated.status).toBe(401);

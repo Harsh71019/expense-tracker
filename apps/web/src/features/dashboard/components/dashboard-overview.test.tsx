@@ -35,6 +35,10 @@ vi.mock("../hooks/use-recurring-forecast", () => ({
 vi.mock("@/features/reports/components/pie-chart", () => ({
   PieChart: () => <svg role="img" aria-label="pie" />
 }));
+vi.mock("@/features/financial-profile", () => ({
+  DataReadinessPanel: ({ initialDiagnostic }: { initialDiagnostic: unknown }) =>
+    initialDiagnostic ? <div>Copilot Data Readiness</div> : null
+}));
 
 const stats: DashboardStats = {
   period: "2026-07",
@@ -128,5 +132,39 @@ describe("DashboardOverview", () => {
 
     expect(screen.queryByText(/SPENT ·/)).not.toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Financial overview" })).toBeVisible();
+  });
+
+  it("renders DataReadinessPanel when initialDiagnostic is provided", () => {
+    setup();
+    const diagnostic = {
+      computedAt: new Date("2026-08-18T10:00:00.000Z"),
+      sourceThrough: new Date("2026-08-18T10:00:00.000Z"),
+      formulaVersion: 1,
+      policyVersion: 1,
+      overallStatus: "setup_required" as const,
+      readyCount: 1,
+      totalRequiredCount: 4,
+      availableCapabilities: [],
+      unavailableCapabilities: [],
+      nextAction: "configure_salary" as const,
+      items: [],
+      limitations: []
+    };
+
+    render(
+      <DashboardOverview
+        initialStats={stats}
+        initialMonthlySpending={monthlySpending}
+        initialCashflow={cashflow}
+        initialSpendMix={spendMix}
+        initialTopSpending={topSpending}
+        initialRecurringForecast={recurringForecast}
+        initialInvestments={investments}
+        initialBudgets={null}
+        initialDiagnostic={diagnostic}
+      />
+    );
+
+    expect(screen.getByText("Copilot Data Readiness")).toBeVisible();
   });
 });

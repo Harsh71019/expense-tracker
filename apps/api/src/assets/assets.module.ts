@@ -5,6 +5,7 @@ import { AssetController } from "./asset.controller.js";
 import { AssetRepository } from "./asset.repository.js";
 import { AssetService } from "./asset.service.js";
 import { AssetMutationService } from "./asset-mutation.service.js";
+import { AssetDiagnosticReadService } from "./asset-diagnostic-read.service.js";
 import { LiabilityAssetReadService } from "./liability-asset-read.service.js";
 import { NetWorthController } from "./net-worth.controller.js";
 import { NetWorthService } from "./net-worth.service.js";
@@ -19,10 +20,15 @@ import { ValuationRepository } from "./valuation.repository.js";
     AssetService,
     AssetMutationService,
     LiabilityAssetReadService,
+    AssetDiagnosticReadService,
     NetWorthService
   ],
-  // LiabilityAssetReadService is the only asset surface other modules may use
-  // for loan-liability facts — a read-only, tenant-scoped, parsed contract.
-  exports: [AssetRepository, ValuationRepository, LiabilityAssetReadService]
+  // Export narrow read services for cross-module consumption
+  exports: [
+    AssetRepository,
+    ValuationRepository,
+    LiabilityAssetReadService,
+    AssetDiagnosticReadService
+  ]
 })
 export class AssetsModule {}

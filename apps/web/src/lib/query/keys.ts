@@ -64,6 +64,8 @@ export const qk = {
   profile: () => ["profile"] as const,
   financialProfile: () => financialProfileRoot,
   financialProfileState: () => [...financialProfileRoot, "state"] as const,
+  financialDiagnostic: (asOf?: string) =>
+    [...financialProfileRoot, "diagnostic", asOf ?? "latest"] as const,
   salaryStatistics: () => [...financialProfileRoot, "salary-statistics"] as const,
   salaryVersions: (limit: number) =>
     [...financialProfileRoot, "salary-versions", { limit }] as const,

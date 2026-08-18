@@ -179,7 +179,9 @@ import {
   CreateSafetyBufferPreferenceSchema,
   SafetyBufferPreferenceSchema,
   SafetyBufferStateSchema,
-  SafetyBufferVersionPageSchema
+  SafetyBufferVersionPageSchema,
+  FinancialDiagnosticQuerySchema,
+  FinancialDiagnosticSchema
 } from "@treasury-ops/shared";
 import { z } from "zod";
 
@@ -278,6 +280,7 @@ const SafetyBufferState = SafetyBufferStateSchema.meta({ id: "SafetyBufferState"
 const SafetyBufferVersionPage = SafetyBufferVersionPageSchema.meta({
   id: "SafetyBufferVersionPage"
 });
+const FinancialDiagnostic = FinancialDiagnosticSchema.meta({ id: "FinancialDiagnostic" });
 
 const reviewItemId = z.object({ id: ReviewItemIdSchema });
 
@@ -1074,6 +1077,20 @@ registry.registerPath({
         "The debt is already resolved, its amount is derived from a linked asset, or the idempotency key was reused with a different request intent",
       ...json(ProblemDetails)
     }
+  }
+});
+registry.registerPath({
+  method: "get",
+  path: "/v1/financial-profile/diagnostic",
+  security: secured,
+  request: { query: FinancialDiagnosticQuerySchema },
+  responses: {
+    200: {
+      description:
+        "Composed server-authoritative financial readiness diagnostic measuring data completeness and available capabilities",
+      ...json(FinancialDiagnostic)
+    },
+    ...problemResponses
   }
 });
 

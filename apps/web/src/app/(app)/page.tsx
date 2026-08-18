@@ -14,6 +14,7 @@ import {
   getStats,
   getTopSpending
 } from "@/features/dashboard";
+import { getFinancialDiagnostic } from "@/features/financial-profile";
 
 export default async function DashboardPage(): Promise<ReactNode> {
   const [
@@ -24,7 +25,8 @@ export default async function DashboardPage(): Promise<ReactNode> {
     topSpending,
     recurringForecast,
     investments,
-    budgets
+    budgets,
+    diagnostic
   ] = await Promise.all([
     getStats(),
     getMonthlySpending(),
@@ -33,7 +35,8 @@ export default async function DashboardPage(): Promise<ReactNode> {
     getTopSpending(DEFAULT_PANEL_RANGE, TOP_SPENDING_LIMIT),
     getRecurringForecast(DEFAULT_PANEL_RANGE),
     getInvestments(),
-    getBudgetPage(false, 200)
+    getBudgetPage(false, 200),
+    getFinancialDiagnostic()
   ]);
 
   return (
@@ -46,6 +49,7 @@ export default async function DashboardPage(): Promise<ReactNode> {
       initialRecurringForecast={recurringForecast}
       initialInvestments={investments}
       initialBudgets={budgets}
+      initialDiagnostic={diagnostic}
     />
   );
 }

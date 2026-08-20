@@ -391,6 +391,7 @@ registry.registerPath({
 registry.registerPath({
   method: "patch",
   path: "/v1/transactions",
+  operationId: "batchCategorizeTransactions",
   security: secured,
   request: {
     body: json(BatchCategorizeTransactionsSchema),
@@ -651,6 +652,7 @@ registry.registerPath({
 registry.registerPath({
   method: "get",
   path: "/v1/transactions",
+  operationId: "listTransactions",
   security: secured,
   request: { query: ListTransactionsQuerySchema },
   responses: {
@@ -661,6 +663,7 @@ registry.registerPath({
 registry.registerPath({
   method: "get",
   path: "/v1/transactions/insights",
+  operationId: "getTransactionInsights",
   security: secured,
   responses: {
     200: { description: "Current IST-month transaction insights", ...json(TransactionInsights) },
@@ -670,6 +673,7 @@ registry.registerPath({
 registry.registerPath({
   method: "post",
   path: "/v1/transactions",
+  operationId: "createTransaction",
   security: securedByKeyOrCookie,
   request: {
     body: json(CreateTransactionSchema),
@@ -684,6 +688,7 @@ registry.registerPath({
 registry.registerPath({
   method: "get",
   path: "/v1/transactions/{transactionId}",
+  operationId: "getTransaction",
   security: secured,
   request: { params: transactionId },
   responses: {
@@ -695,6 +700,7 @@ registry.registerPath({
 registry.registerPath({
   method: "patch",
   path: "/v1/transactions/{transactionId}",
+  operationId: "updateTransaction",
   security: secured,
   request: {
     params: transactionId,
@@ -719,6 +725,7 @@ registry.registerPath({
 registry.registerPath({
   method: "post",
   path: "/v1/transactions/{transactionId}/reverse",
+  operationId: "reverseTransaction",
   security: secured,
   request: { params: transactionId },
   responses: {
@@ -736,6 +743,7 @@ registry.registerPath({
 registry.registerPath({
   method: "post",
   path: "/v1/transfers",
+  operationId: "createTransfer",
   security: secured,
   request: {
     body: json(CreateTransferSchema),
@@ -751,6 +759,7 @@ registry.registerPath({
 registry.registerPath({
   method: "post",
   path: "/v1/transfers/{transferGroupId}/reverse",
+  operationId: "reverseTransfer",
   security: secured,
   request: { params: transferGroupId },
   responses: {
@@ -1937,6 +1946,7 @@ registry.registerPath({
 registry.registerPath({
   method: "post",
   path: "/v1/pending-transactions",
+  operationId: "createPendingTransaction",
   security: securedByKeyOrCookie,
   request: { body: json(CreatePendingTransactionSchema), headers: idempotencyKeyHeaders },
   responses: {
@@ -1954,6 +1964,7 @@ registry.registerPath({
 registry.registerPath({
   method: "get",
   path: "/v1/pending-transactions",
+  operationId: "listPendingTransactions",
   security: secured,
   request: { query: ListPendingTransactionsQuerySchema },
   responses: {
@@ -1964,6 +1975,7 @@ registry.registerPath({
 registry.registerPath({
   method: "post",
   path: "/v1/pending-transactions/{id}/confirm",
+  operationId: "confirmPendingTransaction",
   security: secured,
   request: {
     params: pendingTransactionId,
@@ -1983,6 +1995,7 @@ registry.registerPath({
 registry.registerPath({
   method: "post",
   path: "/v1/pending-transactions/{id}/dismiss",
+  operationId: "dismissPendingTransaction",
   security: secured,
   request: { params: pendingTransactionId, headers: idempotencyKeyHeaders },
   responses: {

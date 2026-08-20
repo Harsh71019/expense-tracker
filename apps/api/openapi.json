@@ -9842,6 +9842,7 @@
     },
     "/v1/transactions": {
       "patch": {
+        "operationId": "batchCategorizeTransactions",
         "security": [
           {
             "cookieAuth": []
@@ -9956,6 +9957,7 @@
         }
       },
       "get": {
+        "operationId": "listTransactions",
         "security": [
           {
             "cookieAuth": []
@@ -10083,6 +10085,7 @@
         }
       },
       "post": {
+        "operationId": "createTransaction",
         "security": [
           {
             "cookieAuth": []
@@ -11795,6 +11798,7 @@
     },
     "/v1/transactions/insights": {
       "get": {
+        "operationId": "getTransactionInsights",
         "security": [
           {
             "cookieAuth": []
@@ -11846,6 +11850,7 @@
     },
     "/v1/transactions/{transactionId}": {
       "get": {
+        "operationId": "getTransaction",
         "security": [
           {
             "cookieAuth": []
@@ -11916,6 +11921,7 @@
         }
       },
       "patch": {
+        "operationId": "updateTransaction",
         "security": [
           {
             "cookieAuth": []
@@ -12045,6 +12051,7 @@
     },
     "/v1/transactions/{transactionId}/reverse": {
       "post": {
+        "operationId": "reverseTransaction",
         "security": [
           {
             "cookieAuth": []
@@ -12136,6 +12143,7 @@
     },
     "/v1/transfers": {
       "post": {
+        "operationId": "createTransfer",
         "security": [
           {
             "cookieAuth": []
@@ -12258,6 +12266,7 @@
     },
     "/v1/transfers/{transferGroupId}/reverse": {
       "post": {
+        "operationId": "reverseTransfer",
         "security": [
           {
             "cookieAuth": []
@@ -19430,6 +19439,7 @@
     },
     "/v1/pending-transactions": {
       "post": {
+        "operationId": "createPendingTransaction",
         "security": [
           {
             "cookieAuth": []
@@ -19561,6 +19571,7 @@
         }
       },
       "get": {
+        "operationId": "listPendingTransactions",
         "security": [
           {
             "cookieAuth": []
@@ -19627,6 +19638,7 @@
     },
     "/v1/pending-transactions/{id}/confirm": {
       "post": {
+        "operationId": "confirmPendingTransaction",
         "security": [
           {
             "cookieAuth": []
@@ -19735,6 +19747,7 @@
     },
     "/v1/pending-transactions/{id}/dismiss": {
       "post": {
+        "operationId": "dismissPendingTransaction",
         "security": [
           {
             "cookieAuth": []

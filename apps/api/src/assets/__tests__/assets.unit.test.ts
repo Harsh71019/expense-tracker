@@ -43,8 +43,8 @@ describe("Asset Unit Tests", () => {
         findByLegacyAssetId: vi.fn(async () => null)
       };
 
-      // @ts-expect-error mock service args
       const service = new AssetService(
+        // @ts-expect-error mock service args
         mockDb,
         mockAssetRepo,
         mockValRepo,

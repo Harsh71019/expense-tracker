@@ -52,8 +52,8 @@ describe("NetWorthService", () => {
       ])
     };
 
-    // @ts-expect-error mock service args
     const service = new NetWorthService(
+      // @ts-expect-error mock service args
       mockAccountRepo,
       mockAssetRepo,
       mockValRepo,

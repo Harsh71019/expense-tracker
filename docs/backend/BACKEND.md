@@ -264,6 +264,41 @@ Loans given are receivables; loans taken are liabilities. Fixed deposits, gold, 
 
 `netWorth = accounts + latest asset valuations`, where liabilities are stored as a negative valuation. Gold and silver start with manual valuations; no external price-feed dependency is required.
 
+`loan_receivable` is now migrated: an additive backfill ports every legacy `loan_receivable` asset into `receivables` below (linked via `receivables.legacy_asset_id`), and `GET /assets` hides backfilled rows going forward. Legacy asset/valuation rows are left untouched for rollback safety.
+
+#### `receivables` + `receivable_events` — Debt Given (money lent to other people)
+
+```ts
+// receivables -- identity + editable metadata only, no mutable balance
+{
+  id: UUID,
+  userId: string,
+  counterpartyName: string,
+  note?: string,
+  openedAt: Date,
+  dueAt?: Date,
+  legacyAssetId?: UUID,          // set only for migrated loan_receivable assets
+  createdAt: Date, updatedAt: Date
+}
+
+// receivable_events -- append-only, no updates/deletes
+{
+  id: UUID,
+  userId: string,
+  receivableId: UUID,
+  kind: 'opening' | 'repayment' | 'correction_increase' | 'correction_decrease'
+      | 'legacy_increase' | 'legacy_decrease',
+  amountMinor: number,           // positive safe integer
+  occurredAt: Date,
+  transactionId?: UUID,          // set for manual opening/repayment; one-to-one
+  legacyValuationId?: UUID,      // set only for migration-derived events
+  reason?: string,               // required for correction_* kinds
+  createdAt: Date
+}
+```
+
+Outstanding principal is derived by summing signed event effects (never a stored column), reversal-aware: a transaction-backed event stops contributing once its linked transaction is reversed. `status` (`active` | `settled` | `cancelled`) is likewise derived, never stored. Lending money and receiving principal post real `expense`/`income` transactions tagged `transactions.purpose = 'receivable_principal'` (an internal-only column, never accepted from a public transaction body) so account balances stay correct while every income/spend-interpreting report query excludes principal movement. `netWorth = accounts + non-receivable asset valuations + receivable outstanding balances`. See `docs/plans/2026-08-22-debt-given-partial-repayments.md` for the full design.
+
 #### `goals`
 
 ```ts
@@ -805,9 +840,21 @@ GET    /categories?includeArchived=true | POST /categories | PUT /categories/:id
 PATCH  /categories/:id/archive | PATCH /categories/:id/unarchive
 DELETE /categories/:id/permanent              archived, unreferenced leaves only
 GET    /category-rules | POST /category-rules | DELETE /category-rules/:id
-GET    /assets | POST /assets | POST /assets/:id/close
+GET    /assets | POST /assets | POST /assets/:id/close   (POST kind=loan_receivable is a deprecated
+                                                          compat path -> creates a receivable instead)
 GET    /assets/:id/valuations | POST /assets/:id/valuations
-GET    /net-worth
+GET    /net-worth                       accounts + non-receivable assets + receivables breakdown
+
+GET    /receivables?status&cursor       Debt Given: cursor-paginated, filtered by active/settled/
+                                        cancelled/all
+POST   /receivables                     lend now (moves an account) or record an already-lent
+                                        opening balance (Idempotency-Key required)
+GET    /receivables/:id                 current derived detail
+PATCH  /receivables/:id                 counterparty/note/due date only
+GET    /receivables/:id/events          cursor-paginated append-only history
+POST   /receivables/:id/repayments      receive into an account or link an existing posted income
+                                        transaction (Idempotency-Key required)
+POST   /receivables/:id/corrections     reasoned correction_increase/decrease (Idempotency-Key required)
 GET    /profile                         read-only app profile
 GET    /recurring | POST /recurring | PATCH /recurring/:id
 GET    /recurring/stats                 rule counts + next-30-days cash-flow/category forecast
@@ -846,6 +893,9 @@ apps/api/src/
 ├─ imports/                   + parser.processor.ts (BullMQ), dedupe.service.ts
 ├─ recurring/
 ├─ recurring-detection/       pure cadence/scoring evaluation + immutable shadow snapshots
+├─ receivables/                Debt Given: repository / policy / reversal-policy / service /
+│                             idempotent mutation service / controller
+├─ net-worth/                  accounts + non-receivable assets + receivables breakdown
 ├─ budgets/
 ├─ reports/                   aggregation pipelines + rollup reader
 ├─ spending-warnings/         detector (pure) + queue/processor + worker-only 05:00 IST schedule

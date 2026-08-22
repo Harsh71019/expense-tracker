@@ -1,7 +1,10 @@
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 
-import { AssetDetail, getAsset, getMarketRates, getValuations } from "@/features/assets";
+import { AssetDetail } from "@/features/assets";
+import { getAsset } from "@/features/assets/server/get-asset";
+import { getMarketRates } from "@/features/assets/server/get-market-rates";
+import { getValuations } from "@/features/assets/server/get-valuations";
 
 export default async function AssetDetailPage({
   params

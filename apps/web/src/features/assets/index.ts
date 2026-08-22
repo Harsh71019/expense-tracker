@@ -10,7 +10,3 @@ export * from "./hooks/use-valuations";
 export * from "./model/asset-form";
 export * from "./model/asset-visuals";
 export * from "./model/sparkline-path";
-export * from "./server/get-asset";
-export * from "./server/get-assets";
-export * from "./server/get-market-rates";
-export * from "./server/get-valuations";

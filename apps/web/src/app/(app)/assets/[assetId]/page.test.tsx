@@ -30,10 +30,17 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() })
 }));
 
+vi.mock("@/features/assets/server/get-asset", () => ({
+  getAsset: mocks.getAsset
+}));
+vi.mock("@/features/assets/server/get-valuations", () => ({
+  getValuations: mocks.getValuations
+}));
+vi.mock("@/features/assets/server/get-market-rates", () => ({
+  getMarketRates: mocks.getMarketRates
+}));
+
 vi.mock("@/features/assets", () => ({
-  getAsset: mocks.getAsset,
-  getValuations: mocks.getValuations,
-  getMarketRates: mocks.getMarketRates,
   AssetDetail: ({ initialAsset }: Readonly<{ initialAsset: Asset }>) => (
     <h1>Asset: {initialAsset.name}</h1>
   )

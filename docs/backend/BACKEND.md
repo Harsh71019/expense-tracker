@@ -81,6 +81,13 @@ Better Auth commits users in its own transaction. Profile provisioning is theref
 }
 ```
 
+Account details use a live, tenant-scoped read model rather than browser-side aggregation.
+`GET /accounts/:id` resolves active or archived owned accounts, while
+`GET /accounts/:id/insights?range=30d|90d|1y|all` returns range totals, bucketed physical cash
+movement, running balances, and consumption-only category totals. The latter exclude transfers,
+reversed rows, and active asset funding from spending mix while retaining compensating reversal
+entries in physical movement so the net reconciles with the ledger.
+
 #### `categories`
 
 ```ts
@@ -838,6 +845,8 @@ POST   /imports/:id/commit
 POST   /imports/:id/revert
 
 GET    /accounts | POST /accounts | PATCH /accounts/:id/archive
+GET    /accounts/:id                     active or archived tenant-scoped detail
+GET    /accounts/:id/insights?range      complete-range balance, movement, and spending read model
 GET    /categories?includeArchived=true | POST /categories | PUT /categories/:id
 PATCH  /categories/:id/archive | PATCH /categories/:id/unarchive
 DELETE /categories/:id/permanent              archived, unreferenced leaves only

@@ -23,6 +23,8 @@ import {
   BatchCategorizeTransactionsResultSchema,
   BatchCategorizeTransactionsSchema,
   AccountIdSchema,
+  AccountInsightsQuerySchema,
+  AccountInsightsSchema,
   AccountSchema,
   AcknowledgeExtraTransactionSchema,
   ApiKeySchema,
@@ -214,6 +216,7 @@ extendZodWithOpenApi(z);
 const registry = new OpenAPIRegistry();
 
 const Account = AccountSchema.meta({ id: "Account" });
+const AccountInsights = AccountInsightsSchema.meta({ id: "AccountInsights" });
 const Category = CategorySchema.meta({ id: "Category" });
 const CategoryRule = CategoryRuleSchema.meta({ id: "CategoryRule" });
 const CategoryRecommendationResponse = CategoryRecommendationResponseSchema.meta({
@@ -403,6 +406,28 @@ registry.registerPath({
   path: "/v1/accounts",
   security: securedByKeyOrCookie,
   responses: { 200: { description: "Accounts", ...json(z.array(Account)) }, ...problemResponses }
+});
+registry.registerPath({
+  method: "get",
+  path: "/v1/accounts/{accountId}",
+  security: securedByKeyOrCookie,
+  request: { params: accountId },
+  responses: {
+    200: { description: "Account", ...json(Account) },
+    404: { description: "Account not found", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "get",
+  path: "/v1/accounts/{accountId}/insights",
+  security: securedByKeyOrCookie,
+  request: { params: accountId, query: AccountInsightsQuerySchema },
+  responses: {
+    200: { description: "Account insights", ...json(AccountInsights) },
+    404: { description: "Account not found", ...json(ProblemDetails) },
+    ...problemResponses
+  }
 });
 registry.registerPath({
   method: "post",

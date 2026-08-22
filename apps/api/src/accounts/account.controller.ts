@@ -1,5 +1,22 @@
-import { Body, Controller, Get, Headers, HttpCode, Param, Patch, Post, Res } from "@nestjs/common";
-import { AccountIdSchema, CreateAccountSchema, type Account } from "@treasury-ops/shared";
+import {
+  Body,
+  Controller,
+  Get,
+  Headers,
+  HttpCode,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Res
+} from "@nestjs/common";
+import {
+  AccountIdSchema,
+  AccountInsightsQuerySchema,
+  CreateAccountSchema,
+  type Account,
+  type AccountInsights
+} from "@treasury-ops/shared";
 
 import type { AuthenticatedUser } from "../auth/auth.guard.js";
 import { CurrentUser } from "../auth/current-user.decorator.js";
@@ -37,6 +54,26 @@ export class AccountController {
   @RequireScopes({ accounts: ["read"] })
   list(@CurrentUser() user: AuthenticatedUser): Promise<Account[]> {
     return this.accounts.list(user.id);
+  }
+
+  @Get(":accountId/insights")
+  @RequireScopes({ accounts: ["read"] })
+  insights(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("accountId") accountId: string,
+    @Query() query: unknown
+  ): Promise<AccountInsights> {
+    const parsedQuery = AccountInsightsQuerySchema.parse(query);
+    return this.accounts.getInsights(user.id, AccountIdSchema.parse(accountId), parsedQuery.range);
+  }
+
+  @Get(":accountId")
+  @RequireScopes({ accounts: ["read"] })
+  get(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("accountId") accountId: string
+  ): Promise<Account> {
+    return this.accounts.get(user.id, AccountIdSchema.parse(accountId));
   }
 
   @Patch(":accountId/archive")

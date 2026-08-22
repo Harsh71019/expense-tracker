@@ -1,6 +1,13 @@
 export {
+  AccountBalancePointSchema,
+  AccountCashflowPointSchema,
   AccountIdSchema,
+  AccountInsightsBucketSchema,
+  AccountInsightsQuerySchema,
+  AccountInsightsRangeSchema,
+  AccountInsightsSchema,
   AccountSchema,
+  AccountSpendingCategorySchema,
   AccountTypeSchema,
   CreateAccountSchema,
   CreditCardConfigInputSchema,
@@ -8,7 +15,14 @@ export {
 } from "./account.js";
 export type {
   Account,
+  AccountBalancePoint,
+  AccountCashflowPoint,
   AccountId,
+  AccountInsights,
+  AccountInsightsBucket,
+  AccountInsightsQuery,
+  AccountInsightsRange,
+  AccountSpendingCategory,
   AccountType,
   CreateAccount,
   CreditCardConfig,

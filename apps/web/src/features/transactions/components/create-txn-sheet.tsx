@@ -33,7 +33,10 @@ function fieldErrorName(path: string): keyof CreateTransaction | null {
   return null;
 }
 
-export function CreateTxnSheet({ onClose }: Readonly<{ onClose: () => void }>): ReactNode {
+export function CreateTxnSheet({
+  onClose,
+  initialAccountId
+}: Readonly<{ onClose: () => void; initialAccountId?: string }>): ReactNode {
   const [idempotencyKey, setIdempotencyKey] = useState(generateRequestId);
   const accounts = useAccounts();
   const categories = useCategories();
@@ -41,6 +44,7 @@ export function CreateTxnSheet({ onClose }: Readonly<{ onClose: () => void }>): 
   const [amountDraft, setAmountDraft] = useState("");
   const form = useForm<CreateTransaction>({
     defaultValues: {
+      ...(initialAccountId === undefined ? {} : { accountId: initialAccountId }),
       type: "expense",
       amountMinor: 0,
       occurredAt: new Date(),

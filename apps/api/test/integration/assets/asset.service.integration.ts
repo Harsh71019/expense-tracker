@@ -6,11 +6,19 @@ import { AssetRepository } from "../../../src/assets/asset.repository.js";
 import { AssetService } from "../../../src/assets/asset.service.js";
 import { AssetMutationService } from "../../../src/assets/asset-mutation.service.js";
 import { ValuationRepository } from "../../../src/assets/valuation.repository.js";
+import { CategoryRepository } from "../../../src/categories/category.repository.js";
 import { assetValuations, auditLog } from "../../../src/common/db/schema/index.js";
 import { IdempotencyPostgresRepository } from "../../../src/common/idempotency/idempotency-postgres.repository.js";
 import { IdempotencyPostgresService } from "../../../src/common/idempotency/idempotency-postgres.service.js";
+import { ReceivableRepository } from "../../../src/receivables/receivable.repository.js";
+import { ReceivableService } from "../../../src/receivables/receivable.service.js";
+import { AccountRepository } from "../../../src/accounts/account.repository.js";
+import { TransactionRepository } from "../../../src/transactions/transaction.repository.js";
+import { TransactionService } from "../../../src/transactions/transaction.service.js";
 import { createTestDb, insertTestUser } from "../support/postgres-test-db.js";
 import type { TestDb } from "../support/postgres-test-db.js";
+
+const NOOP_LOGGER = { log: () => undefined, warn: () => undefined, error: () => undefined };
 
 describe("AssetService", () => {
   let testDb: TestDb;
@@ -22,11 +30,29 @@ describe("AssetService", () => {
     for (const userId of ["user-a", "user-b", "user-idempotent"]) {
       await insertTestUser(testDb.db, userId);
     }
+    const audit = new AuditRepository(testDb.db);
+    const transactionRepository = new TransactionRepository(testDb.db);
+    const transactionsService = new TransactionService(
+      testDb.db,
+      new AccountRepository(testDb.db),
+      new CategoryRepository(testDb.db),
+      transactionRepository,
+      audit,
+      NOOP_LOGGER
+    );
+    const receivableRepository = new ReceivableRepository(testDb.db);
+    const receivableService = new ReceivableService(
+      testDb.db,
+      receivableRepository,
+      transactionsService,
+      audit
+    );
     service = new AssetService(
       testDb.db,
       new AssetRepository(testDb.db),
       new ValuationRepository(testDb.db),
-      new AuditRepository(testDb.db)
+      audit,
+      receivableService
     );
     mutations = new AssetMutationService(
       service,

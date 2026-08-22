@@ -61,7 +61,8 @@ const netWorth: NetWorth = {
   asOf: new Date("2026-07-18T00:00:00.000Z"),
   netWorthMinor: 0,
   accounts: [],
-  assets: []
+  assets: [],
+  receivables: []
 };
 
 describe("AssetManager", () => {

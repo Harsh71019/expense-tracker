@@ -82,6 +82,7 @@ function createService(overrides: Overrides = {}) {
     focusedTestDouble(collaborators.audit),
     focusedTestDouble(collaborators.logger),
     undefined,
+    undefined,
     collaborators.assetFundings === undefined
       ? undefined
       : focusedTestDouble(collaborators.assetFundings),

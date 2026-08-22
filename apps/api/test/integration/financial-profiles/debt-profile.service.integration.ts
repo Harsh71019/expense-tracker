@@ -21,10 +21,17 @@ import { IdempotencyPostgresRepository } from "../../../src/common/idempotency/i
 import { IdempotencyPostgresService } from "../../../src/common/idempotency/idempotency-postgres.service.js";
 import { DebtProfileService } from "../../../src/financial-profiles/debt-profile.service.js";
 import { DeclaredDebtRepository } from "../../../src/financial-profiles/debt-profile.repository.js";
+import { CategoryRepository } from "../../../src/categories/category.repository.js";
+import { AccountRepository } from "../../../src/accounts/account.repository.js";
+import { ReceivableRepository } from "../../../src/receivables/receivable.repository.js";
+import { ReceivableService } from "../../../src/receivables/receivable.service.js";
+import { TransactionRepository } from "../../../src/transactions/transaction.repository.js";
+import { TransactionService } from "../../../src/transactions/transaction.service.js";
 import { createTestDb, insertTestUser } from "../support/postgres-test-db.js";
 import type { TestDb } from "../support/postgres-test-db.js";
 
 const ACTIVE = { limit: 50, status: "active" } as const;
+const NOOP_LOGGER = { log: () => undefined, warn: () => undefined, error: () => undefined };
 
 function key(seed: string): string {
   return `${seed}-1111-4111-8111-111111111111`;
@@ -45,11 +52,29 @@ describe("DebtProfileService", () => {
       await insertTestUser(testDb.db, userId);
     }
 
+    const audit = new AuditRepository(testDb.db);
+    const receivableRepository = new ReceivableRepository(testDb.db);
+    const transactionRepository = new TransactionRepository(testDb.db);
+    const transactionsService = new TransactionService(
+      testDb.db,
+      new AccountRepository(testDb.db),
+      new CategoryRepository(testDb.db),
+      transactionRepository,
+      audit,
+      NOOP_LOGGER
+    );
+    const receivableService = new ReceivableService(
+      testDb.db,
+      receivableRepository,
+      transactionsService,
+      audit
+    );
     assetService = new AssetService(
       testDb.db,
       new AssetRepository(testDb.db),
       new ValuationRepository(testDb.db),
-      new AuditRepository(testDb.db)
+      audit,
+      receivableService
     );
     service = new DebtProfileService(
       new DeclaredDebtRepository(testDb.db),

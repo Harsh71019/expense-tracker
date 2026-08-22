@@ -2,6 +2,7 @@ import type {
   DashboardRange,
   DeclaredDebtStatus,
   GoalStatus,
+  ListReceivablesQuery,
   ListTransactionsQuery
 } from "@treasury-ops/shared";
 
@@ -15,6 +16,7 @@ const dashboardRoot = ["dashboard"] as const;
 const billRoot = ["bills"] as const;
 const financialProfileRoot = ["financial-profile"] as const;
 const financialSafetyRoot = ["financial-safety"] as const;
+const receivableRoot = ["receivables"] as const;
 
 export const qk = {
   transactions: () => transactionRoot,
@@ -65,6 +67,13 @@ export const qk = {
   assetFundings: (assetId: string) => ["asset-fundings", assetId] as const,
   marketRates: () => ["market-rates", "metals"] as const,
   netWorth: () => ["net-worth"] as const,
+  receivables: () => receivableRoot,
+  receivableSummary: () => [...receivableRoot, "summary"] as const,
+  receivableList: (filters: ListReceivablesQuery) => [...receivableRoot, "list", filters] as const,
+  receivable: (receivableId: string) => [...receivableRoot, "detail", receivableId] as const,
+  receivableEvents: (receivableId: string) =>
+    [...receivableRoot, "detail", receivableId, "events"] as const,
+  receivableLinkCandidates: () => [...receivableRoot, "link-candidates"] as const,
   importBatches: () => ["import-batches"] as const,
   importPreview: (batchId: string) => ["import-preview", batchId] as const,
   importMapping: (accountId: string) => ["import-mapping", accountId] as const,

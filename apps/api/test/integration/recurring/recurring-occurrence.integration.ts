@@ -91,6 +91,7 @@ describe("manual-post recurring occurrences (integration)", () => {
       new AuditRepository(testDb.db),
       new IdempotencyPostgresService(testDb.db, new IdempotencyPostgresRepository(testDb.db)),
       NOOP_LOGGER,
+      undefined,
       NOOP_MODULE_REF
     );
     transactionsService = new TransactionService(

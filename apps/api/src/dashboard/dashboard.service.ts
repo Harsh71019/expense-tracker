@@ -356,11 +356,12 @@ export class DashboardService {
   }
 
   private async netWorthMinorAsOf(userId: string, asOf: Date): Promise<number> {
-    const [accountsMinor, assetsMinor] = await Promise.all([
+    const [accountsMinor, assetsMinor, receivablesMinor] = await Promise.all([
       this.dashboard.accountsBalanceMinorAsOf(userId, asOf),
-      this.dashboard.assetsValueMinorAsOf(userId, asOf)
+      this.dashboard.assetsValueMinorAsOf(userId, asOf),
+      this.dashboard.receivablesOutstandingMinorAsOf(userId, asOf)
     ]);
-    return accountsMinor + assetsMinor;
+    return accountsMinor + assetsMinor + receivablesMinor;
   }
 
   private async categoryTotalsForRange(

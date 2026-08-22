@@ -22,6 +22,7 @@ export const ErrorCodes = [
   "category.name_conflict",
   "category.in_use",
   "asset.invalid_valuation_sign",
+  "asset.moved_to_receivables",
   "goal.funding_source_in_use",
   "goal.invalid_order",
   "import.invalid_file",
@@ -51,7 +52,12 @@ export const ErrorCodes = [
   "recurring.invalid_occurrence_source",
   "recurring.occurrence_already_confirmed",
   "recurring.detected_stream_not_reviewable",
-  "pending_transaction.already_resolved"
+  "pending_transaction.already_resolved",
+  "receivable.overpayment",
+  "receivable.correction_underflow",
+  "receivable.reversal_blocked",
+  "receivable.transaction_already_linked",
+  "receivable.transaction_ineligible"
 ] as const;
 
 export type ErrorCode = (typeof ErrorCodes)[number];

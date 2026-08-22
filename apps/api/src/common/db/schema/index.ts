@@ -28,3 +28,4 @@ export * from "./spending-change-detection.js";
 export * from "./review-inbox.js";
 export * from "./safety-buffer.js";
 export * from "./financial-protection.js";
+export * from "./receivable.js";

@@ -18,7 +18,8 @@ const sampleNetWorth: NetWorth = {
   accounts: [
     { accountId: "3fa85f64-5717-4562-b3fc-2c963f66beef", name: "Cash", balanceMinor: 100_000 }
   ],
-  assets: []
+  assets: [],
+  receivables: []
 };
 
 function wrapper(): (props: { children: ReactNode }) => ReactNode {

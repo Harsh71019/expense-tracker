@@ -16,6 +16,7 @@ import { Logger } from "nestjs-pino";
 
 import { AccountRepository } from "../accounts/account.repository.js";
 import { assertBalanceDeltaApplied } from "../accounts/balance-delta.js";
+import { AssetFundingRepository } from "../asset-fundings/asset-funding.repository.js";
 import { AuditRepository } from "../audit/audit.repository.js";
 import { CategoryRepository } from "../categories/category.repository.js";
 import { DATABASE_CONNECTION } from "../common/db/db.module.js";
@@ -28,13 +29,16 @@ import { EntityNotFoundError } from "../common/errors/entity-not-found.error.js"
 import { TransferMetadataRequiresGroupError } from "../common/errors/transfer-metadata-requires-group.error.js";
 import { LogEvent } from "../common/logging/events.js";
 import { toISTMonth } from "../common/time/ist.js";
-import { TransactionRepository } from "./transaction.repository.js";
-import { AssetFundingRepository } from "../asset-fundings/asset-funding.repository.js";
+import { TransactionRepository, type TransactionPurpose } from "./transaction.repository.js";
 import {
   TRANSACTION_CREATED_HOOK,
   type TransactionCreatedHook
 } from "./transaction-created-hook.js";
 import { reverseTransactionInTx } from "./reverse-transaction-in-tx.js";
+import {
+  TRANSACTION_REVERSAL_POLICY,
+  type TransactionReversalPolicy
+} from "./transaction-reversal-policy.js";
 import {
   TRANSACTION_REVERSAL_HOOK,
   type TransactionReversalHook
@@ -67,6 +71,9 @@ export class TransactionService {
     @Optional()
     @Inject(TRANSACTION_CREATED_HOOK)
     private readonly createdHook?: TransactionCreatedHook,
+    @Optional()
+    @Inject(TRANSACTION_REVERSAL_POLICY)
+    private readonly reversalPolicy?: TransactionReversalPolicy,
     @Optional()
     private readonly assetFundings?: AssetFundingRepository,
     @Inject(ModuleRef)
@@ -125,33 +132,49 @@ export class TransactionService {
     }
   }
 
-  /** Shared ledger-write core for composite mutations; it never opens a transaction itself. */
+  /**
+   * The `withTxn`-bound core of `create()`, extracted so another module's
+   * own transaction (e.g. `ReceivablesModule` posting a lend/repay leg, or
+   * `AssetFundingsModule` posting a funding leg, alongside its own ledger
+   * rows) can post a transaction without opening a nested Postgres
+   * transaction. Unlike `create()`, this does not retry on a
+   * unique-violation idempotency-key collision -- the caller either provides
+   * its own idempotency wrapper (as `IdempotencyPostgresService.execute`
+   * does) or omits `idempotencyKey` entirely.
+   */
   async createInTx(
     userId: string,
     input: CreateTransaction,
     source: TransactionSource,
     tx: DbTx,
-    options?: Readonly<{ idempotencyKey?: string }>
+    options?: Readonly<{ idempotencyKey?: string; purpose?: TransactionPurpose }>
   ): Promise<Transaction> {
     if (input.categoryId !== undefined) {
       const category = await this.categories.findActiveById(userId, input.categoryId, tx);
       if (category === null) throw new EntityNotFoundError("Category");
       if (category.kind !== input.type) throw new CategoryKindMismatchError();
     }
+
     const deltaMinor = input.type === "income" ? input.amountMinor : -input.amountMinor;
     assertBalanceDeltaApplied(
       await this.accounts.applyBalanceDelta(userId, input.accountId, deltaMinor, tx)
     );
+
     const created = await this.transactions.create(
       userId,
       input,
       options?.idempotencyKey,
       tx,
       undefined,
-      source
+      source,
+      undefined,
+      undefined,
+      options?.purpose ?? "ordinary"
     );
     await this.audit.record(userId, "transaction.create", created.id, tx);
-    if (source === "api") await this.createdHook?.onTransactionCreatedInTx(userId, created, tx);
+    if (source === "api") {
+      await this.createdHook?.onTransactionCreatedInTx(userId, created, tx);
+    }
     return created;
   }
 
@@ -167,6 +190,29 @@ export class TransactionService {
     const transaction = await this.transactions.findById(userId, transactionId);
     if (transaction === null) throw new EntityNotFoundError("Transaction");
     return this.hydrateFunding(userId, transaction);
+  }
+
+  /**
+   * Narrow, tx-scoped read for a caller (e.g. ReceivablesModule's
+   * link_existing repayment flow) that needs the raw transaction row inside
+   * its own transaction, without deep-importing TransactionRepository (see
+   * apps/api/CLAUDE.md's cross-module DI rule). Deliberately skips funding
+   * hydration -- callers here only need the ledger fields to validate
+   * eligibility, not the presentation-layer assetFunding attachment.
+   */
+  findByIdInTx(userId: string, transactionId: string, tx: DbTx): Promise<Transaction | null> {
+    return this.transactions.findById(userId, transactionId, tx);
+  }
+
+  /** Same DI-boundary reasoning as findByIdInTx: a thin passthrough so a
+   * caller outside this module never imports TransactionRepository. */
+  reclassifyPurposeInTx(
+    userId: string,
+    transactionId: string,
+    purpose: TransactionPurpose,
+    tx: DbTx
+  ): Promise<Transaction | null> {
+    return this.transactions.reclassifyPurpose(userId, transactionId, purpose, tx);
   }
 
   private async hydrateFundings(userId: string, page: TransactionPage): Promise<TransactionPage> {
@@ -343,6 +389,7 @@ export class TransactionService {
         transactions: this.transactions,
         accounts: this.accounts,
         audit: this.audit,
+        policy: this.reversalPolicy,
         reversalHook
       },
       userId,

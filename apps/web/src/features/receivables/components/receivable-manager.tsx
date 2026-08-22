@@ -1,6 +1,11 @@
 "use client";
 
-import { formatMinor, type ReceivablePage, type ReceivableStatus } from "@treasury-ops/shared";
+import {
+  formatMinor,
+  type ReceivablePage,
+  type ReceivableStatus,
+  type ReceivableSummary
+} from "@treasury-ops/shared";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import type { ReactNode } from "react";
@@ -10,6 +15,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatCard, StatCardLabel, StatCardValue } from "@/components/ui/stat-card";
 
+import { useReceivableSummary } from "../hooks/use-receivable-summary";
 import { useReceivables } from "../hooks/use-receivables";
 import { CreateReceivableSheet } from "./create-receivable-sheet";
 import { ReceivableCard } from "./receivable-card";
@@ -28,8 +34,9 @@ function isValidStatusFilter(value: string | null): value is ReceivableStatus | 
 }
 
 export function ReceivableManager({
-  initialActive
-}: Readonly<{ initialActive: ReceivablePage }>): ReactNode {
+  initialActive,
+  initialSummary
+}: Readonly<{ initialActive: ReceivablePage; initialSummary: ReceivableSummary }>): ReactNode {
   const router = useRouter();
   const searchParams = useSearchParams();
   const statusParam = searchParams.get("status");
@@ -43,14 +50,15 @@ export function ReceivableManager({
 
   const [createOpen, setCreateOpen] = useState(false);
 
-  const totalOutstandingMinor = items.reduce((sum, item) => sum + item.outstandingMinor, 0);
-  const totalReturnedMinor = items.reduce((sum, item) => sum + item.confirmedRepaidMinor, 0);
-  const activeCount = items.filter((item) => item.status === "active").length;
-  const now = new Date();
-  const dueCount = items.filter(
-    (item) =>
-      item.status === "active" && item.dueAt !== undefined && item.dueAt.getTime() < now.getTime()
-  ).length;
+  // Summary cards reflect ALL of the user's receivables via a dedicated
+  // backend aggregate, not just `items` (the current page/filter) --
+  // otherwise a user with more receivables than one page would see
+  // undercounted totals.
+  const summary = useReceivableSummary(initialSummary).data ?? initialSummary;
+  const totalOutstandingMinor = summary.totalOutstandingMinor;
+  const totalReturnedMinor = summary.totalConfirmedRepaidMinor;
+  const activeCount = summary.activeCount;
+  const dueCount = summary.dueCount;
 
   function setStatus(next: ReceivableStatus | "all"): void {
     const params = new URLSearchParams(searchParams.toString());

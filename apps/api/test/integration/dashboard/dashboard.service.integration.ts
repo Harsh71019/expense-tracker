@@ -133,7 +133,6 @@ describe("DashboardService", () => {
       testDb.db,
       dashboardReceivableRepository,
       dashboardTransactionsService,
-      dashboardTransactionRepository,
       dashboardAudit
     );
     const assetService = new AssetService(
@@ -141,8 +140,7 @@ describe("DashboardService", () => {
       assetRepository,
       valuations,
       dashboardAudit,
-      dashboardReceivableService,
-      dashboardReceivableRepository
+      dashboardReceivableService
     );
     await withTxn(testDb.db, async (tx) => {
       const fd = await assetService.createInTx(

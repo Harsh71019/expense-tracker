@@ -38,8 +38,7 @@ describe("Asset Unit Tests", () => {
       const mockAuditRepo = {
         record: vi.fn(async () => undefined)
       };
-      const mockReceivableService = {};
-      const mockReceivableRepo = {
+      const mockReceivableService = {
         findByLegacyAssetId: vi.fn(async () => null)
       };
 
@@ -49,8 +48,7 @@ describe("Asset Unit Tests", () => {
         mockAssetRepo,
         mockValRepo,
         mockAuditRepo,
-        mockReceivableService,
-        mockReceivableRepo
+        mockReceivableService
       );
 
       const res = await service.addValuation("u1", "asset_1", {

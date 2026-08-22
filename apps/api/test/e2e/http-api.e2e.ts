@@ -32,6 +32,7 @@ import {
   NetWorthSchema,
   ReceivableEventPageSchema,
   ReceivableMutationResultSchema,
+  ReceivablePageSchema,
   ReceivableSchema
 } from "@treasury-ops/shared";
 import { GenericContainer } from "testcontainers";
@@ -1221,18 +1222,22 @@ describe("production HTTP composition", () => {
       netWorthAfterSettle.receivables.some((r) => r.receivableId === created.receivable.id)
     ).toBe(false); // settled -> no longer outstanding, so it drops out of the active breakdown.
 
+    // Session B is an authenticated session in this file -- a 401 here would
+    // mean the session itself is broken, not that tenancy holds, so it must
+    // never see session A's receivable, neither in its own list nor by id.
+    const foreignListResponse = await fetch(`${baseUrl}/api/v1/receivables`, {
+      headers: { cookie: sessionB }
+    });
+    expect(foreignListResponse.status).toBe(200);
+    const foreignList = await parseResponse(foreignListResponse, ReceivablePageSchema);
+    expect(foreignList.items.some((item) => item.id === created.receivable.id)).toBe(false);
+
     for (const path of [
-      "/api/v1/receivables",
       `/api/v1/receivables/${created.receivable.id}`,
       `/api/v1/receivables/${created.receivable.id}/events`
     ]) {
       const foreign = await fetch(`${baseUrl}${path}`, { headers: { cookie: sessionB } });
-      expect(foreign.status === 401 || foreign.status === 404 || foreign.status === 200).toBe(true);
-      if (path !== "/api/v1/receivables") {
-        // Cross-tenant access to a specific receivable must 404, not leak data.
-        if (foreign.status === 200)
-          throw new Error(`${path} leaked cross-tenant data to session B.`);
-      }
+      expect(foreign.status).toBe(404);
     }
   });
 

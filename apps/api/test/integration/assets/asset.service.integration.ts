@@ -45,7 +45,6 @@ describe("AssetService", () => {
       testDb.db,
       receivableRepository,
       transactionsService,
-      transactionRepository,
       audit
     );
     service = new AssetService(
@@ -53,8 +52,7 @@ describe("AssetService", () => {
       new AssetRepository(testDb.db),
       new ValuationRepository(testDb.db),
       audit,
-      receivableService,
-      receivableRepository
+      receivableService
     );
     mutations = new AssetMutationService(
       service,

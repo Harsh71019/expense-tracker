@@ -4,6 +4,7 @@ import { formatMinor, type ReceivableEvent } from "@treasury-ops/shared";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 
 import { useReceivableEvents } from "../hooks/use-receivable-events";
@@ -69,7 +70,7 @@ export function ReceivableEventList({
   receivableId
 }: Readonly<{ receivableId: string }>): ReactNode {
   const events = useReceivableEvents(receivableId);
-  const items = events.data?.items ?? [];
+  const items = events.data?.pages.flatMap((page) => page.items) ?? [];
 
   if (events.isLoading) {
     return <p className="text-sm text-foreground-muted">Loading history…</p>;
@@ -85,10 +86,24 @@ export function ReceivableEventList({
   }
 
   return (
-    <ul className="space-y-2">
-      {items.map((event) => (
-        <EventRow key={event.id} event={event} />
-      ))}
-    </ul>
+    <div className="space-y-3">
+      <ul className="space-y-2">
+        {items.map((event) => (
+          <EventRow key={event.id} event={event} />
+        ))}
+      </ul>
+      {events.hasNextPage ? (
+        <div className="flex justify-center">
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={events.isFetchingNextPage}
+            onClick={() => void events.fetchNextPage()}
+          >
+            {events.isFetchingNextPage ? "Loading…" : "Load more"}
+          </Button>
+        </div>
+      ) : null}
+    </div>
   );
 }

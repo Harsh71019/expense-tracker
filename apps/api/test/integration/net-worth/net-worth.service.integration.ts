@@ -29,6 +29,7 @@ describe("NetWorthService", () => {
     testDb = await createTestDb();
     await insertTestUser(testDb.db, "user-a");
     await insertTestUser(testDb.db, "user-c");
+    await insertTestUser(testDb.db, "user-d");
     accounts = new AccountRepository(testDb.db);
     const assetRepository = new AssetRepository(testDb.db);
     const valuationRepository = new ValuationRepository(testDb.db);
@@ -47,7 +48,6 @@ describe("NetWorthService", () => {
       testDb.db,
       receivableRepository,
       transactionsService,
-      transactionRepository,
       audit
     );
     assets = new AssetService(
@@ -55,8 +55,7 @@ describe("NetWorthService", () => {
       assetRepository,
       valuationRepository,
       audit,
-      receivableService,
-      receivableRepository
+      receivableService
     );
     const receivablesRead = new ReceivableNetWorthReadService(receivableRepository);
     netWorth = new NetWorthService(
@@ -137,5 +136,30 @@ describe("NetWorthService", () => {
 
     expect(result.assets).toHaveLength(0);
     expect(result.netWorthMinor).toBe(0);
+  });
+
+  it("includes a zero-opening loan_receivable asset (no linked receivable) once it gets a valuation", async () => {
+    // openingValueMinor: 0 skips AssetService's compat adapter (it only
+    // links a receivable when openingValueMinor > 0, since a zero-amount
+    // opening event is impossible), leaving a legacy-only asset with no
+    // receivables.legacy_asset_id row. AssetRepository.list()'s exclusion is
+    // link-based, not kind-based, so this asset must still surface here.
+    const asset = await assets.create("user-d", {
+      kind: "loan_receivable",
+      name: "Informal IOU",
+      openedAt: new Date("2026-03-01T00:00:00.000Z"),
+      openingValueMinor: 0
+    });
+    await assets.addValuation("user-d", asset.id, {
+      valueMinor: 7_500_00,
+      valuedAt: new Date("2026-04-01T00:00:00.000Z"),
+      source: "manual"
+    });
+
+    const result = await netWorth.get("user-d");
+
+    const entry = result.assets.find((a) => a.assetId === asset.id);
+    expect(entry).toMatchObject({ valueMinor: 7_500_00 });
+    expect(result.netWorthMinor).toBe(7_500_00);
   });
 });

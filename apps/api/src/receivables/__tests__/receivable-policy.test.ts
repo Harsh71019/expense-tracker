@@ -15,24 +15,41 @@ function balance(overrides: Partial<ReceivableBalance>): ReceivableBalance {
     confirmedRepaidMinor: 0,
     repaymentCount: 0,
     hasEffectiveOpening: false,
+    hasAnyOpeningEver: false,
     ...overrides
   };
 }
 
 describe("deriveReceivableStatus", () => {
-  it("is active while outstanding is positive", () => {
-    expect(deriveReceivableStatus(balance({ outstandingMinor: 1 }))).toBe("active");
+  it("is active while outstanding is positive, regardless of opening history", () => {
+    expect(
+      deriveReceivableStatus(
+        balance({ outstandingMinor: 1, hasEffectiveOpening: false, hasAnyOpeningEver: false })
+      )
+    ).toBe("active");
+  });
+
+  it("is settled when outstanding is zero and no opening ever existed (e.g. a zero-valued migrated legacy asset with no receivable_events)", () => {
+    expect(
+      deriveReceivableStatus(
+        balance({ outstandingMinor: 0, hasEffectiveOpening: false, hasAnyOpeningEver: false })
+      )
+    ).toBe("settled");
   });
 
   it("is settled when outstanding reached zero after an effective opening", () => {
     expect(
-      deriveReceivableStatus(balance({ outstandingMinor: 0, hasEffectiveOpening: true }))
+      deriveReceivableStatus(
+        balance({ outstandingMinor: 0, hasEffectiveOpening: true, hasAnyOpeningEver: true })
+      )
     ).toBe("settled");
   });
 
-  it("is cancelled when outstanding is zero because the opening itself was reversed", () => {
+  it("is cancelled when an opening existed but is no longer effective (it was reversed)", () => {
     expect(
-      deriveReceivableStatus(balance({ outstandingMinor: 0, hasEffectiveOpening: false }))
+      deriveReceivableStatus(
+        balance({ outstandingMinor: 0, hasEffectiveOpening: false, hasAnyOpeningEver: true })
+      )
     ).toBe("cancelled");
   });
 });

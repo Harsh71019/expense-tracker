@@ -67,7 +67,6 @@ describe("DebtProfileService", () => {
       testDb.db,
       receivableRepository,
       transactionsService,
-      transactionRepository,
       audit
     );
     assetService = new AssetService(
@@ -75,8 +74,7 @@ describe("DebtProfileService", () => {
       new AssetRepository(testDb.db),
       new ValuationRepository(testDb.db),
       audit,
-      receivableService,
-      receivableRepository
+      receivableService
     );
     service = new DebtProfileService(
       new DeclaredDebtRepository(testDb.db),

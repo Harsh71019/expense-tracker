@@ -192,6 +192,29 @@ export class TransactionService {
     return this.hydrateFunding(userId, transaction);
   }
 
+  /**
+   * Narrow, tx-scoped read for a caller (e.g. ReceivablesModule's
+   * link_existing repayment flow) that needs the raw transaction row inside
+   * its own transaction, without deep-importing TransactionRepository (see
+   * apps/api/CLAUDE.md's cross-module DI rule). Deliberately skips funding
+   * hydration -- callers here only need the ledger fields to validate
+   * eligibility, not the presentation-layer assetFunding attachment.
+   */
+  findByIdInTx(userId: string, transactionId: string, tx: DbTx): Promise<Transaction | null> {
+    return this.transactions.findById(userId, transactionId, tx);
+  }
+
+  /** Same DI-boundary reasoning as findByIdInTx: a thin passthrough so a
+   * caller outside this module never imports TransactionRepository. */
+  reclassifyPurposeInTx(
+    userId: string,
+    transactionId: string,
+    purpose: TransactionPurpose,
+    tx: DbTx
+  ): Promise<Transaction | null> {
+    return this.transactions.reclassifyPurpose(userId, transactionId, purpose, tx);
+  }
+
   private async hydrateFundings(userId: string, page: TransactionPage): Promise<TransactionPage> {
     const summaries =
       this.assetFundings === undefined

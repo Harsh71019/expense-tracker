@@ -130,11 +130,12 @@ export async function assertLedgerInvariants(db: DrizzleDb): Promise<void> {
     // opening/correction/legacy events always contribute.
     const isEffective = linkedTransaction === undefined || linkedTransaction.status !== "reversed";
     if (isEffective) {
-      const signed = INCREASE_EVENT_KINDS.has(event.kind)
-        ? event.amountMinor
-        : DECREASE_EVENT_KINDS.has(event.kind)
-          ? -event.amountMinor
-          : 0;
+      if (!INCREASE_EVENT_KINDS.has(event.kind) && !DECREASE_EVENT_KINDS.has(event.kind)) {
+        throw new Error(
+          `Receivable event ${event.id} has unrecognized kind ${event.kind}; add it to INCREASE_EVENT_KINDS or DECREASE_EVENT_KINDS.`
+        );
+      }
+      const signed = INCREASE_EVENT_KINDS.has(event.kind) ? event.amountMinor : -event.amountMinor;
       runningBalanceByReceivable.set(
         event.receivableId,
         (runningBalanceByReceivable.get(event.receivableId) ?? 0) + signed

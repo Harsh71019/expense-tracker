@@ -149,14 +149,8 @@ export async function createSeedContext(): Promise<SeedContext> {
   const transfers = new TransferService(db, accounts, transactionsRepo, audit, seedLogger);
   const recurring = new RecurringRuleService(db, recurringRuleRepo, accounts, categories);
   const receivablesRepo = new ReceivableRepository(db);
-  const receivables = new ReceivableService(
-    db,
-    receivablesRepo,
-    transactions,
-    transactionsRepo,
-    audit
-  );
-  const assets = new AssetService(db, assetsRepo, valuations, audit, receivables, receivablesRepo);
+  const receivables = new ReceivableService(db, receivablesRepo, transactions, audit);
+  const assets = new AssetService(db, assetsRepo, valuations, audit, receivables);
 
   const imports = new ImportsService(
     db,

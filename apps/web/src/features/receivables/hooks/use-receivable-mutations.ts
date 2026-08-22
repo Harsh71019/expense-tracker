@@ -172,7 +172,7 @@ export function useUpdateReceivableMetadata(): ReturnType<
     onSettled: async (_result, _error, request) => {
       await Promise.all([
         client.invalidateQueries({ queryKey: qk.receivable(request.receivableId) }),
-        client.invalidateQueries({ queryKey: qk.receivableList({ status: "active", limit: 50 }) })
+        client.invalidateQueries({ queryKey: qk.receivables() })
       ]);
     }
   });

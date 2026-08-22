@@ -6,14 +6,19 @@ import type { ReceivableBalance } from "./receivable.repository.js";
 
 /**
  * Pure derivation from plan doc invariant 12: `active` while outstanding is
- * positive; once it reaches zero, `settled` if principal was ever
- * effectively added (repayments/corrections brought it to zero) or
- * `cancelled` if the opening itself was reversed before any principal was
- * ever effective.
+ * positive. At zero outstanding, `cancelled` means an opening existed at
+ * some point but is no longer effective (the cash-backed lend was reversed
+ * before any repayment) -- `hasAnyOpeningEver && !hasEffectiveOpening`.
+ * Everything else at zero is `settled`, which covers both "an effective
+ * opening was paid down to zero" and "no opening ever existed" (a migrated
+ * legacy asset whose every historical valuation was exactly zero gets zero
+ * receivable_events at all, since the backfill skips zero deltas -- that's a
+ * legitimately-zero receivable, not a cancelled one).
  */
 export function deriveReceivableStatus(balance: ReceivableBalance): ReceivableStatus {
   if (balance.outstandingMinor > 0) return "active";
-  return balance.hasEffectiveOpening ? "settled" : "cancelled";
+  if (balance.hasAnyOpeningEver && !balance.hasEffectiveOpening) return "cancelled";
+  return "settled";
 }
 
 export function assertNotOverpaying(outstandingMinor: number, amountMinor: number): void {

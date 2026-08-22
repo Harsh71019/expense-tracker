@@ -299,6 +299,8 @@ Loans given are receivables; loans taken are liabilities. Fixed deposits, gold, 
 
 Outstanding principal is derived by summing signed event effects (never a stored column), reversal-aware: a transaction-backed event stops contributing once its linked transaction is reversed. `status` (`active` | `settled` | `cancelled`) is likewise derived, never stored. Lending money and receiving principal post real `expense`/`income` transactions tagged `transactions.purpose = 'receivable_principal'` (an internal-only column, never accepted from a public transaction body) so account balances stay correct while every income/spend-interpreting report query excludes principal movement. `netWorth = accounts + non-receivable asset valuations + receivable outstanding balances`. See `docs/plans/2026-08-22-debt-given-partial-repayments.md` for the full design.
 
+The migration that adds these tables (`apps/api/drizzle/0037_outstanding_tyrannus.sql`) hand-appends a `DO $$ ... END $$;` legacy-backfill block after its generated DDL — a deliberate, documented exception to "never edit `apps/api/drizzle/*.sql` by hand after generation" (same precedent as `0011_idempotency_request_fingerprint.sql`'s hand-appended backfill `UPDATE`). Re-running `pnpm migrate:generate` produces a new migration for further schema changes; it does not touch this file, so don't delete the `DO $$` block when regenerating around it.
+
 #### `goals`
 
 ```ts

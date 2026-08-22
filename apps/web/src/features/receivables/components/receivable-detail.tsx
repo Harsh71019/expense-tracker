@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Money } from "@/components/ui/money";
 import { PageHeader } from "@/components/ui/page-header";
+import { StatCard, StatCardLabel, StatCardValue } from "@/components/ui/stat-card";
 
 import { useReceivable } from "../hooks/use-receivable";
 import {
@@ -88,24 +89,22 @@ export function ReceivableDetail({
       </div>
 
       <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3">
-        <div className="glass-card rounded-xl p-4">
-          <p className="text-2xs font-semibold text-foreground-muted uppercase">Returned</p>
-          <p className="mt-1 font-mono text-lg font-bold text-foreground">
+        <StatCard padding="xs">
+          <StatCardLabel>Returned</StatCardLabel>
+          <StatCardValue className="mt-1 text-lg">
             {formatMinor(receivable.confirmedRepaidMinor)}
-          </p>
-        </div>
-        <div className="glass-card rounded-xl p-4">
-          <p className="text-2xs font-semibold text-foreground-muted uppercase">Repayments</p>
-          <p className="mt-1 font-mono text-lg font-bold text-foreground">
-            {receivable.repaymentCount}
-          </p>
-        </div>
-        <div className="glass-card rounded-xl p-4">
-          <p className="text-2xs font-semibold text-foreground-muted uppercase">Due</p>
-          <p className="mt-1 font-mono text-lg font-bold text-foreground">
+          </StatCardValue>
+        </StatCard>
+        <StatCard padding="xs">
+          <StatCardLabel>Repayments</StatCardLabel>
+          <StatCardValue className="mt-1 text-lg">{receivable.repaymentCount}</StatCardValue>
+        </StatCard>
+        <StatCard padding="xs">
+          <StatCardLabel>Due</StatCardLabel>
+          <StatCardValue className="mt-1 text-lg">
             {receivable.dueAt === undefined ? "—" : dateFormatter.format(receivable.dueAt)}
-          </p>
-        </div>
+          </StatCardValue>
+        </StatCard>
       </div>
 
       {receivable.note === undefined ? null : (

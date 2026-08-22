@@ -18,11 +18,6 @@ import { ReceivableTransactionReversalPolicy } from "./receivable-transaction-re
     ReceivableTransactionReversalPolicy,
     ReceivableNetWorthReadService
   ],
-  exports: [
-    ReceivableService,
-    ReceivableRepository,
-    ReceivableTransactionReversalPolicy,
-    ReceivableNetWorthReadService
-  ]
+  exports: [ReceivableService, ReceivableTransactionReversalPolicy, ReceivableNetWorthReadService]
 })
 export class ReceivablesModule {}

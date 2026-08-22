@@ -21,11 +21,19 @@ import { receivableEvents, receivables, transactions } from "../common/db/schema
 import { stripNulls } from "../common/db/strip-nulls.js";
 import { InvalidCursorError } from "../common/errors/invalid-cursor.error.js";
 
+export type ReceivableSummary = Readonly<{
+  totalOutstandingMinor: number;
+  totalConfirmedRepaidMinor: number;
+  activeCount: number;
+  dueCount: number;
+}>;
+
 export type ReceivableBalance = Readonly<{
   outstandingMinor: number;
   confirmedRepaidMinor: number;
   repaymentCount: number;
   hasEffectiveOpening: boolean;
+  hasAnyOpeningEver: boolean;
 }>;
 
 export type ReceivableWithBalance = StoredReceivable & ReceivableBalance;
@@ -82,6 +90,17 @@ const REPAYMENT_COUNT_EXPR = sql<string>`count(case
 // plan doc invariant 12.
 const HAS_OPENING_EXPR = sql<string>`coalesce(sum(case
   when ${EVENT_EFFECTIVE} and ${INCREASE_KINDS} then ${receivableEvents.amountMinor}
+  else 0 end), 0)::bigint`;
+
+// Unlike HAS_OPENING_EXPR, ignores EVENT_EFFECTIVE: true if an opening-kind
+// event was EVER written, effective or not. A migrated legacy asset whose
+// every historical valuation was exactly zero gets zero receivable_events at
+// all (the backfill skips zero deltas), so it has no opening ever -- distinct
+// from a receivable whose cash-backed opening was later reversed, which did
+// have one. `deriveReceivableStatus` needs both signals to tell "settled,
+// nothing was ever owed" apart from "cancelled, the lend itself was undone".
+const HAS_ANY_OPENING_EVER_EXPR = sql<string>`coalesce(sum(case
+  when ${INCREASE_KINDS} then ${receivableEvents.amountMinor}
   else 0 end), 0)::bigint`;
 
 @Injectable()
@@ -187,7 +206,8 @@ export class ReceivableRepository {
         outstandingMinor: OUTSTANDING_EXPR,
         confirmedRepaidMinor: CONFIRMED_REPAID_EXPR,
         repaymentCount: REPAYMENT_COUNT_EXPR,
-        hasOpening: HAS_OPENING_EXPR
+        hasOpening: HAS_OPENING_EXPR,
+        hasAnyOpeningEver: HAS_ANY_OPENING_EVER_EXPR
       })
       .from(receivableEvents)
       .leftJoin(transactions, eq(receivableEvents.transactionId, transactions.id))
@@ -196,6 +216,46 @@ export class ReceivableRepository {
       );
     if (row === undefined) throw new Error("Receivable balance aggregate did not return a row.");
     return toBalance(row);
+  }
+
+  /** Global totals across every one of this user's receivables, not just
+   * the current page -- the Debt Given summary cards must reflect the same
+   * totals regardless of which page/filter is currently loaded. */
+  async getSummary(userId: string): Promise<ReceivableSummary> {
+    const perReceivable = this.db
+      .select({
+        id: receivables.id,
+        dueAt: receivables.dueAt,
+        outstandingMinor: OUTSTANDING_EXPR.as("outstanding_minor"),
+        confirmedRepaidMinor: CONFIRMED_REPAID_EXPR.as("confirmed_repaid_minor")
+      })
+      .from(receivables)
+      .leftJoin(receivableEvents, eq(receivableEvents.receivableId, receivables.id))
+      .leftJoin(transactions, eq(receivableEvents.transactionId, transactions.id))
+      .where(eq(receivables.userId, userId))
+      .groupBy(receivables.id)
+      .as("per_receivable");
+
+    const now = new Date();
+    const [row] = await this.db
+      .select({
+        totalOutstandingMinor: sql<string>`coalesce(sum(${perReceivable.outstandingMinor}), 0)::bigint`,
+        totalConfirmedRepaidMinor: sql<string>`coalesce(sum(${perReceivable.confirmedRepaidMinor}), 0)::bigint`,
+        activeCount: sql<string>`count(*) filter (where ${perReceivable.outstandingMinor} > 0)::bigint`,
+        dueCount: sql<string>`count(*) filter (
+          where ${perReceivable.outstandingMinor} > 0
+          and ${perReceivable.dueAt} is not null
+          and ${perReceivable.dueAt} < ${now}
+        )::bigint`
+      })
+      .from(perReceivable);
+    if (row === undefined) throw new Error("Receivable summary aggregate did not return a row.");
+    return {
+      totalOutstandingMinor: Number(row.totalOutstandingMinor),
+      totalConfirmedRepaidMinor: Number(row.totalConfirmedRepaidMinor),
+      activeCount: Number(row.activeCount),
+      dueCount: Number(row.dueCount)
+    };
   }
 
   async list(
@@ -221,7 +281,8 @@ export class ReceivableRepository {
         outstandingMinor: OUTSTANDING_EXPR,
         confirmedRepaidMinor: CONFIRMED_REPAID_EXPR,
         repaymentCount: REPAYMENT_COUNT_EXPR,
-        hasOpening: HAS_OPENING_EXPR
+        hasOpening: HAS_OPENING_EXPR,
+        hasAnyOpeningEver: HAS_ANY_OPENING_EVER_EXPR
       })
       .from(receivables)
       .leftJoin(receivableEvents, eq(receivableEvents.receivableId, receivables.id))
@@ -364,12 +425,14 @@ function toBalance(row: {
   confirmedRepaidMinor: string;
   repaymentCount: string;
   hasOpening: string;
+  hasAnyOpeningEver: string;
 }): ReceivableBalance {
   return {
     outstandingMinor: Number(row.outstandingMinor),
     confirmedRepaidMinor: Number(row.confirmedRepaidMinor),
     repaymentCount: Number(row.repaymentCount),
-    hasEffectiveOpening: Number(row.hasOpening) > 0
+    hasEffectiveOpening: Number(row.hasOpening) > 0,
+    hasAnyOpeningEver: Number(row.hasAnyOpeningEver) > 0
   };
 }
 
@@ -380,14 +443,18 @@ function toReceivableEvent(
   return ReceivableEventSchema.parse({ ...stripNulls(row), isReversed });
 }
 
+// Mirrors deriveReceivableStatus (receivable-policy.ts): "cancelled" requires
+// an opening to have existed and no longer be effective (it was reversed);
+// "settled" is everything else at zero outstanding, including a receivable
+// that never had an opening event at all (e.g. a zero-valued migrated asset).
 function havingForStatus(status: ListReceivablesQuery["status"]) {
   switch (status) {
     case "active":
       return sql`${OUTSTANDING_EXPR} > 0`;
-    case "settled":
-      return sql`${OUTSTANDING_EXPR} = 0 and ${HAS_OPENING_EXPR} > 0`;
     case "cancelled":
-      return sql`${OUTSTANDING_EXPR} = 0 and ${HAS_OPENING_EXPR} = 0`;
+      return sql`${OUTSTANDING_EXPR} = 0 and ${HAS_ANY_OPENING_EVER_EXPR} > 0 and ${HAS_OPENING_EXPR} = 0`;
+    case "settled":
+      return sql`${OUTSTANDING_EXPR} = 0 and not (${HAS_ANY_OPENING_EVER_EXPR} > 0 and ${HAS_OPENING_EXPR} = 0)`;
     case "all":
       return sql`true`;
   }

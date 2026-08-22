@@ -10,6 +10,7 @@ import {
   type ReceivableId,
   type ReceivableMutationResult,
   type ReceivablePage,
+  type ReceivableSummary,
   type RecordReceivableRepayment,
   type StoredReceivable,
   type UpdateReceivableMetadata
@@ -23,7 +24,6 @@ import type { DbTx } from "../common/db/db-txn.js";
 import { EntityNotFoundError } from "../common/errors/entity-not-found.error.js";
 import { ReceivableTransactionAlreadyLinkedError } from "../common/errors/receivable-transaction-already-linked.error.js";
 import { ReceivableTransactionIneligibleError } from "../common/errors/receivable-transaction-ineligible.error.js";
-import { TransactionRepository } from "../transactions/transaction.repository.js";
 import { TransactionService } from "../transactions/transaction.service.js";
 import {
   assertCorrectionWithinBounds,
@@ -38,7 +38,6 @@ export class ReceivableService {
     @Inject(DATABASE_CONNECTION) private readonly db: DrizzleDb,
     private readonly receivables: ReceivableRepository,
     private readonly transactionsService: TransactionService,
-    private readonly transactions: TransactionRepository,
     private readonly audit: AuditRepository
   ) {}
 
@@ -93,9 +92,14 @@ export class ReceivableService {
       outstandingMinor: amountMinor,
       confirmedRepaidMinor: 0,
       repaymentCount: 0,
-      hasEffectiveOpening: true
+      hasEffectiveOpening: true,
+      hasAnyOpeningEver: true
     };
     return { receivable: toReceivable(stored, balance), event, transactionId };
+  }
+
+  getSummary(userId: string): Promise<ReceivableSummary> {
+    return this.receivables.getSummary(userId);
   }
 
   async list(userId: string, query: ListReceivablesQuery): Promise<ReceivablePage> {
@@ -111,6 +115,17 @@ export class ReceivableService {
     if (stored === null) throw new EntityNotFoundError("Receivable");
     const balance = await this.receivables.getBalance(userId, receivableId);
     return toReceivable(stored, balance);
+  }
+
+  /** Narrow passthrough so AssetsModule never deep-imports
+   * ReceivableRepository (apps/api/CLAUDE.md's cross-module DI rule) --
+   * used to detect an asset already moved into the receivables ledger. */
+  findByLegacyAssetId(
+    userId: string,
+    legacyAssetId: string,
+    tx: DbTx
+  ): Promise<StoredReceivable | null> {
+    return this.receivables.findByLegacyAssetId(userId, legacyAssetId, tx);
   }
 
   async listEvents(
@@ -199,7 +214,11 @@ export class ReceivableService {
       occurredAt = input.occurredAt;
       auditAction = "receivable.repayment.create";
     } else {
-      const candidate = await this.transactions.findById(userId, input.transactionId, tx);
+      const candidate = await this.transactionsService.findByIdInTx(
+        userId,
+        input.transactionId,
+        tx
+      );
       if (candidate === null) throw new EntityNotFoundError("Transaction");
       if (
         candidate.type !== "income" ||
@@ -216,7 +235,7 @@ export class ReceivableService {
       if (existingLink !== null) throw new ReceivableTransactionAlreadyLinkedError();
       assertNotOverpaying(balance.outstandingMinor, candidate.amountMinor);
 
-      const reclassified = await this.transactions.reclassifyPurpose(
+      const reclassified = await this.transactionsService.reclassifyPurposeInTx(
         userId,
         candidate.id,
         "receivable_principal",

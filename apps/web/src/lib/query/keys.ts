@@ -66,6 +66,7 @@ export const qk = {
   assetFundings: (assetId: string) => ["asset-fundings", assetId] as const,
   netWorth: () => ["net-worth"] as const,
   receivables: () => receivableRoot,
+  receivableSummary: () => [...receivableRoot, "summary"] as const,
   receivableList: (filters: ListReceivablesQuery) => [...receivableRoot, "list", filters] as const,
   receivable: (receivableId: string) => [...receivableRoot, "detail", receivableId] as const,
   receivableEvents: (receivableId: string) =>

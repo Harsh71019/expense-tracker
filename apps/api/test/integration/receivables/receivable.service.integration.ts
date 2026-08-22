@@ -70,13 +70,7 @@ describe("ReceivableService", () => {
       undefined,
       reversalPolicy
     );
-    service = new ReceivableService(
-      testDb.db,
-      receivables,
-      transactionsService,
-      transactionRepository,
-      audit
-    );
+    service = new ReceivableService(testDb.db, receivables, transactionsService, audit);
     const idempotencyService = new IdempotencyPostgresService(
       testDb.db,
       new IdempotencyPostgresRepository(testDb.db)

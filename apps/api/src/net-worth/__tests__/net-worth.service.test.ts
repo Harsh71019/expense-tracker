@@ -24,22 +24,36 @@ describe("NetWorthService", () => {
     createdAt: new Date()
   };
 
-  const legacyReceivableAsset = {
+  // Not migrated/linked -- AssetRepository.list() already excludes a
+  // backfilled `loan_receivable` (NOT EXISTS on receivables.legacy_asset_id)
+  // before NetWorthService ever sees the result, so this mock only needs to
+  // model what list() actually returns: an unlinked `loan_receivable` asset
+  // (e.g. created with openingValueMinor: 0, so no receivable was linked)
+  // must still be counted here, not stripped again by kind (see fix for
+  // "Do not exclude unlinked zero-opening loan receivables").
+  const unlinkedLoanReceivableAsset = {
     ...sampleAsset,
     id: "asset_2",
     kind: "loan_receivable" as const,
-    name: "Legacy Loan"
+    name: "Informal IOU"
   };
+  const unlinkedValuation = { ...sampleValuation, id: "val_2", assetId: "asset_2" };
 
   it("get calculates net worth from accounts, non-receivable assets, and receivables", async () => {
     const mockAccountRepo = {
       list: vi.fn(async () => [{ id: "acc_1", name: "Savings", balanceMinor: 100000 }])
     };
     const mockAssetRepo = {
-      list: vi.fn(async () => [sampleAsset, legacyReceivableAsset])
+      list: vi.fn(async () => [sampleAsset, unlinkedLoanReceivableAsset])
     };
     const mockValRepo = {
-      findLatestForAssets: vi.fn(async () => new Map([["asset_1", sampleValuation]]))
+      findLatestForAssets: vi.fn(
+        async () =>
+          new Map([
+            ["asset_1", sampleValuation],
+            ["asset_2", unlinkedValuation]
+          ])
+      )
     };
     const mockFundingRepo = {
       listActiveForAssets: vi.fn(async () => [])
@@ -66,13 +80,15 @@ describe("NetWorthService", () => {
 
     const res = await service.get("u1");
 
-    expect(res.netWorthMinor).toBe(175000);
+    expect(res.netWorthMinor).toBe(225000);
     expect(res.accounts).toHaveLength(1);
-    // A backfilled `loan_receivable` asset is excluded from the asset side.
-    expect(res.assets).toHaveLength(1);
-    expect(res.assets[0]?.assetId).toBe("asset_1");
+    // An unlinked loan_receivable asset is NOT excluded by kind -- only a
+    // migrated/linked one is (and that exclusion already happened inside
+    // AssetRepository.list(), before this mock's data).
+    expect(res.assets).toHaveLength(2);
+    expect(res.assets.map((asset) => asset.assetId).sort()).toEqual(["asset_1", "asset_2"]);
     expect(res.receivables).toHaveLength(1);
     expect(res.receivables[0]?.outstandingMinor).toBe(25000);
-    expect(mockValRepo.findLatestForAssets).toHaveBeenCalledWith("u1", ["asset_1"]);
+    expect(mockValRepo.findLatestForAssets).toHaveBeenCalledWith("u1", ["asset_1", "asset_2"]);
   });
 });

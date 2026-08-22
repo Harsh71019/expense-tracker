@@ -3140,6 +3140,35 @@
         },
         "required": ["receivable", "event"]
       },
+      "ReceivableSummary": {
+        "type": "object",
+        "properties": {
+          "totalOutstandingMinor": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "totalConfirmedRepaidMinor": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "activeCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "dueCount": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "totalOutstandingMinor",
+          "totalConfirmedRepaidMinor",
+          "activeCount",
+          "dueCount"
+        ]
+      },
       "Receivable": {
         "type": "object",
         "properties": {
@@ -15218,6 +15247,58 @@
           },
           "409": {
             "description": "Idempotency key was already used for different request intent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/receivables/summary": {
+      "get": {
+        "operationId": "getReceivableSummary",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Global receivable totals",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceivableSummary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
             "content": {
               "application/json": {
                 "schema": {

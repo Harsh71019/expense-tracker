@@ -44,7 +44,6 @@ type Overrides = Readonly<{
   valuations?: Double;
   audit?: Double;
   receivableService?: Double;
-  receivables?: Double;
 }>;
 
 function createService(overrides: Overrides = {}) {
@@ -58,16 +57,16 @@ function createService(overrides: Overrides = {}) {
     assets: overrides.assets ?? {},
     valuations: overrides.valuations ?? {},
     audit: overrides.audit ?? { record: vi.fn().mockResolvedValue(undefined) },
-    receivableService: overrides.receivableService ?? {},
-    receivables: overrides.receivables ?? { findByLegacyAssetId: vi.fn().mockResolvedValue(null) }
+    receivableService: overrides.receivableService ?? {
+      findByLegacyAssetId: vi.fn().mockResolvedValue(null)
+    }
   };
   const service = new AssetService(
     focusedTestDouble(collaborators.db),
     focusedTestDouble(collaborators.assets),
     focusedTestDouble(collaborators.valuations),
     focusedTestDouble(collaborators.audit),
-    focusedTestDouble(collaborators.receivableService),
-    focusedTestDouble(collaborators.receivables)
+    focusedTestDouble(collaborators.receivableService)
   );
   return { service, tx, ...collaborators };
 }

@@ -1,4 +1,15 @@
-import { Body, Controller, Get, Headers, Param, Patch, Post, Query, Res } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Get,
+  Header,
+  Headers,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Res
+} from "@nestjs/common";
 import {
   CreateReceivableCorrectionSchema,
   CreateReceivableSchema,
@@ -10,7 +21,8 @@ import {
   type Receivable,
   type ReceivableEventPage,
   type ReceivableMutationResult,
-  type ReceivablePage
+  type ReceivablePage,
+  type ReceivableSummary
 } from "@treasury-ops/shared";
 import type { Response } from "express";
 import { z } from "zod";
@@ -30,6 +42,7 @@ export class ReceivableController {
   ) {}
 
   @Get()
+  @Header("Cache-Control", "no-store")
   list(@CurrentUser() user: AuthenticatedUser, @Query() query: unknown): Promise<ReceivablePage> {
     return this.receivables.list(user.id, ListReceivablesQuerySchema.parse(query));
   }
@@ -54,7 +67,17 @@ export class ReceivableController {
     return result.result;
   }
 
+  // Registered before :receivableId so this fixed segment isn't swallowed
+  // by the param route (matches GoalController's feasibility/reorder
+  // ordering convention).
+  @Get("summary")
+  @Header("Cache-Control", "no-store")
+  getSummary(@CurrentUser() user: AuthenticatedUser): Promise<ReceivableSummary> {
+    return this.receivables.getSummary(user.id);
+  }
+
   @Get(":receivableId")
+  @Header("Cache-Control", "no-store")
   get(
     @CurrentUser() user: AuthenticatedUser,
     @Param("receivableId") receivableId: string
@@ -81,6 +104,7 @@ export class ReceivableController {
   }
 
   @Get(":receivableId/events")
+  @Header("Cache-Control", "no-store")
   listEvents(
     @CurrentUser() user: AuthenticatedUser,
     @Param("receivableId") receivableId: string,

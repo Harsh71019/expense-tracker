@@ -32,7 +32,8 @@ function balance(outstandingMinor: number): ReceivableBalance {
     outstandingMinor,
     confirmedRepaidMinor: 0,
     repaymentCount: 0,
-    hasEffectiveOpening: true
+    hasEffectiveOpening: true,
+    hasAnyOpeningEver: true
   };
 }
 

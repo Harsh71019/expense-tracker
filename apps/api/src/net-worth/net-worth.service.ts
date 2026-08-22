@@ -23,13 +23,19 @@ export class NetWorthService {
       this.assets.list(userId),
       this.receivablesRead.listActive(userId)
     ]);
-    // A backfilled legacy `loan_receivable` asset is represented by its
-    // migrated receivable instead (plan doc §13.2) -- excluded here so it
-    // isn't counted on both sides of the net-worth split.
-    const nonReceivableAssets = allAssets.filter((asset) => asset.kind !== "loan_receivable");
+    // `AssetRepository.list()` already excludes a backfilled legacy
+    // `loan_receivable` asset (plan doc §13.2, via NOT EXISTS on
+    // receivables.legacy_asset_id) so it isn't counted on both sides of the
+    // net-worth split. That exclusion is link-based, not kind-based: a
+    // `loan_receivable` asset created with `openingValueMinor: 0` (via the
+    // POST /assets compat adapter) has no linked receivable -- you can't
+    // create a zero-amount `opening` event -- and remains a real,
+    // legacy-only, still-live asset that a later valuation can update.
+    // Filtering it out here by kind alone would silently drop that value
+    // from net worth, so `allAssets` is used directly.
     const latest = await this.valuations.findLatestForAssets(
       userId,
-      nonReceivableAssets.map((asset) => asset.id)
+      allAssets.map((asset) => asset.id)
     );
 
     const activeFundings = await this.fundings.listActiveForAssets(
@@ -50,7 +56,7 @@ export class NetWorthService {
       name: account.name,
       balanceMinor: account.balanceMinor
     }));
-    const netWorthAssets = nonReceivableAssets.map((asset) => {
+    const netWorthAssets = allAssets.map((asset) => {
       const value = latest.get(asset.id);
       return {
         assetId: asset.id,

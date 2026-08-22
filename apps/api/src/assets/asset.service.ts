@@ -16,7 +16,6 @@ import type { DbTx } from "../common/db/db-txn.js";
 import { AssetMovedToReceivablesError } from "../common/errors/asset-moved-to-receivables.error.js";
 import { EntityNotFoundError } from "../common/errors/entity-not-found.error.js";
 import { InvalidValuationSignError } from "../common/errors/invalid-valuation-sign.error.js";
-import { ReceivableRepository } from "../receivables/receivable.repository.js";
 import { ReceivableService } from "../receivables/receivable.service.js";
 import { AssetRepository } from "./asset.repository.js";
 import { ValuationRepository } from "./valuation.repository.js";
@@ -28,8 +27,7 @@ export class AssetService {
     private readonly assets: AssetRepository,
     private readonly valuations: ValuationRepository,
     private readonly audit: AuditRepository,
-    private readonly receivableService: ReceivableService,
-    private readonly receivables: ReceivableRepository
+    private readonly receivableService: ReceivableService
   ) {}
 
   async create(userId: string, input: CreateAsset): Promise<Asset> {
@@ -127,7 +125,7 @@ export class AssetService {
     assetId: AssetId,
     tx: DbTx
   ): Promise<void> {
-    const receivable = await this.receivables.findByLegacyAssetId(userId, assetId, tx);
+    const receivable = await this.receivableService.findByLegacyAssetId(userId, assetId, tx);
     if (receivable !== null) {
       throw new AssetMovedToReceivablesError(receivable.id);
     }

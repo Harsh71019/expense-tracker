@@ -195,6 +195,7 @@ import {
   ReceivableMutationResultSchema,
   ReceivablePageSchema,
   ReceivableSchema,
+  ReceivableSummarySchema,
   RecordReceivableRepaymentSchema,
   UpdateReceivableMetadataSchema,
   AssetFundingIdSchema,
@@ -274,6 +275,7 @@ const ReceivableEventPage = ReceivableEventPageSchema.meta({ id: "ReceivableEven
 const ReceivableMutationResult = ReceivableMutationResultSchema.meta({
   id: "ReceivableMutationResult"
 });
+const ReceivableSummary = ReceivableSummarySchema.meta({ id: "ReceivableSummary" });
 const PendingTransaction = PendingTransactionSchema.meta({ id: "PendingTransaction" });
 const DashboardSummary = DashboardSummarySchema.meta({ id: "DashboardSummary" });
 const RecentActivityItem = RecentActivityItemSchema.meta({ id: "RecentActivityItem" });
@@ -1016,6 +1018,16 @@ registry.registerPath({
     201: { description: "Created receivable", ...json(ReceivableMutationResult) },
     404: { description: "Linked account not found", ...json(ProblemDetails) },
     ...idempotencyConflictResponse,
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "get",
+  path: "/v1/receivables/summary",
+  operationId: "getReceivableSummary",
+  security: secured,
+  responses: {
+    200: { description: "Global receivable totals", ...json(ReceivableSummary) },
     ...problemResponses
   }
 });

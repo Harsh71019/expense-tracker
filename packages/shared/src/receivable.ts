@@ -168,6 +168,15 @@ export const ReceivablePageSchema = z.object({
   pageInfo: PageInfoSchema
 });
 
+// Global totals across every one of the user's receivables, independent of
+// any list page/filter -- backs the Debt Given summary cards.
+export const ReceivableSummarySchema = z.object({
+  totalOutstandingMinor: NonNegativeMinorSchema,
+  totalConfirmedRepaidMinor: NonNegativeMinorSchema,
+  activeCount: z.number().int().min(0),
+  dueCount: z.number().int().min(0)
+});
+
 export const ReceivableEventPageSchema = z.object({
   items: z.array(ReceivableEventSchema),
   pageInfo: PageInfoSchema
@@ -200,6 +209,7 @@ export type ReceivableEvent = z.infer<typeof ReceivableEventSchema>;
 export type StoredReceivable = z.infer<typeof StoredReceivableSchema>;
 export type Receivable = z.infer<typeof ReceivableSchema>;
 export type ReceivablePage = z.infer<typeof ReceivablePageSchema>;
+export type ReceivableSummary = z.infer<typeof ReceivableSummarySchema>;
 export type ReceivableEventPage = z.infer<typeof ReceivableEventPageSchema>;
 export type ReceivableMutationResult = z.infer<typeof ReceivableMutationResultSchema>;
 export type NetWorthReceivable = z.infer<typeof NetWorthReceivableSchema>;

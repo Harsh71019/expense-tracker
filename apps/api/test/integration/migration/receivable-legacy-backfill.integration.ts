@@ -10,8 +10,11 @@ import {
   receivableEvents,
   receivables
 } from "../../../src/common/db/schema/index.js";
+import { ReceivableRepository } from "../../../src/receivables/receivable.repository.js";
+import { deriveReceivableStatus } from "../../../src/receivables/receivable-policy.js";
 import { createTestDb, insertTestUser } from "../support/postgres-test-db.js";
 import type { TestDb } from "../support/postgres-test-db.js";
+import { assertLedgerInvariants } from "../support/assert-ledger-invariants.js";
 
 /**
  * `createTestDb()` always migrates straight to head, so migration 0033's
@@ -151,11 +154,19 @@ describe("Legacy loan_receivable -> receivables migration backfill", () => {
     const tenantBId = await insertAsset(USER_B, "Shared Name Loan", day(1), false, day(1));
     await insertValuation(USER_B, tenantBId, 2_000_00, day(1));
 
+    // 7. Zero-valued: every historical valuation is exactly 0, so the
+    // backfill's delta-from-previous-balance is 0 at every step and skips
+    // creating any event at all. Must derive `settled`, not `cancelled` --
+    // no opening ever existed to have been reversed (see
+    // receivable-policy.ts's deriveReceivableStatus).
+    const zeroValuedId = await insertAsset(USER_A, "Zero Valued Loan", day(1), false, day(1));
+    await insertValuation(USER_A, zeroValuedId, 0, day(1));
+
     await testDb.db.execute(sql.raw(backfillSql));
 
     // Exactly one receivable per legacy loan_receivable asset.
     const allReceivables = await testDb.db.select().from(receivables);
-    expect(allReceivables.length).toBe(6);
+    expect(allReceivables.length).toBe(7);
 
     async function outstandingFor(legacyAssetId: string, userId: string): Promise<number> {
       const [receivable] = await testDb.db
@@ -217,14 +228,38 @@ describe("Legacy loan_receivable -> receivables migration backfill", () => {
     expect(liabilityLinked.length).toBe(0);
     expect(goldLinked.length).toBe(0);
 
-    // Rerun guard: executing the backfill again must be a complete no-op.
+    // Zero-valued asset: zero receivable_events, and status derives to
+    // "settled" (not "cancelled") since no opening ever existed.
+    const [zeroValuedReceivable] = await testDb.db
+      .select()
+      .from(receivables)
+      .where(eq(receivables.legacyAssetId, zeroValuedId));
+    if (zeroValuedReceivable === undefined) throw new Error("Zero-valued fixture not backfilled.");
+    const zeroValuedEvents = await testDb.db
+      .select()
+      .from(receivableEvents)
+      .where(eq(receivableEvents.receivableId, zeroValuedReceivable.id));
+    expect(zeroValuedEvents.length).toBe(0);
+    const repository = new ReceivableRepository(testDb.db);
+    const zeroValuedBalance = await repository.getBalance(USER_A, zeroValuedReceivable.id);
+    expect(zeroValuedBalance.outstandingMinor).toBe(0);
+    expect(deriveReceivableStatus(zeroValuedBalance)).toBe("settled");
+
+    // Rerun guard: executing the backfill again must be a complete no-op --
+    // same receivable count AND the same event count, not merely "some
+    // events still exist" (which would also pass if every row were
+    // silently duplicated).
+    const eventsBeforeRerun = await testDb.db.select().from(receivableEvents);
     await testDb.db.execute(sql.raw(backfillSql));
     const receivablesAfterRerun = await testDb.db.select().from(receivables);
-    expect(receivablesAfterRerun.length).toBe(6);
+    expect(receivablesAfterRerun.length).toBe(7);
     const eventsAfterRerun = await testDb.db.select().from(receivableEvents);
-    const eventsBeforeRerunCount = await outstandingFor(simpleId, USER_A); // sanity: still reachable
-    expect(eventsBeforeRerunCount).toBe(10_000_00);
-    expect(eventsAfterRerun.length).toBeGreaterThan(0);
+    expect(eventsAfterRerun.length).toBe(eventsBeforeRerun.length);
+    expect(await outstandingFor(simpleId, USER_A)).toBe(10_000_00);
+    expect(await outstandingFor(multiId, USER_A)).toBe(12_000_00);
+    expect(await outstandingFor(closedId, USER_A)).toBe(0);
+
+    await assertLedgerInvariants(testDb.db);
   }, 30_000);
 
   it("aborts on a negative legacy valuation instead of silently coercing it", async () => {

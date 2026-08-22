@@ -100,6 +100,7 @@ function buildService(overrides: {
     )
   };
   const logger = { log: vi.fn(), error: vi.fn() };
+  const reversalHook = { onTransactionReversedInTx: vi.fn(async () => undefined) };
 
   const service = new RecurringReconciliationService(
     // @ts-expect-error mock db for unit testing
@@ -111,7 +112,8 @@ function buildService(overrides: {
     notifications,
     audit,
     idempotency,
-    logger
+    logger,
+    reversalHook
   );
   return { service, reconciliations, occurrences, notifications, audit, idempotency, transactions };
 }

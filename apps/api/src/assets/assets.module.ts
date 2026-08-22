@@ -20,7 +20,6 @@ import { AssetFundingRepository } from "../asset-fundings/asset-funding.reposito
     AssetFundingRepository,
     AssetService,
     ValuationRepository,
-    AssetService,
     AssetMutationService,
     LiabilityAssetReadService,
     AssetDiagnosticReadService,
@@ -29,6 +28,7 @@ import { AssetFundingRepository } from "../asset-fundings/asset-funding.reposito
   // Export narrow read services for cross-module consumption
   exports: [
     AssetRepository,
+    AssetService,
     ValuationRepository,
     LiabilityAssetReadService,
     AssetDiagnosticReadService

@@ -10,6 +10,7 @@ import { and, eq, gte, lt, sql } from "drizzle-orm";
 
 import { DATABASE_CONNECTION } from "../common/db/db.module.js";
 import type { DrizzleDb } from "../common/db/db.module.js";
+import { withTxn } from "../common/db/db-txn.js";
 import { assetFundings, monthlyRollups, transactions } from "../common/db/schema/index.js";
 import { isActiveAssetFunding } from "../common/db/asset-funding-active.js";
 import { stripNulls } from "../common/db/strip-nulls.js";
@@ -32,6 +33,11 @@ export class MonthlyRollupRepository {
    * time-of-day, so the IST month can differ from the UTC month.
    */
   async recompute(userId: string, month: Month): Promise<MonthlyRollup> {
+    return withTxn(this.db, (tx) => this.recomputeInTx(userId, month, tx));
+  }
+
+  private async recomputeInTx(userId: string, month: Month, tx: DbTx): Promise<MonthlyRollup> {
+    await this.lockMonth(userId, month, tx);
     const { roughStart, roughEnd } = roughMonthBounds(month);
     const istMonth = sql<string>`to_char(${transactions.occurredAt} AT TIME ZONE ${IST_TIME_ZONE}, 'YYYY-MM')`;
     const baseWhere = and(
@@ -52,7 +58,7 @@ export class MonthlyRollupRepository {
     // each aggregate explicitly below; these sums stay far under
     // Number.MAX_SAFE_INTEGER at personal-finance scale, so the conversion
     // is lossless.
-    const byCategoryRows = await this.db
+    const byCategoryRows = await tx
       .select({
         categoryId: transactions.categoryId,
         spentMinor: sql<string>`coalesce(sum(case when ${transactions.type} = 'expense' then ${transactions.amountMinor} else 0 end), 0)::bigint`,
@@ -63,7 +69,7 @@ export class MonthlyRollupRepository {
       .where(baseWhere)
       .groupBy(transactions.categoryId);
 
-    const consumptionByCategoryRows = await this.db
+    const consumptionByCategoryRows = await tx
       .select({
         categoryId: transactions.categoryId,
         spentMinor: sql<string>`coalesce(sum(${consumptionExpense}), 0)::bigint`,
@@ -82,7 +88,7 @@ export class MonthlyRollupRepository {
       .where(baseWhere)
       .groupBy(transactions.categoryId);
 
-    const byAccountRows = await this.db
+    const byAccountRows = await tx
       .select({
         accountId: transactions.accountId,
         netMinor: sql<string>`coalesce(sum(case when ${transactions.type} = 'income' then ${transactions.amountMinor} else -${transactions.amountMinor} end), 0)::bigint`
@@ -91,7 +97,7 @@ export class MonthlyRollupRepository {
       .where(baseWhere)
       .groupBy(transactions.accountId);
 
-    const [totalsRow] = await this.db
+    const [totalsRow] = await tx
       .select({
         totalExpenseMinor: sql<string>`coalesce(sum(case when ${transactions.type} = 'expense' then ${transactions.amountMinor} else 0 end), 0)::bigint`,
         totalIncomeMinor: sql<string>`coalesce(sum(case when ${transactions.type} = 'income' then ${transactions.amountMinor} else 0 end), 0)::bigint`,
@@ -137,7 +143,7 @@ export class MonthlyRollupRepository {
       computedAt: new Date()
     };
 
-    await this.db
+    await tx
       .insert(monthlyRollups)
       .values(document)
       .onConflictDoUpdate({
@@ -168,9 +174,21 @@ export class MonthlyRollupRepository {
   }
 
   async invalidate(userId: string, month: Month, tx: DbTx): Promise<void> {
+    await this.lockMonth(userId, month, tx);
     await tx
       .delete(monthlyRollups)
       .where(and(eq(monthlyRollups.userId, userId), eq(monthlyRollups.month, month)));
+  }
+
+  /**
+   * Serializes cache reads/recomputations with the transaction that invalidates
+   * the same user/month. It is transaction-scoped, so lock release coincides
+   * with publishing the cache row or committing the ledger/funding mutation.
+   */
+  private async lockMonth(userId: string, month: Month, tx: DbTx): Promise<void> {
+    await tx.execute(
+      sql`select pg_advisory_xact_lock(hashtextextended(${`${userId}:${month}`}, 0))`
+    );
   }
 
   async distinctUserIds(): Promise<string[]> {

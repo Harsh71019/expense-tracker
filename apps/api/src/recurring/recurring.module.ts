@@ -3,6 +3,7 @@ import { Module } from "@nestjs/common";
 import { AccountsModule } from "../accounts/accounts.module.js";
 import { AssetsModule } from "../assets/assets.module.js";
 import { AssetFundingsModule } from "../asset-fundings/asset-fundings.module.js";
+import { TransactionAssetFundingHookModule } from "../asset-fundings/transaction-asset-funding-hook.module.js";
 import { CategoriesModule } from "../categories/categories.module.js";
 import { TransactionsModule } from "../transactions/transactions.module.js";
 import { RecurringMaterializeService } from "./recurring-materialize.service.js";
@@ -24,6 +25,7 @@ import { RecurringStatsService } from "./recurring-stats.service.js";
     AccountsModule,
     AssetsModule,
     AssetFundingsModule,
+    TransactionAssetFundingHookModule,
     CategoriesModule,
     TransactionsModule
   ],

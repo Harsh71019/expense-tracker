@@ -44,7 +44,7 @@ export const assetFundings = pgTable(
     ),
     check(
       "asset_fundings_no_self_reversal",
-      sql`${table.reversalOf} IS NULL OR ${table.reversalOf} <> ${table.id}`
+      sql`(${table.reversalOf} IS NULL OR ${table.reversalOf} <> ${table.id}) AND (${table.reversedBy} IS NULL OR ${table.reversedBy} <> ${table.id})`
     ),
     uniqueIndex("asset_fundings_active_source_unique")
       .on(table.userId, table.transactionId)

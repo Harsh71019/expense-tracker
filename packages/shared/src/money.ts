@@ -1,4 +1,8 @@
+import { z } from "zod";
+
 export type MinorAmount = number;
+
+export const PositiveMinorAmountSchema = z.number().int().min(1).max(Number.MAX_SAFE_INTEGER);
 
 const PAISA_PER_RUPEE = 100;
 const PAISA_PER_LAKH = 1_00_000 * PAISA_PER_RUPEE;

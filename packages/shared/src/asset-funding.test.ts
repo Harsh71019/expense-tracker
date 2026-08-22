@@ -41,6 +41,9 @@ describe("AssetFundingSchema", () => {
     expect(() =>
       AssetFundingSchema.parse({ ...base, amountMinor: 1.5, status: "posted" })
     ).toThrow();
+    expect(() =>
+      AssetFundingSchema.parse({ ...base, status: "reversed", reversedBy: ids.funding })
+    ).toThrow();
   });
 });
 

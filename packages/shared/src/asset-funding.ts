@@ -1,12 +1,12 @@
 import { z } from "zod";
 
 import { AssetIdSchema, AssetSchema } from "./asset.js";
+import { PositiveMinorAmountSchema } from "./money.js";
 import { PageInfoSchema } from "./pagination.js";
 import { TransactionIdSchema, TransactionSchema } from "./transaction.js";
 
 export const AssetFundingIdSchema = z.string().uuid("Asset funding id must be a UUID.");
 export const AssetFundingStatusSchema = z.enum(["posted", "reversed", "reversal"]);
-const MinorAmountSchema = z.number().int().min(1).max(Number.MAX_SAFE_INTEGER);
 
 export const AssetFundingSchema = z
   .object({
@@ -14,7 +14,7 @@ export const AssetFundingSchema = z
     userId: z.string().min(1),
     assetId: AssetIdSchema,
     transactionId: TransactionIdSchema,
-    amountMinor: MinorAmountSchema,
+    amountMinor: PositiveMinorAmountSchema,
     occurredAt: z.coerce.date(),
     status: AssetFundingStatusSchema,
     reversalOf: AssetFundingIdSchema.optional(),
@@ -38,11 +38,11 @@ export const AssetFundingSchema = z
         message: "Invalid asset funding lifecycle fields."
       });
     }
-    if (value.reversalOf === value.id) {
+    if (value.reversalOf === value.id || value.reversedBy === value.id) {
       context.addIssue({
         code: z.ZodIssueCode.custom,
         message: "An asset funding cannot reverse itself.",
-        path: ["reversalOf"]
+        path: [value.reversalOf === value.id ? "reversalOf" : "reversedBy"]
       });
     }
   });
@@ -71,7 +71,7 @@ export const LinkTransactionToAssetSchema = z.object({ target: AssetFundingTarge
 
 export const CreateInvestmentTransactionSchema = z.object({
   accountId: z.string().uuid("Account id must be a UUID."),
-  amountMinor: MinorAmountSchema,
+  amountMinor: PositiveMinorAmountSchema,
   occurredAt: z.string().datetime({ offset: false }),
   description: z.string().trim().min(1).max(500),
   tags: z.array(z.string().trim().min(1).max(40)).max(20).default([]),

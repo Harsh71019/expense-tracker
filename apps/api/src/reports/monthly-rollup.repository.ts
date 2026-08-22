@@ -11,6 +11,7 @@ import { DATABASE_CONNECTION } from "../common/db/db.module.js";
 import type { DrizzleDb } from "../common/db/db.module.js";
 import { monthlyRollups, transactions } from "../common/db/schema/index.js";
 import { stripNulls } from "../common/db/strip-nulls.js";
+import type { DbTx } from "../common/db/db-txn.js";
 
 const IST_TIME_ZONE = "Asia/Kolkata";
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
@@ -117,6 +118,12 @@ export class MonthlyRollupRepository {
       .from(monthlyRollups)
       .where(and(eq(monthlyRollups.userId, userId), eq(monthlyRollups.month, month)));
     return row === undefined ? null : MonthlyRollupSchema.parse(stripNulls(row));
+  }
+
+  async invalidate(userId: string, month: Month, tx: DbTx): Promise<void> {
+    await tx
+      .delete(monthlyRollups)
+      .where(and(eq(monthlyRollups.userId, userId), eq(monthlyRollups.month, month)));
   }
 
   async distinctUserIds(): Promise<string[]> {

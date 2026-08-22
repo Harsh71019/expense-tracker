@@ -16,6 +16,7 @@ import { ValuationRepository } from "./valuation.repository.js";
   controllers: [AssetController, NetWorthController],
   providers: [
     AssetRepository,
+    AssetService,
     ValuationRepository,
     AssetService,
     AssetMutationService,

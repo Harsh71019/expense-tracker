@@ -185,7 +185,9 @@ export function TxnList({
       return;
     }
     const csvContent = generateTransactionsCsv(toExport, categoryById, accountById);
-    const dateStr = new Date().toISOString().slice(0, 10);
+    const dateStr = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(
+      new Date()
+    );
     downloadCsvFile(`treasury-ops-transactions-${dateStr}.csv`, csvContent);
     toast.success(`Exported ${toExport.length} transactions to CSV`);
   }

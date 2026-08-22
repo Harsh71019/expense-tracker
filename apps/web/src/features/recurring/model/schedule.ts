@@ -60,7 +60,8 @@ export function dateInputToUtc(date: string): Date {
 }
 
 export function utcToDateInput(date: Date): string {
-  return date.toISOString().slice(0, 10);
+  if (Number.isNaN(date.getTime())) return "";
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(date);
 }
 
 export function buildSchedule(draft: ScheduleDraft): ScheduleResult {

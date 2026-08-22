@@ -7,6 +7,7 @@ import { SignedMoney } from "@/components/ui/money";
 import { DialogSurface } from "@/components/ui/dialog";
 
 import { useValuations } from "../hooks/use-valuations";
+import { useAssetFundings } from "../hooks/use-asset-fundings";
 import { ASSET_KIND_COLOR } from "../model/asset-visuals";
 import { Sparkline } from "./sparkline";
 
@@ -21,6 +22,7 @@ type AssetHistoryDrawerProps = Readonly<{ asset: Asset; onClose: () => void }>;
 
 export function AssetHistoryDrawer({ asset, onClose }: AssetHistoryDrawerProps): ReactNode {
   const valuations = useValuations(asset.id);
+  const fundings = useAssetFundings(asset.id);
   const items = valuations.data?.items ?? [];
   const color = ASSET_KIND_COLOR[asset.kind];
   const sparklineValues = items
@@ -98,6 +100,53 @@ export function AssetHistoryDrawer({ asset, onClose }: AssetHistoryDrawerProps):
           );
         })}
       </div>
+
+      <section className="mt-6" aria-labelledby="asset-funding-history-title">
+        <h3
+          id="asset-funding-history-title"
+          className="font-mono text-2xs font-semibold tracking-wider text-foreground-muted"
+        >
+          FUNDING ACTIVITY
+        </h3>
+        {fundings.isLoading ? (
+          <p className="mt-3 text-sm text-foreground-muted">Loading funding activity…</p>
+        ) : null}
+        {fundings.isError ? (
+          <p role="alert" className="mt-3 text-sm text-expense">
+            Could not load funding activity.
+          </p>
+        ) : null}
+        {fundings.data?.items.length === 0 ? (
+          <p className="mt-3 text-sm text-foreground-muted">No funding activity yet.</p>
+        ) : null}
+        <div className="mt-2 flex flex-col gap-0.5">
+          {(fundings.data?.items ?? []).map((funding) => (
+            <div
+              key={funding.id}
+              className="flex items-center gap-3.5 border-b border-border py-3.5 last:border-b-0"
+            >
+              <span
+                className={`h-2.5 w-2.5 shrink-0 rounded-full ${funding.status === "posted" ? "bg-income" : "bg-warning"}`}
+                aria-hidden="true"
+              />
+              <div className="min-w-0 flex-1">
+                <SignedMoney minor={funding.amountMinor} />
+                <p className="mt-0.5 truncate font-mono text-xs text-foreground-muted">
+                  {dateFormatter.format(funding.occurredAt)} · source{" "}
+                  {funding.transactionId.slice(0, 8)}…
+                </p>
+              </div>
+              <span className="rounded-[5px] border border-border bg-surface px-2 py-1 font-mono text-2xs font-semibold tracking-wide text-foreground-muted">
+                {funding.status === "posted"
+                  ? "Active"
+                  : funding.status === "reversed"
+                    ? "Reversed"
+                    : "Reversal"}
+              </span>
+            </div>
+          ))}
+        </div>
+      </section>
     </DialogSurface>
   );
 }

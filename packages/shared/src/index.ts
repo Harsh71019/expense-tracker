@@ -170,6 +170,30 @@ export {
   ValuationSchema,
   ValuationSourceSchema
 } from "./asset.js";
+export {
+  AssetFundingIdSchema,
+  AssetFundingPageSchema,
+  AssetFundingMutationResultSchema,
+  AssetFundingSchema,
+  AssetFundingStatusSchema,
+  AssetFundingTargetSchema,
+  CreateInvestmentTransactionSchema,
+  LinkTransactionToAssetSchema,
+  ListAssetFundingsQuerySchema,
+  ReverseAssetFundingResultSchema
+} from "./asset-funding.js";
+export type {
+  AssetFunding,
+  AssetFundingId,
+  AssetFundingPage,
+  AssetFundingMutationResult,
+  AssetFundingStatus,
+  AssetFundingTarget,
+  CreateInvestmentTransaction,
+  LinkTransactionToAsset,
+  ListAssetFundingsQuery,
+  ReverseAssetFundingResult
+} from "./asset-funding.js";
 export type {
   Asset,
   AssetId,
@@ -581,6 +605,7 @@ export type {
 export {
   AccountRollupSchema,
   CategoryRollupSchema,
+  MONTHLY_ROLLUP_FORMULA_VERSION,
   MonthlyRollupSchema,
   MonthSchema
 } from "./report.js";

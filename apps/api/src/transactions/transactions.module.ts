@@ -9,12 +9,14 @@ import { LedgerHistoryDiagnosticReadService } from "./ledger-history-diagnostic-
 import { TransactionMutationService } from "./transaction-mutation.service.js";
 import { TransferController } from "./transfer.controller.js";
 import { TransferService } from "./transfer.service.js";
+import { AssetFundingRepository } from "../asset-fundings/asset-funding.repository.js";
 
 @Module({
   imports: [AccountsModule, CategoriesModule],
   controllers: [TransactionController, TransferController],
   providers: [
     TransactionRepository,
+    AssetFundingRepository,
     TransactionService,
     TransactionMutationService,
     TransferService,

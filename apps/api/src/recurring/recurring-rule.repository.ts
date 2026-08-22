@@ -30,6 +30,7 @@ export class RecurringRuleRepository {
       .values({
         userId,
         templateAccountId: input.template.accountId,
+        templateAssetId: input.template.assetId ?? null,
         templateCategoryId: input.template.categoryId ?? null,
         templateType: input.template.type,
         templateAmountMinor: input.template.amountMinor,
@@ -109,6 +110,7 @@ export class RecurringRuleRepository {
   ): Promise<RecurringRule | null> {
     const set: Record<string, unknown> = { updatedAt: new Date() };
     if (patch.template?.accountId !== undefined) set.templateAccountId = patch.template.accountId;
+    if (patch.template?.assetId !== undefined) set.templateAssetId = patch.template.assetId;
     if (patch.template?.categoryId !== undefined) {
       set.templateCategoryId = patch.template.categoryId;
     }
@@ -202,6 +204,7 @@ function toRecurringRule(row: typeof recurringRules.$inferSelect): RecurringRule
     userId: row.userId,
     template: {
       accountId: row.templateAccountId,
+      assetId: stripped.templateAssetId,
       categoryId: stripped.templateCategoryId,
       type: row.templateType,
       amountMinor: row.templateAmountMinor,

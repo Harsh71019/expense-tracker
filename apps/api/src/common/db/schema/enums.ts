@@ -30,6 +30,11 @@ export const assetKindEnum = pgEnum("asset_kind", [
   "investment"
 ]);
 export const valuationSourceEnum = pgEnum("valuation_source", ["manual", "maturity_projection"]);
+export const assetFundingStatusEnum = pgEnum("asset_funding_status", [
+  "posted",
+  "reversed",
+  "reversal"
+]);
 export const importBatchStatusEnum = pgEnum("import_batch_status", [
   "pending",
   "pending_parse",

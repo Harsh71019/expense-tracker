@@ -28,11 +28,16 @@ import { TransferMetadataRequiresGroupError } from "../common/errors/transfer-me
 import { LogEvent } from "../common/logging/events.js";
 import { toISTMonth } from "../common/time/ist.js";
 import { TransactionRepository } from "./transaction.repository.js";
+import { AssetFundingRepository } from "../asset-fundings/asset-funding.repository.js";
 import {
   TRANSACTION_CREATED_HOOK,
   type TransactionCreatedHook
 } from "./transaction-created-hook.js";
 import { reverseTransactionInTx } from "./reverse-transaction-in-tx.js";
+import {
+  TRANSACTION_REVERSAL_HOOK,
+  type TransactionReversalHook
+} from "./transaction-reversal-hook.js";
 
 export type CreateTransactionResult = Readonly<{ transaction: Transaction; replayed: boolean }>;
 type TransactionLogger = Pick<Logger, "log" | "warn" | "error">;
@@ -48,7 +53,12 @@ export class TransactionService {
     @Inject(Logger) private readonly logger: TransactionLogger,
     @Optional()
     @Inject(TRANSACTION_CREATED_HOOK)
-    private readonly createdHook?: TransactionCreatedHook
+    private readonly createdHook?: TransactionCreatedHook,
+    @Optional()
+    @Inject(TRANSACTION_REVERSAL_HOOK)
+    private readonly reversalHook?: TransactionReversalHook,
+    @Optional()
+    private readonly assetFundings?: AssetFundingRepository
   ) {}
 
   async create(
@@ -67,32 +77,15 @@ export class TransactionService {
     source: TransactionSource
   ): Promise<CreateTransactionResult> {
     try {
-      const transaction = await withTxn(this.db, async (tx) => {
-        if (input.categoryId !== undefined) {
-          const category = await this.categories.findActiveById(userId, input.categoryId, tx);
-          if (category === null) throw new EntityNotFoundError("Category");
-          if (category.kind !== input.type) throw new CategoryKindMismatchError();
-        }
-
-        const deltaMinor = input.type === "income" ? input.amountMinor : -input.amountMinor;
-        assertBalanceDeltaApplied(
-          await this.accounts.applyBalanceDelta(userId, input.accountId, deltaMinor, tx)
-        );
-
-        const created = await this.transactions.create(
+      const transaction = await withTxn(this.db, (tx) =>
+        this.createInTx(
           userId,
           input,
-          idempotencyKey,
+          source,
           tx,
-          undefined,
-          source
-        );
-        await this.audit.record(userId, "transaction.create", created.id, tx);
-        if (source === "api") {
-          await this.createdHook?.onTransactionCreatedInTx(userId, created, tx);
-        }
-        return created;
-      });
+          idempotencyKey === undefined ? undefined : { idempotencyKey }
+        )
+      );
       this.logger.log(
         {
           event: LogEvent.TransactionCreated,
@@ -120,8 +113,38 @@ export class TransactionService {
     }
   }
 
-  list(userId: string, query: ListTransactionsQuery): Promise<TransactionPage> {
-    return this.transactions.findMany(userId, query);
+  /** Shared ledger-write core for composite mutations; it never opens a transaction itself. */
+  async createInTx(
+    userId: string,
+    input: CreateTransaction,
+    source: TransactionSource,
+    tx: DbTx,
+    options?: Readonly<{ idempotencyKey?: string }>
+  ): Promise<Transaction> {
+    if (input.categoryId !== undefined) {
+      const category = await this.categories.findActiveById(userId, input.categoryId, tx);
+      if (category === null) throw new EntityNotFoundError("Category");
+      if (category.kind !== input.type) throw new CategoryKindMismatchError();
+    }
+    const deltaMinor = input.type === "income" ? input.amountMinor : -input.amountMinor;
+    assertBalanceDeltaApplied(
+      await this.accounts.applyBalanceDelta(userId, input.accountId, deltaMinor, tx)
+    );
+    const created = await this.transactions.create(
+      userId,
+      input,
+      options?.idempotencyKey,
+      tx,
+      undefined,
+      source
+    );
+    await this.audit.record(userId, "transaction.create", created.id, tx);
+    if (source === "api") await this.createdHook?.onTransactionCreatedInTx(userId, created, tx);
+    return created;
+  }
+
+  async list(userId: string, query: ListTransactionsQuery): Promise<TransactionPage> {
+    return this.hydrateFundings(userId, await this.transactions.findMany(userId, query));
   }
 
   getInsights(userId: string): Promise<TransactionInsights> {
@@ -131,7 +154,46 @@ export class TransactionService {
   async get(userId: string, transactionId: TransactionId): Promise<Transaction> {
     const transaction = await this.transactions.findById(userId, transactionId);
     if (transaction === null) throw new EntityNotFoundError("Transaction");
-    return transaction;
+    return this.hydrateFunding(userId, transaction);
+  }
+
+  private async hydrateFundings(userId: string, page: TransactionPage): Promise<TransactionPage> {
+    const summaries =
+      this.assetFundings === undefined
+        ? new Map()
+        : await this.assetFundings.findActiveSummariesByTransactionIds(
+            userId,
+            page.items.map((transaction) => transaction.id)
+          );
+    return {
+      ...page,
+      items: page.items.map((transaction) =>
+        this.withFunding(transaction, summaries.get(transaction.id))
+      )
+    };
+  }
+
+  private async hydrateFunding(userId: string, transaction: Transaction): Promise<Transaction> {
+    if (this.assetFundings === undefined) return transaction;
+    const summaries = await this.assetFundings.findActiveSummariesByTransactionIds(userId, [
+      transaction.id
+    ]);
+    return this.withFunding(transaction, summaries.get(transaction.id));
+  }
+
+  private withFunding(
+    transaction: Transaction,
+    funding:
+      | Readonly<{
+          fundingId: string;
+          assetId: string;
+          assetName: string;
+          assetKind: "investment" | "fixed_deposit";
+          amountMinor: number;
+        }>
+      | undefined
+  ): Transaction {
+    return funding === undefined ? transaction : { ...transaction, assetFunding: funding };
   }
 
   async update(
@@ -264,7 +326,12 @@ export class TransactionService {
    */
   reverseInTx(userId: string, transactionId: TransactionId, tx: DbTx): Promise<Transaction> {
     return reverseTransactionInTx(
-      { transactions: this.transactions, accounts: this.accounts, audit: this.audit },
+      {
+        transactions: this.transactions,
+        accounts: this.accounts,
+        audit: this.audit,
+        ...(this.reversalHook === undefined ? {} : { reversalHook: this.reversalHook })
+      },
       userId,
       transactionId,
       tx

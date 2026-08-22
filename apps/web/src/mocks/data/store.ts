@@ -1,4 +1,4 @@
-import { formatMinorInput } from "@treasury-ops/shared";
+import { formatMinorInput, MONTHLY_ROLLUP_FORMULA_VERSION } from "@treasury-ops/shared";
 
 import type { components } from "@/lib/api/generated/schema";
 import { MOCK_USER_ID } from "@/mocks/enabled";
@@ -2675,6 +2675,10 @@ function seedMonthlyRollups(store: MockStore): void {
         txnCount: category.txnCount
       };
     });
+    const totalExpenseMinor = rollup.byCategory.reduce(
+      (sum, category) => sum + category.spentMinor,
+      0
+    );
     store.monthlyRollups.push({
       userId: store.profile.userId,
       month: monthKey(rollup.monthsAgo),
@@ -2683,8 +2687,13 @@ function seedMonthlyRollups(store: MockStore): void {
         accountId: accountIdFor(account.accountName),
         netMinor: account.netMinor
       })),
-      totalExpenseMinor: rollup.byCategory.reduce((sum, category) => sum + category.spentMinor, 0),
+      totalExpenseMinor,
       totalIncomeMinor: rollup.totalIncomeMinor,
+      totalCashOutflowMinor: totalExpenseMinor,
+      totalConsumptionMinor: totalExpenseMinor,
+      totalAssetFundingMinor: 0,
+      consumptionByCategory: byCategory,
+      formulaVersion: MONTHLY_ROLLUP_FORMULA_VERSION,
       computedAt: monthComputedAt(rollup.monthsAgo)
     });
   }

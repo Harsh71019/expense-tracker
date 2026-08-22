@@ -14,7 +14,7 @@ export function CategoryBreakdownPanel({
   rollup,
   categories
 }: CategoryBreakdownPanelProps): ReactNode {
-  const ranked = rollup.byCategory
+  const ranked = rollup.consumptionByCategory
     .filter((category) => category.spentMinor > 0)
     .slice()
     .sort((a, b) => b.spentMinor - a.spentMinor);

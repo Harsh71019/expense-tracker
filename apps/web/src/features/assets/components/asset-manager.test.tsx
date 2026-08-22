@@ -32,6 +32,13 @@ vi.mock("../hooks/use-valuations", () => ({
     data: { items: [], pageInfo: { nextCursor: null, hasMore: false, limit: 50 } }
   })
 }));
+vi.mock("../hooks/use-asset-fundings", () => ({
+  useAssetFundings: () => ({
+    data: { items: [], pageInfo: { nextCursor: null, hasMore: false, limit: 50 } },
+    isLoading: false,
+    isError: false
+  })
+}));
 vi.mock("@/lib/toast", () => ({
   toast: { success: mocks.toastSuccess, error: mocks.toastError }
 }));

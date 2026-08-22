@@ -13,6 +13,11 @@ export const monthlyRollups = pgTable(
     byAccount: jsonb("by_account").notNull(),
     totalExpenseMinor: bigint("total_expense_minor", { mode: "number" }).notNull(),
     totalIncomeMinor: bigint("total_income_minor", { mode: "number" }).notNull(),
+    totalCashOutflowMinor: bigint("total_cash_outflow_minor", { mode: "number" }).notNull(),
+    totalConsumptionMinor: bigint("total_consumption_minor", { mode: "number" }).notNull(),
+    totalAssetFundingMinor: bigint("total_asset_funding_minor", { mode: "number" }).notNull(),
+    consumptionByCategory: jsonb("consumption_by_category").notNull(),
+    formulaVersion: bigint("formula_version", { mode: "number" }).notNull(),
     computedAt: timestamp("computed_at", { withTimezone: true }).notNull()
   },
   (table) => [primaryKey({ columns: [table.userId, table.month] })]

@@ -10,11 +10,11 @@ type SpendByCategoryPanelProps = Readonly<{
 }>;
 
 export function SpendByCategoryPanel({ rollup, categories }: SpendByCategoryPanelProps): ReactNode {
-  const ranked = rollup.byCategory
+  const ranked = rollup.consumptionByCategory
     .filter((category) => category.spentMinor > 0)
     .slice()
     .sort((a, b) => b.spentMinor - a.spentMinor);
-  const total = rollup.totalExpenseMinor || 1;
+  const total = rollup.totalConsumptionMinor || 1;
 
   const rows = ranked.map((category, index) => ({
     key: category.categoryId ?? `uncategorized-${index}`,

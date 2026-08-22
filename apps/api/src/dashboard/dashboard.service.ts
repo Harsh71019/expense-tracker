@@ -106,7 +106,7 @@ export class DashboardService {
     const months = monthWindow(month, TREND_MONTHS);
     const monthRollups = await Promise.all(months.map((m) => this.rollups.getOrCompute(userId, m)));
 
-    const spentTrend = monthRollups.map((r) => r?.totalExpenseMinor ?? 0);
+    const spentTrend = monthRollups.map((r) => r?.totalConsumptionMinor ?? 0);
     const incomeTrend = monthRollups.map((r) => r?.totalIncomeMinor ?? 0);
     const savingsRateTrend = spentTrend.map((spent, i) =>
       savingsRatePct(incomeTrend[i] ?? 0, spent)
@@ -135,8 +135,8 @@ export class DashboardService {
         trend: incomeTrend
       },
       savingsRate: {
-        valuePct: valueAt(savingsRateTrend, last),
-        deltaPct: deltaPct(valueAt(savingsRateTrend, last), valueAt(savingsRateTrend, prev)),
+        valuePct: savingsRateTrend[last] ?? null,
+        deltaPct: nullableDeltaPct(savingsRateTrend[last], savingsRateTrend[prev]),
         trend: savingsRateTrend
       },
       netWorth: {
@@ -204,7 +204,7 @@ export class DashboardService {
     const asOf = new Date();
     const period = toISTMonth(asOf);
     const { start } = istMonthBounds(period);
-    const dailyTotals = await this.dashboard.cashflowDaily(userId, start, endOfISTDay(asOf));
+    const dailyTotals = await this.dashboard.consumptionDaily(userId, start, endOfISTDay(asOf));
     const asOfDay = toISTCalendarDate(asOf);
     const daily: DailySpendingBucket[] = listISTMonthDayKeys(period).map((day, index) => ({
       date: new Date(start.getTime() + index * ONE_DAY_MS),
@@ -375,11 +375,23 @@ export class DashboardService {
     }
     const months = monthWindow(toISTMonth(new Date()), RANGE_MONTHS[range]);
     const monthRollups = await Promise.all(months.map((m) => this.rollups.getOrCompute(userId, m)));
-    const byCategoryAcrossMonths = monthRollups.flatMap((rollup) => rollup?.byCategory ?? []);
+    const byCategoryAcrossMonths = monthRollups.flatMap(
+      (rollup) => rollup?.consumptionByCategory ?? []
+    );
     return mergeCategoryRollups(byCategoryAcrossMonths);
   }
 }
 
 function valueAt(values: readonly number[], index: number): number {
   return values[index] ?? 0;
+}
+
+function nullableDeltaPct(
+  current: number | null | undefined,
+  previous: number | null | undefined
+): number | null {
+  if (current === undefined || current === null || previous === undefined || previous === null) {
+    return null;
+  }
+  return deltaPct(current, previous);
 }

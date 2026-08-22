@@ -101,8 +101,9 @@ describe("savingsRatePct", () => {
     expect(savingsRatePct(1000, 700)).toBe(30);
   });
 
-  it("returns 0 when there is no income, rather than a nonsensical rate", () => {
-    expect(savingsRatePct(0, 500)).toBe(0);
+  it("returns null when income is zero or negative", () => {
+    expect(savingsRatePct(0, 500)).toBeNull();
+    expect(savingsRatePct(-100, 500)).toBeNull();
   });
 
   it("can be negative when expenses exceed income", () => {

@@ -11,6 +11,7 @@ import { CategoryKindMismatchError } from "../../common/errors/category-kind-mis
 import { EntityNotFoundError } from "../../common/errors/entity-not-found.error.js";
 import { ImportAlreadyCommittedError } from "../../common/errors/import-already-committed.error.js";
 import { ImportBatchNotReadyError } from "../../common/errors/import-batch-not-ready.error.js";
+import { ImportFileTooLargeError } from "../../common/errors/import-file-too-large.error.js";
 import { InvalidImportFileError } from "../../common/errors/invalid-import-file.error.js";
 import { focusedTestDouble } from "../../test/mock-drizzle.js";
 import { assertValidImportFile, ImportsService } from "../imports.service.js";
@@ -136,7 +137,7 @@ describe("assertValidImportFile", () => {
         "text/csv",
         Buffer.alloc(MAX_IMPORT_FILE_SIZE_BYTES + 1, "x")
       )
-    ).toThrow(InvalidImportFileError);
+    ).toThrow(ImportFileTooLargeError);
   });
 
   it("rejects files over the approximate row cap and accepts header-only content", () => {

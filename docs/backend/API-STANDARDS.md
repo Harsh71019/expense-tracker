@@ -158,7 +158,10 @@ Notes: **404 for cross-tenant access, not 403** — a 403 confirms the resource 
 
 ## 5. Error Code Catalog
 
-Codes are `domain.reason`, lowercase snake, defined once:
+Codes are `domain.reason`, lowercase snake, defined once in
+`packages/shared/src/errors/codes.ts` (append-only). The list below is the
+design catalog; implemented codes include `common.malformed_request`,
+`common.payload_too_large`, and `import.file_too_large` for HTTP-edge failures.
 
 ```ts
 // packages/shared/src/errors/codes.ts
@@ -166,6 +169,7 @@ export const ErrorCodes = [
   // common
   "common.validation_failed",
   "common.malformed_request",
+  "common.payload_too_large",
   "common.invalid_cursor",
   "common.not_found",
   "common.rate_limited",

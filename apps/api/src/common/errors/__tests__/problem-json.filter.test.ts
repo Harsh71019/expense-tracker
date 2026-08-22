@@ -1,6 +1,8 @@
 import {
+  BadRequestException,
   ForbiddenException,
   NotFoundException,
+  PayloadTooLargeException,
   ServiceUnavailableException,
   UnauthorizedException
 } from "@nestjs/common";
@@ -177,5 +179,78 @@ describe("ProblemJsonFilter", () => {
     });
     expect(body.detail).toContain("req-7");
     expect(logger.error).toHaveBeenCalledOnce();
+  });
+
+  it("maps Express malformed JSON to 400 common.malformed_request without logging", () => {
+    logger.error.mockClear();
+    // @ts-expect-error - mock Logger for unit testing
+    const filter = new ProblemJsonFilter(logger);
+    const { host, response } = mockHost("req-10");
+    const error = new SyntaxError("Unexpected token");
+    Object.assign(error, { type: "entity.parse.failed", status: 400 });
+
+    // @ts-expect-error - mock ArgumentsHost for unit testing
+    filter.catch(error, host);
+
+    expect(response.status).toHaveBeenCalledWith(400);
+    expect(response.send.mock.calls[0]?.[0]).toMatchObject({
+      code: "common.malformed_request",
+      retryable: false,
+      reqId: "req-10"
+    });
+    expect(logger.error).not.toHaveBeenCalled();
+  });
+
+  it("maps Express oversized JSON to 413 common.payload_too_large", () => {
+    // @ts-expect-error - mock Logger for unit testing
+    const filter = new ProblemJsonFilter(logger);
+    const { host, response } = mockHost("req-11");
+    const error = Object.assign(new Error("too large"), { type: "entity.too.large", status: 413 });
+
+    // @ts-expect-error - mock ArgumentsHost for unit testing
+    filter.catch(error, host);
+
+    expect(response.status).toHaveBeenCalledWith(413);
+    expect(response.send.mock.calls[0]?.[0]).toMatchObject({
+      code: "common.payload_too_large",
+      retryable: false
+    });
+  });
+
+  it("maps Multer LIMIT_FILE_SIZE to 413 import.file_too_large", () => {
+    // @ts-expect-error - mock Logger for unit testing
+    const filter = new ProblemJsonFilter(logger);
+    const { host, response } = mockHost("req-12");
+    const error = Object.assign(new Error("File too large"), {
+      name: "MulterError",
+      code: "LIMIT_FILE_SIZE"
+    });
+
+    // @ts-expect-error - mock ArgumentsHost for unit testing
+    filter.catch(error, host);
+
+    expect(response.status).toHaveBeenCalledWith(413);
+    expect(response.send.mock.calls[0]?.[0]).toMatchObject({
+      code: "import.file_too_large",
+      retryable: false
+    });
+  });
+
+  it("maps 400 and 413 HttpExceptions to the catalog codes", () => {
+    // @ts-expect-error - mock Logger for unit testing
+    const filter = new ProblemJsonFilter(logger);
+    const bad = mockHost("req-13");
+    // @ts-expect-error - mock ArgumentsHost for unit testing
+    filter.catch(new BadRequestException(), bad.host);
+    expect(bad.response.send.mock.calls[0]?.[0]).toMatchObject({
+      code: "common.malformed_request"
+    });
+
+    const large = mockHost("req-14");
+    // @ts-expect-error - mock ArgumentsHost for unit testing
+    filter.catch(new PayloadTooLargeException(), large.host);
+    expect(large.response.send.mock.calls[0]?.[0]).toMatchObject({
+      code: "common.payload_too_large"
+    });
   });
 });

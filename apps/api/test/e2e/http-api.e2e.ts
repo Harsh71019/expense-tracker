@@ -118,6 +118,31 @@ describe("production HTTP composition", () => {
       retryable: false
     });
 
+    const malformedJson = await fetch(`${baseUrl}/api/v1/accounts`, {
+      method: "POST",
+      headers: JSON_HEADERS,
+      body: "{not-json"
+    });
+    expect(malformedJson.status).toBe(400);
+    expect(malformedJson.headers.get("content-type")).toContain("application/problem+json");
+    expect(await parseResponse(malformedJson, ProblemDetailsSchema)).toMatchObject({
+      status: 400,
+      code: "common.malformed_request",
+      retryable: false
+    });
+
+    const oversizedJson = await fetch(`${baseUrl}/api/v1/accounts`, {
+      method: "POST",
+      headers: JSON_HEADERS,
+      body: `{"name":"${"n".repeat(300_000)}"}`
+    });
+    expect(oversizedJson.status).toBe(413);
+    expect(await parseResponse(oversizedJson, ProblemDetailsSchema)).toMatchObject({
+      status: 413,
+      code: "common.payload_too_large",
+      retryable: false
+    });
+
     const metrics = await fetch(`${baseUrl}/api/v1/metrics`, {
       headers: { cookie: sessionA }
     });

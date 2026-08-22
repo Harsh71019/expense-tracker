@@ -15,6 +15,7 @@ import { requireSession } from "./auth/require-session.middleware.js";
 import { BillStatementsQueue } from "./bills/bill-statements.queue.js";
 import { RuntimeConfigService } from "./common/config/runtime-config.service.js";
 import { ProblemJsonFilter } from "./common/errors/problem-json.filter.js";
+import { JSON_BODY_LIMIT_BYTES } from "./common/http/request-limits.js";
 import { ImportsQueue } from "./imports/imports.queue.js";
 
 const BULL_BOARD_BASE_PATH = "/api/admin/queues";
@@ -30,6 +31,7 @@ export async function createHttpApp(): Promise<INestApplication> {
   const config = app.get(RuntimeConfigService);
   const auth = app.get(AuthService);
   const httpAdapter = app.getHttpAdapter().getInstance();
+  httpAdapter.set("trust proxy", 1);
   httpAdapter.all("/api/auth/*any", toNodeHandler(auth.auth));
 
   // Mounted before helmet() so Bull Board's own UI assets (inline
@@ -49,7 +51,7 @@ export async function createHttpApp(): Promise<INestApplication> {
   app.setGlobalPrefix("api");
   app.use(helmet());
   app.use(cookieParser());
-  app.use(express.json());
+  app.use(express.json({ limit: JSON_BODY_LIMIT_BYTES }));
   app.enableCors({
     origin: config.trustedOrigins(),
     credentials: true

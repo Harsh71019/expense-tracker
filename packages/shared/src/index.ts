@@ -172,22 +172,26 @@ export {
 } from "./asset.js";
 export {
   AssetFundingIdSchema,
+  AssetFundingPageSchema,
   AssetFundingMutationResultSchema,
   AssetFundingSchema,
   AssetFundingStatusSchema,
   AssetFundingTargetSchema,
   CreateInvestmentTransactionSchema,
   LinkTransactionToAssetSchema,
+  ListAssetFundingsQuerySchema,
   ReverseAssetFundingResultSchema
 } from "./asset-funding.js";
 export type {
   AssetFunding,
   AssetFundingId,
+  AssetFundingPage,
   AssetFundingMutationResult,
   AssetFundingStatus,
   AssetFundingTarget,
   CreateInvestmentTransaction,
   LinkTransactionToAsset,
+  ListAssetFundingsQuery,
   ReverseAssetFundingResult
 } from "./asset-funding.js";
 export type {

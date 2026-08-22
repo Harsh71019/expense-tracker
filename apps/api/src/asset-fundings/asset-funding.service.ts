@@ -4,9 +4,11 @@ import {
   ReverseAssetFundingResultSchema,
   type Asset,
   type AssetFundingMutationResult,
+  type AssetFundingPage,
   type AssetFundingTarget,
   type CreateInvestmentTransaction,
   type LinkTransactionToAsset,
+  type ListAssetFundingsQuery,
   type ReverseAssetFundingResult,
   type Transaction,
   type TransactionId
@@ -71,6 +73,16 @@ export class AssetFundingService implements TransactionReversalHook {
     });
     await this.rollups.invalidate(userId, toISTMonth(transaction.occurredAt), tx);
     return AssetFundingMutationResultSchema.parse({ funding, transaction, asset });
+  }
+
+  async listByAsset(
+    userId: string,
+    assetId: string,
+    query: ListAssetFundingsQuery
+  ): Promise<AssetFundingPage> {
+    if ((await this.assets.findById(userId, assetId)) === null)
+      throw new EntityNotFoundError("Asset");
+    return this.fundings.findPageByAsset(userId, assetId, query);
   }
 
   async createInvestmentInTx(

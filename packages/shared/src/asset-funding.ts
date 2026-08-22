@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { AssetIdSchema, AssetSchema } from "./asset.js";
+import { PageInfoSchema } from "./pagination.js";
 import { TransactionIdSchema, TransactionSchema } from "./transaction.js";
 
 export const AssetFundingIdSchema = z.string().uuid("Asset funding id must be a UUID.");
@@ -87,6 +88,16 @@ export const ReverseAssetFundingResultSchema = z.object({
   reversal: AssetFundingSchema
 });
 
+export const ListAssetFundingsQuerySchema = z.object({
+  cursor: z.string().min(1).optional(),
+  limit: z.coerce.number().int().min(1).max(200).default(50)
+});
+
+export const AssetFundingPageSchema = z.object({
+  items: z.array(AssetFundingSchema),
+  pageInfo: PageInfoSchema
+});
+
 export type AssetFunding = z.infer<typeof AssetFundingSchema>;
 export type AssetFundingId = z.infer<typeof AssetFundingIdSchema>;
 export type AssetFundingStatus = z.infer<typeof AssetFundingStatusSchema>;
@@ -95,3 +106,5 @@ export type LinkTransactionToAsset = z.infer<typeof LinkTransactionToAssetSchema
 export type CreateInvestmentTransaction = z.infer<typeof CreateInvestmentTransactionSchema>;
 export type AssetFundingMutationResult = z.infer<typeof AssetFundingMutationResultSchema>;
 export type ReverseAssetFundingResult = z.infer<typeof ReverseAssetFundingResultSchema>;
+export type ListAssetFundingsQuery = z.infer<typeof ListAssetFundingsQuerySchema>;
+export type AssetFundingPage = z.infer<typeof AssetFundingPageSchema>;

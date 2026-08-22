@@ -526,6 +526,42 @@ export type {
   StoredPendingTransaction
 } from "./pending-transaction.js";
 export {
+  CreateReceivableCorrectionSchema,
+  CreateReceivableSchema,
+  ListReceivableEventsQuerySchema,
+  ListReceivablesQuerySchema,
+  NetWorthReceivableSchema,
+  RecordReceivableRepaymentSchema,
+  ReceivableEventIdSchema,
+  ReceivableEventKindSchema,
+  ReceivableEventPageSchema,
+  ReceivableEventSchema,
+  ReceivableIdSchema,
+  ReceivableMutationResultSchema,
+  ReceivablePageSchema,
+  ReceivableSchema,
+  ReceivableStatusSchema,
+  UpdateReceivableMetadataSchema
+} from "./receivable.js";
+export type {
+  CreateReceivable,
+  CreateReceivableCorrection,
+  ListReceivableEventsQuery,
+  ListReceivablesQuery,
+  NetWorthReceivable,
+  Receivable,
+  ReceivableEvent,
+  ReceivableEventId,
+  ReceivableEventKind,
+  ReceivableEventPage,
+  ReceivableId,
+  ReceivableMutationResult,
+  ReceivablePage,
+  RecordReceivableRepayment,
+  ReceivableStatus,
+  UpdateReceivableMetadata
+} from "./receivable.js";
+export {
   computeFirstOccurrence,
   computeNextOccurrence,
   CreateRecurringRuleSchema,

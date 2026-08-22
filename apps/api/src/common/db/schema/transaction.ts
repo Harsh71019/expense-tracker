@@ -14,7 +14,12 @@ import { user } from "../auth-schema.js";
 import { accounts } from "./account.js";
 import { categories } from "./category.js";
 import { creditCardBills } from "./credit-card-bill.js";
-import { transactionSourceEnum, transactionStatusEnum, transactionTypeEnum } from "./enums.js";
+import {
+  transactionPurposeEnum,
+  transactionSourceEnum,
+  transactionStatusEnum,
+  transactionTypeEnum
+} from "./enums.js";
 import { importBatches } from "./import.js";
 import { recurringRules } from "./recurring.js";
 
@@ -37,6 +42,7 @@ export const transactions = pgTable(
     tags: text("tags").array().notNull().default([]),
     source: transactionSourceEnum("source").notNull(),
     status: transactionStatusEnum("status").notNull(),
+    purpose: transactionPurposeEnum("purpose").notNull().default("ordinary"),
     idempotencyKey: uuid("idempotency_key"),
     reversalOf: uuid("reversal_of").references((): AnyPgColumn => transactions.id),
     reversedBy: uuid("reversed_by").references((): AnyPgColumn => transactions.id),

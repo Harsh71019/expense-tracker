@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { AccountIdSchema } from "./account.js";
 import { PageInfoSchema } from "./pagination.js";
+import { NetWorthReceivableSchema } from "./receivable.js";
 
 const SignedMinorSchema = z
   .number()
@@ -100,7 +101,8 @@ export const NetWorthSchema = z.object({
   asOf: z.coerce.date(),
   netWorthMinor: SignedMinorSchema,
   accounts: z.array(NetWorthAccountSchema),
-  assets: z.array(NetWorthAssetSchema)
+  assets: z.array(NetWorthAssetSchema),
+  receivables: z.array(NetWorthReceivableSchema).default([])
 });
 
 export type AssetKind = z.infer<typeof AssetKindSchema>;

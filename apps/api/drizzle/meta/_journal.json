@@ -232,6 +232,13 @@
       "when": 1786899332572,
       "tag": "0032_tired_firelord",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1787407441293,
+      "tag": "0033_round_iron_patriot",
+      "breakpoints": true
     }
   ]
 }

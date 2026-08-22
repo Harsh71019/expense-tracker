@@ -2,6 +2,7 @@ import { bigint, boolean, index, pgTable, text, timestamp, uuid } from "drizzle-
 
 import { user } from "../auth-schema.js";
 import { accounts } from "./account.js";
+import { assets } from "./asset.js";
 import { categories } from "./category.js";
 import { transactionTypeEnum } from "./enums.js";
 
@@ -15,6 +16,7 @@ export const recurringRules = pgTable(
     templateAccountId: uuid("template_account_id")
       .notNull()
       .references(() => accounts.id),
+    templateAssetId: uuid("template_asset_id").references(() => assets.id),
     templateCategoryId: uuid("template_category_id").references(() => categories.id),
     templateType: transactionTypeEnum("template_type").notNull(),
     templateAmountMinor: bigint("template_amount_minor", { mode: "number" }).notNull(),

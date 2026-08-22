@@ -4,6 +4,7 @@ import { computeNextOccurrence, type RecurringRule } from "@treasury-ops/shared"
 import { Logger } from "nestjs-pino";
 
 import { AccountRepository } from "../accounts/account.repository.js";
+import { AssetFundingService } from "../asset-fundings/asset-funding.service.js";
 import { assertBalanceDeltaApplied } from "../accounts/balance-delta.js";
 import { AuditRepository } from "../audit/audit.repository.js";
 import { RuntimeConfigService } from "../common/config/runtime-config.service.js";
@@ -50,7 +51,8 @@ export class RecurringMaterializeService {
     private readonly occurrences: RecurringOccurrenceRepository,
     private readonly audit: AuditRepository,
     @Inject(Logger) private readonly logger: MaterializeLogger,
-    @Optional() private readonly scheduler?: ScheduledRunCoordinator
+    @Optional() private readonly scheduler?: ScheduledRunCoordinator,
+    @Optional() private readonly fundings?: AssetFundingService
   ) {}
 
   @Cron("0 1 * * *", { timeZone: "Asia/Kolkata" })
@@ -122,6 +124,17 @@ export class RecurringMaterializeService {
         rule.id
       );
       await this.audit.record(rule.userId, "recurring.materialize", posted.id, tx);
+
+      if (rule.template.assetId !== undefined) {
+        if (this.fundings === undefined)
+          throw new Error("Recurring funding service is unavailable.");
+        await this.fundings.linkInTx(
+          rule.userId,
+          posted.id,
+          { target: { kind: "existing_asset", assetId: rule.template.assetId } },
+          tx
+        );
+      }
 
       return { kind: "transaction" as const, txnId: posted.id };
     });

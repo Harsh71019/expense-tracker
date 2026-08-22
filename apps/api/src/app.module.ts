@@ -25,6 +25,7 @@ import { AuthModule } from "./auth/auth.module.js";
 import { AccountsModule } from "./accounts/accounts.module.js";
 import { ApiKeysModule } from "./api-keys/api-keys.module.js";
 import { AssetsModule } from "./assets/assets.module.js";
+import { AssetFundingsModule } from "./asset-fundings/asset-fundings.module.js";
 import { AuditModule } from "./audit/audit.module.js";
 import { BudgetsModule } from "./budgets/budgets.module.js";
 import { CategoriesModule } from "./categories/categories.module.js";
@@ -93,6 +94,7 @@ function isUnthrottledPath(context: ExecutionContext): boolean {
     TransactionsModule,
     BillsModule,
     AssetsModule,
+    AssetFundingsModule,
     ImportsModule,
     ForecastingModule,
     ExportModule,

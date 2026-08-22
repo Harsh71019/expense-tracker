@@ -67,32 +67,15 @@ export class TransactionService {
     source: TransactionSource
   ): Promise<CreateTransactionResult> {
     try {
-      const transaction = await withTxn(this.db, async (tx) => {
-        if (input.categoryId !== undefined) {
-          const category = await this.categories.findActiveById(userId, input.categoryId, tx);
-          if (category === null) throw new EntityNotFoundError("Category");
-          if (category.kind !== input.type) throw new CategoryKindMismatchError();
-        }
-
-        const deltaMinor = input.type === "income" ? input.amountMinor : -input.amountMinor;
-        assertBalanceDeltaApplied(
-          await this.accounts.applyBalanceDelta(userId, input.accountId, deltaMinor, tx)
-        );
-
-        const created = await this.transactions.create(
+      const transaction = await withTxn(this.db, (tx) =>
+        this.createInTx(
           userId,
           input,
-          idempotencyKey,
+          source,
           tx,
-          undefined,
-          source
-        );
-        await this.audit.record(userId, "transaction.create", created.id, tx);
-        if (source === "api") {
-          await this.createdHook?.onTransactionCreatedInTx(userId, created, tx);
-        }
-        return created;
-      });
+          idempotencyKey === undefined ? undefined : { idempotencyKey }
+        )
+      );
       this.logger.log(
         {
           event: LogEvent.TransactionCreated,
@@ -118,6 +101,36 @@ export class TransactionService {
       );
       return { transaction, replayed: true };
     }
+  }
+
+  /** Shared ledger-write core for composite mutations; it never opens a transaction itself. */
+  async createInTx(
+    userId: string,
+    input: CreateTransaction,
+    source: TransactionSource,
+    tx: DbTx,
+    options?: Readonly<{ idempotencyKey?: string }>
+  ): Promise<Transaction> {
+    if (input.categoryId !== undefined) {
+      const category = await this.categories.findActiveById(userId, input.categoryId, tx);
+      if (category === null) throw new EntityNotFoundError("Category");
+      if (category.kind !== input.type) throw new CategoryKindMismatchError();
+    }
+    const deltaMinor = input.type === "income" ? input.amountMinor : -input.amountMinor;
+    assertBalanceDeltaApplied(
+      await this.accounts.applyBalanceDelta(userId, input.accountId, deltaMinor, tx)
+    );
+    const created = await this.transactions.create(
+      userId,
+      input,
+      options?.idempotencyKey,
+      tx,
+      undefined,
+      source
+    );
+    await this.audit.record(userId, "transaction.create", created.id, tx);
+    if (source === "api") await this.createdHook?.onTransactionCreatedInTx(userId, created, tx);
+    return created;
   }
 
   list(userId: string, query: ListTransactionsQuery): Promise<TransactionPage> {

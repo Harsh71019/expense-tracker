@@ -511,6 +511,25 @@ export class TransactionRepository {
     return row === undefined ? null : toTransaction(row);
   }
 
+  async findPostedByIdForUpdate(
+    userId: string,
+    transactionId: string,
+    tx: DbTx
+  ): Promise<Transaction | null> {
+    const [row] = await tx
+      .select()
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.id, transactionId),
+          eq(transactions.userId, userId),
+          eq(transactions.status, "posted")
+        )
+      )
+      .for("update");
+    return row === undefined ? null : toTransaction(row);
+  }
+
   async findById(userId: string, transactionId: string, tx?: DbTx): Promise<Transaction | null> {
     const executor = tx ?? this.db;
     const [row] = await executor

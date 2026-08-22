@@ -129,6 +129,7 @@ export class TransactionRepository {
     if (query.accountId !== undefined) conditions.push(eq(transactions.accountId, query.accountId));
     if (query.categoryId !== undefined)
       conditions.push(eq(transactions.categoryId, query.categoryId));
+    if (query.uncategorized === true) conditions.push(isNull(transactions.categoryId));
     if (query.from !== undefined) conditions.push(gte(transactions.occurredAt, query.from));
     if (query.to !== undefined) conditions.push(lte(transactions.occurredAt, query.to));
     if (query.q !== undefined) {

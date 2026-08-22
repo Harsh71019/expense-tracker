@@ -10974,6 +10974,15 @@
           },
           {
             "schema": {
+              "type": "string",
+              "enum": ["true", "false"]
+            },
+            "required": false,
+            "name": "uncategorized",
+            "in": "query"
+          },
+          {
+            "schema": {
               "type": ["string", "null"],
               "format": "date-time"
             },

@@ -40,11 +40,23 @@ describe("getTxnPage", () => {
   it("parses API dates and forwards serialized filters", async () => {
     mocks.GET.mockResolvedValue({ data: response });
     const { getTxnPage } = await import("./get-txn-page");
-    const page = await getTxnPage({ limit: 10, from: new Date(timestamp), q: "chai" });
+    const page = await getTxnPage({
+      limit: 10,
+      from: new Date(timestamp),
+      q: "chai",
+      uncategorized: true
+    });
 
     expect(page.items[0]?.occurredAt).toEqual(new Date(timestamp));
     expect(mocks.GET).toHaveBeenCalledWith("/v1/transactions", {
-      params: { query: expect.objectContaining({ from: timestamp, q: "chai", limit: 10 }) }
+      params: {
+        query: expect.objectContaining({
+          from: timestamp,
+          q: "chai",
+          uncategorized: "true",
+          limit: 10
+        })
+      }
     });
   });
 

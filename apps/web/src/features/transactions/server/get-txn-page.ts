@@ -16,6 +16,7 @@ function toQuery(filters: ListTransactionsQuery): Record<string, string | number
   return {
     accountId: filters.accountId,
     categoryId: filters.categoryId,
+    uncategorized: filters.uncategorized === true ? "true" : undefined,
     from: filters.from?.toISOString(),
     to: filters.to?.toISOString(),
     q: filters.q,

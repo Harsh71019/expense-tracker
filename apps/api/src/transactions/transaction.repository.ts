@@ -2,6 +2,7 @@ import { Inject, Injectable } from "@nestjs/common";
 import {
   TransactionInsightsSchema,
   TransactionSchema,
+  parseMinor,
   parseSafeIntegerMinor,
   type CreditCardBillId,
   type CreateTransaction,
@@ -132,7 +133,13 @@ export class TransactionRepository {
     if (query.from !== undefined) conditions.push(gte(transactions.occurredAt, query.from));
     if (query.to !== undefined) conditions.push(lte(transactions.occurredAt, query.to));
     if (query.q !== undefined) {
-      conditions.push(sql`${transactions.description} ILIKE ${"%" + escapeLike(query.q) + "%"}`);
+      const descriptionCondition = sql`${transactions.description} ILIKE ${"%" + escapeLike(query.q) + "%"}`;
+      const amountMinor = parseAmountSearchMinor(query.q);
+      conditions.push(
+        amountMinor === null
+          ? descriptionCondition
+          : sql`(${descriptionCondition} OR ${transactions.amountMinor} = ${amountMinor})`
+      );
     }
     if (query.tag !== undefined) {
       conditions.push(sql`${query.tag} = ANY(${transactions.tags})`);
@@ -855,6 +862,15 @@ function toTransaction(row: TransactionRow): Transaction {
     paymentRail: normalized.paymentRail,
     counterpartyHandle: normalized.counterpartyHandle
   });
+}
+
+function parseAmountSearchMinor(query: string): number | null {
+  try {
+    return parseMinor(query);
+  } catch (error) {
+    if (error instanceof RangeError) return null;
+    throw error;
+  }
 }
 
 function encodeCursor(occurredAt: Date, id: string): string {

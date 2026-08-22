@@ -28,7 +28,9 @@ describe("TxnFilters", () => {
   it("debounces search input before updating the URL", () => {
     render(<TxnFilters filters={{ limit: 50 }} />);
 
-    fireEvent.change(screen.getByLabelText("Search description"), { target: { value: "chai" } });
+    fireEvent.change(screen.getByLabelText("Search description or amount"), {
+      target: { value: "chai" }
+    });
     expect(mocks.push).not.toHaveBeenCalled();
 
     vi.advanceTimersByTime(400);

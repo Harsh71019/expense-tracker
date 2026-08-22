@@ -54,6 +54,7 @@ describe("TransactionService.list", () => {
     const rows: Array<{
       accountId: string;
       categoryId?: string;
+      amountMinor?: number;
       description: string;
       occurredAt: string;
       tags?: string[];
@@ -69,6 +70,7 @@ describe("TransactionService.list", () => {
       {
         accountId: cash.id,
         categoryId: food.id,
+        amountMinor: 12_345,
         description: "Vada pav",
         occurredAt: "2026-07-03T09:00:00.000Z"
       },
@@ -89,7 +91,7 @@ describe("TransactionService.list", () => {
           accountId: row.accountId,
           ...categoryId,
           type: "expense",
-          amountMinor: 100,
+          amountMinor: row.amountMinor ?? 100,
           occurredAt: new Date(row.occurredAt),
           description: row.description,
           tags: row.tags ?? []
@@ -136,6 +138,11 @@ describe("TransactionService.list", () => {
   it("filters by case-insensitive description search", async () => {
     const page = await transactions.list("user-a", { q: "chai", limit: 50 });
     expect(page.items.map((t) => t.description)).toEqual(["Chai again", "Chai"]);
+  });
+
+  it("filters by an exact INR amount as well as description text", async () => {
+    const page = await transactions.list("user-a", { q: "₹123.45", limit: 50 });
+    expect(page.items.map((t) => t.description)).toEqual(["Vada pav"]);
   });
 
   it("filters by an exact transaction tag", async () => {

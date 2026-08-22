@@ -155,8 +155,8 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
           autoComplete="off"
           spellCheck={false}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search description…"
-          aria-label="Search description"
+          placeholder="Search description or amount…"
+          aria-label="Search description or amount"
           className="min-h-10 w-full bg-transparent py-2 text-base text-foreground outline-none placeholder:text-foreground-muted/60 sm:text-sm"
         />
         {query !== "" && (

@@ -170,6 +170,26 @@ export {
   ValuationSchema,
   ValuationSourceSchema
 } from "./asset.js";
+export {
+  AssetFundingIdSchema,
+  AssetFundingMutationResultSchema,
+  AssetFundingSchema,
+  AssetFundingStatusSchema,
+  AssetFundingTargetSchema,
+  CreateInvestmentTransactionSchema,
+  LinkTransactionToAssetSchema,
+  ReverseAssetFundingResultSchema
+} from "./asset-funding.js";
+export type {
+  AssetFunding,
+  AssetFundingId,
+  AssetFundingMutationResult,
+  AssetFundingStatus,
+  AssetFundingTarget,
+  CreateInvestmentTransaction,
+  LinkTransactionToAsset,
+  ReverseAssetFundingResult
+} from "./asset-funding.js";
 export type {
   Asset,
   AssetId,

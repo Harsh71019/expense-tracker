@@ -161,6 +161,19 @@ describe("ListTransactionsQuerySchema", () => {
     ).toEqual({ from: new Date("2026-07-01T00:00:00.000Z"), limit: 10 });
   });
 
+  it("parses the uncategorized query filter and rejects a conflicting category", () => {
+    expect(ListTransactionsQuerySchema.parse({ uncategorized: "true" })).toEqual({
+      uncategorized: true,
+      limit: 50
+    });
+    expect(() =>
+      ListTransactionsQuerySchema.parse({
+        categoryId: "3fa85f64-5717-4562-b3fc-2c963f66beef",
+        uncategorized: "true"
+      })
+    ).toThrow();
+  });
+
   it("rejects limits beyond the endpoint maximum", () => {
     expect(() => ListTransactionsQuerySchema.parse({ limit: "101" })).toThrow();
   });

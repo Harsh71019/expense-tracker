@@ -59,6 +59,16 @@ describe("transaction URL filters", () => {
     );
   });
 
+  it("round-trips the uncategorized filter", () => {
+    expect(parseTransactionFilters({ uncategorized: "true" })).toEqual({
+      uncategorized: true,
+      limit: 50
+    });
+    expect(serializeTransactionFilters({ uncategorized: true, limit: 50 })).toBe(
+      "uncategorized=true"
+    );
+  });
+
   it("includes a non-default page size", () => {
     expect(serializeTransactionFilters({ accountId, limit: 25 })).toBe(
       "accountId=3fa85f64-5717-4562-b3fc-2c963f66beef&limit=25"

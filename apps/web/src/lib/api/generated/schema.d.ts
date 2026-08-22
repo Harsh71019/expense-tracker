@@ -11210,6 +11210,7 @@ export interface operations {
       query?: {
         accountId?: string;
         categoryId?: string;
+        uncategorized?: "true" | "false";
         from?: string | null;
         to?: string | null;
         q?: string;

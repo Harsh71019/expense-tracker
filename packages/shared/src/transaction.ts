@@ -79,12 +79,21 @@ export const BatchCategorizeTransactionsResultSchema = z.object({
 export const ListTransactionsQuerySchema = z.object({
   accountId: AccountIdSchema.optional(),
   categoryId: CategoryIdSchema.optional(),
+  // Query values arrive as strings. Keep the filter optional internally so
+  // existing callers without it retain the canonical list-query shape.
+  uncategorized: z
+    .union([z.literal("true"), z.literal("false")])
+    .optional()
+    .transform((value) => (value === "true" ? true : undefined)),
   from: z.coerce.date().optional(),
   to: z.coerce.date().optional(),
   q: z.string().trim().min(1).max(200).optional(),
   tag: z.string().trim().min(1).max(40).optional(),
   cursor: z.string().min(1).optional(),
   limit: z.coerce.number().int().min(1).max(100).default(50)
+}).refine((value) => !(value.uncategorized === true && value.categoryId !== undefined), {
+  message: "Category and uncategorized filters cannot be used together.",
+  path: ["uncategorized"]
 });
 
 export const TransactionPageSchema = z.object({

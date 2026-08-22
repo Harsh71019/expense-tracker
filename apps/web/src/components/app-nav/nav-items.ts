@@ -15,6 +15,7 @@ export const mainNavItems: readonly NavItem[] = [
   { href: "/imports", label: "Imports", icon: "↥" },
   { href: "/export", label: "Export", icon: "⇩" },
   { href: "/assets", label: "Assets", icon: "◈" },
+  { href: "/debts-given", label: "Debt Given", icon: "⇄" },
   { href: "/goals", label: "Goals", icon: "◎" },
   { href: "/budgets", label: "Budgets", icon: "◫" },
   { href: "/reports", label: "Reports", icon: "◔" },

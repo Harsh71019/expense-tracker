@@ -1,6 +1,7 @@
 "use client";
 
 import type { Asset, AssetKind, NetWorth } from "@treasury-ops/shared";
+import Link from "next/link";
 import { useState } from "react";
 import type { ReactNode } from "react";
 import { toast } from "@/lib/toast";
@@ -73,6 +74,12 @@ export function AssetManager({ initialAssets, initialNetWorth }: AssetManagerPro
           <p className="mt-0.5 text-xs text-foreground-muted">
             Valuations, investment holdings, deposits, and total net worth tracking.
           </p>
+          <Link
+            href="/debts-given"
+            className="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-accent hover:underline"
+          >
+            Looking for money owed to you? See Debt Given →
+          </Link>
         </div>
         <Button type="button" className="w-full sm:w-auto" onClick={() => setCreateOpen(true)}>
           <span className="mr-1 text-base leading-none">+</span> New asset

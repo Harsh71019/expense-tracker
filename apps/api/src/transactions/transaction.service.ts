@@ -33,6 +33,10 @@ import {
   type TransactionCreatedHook
 } from "./transaction-created-hook.js";
 import { reverseTransactionInTx } from "./reverse-transaction-in-tx.js";
+import {
+  TRANSACTION_REVERSAL_HOOK,
+  type TransactionReversalHook
+} from "./transaction-reversal-hook.js";
 
 export type CreateTransactionResult = Readonly<{ transaction: Transaction; replayed: boolean }>;
 type TransactionLogger = Pick<Logger, "log" | "warn" | "error">;
@@ -48,7 +52,10 @@ export class TransactionService {
     @Inject(Logger) private readonly logger: TransactionLogger,
     @Optional()
     @Inject(TRANSACTION_CREATED_HOOK)
-    private readonly createdHook?: TransactionCreatedHook
+    private readonly createdHook?: TransactionCreatedHook,
+    @Optional()
+    @Inject(TRANSACTION_REVERSAL_HOOK)
+    private readonly reversalHook?: TransactionReversalHook
   ) {}
 
   async create(
@@ -277,7 +284,12 @@ export class TransactionService {
    */
   reverseInTx(userId: string, transactionId: TransactionId, tx: DbTx): Promise<Transaction> {
     return reverseTransactionInTx(
-      { transactions: this.transactions, accounts: this.accounts, audit: this.audit },
+      {
+        transactions: this.transactions,
+        accounts: this.accounts,
+        audit: this.audit,
+        ...(this.reversalHook === undefined ? {} : { reversalHook: this.reversalHook })
+      },
       userId,
       transactionId,
       tx

@@ -13,7 +13,7 @@ export type ReverseTransactionDeps = Readonly<{
   transactions: TransactionRepository;
   accounts: AccountRepository;
   audit: AuditRepository;
-  reversalHook?: TransactionReversalHook;
+  reversalHook: TransactionReversalHook;
 }>;
 
 /**
@@ -58,6 +58,6 @@ export async function reverseTransactionInTx(
   );
 
   await deps.audit.record(userId, "transaction.reverse", reversal.id, tx);
-  await deps.reversalHook?.onTransactionReversedInTx(userId, original, reversal, tx);
+  await deps.reversalHook.onTransactionReversedInTx(userId, original, reversal, tx);
   return reversal;
 }

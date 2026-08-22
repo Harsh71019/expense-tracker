@@ -41,6 +41,9 @@ import {
 
 export type CreateTransactionResult = Readonly<{ transaction: Transaction; replayed: boolean }>;
 type TransactionLogger = Pick<Logger, "log" | "warn" | "error">;
+const NOOP_REVERSAL_HOOK: TransactionReversalHook = {
+  onTransactionReversedInTx: async (): Promise<void> => undefined
+};
 
 @Injectable()
 export class TransactionService {
@@ -54,9 +57,8 @@ export class TransactionService {
     @Optional()
     @Inject(TRANSACTION_CREATED_HOOK)
     private readonly createdHook?: TransactionCreatedHook,
-    @Optional()
     @Inject(TRANSACTION_REVERSAL_HOOK)
-    private readonly reversalHook?: TransactionReversalHook,
+    private readonly reversalHook: TransactionReversalHook = NOOP_REVERSAL_HOOK,
     @Optional()
     private readonly assetFundings?: AssetFundingRepository
   ) {}
@@ -330,7 +332,7 @@ export class TransactionService {
         transactions: this.transactions,
         accounts: this.accounts,
         audit: this.audit,
-        ...(this.reversalHook === undefined ? {} : { reversalHook: this.reversalHook })
+        reversalHook: this.reversalHook
       },
       userId,
       transactionId,

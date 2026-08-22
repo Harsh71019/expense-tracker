@@ -247,8 +247,12 @@ Removing the classification:
 - does not touch the account balance; and
 - causes the original outflow to count as consumption again.
 
-The correction restates interpretation for the source transaction's IST month.
-`createdAt` still records when the user made the correction.
+The correction retroactively restates interpretation for the source
+transaction's IST month and every historical carrying-value read. In other
+words, current-state active funding is intentionally the as-of rule: a funding
+that is later corrected is excluded even when querying an instant before the
+correction was recorded. `createdAt` remains a forensic audit timestamp, not
+the economic effective time.
 
 ### 7.6 Reversing the source transaction
 
@@ -777,7 +781,7 @@ Bind the hook through a small global module analogous to
 `TransactionReconciliationHookModule` so `TransactionsModule` does not import
 `AssetFundingsModule` and form a cycle.
 
-Pass the optional hook into every `reverseTransactionInTx` call site:
+Pass the required hook into every `reverseTransactionInTx` call site:
 
 - `TransactionService`; and
 - `RecurringReconciliationService`.
@@ -960,6 +964,11 @@ carryingValue(T) =
 
 If no valuation exists, sum active fundings through `T`. Existing asset creation
 normally guarantees an opening valuation, but reads must remain total.
+
+Funding corrections use the current active lifecycle state and therefore
+retroactively restate historical carrying-value reads; they do not become
+effective only at reversal `createdAt`. This matches the transaction's
+original occurrence date and the IST-month restatement policy above.
 
 Liabilities are not fundable in version 1 and retain current signed valuation
 behavior.

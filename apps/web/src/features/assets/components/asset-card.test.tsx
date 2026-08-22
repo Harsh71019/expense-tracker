@@ -113,11 +113,27 @@ describe("AssetCard", () => {
     expect(screen.getByText("No valuation")).toBeVisible();
   });
 
-  it("fires the add-valuation, history, and close callbacks", async () => {
+  it("links to the asset detail page and does not show a close button on the card", () => {
+    mocks.valuations = { items: [], pageInfo: { nextCursor: null, hasMore: false, limit: 50 } };
+    const target = asset();
+    render(
+      <AssetCard
+        asset={target}
+        netWorthEntry={netWorthEntry}
+        onAddValuation={vi.fn()}
+        onHistory={vi.fn()}
+      />
+    );
+
+    const link = screen.getByRole("link", { name: `View details for ${target.name}` });
+    expect(link).toHaveAttribute("href", `/assets/${target.id}`);
+    expect(screen.queryByRole("button", { name: `Close ${target.name}` })).not.toBeInTheDocument();
+  });
+
+  it("fires the add-valuation callback", async () => {
     const user = userEvent.setup();
     const onAddValuation = vi.fn();
     const onHistory = vi.fn();
-    const onClose = vi.fn();
     mocks.valuations = {
       items: [valuation()],
       pageInfo: { nextCursor: null, hasMore: false, limit: 50 }
@@ -129,17 +145,10 @@ describe("AssetCard", () => {
         netWorthEntry={netWorthEntry}
         onAddValuation={onAddValuation}
         onHistory={onHistory}
-        onClose={onClose}
       />
     );
 
     await user.click(screen.getByRole("button", { name: "+ Add valuation" }));
     expect(onAddValuation).toHaveBeenCalledWith(target);
-
-    await user.click(screen.getByRole("button", { name: "1 valuation" }));
-    expect(onHistory).toHaveBeenCalledWith(target);
-
-    await user.click(screen.getByRole("button", { name: `Close ${target.name}` }));
-    expect(onClose).toHaveBeenCalledWith(target);
   });
 });

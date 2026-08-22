@@ -5,7 +5,7 @@ import { QuickAddForm } from "@/features/quick-add";
 
 export default function AddTransactionPage(): ReactNode {
   return (
-    <div className="mx-auto max-w-2xl space-y-5">
+    <div className="space-y-5">
       <div className="flex justify-stretch sm:justify-end">
         <Link
           href="/transfers"

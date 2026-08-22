@@ -99,7 +99,7 @@ describe("AssetManager", () => {
     expect(screen.getByRole("heading", { name: "New asset" })).toBeVisible();
   });
 
-  it("opens the add-valuation dialog and the history drawer for the right asset", async () => {
+  it("opens the add-valuation dialog and links card to asset details", async () => {
     const user = userEvent.setup();
     mocks.assets = [makeAsset()];
     render(<AssetManager initialAssets={mocks.assets} initialNetWorth={netWorth} />);
@@ -109,21 +109,7 @@ describe("AssetManager", () => {
     expect(screen.getByText("HDFC FD 2025", { selector: "strong" })).toBeVisible();
     await user.click(screen.getByRole("button", { name: "Cancel" }));
 
-    await user.click(screen.getByRole("button", { name: "0 valuations" }));
-    expect(screen.getByText("VALUATION HISTORY")).toBeVisible();
-  });
-
-  it("closes an asset after confirming", async () => {
-    const user = userEvent.setup();
-    mocks.assets = [makeAsset()];
-    mocks.closeMutateAsync.mockResolvedValue(undefined);
-    render(<AssetManager initialAssets={mocks.assets} initialNetWorth={netWorth} />);
-
-    await user.click(screen.getByRole("button", { name: "Close HDFC FD 2025" }));
-    expect(screen.getByText("Close HDFC FD 2025?")).toBeVisible();
-    await user.click(screen.getByRole("button", { name: "Close asset" }));
-
-    expect(mocks.closeMutateAsync).toHaveBeenCalledWith(mocks.assets[0]?.id);
-    expect(mocks.toastSuccess).toHaveBeenCalledWith("Asset closed");
+    const detailLink = screen.getByRole("link", { name: "View details for HDFC FD 2025" });
+    expect(detailLink).toHaveAttribute("href", `/assets/${mocks.assets[0]?.id}`);
   });
 });

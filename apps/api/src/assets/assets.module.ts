@@ -7,6 +7,7 @@ import { AssetService } from "./asset.service.js";
 import { AssetMutationService } from "./asset-mutation.service.js";
 import { AssetDiagnosticReadService } from "./asset-diagnostic-read.service.js";
 import { LiabilityAssetReadService } from "./liability-asset-read.service.js";
+import { MarketRatesService } from "./market-rates.service.js";
 import { NetWorthController } from "./net-worth.controller.js";
 import { NetWorthService } from "./net-worth.service.js";
 import { ValuationRepository } from "./valuation.repository.js";
@@ -23,7 +24,8 @@ import { AssetFundingRepository } from "../asset-fundings/asset-funding.reposito
     AssetMutationService,
     LiabilityAssetReadService,
     AssetDiagnosticReadService,
-    NetWorthService
+    NetWorthService,
+    MarketRatesService
   ],
   // Export narrow read services for cross-module consumption
   exports: [
@@ -31,7 +33,8 @@ import { AssetFundingRepository } from "../asset-fundings/asset-funding.reposito
     AssetService,
     ValuationRepository,
     LiabilityAssetReadService,
-    AssetDiagnosticReadService
+    AssetDiagnosticReadService,
+    MarketRatesService
   ]
 })
 export class AssetsModule {}

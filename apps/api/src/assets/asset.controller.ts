@@ -4,6 +4,7 @@ import {
   CreateAssetSchema,
   CreateValuationSchema,
   type Asset,
+  type MarketRates,
   type Valuation,
   type ValuationPage
 } from "@treasury-ops/shared";
@@ -14,6 +15,7 @@ import type { AuthenticatedUser } from "../auth/auth.guard.js";
 import { CurrentUser } from "../auth/current-user.decorator.js";
 import { AssetService } from "./asset.service.js";
 import { AssetMutationService } from "./asset-mutation.service.js";
+import { MarketRatesService } from "./market-rates.service.js";
 
 const IdempotencyKeySchema = z.string().uuid();
 
@@ -21,6 +23,7 @@ const IdempotencyKeySchema = z.string().uuid();
 export class AssetController {
   constructor(
     private readonly assets: AssetService,
+    private readonly marketRates: MarketRatesService,
     private readonly mutations?: AssetMutationService
   ) {}
 
@@ -49,6 +52,16 @@ export class AssetController {
   @Get()
   list(@CurrentUser() user: AuthenticatedUser): Promise<Asset[]> {
     return this.assets.list(user.id);
+  }
+
+  @Get("market-rates")
+  getMarketRates(): Promise<MarketRates> {
+    return this.marketRates.getRates();
+  }
+
+  @Get(":assetId")
+  get(@CurrentUser() user: AuthenticatedUser, @Param("assetId") assetId: string): Promise<Asset> {
+    return this.assets.getById(user.id, AssetIdSchema.parse(assetId));
   }
 
   @Post(":assetId/close")

@@ -28,6 +28,7 @@ import { TransferMetadataRequiresGroupError } from "../common/errors/transfer-me
 import { LogEvent } from "../common/logging/events.js";
 import { toISTMonth } from "../common/time/ist.js";
 import { TransactionRepository } from "./transaction.repository.js";
+import { AssetFundingRepository } from "../asset-fundings/asset-funding.repository.js";
 import {
   TRANSACTION_CREATED_HOOK,
   type TransactionCreatedHook
@@ -55,7 +56,9 @@ export class TransactionService {
     private readonly createdHook?: TransactionCreatedHook,
     @Optional()
     @Inject(TRANSACTION_REVERSAL_HOOK)
-    private readonly reversalHook?: TransactionReversalHook
+    private readonly reversalHook?: TransactionReversalHook,
+    @Optional()
+    private readonly assetFundings?: AssetFundingRepository
   ) {}
 
   async create(
@@ -140,8 +143,8 @@ export class TransactionService {
     return created;
   }
 
-  list(userId: string, query: ListTransactionsQuery): Promise<TransactionPage> {
-    return this.transactions.findMany(userId, query);
+  async list(userId: string, query: ListTransactionsQuery): Promise<TransactionPage> {
+    return this.hydrateFundings(userId, await this.transactions.findMany(userId, query));
   }
 
   getInsights(userId: string): Promise<TransactionInsights> {
@@ -151,7 +154,46 @@ export class TransactionService {
   async get(userId: string, transactionId: TransactionId): Promise<Transaction> {
     const transaction = await this.transactions.findById(userId, transactionId);
     if (transaction === null) throw new EntityNotFoundError("Transaction");
-    return transaction;
+    return this.hydrateFunding(userId, transaction);
+  }
+
+  private async hydrateFundings(userId: string, page: TransactionPage): Promise<TransactionPage> {
+    const summaries =
+      this.assetFundings === undefined
+        ? new Map()
+        : await this.assetFundings.findActiveSummariesByTransactionIds(
+            userId,
+            page.items.map((transaction) => transaction.id)
+          );
+    return {
+      ...page,
+      items: page.items.map((transaction) =>
+        this.withFunding(transaction, summaries.get(transaction.id))
+      )
+    };
+  }
+
+  private async hydrateFunding(userId: string, transaction: Transaction): Promise<Transaction> {
+    if (this.assetFundings === undefined) return transaction;
+    const summaries = await this.assetFundings.findActiveSummariesByTransactionIds(userId, [
+      transaction.id
+    ]);
+    return this.withFunding(transaction, summaries.get(transaction.id));
+  }
+
+  private withFunding(
+    transaction: Transaction,
+    funding:
+      | Readonly<{
+          fundingId: string;
+          assetId: string;
+          assetName: string;
+          assetKind: "investment" | "fixed_deposit";
+          amountMinor: number;
+        }>
+      | undefined
+  ): Transaction {
+    return funding === undefined ? transaction : { ...transaction, assetFunding: funding };
   }
 
   async update(

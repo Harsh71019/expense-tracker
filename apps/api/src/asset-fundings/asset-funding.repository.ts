@@ -13,6 +13,7 @@ import type { DrizzleDb } from "../common/db/db.module.js";
 import type { DbTx } from "../common/db/db-txn.js";
 import { assetFundings } from "../common/db/schema/index.js";
 import { transactions } from "../common/db/schema/index.js";
+import { assets } from "../common/db/schema/index.js";
 import { isActiveAssetFunding } from "../common/db/asset-funding-active.js";
 import { stripNulls } from "../common/db/strip-nulls.js";
 
@@ -150,6 +151,66 @@ export class AssetFundingRepository {
           isActiveAssetFunding()
         )
       );
+  }
+
+  async findActiveSummariesByTransactionIds(
+    userId: string,
+    transactionIds: readonly TransactionId[]
+  ): Promise<
+    ReadonlyMap<
+      string,
+      Readonly<{
+        fundingId: string;
+        assetId: string;
+        assetName: string;
+        assetKind: "investment" | "fixed_deposit";
+        amountMinor: number;
+      }>
+    >
+  > {
+    if (transactionIds.length === 0) return new Map();
+    const rows = await this.db
+      .select({
+        transactionId: assetFundings.transactionId,
+        fundingId: assetFundings.id,
+        assetId: assets.id,
+        assetName: assets.name,
+        assetKind: assets.kind,
+        amountMinor: assetFundings.amountMinor
+      })
+      .from(assetFundings)
+      .innerJoin(transactions, eq(transactions.id, assetFundings.transactionId))
+      .innerJoin(assets, eq(assets.id, assetFundings.assetId))
+      .where(
+        and(
+          eq(assetFundings.userId, userId),
+          eq(transactions.userId, userId),
+          eq(assets.userId, userId),
+          inArray(assetFundings.transactionId, [...transactionIds]),
+          isActiveAssetFunding()
+        )
+      );
+    const result = new Map<
+      string,
+      Readonly<{
+        fundingId: string;
+        assetId: string;
+        assetName: string;
+        assetKind: "investment" | "fixed_deposit";
+        amountMinor: number;
+      }>
+    >();
+    for (const row of rows) {
+      if (row.assetKind !== "investment" && row.assetKind !== "fixed_deposit") continue;
+      result.set(row.transactionId, {
+        fundingId: row.fundingId,
+        assetId: row.assetId,
+        assetName: row.assetName,
+        assetKind: row.assetKind,
+        amountMinor: row.amountMinor
+      });
+    }
+    return result;
   }
 }
 

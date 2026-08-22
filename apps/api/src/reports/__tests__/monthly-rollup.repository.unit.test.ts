@@ -9,6 +9,11 @@ describe("MonthlyRollupRepository Unit Tests", () => {
     month: "2026-01",
     totalIncomeMinor: 100000,
     totalExpenseMinor: 50000,
+    totalCashOutflowMinor: 50000,
+    totalConsumptionMinor: 50000,
+    totalAssetFundingMinor: 0,
+    consumptionByCategory: [],
+    formulaVersion: 2,
     byCategory: [],
     byAccount: [],
     computedAt: new Date()
@@ -34,7 +39,9 @@ describe("MonthlyRollupRepository Unit Tests", () => {
       accountId: "223e4567-e89b-12d3-a456-426614174000",
       netMinor: "-5000",
       totalExpenseMinor: "5000",
-      totalIncomeMinor: "0"
+      totalIncomeMinor: "0",
+      totalConsumptionMinor: "5000",
+      totalAssetFundingMinor: "0"
     };
     const mockDb = createMockDrizzleDb([aggregateRow]);
     const repo = new MonthlyRollupRepository(mockDb);

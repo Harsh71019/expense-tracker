@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { AccountIdSchema } from "./account.js";
+import { AssetIdSchema } from "./asset.js";
 import { CategoryColorSchema, CategoryIconSchema, CategoryIdSchema } from "./category.js";
 import { MonthSchema } from "./report.js";
 import { PageInfoSchema } from "./pagination.js";
@@ -44,7 +45,16 @@ export const TransactionSchema = CreateTransactionSchema.extend({
   paymentRail: TransactionTextPaymentRailSchema,
   counterpartyHandle: z.string().min(1).nullable(),
   createdAt: z.coerce.date(),
-  updatedAt: z.coerce.date()
+  updatedAt: z.coerce.date(),
+  assetFunding: z
+    .object({
+      fundingId: z.string().uuid("Asset funding id must be a UUID."),
+      assetId: AssetIdSchema,
+      assetName: z.string().min(1).max(80),
+      assetKind: z.enum(["investment", "fixed_deposit"]),
+      amountMinor: MinorAmountSchema
+    })
+    .optional()
 });
 
 export const UpdateTransactionSchema = z
@@ -76,16 +86,27 @@ export const BatchCategorizeTransactionsResultSchema = z.object({
   updatedCount: z.number().int().min(1).max(200)
 });
 
-export const ListTransactionsQuerySchema = z.object({
-  accountId: AccountIdSchema.optional(),
-  categoryId: CategoryIdSchema.optional(),
-  from: z.coerce.date().optional(),
-  to: z.coerce.date().optional(),
-  q: z.string().trim().min(1).max(200).optional(),
-  tag: z.string().trim().min(1).max(40).optional(),
-  cursor: z.string().min(1).optional(),
-  limit: z.coerce.number().int().min(1).max(100).default(50)
-});
+export const ListTransactionsQuerySchema = z
+  .object({
+    accountId: AccountIdSchema.optional(),
+    categoryId: CategoryIdSchema.optional(),
+    // Query values arrive as strings. Keep the filter optional internally so
+    // existing callers without it retain the canonical list-query shape.
+    uncategorized: z
+      .union([z.literal("true"), z.literal("false")])
+      .transform((value) => (value === "true" ? true : undefined))
+      .optional(),
+    from: z.coerce.date().optional(),
+    to: z.coerce.date().optional(),
+    q: z.string().trim().min(1).max(200).optional(),
+    tag: z.string().trim().min(1).max(40).optional(),
+    cursor: z.string().min(1).optional(),
+    limit: z.coerce.number().int().min(1).max(100).default(50)
+  })
+  .refine((value) => !(value.uncategorized === true && value.categoryId !== undefined), {
+    message: "Category and uncategorized filters cannot be used together.",
+    path: ["uncategorized"]
+  });
 
 export const TransactionPageSchema = z.object({
   items: z.array(TransactionSchema),

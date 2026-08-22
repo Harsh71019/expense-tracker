@@ -196,7 +196,14 @@ import {
   ReceivablePageSchema,
   ReceivableSchema,
   RecordReceivableRepaymentSchema,
-  UpdateReceivableMetadataSchema
+  UpdateReceivableMetadataSchema,
+  AssetFundingIdSchema,
+  AssetFundingMutationResultSchema,
+  AssetFundingPageSchema,
+  LinkTransactionToAssetSchema,
+  CreateInvestmentTransactionSchema,
+  ReverseAssetFundingResultSchema,
+  ListAssetFundingsQuerySchema
 } from "@treasury-ops/shared";
 import { z } from "zod";
 
@@ -306,6 +313,13 @@ const SafetyBufferVersionPage = SafetyBufferVersionPageSchema.meta({
 });
 const FinancialDiagnostic = FinancialDiagnosticSchema.meta({ id: "FinancialDiagnostic" });
 const EssentialBurnResponse = EssentialBurnResponseSchema.meta({ id: "EssentialBurnResponse" });
+const AssetFundingMutationResult = AssetFundingMutationResultSchema.meta({
+  id: "AssetFundingMutationResult"
+});
+const AssetFundingPage = AssetFundingPageSchema.meta({ id: "AssetFundingPage" });
+const ReverseAssetFundingResult = ReverseAssetFundingResultSchema.meta({
+  id: "ReverseAssetFundingResult"
+});
 
 const reviewItemId = z.object({ id: ReviewItemIdSchema });
 
@@ -315,6 +329,7 @@ const categoryRuleId = z.object({ ruleId: CategoryRuleIdSchema });
 const transactionId = z.object({ transactionId: TransactionIdSchema });
 const assetId = z.object({ assetId: AssetIdSchema });
 const receivableId = z.object({ receivableId: ReceivableIdSchema });
+const assetFundingId = z.object({ fundingId: AssetFundingIdSchema });
 const transferGroupId = z.object({ transferGroupId: TransferGroupIdSchema });
 const importBatchId = z.object({ importBatchId: ImportBatchIdSchema });
 const importBatchAndRowId = z.object({
@@ -782,6 +797,64 @@ registry.registerPath({
 
 registry.registerPath({
   method: "post",
+  path: "/v1/transactions/{transactionId}/asset-funding",
+  operationId: "linkTransactionAssetFunding",
+  security: secured,
+  request: {
+    params: transactionId,
+    body: json(LinkTransactionToAssetSchema),
+    headers: idempotencyKeyHeaders
+  },
+  responses: {
+    200: {
+      description: "Linked funding, or idempotent replay",
+      headers: optionalReplayHeaders,
+      ...json(AssetFundingMutationResult)
+    },
+    404: { description: "Transaction or asset not found", ...json(ProblemDetails) },
+    ...idempotencyConflictResponse,
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/v1/asset-fundings/investments",
+  operationId: "createInvestmentFunding",
+  security: secured,
+  request: { body: json(CreateInvestmentTransactionSchema), headers: idempotencyKeyHeaders },
+  responses: {
+    200: {
+      description: "Investment funding, or idempotent replay",
+      headers: optionalReplayHeaders,
+      ...json(AssetFundingMutationResult)
+    },
+    404: { description: "Account or asset not found", ...json(ProblemDetails) },
+    ...idempotencyConflictResponse,
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/v1/asset-fundings/{fundingId}/reverse",
+  operationId: "reverseAssetFunding",
+  security: secured,
+  request: { params: assetFundingId, headers: idempotencyKeyHeaders },
+  responses: {
+    200: {
+      description: "Funding reversal, or idempotent replay",
+      headers: optionalReplayHeaders,
+      ...json(ReverseAssetFundingResult)
+    },
+    404: { description: "Funding not found", ...json(ProblemDetails) },
+    ...idempotencyConflictResponse,
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "post",
   path: "/v1/transfers",
   operationId: "createTransfer",
   security: secured,
@@ -856,6 +929,19 @@ registry.registerPath({
     },
     404: { description: "Not found", ...json(ProblemDetails) },
     ...idempotencyConflictResponse,
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/v1/assets/{assetId}/fundings",
+  operationId: "listAssetFundings",
+  security: secured,
+  request: { params: assetId, query: ListAssetFundingsQuerySchema },
+  responses: {
+    200: { description: "Asset funding history", ...json(AssetFundingPage) },
+    404: { description: "Asset not found", ...json(ProblemDetails) },
     ...problemResponses
   }
 });

@@ -1,4 +1,5 @@
 import { Inject, Injectable, Optional } from "@nestjs/common";
+import { ModuleRef } from "@nestjs/core";
 import {
   type BatchCategorizeTransactions,
   type BatchCategorizeTransactionsResult,
@@ -15,6 +16,7 @@ import { Logger } from "nestjs-pino";
 
 import { AccountRepository } from "../accounts/account.repository.js";
 import { assertBalanceDeltaApplied } from "../accounts/balance-delta.js";
+import { AssetFundingRepository } from "../asset-fundings/asset-funding.repository.js";
 import { AuditRepository } from "../audit/audit.repository.js";
 import { CategoryRepository } from "../categories/category.repository.js";
 import { DATABASE_CONNECTION } from "../common/db/db.module.js";
@@ -37,9 +39,25 @@ import {
   TRANSACTION_REVERSAL_POLICY,
   type TransactionReversalPolicy
 } from "./transaction-reversal-policy.js";
+import {
+  TRANSACTION_REVERSAL_HOOK,
+  type TransactionReversalHook
+} from "./transaction-reversal-hook.js";
 
 export type CreateTransactionResult = Readonly<{ transaction: Transaction; replayed: boolean }>;
 type TransactionLogger = Pick<Logger, "log" | "warn" | "error">;
+type ReversalHookResolver = Readonly<{
+  get(
+    token: typeof TRANSACTION_REVERSAL_HOOK,
+    options: Readonly<{ strict: false }>
+  ): TransactionReversalHook;
+}>;
+const NOOP_REVERSAL_HOOK: TransactionReversalHook = {
+  onTransactionReversedInTx: async (): Promise<void> => undefined
+};
+const NOOP_REVERSAL_HOOK_RESOLVER: ReversalHookResolver = {
+  get: () => NOOP_REVERSAL_HOOK
+};
 
 @Injectable()
 export class TransactionService {
@@ -55,7 +73,11 @@ export class TransactionService {
     private readonly createdHook?: TransactionCreatedHook,
     @Optional()
     @Inject(TRANSACTION_REVERSAL_POLICY)
-    private readonly reversalPolicy?: TransactionReversalPolicy
+    private readonly reversalPolicy?: TransactionReversalPolicy,
+    @Optional()
+    private readonly assetFundings?: AssetFundingRepository,
+    @Inject(ModuleRef)
+    private readonly moduleRef: ReversalHookResolver = NOOP_REVERSAL_HOOK_RESOLVER
   ) {}
 
   async create(
@@ -75,7 +97,13 @@ export class TransactionService {
   ): Promise<CreateTransactionResult> {
     try {
       const transaction = await withTxn(this.db, (tx) =>
-        this.createInTx(userId, input, idempotencyKey, tx, source)
+        this.createInTx(
+          userId,
+          input,
+          source,
+          tx,
+          idempotencyKey === undefined ? undefined : { idempotencyKey }
+        )
       );
       this.logger.log(
         {
@@ -106,9 +134,10 @@ export class TransactionService {
 
   /**
    * The `withTxn`-bound core of `create()`, extracted so another module's
-   * own transaction (e.g. `ReceivablesModule` posting a lend/repay leg
-   * alongside its own ledger rows) can post a transaction without opening a
-   * nested Postgres transaction. Unlike `create()`, this does not retry on a
+   * own transaction (e.g. `ReceivablesModule` posting a lend/repay leg, or
+   * `AssetFundingsModule` posting a funding leg, alongside its own ledger
+   * rows) can post a transaction without opening a nested Postgres
+   * transaction. Unlike `create()`, this does not retry on a
    * unique-violation idempotency-key collision -- the caller either provides
    * its own idempotency wrapper (as `IdempotencyPostgresService.execute`
    * does) or omits `idempotencyKey` entirely.
@@ -116,10 +145,9 @@ export class TransactionService {
   async createInTx(
     userId: string,
     input: CreateTransaction,
-    idempotencyKey: string | undefined,
+    source: TransactionSource,
     tx: DbTx,
-    source: TransactionSource = "manual",
-    purpose: TransactionPurpose = "ordinary"
+    options?: Readonly<{ idempotencyKey?: string; purpose?: TransactionPurpose }>
   ): Promise<Transaction> {
     if (input.categoryId !== undefined) {
       const category = await this.categories.findActiveById(userId, input.categoryId, tx);
@@ -135,13 +163,13 @@ export class TransactionService {
     const created = await this.transactions.create(
       userId,
       input,
-      idempotencyKey,
+      options?.idempotencyKey,
       tx,
       undefined,
       source,
       undefined,
       undefined,
-      purpose
+      options?.purpose ?? "ordinary"
     );
     await this.audit.record(userId, "transaction.create", created.id, tx);
     if (source === "api") {
@@ -150,8 +178,8 @@ export class TransactionService {
     return created;
   }
 
-  list(userId: string, query: ListTransactionsQuery): Promise<TransactionPage> {
-    return this.transactions.findMany(userId, query);
+  async list(userId: string, query: ListTransactionsQuery): Promise<TransactionPage> {
+    return this.hydrateFundings(userId, await this.transactions.findMany(userId, query));
   }
 
   getInsights(userId: string): Promise<TransactionInsights> {
@@ -161,7 +189,46 @@ export class TransactionService {
   async get(userId: string, transactionId: TransactionId): Promise<Transaction> {
     const transaction = await this.transactions.findById(userId, transactionId);
     if (transaction === null) throw new EntityNotFoundError("Transaction");
-    return transaction;
+    return this.hydrateFunding(userId, transaction);
+  }
+
+  private async hydrateFundings(userId: string, page: TransactionPage): Promise<TransactionPage> {
+    const summaries =
+      this.assetFundings === undefined
+        ? new Map()
+        : await this.assetFundings.findActiveSummariesByTransactionIds(
+            userId,
+            page.items.map((transaction) => transaction.id)
+          );
+    return {
+      ...page,
+      items: page.items.map((transaction) =>
+        this.withFunding(transaction, summaries.get(transaction.id))
+      )
+    };
+  }
+
+  private async hydrateFunding(userId: string, transaction: Transaction): Promise<Transaction> {
+    if (this.assetFundings === undefined) return transaction;
+    const summaries = await this.assetFundings.findActiveSummariesByTransactionIds(userId, [
+      transaction.id
+    ]);
+    return this.withFunding(transaction, summaries.get(transaction.id));
+  }
+
+  private withFunding(
+    transaction: Transaction,
+    funding:
+      | Readonly<{
+          fundingId: string;
+          assetId: string;
+          assetName: string;
+          assetKind: "investment" | "fixed_deposit";
+          amountMinor: number;
+        }>
+      | undefined
+  ): Transaction {
+    return funding === undefined ? transaction : { ...transaction, assetFunding: funding };
   }
 
   async update(
@@ -293,12 +360,14 @@ export class TransactionService {
    * through this class).
    */
   reverseInTx(userId: string, transactionId: TransactionId, tx: DbTx): Promise<Transaction> {
+    const reversalHook = this.moduleRef.get(TRANSACTION_REVERSAL_HOOK, { strict: false });
     return reverseTransactionInTx(
       {
         transactions: this.transactions,
         accounts: this.accounts,
         audit: this.audit,
-        policy: this.reversalPolicy
+        policy: this.reversalPolicy,
+        reversalHook
       },
       userId,
       transactionId,

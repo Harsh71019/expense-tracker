@@ -8,6 +8,7 @@ import { EntityNotFoundError } from "../common/errors/entity-not-found.error.js"
 import { TransactionNotReversibleError } from "../common/errors/transaction-not-reversible.error.js";
 import type { TransactionRepository } from "./transaction.repository.js";
 import type { TransactionReversalPolicy } from "./transaction-reversal-policy.js";
+import type { TransactionReversalHook } from "./transaction-reversal-hook.js";
 
 export type ReverseTransactionDeps = Readonly<{
   transactions: TransactionRepository;
@@ -16,6 +17,7 @@ export type ReverseTransactionDeps = Readonly<{
   // Optional so existing call sites built before this policy existed don't
   // need updating; omitting it just means nothing can veto the reversal.
   policy?: TransactionReversalPolicy | undefined;
+  reversalHook: TransactionReversalHook;
 }>;
 
 /**
@@ -39,7 +41,10 @@ export type ReverseTransactionDeps = Readonly<{
  * `deps.policy` follows the same shape for the same reason: it lets
  * `ReceivablesModule` veto reversing a transaction linked to a receivable
  * event (see `TRANSACTION_REVERSAL_POLICY`'s binding module) without
- * `TransactionsModule` importing `ReceivablesModule`.
+ * `TransactionsModule` importing `ReceivablesModule`. `deps.reversalHook`
+ * is a separate, non-vetoing extension point resolved via `ModuleRef` (see
+ * `TransactionService.reverseInTx`) that lets `AssetFundingsModule` react
+ * to a reversal (e.g. mark a linked funding reversed) after it commits.
  */
 export async function reverseTransactionInTx(
   deps: ReverseTransactionDeps,
@@ -67,5 +72,6 @@ export async function reverseTransactionInTx(
   );
 
   await deps.audit.record(userId, "transaction.reverse", reversal.id, tx);
+  await deps.reversalHook.onTransactionReversedInTx(userId, original, reversal, tx);
   return reversal;
 }

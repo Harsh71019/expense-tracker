@@ -4,6 +4,7 @@ import { AccountRepository } from "../../../src/accounts/account.repository.js";
 import { AuditRepository } from "../../../src/audit/audit.repository.js";
 import { AssetRepository } from "../../../src/assets/asset.repository.js";
 import { AssetService } from "../../../src/assets/asset.service.js";
+import { AssetFundingRepository } from "../../../src/asset-fundings/asset-funding.repository.js";
 import { NetWorthService } from "../../../src/net-worth/net-worth.service.js";
 import { ValuationRepository } from "../../../src/assets/valuation.repository.js";
 import { CategoryRepository } from "../../../src/categories/category.repository.js";
@@ -58,7 +59,13 @@ describe("NetWorthService", () => {
       receivableRepository
     );
     const receivablesRead = new ReceivableNetWorthReadService(receivableRepository);
-    netWorth = new NetWorthService(accounts, assetRepository, valuationRepository, receivablesRead);
+    netWorth = new NetWorthService(
+      accounts,
+      assetRepository,
+      valuationRepository,
+      new AssetFundingRepository(testDb.db),
+      receivablesRead
+    );
   }, 60_000);
 
   afterAll(async () => {

@@ -11,6 +11,11 @@ describe("Reports Services Unit Tests", () => {
     month: "2026-01",
     totalIncomeMinor: 100000,
     totalExpenseMinor: 50000,
+    totalCashOutflowMinor: 50000,
+    totalConsumptionMinor: 50000,
+    totalAssetFundingMinor: 0,
+    consumptionByCategory: [],
+    formulaVersion: 2,
     byCategory: [
       {
         categoryId: "123e4567-e89b-12d3-a456-426614174001",
@@ -42,6 +47,21 @@ describe("Reports Services Unit Tests", () => {
       expect(res?.month).toBe("2026-01");
       expect(res?.totalIncomeMinor).toBe(100000);
       expect(res?.byCategory[0]?.spentMinor).toBe(50000);
+      expect(mockRollupRepo.recompute).not.toHaveBeenCalled();
+    });
+
+    it("recomputes a cached rollup from an earlier formula", async () => {
+      const current = { ...sampleRollup, month: "2026-02" };
+      const mockRollupRepo = {
+        findByMonth: vi.fn(async () => ({ ...current, formulaVersion: 1 })),
+        recompute: vi.fn(async () => current)
+      };
+
+      // @ts-expect-error mock service args
+      const service = new MonthlyRollupService(mockRollupRepo);
+
+      await expect(service.getOrCompute("u1", "2026-02")).resolves.toEqual(current);
+      expect(mockRollupRepo.recompute).toHaveBeenCalledWith("u1", "2026-02");
     });
   });
 

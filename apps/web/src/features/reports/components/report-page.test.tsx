@@ -34,6 +34,11 @@ function rollup(month: string): MonthlyRollup {
     byAccount: [],
     totalExpenseMinor: 100_000,
     totalIncomeMinor: 200_000,
+    totalCashOutflowMinor: 100_000,
+    totalConsumptionMinor: 100_000,
+    totalAssetFundingMinor: 0,
+    consumptionByCategory: [{ spentMinor: 100_000, incomeMinor: 0, txnCount: 3 }],
+    formulaVersion: 2,
     computedAt: new Date("2026-07-01T02:15:00.000Z")
   };
 }
@@ -50,7 +55,7 @@ describe("ReportPage", () => {
     render(<ReportPage initialMonth="2026-06" initialRollup={rollup("2026-06")} />);
 
     expect(screen.getByRole("heading", { name: "Monthly report" })).toBeVisible();
-    expect(screen.getByText("SPENT")).toBeVisible();
+    expect(screen.getByText("CONSUMPTION")).toBeVisible();
     expect(screen.getByText("Spend by category")).toBeVisible();
     expect(screen.getByText("Category breakdown")).toBeVisible();
     expect(screen.getByText("Net flow by account")).toBeVisible();
@@ -88,7 +93,7 @@ describe("ReportPage", () => {
     mocks.rollupsByMonth.set("2026-05", null);
     render(<ReportPage initialMonth="2026-06" initialRollup={rollup("2026-06")} />);
 
-    expect(screen.getByText("SPENT")).toBeVisible();
+    expect(screen.getByText("CONSUMPTION")).toBeVisible();
     await user.click(screen.getByRole("button", { name: "May 26" }));
     expect(screen.getByText("No rollup for May 2026")).toBeVisible();
     expect(mocks.replace).toHaveBeenCalledWith("/reports?month=2026-05", { scroll: false });

@@ -25,7 +25,7 @@ import type { TestDb } from "../support/postgres-test-db.js";
  * faithful, idempotent replay of what cutover actually does.
  */
 const MIGRATION_PATH = fileURLToPath(
-  new URL("../../../drizzle/0033_round_iron_patriot.sql", import.meta.url)
+  new URL("../../../drizzle/0037_outstanding_tyrannus.sql", import.meta.url)
 );
 
 function extractBackfillSql(): string {

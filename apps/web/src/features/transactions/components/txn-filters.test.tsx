@@ -42,6 +42,15 @@ describe("TxnFilters", () => {
     expect(mocks.push).toHaveBeenCalledWith("/transactions?from=2026-07-01T00%3A00%3A00.000Z");
   });
 
+  it("filters to uncategorized transactions", () => {
+    render(<TxnFilters filters={{ limit: 50 }} />);
+
+    fireEvent.click(screen.getByRole("combobox", { name: "Filter by category" }));
+    fireEvent.click(screen.getByRole("option", { name: "Uncategorized" }));
+
+    expect(mocks.push).toHaveBeenCalledWith("/transactions?uncategorized=true");
+  });
+
   it("keeps secondary filters collapsed on mobile until requested", () => {
     render(<TxnFilters filters={{ limit: 50 }} />);
 

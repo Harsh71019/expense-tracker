@@ -41,6 +41,9 @@ describe("NetWorthService", () => {
     const mockValRepo = {
       findLatestForAssets: vi.fn(async () => new Map([["asset_1", sampleValuation]]))
     };
+    const mockFundingRepo = {
+      listActiveForAssets: vi.fn(async () => [])
+    };
     const mockReceivablesRead = {
       listActive: vi.fn(async () => [
         {
@@ -57,6 +60,7 @@ describe("NetWorthService", () => {
       mockAccountRepo,
       mockAssetRepo,
       mockValRepo,
+      mockFundingRepo,
       mockReceivablesRead
     );
 

@@ -236,8 +236,36 @@
     {
       "idx": 33,
       "version": "7",
-      "when": 1787407441293,
-      "tag": "0033_round_iron_patriot",
+      "when": 1787379121002,
+      "tag": "0033_next_sandman",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1787381296355,
+      "tag": "0034_harsh_scarecrow",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1787401571759,
+      "tag": "0035_pretty_the_call",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1787407176052,
+      "tag": "0036_giant_hiroim",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1787418428961,
+      "tag": "0037_outstanding_tyrannus",
       "breakpoints": true
     }
   ]

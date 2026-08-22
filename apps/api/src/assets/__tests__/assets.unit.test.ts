@@ -62,4 +62,7 @@ describe("Asset Unit Tests", () => {
       expect(res.valueMinor).toBe(50000);
     });
   });
+  // NetWorthService moved to apps/api/src/net-worth/net-worth.service.ts
+  // (see net-worth/__tests__/net-worth.service.test.ts for its coverage,
+  // now also mocking AssetFundingRepository per main's asset-funding work).
 });

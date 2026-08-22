@@ -282,7 +282,8 @@ describe("DashboardService", () => {
       expect(stats.spent.trend).toHaveLength(6);
       expect(stats.spent.valueMinor).toBe(0);
       expect(stats.income.valueMinor).toBe(0);
-      expect(stats.savingsRate.valuePct).toBe(0);
+      // A percentage has no meaningful denominator when the period has no income.
+      expect(stats.savingsRate.valuePct).toBeNull();
       expect(stats.netWorth.valueMinor).toBe(0);
       expect(stats.netWorth.deltaPct).toBeNull();
     });

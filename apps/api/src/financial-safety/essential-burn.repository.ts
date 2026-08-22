@@ -4,7 +4,8 @@ import { MonthSchema, parseSafeIntegerMinor, type Month } from "@treasury-ops/sh
 
 import { DATABASE_CONNECTION } from "../common/db/db.module.js";
 import type { DrizzleDb } from "../common/db/db.module.js";
-import { categories, transactions } from "../common/db/schema/index.js";
+import { isActiveAssetFunding } from "../common/db/asset-funding-active.js";
+import { assetFundings, categories, transactions } from "../common/db/schema/index.js";
 import { istMonthBounds } from "../common/time/ist.js";
 import type { MonthlyLedgerExpenseFacts } from "./essential-burn.js";
 
@@ -52,6 +53,14 @@ export class EssentialBurnRepository {
         categories,
         and(eq(transactions.categoryId, categories.id), eq(categories.userId, userId))
       )
+      .leftJoin(
+        assetFundings,
+        and(
+          eq(assetFundings.userId, userId),
+          eq(assetFundings.transactionId, transactions.id),
+          isActiveAssetFunding()
+        )
+      )
       .where(
         and(
           eq(transactions.userId, userId),
@@ -61,6 +70,7 @@ export class EssentialBurnRepository {
           isNull(transactions.reversalOf),
           isNull(transactions.reversedBy),
           isNull(transactions.transferGroupId),
+          isNull(assetFundings.id),
           gte(transactions.occurredAt, windowStart),
           lt(transactions.occurredAt, windowEnd)
         )

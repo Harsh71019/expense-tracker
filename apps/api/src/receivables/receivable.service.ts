@@ -67,10 +67,9 @@ export class ReceivableService {
           description: input.description,
           tags: []
         },
-        undefined,
-        tx,
         "manual",
-        "receivable_principal"
+        tx,
+        { purpose: "receivable_principal" }
       );
       transactionId = transaction.id;
       amountMinor = input.principalMinor;
@@ -191,10 +190,9 @@ export class ReceivableService {
           description: input.description,
           tags: []
         },
-        undefined,
-        tx,
         "manual",
-        "receivable_principal"
+        tx,
+        { purpose: "receivable_principal" }
       );
       transactionId = transaction.id;
       amountMinor = input.amountMinor;

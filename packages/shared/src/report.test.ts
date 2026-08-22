@@ -26,8 +26,14 @@ describe("MonthlyRollupSchema", () => {
       byAccount: [{ accountId: "3fa85f64-5717-4562-b3fc-2c963f66beef", netMinor: -5_000 }],
       totalExpenseMinor: 5_000,
       totalIncomeMinor: 0,
+      totalCashOutflowMinor: 5_000,
+      totalConsumptionMinor: 5_000,
+      totalAssetFundingMinor: 0,
+      consumptionByCategory: [{ spentMinor: 5_000, incomeMinor: 0, txnCount: 2 }],
+      formulaVersion: 2,
       computedAt: "2026-08-02T02:00:00.000Z"
     });
     expect(parsed.byCategory[0]?.categoryId).toBeUndefined();
+    expect(parsed.totalConsumptionMinor).toBe(5_000);
   });
 });

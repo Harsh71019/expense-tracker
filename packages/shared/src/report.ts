@@ -3,6 +3,8 @@ import { z } from "zod";
 import { AccountIdSchema } from "./account.js";
 import { CategoryIdSchema } from "./category.js";
 
+export const MONTHLY_ROLLUP_FORMULA_VERSION = 2;
+
 export const MonthSchema = z
   .string()
   .regex(/^\d{4}-(0[1-9]|1[0-2])$/, "Month must be in YYYY-MM format.");
@@ -26,6 +28,11 @@ export const MonthlyRollupSchema = z.object({
   byAccount: z.array(AccountRollupSchema),
   totalExpenseMinor: z.number().int().min(0),
   totalIncomeMinor: z.number().int().min(0),
+  totalCashOutflowMinor: z.number().int().min(0),
+  totalConsumptionMinor: z.number().int().min(0),
+  totalAssetFundingMinor: z.number().int().min(0),
+  consumptionByCategory: z.array(CategoryRollupSchema),
+  formulaVersion: z.number().int().min(1),
   computedAt: z.coerce.date()
 });
 

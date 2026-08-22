@@ -4,6 +4,7 @@ import type { NetWorth } from "@treasury-ops/shared";
 import { AccountRepository } from "../accounts/account.repository.js";
 import { AssetRepository } from "../assets/asset.repository.js";
 import { ValuationRepository } from "../assets/valuation.repository.js";
+import { AssetFundingRepository } from "../asset-fundings/asset-funding.repository.js";
 import { ReceivableNetWorthReadService } from "../receivables/receivable-net-worth-read.service.js";
 
 @Injectable()
@@ -12,6 +13,7 @@ export class NetWorthService {
     private readonly accounts: AccountRepository,
     private readonly assets: AssetRepository,
     private readonly valuations: ValuationRepository,
+    private readonly fundings: AssetFundingRepository,
     private readonly receivablesRead: ReceivableNetWorthReadService
   ) {}
 
@@ -30,6 +32,19 @@ export class NetWorthService {
       nonReceivableAssets.map((asset) => asset.id)
     );
 
+    const activeFundings = await this.fundings.listActiveForAssets(
+      userId,
+      allAssets.map((asset) => asset.id)
+    );
+    const contributedAfterLatest = new Map<string, number>();
+    for (const funding of activeFundings) {
+      const valuation = latest.get(funding.assetId);
+      if (valuation !== undefined && funding.occurredAt <= valuation.valuedAt) continue;
+      contributedAfterLatest.set(
+        funding.assetId,
+        (contributedAfterLatest.get(funding.assetId) ?? 0) + funding.amountMinor
+      );
+    }
     const netWorthAccounts = accounts.map((account) => ({
       accountId: account.id,
       name: account.name,
@@ -41,7 +56,9 @@ export class NetWorthService {
         assetId: asset.id,
         name: asset.name,
         kind: asset.kind,
-        valueMinor: value === undefined ? 0 : value.valueMinor,
+        valueMinor:
+          (value === undefined ? 0 : value.valueMinor) +
+          (contributedAfterLatest.get(asset.id) ?? 0),
         valuedAt: value === undefined ? null : value.valuedAt
       };
     });

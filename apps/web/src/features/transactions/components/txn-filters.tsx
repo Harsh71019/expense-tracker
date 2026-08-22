@@ -12,6 +12,7 @@ import { useCategories } from "@/features/categories";
 import { serializeTransactionFilters } from "../model/filters";
 
 const SEARCH_DEBOUNCE_MS = 400;
+const UNCATEGORIZED_FILTER_VALUE = "__uncategorized__";
 
 function toDateInputValue(value: Date | undefined): string {
   return value === undefined ? "" : value.toISOString().slice(0, 10);
@@ -57,6 +58,7 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
     filters.q,
     filters.accountId,
     filters.categoryId,
+    filters.uncategorized,
     filters.from,
     filters.to
   ].filter((value) => value !== undefined).length;
@@ -105,6 +107,7 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
 
   const categoryOptions = [
     { value: "", label: "All categories" },
+    { value: UNCATEGORIZED_FILTER_VALUE, label: "Uncategorized" },
     ...(filters.categoryId !== undefined &&
     !(categories.data ?? []).some((category) => category.id === filters.categoryId)
       ? [{ value: filters.categoryId, label: "Archived or unavailable" }]
@@ -114,6 +117,13 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
       label: category.name
     }))
   ];
+
+  function handleCategoryFilterChange(value: string): void {
+    navigate({
+      categoryId: value === "" || value === UNCATEGORIZED_FILTER_VALUE ? undefined : value,
+      uncategorized: value === UNCATEGORIZED_FILTER_VALUE ? true : undefined
+    });
+  }
 
   function applyPreset(preset: "this-month" | "30-days" | "this-year"): void {
     const todayStr = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(
@@ -139,7 +149,7 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
 
   return (
     <div
-      className={`mb-5 flex flex-wrap items-center gap-3 rounded-2xl border p-3.5 backdrop-blur transition-all duration-200 ${
+      className={`relative z-10 mb-5 flex flex-wrap items-center gap-3 rounded-2xl border p-3.5 backdrop-blur transition-all duration-200 ${
         isFiltered
           ? "border-accent/40 bg-surface-elevated/90 shadow-sm"
           : "border-border/80 bg-surface-elevated/90"
@@ -204,8 +214,10 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
           aria-label="Filter by category"
           name="transactionCategory"
           options={categoryOptions}
-          value={filters.categoryId ?? ""}
-          onChange={(value) => navigate({ categoryId: value === "" ? undefined : value })}
+          value={
+            filters.uncategorized === true ? UNCATEGORIZED_FILTER_VALUE : (filters.categoryId ?? "")
+          }
+          onChange={handleCategoryFilterChange}
         />
         <DatePicker
           name="transactionFrom"
@@ -303,16 +315,18 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
               </button>
             </span>
           )}
-          {filters.categoryId !== undefined && (
+          {(filters.categoryId !== undefined || filters.uncategorized === true) && (
             <span className="inline-flex items-center gap-1 rounded-full border border-accent/30 bg-accent-glow px-2.5 py-0.5 font-mono text-xs font-medium text-accent">
               <span>
                 Category:{" "}
-                {(categories.data ?? []).find((c) => c.id === filters.categoryId)?.name ??
-                  "Selected"}
+                {filters.uncategorized === true
+                  ? "Uncategorized"
+                  : ((categories.data ?? []).find((c) => c.id === filters.categoryId)?.name ??
+                    "Selected")}
               </span>
               <button
                 type="button"
-                onClick={() => navigate({ categoryId: undefined })}
+                onClick={() => navigate({ categoryId: undefined, uncategorized: undefined })}
                 className="hover:text-foreground focus-visible:outline-none"
                 aria-label="Remove category filter"
               >

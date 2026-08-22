@@ -34,6 +34,7 @@ export function parseTransactionFilters(
   const result = ListTransactionsQuerySchema.safeParse({
     accountId: getSingleValue(searchParams, "accountId"),
     categoryId: getSingleValue(searchParams, "categoryId"),
+    uncategorized: getSingleValue(searchParams, "uncategorized"),
     from: getSingleValue(searchParams, "from"),
     to: getSingleValue(searchParams, "to"),
     q: getSingleValue(searchParams, "q"),
@@ -53,6 +54,9 @@ export function serializeTransactionFilters(filters: ListTransactionsQuery): str
   const params = new URLSearchParams();
   appendIfDefined(params, "accountId", filters.accountId);
   appendIfDefined(params, "categoryId", filters.categoryId);
+  if (filters.uncategorized === true) {
+    params.set("uncategorized", "true");
+  }
   appendIfDefined(params, "from", filters.from?.toISOString());
   appendIfDefined(params, "to", filters.to?.toISOString());
   appendIfDefined(params, "q", filters.q);

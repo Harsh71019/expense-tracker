@@ -67,6 +67,7 @@ describe("repository edge branches", () => {
   it("covers monthly rollup null-category and missing-total fallbacks", async () => {
     const db = sequentialSelectDb([
       [{ categoryId: null, spentMinor: "100", incomeMinor: "20", txnCount: 2 }],
+      [{ categoryId: null, spentMinor: "100", incomeMinor: "20", txnCount: 2 }],
       [{ accountId: ID, netMinor: "-80" }],
       []
     ]);

@@ -13,6 +13,13 @@ const mocks = vi.hoisted((): { data: ValuationPage | undefined; isLoading: boole
 vi.mock("../hooks/use-valuations", () => ({
   useValuations: () => ({ data: mocks.data, isLoading: mocks.isLoading })
 }));
+vi.mock("../hooks/use-asset-fundings", () => ({
+  useAssetFundings: () => ({
+    data: { items: [], pageInfo: { nextCursor: null, hasMore: false, limit: 50 } },
+    isLoading: false,
+    isError: false
+  })
+}));
 
 const asset: Asset = {
   id: "507f1f77bcf86cd799439021",

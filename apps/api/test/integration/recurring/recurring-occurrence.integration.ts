@@ -32,6 +32,9 @@ import { createTestDb, insertTestUser } from "../support/postgres-test-db.js";
 import type { TestDb } from "../support/postgres-test-db.js";
 
 const NOOP_LOGGER = { log: () => undefined, warn: () => undefined, error: () => undefined };
+const NOOP_MODULE_REF = {
+  get: () => ({ onTransactionReversedInTx: async () => undefined })
+};
 const USER_ID = "user-a";
 const OTHER_USER_ID = "user-b";
 
@@ -87,7 +90,9 @@ describe("manual-post recurring occurrences (integration)", () => {
       new NotificationOutboxRepository(testDb.db),
       new AuditRepository(testDb.db),
       new IdempotencyPostgresService(testDb.db, new IdempotencyPostgresRepository(testDb.db)),
-      NOOP_LOGGER
+      NOOP_LOGGER,
+      undefined,
+      NOOP_MODULE_REF
     );
     transactionsService = new TransactionService(
       testDb.db,

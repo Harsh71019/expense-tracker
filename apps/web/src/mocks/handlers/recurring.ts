@@ -69,7 +69,18 @@ export function recurringHandlers(http: MockHttp, store: MockStore): HttpHandler
         );
       }
       if (body.template !== undefined) {
-        rule.template = { ...rule.template, ...body.template };
+        const { assetId, ...template } = body.template;
+        if (assetId === null) {
+          const { assetId: removedAssetId, ...currentTemplate } = rule.template;
+          void removedAssetId;
+          rule.template = { ...currentTemplate, ...template };
+        } else {
+          rule.template = {
+            ...rule.template,
+            ...template,
+            ...(assetId === undefined ? {} : { assetId })
+          };
+        }
       }
       if (body.rrule !== undefined) rule.rrule = body.rrule;
       if (body.isPaused !== undefined) rule.isPaused = body.isPaused;

@@ -1,5 +1,5 @@
 {
-  "id": "101427c9-b109-49ae-80c1-08c95d8a8c92",
+  "id": "77ef2367-7233-404e-aeab-1819ad7204ff",
   "prevId": "908265ba-d7bf-4205-bb15-c29feacd1e5c",
   "version": "7",
   "dialect": "postgresql",
@@ -730,14 +730,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "purpose": {
-          "name": "purpose",
-          "type": "transaction_purpose",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'ordinary'"
-        },
         "idempotency_key": {
           "name": "idempotency_key",
           "type": "uuid",
@@ -1400,6 +1392,249 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.asset_fundings": {
+      "name": "asset_fundings",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "asset_id": {
+          "name": "asset_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "transaction_id": {
+          "name": "transaction_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "amount_minor": {
+          "name": "amount_minor",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "occurred_at": {
+          "name": "occurred_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "asset_funding_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reversal_of": {
+          "name": "reversal_of",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reversed_by": {
+          "name": "reversed_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "asset_fundings_active_source_unique": {
+          "name": "asset_fundings_active_source_unique",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "transaction_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"asset_fundings\".\"status\" = 'posted'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "asset_fundings_reversal_of_unique": {
+          "name": "asset_fundings_reversal_of_unique",
+          "columns": [
+            {
+              "expression": "reversal_of",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"asset_fundings\".\"reversal_of\" IS NOT NULL",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "asset_fundings_reversed_by_unique": {
+          "name": "asset_fundings_reversed_by_unique",
+          "columns": [
+            {
+              "expression": "reversed_by",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"asset_fundings\".\"reversed_by\" IS NOT NULL",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "asset_fundings_user_asset_occurred_at_id": {
+          "name": "asset_fundings_user_asset_occurred_at_id",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "asset_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "occurred_at",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "asset_fundings_user_transaction": {
+          "name": "asset_fundings_user_transaction",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "transaction_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "asset_fundings_user_id_user_id_fk": {
+          "name": "asset_fundings_user_id_user_id_fk",
+          "tableFrom": "asset_fundings",
+          "tableTo": "user",
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "asset_fundings_asset_id_net_worth_assets_id_fk": {
+          "name": "asset_fundings_asset_id_net_worth_assets_id_fk",
+          "tableFrom": "asset_fundings",
+          "tableTo": "net_worth_assets",
+          "columnsFrom": ["asset_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "asset_fundings_transaction_id_transactions_id_fk": {
+          "name": "asset_fundings_transaction_id_transactions_id_fk",
+          "tableFrom": "asset_fundings",
+          "tableTo": "transactions",
+          "columnsFrom": ["transaction_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "asset_fundings_reversal_of_asset_fundings_id_fk": {
+          "name": "asset_fundings_reversal_of_asset_fundings_id_fk",
+          "tableFrom": "asset_fundings",
+          "tableTo": "asset_fundings",
+          "columnsFrom": ["reversal_of"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "asset_fundings_reversed_by_asset_fundings_id_fk": {
+          "name": "asset_fundings_reversed_by_asset_fundings_id_fk",
+          "tableFrom": "asset_fundings",
+          "tableTo": "asset_fundings",
+          "columnsFrom": ["reversed_by"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "asset_fundings_amount_positive": {
+          "name": "asset_fundings_amount_positive",
+          "value": "\"asset_fundings\".\"amount_minor\" > 0"
+        },
+        "asset_fundings_lifecycle_valid": {
+          "name": "asset_fundings_lifecycle_valid",
+          "value": "(\"asset_fundings\".\"status\" = 'posted' AND \"asset_fundings\".\"reversal_of\" IS NULL AND \"asset_fundings\".\"reversed_by\" IS NULL) OR (\"asset_fundings\".\"status\" = 'reversed' AND \"asset_fundings\".\"reversal_of\" IS NULL AND \"asset_fundings\".\"reversed_by\" IS NOT NULL) OR (\"asset_fundings\".\"status\" = 'reversal' AND \"asset_fundings\".\"reversal_of\" IS NOT NULL AND \"asset_fundings\".\"reversed_by\" IS NULL)"
+        },
+        "asset_fundings_no_self_reversal": {
+          "name": "asset_fundings_no_self_reversal",
+          "value": "\"asset_fundings\".\"reversal_of\" IS NULL OR \"asset_fundings\".\"reversal_of\" <> \"asset_fundings\".\"id\""
+        }
+      },
       "isRLSEnabled": false
     },
     "public.import_batches": {
@@ -6817,354 +7052,6 @@
       },
       "isRLSEnabled": false
     },
-    "public.receivable_events": {
-      "name": "receivable_events",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "receivable_id": {
-          "name": "receivable_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "kind": {
-          "name": "kind",
-          "type": "receivable_event_kind",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "amount_minor": {
-          "name": "amount_minor",
-          "type": "bigint",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "occurred_at": {
-          "name": "occurred_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "transaction_id": {
-          "name": "transaction_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "legacy_valuation_id": {
-          "name": "legacy_valuation_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "reason": {
-          "name": "reason",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {
-        "receivable_events_transaction_id_unique": {
-          "name": "receivable_events_transaction_id_unique",
-          "columns": [
-            {
-              "expression": "transaction_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "where": "\"receivable_events\".\"transaction_id\" IS NOT NULL",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "receivable_events_legacy_valuation_id_unique": {
-          "name": "receivable_events_legacy_valuation_id_unique",
-          "columns": [
-            {
-              "expression": "legacy_valuation_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "where": "\"receivable_events\".\"legacy_valuation_id\" IS NOT NULL",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "receivable_events_user_id_receivable_id_occurred_at": {
-          "name": "receivable_events_user_id_receivable_id_occurred_at",
-          "columns": [
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "receivable_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "occurred_at",
-              "isExpression": false,
-              "asc": false,
-              "nulls": "last"
-            },
-            {
-              "expression": "id",
-              "isExpression": false,
-              "asc": false,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "receivable_events_user_id_user_id_fk": {
-          "name": "receivable_events_user_id_user_id_fk",
-          "tableFrom": "receivable_events",
-          "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "receivable_events_receivable_id_receivables_id_fk": {
-          "name": "receivable_events_receivable_id_receivables_id_fk",
-          "tableFrom": "receivable_events",
-          "tableTo": "receivables",
-          "columnsFrom": ["receivable_id"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "receivable_events_transaction_id_transactions_id_fk": {
-          "name": "receivable_events_transaction_id_transactions_id_fk",
-          "tableFrom": "receivable_events",
-          "tableTo": "transactions",
-          "columnsFrom": ["transaction_id"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "receivable_events_legacy_valuation_id_asset_valuations_id_fk": {
-          "name": "receivable_events_legacy_valuation_id_asset_valuations_id_fk",
-          "tableFrom": "receivable_events",
-          "tableTo": "asset_valuations",
-          "columnsFrom": ["legacy_valuation_id"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "receivable_events_amount_minor_safe_integer": {
-          "name": "receivable_events_amount_minor_safe_integer",
-          "value": "\"receivable_events\".\"amount_minor\" between 1 and 9007199254740991"
-        },
-        "receivable_events_correction_requires_reason": {
-          "name": "receivable_events_correction_requires_reason",
-          "value": "(\"receivable_events\".\"kind\" NOT IN ('correction_increase', 'correction_decrease')) OR (\"receivable_events\".\"reason\" IS NOT NULL)"
-        },
-        "receivable_events_legacy_increase_requires_legacy_valuation": {
-          "name": "receivable_events_legacy_increase_requires_legacy_valuation",
-          "value": "(\"receivable_events\".\"kind\" <> 'legacy_increase') OR (\"receivable_events\".\"legacy_valuation_id\" IS NOT NULL)"
-        },
-        "receivable_events_non_legacy_excludes_legacy_valuation": {
-          "name": "receivable_events_non_legacy_excludes_legacy_valuation",
-          "value": "(\"receivable_events\".\"kind\" IN ('legacy_increase', 'legacy_decrease')) OR (\"receivable_events\".\"legacy_valuation_id\" IS NULL)"
-        }
-      },
-      "isRLSEnabled": false
-    },
-    "public.receivables": {
-      "name": "receivables",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "counterparty_name": {
-          "name": "counterparty_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "note": {
-          "name": "note",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "opened_at": {
-          "name": "opened_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "due_at": {
-          "name": "due_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "legacy_asset_id": {
-          "name": "legacy_asset_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {
-        "receivables_user_id_created_at": {
-          "name": "receivables_user_id_created_at",
-          "columns": [
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": false,
-              "nulls": "last"
-            },
-            {
-              "expression": "id",
-              "isExpression": false,
-              "asc": false,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "receivables_user_id_due_at": {
-          "name": "receivables_user_id_due_at",
-          "columns": [
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "due_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "where": "\"receivables\".\"due_at\" IS NOT NULL",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "receivables_legacy_asset_id_unique": {
-          "name": "receivables_legacy_asset_id_unique",
-          "columns": [
-            {
-              "expression": "legacy_asset_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "where": "\"receivables\".\"legacy_asset_id\" IS NOT NULL",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "receivables_user_id_user_id_fk": {
-          "name": "receivables_user_id_user_id_fk",
-          "tableFrom": "receivables",
-          "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "receivables_legacy_asset_id_net_worth_assets_id_fk": {
-          "name": "receivables_legacy_asset_id_net_worth_assets_id_fk",
-          "tableFrom": "receivables",
-          "tableTo": "net_worth_assets",
-          "columnsFrom": ["legacy_asset_id"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.account": {
       "name": "account",
       "schema": "",
@@ -7691,6 +7578,11 @@
       "schema": "public",
       "values": ["bank", "credit_card", "cash", "wallet", "investment"]
     },
+    "public.asset_funding_status": {
+      "name": "asset_funding_status",
+      "schema": "public",
+      "values": ["posted", "reversed", "reversal"]
+    },
     "public.asset_kind": {
       "name": "asset_kind",
       "schema": "public",
@@ -7821,18 +7713,6 @@
       "schema": "public",
       "values": ["pending", "confirmed", "dismissed"]
     },
-    "public.receivable_event_kind": {
-      "name": "receivable_event_kind",
-      "schema": "public",
-      "values": [
-        "opening",
-        "repayment",
-        "correction_increase",
-        "correction_decrease",
-        "legacy_increase",
-        "legacy_decrease"
-      ]
-    },
     "public.recurring_detection_run_status": {
       "name": "recurring_detection_run_status",
       "schema": "public",
@@ -7926,11 +7806,6 @@
         "covered_by_existing_family_arrangement",
         "other_personal_reason"
       ]
-    },
-    "public.transaction_purpose": {
-      "name": "transaction_purpose",
-      "schema": "public",
-      "values": ["ordinary", "receivable_principal"]
     },
     "public.transaction_source": {
       "name": "transaction_source",

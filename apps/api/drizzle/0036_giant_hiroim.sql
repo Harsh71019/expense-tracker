@@ -1,0 +1,2 @@
+ALTER TABLE "asset_fundings" DROP CONSTRAINT "asset_fundings_no_self_reversal";--> statement-breakpoint
+ALTER TABLE "asset_fundings" ADD CONSTRAINT "asset_fundings_no_self_reversal" CHECK (("asset_fundings"."reversal_of" IS NULL OR "asset_fundings"."reversal_of" <> "asset_fundings"."id") AND ("asset_fundings"."reversed_by" IS NULL OR "asset_fundings"."reversed_by" <> "asset_fundings"."id"));

@@ -56,6 +56,7 @@ type Overrides = Readonly<{
   transactions?: Double;
   audit?: Double;
   logger?: Double;
+  assetFundings?: Double;
 }>;
 
 function createService(overrides: Overrides = {}) {
@@ -70,7 +71,8 @@ function createService(overrides: Overrides = {}) {
     categories: overrides.categories ?? {},
     transactions: overrides.transactions ?? {},
     audit: overrides.audit ?? { record: vi.fn().mockResolvedValue(undefined) },
-    logger: overrides.logger ?? { log: vi.fn(), warn: vi.fn() }
+    logger: overrides.logger ?? { log: vi.fn(), warn: vi.fn() },
+    assetFundings: overrides.assetFundings
   };
   const service = new TransactionService(
     focusedTestDouble(collaborators.db),
@@ -78,7 +80,13 @@ function createService(overrides: Overrides = {}) {
     focusedTestDouble(collaborators.categories),
     focusedTestDouble(collaborators.transactions),
     focusedTestDouble(collaborators.audit),
-    focusedTestDouble(collaborators.logger)
+    focusedTestDouble(collaborators.logger),
+    undefined,
+    undefined,
+    collaborators.assetFundings === undefined
+      ? undefined
+      : focusedTestDouble(collaborators.assetFundings),
+    undefined
   );
   return { service, tx, ...collaborators };
 }
@@ -164,8 +172,65 @@ describe("TransactionService create and reads", () => {
     };
     const context = createService({ transactions });
 
-    await expect(context.service.list("u1", { limit: 50 })).resolves.toBe(page);
+    await expect(context.service.list("u1", { limit: 50 })).resolves.toEqual(page);
     await expect(context.service.get("u1", TRANSACTION_ID)).resolves.toBe(TRANSACTION);
+  });
+
+  it("hydrates active funding summaries in one batched lookup", async () => {
+    const secondTransaction = { ...TRANSACTION, id: "523e4567-e89b-42d3-a456-426614174000" };
+    const page = {
+      items: [TRANSACTION, secondTransaction],
+      pageInfo: { nextCursor: null, hasMore: false, limit: 50 }
+    };
+    const funding = {
+      fundingId: "623e4567-e89b-42d3-a456-426614174000",
+      assetId: "723e4567-e89b-42d3-a456-426614174000",
+      assetName: "Index fund",
+      assetKind: "investment" as const,
+      amountMinor: 5_000
+    };
+    const transactions = { findMany: vi.fn().mockResolvedValue(page) };
+    const assetFundings = {
+      findActiveSummariesByTransactionIds: vi
+        .fn()
+        .mockResolvedValue(new Map([[TRANSACTION_ID, funding]]))
+    };
+    const context = createService({ transactions, assetFundings });
+
+    await expect(context.service.list("u1", { limit: 50 })).resolves.toEqual({
+      ...page,
+      items: [{ ...TRANSACTION, assetFunding: funding }, secondTransaction]
+    });
+    expect(assetFundings.findActiveSummariesByTransactionIds).toHaveBeenCalledTimes(1);
+    expect(assetFundings.findActiveSummariesByTransactionIds).toHaveBeenCalledWith("u1", [
+      TRANSACTION_ID,
+      secondTransaction.id
+    ]);
+  });
+
+  it("hydrates the funding summary for a transaction detail", async () => {
+    const funding = {
+      fundingId: "623e4567-e89b-42d3-a456-426614174000",
+      assetId: "723e4567-e89b-42d3-a456-426614174000",
+      assetName: "Fixed deposit",
+      assetKind: "fixed_deposit" as const,
+      amountMinor: 5_000
+    };
+    const transactions = { findById: vi.fn().mockResolvedValue(TRANSACTION) };
+    const assetFundings = {
+      findActiveSummariesByTransactionIds: vi
+        .fn()
+        .mockResolvedValue(new Map([[TRANSACTION_ID, funding]]))
+    };
+    const context = createService({ transactions, assetFundings });
+
+    await expect(context.service.get("u1", TRANSACTION_ID)).resolves.toEqual({
+      ...TRANSACTION,
+      assetFunding: funding
+    });
+    expect(assetFundings.findActiveSummariesByTransactionIds).toHaveBeenCalledWith("u1", [
+      TRANSACTION_ID
+    ]);
   });
 
   it("rejects a missing transaction from get", async () => {

@@ -63,6 +63,7 @@ export const qk = {
   pendingTransactions: () => ["pending-transactions"] as const,
   assets: () => ["assets"] as const,
   assetValuations: (assetId: string) => ["asset-valuations", assetId] as const,
+  assetFundings: (assetId: string) => ["asset-fundings", assetId] as const,
   netWorth: () => ["net-worth"] as const,
   receivables: () => receivableRoot,
   receivableList: (filters: ListReceivablesQuery) => [...receivableRoot, "list", filters] as const,

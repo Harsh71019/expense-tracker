@@ -1,5 +1,9 @@
 import { Injectable } from "@nestjs/common";
-import type { Month, MonthlyRollup } from "@treasury-ops/shared";
+import {
+  MONTHLY_ROLLUP_FORMULA_VERSION,
+  type Month,
+  type MonthlyRollup
+} from "@treasury-ops/shared";
 
 import { toISTMonth } from "../common/time/ist.js";
 import { MonthlyRollupRepository } from "./monthly-rollup.repository.js";
@@ -18,7 +22,9 @@ export class MonthlyRollupService {
    */
   async getOrCompute(userId: string, month: Month): Promise<MonthlyRollup | null> {
     const existing = await this.rollups.findByMonth(userId, month);
-    if (existing !== null) return existing;
+    if (existing !== null && existing.formulaVersion === MONTHLY_ROLLUP_FORMULA_VERSION) {
+      return existing;
+    }
     if (month > toISTMonth(new Date())) return null;
     return this.rollups.recompute(userId, month);
   }

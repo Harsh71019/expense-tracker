@@ -2,7 +2,14 @@ import { z } from "zod";
 
 import { AccountIdSchema } from "./account.js";
 import { PageInfoSchema } from "./pagination.js";
-import { TransactionIdSchema } from "./transaction.js";
+
+// Not imported from ./transaction.js: transaction.ts -> asset.ts (for
+// AssetIdSchema) -> receivable.ts (for NetWorthReceivableSchema) already
+// forms a cycle, and this file importing TransactionIdSchema back from
+// transaction.ts would close a second, three-way cycle -- under ESM's
+// circular-import evaluation order that leaves TransactionIdSchema
+// undefined here at module-init time. Same literal definition, just local.
+const TransactionIdSchema = z.string().uuid("Transaction id must be a UUID.");
 
 const PositiveMinorSchema = z.number().int().min(1).max(Number.MAX_SAFE_INTEGER);
 const NonNegativeMinorSchema = z.number().int().min(0).max(Number.MAX_SAFE_INTEGER);

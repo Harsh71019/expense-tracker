@@ -26,6 +26,14 @@ const rollup: MonthlyRollup = {
   byAccount: [],
   totalExpenseMinor: 100_000,
   totalIncomeMinor: 0,
+  totalCashOutflowMinor: 100_000,
+  totalConsumptionMinor: 100_000,
+  totalAssetFundingMinor: 0,
+  consumptionByCategory: [
+    { categoryId: groceries.id, spentMinor: 75_000, incomeMinor: 0, txnCount: 5 },
+    { spentMinor: 25_000, incomeMinor: 0, txnCount: 1 }
+  ],
+  formulaVersion: 2,
   computedAt: new Date("2026-07-01T02:15:00.000Z")
 };
 

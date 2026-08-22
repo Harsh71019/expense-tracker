@@ -105,6 +105,20 @@ export const NetWorthSchema = z.object({
   receivables: z.array(NetWorthReceivableSchema).default([])
 });
 
+export const MetalRateSchema = z.object({
+  priceUsdPerOz: z.number(),
+  priceMinorPerGram: z.number().int().nonnegative(),
+  priceFormatted: z.string(),
+  changePercent24h: z.number().optional()
+});
+
+export const MarketRatesSchema = z.object({
+  asOf: z.coerce.date(),
+  usdInr: z.number(),
+  gold: MetalRateSchema,
+  silver: MetalRateSchema
+});
+
 export type AssetKind = z.infer<typeof AssetKindSchema>;
 export type AssetId = z.infer<typeof AssetIdSchema>;
 export type CreateAsset = z.infer<typeof CreateAssetSchema>;
@@ -116,3 +130,5 @@ export type ValuationPage = z.infer<typeof ValuationPageSchema>;
 export type NetWorthAccount = z.infer<typeof NetWorthAccountSchema>;
 export type NetWorthAsset = z.infer<typeof NetWorthAssetSchema>;
 export type NetWorth = z.infer<typeof NetWorthSchema>;
+export type MetalRate = z.infer<typeof MetalRateSchema>;
+export type MarketRates = z.infer<typeof MarketRatesSchema>;

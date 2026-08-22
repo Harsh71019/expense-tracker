@@ -75,6 +75,14 @@ export class AssetService {
     return this.assets.list(userId);
   }
 
+  async getById(userId: string, assetId: AssetId): Promise<Asset> {
+    const asset = await this.assets.findById(userId, assetId);
+    if (asset === null) {
+      throw new EntityNotFoundError("Asset");
+    }
+    return asset;
+  }
+
   async close(userId: string, assetId: AssetId): Promise<void> {
     await withTxn(this.db, (tx) => this.closeInTx(userId, assetId, tx));
   }

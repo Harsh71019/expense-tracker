@@ -15,11 +15,15 @@ const SEARCH_DEBOUNCE_MS = 400;
 const UNCATEGORIZED_FILTER_VALUE = "__uncategorized__";
 
 function toDateInputValue(value: Date | undefined): string {
-  return value === undefined ? "" : value.toISOString().slice(0, 10);
+  return value === undefined || Number.isNaN(value.getTime())
+    ? ""
+    : value.toISOString().slice(0, 10);
 }
 
 function parseDate(value: string): Date | undefined {
-  return value === "" ? undefined : new Date(`${value}T00:00:00.000Z`);
+  if (value === "") return undefined;
+  const d = new Date(`${value}T00:00:00.000Z`);
+  return Number.isNaN(d.getTime()) ? undefined : d;
 }
 
 export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuery }>): ReactNode {

@@ -142,8 +142,9 @@ describe("AssetController", () => {
       close: vi.fn().mockResolvedValue({ result: null, replayed: true }),
       addValuation: vi.fn().mockResolvedValue({ result: valuation, replayed: true })
     };
+    const mockRates = { getRates: vi.fn() };
     // @ts-expect-error - mock services for unit testing
-    const controller = new AssetController(mockService, mockMutations);
+    const controller = new AssetController(mockService, mockRates, mockMutations);
     const response = { status: vi.fn(), setHeader: vi.fn() };
     response.status.mockReturnValue(response);
 
@@ -177,5 +178,43 @@ describe("AssetController", () => {
 
     expect(response.status).toHaveBeenCalledWith(200);
     expect(response.setHeader).toHaveBeenCalledWith("Idempotency-Replayed", "true");
+  });
+
+  it("fetches an asset by id for the current user", async () => {
+    const mockService = { getById: vi.fn().mockResolvedValue(sampleAsset) };
+    const mockRates = { getRates: vi.fn() };
+    // @ts-expect-error - mock AssetService for unit testing
+    const controller = new AssetController(mockService, mockRates);
+
+    const result = await controller.get(user, sampleAsset.id);
+
+    expect(result).toEqual(sampleAsset);
+    expect(mockService.getById).toHaveBeenCalledWith("user-1", sampleAsset.id);
+  });
+
+  it("fetches live market rates", async () => {
+    const mockService = {};
+    const sampleRates = {
+      asOf: new Date(),
+      usdInr: 95.7,
+      gold: {
+        priceUsdPerOz: 4680.0,
+        priceMinorPerGram: 1440000,
+        priceFormatted: "₹14,400.00 / g"
+      },
+      silver: {
+        priceUsdPerOz: 52.0,
+        priceMinorPerGram: 16000,
+        priceFormatted: "₹160.00 / g"
+      }
+    };
+    const mockRates = { getRates: vi.fn().mockResolvedValue(sampleRates) };
+    // @ts-expect-error - mock AssetService for unit testing
+    const controller = new AssetController(mockService, mockRates);
+
+    const result = await controller.getMarketRates();
+
+    expect(result).toEqual(sampleRates);
+    expect(mockRates.getRates).toHaveBeenCalled();
   });
 });

@@ -89,6 +89,7 @@ import {
   BudgetPageSchema,
   BudgetSchema,
   CreateValuationSchema,
+  MarketRatesSchema,
   ValuationSchema,
   ValuationPageSchema,
   NetWorthSchema,
@@ -228,6 +229,7 @@ const ProblemDetails = ProblemDetailsSchema.meta({ id: "ProblemDetails" });
 const Transfer = TransferSchema.meta({ id: "Transfer" });
 const TransferReversal = TransferReversalSchema.meta({ id: "TransferReversal" });
 const Asset = AssetSchema.meta({ id: "Asset" });
+const MarketRates = MarketRatesSchema.meta({ id: "MarketRates" });
 const Valuation = ValuationSchema.meta({ id: "Valuation" });
 const ValuationPage = ValuationPageSchema.meta({ id: "ValuationPage" });
 const NetWorth = NetWorthSchema.meta({ id: "NetWorth" });
@@ -915,6 +917,28 @@ registry.registerPath({
   security: secured,
   responses: {
     200: { description: "Asset list", ...json(z.array(Asset)) },
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/v1/assets/market-rates",
+  security: secured,
+  responses: {
+    200: { description: "Live gold and silver market rates", ...json(MarketRates) },
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/v1/assets/{assetId}",
+  security: secured,
+  request: { params: assetId },
+  responses: {
+    200: { description: "Asset detail", ...json(Asset) },
+    404: { description: "Not found", ...json(ProblemDetails) },
     ...problemResponses
   }
 });

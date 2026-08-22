@@ -1,7 +1,9 @@
 "use client";
 
 import type { Asset, NetWorthAsset } from "@treasury-ops/shared";
+import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
+import { ChevronRight } from "lucide-react";
 
 import { SignedMoney } from "@/components/ui/money";
 import { tint } from "@/features/categories";
@@ -38,17 +40,11 @@ type AssetCardProps = Readonly<{
   asset: Asset;
   netWorthEntry: NetWorthAsset | undefined;
   onAddValuation: (asset: Asset) => void;
-  onHistory: (asset: Asset) => void;
-  onClose: (asset: Asset) => void;
+  onHistory?: (asset: Asset) => void;
+  onClose?: (asset: Asset) => void;
 }>;
 
-export function AssetCard({
-  asset,
-  netWorthEntry,
-  onAddValuation,
-  onHistory,
-  onClose
-}: AssetCardProps): ReactNode {
+export function AssetCard({ asset, netWorthEntry, onAddValuation }: AssetCardProps): ReactNode {
   const valuations = useValuations(asset.id);
   const items = valuations.data?.items ?? [];
   const latest = items[0];
@@ -73,79 +69,81 @@ export function AssetCard({
   };
 
   return (
-    <div className="rounded-[18px] border border-border bg-surface-elevated p-5.5 animate-fade-in">
-      <div className="flex items-start gap-3.5">
-        <div
-          style={medallionStyle}
-          className="grid h-12 w-12 shrink-0 place-items-center rounded-[13px] text-xl"
-          aria-hidden="true"
-        >
-          {ASSET_KIND_ICON[asset.kind]}
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="truncate text-[17px] font-bold tracking-tight text-foreground">
-              {asset.name}
-            </span>
-            <span
-              style={badgeStyle}
-              className="rounded-[5px] px-1.5 py-0.5 font-mono text-2xs font-semibold tracking-wide uppercase"
-            >
-              {ASSET_KIND_SHORT_LABEL[asset.kind]}
-            </span>
+    <div className="group/card relative flex flex-col justify-between rounded-[20px] border border-border bg-surface-elevated p-5.5 shadow-sm transition-all duration-200 hover:border-accent/40 hover:shadow-md animate-fade-in">
+      <Link
+        href={`/assets/${asset.id}`}
+        className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-xl"
+        aria-label={`View details for ${asset.name}`}
+      >
+        <div className="flex items-start gap-3.5">
+          <div
+            style={medallionStyle}
+            className="grid h-12 w-12 shrink-0 place-items-center rounded-[13px] text-xl transition-transform duration-200 group-hover/card:scale-105"
+            aria-hidden="true"
+          >
+            {ASSET_KIND_ICON[asset.kind]}
           </div>
-          <p className="mt-1 text-xs font-medium text-foreground-muted">{subMeta(asset)}</p>
-        </div>
-        <button
-          type="button"
-          onClick={() => onClose(asset)}
-          title="Close asset"
-          aria-label={`Close ${asset.name}`}
-          className="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-border bg-surface-muted text-xs text-foreground-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-        >
-          ✕
-        </button>
-      </div>
-
-      <div className="mt-4.5 flex items-end justify-between gap-3.5">
-        <div>
-          <p className="font-mono text-2xs font-semibold tracking-wider text-foreground-muted">
-            CURRENT VALUE
-          </p>
-          {valueMinor === undefined ? (
-            <p className="mt-0.5 text-sm text-foreground-muted">No valuation</p>
-          ) : (
-            <SignedMoney minor={valueMinor} size="lg" />
-          )}
-          <div className="mt-1.5 flex items-center gap-1.5 font-mono text-2xs text-foreground-muted">
-            {isProjected ? (
-              <span className="rounded-[4px] border border-warning/30 bg-warning/10 px-1 py-0.5 font-mono text-2xs font-semibold text-warning">
-                ✦ PROJECTED
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="truncate text-[17px] font-bold tracking-tight text-foreground group-hover/card:text-accent transition-colors">
+                {asset.name}
               </span>
-            ) : null}
-            {valuedAt === undefined ? null : dateFormatter.format(valuedAt)}
+              <span
+                style={badgeStyle}
+                className="rounded-[5px] px-1.5 py-0.5 font-mono text-2xs font-semibold tracking-wide uppercase"
+              >
+                {ASSET_KIND_SHORT_LABEL[asset.kind]}
+              </span>
+            </div>
+            <p className="mt-1 text-xs font-medium text-foreground-muted">{subMeta(asset)}</p>
+          </div>
+          <div className="grid h-8 w-8 place-items-center rounded-lg text-foreground-muted/60 transition-colors group-hover/card:text-accent">
+            <ChevronRight size={18} />
           </div>
         </div>
-        <div className="shrink-0">
-          <Sparkline values={sparklineValues} color={color} width={88} height={42} />
-        </div>
-      </div>
 
-      <div className="mt-5 flex flex-col gap-2 border-t border-border pt-4 sm:flex-row sm:items-center">
+        <div className="mt-4.5 flex items-end justify-between gap-3.5">
+          <div>
+            <p className="font-mono text-2xs font-semibold tracking-wider text-foreground-muted uppercase">
+              Current Value
+            </p>
+            {valueMinor === undefined ? (
+              <p className="mt-0.5 text-sm text-foreground-muted">No valuation</p>
+            ) : (
+              <SignedMoney minor={valueMinor} size="lg" />
+            )}
+            <div className="mt-1.5 flex items-center gap-1.5 font-mono text-2xs text-foreground-muted">
+              {isProjected ? (
+                <span className="rounded-[4px] border border-warning/30 bg-warning/10 px-1 py-0.5 font-mono text-2xs font-semibold text-warning">
+                  ✦ PROJECTED
+                </span>
+              ) : null}
+              {valuedAt === undefined ? null : dateFormatter.format(valuedAt)}
+            </div>
+          </div>
+          <div className="shrink-0">
+            <Sparkline values={sparklineValues} color={color} width={88} height={42} />
+          </div>
+        </div>
+      </Link>
+
+      <div className="mt-5 flex flex-col gap-2 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
         <button
           type="button"
-          onClick={() => onAddValuation(asset)}
-          className="min-h-11 w-full rounded-[9px] border border-border bg-accent-glow px-3.5 py-2 text-[12.5px] font-semibold text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:w-auto"
+          onClick={(e) => {
+            e.stopPropagation();
+            onAddValuation(asset);
+          }}
+          className="min-h-10 w-full rounded-lg border border-border bg-accent-glow px-3.5 py-2 text-xs font-semibold text-accent hover:border-accent/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:w-auto"
         >
           + Add valuation
         </button>
-        <button
-          type="button"
-          onClick={() => onHistory(asset)}
-          className="min-h-11 w-full rounded-[9px] px-1.5 py-2 text-[12.5px] font-medium text-foreground-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:w-auto"
+        <Link
+          href={`/assets/${asset.id}`}
+          className="min-h-10 flex items-center justify-center rounded-lg px-2.5 py-2 text-xs font-medium text-foreground-muted hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:w-auto"
         >
-          {items.length} valuation{items.length === 1 ? "" : "s"}
-        </button>
+          {items.length} valuation{items.length === 1 ? "" : "s"} →
+        </Link>
       </div>
     </div>
   );

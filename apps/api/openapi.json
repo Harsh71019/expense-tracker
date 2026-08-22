@@ -2635,6 +2635,57 @@
           "updatedAt"
         ]
       },
+      "MarketRates": {
+        "type": "object",
+        "properties": {
+          "asOf": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "usdInr": {
+            "type": "number"
+          },
+          "gold": {
+            "type": "object",
+            "properties": {
+              "priceUsdPerOz": {
+                "type": "number"
+              },
+              "priceMinorPerGram": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "priceFormatted": {
+                "type": "string"
+              },
+              "changePercent24h": {
+                "type": "number"
+              }
+            },
+            "required": ["priceUsdPerOz", "priceMinorPerGram", "priceFormatted"]
+          },
+          "silver": {
+            "type": "object",
+            "properties": {
+              "priceUsdPerOz": {
+                "type": "number"
+              },
+              "priceMinorPerGram": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "priceFormatted": {
+                "type": "string"
+              },
+              "changePercent24h": {
+                "type": "number"
+              }
+            },
+            "required": ["priceUsdPerOz", "priceMinorPerGram", "priceFormatted"]
+          }
+        },
+        "required": ["asOf", "usdInr", "gold", "silver"]
+      },
       "AssetFundingPage": {
         "type": "object",
         "properties": {
@@ -14528,6 +14579,129 @@
           },
           "401": {
             "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/assets/market-rates": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Live gold and silver market rates",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarketRates"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/assets/{assetId}": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "assetId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Asset detail",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Asset"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
             "content": {
               "application/json": {
                 "schema": {

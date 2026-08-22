@@ -47,7 +47,8 @@ export function useCreateCategory(): UseMutationResult<Category, Error, CreateCa
       await Promise.all([
         client.invalidateQueries({ queryKey: qk.categories() }),
         client.invalidateQueries({ queryKey: qk.transactionLists() }),
-        client.invalidateQueries({ queryKey: qk.categoryRules() })
+        client.invalidateQueries({ queryKey: qk.categoryRules() }),
+        client.invalidateQueries({ queryKey: qk.categoryRecommendations() })
       ]);
     }
   });
@@ -75,7 +76,8 @@ export function useArchiveCategory(): UseMutationResult<void, Error, string> {
       await Promise.all([
         client.invalidateQueries({ queryKey: qk.categories() }),
         client.invalidateQueries({ queryKey: qk.transactionLists() }),
-        client.invalidateQueries({ queryKey: qk.categoryRules() })
+        client.invalidateQueries({ queryKey: qk.categoryRules() }),
+        client.invalidateQueries({ queryKey: qk.categoryRecommendations() })
       ]);
     }
   });
@@ -208,6 +210,7 @@ async function invalidateCategoryConsumers(client: QueryClient): Promise<void> {
   await Promise.all([
     client.invalidateQueries({ queryKey: qk.categories() }),
     client.invalidateQueries({ queryKey: qk.transactionLists() }),
-    client.invalidateQueries({ queryKey: qk.categoryRules() })
+    client.invalidateQueries({ queryKey: qk.categoryRules() }),
+    client.invalidateQueries({ queryKey: qk.categoryRecommendations() })
   ]);
 }

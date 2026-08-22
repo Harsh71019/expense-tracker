@@ -41,6 +41,8 @@ import {
   CategorySchema,
   CategoryRuleIdSchema,
   CategoryRuleSchema,
+  CategoryRecommendationQuerySchema,
+  CategoryRecommendationResponseSchema,
   CreateAccountSchema,
   CreateApiKeyResponseSchema,
   CreateApiKeySchema,
@@ -194,6 +196,9 @@ const registry = new OpenAPIRegistry();
 const Account = AccountSchema.meta({ id: "Account" });
 const Category = CategorySchema.meta({ id: "Category" });
 const CategoryRule = CategoryRuleSchema.meta({ id: "CategoryRule" });
+const CategoryRecommendationResponse = CategoryRecommendationResponseSchema.meta({
+  id: "CategoryRecommendationResponse"
+});
 const Transaction = TransactionSchema.meta({ id: "Transaction" });
 const TransactionPage = TransactionPageSchema.meta({ id: "TransactionPage" });
 const TransactionInsights = TransactionInsightsSchema.meta({ id: "TransactionInsights" });
@@ -645,6 +650,23 @@ registry.registerPath({
     },
     404: { description: "Category rule not found", ...json(ProblemDetails) },
     ...idempotencyConflictResponse,
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/v1/category-recommendations/query",
+  operationId: "queryCategoryRecommendations",
+  description:
+    "Read-only personal category recommendations for the signed-in user. Has no side effects and does not persist results.",
+  security: secured,
+  request: { body: json(CategoryRecommendationQuerySchema) },
+  responses: {
+    200: {
+      description: "Deterministic personal category recommendations",
+      ...json(CategoryRecommendationResponse)
+    },
     ...problemResponses
   }
 });

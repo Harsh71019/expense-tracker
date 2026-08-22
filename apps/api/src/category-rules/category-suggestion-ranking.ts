@@ -1,11 +1,13 @@
 import type {
   AlgorithmResourceContract,
+  CategoryRecommendation,
   CategoryRule,
   CategorySuggestion,
   CategorySuggestionMethod,
   NormalizedTransactionText,
   TransactionType
 } from "@treasury-ops/shared";
+import { CATEGORY_RECOMMENDATION_ALGORITHM_VERSION } from "@treasury-ops/shared";
 
 import {
   boundedRatioBasisPoints,
@@ -24,6 +26,7 @@ import {
 import type { PreparedSoftTfIdfCorpus } from "../common/transaction-text/soft-tf-idf.js";
 
 export const CATEGORY_SUGGESTION_ALGORITHM_VERSION = 1;
+export { CATEGORY_RECOMMENDATION_ALGORITHM_VERSION };
 export const CATEGORY_SUGGESTION_HISTORY_LIMIT = 500;
 export const CATEGORY_SUGGESTION_RESOURCE_CONTRACT = {
   lookbackDays: 3_660,
@@ -117,6 +120,145 @@ export function prepareCategorySuggestionHistory(
  * Rule-first, deterministic category ranking over one user's already-bounded private history.
  * The function never mutates a transaction and returns undefined when no calibrated stage wins.
  */
+type FrequentCategoryAggregate = Readonly<{
+  categoryId: string;
+  usageCount: number;
+  latestOccurredAt: Date;
+  latestTransactionId: string;
+}>;
+
+function isLaterOccurrence(
+  candidate: Readonly<{ occurredAt: Date; id: string }>,
+  current: Readonly<{ occurredAt: Date; id: string }>
+): boolean {
+  const timeDelta = candidate.occurredAt.getTime() - current.occurredAt.getTime();
+  if (timeDelta !== 0) return timeDelta > 0;
+  return candidate.id.localeCompare(current.id) > 0;
+}
+
+function compareFrequentAggregates(
+  left: FrequentCategoryAggregate,
+  right: FrequentCategoryAggregate
+): number {
+  if (left.usageCount !== right.usageCount) return right.usageCount - left.usageCount;
+  const timeDelta = right.latestOccurredAt.getTime() - left.latestOccurredAt.getTime();
+  if (timeDelta !== 0) return timeDelta;
+  const transactionOrder = left.latestTransactionId.localeCompare(right.latestTransactionId);
+  if (transactionOrder !== 0) return transactionOrder;
+  return left.categoryId.localeCompare(right.categoryId);
+}
+
+function compareHistoryNewestFirst(
+  left: PreparedCategorySuggestionHistoryItem,
+  right: PreparedCategorySuggestionHistoryItem
+): number {
+  const timeDelta = right.occurredAt.getTime() - left.occurredAt.getTime();
+  return timeDelta !== 0 ? timeDelta : right.id.localeCompare(left.id);
+}
+
+function mapContextualRecommendation(suggestion: CategorySuggestion): CategoryRecommendation {
+  const reason =
+    suggestion.method === "explicit_rule" || suggestion.method === "exact_counterparty"
+      ? suggestion.method
+      : "similar_description";
+  return {
+    categoryId: suggestion.categoryId,
+    reason,
+    evidenceCount: suggestion.evidenceCount,
+    confidenceBps: suggestion.confidenceBps,
+    algorithmVersion: CATEGORY_RECOMMENDATION_ALGORITHM_VERSION
+  };
+}
+
+export function rankFrequentCategories(
+  history: readonly PreparedCategorySuggestionHistoryItem[]
+): CategoryRecommendation[] {
+  const aggregates = new Map<string, FrequentCategoryAggregate>();
+  for (const item of history) {
+    const current = aggregates.get(item.categoryId);
+    if (current === undefined) {
+      aggregates.set(item.categoryId, {
+        categoryId: item.categoryId,
+        usageCount: 1,
+        latestOccurredAt: item.occurredAt,
+        latestTransactionId: item.id
+      });
+      continue;
+    }
+    const later = isLaterOccurrence(item, {
+      occurredAt: current.latestOccurredAt,
+      id: current.latestTransactionId
+    });
+    aggregates.set(item.categoryId, {
+      categoryId: item.categoryId,
+      usageCount: current.usageCount + 1,
+      latestOccurredAt: later ? item.occurredAt : current.latestOccurredAt,
+      latestTransactionId: later ? item.id : current.latestTransactionId
+    });
+  }
+
+  return [...aggregates.values()]
+    .filter((aggregate) => aggregate.usageCount >= 2)
+    .sort(compareFrequentAggregates)
+    .map((aggregate) => ({
+      categoryId: aggregate.categoryId,
+      reason: "frequent" as const,
+      evidenceCount: aggregate.usageCount,
+      algorithmVersion: CATEGORY_RECOMMENDATION_ALGORITHM_VERSION
+    }));
+}
+
+export function fillRecentCategories(
+  history: readonly PreparedCategorySuggestionHistoryItem[],
+  excludedCategoryIds: ReadonlySet<string>
+): CategoryRecommendation[] {
+  const counts = new Map<string, number>();
+  for (const item of history) {
+    counts.set(item.categoryId, (counts.get(item.categoryId) ?? 0) + 1);
+  }
+
+  const items: CategoryRecommendation[] = [];
+  const seen = new Set(excludedCategoryIds);
+  for (const item of [...history].sort(compareHistoryNewestFirst)) {
+    if (seen.has(item.categoryId)) continue;
+    seen.add(item.categoryId);
+    const evidenceCount = counts.get(item.categoryId);
+    if (evidenceCount === undefined || evidenceCount < 1) continue;
+    items.push({
+      categoryId: item.categoryId,
+      reason: "recent",
+      evidenceCount,
+      algorithmVersion: CATEGORY_RECOMMENDATION_ALGORITHM_VERSION
+    });
+  }
+  return items;
+}
+
+export function composeCategoryRecommendations(
+  contextual: CategorySuggestion | undefined,
+  history: readonly PreparedCategorySuggestionHistoryItem[],
+  limit: number
+): CategoryRecommendation[] {
+  const items: CategoryRecommendation[] = [];
+  const seen = new Set<string>();
+  if (contextual !== undefined) {
+    items.push(mapContextualRecommendation(contextual));
+    seen.add(contextual.categoryId);
+  }
+  for (const frequent of rankFrequentCategories(history)) {
+    if (items.length >= limit) break;
+    if (seen.has(frequent.categoryId)) continue;
+    items.push(frequent);
+    seen.add(frequent.categoryId);
+  }
+  for (const recent of fillRecentCategories(history, seen)) {
+    if (items.length >= limit) break;
+    items.push(recent);
+    seen.add(recent.categoryId);
+  }
+  return items.slice(0, limit);
+}
+
 export function rankCategorySuggestions(
   target: CategorySuggestionTarget,
   rules: readonly CategoryRule[],

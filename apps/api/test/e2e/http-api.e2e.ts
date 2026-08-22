@@ -4,6 +4,7 @@ import {
   AssetSchema,
   BatchCategorizeTransactionsResultSchema,
   CategorySchema,
+  CategoryRecommendationResponseSchema,
   CreditCardPaymentResultSchema,
   CreateApiKeyResponseSchema,
   DeclaredDebtPageSchema,
@@ -259,6 +260,75 @@ describe("production HTTP composition", () => {
         categoryId: category.id
       });
     }
+  });
+
+  it("returns personal category recommendations without persisting or leaking tenancy", async () => {
+    const account = await createAccount(baseUrl, sessionA, "HTTP recommendations");
+    const categoryResponse = await fetch(`${baseUrl}/api/v1/categories`, {
+      method: "POST",
+      headers: {
+        ...JSON_HEADERS,
+        cookie: sessionA,
+        "idempotency-key": crypto.randomUUID()
+      },
+      body: JSON.stringify({ name: "Reco dining", kind: "expense" })
+    });
+    expect(categoryResponse.status).toBe(201);
+    const category = await parseResponse(categoryResponse, CategorySchema);
+    for (const [index, description] of ["SWIGGY", "SWIGGY"].entries()) {
+      const response = await fetch(`${baseUrl}/api/v1/transactions`, {
+        method: "POST",
+        headers: {
+          ...JSON_HEADERS,
+          cookie: sessionA,
+          "idempotency-key": crypto.randomUUID()
+        },
+        body: JSON.stringify({
+          accountId: account.id,
+          categoryId: category.id,
+          type: "expense",
+          amountMinor: 1_000 + index,
+          occurredAt: `2026-08-0${index + 1}T06:30:00.000Z`,
+          description,
+          tags: []
+        })
+      });
+      expect(response.status).toBe(201);
+    }
+
+    const unauthenticated = await fetch(`${baseUrl}/api/v1/category-recommendations/query`, {
+      method: "POST",
+      headers: JSON_HEADERS,
+      body: JSON.stringify({ type: "expense", occurredAt: "2026-08-22T06:30:00.000Z" })
+    });
+    expect(unauthenticated.status).toBe(401);
+
+    const queryResponse = await fetch(`${baseUrl}/api/v1/category-recommendations/query`, {
+      method: "POST",
+      headers: { ...JSON_HEADERS, cookie: sessionA },
+      body: JSON.stringify({
+        type: "expense",
+        occurredAt: "2026-08-22T06:30:00.000Z",
+        description: "SWIGGY"
+      })
+    });
+    expect(queryResponse.status).toBe(200);
+    expect(queryResponse.headers.get("cache-control")).toBe("no-store");
+    const body = await parseResponse(queryResponse, CategoryRecommendationResponseSchema);
+    expect(body.items.some((item) => item.categoryId === category.id)).toBe(true);
+
+    const otherUser = await fetch(`${baseUrl}/api/v1/category-recommendations/query`, {
+      method: "POST",
+      headers: { ...JSON_HEADERS, cookie: sessionB },
+      body: JSON.stringify({
+        type: "expense",
+        occurredAt: "2026-08-22T06:30:00.000Z",
+        description: "SWIGGY"
+      })
+    });
+    expect(otherUser.status).toBe(200);
+    const otherBody = await parseResponse(otherUser, CategoryRecommendationResponseSchema);
+    expect(otherBody.items.some((item) => item.categoryId === category.id)).toBe(false);
   });
 
   it("links an existing debit to a credit card without debiting the bank twice", async () => {
@@ -1061,7 +1131,8 @@ describe("production HTTP composition", () => {
         { method: "put", path: "/v1/financial-profile/protection" },
         { method: "get", path: "/v1/financial-profile/debts" },
         { method: "post", path: "/v1/financial-profile/debts" },
-        { method: "patch", path: "/v1/financial-profile/debts/{debtId}" }
+        { method: "patch", path: "/v1/financial-profile/debts/{debtId}" },
+        { method: "post", path: "/v1/category-recommendations/query" }
       ])
     );
 

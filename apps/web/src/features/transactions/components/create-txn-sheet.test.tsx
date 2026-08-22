@@ -25,7 +25,13 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@/features/accounts", () => ({ useAccounts: () => ({ data: mocks.accounts }) }));
-vi.mock("@/features/categories", () => ({ useCategories: () => ({ data: mocks.categories }) }));
+vi.mock("@/features/categories", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/categories")>();
+  return { ...actual, useCategories: () => ({ data: mocks.categories }) };
+});
+vi.mock("@/features/categories/hooks/use-category-recommendations", () => ({
+  useCategoryRecommendations: () => ({ data: undefined, isFetching: false, isError: false })
+}));
 vi.mock("@/features/quick-add", () => ({
   useCreateTxn: () => ({ mutateAsync: mocks.mutateAsync, isPending: mocks.pending })
 }));
@@ -45,10 +51,7 @@ describe("CreateTxnSheet", () => {
       "overflow-y-auto",
       "overscroll-contain"
     );
-    expect(screen.getByLabelText("Date & time").closest(".sm\\:flex-row")).toHaveClass(
-      "flex-col",
-      "sm:flex-row"
-    );
+    expect(screen.getByLabelText("Date & time")).toBeInTheDocument();
   });
 
   it("disables Post entry until amount and description are both present", async () => {

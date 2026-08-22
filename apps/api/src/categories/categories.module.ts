@@ -13,6 +13,6 @@ import { CategoryMutationService } from "./category-mutation.service.js";
     CategoryMutationService,
     CategoryDiagnosticReadService
   ],
-  exports: [CategoryRepository, CategoryDiagnosticReadService]
+  exports: [CategoryRepository, CategoryDiagnosticReadService, CategoryService]
 })
 export class CategoriesModule {}

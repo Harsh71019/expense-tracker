@@ -12,6 +12,8 @@ export type QueueMetricSnapshot = Readonly<{
 type TransactionOutcome = "committed" | "failed";
 export type CategorySuggestionMetricOutcome =
   "suggested" | "accepted_unchanged" | "corrected" | "dismissed";
+export type CategoryRecommendationMetricOutcome =
+  "contextual" | "shortcut_only" | "empty" | "degraded";
 export type StatementAssignmentMetricOutcome =
   "matched" | "ambiguous" | "missing_from_ledger" | "resource_limit";
 export type RecurringDetectionMetricOutcome = "completed" | "degraded" | "abstained" | "failed";
@@ -78,6 +80,15 @@ export class MetricsService {
     corrected: 0,
     dismissed: 0
   };
+  private readonly categoryRecommendationOutcomes: Record<
+    CategoryRecommendationMetricOutcome,
+    number
+  > = {
+    contextual: 0,
+    shortcut_only: 0,
+    empty: 0,
+    degraded: 0
+  };
   private readonly statementAssignmentOutcomes: Record<StatementAssignmentMetricOutcome, number> = {
     matched: 0,
     ambiguous: 0,
@@ -108,6 +119,10 @@ export class MetricsService {
       throw new RangeError("Category suggestion metric count must be a non-negative integer.");
     }
     this.categorySuggestionOutcomes[outcome] += count;
+  }
+
+  recordCategoryRecommendations(outcome: CategoryRecommendationMetricOutcome): void {
+    this.categoryRecommendationOutcomes[outcome] += 1;
   }
 
   recordStatementAssignments(outcome: StatementAssignmentMetricOutcome, count: number): void {
@@ -289,6 +304,12 @@ export class MetricsService {
       `treasuryops_category_suggestions_total{outcome="accepted_unchanged"} ${this.categorySuggestionOutcomes.accepted_unchanged}`,
       `treasuryops_category_suggestions_total{outcome="corrected"} ${this.categorySuggestionOutcomes.corrected}`,
       `treasuryops_category_suggestions_total{outcome="dismissed"} ${this.categorySuggestionOutcomes.dismissed}`,
+      "# HELP treasuryops_category_recommendations_total Narration-free interactive recommendation outcomes.",
+      "# TYPE treasuryops_category_recommendations_total counter",
+      `treasuryops_category_recommendations_total{outcome="contextual"} ${this.categoryRecommendationOutcomes.contextual}`,
+      `treasuryops_category_recommendations_total{outcome="shortcut_only"} ${this.categoryRecommendationOutcomes.shortcut_only}`,
+      `treasuryops_category_recommendations_total{outcome="empty"} ${this.categoryRecommendationOutcomes.empty}`,
+      `treasuryops_category_recommendations_total{outcome="degraded"} ${this.categoryRecommendationOutcomes.degraded}`,
       "# HELP treasuryops_statement_assignments_total Narration-free statement assignment outcomes.",
       "# TYPE treasuryops_statement_assignments_total counter",
       `treasuryops_statement_assignments_total{outcome="matched"} ${this.statementAssignmentOutcomes.matched}`,

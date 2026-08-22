@@ -42,6 +42,16 @@ export const qk = {
     [...billRoot, "detail", billId, "statement-rows", filters] as const,
   categories: () => ["categories"] as const,
   categoryList: (includeArchived: boolean) => ["categories", "list", { includeArchived }] as const,
+  categoryRecommendations: () => ["category-recommendations"] as const,
+  categoryRecommendationQuery: (
+    input: Readonly<{
+      type: string;
+      description: string;
+      draft: string;
+      occurredAt: string;
+      limit: number;
+    }>
+  ) => ["category-recommendations", "query", input] as const,
   categoryRules: () => ["category-rules"] as const,
   recurringRules: () => ["recurring-rules"] as const,
   recurringStats: () => ["recurring-rules", "stats"] as const,

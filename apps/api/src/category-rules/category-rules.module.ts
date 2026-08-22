@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 
 import { CategoriesModule } from "../categories/categories.module.js";
+import { CategoryRecommendationController } from "./category-recommendation.controller.js";
 import { CategoryRuleController } from "./category-rule.controller.js";
 import { CategoryRuleRepository } from "./category-rule.repository.js";
 import { CategoryRuleService } from "./category-rule.service.js";
@@ -10,7 +11,7 @@ import { CategorySuggestionService } from "./category-suggestion.service.js";
 
 @Module({
   imports: [CategoriesModule],
-  controllers: [CategoryRuleController],
+  controllers: [CategoryRuleController, CategoryRecommendationController],
   providers: [
     CategoryRuleRepository,
     CategoryRuleService,

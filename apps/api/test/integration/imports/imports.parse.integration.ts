@@ -10,6 +10,7 @@ import { CategoryRuleRepository } from "../../../src/category-rules/category-rul
 import { CategorySuggestionRepository } from "../../../src/category-rules/category-suggestion.repository.js";
 import { CategorySuggestionService } from "../../../src/category-rules/category-suggestion.service.js";
 import { CategoryRepository } from "../../../src/categories/category.repository.js";
+import { CategoryService } from "../../../src/categories/category.service.js";
 import { RuntimeConfigService } from "../../../src/common/config/runtime-config.service.js";
 import { MetricsService } from "../../../src/common/observability/metrics.service.js";
 import { withTxn } from "../../../src/common/db/db-txn.js";
@@ -111,7 +112,11 @@ describe("Imports parse pipeline (real BullMQ worker against real Redis)", () =>
       accounts,
       new CategoryRepository(testDb.db),
       audit,
-      new CategorySuggestionService(categoryRules, new CategorySuggestionRepository(testDb.db)),
+      new CategorySuggestionService(
+        categoryRules,
+        new CategorySuggestionRepository(testDb.db),
+        new CategoryService(new CategoryRepository(testDb.db))
+      ),
       focusedTestDouble<MetricsService>({ recordCategorySuggestions: () => undefined })
     );
     const logger = { log: () => undefined, error: () => undefined };
@@ -208,7 +213,11 @@ describe("Imports parse pipeline (real BullMQ worker against real Redis)", () =>
       accounts,
       new CategoryRepository(testDb.db),
       audit,
-      new CategorySuggestionService(categoryRules, new CategorySuggestionRepository(testDb.db)),
+      new CategorySuggestionService(
+        categoryRules,
+        new CategorySuggestionRepository(testDb.db),
+        new CategoryService(new CategoryRepository(testDb.db))
+      ),
       focusedTestDouble<MetricsService>({ recordCategorySuggestions: () => undefined })
     );
 
@@ -243,7 +252,11 @@ describe("Imports parse pipeline (real BullMQ worker against real Redis)", () =>
       accounts,
       new CategoryRepository(testDb.db),
       audit,
-      new CategorySuggestionService(categoryRules, new CategorySuggestionRepository(testDb.db)),
+      new CategorySuggestionService(
+        categoryRules,
+        new CategorySuggestionRepository(testDb.db),
+        new CategoryService(new CategoryRepository(testDb.db))
+      ),
       focusedTestDouble<MetricsService>({ recordCategorySuggestions: () => undefined })
     );
 

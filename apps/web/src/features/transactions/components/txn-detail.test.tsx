@@ -23,14 +23,21 @@ vi.mock("@/features/accounts", () => ({
     ]
   })
 }));
-vi.mock("@/features/categories", () => ({
-  useCategories: () => ({
-    data: [
-      { id: "cat-exp-1", name: "Food", kind: "expense", isArchived: false },
-      { id: "cat-exp-archived", name: "Old Food", kind: "expense", isArchived: true },
-      { id: "cat-inc-1", name: "Salary", kind: "income", isArchived: false }
-    ]
-  })
+vi.mock("@/features/categories", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/categories")>();
+  return {
+    ...actual,
+    useCategories: () => ({
+      data: [
+        { id: "cat-exp-1", name: "Food", kind: "expense", isArchived: false },
+        { id: "cat-exp-archived", name: "Old Food", kind: "expense", isArchived: true },
+        { id: "cat-inc-1", name: "Salary", kind: "income", isArchived: false }
+      ]
+    })
+  };
+});
+vi.mock("@/features/categories/hooks/use-category-recommendations", () => ({
+  useCategoryRecommendations: () => ({ data: undefined, isFetching: false, isError: false })
 }));
 vi.mock("@/features/transfers/hooks/use-transfers", () => ({
   useReverseTransfer: () => ({ mutate: vi.fn(), isPending: false })
@@ -79,7 +86,7 @@ describe("TxnDetail", () => {
     const select = screen.getByRole("combobox", { name: "Category" });
     expect(select).toBeInTheDocument();
     await user.click(select);
-    expect(screen.getByRole("option", { name: "No category" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Uncategorized" })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "Food" })).toBeInTheDocument();
     expect(screen.queryByRole("option", { name: "Salary" })).not.toBeInTheDocument();
     expect(screen.queryByRole("option", { name: "Old Food" })).not.toBeInTheDocument();

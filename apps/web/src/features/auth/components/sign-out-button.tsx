@@ -1,5 +1,6 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import type { ReactNode } from "react";
 import { useRouter } from "next/navigation";
@@ -10,6 +11,7 @@ import { toast } from "../../../lib/toast";
 
 export function SignOutButton({ compact = false }: Readonly<{ compact?: boolean }>): ReactNode {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -18,6 +20,7 @@ export function SignOutButton({ compact = false }: Readonly<{ compact?: boolean 
     setIsSigningOut(true);
     try {
       await authClient.signOut();
+      queryClient.clear();
       toast.success("Signed out successfully");
       router.push("/login");
       router.refresh();

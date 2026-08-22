@@ -29,6 +29,7 @@ export function useCommitBatch(): UseMutationResult<ImportBatch, Error, string> 
       void queryClient.invalidateQueries({ queryKey: qk.accounts() });
       void queryClient.invalidateQueries({ queryKey: qk.transactionLists() });
       void queryClient.invalidateQueries({ queryKey: qk.goals() });
+      void queryClient.invalidateQueries({ queryKey: qk.categoryRecommendations() });
     }
   });
 }

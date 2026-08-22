@@ -9,7 +9,7 @@ import { DialogSurface } from "@/components/ui/dialog";
 import { Money } from "@/components/ui/money";
 import { useAccounts } from "@/features/accounts";
 import { isLinkableBillPaymentSource, LinkBillPaymentDialog } from "@/features/bills";
-import { IconGlyph, useCategories } from "@/features/categories";
+import { IconGlyph, CategoryPicker, useCategories } from "@/features/categories";
 import { toast } from "@/lib/toast";
 
 import { useReverseTxn } from "../hooks/use-reverse-txn";
@@ -72,7 +72,6 @@ export function TxnDetailDrawer({
 
   const account = accounts.data?.find((item) => item.id === transaction.accountId);
   const category = categories.data?.find((item) => item.id === transaction.categoryId);
-  const activeCategories = (categories.data ?? []).filter((item) => !item.isArchived);
   const railLabel = paymentRailLabel(transaction.paymentRail);
   const canLinkBillPayment = isLinkableBillPaymentSource(transaction, accounts.data ?? []);
 
@@ -318,32 +317,17 @@ export function TxnDetailDrawer({
               <p className="font-mono text-2xs font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
                 Category
               </p>
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => setCategoryId(undefined)}
-                  className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors duration-150 ${
-                    categoryId === undefined
-                      ? "border-accent bg-accent/10 text-accent"
-                      : "border-border bg-surface-muted text-foreground-muted"
-                  }`}
-                >
-                  None
-                </button>
-                {activeCategories.map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => setCategoryId(item.id)}
-                    className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors duration-150 ${
-                      categoryId === item.id
-                        ? "border-accent bg-accent/10 text-accent"
-                        : "border-border bg-surface-muted text-foreground-muted"
-                    }`}
-                  >
-                    {item.name}
-                  </button>
-                ))}
+              <div className="mt-2">
+                <CategoryPicker
+                  categories={categories.data ?? []}
+                  type={transaction.type}
+                  value={categoryId}
+                  onChange={setCategoryId}
+                  description={description}
+                  occurredAt={transaction.occurredAt}
+                  allowUncategorized
+                  label="Category"
+                />
               </div>
               <p className="mt-1.5 text-xs leading-relaxed text-foreground-muted">
                 Uncategorize is an explicit action — it clears the category rather than leaving it

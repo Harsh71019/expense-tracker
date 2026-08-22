@@ -11,18 +11,20 @@ describe("Account service edge coverage", () => {
   it("archives an account and rejects a missing account", async () => {
     const successRepo = { archive: vi.fn().mockResolvedValue(true) };
     await expect(
-      new AccountService(focusedTestDouble({}), focusedTestDouble(successRepo)).archive(
-        "u1",
-        ACCOUNT_ID
-      )
+      new AccountService(
+        focusedTestDouble({}),
+        focusedTestDouble(successRepo),
+        focusedTestDouble({})
+      ).archive("u1", ACCOUNT_ID)
     ).resolves.toBeUndefined();
 
     const missingRepo = { archive: vi.fn().mockResolvedValue(false) };
     await expect(
-      new AccountService(focusedTestDouble({}), focusedTestDouble(missingRepo)).archive(
-        "u1",
-        ACCOUNT_ID
-      )
+      new AccountService(
+        focusedTestDouble({}),
+        focusedTestDouble(missingRepo),
+        focusedTestDouble({})
+      ).archive("u1", ACCOUNT_ID)
     ).rejects.toBeInstanceOf(EntityNotFoundError);
   });
 

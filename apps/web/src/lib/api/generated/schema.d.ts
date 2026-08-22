@@ -146,6 +146,154 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/v1/accounts/{accountId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          accountId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Account */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["Account"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Account not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/accounts/{accountId}/insights": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: {
+          range?: "30d" | "90d" | "1y" | "all";
+        };
+        header?: never;
+        path: {
+          accountId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Account insights */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["AccountInsights"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Account not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/v1/imports": {
     parameters: {
       query?: never;
@@ -8552,6 +8700,39 @@ export interface components {
             message: string;
           }[]
         | null;
+    };
+    AccountInsights: {
+      /** @enum {string} */
+      range: "30d" | "90d" | "1y" | "all";
+      /** Format: date-time */
+      from: string | null;
+      /** Format: date-time */
+      to: string | null;
+      /** @enum {string} */
+      bucket: "day" | "month";
+      summary: {
+        incomeMinor: number;
+        expenseMinor: number;
+        netMinor: number;
+        transactionCount: number;
+      };
+      balanceSeries: {
+        period: string;
+        balanceMinor: number;
+      }[];
+      cashflowSeries: {
+        period: string;
+        incomeMinor: number;
+        expenseMinor: number;
+      }[];
+      spendingByCategory: {
+        /** Format: uuid */
+        categoryId?: string;
+        name: string;
+        color?: string;
+        amountMinor: number;
+        transactionCount: number;
+      }[];
     };
     ImportBatch: {
       /** Format: uuid */

@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { AccountRepository } from "../../../src/accounts/account.repository.js";
+import { AccountInsightsRepository } from "../../../src/accounts/account-insights.repository.js";
 import { AccountService } from "../../../src/accounts/account.service.js";
 import { AccountDiagnosticReadService } from "../../../src/accounts/account-diagnostic-read.service.js";
 import { AssetDiagnosticReadService } from "../../../src/assets/asset-diagnostic-read.service.js";
@@ -56,7 +57,7 @@ describe("FinancialDiagnosticService Integration", () => {
     const idempotency = new IdempotencyPostgresService(db, new IdempotencyPostgresRepository(db));
 
     const accountRepo = new AccountRepository(db);
-    accountService = new AccountService(db, accountRepo);
+    accountService = new AccountService(db, accountRepo, new AccountInsightsRepository(db));
     const accountDiagnostic = new AccountDiagnosticReadService(db);
 
     categoryRepo = new CategoryRepository(db);

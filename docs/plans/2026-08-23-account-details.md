@@ -1,6 +1,6 @@
 # Account details page — implementation plan
 
-**Status:** Approved for implementation
+**Status:** Implemented
 
 **Branch:** `feature/account-details`
 

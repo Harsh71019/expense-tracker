@@ -1,6 +1,7 @@
 "use client";
 
 import type { Account, AccountType } from "@treasury-ops/shared";
+import Link from "next/link";
 import { useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 
@@ -19,7 +20,6 @@ import { useArchiveAccount } from "../hooks/use-archive-account";
 import { useCreateAccount } from "../hooks/use-create-account";
 import { useUpdateCreditCardConfig } from "../hooks/use-update-credit-card-config";
 import { parseCreateAccountInput, parseCreditCardConfigInput } from "../model/account-form";
-import { AccountDetailDialog } from "./account-detail-dialog";
 
 type TypeMeta = {
   value: AccountType;
@@ -106,7 +106,6 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
   const [dueDay, setDueDay] = useState("");
   const [confirming, setConfirming] = useState<Account>();
   const [configuring, setConfiguring] = useState<Account>();
-  const [detailAccount, setDetailAccount] = useState<Account>();
   const [error, setError] = useState<string>();
 
   function openCreate(): void {
@@ -436,10 +435,9 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
                   account.isArchived ? "opacity-60" : ""
                 }`}
               >
-                <button
-                  type="button"
+                <Link
+                  href={`/accounts/${account.id}`}
                   aria-label={`View details for ${account.name}`}
-                  onClick={() => setDetailAccount(account)}
                   className="absolute inset-0 z-0 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
                 />
 
@@ -777,11 +775,6 @@ export function AccountManager({ initialAccounts }: { initialAccounts: Account[]
             </Button>
           </div>
         </DialogSurface>
-      )}
-
-      {/* Account Detail Drawer/Modal */}
-      {detailAccount === undefined ? null : (
-        <AccountDetailDialog account={detailAccount} onClose={() => setDetailAccount(undefined)} />
       )}
     </section>
   );

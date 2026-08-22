@@ -3,6 +3,7 @@ import { and, eq } from "drizzle-orm";
 
 import { AccountRepository } from "../../../src/accounts/account.repository.js";
 import { AccountService } from "../../../src/accounts/account.service.js";
+import { AccountInsightsRepository } from "../../../src/accounts/account-insights.repository.js";
 import { AccountMutationService } from "../../../src/accounts/account-mutation.service.js";
 import { IdempotencyPostgresRepository } from "../../../src/common/idempotency/idempotency-postgres.repository.js";
 import { IdempotencyPostgresService } from "../../../src/common/idempotency/idempotency-postgres.service.js";
@@ -21,7 +22,11 @@ describe("AccountService", () => {
   beforeAll(async () => {
     testDb = await createTestDb();
     const repository = new AccountRepository(testDb.db);
-    accountService = new AccountService(testDb.db, repository);
+    accountService = new AccountService(
+      testDb.db,
+      repository,
+      new AccountInsightsRepository(testDb.db)
+    );
     accountMutations = new AccountMutationService(
       repository,
       new IdempotencyPostgresService(testDb.db, new IdempotencyPostgresRepository(testDb.db))
@@ -82,6 +87,12 @@ describe("AccountService", () => {
 
     // Archiving as the correct user should succeed
     await expect(accountService.archive("user-a", acc.id)).resolves.toBeUndefined();
+
+    await expect(accountService.get("user-a", acc.id)).resolves.toMatchObject({
+      id: acc.id,
+      isArchived: true
+    });
+    await expect(accountService.get("user-b", acc.id)).rejects.toThrow(EntityNotFoundError);
 
     // Archiving again should fail since it's already archived
     await expect(accountService.archive("user-a", acc.id)).rejects.toThrow(EntityNotFoundError);

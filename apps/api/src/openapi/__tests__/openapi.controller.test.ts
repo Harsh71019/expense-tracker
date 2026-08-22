@@ -17,6 +17,8 @@ describe("OpenApiController", () => {
 
       const paths = Object.keys(spec.paths ?? {});
       expect(paths).toContain("/v1/accounts");
+      expect(paths).toContain("/v1/accounts/{accountId}");
+      expect(paths).toContain("/v1/accounts/{accountId}/insights");
       expect(paths).toContain("/v1/categories");
       expect(paths).toContain("/v1/transactions");
       expect(paths).toContain("/v1/transactions/{transactionId}");

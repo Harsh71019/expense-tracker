@@ -7,11 +7,13 @@ import type { DbTx } from "../common/db/db-txn.js";
 import { EntityNotFoundError } from "../common/errors/entity-not-found.error.js";
 import { TransactionNotReversibleError } from "../common/errors/transaction-not-reversible.error.js";
 import type { TransactionRepository } from "./transaction.repository.js";
+import type { TransactionReversalHook } from "./transaction-reversal-hook.js";
 
 export type ReverseTransactionDeps = Readonly<{
   transactions: TransactionRepository;
   accounts: AccountRepository;
   audit: AuditRepository;
+  reversalHook?: TransactionReversalHook;
 }>;
 
 /**
@@ -56,5 +58,6 @@ export async function reverseTransactionInTx(
   );
 
   await deps.audit.record(userId, "transaction.reverse", reversal.id, tx);
+  await deps.reversalHook?.onTransactionReversedInTx(userId, original, reversal, tx);
   return reversal;
 }

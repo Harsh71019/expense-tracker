@@ -28,9 +28,10 @@ import { TransactionRepository } from "../transactions/transaction.repository.js
 import { TransactionService } from "../transactions/transaction.service.js";
 import { AuditRepository } from "../audit/audit.repository.js";
 import { AssetFundingRepository } from "./asset-funding.repository.js";
+import type { TransactionReversalHook } from "../transactions/transaction-reversal-hook.js";
 
 @Injectable()
-export class AssetFundingService {
+export class AssetFundingService implements TransactionReversalHook {
   constructor(
     private readonly fundings: AssetFundingRepository,
     private readonly transactions: TransactionRepository,
@@ -127,6 +128,24 @@ export class AssetFundingService {
     });
     await this.rollups.invalidate(userId, toISTMonth(original.occurredAt), tx);
     return ReverseAssetFundingResultSchema.parse({ original: paired, reversal });
+  }
+
+  async onTransactionReversedInTx(
+    userId: string,
+    original: Transaction,
+    _reversal: Transaction,
+    tx: DbTx
+  ): Promise<void> {
+    const funding = await this.fundings.findActiveByTransactionId(userId, original.id, tx);
+    if (funding === null) return;
+    const reversal = await this.fundings.createReversal(userId, funding, tx);
+    const paired = await this.fundings.markReversed(userId, funding.id, reversal.id, tx);
+    if (paired === null) throw new AssetFundingNotReversibleError();
+    await this.audit.record(userId, "asset_funding.reverse", funding.id, tx, {
+      reversalId: reversal.id,
+      source: "transaction_reversal"
+    });
+    await this.rollups.invalidate(userId, toISTMonth(funding.occurredAt), tx);
   }
 
   private async resolveTarget(

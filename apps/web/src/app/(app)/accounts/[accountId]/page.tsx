@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { PageShell } from "@/components/ui/page-shell";
-import { AccountDetail } from "@/features/accounts";
+import { AccountDetail } from "@/features/accounts/components/account-detail";
 import {
   parseAccountInsightsRange,
   type AccountDetailSearchParams

@@ -43,7 +43,7 @@ vi.mock("next/navigation", () => ({
     throw new Error("NEXT_NOT_FOUND");
   }
 }));
-vi.mock("@/features/accounts", () => ({
+vi.mock("@/features/accounts/components/account-detail", () => ({
   AccountDetail: ({
     account: value,
     insights: accountInsights

@@ -37,6 +37,10 @@ export function createMockDrizzleDb(defaultReturnRows: unknown[] = []): MockDriz
   for (const method of methods) {
     chain[method] = vi.fn().mockReturnValue(chain);
   }
+  chain.transaction = vi.fn(async (operation: (tx: DbTx) => Promise<unknown>) => {
+    // @ts-expect-error The fluent test double intentionally has only the Drizzle members exercised here.
+    return operation(chain);
+  });
 
   chain.then = (
     onfulfilled?: (value: unknown) => unknown,

@@ -1,4 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
+import { ModuleRef } from "@nestjs/core";
 import {
   RecurringReconciliationSchema,
   type RecurringReconciliation,
@@ -28,6 +29,10 @@ import { reverseTransactionInTx } from "../transactions/reverse-transaction-in-t
 import { TransactionRepository } from "../transactions/transaction.repository.js";
 import type { TransactionCreatedHook } from "../transactions/transaction-created-hook.js";
 import {
+  TRANSACTION_REVERSAL_HOOK,
+  type TransactionReversalHook
+} from "../transactions/transaction-reversal-hook.js";
+import {
   RECONCILIATION_WINDOW_DAYS,
   matchIncomingTransaction
 } from "./recurring-reconciliation-matcher.js";
@@ -35,6 +40,12 @@ import { RecurringOccurrenceRepository } from "./recurring-occurrence.repository
 import { RecurringReconciliationRepository } from "./recurring-reconciliation.repository.js";
 
 type ReconciliationLogger = Pick<Logger, "log" | "error">;
+type ReversalHookResolver = Readonly<{
+  get(
+    token: typeof TRANSACTION_REVERSAL_HOOK,
+    options: Readonly<{ strict: false }>
+  ): TransactionReversalHook;
+}>;
 
 @Injectable()
 export class RecurringReconciliationService implements TransactionCreatedHook {
@@ -47,12 +58,21 @@ export class RecurringReconciliationService implements TransactionCreatedHook {
     private readonly notifications: NotificationOutboxRepository,
     private readonly audit: AuditRepository,
     private readonly idempotency: IdempotencyPostgresService,
-    @Inject(Logger) private readonly logger: ReconciliationLogger
+    @Inject(Logger) private readonly logger: ReconciliationLogger,
+    @Inject(ModuleRef) private readonly moduleRef: ReversalHookResolver
   ) {}
 
   private reverseInTx(userId: string, transactionId: string, tx: DbTx) {
+    const reversalHook = this.moduleRef.get(TRANSACTION_REVERSAL_HOOK, {
+      strict: false
+    });
     return reverseTransactionInTx(
-      { transactions: this.transactions, accounts: this.accounts, audit: this.audit },
+      {
+        transactions: this.transactions,
+        accounts: this.accounts,
+        audit: this.audit,
+        reversalHook
+      },
       userId,
       transactionId,
       tx

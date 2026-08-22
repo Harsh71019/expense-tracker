@@ -4,11 +4,19 @@ import { and, desc, eq, gte, inArray, lte, sql } from "drizzle-orm";
 
 import { DATABASE_CONNECTION } from "../common/db/db.module.js";
 import type { DrizzleDb } from "../common/db/db.module.js";
-import { accounts, assets, assetValuations, transactions } from "../common/db/schema/index.js";
+import {
+  accounts,
+  assetFundings,
+  assets,
+  assetValuations,
+  transactions
+} from "../common/db/schema/index.js";
+import { isActiveAssetFunding } from "../common/db/asset-funding-active.js";
 
 const IST_TIME_ZONE = "Asia/Kolkata";
 
 export type DailyCashflow = Readonly<{ expenseMinor: number; incomeMinor: number }>;
+export type DailyConsumption = Readonly<{ expenseMinor: number }>;
 
 @Injectable()
 export class DashboardRepository {
@@ -55,6 +63,39 @@ export class DashboardRepository {
     );
   }
 
+  /** Daily consumption totals exclude transfer legs and active asset fundings. */
+  async consumptionDaily(
+    userId: string,
+    from: Date,
+    to: Date
+  ): Promise<Map<string, DailyConsumption>> {
+    const istDay = sql<string>`to_char(${transactions.occurredAt} AT TIME ZONE ${IST_TIME_ZONE}, 'YYYY-MM-DD')`;
+    const rows = await this.db
+      .select({
+        day: istDay,
+        expenseMinor: sql<string>`coalesce(sum(case when ${transactions.type} = 'expense' and ${transactions.transferGroupId} is null and ${assetFundings.id} is null then ${transactions.amountMinor} else 0 end), 0)::bigint`
+      })
+      .from(transactions)
+      .leftJoin(
+        assetFundings,
+        and(
+          eq(assetFundings.userId, userId),
+          eq(assetFundings.transactionId, transactions.id),
+          isActiveAssetFunding()
+        )
+      )
+      .where(
+        and(
+          eq(transactions.userId, userId),
+          eq(transactions.status, "posted"),
+          gte(transactions.occurredAt, from),
+          lte(transactions.occurredAt, to)
+        )
+      )
+      .groupBy(sql`1`);
+    return new Map(rows.map((row) => [row.day, { expenseMinor: Number(row.expenseMinor) }]));
+  }
+
   /**
    * Category totals for `[from, to]` -- the live, arbitrary-date-range
    * sibling of MonthlyRollupRepository's byCategory query (which is bound
@@ -64,11 +105,19 @@ export class DashboardRepository {
     const rows = await this.db
       .select({
         categoryId: transactions.categoryId,
-        spentMinor: sql<string>`coalesce(sum(case when ${transactions.type} = 'expense' then ${transactions.amountMinor} else 0 end), 0)::bigint`,
+        spentMinor: sql<string>`coalesce(sum(case when ${transactions.type} = 'expense' and ${transactions.transferGroupId} is null and ${assetFundings.id} is null then ${transactions.amountMinor} else 0 end), 0)::bigint`,
         incomeMinor: sql<string>`coalesce(sum(case when ${transactions.type} = 'income' then ${transactions.amountMinor} else 0 end), 0)::bigint`,
-        txnCount: sql<number>`count(*)::int`
+        txnCount: sql<number>`count(*) filter (where ${transactions.type} = 'income' or (${transactions.type} = 'expense' and ${transactions.transferGroupId} is null and ${assetFundings.id} is null))::int`
       })
       .from(transactions)
+      .leftJoin(
+        assetFundings,
+        and(
+          eq(assetFundings.userId, userId),
+          eq(assetFundings.transactionId, transactions.id),
+          isActiveAssetFunding()
+        )
+      )
       .where(
         and(
           eq(transactions.userId, userId),

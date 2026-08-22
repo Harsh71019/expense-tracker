@@ -31,6 +31,9 @@ import { assertLedgerInvariants } from "../support/assert-ledger-invariants.js";
 import type { TestDb } from "../support/postgres-test-db.js";
 
 const NOOP_LOGGER = { log: () => undefined, warn: () => undefined, error: () => undefined };
+const NOOP_MODULE_REF = {
+  get: () => ({ onTransactionReversedInTx: async () => undefined })
+};
 const USER_ID = "user-a";
 
 describe("RecurringReconciliationService (integration)", () => {
@@ -86,7 +89,8 @@ describe("RecurringReconciliationService (integration)", () => {
       new NotificationOutboxRepository(testDb.db),
       new AuditRepository(testDb.db),
       new IdempotencyPostgresService(testDb.db, new IdempotencyPostgresRepository(testDb.db)),
-      NOOP_LOGGER
+      NOOP_LOGGER,
+      NOOP_MODULE_REF
     );
     transactionsService = new TransactionService(
       testDb.db,

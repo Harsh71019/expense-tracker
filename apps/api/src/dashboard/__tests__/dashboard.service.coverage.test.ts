@@ -39,6 +39,7 @@ function createService(overrides: Overrides = {}) {
       overrides.dashboard ??
       ({
         cashflowDaily: vi.fn().mockResolvedValue(new Map()),
+        consumptionDaily: vi.fn().mockResolvedValue(new Map()),
         categoryTotals: vi.fn().mockResolvedValue([]),
         accountsBalanceMinorAsOf: vi.fn().mockResolvedValue(0),
         assetsValueMinorAsOf: vi.fn().mockResolvedValue(0)
@@ -191,6 +192,13 @@ describe("DashboardService cashflow and categories", () => {
           ["2026-07-08", { incomeMinor: 0, expenseMinor: 2_000 }],
           ["2026-07-15", { incomeMinor: 500, expenseMinor: 3_000 }]
         ])
+      ),
+      consumptionDaily: vi.fn().mockResolvedValue(
+        new Map([
+          ["2026-07-01", { expenseMinor: 1_000 }],
+          ["2026-07-08", { expenseMinor: 2_000 }],
+          ["2026-07-15", { expenseMinor: 3_000 }]
+        ])
       )
     };
     const context = createService({ dashboard });
@@ -204,7 +212,7 @@ describe("DashboardService cashflow and categories", () => {
     expect(result.totalMinor).toBe(6_000);
     expect(result.daily.at(-1)?.amountMinor).toBe(0);
     expect(result.weekly.map((week) => week.amountMinor)).toEqual([1_000, 2_000, 3_000]);
-    expect(dashboard.cashflowDaily).toHaveBeenCalledWith(
+    expect(dashboard.consumptionDaily).toHaveBeenCalledWith(
       "u1",
       new Date("2026-06-30T18:30:00.000Z"),
       new Date("2026-07-15T18:29:59.999Z")
@@ -244,7 +252,9 @@ describe("DashboardService cashflow and categories", () => {
         .fn()
         .mockResolvedValueOnce(null)
         .mockResolvedValue({
-          byCategory: [{ categoryId: CATEGORY_ID, spentMinor: 5_000, incomeMinor: 0, txnCount: 2 }]
+          consumptionByCategory: [
+            { categoryId: CATEGORY_ID, spentMinor: 5_000, incomeMinor: 0, txnCount: 2 }
+          ]
         })
     };
     const categories = {

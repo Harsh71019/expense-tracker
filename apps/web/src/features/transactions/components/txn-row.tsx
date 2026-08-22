@@ -116,6 +116,11 @@ export function TxnRow({
                 {SOURCE_LABEL[transaction.source]}
               </span>
             )}
+            {transaction.assetFunding === undefined ? null : (
+              <span className="shrink-0 rounded-md border border-income/30 bg-income/10 px-1.5 py-0.5 font-mono text-2xs font-bold tracking-wider text-income uppercase">
+                Investment
+              </span>
+            )}
             <PaymentRailBadge rail={transaction.paymentRail} />
           </div>
 

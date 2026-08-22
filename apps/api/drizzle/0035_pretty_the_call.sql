@@ -1,0 +1,2 @@
+ALTER TABLE "recurring_rules" ADD COLUMN "template_asset_id" uuid;--> statement-breakpoint
+ALTER TABLE "recurring_rules" ADD CONSTRAINT "recurring_rules_template_asset_id_net_worth_assets_id_fk" FOREIGN KEY ("template_asset_id") REFERENCES "public"."net_worth_assets"("id") ON DELETE no action ON UPDATE no action;

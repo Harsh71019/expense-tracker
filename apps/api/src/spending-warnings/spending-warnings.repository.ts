@@ -19,10 +19,12 @@ import type { DbTx } from "../common/db/db-txn.js";
 import { InvalidCursorError } from "../common/errors/invalid-cursor.error.js";
 import {
   categories,
+  assetFundings,
   spendingWarningAnalysisState,
   spendingWarnings,
   transactions
 } from "../common/db/schema/index.js";
+import { isActiveAssetFunding } from "../common/db/asset-funding-active.js";
 import { stripNulls } from "../common/db/strip-nulls.js";
 import type {
   CandidateExpenseRow,
@@ -82,12 +84,21 @@ export class SpendingWarningsRepository {
         expenseCount: sql<number>`count(*)::int`
       })
       .from(transactions)
+      .leftJoin(
+        assetFundings,
+        and(
+          eq(assetFundings.userId, userId),
+          eq(assetFundings.transactionId, transactions.id),
+          isActiveAssetFunding()
+        )
+      )
       .where(
         and(
           eq(transactions.userId, userId),
           eq(transactions.status, "posted"),
           eq(transactions.type, "expense"),
           isNull(transactions.transferGroupId),
+          isNull(assetFundings.id),
           gte(transactions.occurredAt, rangeStart),
           lt(transactions.occurredAt, analysisBoundary)
         )
@@ -119,12 +130,21 @@ export class SpendingWarningsRepository {
         expenseCount: sql<number>`count(*)::int`
       })
       .from(transactions)
+      .leftJoin(
+        assetFundings,
+        and(
+          eq(assetFundings.userId, userId),
+          eq(assetFundings.transactionId, transactions.id),
+          isActiveAssetFunding()
+        )
+      )
       .where(
         and(
           eq(transactions.userId, userId),
           eq(transactions.status, "posted"),
           eq(transactions.type, "expense"),
           isNull(transactions.transferGroupId),
+          isNull(assetFundings.id),
           gte(transactions.occurredAt, rangeStart),
           lt(transactions.occurredAt, analysisBoundary)
         )
@@ -162,12 +182,21 @@ export class SpendingWarningsRepository {
         occurredAt: transactions.occurredAt
       })
       .from(transactions)
+      .leftJoin(
+        assetFundings,
+        and(
+          eq(assetFundings.userId, userId),
+          eq(assetFundings.transactionId, transactions.id),
+          isActiveAssetFunding()
+        )
+      )
       .where(
         and(
           eq(transactions.userId, userId),
           eq(transactions.status, "posted"),
           eq(transactions.type, "expense"),
           isNull(transactions.transferGroupId),
+          isNull(assetFundings.id),
           gte(transactions.occurredAt, rangeStart),
           lt(transactions.occurredAt, analysisBoundary)
         )
@@ -187,12 +216,21 @@ export class SpendingWarningsRepository {
     const [row] = await this.db
       .select({ earliest: sql<string | null>`min(${transactions.occurredAt})` })
       .from(transactions)
+      .leftJoin(
+        assetFundings,
+        and(
+          eq(assetFundings.userId, userId),
+          eq(assetFundings.transactionId, transactions.id),
+          isActiveAssetFunding()
+        )
+      )
       .where(
         and(
           eq(transactions.userId, userId),
           eq(transactions.status, "posted"),
           eq(transactions.type, "expense"),
-          isNull(transactions.transferGroupId)
+          isNull(transactions.transferGroupId),
+          isNull(assetFundings.id)
         )
       );
     return row?.earliest === null || row?.earliest === undefined ? null : new Date(row.earliest);

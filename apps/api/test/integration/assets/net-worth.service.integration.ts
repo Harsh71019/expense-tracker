@@ -4,6 +4,7 @@ import { AccountRepository } from "../../../src/accounts/account.repository.js";
 import { AuditRepository } from "../../../src/audit/audit.repository.js";
 import { AssetRepository } from "../../../src/assets/asset.repository.js";
 import { AssetService } from "../../../src/assets/asset.service.js";
+import { AssetFundingRepository } from "../../../src/asset-fundings/asset-funding.repository.js";
 import { NetWorthService } from "../../../src/assets/net-worth.service.js";
 import { ValuationRepository } from "../../../src/assets/valuation.repository.js";
 import { withTxn } from "../../../src/common/db/db-txn.js";
@@ -29,7 +30,12 @@ describe("NetWorthService", () => {
       valuationRepository,
       new AuditRepository(testDb.db)
     );
-    netWorth = new NetWorthService(accounts, assetRepository, valuationRepository);
+    netWorth = new NetWorthService(
+      accounts,
+      assetRepository,
+      valuationRepository,
+      new AssetFundingRepository(testDb.db)
+    );
   }, 60_000);
 
   afterAll(async () => {

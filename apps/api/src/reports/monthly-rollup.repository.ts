@@ -1,5 +1,6 @@
 import { Inject, Injectable } from "@nestjs/common";
 import {
+  MONTHLY_ROLLUP_FORMULA_VERSION,
   MonthlyRollupSchema,
   parseSafeIntegerMinor,
   type Month,
@@ -9,8 +10,11 @@ import { and, eq, gte, lt, sql } from "drizzle-orm";
 
 import { DATABASE_CONNECTION } from "../common/db/db.module.js";
 import type { DrizzleDb } from "../common/db/db.module.js";
-import { monthlyRollups, transactions } from "../common/db/schema/index.js";
+import { withTxn } from "../common/db/db-txn.js";
+import { assetFundings, monthlyRollups, transactions } from "../common/db/schema/index.js";
+import { isActiveAssetFunding } from "../common/db/asset-funding-active.js";
 import { stripNulls } from "../common/db/strip-nulls.js";
+import type { DbTx } from "../common/db/db-txn.js";
 
 const IST_TIME_ZONE = "Asia/Kolkata";
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
@@ -29,6 +33,11 @@ export class MonthlyRollupRepository {
    * time-of-day, so the IST month can differ from the UTC month.
    */
   async recompute(userId: string, month: Month): Promise<MonthlyRollup> {
+    return withTxn(this.db, (tx) => this.recomputeInTx(userId, month, tx));
+  }
+
+  private async recomputeInTx(userId: string, month: Month, tx: DbTx): Promise<MonthlyRollup> {
+    await this.lockMonth(userId, month, tx);
     const { roughStart, roughEnd } = roughMonthBounds(month);
     const istMonth = sql<string>`to_char(${transactions.occurredAt} AT TIME ZONE ${IST_TIME_ZONE}, 'YYYY-MM')`;
     const baseWhere = and(
@@ -38,6 +47,7 @@ export class MonthlyRollupRepository {
       lt(transactions.occurredAt, roughEnd),
       sql`${istMonth} = ${month}`
     );
+    const consumptionExpense = sql`case when ${transactions.type} = 'expense' and ${transactions.transferGroupId} is null and ${assetFundings.id} is null then ${transactions.amountMinor} else 0 end`;
 
     // `::bigint`, not `::int` -- amountMinor is declared valid up to
     // Number.MAX_SAFE_INTEGER (packages/shared/src/transaction.ts), and a
@@ -48,7 +58,7 @@ export class MonthlyRollupRepository {
     // each aggregate explicitly below; these sums stay far under
     // Number.MAX_SAFE_INTEGER at personal-finance scale, so the conversion
     // is lossless.
-    const byCategoryRows = await this.db
+    const byCategoryRows = await tx
       .select({
         categoryId: transactions.categoryId,
         spentMinor: sql<string>`coalesce(sum(case when ${transactions.type} = 'expense' then ${transactions.amountMinor} else 0 end), 0)::bigint`,
@@ -59,7 +69,26 @@ export class MonthlyRollupRepository {
       .where(baseWhere)
       .groupBy(transactions.categoryId);
 
-    const byAccountRows = await this.db
+    const consumptionByCategoryRows = await tx
+      .select({
+        categoryId: transactions.categoryId,
+        spentMinor: sql<string>`coalesce(sum(${consumptionExpense}), 0)::bigint`,
+        incomeMinor: sql<string>`coalesce(sum(case when ${transactions.type} = 'income' then ${transactions.amountMinor} else 0 end), 0)::bigint`,
+        txnCount: sql<number>`count(*) filter (where ${transactions.type} = 'income' or (${transactions.type} = 'expense' and ${transactions.transferGroupId} is null and ${assetFundings.id} is null))::int`
+      })
+      .from(transactions)
+      .leftJoin(
+        assetFundings,
+        and(
+          eq(assetFundings.userId, userId),
+          eq(assetFundings.transactionId, transactions.id),
+          isActiveAssetFunding()
+        )
+      )
+      .where(baseWhere)
+      .groupBy(transactions.categoryId);
+
+    const byAccountRows = await tx
       .select({
         accountId: transactions.accountId,
         netMinor: sql<string>`coalesce(sum(case when ${transactions.type} = 'income' then ${transactions.amountMinor} else -${transactions.amountMinor} end), 0)::bigint`
@@ -68,12 +97,22 @@ export class MonthlyRollupRepository {
       .where(baseWhere)
       .groupBy(transactions.accountId);
 
-    const [totalsRow] = await this.db
+    const [totalsRow] = await tx
       .select({
         totalExpenseMinor: sql<string>`coalesce(sum(case when ${transactions.type} = 'expense' then ${transactions.amountMinor} else 0 end), 0)::bigint`,
-        totalIncomeMinor: sql<string>`coalesce(sum(case when ${transactions.type} = 'income' then ${transactions.amountMinor} else 0 end), 0)::bigint`
+        totalIncomeMinor: sql<string>`coalesce(sum(case when ${transactions.type} = 'income' then ${transactions.amountMinor} else 0 end), 0)::bigint`,
+        totalConsumptionMinor: sql<string>`coalesce(sum(${consumptionExpense}), 0)::bigint`,
+        totalAssetFundingMinor: sql<string>`coalesce(sum(case when ${assetFundings.id} is not null then ${assetFundings.amountMinor} else 0 end), 0)::bigint`
       })
       .from(transactions)
+      .leftJoin(
+        assetFundings,
+        and(
+          eq(assetFundings.userId, userId),
+          eq(assetFundings.transactionId, transactions.id),
+          isActiveAssetFunding()
+        )
+      )
       .where(baseWhere);
 
     const document = {
@@ -91,10 +130,20 @@ export class MonthlyRollupRepository {
       })),
       totalExpenseMinor: parseSafeIntegerMinor(totalsRow?.totalExpenseMinor ?? 0),
       totalIncomeMinor: parseSafeIntegerMinor(totalsRow?.totalIncomeMinor ?? 0),
+      totalCashOutflowMinor: parseSafeIntegerMinor(totalsRow?.totalExpenseMinor ?? 0),
+      totalConsumptionMinor: parseSafeIntegerMinor(totalsRow?.totalConsumptionMinor ?? 0),
+      totalAssetFundingMinor: parseSafeIntegerMinor(totalsRow?.totalAssetFundingMinor ?? 0),
+      consumptionByCategory: consumptionByCategoryRows.map((row) => ({
+        ...(row.categoryId === null ? {} : { categoryId: row.categoryId }),
+        spentMinor: parseSafeIntegerMinor(row.spentMinor),
+        incomeMinor: parseSafeIntegerMinor(row.incomeMinor),
+        txnCount: row.txnCount
+      })),
+      formulaVersion: MONTHLY_ROLLUP_FORMULA_VERSION,
       computedAt: new Date()
     };
 
-    await this.db
+    await tx
       .insert(monthlyRollups)
       .values(document)
       .onConflictDoUpdate({
@@ -104,6 +153,11 @@ export class MonthlyRollupRepository {
           byAccount: document.byAccount,
           totalExpenseMinor: document.totalExpenseMinor,
           totalIncomeMinor: document.totalIncomeMinor,
+          totalCashOutflowMinor: document.totalCashOutflowMinor,
+          totalConsumptionMinor: document.totalConsumptionMinor,
+          totalAssetFundingMinor: document.totalAssetFundingMinor,
+          consumptionByCategory: document.consumptionByCategory,
+          formulaVersion: document.formulaVersion,
           computedAt: document.computedAt
         }
       });
@@ -117,6 +171,24 @@ export class MonthlyRollupRepository {
       .from(monthlyRollups)
       .where(and(eq(monthlyRollups.userId, userId), eq(monthlyRollups.month, month)));
     return row === undefined ? null : MonthlyRollupSchema.parse(stripNulls(row));
+  }
+
+  async invalidate(userId: string, month: Month, tx: DbTx): Promise<void> {
+    await this.lockMonth(userId, month, tx);
+    await tx
+      .delete(monthlyRollups)
+      .where(and(eq(monthlyRollups.userId, userId), eq(monthlyRollups.month, month)));
+  }
+
+  /**
+   * Serializes cache reads/recomputations with the transaction that invalidates
+   * the same user/month. It is transaction-scoped, so lock release coincides
+   * with publishing the cache row or committing the ledger/funding mutation.
+   */
+  private async lockMonth(userId: string, month: Month, tx: DbTx): Promise<void> {
+    await tx.execute(
+      sql`select pg_advisory_xact_lock(hashtextextended(${`${userId}:${month}`}, 0))`
+    );
   }
 
   async distinctUserIds(): Promise<string[]> {

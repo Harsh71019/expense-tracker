@@ -22,7 +22,13 @@ import { z } from "zod";
 import { InvalidCursorError } from "../common/errors/invalid-cursor.error.js";
 import { DATABASE_CONNECTION } from "../common/db/db.module.js";
 import type { DrizzleDb } from "../common/db/db.module.js";
-import { categories, recurringReconciliations, transactions } from "../common/db/schema/index.js";
+import {
+  assetFundings,
+  categories,
+  recurringReconciliations,
+  transactions
+} from "../common/db/schema/index.js";
+import { isActiveAssetFunding } from "../common/db/asset-funding-active.js";
 import { stripNulls } from "../common/db/strip-nulls.js";
 import type { DbTx } from "../common/db/db-txn.js";
 import { istMonthBounds, listISTMonthDayKeys } from "../common/time/ist.js";
@@ -202,7 +208,15 @@ export class TransactionRepository {
           occurredAt: transactions.occurredAt
         })
         .from(transactions)
-        .where(postedExpenseWhere)
+        .leftJoin(
+          assetFundings,
+          and(
+            eq(assetFundings.userId, userId),
+            eq(assetFundings.transactionId, transactions.id),
+            isActiveAssetFunding()
+          )
+        )
+        .where(and(postedExpenseWhere, isNull(assetFundings.id)))
         .orderBy(
           desc(transactions.amountMinor),
           desc(transactions.occurredAt),
@@ -223,7 +237,15 @@ export class TransactionRepository {
           categories,
           and(eq(categories.id, transactions.categoryId), eq(categories.userId, userId))
         )
-        .where(postedExpenseWhere)
+        .leftJoin(
+          assetFundings,
+          and(
+            eq(assetFundings.userId, userId),
+            eq(assetFundings.transactionId, transactions.id),
+            isActiveAssetFunding()
+          )
+        )
+        .where(and(postedExpenseWhere, isNull(assetFundings.id)))
         .groupBy(transactions.categoryId, categories.name, categories.color, categories.icon)
         .orderBy(desc(spentTotal), transactions.categoryId)
         .limit(1),
@@ -508,6 +530,25 @@ export class TransactionRepository {
           eq(transactions.status, "posted")
         )
       );
+    return row === undefined ? null : toTransaction(row);
+  }
+
+  async findPostedByIdForUpdate(
+    userId: string,
+    transactionId: string,
+    tx: DbTx
+  ): Promise<Transaction | null> {
+    const [row] = await tx
+      .select()
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.id, transactionId),
+          eq(transactions.userId, userId),
+          eq(transactions.status, "posted")
+        )
+      )
+      .for("update");
     return row === undefined ? null : toTransaction(row);
   }
 

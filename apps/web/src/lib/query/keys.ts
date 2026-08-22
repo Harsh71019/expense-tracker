@@ -61,6 +61,7 @@ export const qk = {
   pendingTransactions: () => ["pending-transactions"] as const,
   assets: () => ["assets"] as const,
   assetValuations: (assetId: string) => ["asset-valuations", assetId] as const,
+  assetFundings: (assetId: string) => ["asset-fundings", assetId] as const,
   netWorth: () => ["net-worth"] as const,
   importBatches: () => ["import-batches"] as const,
   importPreview: (batchId: string) => ["import-preview", batchId] as const,

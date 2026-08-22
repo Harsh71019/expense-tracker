@@ -56,7 +56,7 @@ export function ReportPage({ initialMonth, initialRollup }: ReportPageProps): Re
             Monthly report
           </h1>
           <p className="mt-0.5 text-xs text-foreground-muted">
-            Category breakdowns and net cash flow rollups.
+            Consumption, asset funding, and cash-flow rollups.
           </p>
         </div>
         <Link

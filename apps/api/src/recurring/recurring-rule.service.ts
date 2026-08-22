@@ -1,4 +1,4 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable, Optional } from "@nestjs/common";
 import {
   computeFirstOccurrence,
   computeNextOccurrence,
@@ -9,6 +9,7 @@ import {
 } from "@treasury-ops/shared";
 
 import { AccountRepository } from "../accounts/account.repository.js";
+import { AssetRepository } from "../assets/asset.repository.js";
 import { CategoryRepository } from "../categories/category.repository.js";
 import { DATABASE_CONNECTION } from "../common/db/db.module.js";
 import type { DrizzleDb } from "../common/db/db.module.js";
@@ -25,7 +26,8 @@ export class RecurringRuleService {
     @Inject(DATABASE_CONNECTION) private readonly db: DrizzleDb,
     private readonly rules: RecurringRuleRepository,
     private readonly accounts: AccountRepository,
-    private readonly categories: CategoryRepository
+    private readonly categories: CategoryRepository,
+    @Optional() private readonly assets?: AssetRepository
   ) {}
 
   /**
@@ -47,6 +49,7 @@ export class RecurringRuleService {
       if (category === null) throw new EntityNotFoundError("Category");
       if (category.kind !== input.template.type) throw new CategoryKindMismatchError();
     }
+    await this.assertAssetTarget(userId, input.template.type, input.template.assetId, tx);
 
     const nextRunAt = computeFirstOccurrence(input.rrule, input.startAt);
     if (nextRunAt === null) throw new InvalidRecurringRuleError();
@@ -96,6 +99,11 @@ export class RecurringRuleService {
       if (category === null) throw new EntityNotFoundError("Category");
       if (category.kind !== nextType) throw new CategoryKindMismatchError();
     }
+    const nextAssetId =
+      patch.template?.assetId === undefined
+        ? current.template.assetId
+        : (patch.template.assetId ?? undefined);
+    await this.assertAssetTarget(userId, nextType, nextAssetId, tx);
 
     let nextRunAt: Date | undefined;
     if (patch.rrule !== undefined) {
@@ -107,5 +115,20 @@ export class RecurringRuleService {
     const updated = await this.rules.update(userId, ruleId, patch, nextRunAt, tx);
     if (updated === null) throw new EntityNotFoundError("Recurring rule");
     return updated;
+  }
+
+  private async assertAssetTarget(
+    userId: string,
+    type: "expense" | "income",
+    assetId: string | undefined,
+    tx: DbTx
+  ): Promise<void> {
+    if (assetId === undefined) return;
+    if (this.assets === undefined) throw new InvalidRecurringRuleError();
+    if (type !== "expense") throw new InvalidRecurringRuleError();
+    const asset = await this.assets.findOpenByIdForUpdate(userId, assetId, tx);
+    if (asset === null || (asset.kind !== "investment" && asset.kind !== "fixed_deposit")) {
+      throw new InvalidRecurringRuleError();
+    }
   }
 }

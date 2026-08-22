@@ -1716,6 +1716,54 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/v1/transactions/{transactionId}/asset-funding": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["linkTransactionAssetFunding"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/asset-fundings/investments": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["createInvestmentFunding"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/asset-fundings/{fundingId}/reverse": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["reverseAssetFunding"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/v1/transfers": {
     parameters: {
       query?: never;
@@ -1975,6 +2023,22 @@ export interface paths {
         };
       };
     };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/assets/{assetId}/fundings": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["listAssetFundings"];
+    put?: never;
+    post?: never;
     delete?: never;
     options?: never;
     head?: never;
@@ -3398,6 +3462,8 @@ export interface paths {
               /** Format: uuid */
               accountId: string;
               /** Format: uuid */
+              assetId?: string;
+              /** Format: uuid */
               categoryId?: string;
               /** @enum {string} */
               type: "expense" | "income";
@@ -3810,6 +3876,8 @@ export interface paths {
             template?: {
               /** Format: uuid */
               accountId?: string;
+              /** Format: uuid */
+              assetId?: string | null;
               /** Format: uuid */
               categoryId?: string;
               /** @enum {string} */
@@ -8194,6 +8262,11 @@ export interface components {
         | "auth.rate_limited"
         | "txn.already_reversed"
         | "txn.transfer_metadata_requires_group"
+        | "asset_funding.source_not_eligible"
+        | "asset_funding.already_linked"
+        | "asset_funding.not_reversible"
+        | "asset_funding.asset_kind_unsupported"
+        | "asset_funding.asset_unavailable"
         | "category.parent_kind_mismatch"
         | "category.kind_mismatch"
         | "category.hierarchy_conflict"
@@ -8579,6 +8652,16 @@ export interface components {
         createdAt: string | null;
         /** Format: date-time */
         updatedAt: string | null;
+        assetFunding?: {
+          /** Format: uuid */
+          fundingId: string;
+          /** Format: uuid */
+          assetId: string;
+          assetName: string;
+          /** @enum {string} */
+          assetKind: "investment" | "fixed_deposit";
+          amountMinor: number;
+        };
       }[];
       pageInfo: {
         nextCursor: string | null;
@@ -8653,6 +8736,152 @@ export interface components {
       createdAt: string | null;
       /** Format: date-time */
       updatedAt: string | null;
+      assetFunding?: {
+        /** Format: uuid */
+        fundingId: string;
+        /** Format: uuid */
+        assetId: string;
+        assetName: string;
+        /** @enum {string} */
+        assetKind: "investment" | "fixed_deposit";
+        amountMinor: number;
+      };
+    };
+    AssetFundingMutationResult: {
+      funding: {
+        /** Format: uuid */
+        id: string;
+        userId: string;
+        /** Format: uuid */
+        assetId: string;
+        /** Format: uuid */
+        transactionId: string;
+        amountMinor: number;
+        /** Format: date-time */
+        occurredAt: string | null;
+        /** @enum {string} */
+        status: "posted" | "reversed" | "reversal";
+        /** Format: uuid */
+        reversalOf?: string;
+        /** Format: uuid */
+        reversedBy?: string;
+        /** Format: date-time */
+        createdAt: string | null;
+      };
+      transaction: {
+        /** Format: uuid */
+        accountId: string;
+        /** Format: uuid */
+        categoryId?: string;
+        /** @enum {string} */
+        type: "expense" | "income";
+        amountMinor: number;
+        /** Format: date-time */
+        occurredAt: string | null;
+        description: string;
+        /** @default [] */
+        tags: string[];
+        /** Format: uuid */
+        id: string;
+        userId: string;
+        /** @enum {string} */
+        currency: "INR";
+        /** @enum {string} */
+        source: "manual" | "csv_import" | "recurring" | "api";
+        /** @enum {string} */
+        status: "posted" | "reversed" | "reversal";
+        /** Format: uuid */
+        idempotencyKey?: string;
+        /** Format: uuid */
+        reversalOf?: string;
+        /** Format: uuid */
+        reversedBy?: string;
+        /** Format: uuid */
+        transferGroupId?: string;
+        /** Format: uuid */
+        billId?: string;
+        /** Format: uuid */
+        recurringRuleId?: string;
+        /** @enum {string} */
+        paymentRail: "upi" | "neft" | "rtgs" | "imps" | "nach" | "card" | "unknown";
+        counterpartyHandle: string | null;
+        /** Format: date-time */
+        createdAt: string | null;
+        /** Format: date-time */
+        updatedAt: string | null;
+        assetFunding?: {
+          /** Format: uuid */
+          fundingId: string;
+          /** Format: uuid */
+          assetId: string;
+          assetName: string;
+          /** @enum {string} */
+          assetKind: "investment" | "fixed_deposit";
+          amountMinor: number;
+        };
+      };
+      asset: {
+        /** Format: uuid */
+        id: string;
+        userId: string;
+        /** @enum {string} */
+        kind:
+          "loan_receivable" | "loan_liability" | "fixed_deposit" | "gold" | "silver" | "investment";
+        name: string;
+        /** Format: date-time */
+        openedAt: string | null;
+        /** Format: date-time */
+        maturityAt?: string | null;
+        annualRateBps?: number;
+        quantityMilliUnits?: number;
+        isClosed: boolean;
+        /** Format: date-time */
+        createdAt: string | null;
+        /** Format: date-time */
+        updatedAt: string | null;
+      };
+    };
+    ReverseAssetFundingResult: {
+      original: {
+        /** Format: uuid */
+        id: string;
+        userId: string;
+        /** Format: uuid */
+        assetId: string;
+        /** Format: uuid */
+        transactionId: string;
+        amountMinor: number;
+        /** Format: date-time */
+        occurredAt: string | null;
+        /** @enum {string} */
+        status: "posted" | "reversed" | "reversal";
+        /** Format: uuid */
+        reversalOf?: string;
+        /** Format: uuid */
+        reversedBy?: string;
+        /** Format: date-time */
+        createdAt: string | null;
+      };
+      reversal: {
+        /** Format: uuid */
+        id: string;
+        userId: string;
+        /** Format: uuid */
+        assetId: string;
+        /** Format: uuid */
+        transactionId: string;
+        amountMinor: number;
+        /** Format: date-time */
+        occurredAt: string | null;
+        /** @enum {string} */
+        status: "posted" | "reversed" | "reversal";
+        /** Format: uuid */
+        reversalOf?: string;
+        /** Format: uuid */
+        reversedBy?: string;
+        /** Format: date-time */
+        createdAt: string | null;
+      };
     };
     Transfer: {
       /** Format: uuid */
@@ -8698,6 +8927,16 @@ export interface components {
         createdAt: string | null;
         /** Format: date-time */
         updatedAt: string | null;
+        assetFunding?: {
+          /** Format: uuid */
+          fundingId: string;
+          /** Format: uuid */
+          assetId: string;
+          assetName: string;
+          /** @enum {string} */
+          assetKind: "investment" | "fixed_deposit";
+          amountMinor: number;
+        };
       };
       toTransaction: {
         /** Format: uuid */
@@ -8740,6 +8979,16 @@ export interface components {
         createdAt: string | null;
         /** Format: date-time */
         updatedAt: string | null;
+        assetFunding?: {
+          /** Format: uuid */
+          fundingId: string;
+          /** Format: uuid */
+          assetId: string;
+          assetName: string;
+          /** @enum {string} */
+          assetKind: "investment" | "fixed_deposit";
+          amountMinor: number;
+        };
       };
     };
     TransferReversal: {
@@ -8787,6 +9036,16 @@ export interface components {
           createdAt: string | null;
           /** Format: date-time */
           updatedAt: string | null;
+          assetFunding?: {
+            /** Format: uuid */
+            fundingId: string;
+            /** Format: uuid */
+            assetId: string;
+            assetName: string;
+            /** @enum {string} */
+            assetKind: "investment" | "fixed_deposit";
+            amountMinor: number;
+          };
         },
         {
           /** Format: uuid */
@@ -8829,6 +9088,16 @@ export interface components {
           createdAt: string | null;
           /** Format: date-time */
           updatedAt: string | null;
+          assetFunding?: {
+            /** Format: uuid */
+            fundingId: string;
+            /** Format: uuid */
+            assetId: string;
+            assetName: string;
+            /** @enum {string} */
+            assetKind: "investment" | "fixed_deposit";
+            amountMinor: number;
+          };
         }
       ];
     };
@@ -8851,6 +9120,33 @@ export interface components {
       createdAt: string | null;
       /** Format: date-time */
       updatedAt: string | null;
+    };
+    AssetFundingPage: {
+      items: {
+        /** Format: uuid */
+        id: string;
+        userId: string;
+        /** Format: uuid */
+        assetId: string;
+        /** Format: uuid */
+        transactionId: string;
+        amountMinor: number;
+        /** Format: date-time */
+        occurredAt: string | null;
+        /** @enum {string} */
+        status: "posted" | "reversed" | "reversal";
+        /** Format: uuid */
+        reversalOf?: string;
+        /** Format: uuid */
+        reversedBy?: string;
+        /** Format: date-time */
+        createdAt: string | null;
+      }[];
+      pageInfo: {
+        nextCursor: string | null;
+        hasMore: boolean;
+        limit: number;
+      };
     };
     Valuation: {
       valueMinor: number;
@@ -8932,6 +9228,17 @@ export interface components {
       }[];
       totalExpenseMinor: number;
       totalIncomeMinor: number;
+      totalCashOutflowMinor: number;
+      totalConsumptionMinor: number;
+      totalAssetFundingMinor: number;
+      consumptionByCategory: {
+        /** Format: uuid */
+        categoryId?: string;
+        spentMinor: number;
+        incomeMinor: number;
+        txnCount: number;
+      }[];
+      formulaVersion: number;
       /** Format: date-time */
       computedAt: string | null;
     };
@@ -9412,6 +9719,8 @@ export interface components {
         /** Format: uuid */
         accountId: string;
         /** Format: uuid */
+        assetId?: string;
+        /** Format: uuid */
         categoryId?: string;
         /** @enum {string} */
         type: "expense" | "income";
@@ -9686,6 +9995,16 @@ export interface components {
         createdAt: string | null;
         /** Format: date-time */
         updatedAt: string | null;
+        assetFunding?: {
+          /** Format: uuid */
+          fundingId: string;
+          /** Format: uuid */
+          assetId: string;
+          assetName: string;
+          /** @enum {string} */
+          assetKind: "investment" | "fixed_deposit";
+          amountMinor: number;
+        };
       };
       candidateTransactions: {
         /** Format: uuid */
@@ -9728,6 +10047,16 @@ export interface components {
         createdAt: string | null;
         /** Format: date-time */
         updatedAt: string | null;
+        assetFunding?: {
+          /** Format: uuid */
+          fundingId: string;
+          /** Format: uuid */
+          assetId: string;
+          assetName: string;
+          /** @enum {string} */
+          assetKind: "investment" | "fixed_deposit";
+          amountMinor: number;
+        };
       }[];
     };
     RecurringReconciliation: {
@@ -10093,9 +10422,9 @@ export interface components {
         trend: number[];
       };
       savingsRate: {
-        valuePct: number;
+        valuePct: number | null;
         deltaPct: number | null;
-        trend: number[];
+        trend: (number | null)[];
       };
       netWorth: {
         valueMinor: number;
@@ -10473,6 +10802,16 @@ export interface components {
           createdAt: string | null;
           /** Format: date-time */
           updatedAt: string | null;
+          assetFunding?: {
+            /** Format: uuid */
+            fundingId: string;
+            /** Format: uuid */
+            assetId: string;
+            assetName: string;
+            /** @enum {string} */
+            assetKind: "investment" | "fixed_deposit";
+            amountMinor: number;
+          };
         }[];
       };
     };
@@ -10737,6 +11076,16 @@ export interface components {
           createdAt: string | null;
           /** Format: date-time */
           updatedAt: string | null;
+          assetFunding?: {
+            /** Format: uuid */
+            fundingId: string;
+            /** Format: uuid */
+            assetId: string;
+            assetName: string;
+            /** @enum {string} */
+            assetKind: "investment" | "fixed_deposit";
+            amountMinor: number;
+          };
         };
         toTransaction: {
           /** Format: uuid */
@@ -10779,6 +11128,16 @@ export interface components {
           createdAt: string | null;
           /** Format: date-time */
           updatedAt: string | null;
+          assetFunding?: {
+            /** Format: uuid */
+            fundingId: string;
+            /** Format: uuid */
+            assetId: string;
+            assetName: string;
+            /** @enum {string} */
+            assetKind: "investment" | "fixed_deposit";
+            amountMinor: number;
+          };
         };
       };
     };
@@ -10827,6 +11186,16 @@ export interface components {
           createdAt: string | null;
           /** Format: date-time */
           updatedAt: string | null;
+          assetFunding?: {
+            /** Format: uuid */
+            fundingId: string;
+            /** Format: uuid */
+            assetId: string;
+            assetName: string;
+            /** @enum {string} */
+            assetKind: "investment" | "fixed_deposit";
+            amountMinor: number;
+          };
         };
         toTransaction: {
           /** Format: uuid */
@@ -10869,6 +11238,16 @@ export interface components {
           createdAt: string | null;
           /** Format: date-time */
           updatedAt: string | null;
+          assetFunding?: {
+            /** Format: uuid */
+            fundingId: string;
+            /** Format: uuid */
+            assetId: string;
+            assetName: string;
+            /** @enum {string} */
+            assetKind: "investment" | "fixed_deposit";
+            amountMinor: number;
+          };
         };
       };
       bill?: {
@@ -11722,6 +12101,282 @@ export interface operations {
       };
     };
   };
+  linkTransactionAssetFunding: {
+    parameters: {
+      query?: never;
+      header: {
+        "Idempotency-Key": string;
+      };
+      path: {
+        transactionId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        "application/json": {
+          target:
+            | {
+                /** @enum {string} */
+                kind: "existing_asset";
+                /** Format: uuid */
+                assetId: string;
+              }
+            | {
+                /** @enum {string} */
+                kind: "new_asset";
+                asset:
+                  | {
+                      /** @enum {string} */
+                      kind: "investment";
+                      name: string;
+                    }
+                  | {
+                      /** @enum {string} */
+                      kind: "fixed_deposit";
+                      name: string;
+                      /** Format: date-time */
+                      maturityAt?: string;
+                      annualRateBps?: number;
+                    };
+              };
+        };
+      };
+    };
+    responses: {
+      /** @description Linked funding, or idempotent replay */
+      200: {
+        headers: {
+          "Idempotency-Replayed"?: "true";
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AssetFundingMutationResult"];
+        };
+      };
+      /** @description Unauthenticated */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Transaction or asset not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Idempotency key was already used for different request intent */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Validation failed */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Internal error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+    };
+  };
+  createInvestmentFunding: {
+    parameters: {
+      query?: never;
+      header: {
+        "Idempotency-Key": string;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        "application/json": {
+          /** Format: uuid */
+          accountId: string;
+          amountMinor: number;
+          /** Format: date-time */
+          occurredAt: string;
+          description: string;
+          /** @default [] */
+          tags?: string[];
+          target:
+            | {
+                /** @enum {string} */
+                kind: "existing_asset";
+                /** Format: uuid */
+                assetId: string;
+              }
+            | {
+                /** @enum {string} */
+                kind: "new_asset";
+                asset:
+                  | {
+                      /** @enum {string} */
+                      kind: "investment";
+                      name: string;
+                    }
+                  | {
+                      /** @enum {string} */
+                      kind: "fixed_deposit";
+                      name: string;
+                      /** Format: date-time */
+                      maturityAt?: string;
+                      annualRateBps?: number;
+                    };
+              };
+        };
+      };
+    };
+    responses: {
+      /** @description Investment funding, or idempotent replay */
+      200: {
+        headers: {
+          "Idempotency-Replayed"?: "true";
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AssetFundingMutationResult"];
+        };
+      };
+      /** @description Unauthenticated */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Account or asset not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Idempotency key was already used for different request intent */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Validation failed */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Internal error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+    };
+  };
+  reverseAssetFunding: {
+    parameters: {
+      query?: never;
+      header: {
+        "Idempotency-Key": string;
+      };
+      path: {
+        fundingId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Funding reversal, or idempotent replay */
+      200: {
+        headers: {
+          "Idempotency-Replayed"?: "true";
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ReverseAssetFundingResult"];
+        };
+      };
+      /** @description Unauthenticated */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Funding not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Idempotency key was already used for different request intent */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Validation failed */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Internal error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+    };
+  };
   createTransfer: {
     parameters: {
       query?: never;
@@ -11826,6 +12481,67 @@ export interface operations {
         };
       };
       /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Validation failed */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Internal error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+    };
+  };
+  listAssetFundings: {
+    parameters: {
+      query?: {
+        cursor?: string;
+        limit?: number;
+      };
+      header?: never;
+      path: {
+        assetId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Asset funding history */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AssetFundingPage"];
+        };
+      };
+      /** @description Unauthenticated */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Asset not found */
       404: {
         headers: {
           [name: string]: unknown;

@@ -58,6 +58,7 @@ export function useCreateCategoryRule(): ReturnType<
     },
     onSettled: async () => {
       await client.invalidateQueries({ queryKey: qk.categoryRules() });
+      await client.invalidateQueries({ queryKey: qk.categoryRecommendations() });
     }
   });
 }
@@ -82,6 +83,7 @@ export function useDeleteCategoryRule(): ReturnType<typeof useMutation<void, Err
     },
     onSettled: async () => {
       await client.invalidateQueries({ queryKey: qk.categoryRules() });
+      await client.invalidateQueries({ queryKey: qk.categoryRecommendations() });
     }
   });
 }

@@ -12,6 +12,7 @@ import type { TreasuryOpsAuth } from "../../src/auth/auth.service.js";
 import { BalanceVerifyRepository } from "../../src/balances/balance-verify.repository.js";
 import { BalanceVerifyService } from "../../src/balances/balance-verify.service.js";
 import { CategoryRepository } from "../../src/categories/category.repository.js";
+import { CategoryService } from "../../src/categories/category.service.js";
 import { CategoryRuleRepository } from "../../src/category-rules/category-rule.repository.js";
 import { CategoryRuleService } from "../../src/category-rules/category-rule.service.js";
 import { CategorySuggestionRepository } from "../../src/category-rules/category-suggestion.repository.js";
@@ -116,7 +117,8 @@ export async function createSeedContext(): Promise<SeedContext> {
   const categoryRulesRepo = new CategoryRuleRepository(db);
   const categorySuggestions = new CategorySuggestionService(
     categoryRulesRepo,
-    new CategorySuggestionRepository(db)
+    new CategorySuggestionRepository(db),
+    new CategoryService(categories)
   );
   const transactionsRepo = new TransactionRepository(db);
   const audit = new AuditRepository(db);

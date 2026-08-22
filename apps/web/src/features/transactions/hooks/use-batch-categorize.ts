@@ -45,7 +45,8 @@ export function useBatchCategorize(): UseMutationResult<
         client.invalidateQueries({ queryKey: qk.transactions() }),
         client.invalidateQueries({ queryKey: qk.budgets() }),
         client.invalidateQueries({ queryKey: qk.dashboard() }),
-        client.invalidateQueries({ queryKey: qk.monthlyRollups() })
+        client.invalidateQueries({ queryKey: qk.monthlyRollups() }),
+        client.invalidateQueries({ queryKey: qk.categoryRecommendations() })
       ]);
     }
   });

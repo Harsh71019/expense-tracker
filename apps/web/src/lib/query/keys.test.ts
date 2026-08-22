@@ -37,6 +37,26 @@ describe("query keys", () => {
     ]);
     expect(qk.categories()).toEqual(["categories"]);
     expect(qk.categoryList(true)).toEqual(["categories", "list", { includeArchived: true }]);
+    expect(qk.categoryRecommendations()).toEqual(["category-recommendations"]);
+    expect(
+      qk.categoryRecommendationQuery({
+        type: "expense",
+        description: "swiggy",
+        draft: "swiggy",
+        occurredAt: "2026-08-22T06:30:00.000Z",
+        limit: 5
+      })
+    ).toEqual([
+      "category-recommendations",
+      "query",
+      {
+        type: "expense",
+        description: "swiggy",
+        draft: "swiggy",
+        occurredAt: "2026-08-22T06:30:00.000Z",
+        limit: 5
+      }
+    ]);
     expect(qk.spendingWarnings()).toEqual(["spending-warnings"]);
     expect(qk.spendingWarningLists()).toEqual(["spending-warnings", "list"]);
     expect(qk.spendingWarningList({ filter: "spikes" })).toEqual([

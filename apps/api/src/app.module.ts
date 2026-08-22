@@ -14,6 +14,7 @@ import { RuntimeConfigService } from "./common/config/runtime-config.service.js"
 import { DbModule } from "./common/db/db.module.js";
 import { LoggingContextService } from "./common/logging/logging-context.service.js";
 import { LoggingModule } from "./common/logging/logging.module.js";
+import { PINO_REDACT_PATHS } from "./common/logging/redact-paths.js";
 import { MetricsController } from "./common/observability/metrics.controller.js";
 import { ObservabilityModule } from "./common/observability/observability.module.js";
 import { IdempotencyModule } from "./common/idempotency/idempotency.module.js";
@@ -126,15 +127,18 @@ function isUnthrottledPath(context: ExecutionContext): boolean {
               }
             : {}),
           redact: {
-            paths: [
-              "req.headers.authorization",
-              "req.headers.cookie",
-              "req.body.password",
-              "*.password",
-              "*.secret",
-              "*.token"
-            ],
+            paths: [...PINO_REDACT_PATHS],
             censor: "[REDACTED]"
+          },
+          serializers: {
+            req(request: Request) {
+              const serialized = pino.stdSerializers.req(request);
+              const url = request.originalUrl ?? request.url;
+              if (url.includes("/v1/category-recommendations")) {
+                return { ...serialized, body: undefined };
+              }
+              return serialized;
+            }
           },
           autoLogging: {
             ignore: (request) =>

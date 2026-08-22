@@ -19,8 +19,18 @@ const mocks = vi.hoisted(() => ({
     }
   ],
   categories: [
-    { id: "3fa85f64-5717-4562-b3fc-2c963f66be21", name: "Groceries", isArchived: false },
-    { id: "3fa85f64-5717-4562-b3fc-2c963f66be22", name: "Dining", isArchived: false }
+    {
+      id: "3fa85f64-5717-4562-b3fc-2c963f66be21",
+      name: "Groceries",
+      kind: "expense",
+      isArchived: false
+    },
+    {
+      id: "3fa85f64-5717-4562-b3fc-2c963f66be22",
+      name: "Dining",
+      kind: "expense",
+      isArchived: false
+    }
   ]
 }));
 
@@ -48,6 +58,9 @@ vi.mock("@/features/categories", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/features/categories")>();
   return { ...actual, useCategories: () => ({ data: mocks.categories }) };
 });
+vi.mock("@/features/categories/hooks/use-category-recommendations", () => ({
+  useCategoryRecommendations: () => ({ data: undefined, isFetching: false, isError: false })
+}));
 vi.mock("../hooks/use-reverse-txn", () => ({
   useReverseTxn: () => ({ mutate: mocks.reverseMutate, isPending: mocks.reversePending })
 }));
@@ -99,7 +112,8 @@ describe("TxnDetailDrawer", () => {
     expect(screen.getByDisplayValue("BigBasket order")).toBeVisible();
     expect(screen.getByText("#groceries")).toBeVisible();
 
-    await user.click(screen.getByRole("button", { name: "Dining" }));
+    await user.click(screen.getByRole("combobox", { name: "Category" }));
+    await user.click(screen.getByRole("option", { name: "Dining" }));
     await user.click(screen.getByRole("button", { name: "Save changes" }));
 
     expect(mocks.mutateAsync).toHaveBeenCalledWith({

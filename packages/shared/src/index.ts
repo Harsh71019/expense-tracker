@@ -243,6 +243,22 @@ export type { CategoryRule, CategoryRuleId, CreateCategoryRule } from "./categor
 export { CategorySuggestionMethodSchema, CategorySuggestionSchema } from "./category-suggestion.js";
 export type { CategorySuggestion, CategorySuggestionMethod } from "./category-suggestion.js";
 export {
+  CATEGORY_RECOMMENDATION_ALGORITHM_VERSION,
+  CATEGORY_RECOMMENDATION_LIMIT_MAX,
+  CategoryRecommendationQuerySchema,
+  CategoryRecommendationReasonSchema,
+  CategoryRecommendationResponseSchema,
+  CategoryRecommendationSchema,
+  normalizeCategorySearchText
+} from "./category-recommendation.js";
+export type {
+  CategoryRecommendation,
+  CategoryRecommendationInput,
+  CategoryRecommendationQuery,
+  CategoryRecommendationReason,
+  CategoryRecommendationResponse
+} from "./category-recommendation.js";
+export {
   NearDuplicateAbstentionReasonSchema,
   NearDuplicateEvidenceSchema,
   NearDuplicateMethodSchema,

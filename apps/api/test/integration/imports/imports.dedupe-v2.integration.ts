@@ -8,6 +8,7 @@ import { CategoryRuleRepository } from "../../../src/category-rules/category-rul
 import { CategorySuggestionRepository } from "../../../src/category-rules/category-suggestion.repository.js";
 import { CategorySuggestionService } from "../../../src/category-rules/category-suggestion.service.js";
 import { CategoryRepository } from "../../../src/categories/category.repository.js";
+import { CategoryService } from "../../../src/categories/category.service.js";
 import {
   accounts as accountsTable,
   transactions as transactionsTable
@@ -89,7 +90,11 @@ describe("Imports dedupe v2 (exact fingerprinting + near-duplicate evidence)", (
       accounts,
       categories,
       audit,
-      new CategorySuggestionService(categoryRules, new CategorySuggestionRepository(testDb.db)),
+      new CategorySuggestionService(
+        categoryRules,
+        new CategorySuggestionRepository(testDb.db),
+        new CategoryService(categories)
+      ),
       focusedTestDouble<MetricsService>({ recordCategorySuggestions: () => undefined })
     );
   }, 30_000);

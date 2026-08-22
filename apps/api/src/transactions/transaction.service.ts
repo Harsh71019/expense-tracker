@@ -1,4 +1,5 @@
 import { Inject, Injectable, Optional } from "@nestjs/common";
+import { ModuleRef } from "@nestjs/core";
 import {
   type BatchCategorizeTransactions,
   type BatchCategorizeTransactionsResult,
@@ -41,8 +42,17 @@ import {
 
 export type CreateTransactionResult = Readonly<{ transaction: Transaction; replayed: boolean }>;
 type TransactionLogger = Pick<Logger, "log" | "warn" | "error">;
+type ReversalHookResolver = Readonly<{
+  get(
+    token: typeof TRANSACTION_REVERSAL_HOOK,
+    options: Readonly<{ strict: false }>
+  ): TransactionReversalHook;
+}>;
 const NOOP_REVERSAL_HOOK: TransactionReversalHook = {
   onTransactionReversedInTx: async (): Promise<void> => undefined
+};
+const NOOP_REVERSAL_HOOK_RESOLVER: ReversalHookResolver = {
+  get: () => NOOP_REVERSAL_HOOK
 };
 
 @Injectable()
@@ -57,10 +67,10 @@ export class TransactionService {
     @Optional()
     @Inject(TRANSACTION_CREATED_HOOK)
     private readonly createdHook?: TransactionCreatedHook,
-    @Inject(TRANSACTION_REVERSAL_HOOK)
-    private readonly reversalHook: TransactionReversalHook = NOOP_REVERSAL_HOOK,
     @Optional()
-    private readonly assetFundings?: AssetFundingRepository
+    private readonly assetFundings?: AssetFundingRepository,
+    @Inject(ModuleRef)
+    private readonly moduleRef: ReversalHookResolver = NOOP_REVERSAL_HOOK_RESOLVER
   ) {}
 
   async create(
@@ -327,12 +337,13 @@ export class TransactionService {
    * through this class).
    */
   reverseInTx(userId: string, transactionId: TransactionId, tx: DbTx): Promise<Transaction> {
+    const reversalHook = this.moduleRef.get(TRANSACTION_REVERSAL_HOOK, { strict: false });
     return reverseTransactionInTx(
       {
         transactions: this.transactions,
         accounts: this.accounts,
         audit: this.audit,
-        reversalHook: this.reversalHook
+        reversalHook
       },
       userId,
       transactionId,

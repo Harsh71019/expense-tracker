@@ -449,7 +449,6 @@ export function DatePicker({
           type="text"
           aria-label={ariaLabel}
           aria-controls={isOpen ? popoverId : undefined}
-          aria-expanded={isOpen}
           placeholder={placeholder ?? defaultPlaceholder}
           disabled={disabled}
           value={inputValue}

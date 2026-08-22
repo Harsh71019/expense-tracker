@@ -22,6 +22,7 @@ import { RedisModule } from "./common/redis/redis.module.js";
 import { RedisService } from "./common/redis/redis.service.js";
 import { SchedulerModule } from "./common/scheduler/scheduler.module.js";
 import { RedisThrottlerStorage } from "./common/throttler/redis-throttler.storage.js";
+import { throttleTracker } from "./common/throttler/throttle-tracker.js";
 import { AuthModule } from "./auth/auth.module.js";
 import { AccountsModule } from "./accounts/accounts.module.js";
 import { ApiKeysModule } from "./api-keys/api-keys.module.js";
@@ -81,6 +82,7 @@ function isUnthrottledPath(context: ExecutionContext): boolean {
       useFactory: (redis: RedisService, config: RuntimeConfigService) => ({
         skipIf: (context: ExecutionContext) =>
           config.env.DISABLE_RATE_LIMITING || isUnthrottledPath(context),
+        getTracker: (request) => throttleTracker(request),
         storage: new RedisThrottlerStorage(redis),
         throttlers: [{ ttl: 60_000, limit: 300, blockDuration: 60_000 }]
       })

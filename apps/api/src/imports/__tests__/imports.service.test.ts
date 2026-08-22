@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { ImportFileTooLargeError } from "../../common/errors/import-file-too-large.error.js";
 import { InvalidImportFileError } from "../../common/errors/invalid-import-file.error.js";
 import { assertValidImportFile } from "../imports.service.js";
 
@@ -31,7 +32,7 @@ describe("assertValidImportFile", () => {
   it("rejects a file over the 5MB cap", () => {
     const oversized = Buffer.alloc(5 * 1024 * 1024 + 1, "a");
     expect(() => assertValidImportFile("statement.csv", "text/csv", oversized)).toThrow(
-      InvalidImportFileError
+      ImportFileTooLargeError
     );
   });
 

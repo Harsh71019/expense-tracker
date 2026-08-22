@@ -4,19 +4,42 @@ import type { ReactNode } from "react";
 import { Money, SignedMoney } from "@/components/ui/money";
 
 export function ReportTotals({ rollup }: Readonly<{ rollup: MonthlyRollup }>): ReactNode {
-  const net = rollup.totalIncomeMinor - rollup.totalExpenseMinor;
-  const expenseTxns = rollup.byCategory.reduce((sum, category) => sum + category.txnCount, 0);
+  const savings = rollup.totalIncomeMinor - rollup.totalConsumptionMinor;
+  const consumptionTxns = rollup.consumptionByCategory.reduce(
+    (sum, category) => sum + category.txnCount,
+    0
+  );
 
   return (
-    <div className="mb-5.5 grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <div className="mb-5.5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
       <div className="rounded-2xl border border-border bg-surface-elevated px-5.5 py-5">
-        <p className="font-mono text-2xs font-bold tracking-[1.2px] text-foreground-muted">SPENT</p>
+        <p className="font-mono text-2xs font-bold tracking-[1.2px] text-foreground-muted">
+          CONSUMPTION
+        </p>
         <div className="mt-2.5">
-          <Money minor={rollup.totalExpenseMinor} size="lg" />
+          <Money minor={rollup.totalConsumptionMinor} size="lg" />
         </div>
         <p className="mt-1.5 text-xs font-medium text-foreground-muted">
-          {expenseTxns} transaction{expenseTxns === 1 ? "" : "s"}
+          {consumptionTxns} transaction{consumptionTxns === 1 ? "" : "s"}
         </p>
+      </div>
+      <div className="rounded-2xl border border-border bg-surface-elevated px-5.5 py-5">
+        <p className="font-mono text-2xs font-bold tracking-[1.2px] text-foreground-muted">
+          ASSET FUNDING
+        </p>
+        <div className="mt-2.5">
+          <Money minor={rollup.totalAssetFundingMinor} size="lg" />
+        </div>
+        <p className="mt-1.5 text-xs font-medium text-foreground-muted">Moved into assets</p>
+      </div>
+      <div className="rounded-2xl border border-border bg-surface-elevated px-5.5 py-5">
+        <p className="font-mono text-2xs font-bold tracking-[1.2px] text-foreground-muted">
+          CASH OUT
+        </p>
+        <div className="mt-2.5">
+          <Money minor={rollup.totalCashOutflowMinor} size="lg" />
+        </div>
+        <p className="mt-1.5 text-xs font-medium text-foreground-muted">All account outflows</p>
       </div>
       <div className="rounded-2xl border border-border bg-surface-elevated px-5.5 py-5">
         <p className="font-mono text-2xs font-bold tracking-[1.2px] text-foreground-muted">
@@ -27,16 +50,16 @@ export function ReportTotals({ rollup }: Readonly<{ rollup: MonthlyRollup }>): R
         </div>
       </div>
       <div
-        className={`rounded-2xl border bg-surface-elevated px-5.5 py-5 ${net >= 0 ? "border-accent/40" : "border-border"}`}
+        className={`rounded-2xl border bg-surface-elevated px-5.5 py-5 ${savings >= 0 ? "border-accent/40" : "border-border"}`}
       >
         <p className="font-mono text-2xs font-bold tracking-[1.2px] text-foreground-muted">
-          NET FLOW
+          SAVINGS
         </p>
         <div className="mt-2.5">
-          <SignedMoney minor={net} size="lg" />
+          <SignedMoney minor={savings} size="lg" />
         </div>
         <p className="mt-1.5 text-xs font-medium text-foreground-muted">
-          {net >= 0 ? "saved this month" : "overspent this month"}
+          {savings >= 0 ? "after consumption" : "consumption exceeded income"}
         </p>
       </div>
     </div>

@@ -113,6 +113,9 @@ export function TxnDetail({ initialTransaction }: { initialTransaction: Transact
             </Badge>
             <Badge variant="pending">{sourceLabel(transaction.source)}</Badge>
             {isTransfer ? <Badge variant="success">transfer</Badge> : null}
+            {transaction.assetFunding === undefined ? null : (
+              <Badge variant="success">investment funding</Badge>
+            )}
             <PaymentRailBadge rail={transaction.paymentRail} />
           </div>
         </div>
@@ -159,6 +162,7 @@ export function TxnDetail({ initialTransaction }: { initialTransaction: Transact
       {transaction.recurringRuleId ||
       transaction.billId ||
       transaction.transferGroupId ||
+      transaction.assetFunding ||
       transaction.reversalOf ||
       transaction.reversedBy ? (
         <section className="rounded-xl border border-border/80 bg-surface-muted/50 p-5">
@@ -204,6 +208,21 @@ export function TxnDetail({ initialTransaction }: { initialTransaction: Transact
                   </span>
                 </div>
                 <span className="font-mono text-xs font-bold text-accent">View Pair →</span>
+              </Link>
+            ) : null}
+            {transaction.assetFunding ? (
+              <Link
+                href="/assets"
+                className="flex items-center justify-between gap-3 rounded-xl border border-income/30 bg-income/5 p-3.5 font-medium text-foreground hover:bg-income/10"
+              >
+                <div>
+                  <span className="block text-sm font-semibold">↗ Asset funding</span>
+                  <span className="font-mono text-xs text-foreground-muted">
+                    {transaction.assetFunding.assetName} · {transaction.assetFunding.amountMinor}{" "}
+                    paise
+                  </span>
+                </div>
+                <span className="font-mono text-xs font-bold text-income">View assets →</span>
               </Link>
             ) : null}
             {transaction.reversalOf ? (

@@ -1,8 +1,11 @@
-import { Body, Controller, Headers, Param, Post, Res } from "@nestjs/common";
+import { Body, Controller, Get, Headers, Param, Post, Query, Res } from "@nestjs/common";
 import {
+  AssetIdSchema,
   AssetFundingIdSchema,
   CreateInvestmentTransactionSchema,
   LinkTransactionToAssetSchema,
+  ListAssetFundingsQuerySchema,
+  type AssetFundingPage,
   TransactionIdSchema,
   type AssetFundingMutationResult,
   type ReverseAssetFundingResult
@@ -13,12 +16,29 @@ import { z } from "zod";
 import type { AuthenticatedUser } from "../auth/auth.guard.js";
 import { CurrentUser } from "../auth/current-user.decorator.js";
 import { AssetFundingMutationService } from "./asset-funding-mutation.service.js";
+import { AssetFundingService } from "./asset-funding.service.js";
 
 const IdempotencyKeySchema = z.string().uuid();
 
 @Controller("v1")
 export class AssetFundingController {
-  constructor(private readonly mutations: AssetFundingMutationService) {}
+  constructor(
+    private readonly mutations: AssetFundingMutationService,
+    private readonly fundings: AssetFundingService
+  ) {}
+
+  @Get("assets/:assetId/fundings")
+  listByAsset(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("assetId") assetId: string,
+    @Query() query: unknown
+  ): Promise<AssetFundingPage> {
+    return this.fundings.listByAsset(
+      user.id,
+      AssetIdSchema.parse(assetId),
+      ListAssetFundingsQuerySchema.parse(query)
+    );
+  }
 
   @Post("transactions/:transactionId/asset-funding")
   async link(

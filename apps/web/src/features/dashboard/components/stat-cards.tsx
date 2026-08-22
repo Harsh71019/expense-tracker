@@ -49,10 +49,13 @@ export function StatCards({ stats }: Readonly<{ stats: DashboardStats }>): React
     },
     {
       label: "SAVINGS RATE",
-      value: `${Math.round(stats.savingsRate.valuePct)}%`,
+      value:
+        stats.savingsRate.valuePct === null
+          ? "Not available"
+          : `${Math.round(stats.savingsRate.valuePct)}%`,
       deltaPct: stats.savingsRate.deltaPct,
       goodWhenUp: true,
-      trend: stats.savingsRate.trend,
+      trend: stats.savingsRate.trend.filter((value): value is number => value !== null),
       isMonetary: false
     },
     {

@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { AssetFundingSchema } from "./asset-funding.js";
+import {
+  AssetFundingPageSchema,
+  AssetFundingSchema,
+  ListAssetFundingsQuerySchema
+} from "./asset-funding.js";
 
 const ids = {
   funding: "099fa04f-ef5a-4f9d-b4bc-0cc8d0580f2f",
@@ -37,5 +41,21 @@ describe("AssetFundingSchema", () => {
     expect(() =>
       AssetFundingSchema.parse({ ...base, amountMinor: 1.5, status: "posted" })
     ).toThrow();
+  });
+});
+
+describe("asset funding history contracts", () => {
+  it("defaults the bounded funding-history page size to 50", () => {
+    expect(ListAssetFundingsQuerySchema.parse({})).toEqual({ limit: 50 });
+    expect(() => ListAssetFundingsQuerySchema.parse({ limit: 201 })).toThrow();
+  });
+
+  it("accepts a cursor-paginated funding history page", () => {
+    expect(
+      AssetFundingPageSchema.parse({
+        items: [{ ...base, status: "posted" }],
+        pageInfo: { nextCursor: "next", hasMore: true, limit: 50 }
+      }).pageInfo.nextCursor
+    ).toBe("next");
   });
 });

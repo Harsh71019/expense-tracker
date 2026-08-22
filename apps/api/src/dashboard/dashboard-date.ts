@@ -59,9 +59,9 @@ export function deltaPct(current: number, previous: number): number | null {
   return ((current - previous) / Math.abs(previous)) * 100;
 }
 
-/** `(income - expense) / income * 100`; 0 when there's no income to save from. */
-export function savingsRatePct(incomeMinor: number, expenseMinor: number): number {
-  if (incomeMinor <= 0) return 0;
+/** `(income - expense) / income * 100`; unavailable when income is not positive. */
+export function savingsRatePct(incomeMinor: number, expenseMinor: number): number | null {
+  if (incomeMinor <= 0) return null;
   return ((incomeMinor - expenseMinor) / incomeMinor) * 100;
 }
 

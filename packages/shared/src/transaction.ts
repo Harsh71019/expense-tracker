@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { AccountIdSchema } from "./account.js";
+import { AssetIdSchema } from "./asset.js";
 import { CategoryColorSchema, CategoryIconSchema, CategoryIdSchema } from "./category.js";
 import { MonthSchema } from "./report.js";
 import { PageInfoSchema } from "./pagination.js";
@@ -44,7 +45,16 @@ export const TransactionSchema = CreateTransactionSchema.extend({
   paymentRail: TransactionTextPaymentRailSchema,
   counterpartyHandle: z.string().min(1).nullable(),
   createdAt: z.coerce.date(),
-  updatedAt: z.coerce.date()
+  updatedAt: z.coerce.date(),
+  assetFunding: z
+    .object({
+      fundingId: z.string().uuid("Asset funding id must be a UUID."),
+      assetId: AssetIdSchema,
+      assetName: z.string().min(1).max(80),
+      assetKind: z.enum(["investment", "fixed_deposit"]),
+      amountMinor: MinorAmountSchema
+    })
+    .optional()
 });
 
 export const UpdateTransactionSchema = z

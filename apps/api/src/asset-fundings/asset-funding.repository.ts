@@ -1,18 +1,23 @@
 import { Inject, Injectable } from "@nestjs/common";
 import {
+  AssetFundingIdSchema,
   AssetFundingSchema,
   type AssetFunding,
+  type AssetFundingPage,
   type AssetFundingId,
   type AssetId,
+  type ListAssetFundingsQuery,
   type TransactionId
 } from "@treasury-ops/shared";
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, lt, or } from "drizzle-orm";
+import { z } from "zod";
 
 import { DATABASE_CONNECTION } from "../common/db/db.module.js";
 import type { DrizzleDb } from "../common/db/db.module.js";
 import type { DbTx } from "../common/db/db-txn.js";
 import { assetFundings } from "../common/db/schema/index.js";
 import { transactions } from "../common/db/schema/index.js";
+import { assets } from "../common/db/schema/index.js";
 import { isActiveAssetFunding } from "../common/db/asset-funding-active.js";
 import { stripNulls } from "../common/db/strip-nulls.js";
 
@@ -22,6 +27,11 @@ export type CreateAssetFunding = Readonly<{
   amountMinor: number;
   occurredAt: Date;
 }>;
+
+const CursorPayloadSchema = z.object({
+  occurredAt: z.string().datetime(),
+  id: AssetFundingIdSchema
+});
 
 @Injectable()
 export class AssetFundingRepository {
@@ -129,6 +139,46 @@ export class AssetFundingRepository {
     return rows.map(toAssetFunding);
   }
 
+  async findPageByAsset(
+    userId: string,
+    assetId: AssetId,
+    query: ListAssetFundingsQuery
+  ): Promise<AssetFundingPage> {
+    const cursor = query.cursor === undefined ? null : decodeCursor(query.cursor);
+    const rows = await this.db
+      .select()
+      .from(assetFundings)
+      .where(
+        and(
+          eq(assetFundings.userId, userId),
+          eq(assetFundings.assetId, assetId),
+          ...(cursor === null
+            ? []
+            : [
+                or(
+                  lt(assetFundings.occurredAt, cursor.occurredAt),
+                  and(
+                    eq(assetFundings.occurredAt, cursor.occurredAt),
+                    lt(assetFundings.id, cursor.id)
+                  )
+                )
+              ])
+        )
+      )
+      .orderBy(desc(assetFundings.occurredAt), desc(assetFundings.id))
+      .limit(query.limit + 1);
+    const page = rows.slice(0, query.limit).map(toAssetFunding);
+    const last = page.at(-1);
+    return {
+      items: page,
+      pageInfo: {
+        nextCursor: rows.length > query.limit && last !== undefined ? encodeCursor(last) : null,
+        hasMore: rows.length > query.limit,
+        limit: query.limit
+      }
+    };
+  }
+
   async listActiveForAssets(
     userId: string,
     assetIds: readonly AssetId[]
@@ -151,8 +201,82 @@ export class AssetFundingRepository {
         )
       );
   }
+
+  async findActiveSummariesByTransactionIds(
+    userId: string,
+    transactionIds: readonly TransactionId[]
+  ): Promise<
+    ReadonlyMap<
+      string,
+      Readonly<{
+        fundingId: string;
+        assetId: string;
+        assetName: string;
+        assetKind: "investment" | "fixed_deposit";
+        amountMinor: number;
+      }>
+    >
+  > {
+    if (transactionIds.length === 0) return new Map();
+    const rows = await this.db
+      .select({
+        transactionId: assetFundings.transactionId,
+        fundingId: assetFundings.id,
+        assetId: assets.id,
+        assetName: assets.name,
+        assetKind: assets.kind,
+        amountMinor: assetFundings.amountMinor
+      })
+      .from(assetFundings)
+      .innerJoin(transactions, eq(transactions.id, assetFundings.transactionId))
+      .innerJoin(assets, eq(assets.id, assetFundings.assetId))
+      .where(
+        and(
+          eq(assetFundings.userId, userId),
+          eq(transactions.userId, userId),
+          eq(assets.userId, userId),
+          inArray(assetFundings.transactionId, [...transactionIds]),
+          isActiveAssetFunding()
+        )
+      );
+    const result = new Map<
+      string,
+      Readonly<{
+        fundingId: string;
+        assetId: string;
+        assetName: string;
+        assetKind: "investment" | "fixed_deposit";
+        amountMinor: number;
+      }>
+    >();
+    for (const row of rows) {
+      if (row.assetKind !== "investment" && row.assetKind !== "fixed_deposit") continue;
+      result.set(row.transactionId, {
+        fundingId: row.fundingId,
+        assetId: row.assetId,
+        assetName: row.assetName,
+        assetKind: row.assetKind,
+        amountMinor: row.amountMinor
+      });
+    }
+    return result;
+  }
 }
 
 function toAssetFunding(row: typeof assetFundings.$inferSelect): AssetFunding {
   return AssetFundingSchema.parse(stripNulls(row));
+}
+
+function decodeCursor(cursor: string): { occurredAt: Date; id: string } {
+  const parsed = CursorPayloadSchema.parse(
+    JSON.parse(Buffer.from(cursor, "base64url").toString("utf8"))
+  );
+  return { occurredAt: new Date(parsed.occurredAt), id: parsed.id };
+}
+
+function encodeCursor(funding: AssetFunding): string {
+  return Buffer.from(
+    JSON.stringify({ occurredAt: funding.occurredAt.toISOString(), id: funding.id }),
+    "utf8"
+  ).toString("base64url");
 }

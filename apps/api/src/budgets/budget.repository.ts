@@ -10,8 +10,15 @@ import { z } from "zod";
 
 import { DATABASE_CONNECTION } from "../common/db/db.module.js";
 import type { DrizzleDb } from "../common/db/db.module.js";
+import { isActiveAssetFunding } from "../common/db/asset-funding-active.js";
 import type { DbTx } from "../common/db/db-txn.js";
-import { budgetAlertEvents, budgets, categories, transactions } from "../common/db/schema/index.js";
+import {
+  assetFundings,
+  budgetAlertEvents,
+  budgets,
+  categories,
+  transactions
+} from "../common/db/schema/index.js";
 import { InvalidCursorError } from "../common/errors/invalid-cursor.error.js";
 import { stripNulls } from "../common/db/strip-nulls.js";
 import type { DailyCategorySpend } from "./budget-pacing.js";
@@ -199,12 +206,21 @@ export class BudgetRepository {
         spentMinor: sql<string>`coalesce(sum(${transactions.amountMinor}), 0)::bigint`
       })
       .from(transactions)
+      .leftJoin(
+        assetFundings,
+        and(
+          eq(assetFundings.userId, userId),
+          eq(assetFundings.transactionId, transactions.id),
+          isActiveAssetFunding()
+        )
+      )
       .where(
         and(
           eq(transactions.userId, userId),
           eq(transactions.status, "posted"),
           eq(transactions.type, "expense"),
           sql`${transactions.transferGroupId} IS NULL`,
+          sql`${assetFundings.id} IS NULL`,
           gte(transactions.occurredAt, roughStart),
           lt(transactions.occurredAt, roughEnd),
           ...(asOf === undefined ? [] : [lte(transactions.occurredAt, asOf)]),
@@ -239,6 +255,14 @@ export class BudgetRepository {
         spentMinor: sql<string>`coalesce(sum(${transactions.amountMinor}), 0)::bigint`
       })
       .from(transactions)
+      .leftJoin(
+        assetFundings,
+        and(
+          eq(assetFundings.userId, userId),
+          eq(assetFundings.transactionId, transactions.id),
+          isActiveAssetFunding()
+        )
+      )
       .where(
         and(
           eq(transactions.userId, userId),
@@ -246,6 +270,7 @@ export class BudgetRepository {
           eq(transactions.status, "posted"),
           eq(transactions.type, "expense"),
           sql`${transactions.transferGroupId} IS NULL`,
+          sql`${assetFundings.id} IS NULL`,
           gte(transactions.occurredAt, start),
           lte(transactions.occurredAt, asOf)
         )

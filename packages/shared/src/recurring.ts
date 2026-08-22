@@ -2,6 +2,7 @@ import * as rrulePkg from "rrule";
 import { z } from "zod";
 
 import { AccountIdSchema } from "./account.js";
+import { AssetIdSchema } from "./asset.js";
 import { CategoryIdSchema } from "./category.js";
 import { TopSpendingCategorySchema, TransactionTypeSchema } from "./transaction.js";
 
@@ -49,6 +50,7 @@ export const RecurringRuleIdSchema = z.string().uuid("Recurring rule id must be 
 
 export const RecurringRuleTemplateSchema = z.object({
   accountId: AccountIdSchema,
+  assetId: AssetIdSchema.optional(),
   categoryId: CategoryIdSchema.optional(),
   type: TransactionTypeSchema,
   amountMinor: z.number().int().min(1).max(Number.MAX_SAFE_INTEGER),
@@ -103,6 +105,7 @@ export const CreateRecurringRuleSchema = z.object({
  */
 const RecurringRuleTemplatePatchSchema = z.object({
   accountId: AccountIdSchema.optional(),
+  assetId: AssetIdSchema.nullable().optional(),
   categoryId: CategoryIdSchema.optional(),
   type: TransactionTypeSchema.optional(),
   amountMinor: z.number().int().min(1).max(Number.MAX_SAFE_INTEGER).optional(),

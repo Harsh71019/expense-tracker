@@ -68,7 +68,9 @@ describe("Asset and NetWorth Unit Tests", () => {
       };
 
       // @ts-expect-error mock service args
-      const service = new NetWorthService(mockAccountRepo, mockAssetRepo, mockValRepo);
+      const service = new NetWorthService(mockAccountRepo, mockAssetRepo, mockValRepo, {
+        listActiveForAssets: vi.fn(async () => [])
+      });
 
       const res = await service.get("u1");
 

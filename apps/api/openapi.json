@@ -1156,6 +1156,34 @@
                 "updatedAt": {
                   "type": ["string", "null"],
                   "format": "date-time"
+                },
+                "assetFunding": {
+                  "type": "object",
+                  "properties": {
+                    "fundingId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "assetId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "assetName": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 80
+                    },
+                    "assetKind": {
+                      "type": "string",
+                      "enum": ["investment", "fixed_deposit"]
+                    },
+                    "amountMinor": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": ["fundingId", "assetId", "assetName", "assetKind", "amountMinor"]
                 }
               },
               "required": [
@@ -1392,6 +1420,34 @@
           "updatedAt": {
             "type": ["string", "null"],
             "format": "date-time"
+          },
+          "assetFunding": {
+            "type": "object",
+            "properties": {
+              "fundingId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "assetId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "assetName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80
+              },
+              "assetKind": {
+                "type": "string",
+                "enum": ["investment", "fixed_deposit"]
+              },
+              "amountMinor": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": ["fundingId", "assetId", "assetName", "assetKind", "amountMinor"]
           }
         },
         "required": [
@@ -1410,6 +1466,398 @@
           "createdAt",
           "updatedAt"
         ]
+      },
+      "AssetFundingMutationResult": {
+        "type": "object",
+        "properties": {
+          "funding": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "userId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "assetId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "transactionId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "amountMinor": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              "occurredAt": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              },
+              "status": {
+                "type": "string",
+                "enum": ["posted", "reversed", "reversal"]
+              },
+              "reversalOf": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "reversedBy": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "createdAt": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "id",
+              "userId",
+              "assetId",
+              "transactionId",
+              "amountMinor",
+              "occurredAt",
+              "status",
+              "createdAt"
+            ]
+          },
+          "transaction": {
+            "type": "object",
+            "properties": {
+              "accountId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "categoryId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "type": {
+                "type": "string",
+                "enum": ["expense", "income"]
+              },
+              "amountMinor": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              "occurredAt": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 40
+                },
+                "maxItems": 20,
+                "default": []
+              },
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "userId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "currency": {
+                "type": "string",
+                "enum": ["INR"]
+              },
+              "source": {
+                "type": "string",
+                "enum": ["manual", "csv_import", "recurring", "api"]
+              },
+              "status": {
+                "type": "string",
+                "enum": ["posted", "reversed", "reversal"]
+              },
+              "idempotencyKey": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "reversalOf": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "reversedBy": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "transferGroupId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "billId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "recurringRuleId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "paymentRail": {
+                "type": "string",
+                "enum": ["upi", "neft", "rtgs", "imps", "nach", "card", "unknown"]
+              },
+              "counterpartyHandle": {
+                "type": ["string", "null"],
+                "minLength": 1
+              },
+              "createdAt": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              },
+              "updatedAt": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              },
+              "assetFunding": {
+                "type": "object",
+                "properties": {
+                  "fundingId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "assetId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "assetName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "assetKind": {
+                    "type": "string",
+                    "enum": ["investment", "fixed_deposit"]
+                  },
+                  "amountMinor": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": ["fundingId", "assetId", "assetName", "assetKind", "amountMinor"]
+              }
+            },
+            "required": [
+              "accountId",
+              "type",
+              "amountMinor",
+              "occurredAt",
+              "description",
+              "id",
+              "userId",
+              "currency",
+              "source",
+              "status",
+              "paymentRail",
+              "counterpartyHandle",
+              "createdAt",
+              "updatedAt"
+            ]
+          },
+          "asset": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "userId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "loan_receivable",
+                  "loan_liability",
+                  "fixed_deposit",
+                  "gold",
+                  "silver",
+                  "investment"
+                ]
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80
+              },
+              "openedAt": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              },
+              "maturityAt": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              },
+              "annualRateBps": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 10000
+              },
+              "quantityMilliUnits": {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              },
+              "isClosed": {
+                "type": "boolean"
+              },
+              "createdAt": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              },
+              "updatedAt": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "id",
+              "userId",
+              "kind",
+              "name",
+              "openedAt",
+              "isClosed",
+              "createdAt",
+              "updatedAt"
+            ]
+          }
+        },
+        "required": ["funding", "transaction", "asset"]
+      },
+      "ReverseAssetFundingResult": {
+        "type": "object",
+        "properties": {
+          "original": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "userId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "assetId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "transactionId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "amountMinor": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              "occurredAt": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              },
+              "status": {
+                "type": "string",
+                "enum": ["posted", "reversed", "reversal"]
+              },
+              "reversalOf": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "reversedBy": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "createdAt": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "id",
+              "userId",
+              "assetId",
+              "transactionId",
+              "amountMinor",
+              "occurredAt",
+              "status",
+              "createdAt"
+            ]
+          },
+          "reversal": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "userId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "assetId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "transactionId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "amountMinor": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              "occurredAt": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              },
+              "status": {
+                "type": "string",
+                "enum": ["posted", "reversed", "reversal"]
+              },
+              "reversalOf": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "reversedBy": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "createdAt": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "id",
+              "userId",
+              "assetId",
+              "transactionId",
+              "amountMinor",
+              "occurredAt",
+              "status",
+              "createdAt"
+            ]
+          }
+        },
+        "required": ["original", "reversal"]
       },
       "Transfer": {
         "type": "object",
@@ -1516,6 +1964,34 @@
               "updatedAt": {
                 "type": ["string", "null"],
                 "format": "date-time"
+              },
+              "assetFunding": {
+                "type": "object",
+                "properties": {
+                  "fundingId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "assetId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "assetName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "assetKind": {
+                    "type": "string",
+                    "enum": ["investment", "fixed_deposit"]
+                  },
+                  "amountMinor": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": ["fundingId", "assetId", "assetName", "assetKind", "amountMinor"]
               }
             },
             "required": [
@@ -1633,6 +2109,34 @@
               "updatedAt": {
                 "type": ["string", "null"],
                 "format": "date-time"
+              },
+              "assetFunding": {
+                "type": "object",
+                "properties": {
+                  "fundingId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "assetId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "assetName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "assetKind": {
+                    "type": "string",
+                    "enum": ["investment", "fixed_deposit"]
+                  },
+                  "amountMinor": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": ["fundingId", "assetId", "assetName", "assetKind", "amountMinor"]
               }
             },
             "required": [
@@ -1763,6 +2267,34 @@
                   "updatedAt": {
                     "type": ["string", "null"],
                     "format": "date-time"
+                  },
+                  "assetFunding": {
+                    "type": "object",
+                    "properties": {
+                      "fundingId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "assetId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "assetName": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 80
+                      },
+                      "assetKind": {
+                        "type": "string",
+                        "enum": ["investment", "fixed_deposit"]
+                      },
+                      "amountMinor": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 9007199254740991
+                      }
+                    },
+                    "required": ["fundingId", "assetId", "assetName", "assetKind", "amountMinor"]
                   }
                 },
                 "required": [
@@ -1880,6 +2412,34 @@
                   "updatedAt": {
                     "type": ["string", "null"],
                     "format": "date-time"
+                  },
+                  "assetFunding": {
+                    "type": "object",
+                    "properties": {
+                      "fundingId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "assetId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "assetName": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 80
+                      },
+                      "assetKind": {
+                        "type": "string",
+                        "enum": ["investment", "fixed_deposit"]
+                      },
+                      "amountMinor": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 9007199254740991
+                      }
+                    },
+                    "required": ["fundingId", "assetId", "assetName", "assetKind", "amountMinor"]
                   }
                 },
                 "required": [
@@ -1970,6 +2530,87 @@
           "createdAt",
           "updatedAt"
         ]
+      },
+      "AssetFundingPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "userId": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "assetId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "transactionId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "amountMinor": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                "occurredAt": {
+                  "type": ["string", "null"],
+                  "format": "date-time"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": ["posted", "reversed", "reversal"]
+                },
+                "reversalOf": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "reversedBy": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "createdAt": {
+                  "type": ["string", "null"],
+                  "format": "date-time"
+                }
+              },
+              "required": [
+                "id",
+                "userId",
+                "assetId",
+                "transactionId",
+                "amountMinor",
+                "occurredAt",
+                "status",
+                "createdAt"
+              ]
+            }
+          },
+          "pageInfo": {
+            "type": "object",
+            "properties": {
+              "nextCursor": {
+                "type": ["string", "null"]
+              },
+              "hasMore": {
+                "type": "boolean"
+              },
+              "limit": {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              }
+            },
+            "required": ["nextCursor", "hasMore", "limit"]
+          }
+        },
+        "required": ["items", "pageInfo"]
       },
       "Valuation": {
         "type": "object",
@@ -2200,6 +2841,47 @@
             "type": "integer",
             "minimum": 0
           },
+          "totalCashOutflowMinor": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "totalConsumptionMinor": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "totalAssetFundingMinor": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "consumptionByCategory": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "categoryId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "spentMinor": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "incomeMinor": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "txnCount": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "required": ["spentMinor", "incomeMinor", "txnCount"]
+            }
+          },
+          "formulaVersion": {
+            "type": "integer",
+            "minimum": 1
+          },
           "computedAt": {
             "type": ["string", "null"],
             "format": "date-time"
@@ -2212,6 +2894,11 @@
           "byAccount",
           "totalExpenseMinor",
           "totalIncomeMinor",
+          "totalCashOutflowMinor",
+          "totalConsumptionMinor",
+          "totalAssetFundingMinor",
+          "consumptionByCategory",
+          "formulaVersion",
           "computedAt"
         ]
       },
@@ -4519,6 +5206,34 @@
               "updatedAt": {
                 "type": ["string", "null"],
                 "format": "date-time"
+              },
+              "assetFunding": {
+                "type": "object",
+                "properties": {
+                  "fundingId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "assetId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "assetName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "assetKind": {
+                    "type": "string",
+                    "enum": ["investment", "fixed_deposit"]
+                  },
+                  "amountMinor": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": ["fundingId", "assetId", "assetName", "assetKind", "amountMinor"]
               }
             },
             "required": [
@@ -4638,6 +5353,34 @@
                 "updatedAt": {
                   "type": ["string", "null"],
                   "format": "date-time"
+                },
+                "assetFunding": {
+                  "type": "object",
+                  "properties": {
+                    "fundingId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "assetId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "assetName": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 80
+                    },
+                    "assetKind": {
+                      "type": "string",
+                      "enum": ["investment", "fixed_deposit"]
+                    },
+                    "amountMinor": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": ["fundingId", "assetId", "assetName", "assetKind", "amountMinor"]
                 }
               },
               "required": [
@@ -5895,7 +6638,7 @@
             "type": "object",
             "properties": {
               "valuePct": {
-                "type": "number"
+                "type": ["number", "null"]
               },
               "deltaPct": {
                 "type": ["number", "null"]
@@ -5903,7 +6646,7 @@
               "trend": {
                 "type": "array",
                 "items": {
-                  "type": "number"
+                  "type": ["number", "null"]
                 }
               }
             },
@@ -7103,6 +7846,34 @@
                     "updatedAt": {
                       "type": ["string", "null"],
                       "format": "date-time"
+                    },
+                    "assetFunding": {
+                      "type": "object",
+                      "properties": {
+                        "fundingId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "assetId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "assetName": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 80
+                        },
+                        "assetKind": {
+                          "type": "string",
+                          "enum": ["investment", "fixed_deposit"]
+                        },
+                        "amountMinor": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": ["fundingId", "assetId", "assetName", "assetKind", "amountMinor"]
                     }
                   },
                   "required": [
@@ -7965,6 +8736,34 @@
                   "updatedAt": {
                     "type": ["string", "null"],
                     "format": "date-time"
+                  },
+                  "assetFunding": {
+                    "type": "object",
+                    "properties": {
+                      "fundingId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "assetId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "assetName": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 80
+                      },
+                      "assetKind": {
+                        "type": "string",
+                        "enum": ["investment", "fixed_deposit"]
+                      },
+                      "amountMinor": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 9007199254740991
+                      }
+                    },
+                    "required": ["fundingId", "assetId", "assetName", "assetKind", "amountMinor"]
                   }
                 },
                 "required": [
@@ -8082,6 +8881,34 @@
                   "updatedAt": {
                     "type": ["string", "null"],
                     "format": "date-time"
+                  },
+                  "assetFunding": {
+                    "type": "object",
+                    "properties": {
+                      "fundingId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "assetId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "assetName": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 80
+                      },
+                      "assetKind": {
+                        "type": "string",
+                        "enum": ["investment", "fixed_deposit"]
+                      },
+                      "amountMinor": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 9007199254740991
+                      }
+                    },
+                    "required": ["fundingId", "assetId", "assetName", "assetKind", "amountMinor"]
                   }
                 },
                 "required": [
@@ -8215,6 +9042,34 @@
                   "updatedAt": {
                     "type": ["string", "null"],
                     "format": "date-time"
+                  },
+                  "assetFunding": {
+                    "type": "object",
+                    "properties": {
+                      "fundingId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "assetId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "assetName": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 80
+                      },
+                      "assetKind": {
+                        "type": "string",
+                        "enum": ["investment", "fixed_deposit"]
+                      },
+                      "amountMinor": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 9007199254740991
+                      }
+                    },
+                    "required": ["fundingId", "assetId", "assetName", "assetKind", "amountMinor"]
                   }
                 },
                 "required": [
@@ -8332,6 +9187,34 @@
                   "updatedAt": {
                     "type": ["string", "null"],
                     "format": "date-time"
+                  },
+                  "assetFunding": {
+                    "type": "object",
+                    "properties": {
+                      "fundingId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "assetId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "assetName": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 80
+                      },
+                      "assetKind": {
+                        "type": "string",
+                        "enum": ["investment", "fixed_deposit"]
+                      },
+                      "amountMinor": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 9007199254740991
+                      }
+                    },
+                    "required": ["fundingId", "assetId", "assetName", "assetKind", "amountMinor"]
                   }
                 },
                 "required": [
@@ -12146,6 +13029,494 @@
         }
       }
     },
+    "/v1/transactions/{transactionId}/asset-funding": {
+      "post": {
+        "operationId": "linkTransactionAssetFunding",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "transactionId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "Idempotency-Key",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "target": {
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "enum": ["existing_asset"]
+                          },
+                          "assetId": {
+                            "type": "string",
+                            "format": "uuid"
+                          }
+                        },
+                        "required": ["kind", "assetId"]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "enum": ["new_asset"]
+                          },
+                          "asset": {
+                            "oneOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "enum": ["investment"]
+                                  },
+                                  "name": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 80
+                                  }
+                                },
+                                "required": ["kind", "name"]
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "enum": ["fixed_deposit"]
+                                  },
+                                  "name": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 80
+                                  },
+                                  "maturityAt": {
+                                    "type": "string",
+                                    "format": "date-time"
+                                  },
+                                  "annualRateBps": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "maximum": 10000
+                                  }
+                                },
+                                "required": ["kind", "name"]
+                              }
+                            ]
+                          }
+                        },
+                        "required": ["kind", "asset"]
+                      }
+                    ]
+                  }
+                },
+                "required": ["target"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Linked funding, or idempotent replay",
+            "headers": {
+              "Idempotency-Replayed": {
+                "schema": {
+                  "type": "string",
+                  "enum": ["true"]
+                },
+                "required": false
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssetFundingMutationResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Transaction or asset not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency key was already used for different request intent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/asset-fundings/investments": {
+      "post": {
+        "operationId": "createInvestmentFunding",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "Idempotency-Key",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "accountId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "amountMinor": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  },
+                  "occurredAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "description": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 500
+                  },
+                  "tags": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 40
+                    },
+                    "maxItems": 20,
+                    "default": []
+                  },
+                  "target": {
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "enum": ["existing_asset"]
+                          },
+                          "assetId": {
+                            "type": "string",
+                            "format": "uuid"
+                          }
+                        },
+                        "required": ["kind", "assetId"]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "enum": ["new_asset"]
+                          },
+                          "asset": {
+                            "oneOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "enum": ["investment"]
+                                  },
+                                  "name": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 80
+                                  }
+                                },
+                                "required": ["kind", "name"]
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "enum": ["fixed_deposit"]
+                                  },
+                                  "name": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 80
+                                  },
+                                  "maturityAt": {
+                                    "type": "string",
+                                    "format": "date-time"
+                                  },
+                                  "annualRateBps": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "maximum": 10000
+                                  }
+                                },
+                                "required": ["kind", "name"]
+                              }
+                            ]
+                          }
+                        },
+                        "required": ["kind", "asset"]
+                      }
+                    ]
+                  }
+                },
+                "required": ["accountId", "amountMinor", "occurredAt", "description", "target"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Investment funding, or idempotent replay",
+            "headers": {
+              "Idempotency-Replayed": {
+                "schema": {
+                  "type": "string",
+                  "enum": ["true"]
+                },
+                "required": false
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssetFundingMutationResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Account or asset not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency key was already used for different request intent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/asset-fundings/{fundingId}/reverse": {
+      "post": {
+        "operationId": "reverseAssetFunding",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "fundingId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "Idempotency-Key",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Funding reversal, or idempotent replay",
+            "headers": {
+              "Idempotency-Replayed": {
+                "schema": {
+                  "type": "string",
+                  "enum": ["true"]
+                },
+                "required": false
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReverseAssetFundingResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Funding not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency key was already used for different request intent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/transfers": {
       "post": {
         "operationId": "createTransfer",
@@ -12606,6 +13977,99 @@
           },
           "409": {
             "description": "Idempotency key was already used for different request intent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/assets/{assetId}/fundings": {
+      "get": {
+        "operationId": "listAssetFundings",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "assetId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": false,
+            "name": "cursor",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Asset funding history",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssetFundingPage"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Asset not found",
             "content": {
               "application/json": {
                 "schema": {

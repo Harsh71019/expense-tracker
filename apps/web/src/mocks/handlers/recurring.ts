@@ -71,7 +71,8 @@ export function recurringHandlers(http: MockHttp, store: MockStore): HttpHandler
       if (body.template !== undefined) {
         const { assetId, ...template } = body.template;
         if (assetId === null) {
-          const { assetId: _removedAssetId, ...currentTemplate } = rule.template;
+          const { assetId: removedAssetId, ...currentTemplate } = rule.template;
+          void removedAssetId;
           rule.template = { ...currentTemplate, ...template };
         } else {
           rule.template = {

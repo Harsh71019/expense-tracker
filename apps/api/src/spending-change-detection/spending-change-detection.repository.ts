@@ -112,6 +112,9 @@ export class SpendingChangeDetectionRepository {
       .where(
         and(
           eq(transactions.userId, userId),
+          // Receivable principal is balance-sheet movement, not a
+          // spending-pattern signal (plan doc §12).
+          eq(transactions.purpose, "ordinary"),
           gte(transactions.occurredAt, lookbackStart),
           lte(transactions.occurredAt, asOf),
           lte(transactions.createdAt, asOf),

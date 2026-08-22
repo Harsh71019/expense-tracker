@@ -115,6 +115,7 @@ function buildService(overrides: {
     audit,
     idempotency,
     logger,
+    undefined,
     moduleRef
   );
   return { service, reconciliations, occurrences, notifications, audit, idempotency, transactions };

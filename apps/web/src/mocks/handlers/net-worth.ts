@@ -30,7 +30,8 @@ export function netWorthHandlers(http: MockHttp, store: MockStore): HttpHandler[
         asOf: new Date().toISOString(),
         netWorthMinor: accountsMinor + assetsMinor,
         accounts,
-        assets
+        assets,
+        receivables: []
       });
     })
   ];

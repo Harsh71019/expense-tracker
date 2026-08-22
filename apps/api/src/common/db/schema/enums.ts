@@ -21,6 +21,15 @@ export const transactionSourceEnum = pgEnum("transaction_source", [
   "recurring",
   "api"
 ]);
+// Internal classification only: never accepted from a public transaction-write
+// request body. `receivable_principal` marks a transaction posted by the
+// receivables ledger (lend/repay) so reporting can exclude balance-sheet
+// movement from income/spend analytics while account balance reconstruction
+// keeps including it.
+export const transactionPurposeEnum = pgEnum("transaction_purpose", [
+  "ordinary",
+  "receivable_principal"
+]);
 export const assetKindEnum = pgEnum("asset_kind", [
   "loan_receivable",
   "loan_liability",
@@ -222,4 +231,12 @@ export const safetyBufferModeEnum = pgEnum("safety_buffer_mode", [
   "fixed_amount",
   "essential_months",
   "emergency_fund_goal"
+]);
+export const receivableEventKindEnum = pgEnum("receivable_event_kind", [
+  "opening",
+  "repayment",
+  "correction_increase",
+  "correction_decrease",
+  "legacy_increase",
+  "legacy_decrease"
 ]);

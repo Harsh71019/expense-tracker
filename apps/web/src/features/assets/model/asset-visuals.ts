@@ -1,7 +1,10 @@
 import type { AssetKind } from "@treasury-ops/shared";
 
+// `loan_receivable` is intentionally excluded: that kind now lives under
+// Debt Given (/debts-given), not the Assets manager. `AssetKind` still
+// includes it so historical/migrated rows and the record maps below stay
+// total, but new assets no longer offer or filter by it here.
 export const ASSET_KIND_ORDER: readonly AssetKind[] = [
-  "loan_receivable",
   "loan_liability",
   "fixed_deposit",
   "gold",

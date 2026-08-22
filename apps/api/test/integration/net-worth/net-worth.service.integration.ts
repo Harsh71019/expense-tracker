@@ -5,11 +5,19 @@ import { AuditRepository } from "../../../src/audit/audit.repository.js";
 import { AssetRepository } from "../../../src/assets/asset.repository.js";
 import { AssetService } from "../../../src/assets/asset.service.js";
 import { AssetFundingRepository } from "../../../src/asset-fundings/asset-funding.repository.js";
-import { NetWorthService } from "../../../src/assets/net-worth.service.js";
+import { NetWorthService } from "../../../src/net-worth/net-worth.service.js";
 import { ValuationRepository } from "../../../src/assets/valuation.repository.js";
+import { CategoryRepository } from "../../../src/categories/category.repository.js";
+import { ReceivableNetWorthReadService } from "../../../src/receivables/receivable-net-worth-read.service.js";
+import { ReceivableRepository } from "../../../src/receivables/receivable.repository.js";
+import { ReceivableService } from "../../../src/receivables/receivable.service.js";
+import { TransactionRepository } from "../../../src/transactions/transaction.repository.js";
+import { TransactionService } from "../../../src/transactions/transaction.service.js";
 import { withTxn } from "../../../src/common/db/db-txn.js";
 import { createTestDb, insertTestUser } from "../support/postgres-test-db.js";
 import type { TestDb } from "../support/postgres-test-db.js";
+
+const NOOP_LOGGER = { log: () => undefined, warn: () => undefined, error: () => undefined };
 
 describe("NetWorthService", () => {
   let testDb: TestDb;
@@ -21,20 +29,41 @@ describe("NetWorthService", () => {
     testDb = await createTestDb();
     await insertTestUser(testDb.db, "user-a");
     await insertTestUser(testDb.db, "user-c");
+    await insertTestUser(testDb.db, "user-d");
     accounts = new AccountRepository(testDb.db);
     const assetRepository = new AssetRepository(testDb.db);
     const valuationRepository = new ValuationRepository(testDb.db);
+    const audit = new AuditRepository(testDb.db);
+    const receivableRepository = new ReceivableRepository(testDb.db);
+    const transactionRepository = new TransactionRepository(testDb.db);
+    const transactionsService = new TransactionService(
+      testDb.db,
+      accounts,
+      new CategoryRepository(testDb.db),
+      transactionRepository,
+      audit,
+      NOOP_LOGGER
+    );
+    const receivableService = new ReceivableService(
+      testDb.db,
+      receivableRepository,
+      transactionsService,
+      audit
+    );
     assets = new AssetService(
       testDb.db,
       assetRepository,
       valuationRepository,
-      new AuditRepository(testDb.db)
+      audit,
+      receivableService
     );
+    const receivablesRead = new ReceivableNetWorthReadService(receivableRepository);
     netWorth = new NetWorthService(
       accounts,
       assetRepository,
       valuationRepository,
-      new AssetFundingRepository(testDb.db)
+      new AssetFundingRepository(testDb.db),
+      receivablesRead
     );
   }, 60_000);
 
@@ -107,5 +136,30 @@ describe("NetWorthService", () => {
 
     expect(result.assets).toHaveLength(0);
     expect(result.netWorthMinor).toBe(0);
+  });
+
+  it("includes a zero-opening loan_receivable asset (no linked receivable) once it gets a valuation", async () => {
+    // openingValueMinor: 0 skips AssetService's compat adapter (it only
+    // links a receivable when openingValueMinor > 0, since a zero-amount
+    // opening event is impossible), leaving a legacy-only asset with no
+    // receivables.legacy_asset_id row. AssetRepository.list()'s exclusion is
+    // link-based, not kind-based, so this asset must still surface here.
+    const asset = await assets.create("user-d", {
+      kind: "loan_receivable",
+      name: "Informal IOU",
+      openedAt: new Date("2026-03-01T00:00:00.000Z"),
+      openingValueMinor: 0
+    });
+    await assets.addValuation("user-d", asset.id, {
+      valueMinor: 7_500_00,
+      valuedAt: new Date("2026-04-01T00:00:00.000Z"),
+      source: "manual"
+    });
+
+    const result = await netWorth.get("user-d");
+
+    const entry = result.assets.find((a) => a.assetId === asset.id);
+    expect(entry).toMatchObject({ valueMinor: 7_500_00 });
+    expect(result.netWorthMinor).toBe(7_500_00);
   });
 });

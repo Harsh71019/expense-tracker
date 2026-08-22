@@ -1,9 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { AssetService } from "../asset.service.js";
-import { NetWorthService } from "../net-worth.service.js";
 
-describe("Asset and NetWorth Unit Tests", () => {
+describe("Asset Unit Tests", () => {
   const sampleAsset = {
     id: "asset_1",
     userId: "u1",
@@ -39,9 +38,18 @@ describe("Asset and NetWorth Unit Tests", () => {
       const mockAuditRepo = {
         record: vi.fn(async () => undefined)
       };
+      const mockReceivableService = {
+        findByLegacyAssetId: vi.fn(async () => null)
+      };
 
-      // @ts-expect-error mock service args
-      const service = new AssetService(mockDb, mockAssetRepo, mockValRepo, mockAuditRepo);
+      const service = new AssetService(
+        // @ts-expect-error mock service args
+        mockDb,
+        mockAssetRepo,
+        mockValRepo,
+        mockAuditRepo,
+        mockReceivableService
+      );
 
       const res = await service.addValuation("u1", "asset_1", {
         valueMinor: 50000,
@@ -52,31 +60,7 @@ describe("Asset and NetWorth Unit Tests", () => {
       expect(res.valueMinor).toBe(50000);
     });
   });
-
-  describe("NetWorthService", () => {
-    it("get calculates net worth from accounts and asset valuations", async () => {
-      const mockAccountRepo = {
-        list: vi.fn(async () => [{ id: "acc_1", name: "Savings", balanceMinor: 100000 }])
-      };
-
-      const mockAssetRepo = {
-        list: vi.fn(async () => [sampleAsset])
-      };
-
-      const mockValRepo = {
-        findLatestForAssets: vi.fn(async () => new Map([["asset_1", sampleValuation]]))
-      };
-
-      // @ts-expect-error mock service args
-      const service = new NetWorthService(mockAccountRepo, mockAssetRepo, mockValRepo, {
-        listActiveForAssets: vi.fn(async () => [])
-      });
-
-      const res = await service.get("u1");
-
-      expect(res.netWorthMinor).toBe(150000);
-      expect(res.accounts).toHaveLength(1);
-      expect(res.assets).toHaveLength(1);
-    });
-  });
+  // NetWorthService moved to apps/api/src/net-worth/net-worth.service.ts
+  // (see net-worth/__tests__/net-worth.service.test.ts for its coverage,
+  // now also mocking AssetFundingRepository per main's asset-funding work).
 });

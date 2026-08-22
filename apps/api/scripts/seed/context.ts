@@ -36,6 +36,8 @@ import { RecurringMaterializeService } from "../../src/recurring/recurring-mater
 import { RecurringOccurrenceRepository } from "../../src/recurring/recurring-occurrence.repository.js";
 import { RecurringRuleRepository } from "../../src/recurring/recurring-rule.repository.js";
 import { RecurringRuleService } from "../../src/recurring/recurring-rule.service.js";
+import { ReceivableRepository } from "../../src/receivables/receivable.repository.js";
+import { ReceivableService } from "../../src/receivables/receivable.service.js";
 import { TransactionRepository } from "../../src/transactions/transaction.repository.js";
 import { TransactionService } from "../../src/transactions/transaction.service.js";
 import { TransferService } from "../../src/transactions/transfer.service.js";
@@ -146,7 +148,9 @@ export async function createSeedContext(): Promise<SeedContext> {
   );
   const transfers = new TransferService(db, accounts, transactionsRepo, audit, seedLogger);
   const recurring = new RecurringRuleService(db, recurringRuleRepo, accounts, categories);
-  const assets = new AssetService(db, assetsRepo, valuations, audit);
+  const receivablesRepo = new ReceivableRepository(db);
+  const receivables = new ReceivableService(db, receivablesRepo, transactions, audit);
+  const assets = new AssetService(db, assetsRepo, valuations, audit, receivables);
 
   const imports = new ImportsService(
     db,

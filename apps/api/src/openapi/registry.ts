@@ -186,6 +186,18 @@ import {
   FinancialDiagnosticSchema,
   EssentialBurnQuerySchema,
   EssentialBurnResponseSchema,
+  CreateReceivableCorrectionSchema,
+  CreateReceivableSchema,
+  ListReceivableEventsQuerySchema,
+  ListReceivablesQuerySchema,
+  ReceivableEventPageSchema,
+  ReceivableIdSchema,
+  ReceivableMutationResultSchema,
+  ReceivablePageSchema,
+  ReceivableSchema,
+  ReceivableSummarySchema,
+  RecordReceivableRepaymentSchema,
+  UpdateReceivableMetadataSchema,
   AssetFundingIdSchema,
   AssetFundingMutationResultSchema,
   AssetFundingPageSchema,
@@ -257,6 +269,13 @@ const BudgetPage = BudgetPageSchema.meta({ id: "BudgetPage" });
 const Goal = GoalSchema.meta({ id: "Goal" });
 const GoalContribution = GoalContributionSchema.meta({ id: "GoalContribution" });
 const GoalPlan = GoalPlanSchema.meta({ id: "GoalPlan" });
+const Receivable = ReceivableSchema.meta({ id: "Receivable" });
+const ReceivablePage = ReceivablePageSchema.meta({ id: "ReceivablePage" });
+const ReceivableEventPage = ReceivableEventPageSchema.meta({ id: "ReceivableEventPage" });
+const ReceivableMutationResult = ReceivableMutationResultSchema.meta({
+  id: "ReceivableMutationResult"
+});
+const ReceivableSummary = ReceivableSummarySchema.meta({ id: "ReceivableSummary" });
 const PendingTransaction = PendingTransactionSchema.meta({ id: "PendingTransaction" });
 const DashboardSummary = DashboardSummarySchema.meta({ id: "DashboardSummary" });
 const RecentActivityItem = RecentActivityItemSchema.meta({ id: "RecentActivityItem" });
@@ -311,6 +330,7 @@ const categoryId = z.object({ categoryId: CategoryIdSchema });
 const categoryRuleId = z.object({ ruleId: CategoryRuleIdSchema });
 const transactionId = z.object({ transactionId: TransactionIdSchema });
 const assetId = z.object({ assetId: AssetIdSchema });
+const receivableId = z.object({ receivableId: ReceivableIdSchema });
 const assetFundingId = z.object({ fundingId: AssetFundingIdSchema });
 const transferGroupId = z.object({ transferGroupId: TransferGroupIdSchema });
 const importBatchId = z.object({ importBatchId: ImportBatchIdSchema });
@@ -871,6 +891,10 @@ registry.registerPath({
 registry.registerPath({
   method: "post",
   path: "/v1/assets",
+  description:
+    "Creating an asset with kind `loan_receivable` is deprecated; use POST /v1/receivables " +
+    "instead. For backward compatibility this still atomically creates a matching receivable " +
+    "(visible only through /v1/receivables) alongside the legacy asset anchor.",
   security: secured,
   request: { body: json(CreateAssetSchema), headers: idempotencyKeyHeaders },
   responses: {
@@ -964,6 +988,144 @@ registry.registerPath({
   security: secured,
   responses: {
     200: { description: "Net worth summary", ...json(NetWorth) },
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/v1/receivables",
+  operationId: "listReceivables",
+  security: secured,
+  request: { query: ListReceivablesQuerySchema },
+  responses: {
+    200: { description: "Receivables page", ...json(ReceivablePage) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "post",
+  path: "/v1/receivables",
+  operationId: "createReceivable",
+  security: secured,
+  request: { body: json(CreateReceivableSchema), headers: idempotencyKeyHeaders },
+  responses: {
+    200: {
+      description: "Idempotent replay of the created receivable",
+      headers: replayedHeaders,
+      ...json(ReceivableMutationResult)
+    },
+    201: { description: "Created receivable", ...json(ReceivableMutationResult) },
+    404: { description: "Linked account not found", ...json(ProblemDetails) },
+    ...idempotencyConflictResponse,
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "get",
+  path: "/v1/receivables/summary",
+  operationId: "getReceivableSummary",
+  security: secured,
+  responses: {
+    200: { description: "Global receivable totals", ...json(ReceivableSummary) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "get",
+  path: "/v1/receivables/{receivableId}",
+  operationId: "getReceivable",
+  security: secured,
+  request: { params: receivableId },
+  responses: {
+    200: { description: "Receivable with derived totals", ...json(Receivable) },
+    404: { description: "Receivable not found", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "patch",
+  path: "/v1/receivables/{receivableId}",
+  operationId: "updateReceivable",
+  security: secured,
+  request: {
+    params: receivableId,
+    body: json(UpdateReceivableMetadataSchema),
+    headers: idempotencyKeyHeaders
+  },
+  responses: {
+    200: {
+      description: "Updated receivable, or idempotent replay",
+      headers: optionalReplayHeaders,
+      ...json(Receivable)
+    },
+    404: { description: "Receivable not found", ...json(ProblemDetails) },
+    ...idempotencyConflictResponse,
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "get",
+  path: "/v1/receivables/{receivableId}/events",
+  operationId: "listReceivableEvents",
+  security: secured,
+  request: { params: receivableId, query: ListReceivableEventsQuerySchema },
+  responses: {
+    200: { description: "Receivable event history", ...json(ReceivableEventPage) },
+    404: { description: "Receivable not found", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "post",
+  path: "/v1/receivables/{receivableId}/repayments",
+  operationId: "recordReceivableRepayment",
+  security: secured,
+  request: {
+    params: receivableId,
+    body: json(RecordReceivableRepaymentSchema),
+    headers: idempotencyKeyHeaders
+  },
+  responses: {
+    200: {
+      description: "Idempotent replay of the recorded repayment",
+      headers: replayedHeaders,
+      ...json(ReceivableMutationResult)
+    },
+    201: { description: "Repayment recorded", ...json(ReceivableMutationResult) },
+    404: {
+      description: "Receivable, account, or linked transaction not found",
+      ...json(ProblemDetails)
+    },
+    409: {
+      description: "Overpayment, ineligible transaction, or idempotency intent conflict",
+      ...json(ProblemDetails)
+    },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "post",
+  path: "/v1/receivables/{receivableId}/corrections",
+  operationId: "createReceivableCorrection",
+  security: secured,
+  request: {
+    params: receivableId,
+    body: json(CreateReceivableCorrectionSchema),
+    headers: idempotencyKeyHeaders
+  },
+  responses: {
+    200: {
+      description: "Idempotent replay of the created correction",
+      headers: replayedHeaders,
+      ...json(ReceivableMutationResult)
+    },
+    201: { description: "Correction recorded", ...json(ReceivableMutationResult) },
+    404: { description: "Receivable not found", ...json(ProblemDetails) },
+    409: {
+      description: "Correction would underflow outstanding balance, or idempotency intent conflict",
+      ...json(ProblemDetails)
+    },
     ...problemResponses
   }
 });

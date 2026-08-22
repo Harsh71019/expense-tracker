@@ -107,6 +107,9 @@ export class RecurringDetectionRepository {
         and(
           eq(transactions.userId, userId),
           eq(transactions.status, "posted"),
+          // A repeated lend/repayment shouldn't be learned as a recurring
+          // income/expense stream -- it's balance-sheet movement.
+          eq(transactions.purpose, "ordinary"),
           isNull(transactions.transferGroupId),
           gte(transactions.occurredAt, lookbackStart),
           lte(transactions.occurredAt, asOf),

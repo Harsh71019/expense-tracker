@@ -120,8 +120,7 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
 
   function handleCategoryFilterChange(value: string): void {
     navigate({
-      categoryId:
-        value === "" || value === UNCATEGORIZED_FILTER_VALUE ? undefined : value,
+      categoryId: value === "" || value === UNCATEGORIZED_FILTER_VALUE ? undefined : value,
       uncategorized: value === UNCATEGORIZED_FILTER_VALUE ? true : undefined
     });
   }

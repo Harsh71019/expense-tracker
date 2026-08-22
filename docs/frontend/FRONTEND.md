@@ -56,6 +56,9 @@ apps/web/
 │  │  │  ├─ goals/
 │  │  │  │  ├─ page.tsx               # active/achieved goal grid
 │  │  │  │  └─ [goalId]/page.tsx       # progress, plan, and contribution ledger
+│  │  │  ├─ debts-given/               # Debt Given: money lent to other people
+│  │  │  │  ├─ page.tsx               # active/settled receivable list, summary cards
+│  │  │  │  └─ [receivableId]/page.tsx # event history, repayment/edit/correction actions
 │  │  │  └─ settings/page.tsx         # URL-backed profile, appearance, and management tabs
 │  │  ├─ api/                         # ONLY Next-owned endpoints (none proxy business data)
 │  │  │  └─ offline-sync/route.ts     # drains the offline quick-add queue (calls API with stored keys)
@@ -77,6 +80,8 @@ apps/web/
 │  │  ├─ reports/                     # chart components live here, not in ui/
 │  │  ├─ recurring/
 │  │  ├─ goals/                       # linked-account/tagged progress, plans, reorder
+│  │  ├─ receivables/                 # Debt Given: lend-now/opening-balance creation,
+│  │  │                               # receive-now/link-existing repayments, corrections
 │  │  ├─ auth/                        # login form, passkey button, useSession, signOut
 │  │  └─ ask/                         # Phase 6: natural-language reports UI (streaming)
 │  │
@@ -130,6 +135,7 @@ apps/web/
 | `/imports/*`    | Client-heavy (file handling, editable preview table) inside RSC shell                                | Inherently interactive                                                               |
 | `/reports/*`    | RSC data + client chart components (`recharts` dynamic-imported)                                     | Charts are the only heavy JS — keep them out of the main bundle                      |
 | `/goals/*`      | Hybrid: goals and first contribution page from RSC, interactive mutations via Query                  | Fast initial progress plus fresh plans, reorder, and cursor pagination               |
+| `/debts-given/*` | Hybrid: first receivable page + net-worth summary from RSC, creation/repayment/correction via Query | Fast initial list plus optimistic-free (invalidate-after-atomic-write) mutations     |
 | `/login`        | Static shell + client form                                                                           | —                                                                                    |
 
 **Global rules:**

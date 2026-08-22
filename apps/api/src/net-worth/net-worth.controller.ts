@@ -1,4 +1,4 @@
-import { Controller, Get } from "@nestjs/common";
+import { Controller, Get, Header } from "@nestjs/common";
 import type { NetWorth } from "@treasury-ops/shared";
 
 import type { AuthenticatedUser } from "../auth/auth.guard.js";
@@ -10,6 +10,7 @@ export class NetWorthController {
   constructor(private readonly netWorth: NetWorthService) {}
 
   @Get()
+  @Header("Cache-Control", "no-store")
   get(@CurrentUser() user: AuthenticatedUser): Promise<NetWorth> {
     return this.netWorth.get(user.id);
   }

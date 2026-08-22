@@ -19,6 +19,10 @@ export function NetWorthHero({ netWorth }: Readonly<{ netWorth: NetWorth }>): Re
   const liabilities = netWorth.assets.filter((asset) => asset.valueMinor < 0);
   const assetsTotal = positiveAssets.reduce((sum, asset) => sum + asset.valueMinor, 0);
   const liabTotal = liabilities.reduce((sum, asset) => sum + asset.valueMinor, 0);
+  const receivablesTotal = netWorth.receivables.reduce(
+    (sum, entry) => sum + entry.outstandingMinor,
+    0
+  );
 
   return (
     <section className="relative overflow-hidden rounded-[22px] border border-border bg-surface-elevated p-7.5 sm:p-8.5">
@@ -36,7 +40,8 @@ export function NetWorthHero({ netWorth }: Readonly<{ netWorth: NetWorth }>): Re
           </div>
           <p className="mt-2 text-[13px] font-medium text-foreground-muted">
             as of {dateFormatter.format(netWorth.asOf)} · {formatSignedCompactMinor(accountsMinor)}
-            in accounts + {formatSignedCompactMinor(assetsMinor)} in assets
+            in accounts + {formatSignedCompactMinor(assetsMinor)} in assets +{" "}
+            {formatSignedCompactMinor(receivablesTotal)} debt given
           </p>
         </div>
         <div className="flex flex-wrap gap-3.5">
@@ -62,6 +67,17 @@ export function NetWorthHero({ netWorth }: Readonly<{ netWorth: NetWorth }>): Re
             </p>
             <p className="mt-1 text-2xs font-medium text-foreground-muted">
               {liabilities.length} loans owed
+            </p>
+          </div>
+          <div className="min-w-32 rounded-2xl border border-border bg-surface-muted px-5 py-4">
+            <p className="font-mono text-2xs font-semibold tracking-wider text-foreground-muted">
+              DEBT GIVEN
+            </p>
+            <p className="mt-1.5 font-mono text-xl font-bold tracking-tight text-foreground">
+              {formatSignedCompactMinor(receivablesTotal)}
+            </p>
+            <p className="mt-1 text-2xs font-medium text-foreground-muted">
+              {netWorth.receivables.length} active
             </p>
           </div>
         </div>

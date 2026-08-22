@@ -47,7 +47,17 @@ export class MonthlyRollupRepository {
       lt(transactions.occurredAt, roughEnd),
       sql`${istMonth} = ${month}`
     );
-    const consumptionExpense = sql`case when ${transactions.type} = 'expense' and ${transactions.transferGroupId} is null and ${assetFundings.id} is null then ${transactions.amountMinor} else 0 end`;
+    // `byCategory`/`totalExpenseMinor`/`totalIncomeMinor`/`totalCashOutflowMinor`
+    // stay on unfiltered `baseWhere` -- like DashboardRepository's
+    // `accountsBalanceMinorAsOf` and `byAccount.netMinor` below, they report
+    // real cash movement ("CASH OUT: all account outflows" in the UI), not a
+    // spend/earned classification. `consumptionExpense` is the one true
+    // spend-classification expression (feeds `consumptionByCategory` /
+    // `totalConsumptionMinor`, what the reports UI actually renders as
+    // "spend"), so it excludes both active asset-funding legs and receivable
+    // principal (plan doc §12/ADR-DG-003) -- balance-sheet movement, not
+    // consumption.
+    const consumptionExpense = sql`case when ${transactions.type} = 'expense' and ${transactions.transferGroupId} is null and ${assetFundings.id} is null and ${transactions.purpose} = 'ordinary' then ${transactions.amountMinor} else 0 end`;
 
     // `::bigint`, not `::int` -- amountMinor is declared valid up to
     // Number.MAX_SAFE_INTEGER (packages/shared/src/transaction.ts), and a
@@ -74,7 +84,7 @@ export class MonthlyRollupRepository {
         categoryId: transactions.categoryId,
         spentMinor: sql<string>`coalesce(sum(${consumptionExpense}), 0)::bigint`,
         incomeMinor: sql<string>`coalesce(sum(case when ${transactions.type} = 'income' then ${transactions.amountMinor} else 0 end), 0)::bigint`,
-        txnCount: sql<number>`count(*) filter (where ${transactions.type} = 'income' or (${transactions.type} = 'expense' and ${transactions.transferGroupId} is null and ${assetFundings.id} is null))::int`
+        txnCount: sql<number>`count(*) filter (where ${transactions.type} = 'income' or (${transactions.type} = 'expense' and ${transactions.transferGroupId} is null and ${assetFundings.id} is null and ${transactions.purpose} = 'ordinary'))::int`
       })
       .from(transactions)
       .leftJoin(

@@ -22,6 +22,7 @@ describe("OpenApiController", () => {
       expect(paths).toContain("/v1/transactions/{transactionId}");
       expect(paths).toContain("/v1/category-rules");
       expect(paths).toContain("/v1/category-rules/{ruleId}");
+      expect(paths).toContain("/v1/category-recommendations/query");
       expect(paths).toContain("/v1/export/csv");
       expect(paths).toContain("/v1/profile");
       expect(paths).toContain("/v1/recurring");

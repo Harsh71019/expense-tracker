@@ -12,7 +12,7 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { useAccounts } from "@/features/accounts";
-import { useCategories } from "@/features/categories";
+import { CategoryPicker, useCategories } from "@/features/categories";
 import { useCreateTxn } from "@/features/quick-add";
 import { toDatetimeLocalValue } from "@/lib/datetime-local";
 import { userErrorMessage, ValidationError } from "@/lib/errors";
@@ -49,9 +49,6 @@ export function CreateTxnSheet({ onClose }: Readonly<{ onClose: () => void }>): 
     }
   });
   const type = form.watch("type");
-  const matchingCategories = (categories.data ?? []).filter(
-    (category) => category.kind === type && !category.isArchived
-  );
   const activeAccounts = (accounts.data ?? []).filter((account) => !account.isArchived);
 
   async function submit(values: CreateTransaction): Promise<void> {
@@ -120,7 +117,20 @@ export function CreateTxnSheet({ onClose }: Readonly<{ onClose: () => void }>): 
               className={`relative z-10 flex min-h-11 items-center justify-center rounded-lg py-2.5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                 type === value ? "text-accent" : "text-foreground-muted hover:text-foreground"
               }`}
-              onClick={() => form.setValue("type", value, { shouldValidate: true })}
+              onClick={() => {
+                form.setValue("type", value, { shouldValidate: true });
+                const currentCategoryId = form.getValues("categoryId");
+                if (currentCategoryId === undefined) return;
+                const stillEligible = (categories.data ?? []).some(
+                  (category) =>
+                    category.id === currentCategoryId &&
+                    category.kind === value &&
+                    !category.isArchived
+                );
+                if (!stillEligible) {
+                  form.setValue("categoryId", undefined, { shouldValidate: true });
+                }
+              }}
             >
               {value === "expense" ? "Expense" : "Income"}
             </button>
@@ -201,43 +211,6 @@ export function CreateTxnSheet({ onClose }: Readonly<{ onClose: () => void }>): 
           )}
         </div>
 
-        <div className="flex flex-col gap-3 sm:flex-row">
-          <div className="flex min-w-0 flex-1 flex-col gap-1.5 font-mono text-2xs font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
-            <span>Date &amp; time</span>
-            <DatePicker
-              name="occurredAt"
-              aria-label="Date & time"
-              placeholder="Date & time"
-              includeTime
-              value={toDatetimeLocalValue(form.watch("occurredAt"))}
-              onChange={(val) =>
-                form.setValue("occurredAt", val ? new Date(val) : new Date(), {
-                  shouldValidate: true
-                })
-              }
-            />
-          </div>
-          <div className="flex min-w-0 flex-1 flex-col gap-1.5 font-mono text-2xs font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
-            <span>Category</span>
-            <Select
-              aria-label="Category"
-              name="categoryId"
-              options={[
-                { value: "", label: "Uncategorized" },
-                ...matchingCategories.map((category) => ({
-                  value: category.id,
-                  label: category.name
-                }))
-              ]}
-              placeholder="Uncategorized"
-              value={form.watch("categoryId") ?? ""}
-              onChange={(val) =>
-                form.setValue("categoryId", val === "" ? undefined : val, { shouldValidate: true })
-              }
-            />
-          </div>
-        </div>
-
         <div className="flex flex-col">
           <Input
             id="create-txn-description"
@@ -252,6 +225,38 @@ export function CreateTxnSheet({ onClose }: Readonly<{ onClose: () => void }>): 
               {form.formState.errors.description.message}
             </span>
           )}
+        </div>
+
+        <div className="flex flex-col gap-1.5 font-mono text-2xs font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+          <span>Category</span>
+          <CategoryPicker
+            categories={categories.data ?? []}
+            type={type}
+            value={form.watch("categoryId")}
+            onChange={(categoryId) =>
+              form.setValue("categoryId", categoryId, { shouldValidate: true })
+            }
+            description={form.watch("description")}
+            occurredAt={form.watch("occurredAt")}
+            allowUncategorized
+            label="Category"
+          />
+        </div>
+
+        <div className="flex flex-col gap-1.5 font-mono text-2xs font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
+          <span>Date &amp; time</span>
+          <DatePicker
+            name="occurredAt"
+            aria-label="Date & time"
+            placeholder="Date & time"
+            includeTime
+            value={toDatetimeLocalValue(form.watch("occurredAt"))}
+            onChange={(val) =>
+              form.setValue("occurredAt", val ? new Date(val) : new Date(), {
+                shouldValidate: true
+              })
+            }
+          />
         </div>
 
         <div className="safe-area-bottom sticky bottom-0 -mx-5 flex gap-2.5 border-t border-border bg-surface-elevated/95 px-5 pt-4 backdrop-blur sm:-mx-7 sm:px-7">

@@ -1048,6 +1048,102 @@
         },
         "required": ["pattern", "categoryId", "id", "userId", "createdAt", "updatedAt"]
       },
+      "CategoryRecommendationResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "categoryId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "evidenceCount": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0
+                    },
+                    "algorithmVersion": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0
+                    },
+                    "reason": {
+                      "type": "string",
+                      "enum": ["explicit_rule", "exact_counterparty", "similar_description"]
+                    },
+                    "confidenceBps": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 10000
+                    }
+                  },
+                  "required": [
+                    "categoryId",
+                    "evidenceCount",
+                    "algorithmVersion",
+                    "reason",
+                    "confidenceBps"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "categoryId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "evidenceCount": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0
+                    },
+                    "algorithmVersion": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0
+                    },
+                    "reason": {
+                      "type": "string",
+                      "enum": ["frequent", "recent"]
+                    }
+                  },
+                  "required": ["categoryId", "evidenceCount", "algorithmVersion", "reason"]
+                }
+              ]
+            },
+            "maxItems": 5
+          },
+          "computedAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "sourceThrough": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "algorithmVersion": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          },
+          "historyRowsConsidered": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 500
+          },
+          "degraded": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "items",
+          "computedAt",
+          "sourceThrough",
+          "algorithmVersion",
+          "historyRowsConsidered",
+          "degraded"
+        ]
+      },
       "TransactionPage": {
         "type": "object",
         "properties": {
@@ -11765,6 +11861,90 @@
           },
           "409": {
             "description": "Idempotency key was already used for different request intent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/category-recommendations/query": {
+      "post": {
+        "operationId": "queryCategoryRecommendations",
+        "description": "Read-only personal category recommendations for the signed-in user. Has no side effects and does not persist results.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": ["expense", "income"]
+                  },
+                  "description": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 500
+                  },
+                  "occurredAt": {
+                    "type": "string"
+                  },
+                  "limit": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 5,
+                    "default": 5
+                  }
+                },
+                "required": ["type", "occurredAt"],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Deterministic personal category recommendations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryRecommendationResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
             "content": {
               "application/json": {
                 "schema": {

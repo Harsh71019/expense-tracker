@@ -1,4 +1,5 @@
 export { CategoryCard } from "./components/category-card";
+export { CategoryPicker } from "./components/category-picker/category-picker";
 export { CategoryManager } from "./components/category-manager";
 export { CreateCategorySheet } from "./components/create-category-sheet";
 export { IconGlyph } from "./components/icon-glyph";

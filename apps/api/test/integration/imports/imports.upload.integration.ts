@@ -5,6 +5,7 @@ import type { ColumnMapping } from "@treasury-ops/shared";
 import { AccountRepository } from "../../../src/accounts/account.repository.js";
 import { AuditRepository } from "../../../src/audit/audit.repository.js";
 import { CategoryRepository } from "../../../src/categories/category.repository.js";
+import { CategoryService } from "../../../src/categories/category.service.js";
 import { CategoryRuleRepository } from "../../../src/category-rules/category-rule.repository.js";
 import { CategorySuggestionRepository } from "../../../src/category-rules/category-suggestion.repository.js";
 import { CategorySuggestionService } from "../../../src/category-rules/category-suggestion.service.js";
@@ -59,7 +60,11 @@ describe("ImportsService.createBatch", () => {
       accounts,
       new CategoryRepository(testDb.db),
       audit,
-      new CategorySuggestionService(categoryRules, new CategorySuggestionRepository(testDb.db)),
+      new CategorySuggestionService(
+        categoryRules,
+        new CategorySuggestionRepository(testDb.db),
+        new CategoryService(new CategoryRepository(testDb.db))
+      ),
       focusedTestDouble<MetricsService>({ recordCategorySuggestions: () => undefined })
     );
 

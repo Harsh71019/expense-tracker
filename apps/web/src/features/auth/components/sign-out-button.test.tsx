@@ -1,6 +1,8 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { ReactNode } from "react";
 
 import { SignOutButton } from "./sign-out-button";
 
@@ -23,6 +25,13 @@ vi.mock("../../../lib/toast", () => ({
   toast: { success: mocks.toastSuccess, error: mocks.toastError }
 }));
 
+function renderButton(ui: ReactNode = <SignOutButton />): QueryClient {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  vi.spyOn(client, "clear");
+  render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
+  return client;
+}
+
 describe("SignOutButton", () => {
   beforeEach(() => {
     mocks.push.mockReset();
@@ -35,11 +44,12 @@ describe("SignOutButton", () => {
   it("ends the session then navigates to a refreshed login page", async () => {
     mocks.signOut.mockResolvedValue(undefined);
     const user = userEvent.setup();
-    render(<SignOutButton />);
+    const client = renderButton();
 
     await user.click(screen.getByRole("button", { name: "Sign out" }));
 
     expect(mocks.signOut).toHaveBeenCalledOnce();
+    expect(client.clear).toHaveBeenCalledOnce();
     expect(mocks.push).toHaveBeenCalledWith("/login");
     expect(mocks.refresh).toHaveBeenCalledOnce();
     expect(mocks.toastSuccess).toHaveBeenCalledWith("Signed out successfully");
@@ -48,7 +58,7 @@ describe("SignOutButton", () => {
   it("restores the control and explains a rejected sign-out request", async () => {
     mocks.signOut.mockRejectedValue(new TypeError("Network unavailable"));
     const user = userEvent.setup();
-    render(<SignOutButton />);
+    renderButton();
 
     await user.click(screen.getByRole("button", { name: "Sign out" }));
 
@@ -61,7 +71,7 @@ describe("SignOutButton", () => {
   });
 
   it("uses an icon-sized sign-out control in compact mode", () => {
-    render(<SignOutButton compact />);
+    renderButton(<SignOutButton compact />);
 
     expect(screen.getByRole("button", { name: "Sign out" })).toHaveClass("h-11", "w-11");
   });

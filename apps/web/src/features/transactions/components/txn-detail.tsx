@@ -9,10 +9,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Money } from "@/components/ui/money";
-import { Select } from "@/components/ui/select";
 import { useAccounts } from "@/features/accounts";
 import { isLinkableBillPaymentSource, LinkBillPaymentDialog } from "@/features/bills";
-import { useCategories } from "@/features/categories";
+import { CategoryPicker, useCategories } from "@/features/categories";
 import {
   isLinkableRecurringOccurrenceSource,
   LinkRecurringOccurrenceDialog
@@ -278,25 +277,15 @@ export function TxnDetail({ initialTransaction }: { initialTransaction: Transact
               />
               <div className="flex flex-col gap-1.5 font-mono text-2xs font-extrabold tracking-[0.25em] text-foreground-muted uppercase">
                 <span>Category</span>
-                <Select
-                  name="categoryId"
-                  aria-label="Category"
-                  options={[
-                    { value: "", label: "No category" },
-                    ...(categories.data ?? [])
-                      .filter(
-                        (category) =>
-                          category.kind === transaction.type &&
-                          (!category.isArchived || category.id === transaction.categoryId)
-                      )
-                      .map((category) => ({
-                        value: category.id,
-                        label: category.name
-                      }))
-                  ]}
-                  placeholder="No category"
-                  value={categoryId}
-                  onChange={setCategoryId}
+                <CategoryPicker
+                  categories={categories.data ?? []}
+                  type={transaction.type}
+                  value={categoryId === "" ? undefined : categoryId}
+                  onChange={(next) => setCategoryId(next ?? "")}
+                  description={description}
+                  occurredAt={transaction.occurredAt}
+                  allowUncategorized
+                  label="Category"
                 />
               </div>
               <Input

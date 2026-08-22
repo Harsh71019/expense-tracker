@@ -11,7 +11,7 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { useAccounts } from "@/features/accounts";
-import { useCategories } from "@/features/categories";
+import { CategoryPicker, useCategories } from "@/features/categories";
 import { toDatetimeLocalValue } from "@/lib/datetime-local";
 import { userErrorMessage, ValidationError } from "@/lib/errors";
 import { generateRequestId } from "@/lib/request-id";
@@ -36,9 +36,6 @@ export function QuickAddForm(): ReactNode {
     }
   });
   const type = form.watch("type");
-  const matchingCategories = (categories.data ?? []).filter(
-    (category) => category.kind === type && !category.isArchived
-  );
 
   async function submit(values: CreateTransaction): Promise<void> {
     const parsed = parseCreateTransactionInput(values);
@@ -117,7 +114,20 @@ export function QuickAddForm(): ReactNode {
               className={`relative z-10 flex min-h-11 items-center justify-center rounded-lg py-2 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                 type === value ? "text-accent" : "text-foreground-muted hover:text-foreground"
               }`}
-              onClick={() => form.setValue("type", value, { shouldValidate: true })}
+              onClick={() => {
+                form.setValue("type", value, { shouldValidate: true });
+                const currentCategoryId = form.getValues("categoryId");
+                if (currentCategoryId === undefined) return;
+                const stillEligible = (categories.data ?? []).some(
+                  (category) =>
+                    category.id === currentCategoryId &&
+                    category.kind === value &&
+                    !category.isArchived
+                );
+                if (!stillEligible) {
+                  form.setValue("categoryId", undefined, { shouldValidate: true });
+                }
+              }}
             >
               {value === "expense" ? "Expense" : "Income"}
             </button>
@@ -134,47 +144,26 @@ export function QuickAddForm(): ReactNode {
             ? {}
             : { error: form.formState.errors.amountMinor.message })}
         />
-        <div className="grid gap-5 sm:grid-cols-2">
-          <div className="flex flex-col gap-1.5 font-mono text-2xs font-bold tracking-wider text-foreground-muted uppercase">
-            <span>Account</span>
-            <Select
-              aria-label="Account"
-              name="accountId"
-              options={[
-                { value: "", label: "Choose account" },
-                ...(accounts.data ?? [])
-                  .filter((account) => !account.isArchived)
-                  .map((account) => ({ value: account.id, label: account.name }))
-              ]}
-              placeholder="Choose account"
-              value={form.watch("accountId") ?? ""}
-              onChange={(val) => form.setValue("accountId", val, { shouldValidate: true })}
-            />
-            {form.formState.errors.accountId?.message === undefined ? null : (
-              <span className="text-expense font-mono text-2xs normal-case mt-1.5 rounded-lg border border-expense/25 bg-expense/10 px-2.5 py-0.5 self-start">
-                {form.formState.errors.accountId.message}
-              </span>
-            )}
-          </div>
-          <div className="flex flex-col gap-1.5 font-mono text-2xs font-bold tracking-wider text-foreground-muted uppercase">
-            <span>Category</span>
-            <Select
-              aria-label="Category"
-              name="categoryId"
-              options={[
-                { value: "", label: "No category" },
-                ...matchingCategories.map((category) => ({
-                  value: category.id,
-                  label: category.name
-                }))
-              ]}
-              placeholder="No category"
-              value={form.watch("categoryId") ?? ""}
-              onChange={(val) =>
-                form.setValue("categoryId", val === "" ? undefined : val, { shouldValidate: true })
-              }
-            />
-          </div>
+        <div className="flex flex-col gap-1.5 font-mono text-2xs font-bold tracking-wider text-foreground-muted uppercase">
+          <span>Account</span>
+          <Select
+            aria-label="Account"
+            name="accountId"
+            options={[
+              { value: "", label: "Choose account" },
+              ...(accounts.data ?? [])
+                .filter((account) => !account.isArchived)
+                .map((account) => ({ value: account.id, label: account.name }))
+            ]}
+            placeholder="Choose account"
+            value={form.watch("accountId") ?? ""}
+            onChange={(val) => form.setValue("accountId", val, { shouldValidate: true })}
+          />
+          {form.formState.errors.accountId?.message === undefined ? null : (
+            <span className="text-expense font-mono text-2xs normal-case mt-1.5 rounded-lg border border-expense/25 bg-expense/10 px-2.5 py-0.5 self-start">
+              {form.formState.errors.accountId.message}
+            </span>
+          )}
         </div>
         <div className="flex flex-col">
           <Input
@@ -189,6 +178,36 @@ export function QuickAddForm(): ReactNode {
               {form.formState.errors.description.message}
             </p>
           )}
+        </div>
+        <div className="flex flex-col gap-1.5 font-mono text-2xs font-bold tracking-wider text-foreground-muted uppercase">
+          <span>Category</span>
+          <CategoryPicker
+            categories={categories.data ?? []}
+            type={type}
+            value={form.watch("categoryId")}
+            onChange={(categoryId) =>
+              form.setValue("categoryId", categoryId, { shouldValidate: true })
+            }
+            description={form.watch("description")}
+            occurredAt={form.watch("occurredAt")}
+            allowUncategorized
+            label="Category"
+          />
+        </div>
+        <div className="flex flex-col gap-1.5 font-mono text-2xs font-bold tracking-wider text-foreground-muted uppercase">
+          <span>When</span>
+          <DatePicker
+            name="occurredAt"
+            aria-label="When"
+            placeholder="When"
+            includeTime
+            value={toDatetimeLocalValue(form.watch("occurredAt"))}
+            onChange={(val) =>
+              form.setValue("occurredAt", val ? new Date(val) : new Date(), {
+                shouldValidate: true
+              })
+            }
+          />
         </div>
         <Input
           id="tags"
@@ -208,21 +227,6 @@ export function QuickAddForm(): ReactNode {
             )
           }
         />
-        <div className="flex flex-col gap-1.5 font-mono text-2xs font-bold tracking-wider text-foreground-muted uppercase">
-          <span>When</span>
-          <DatePicker
-            name="occurredAt"
-            aria-label="When"
-            placeholder="When"
-            includeTime
-            value={toDatetimeLocalValue(form.watch("occurredAt"))}
-            onChange={(val) =>
-              form.setValue("occurredAt", val ? new Date(val) : new Date(), {
-                shouldValidate: true
-              })
-            }
-          />
-        </div>
         {create.isError && !(create.error instanceof ValidationError) ? (
           <p
             role="alert"

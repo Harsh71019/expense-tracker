@@ -2,7 +2,7 @@
 
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, X } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
-import type { ReactNode } from "react";
+import type { KeyboardEvent as ReactKeyboardEvent, ReactNode } from "react";
 
 export type DatePickerProps = Readonly<{
   value?: string; // YYYY-MM-DD or YYYY-MM-DDTHH:mm
@@ -97,10 +97,95 @@ function formatDateString(
   return `${dateStr}T${hh}:${min}`;
 }
 
+function isValidDateParts(year: number, month: number, day: number): boolean {
+  if (year < 1000 || year > 9999) return false;
+  if (month < 1 || month > 12) return false;
+  const daysInMonth = new Date(year, month, 0).getDate();
+  return day >= 1 && day <= daysInMonth;
+}
+
+function isValidTimeParts(hours: number, minutes: number): boolean {
+  return hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59;
+}
+
+function parseManualInput(
+  input: string,
+  includeTime: boolean,
+  defaultHours = 0,
+  defaultMinutes = 0
+): {
+  year: number;
+  month: number;
+  day: number;
+  hours: number;
+  minutes: number;
+  normalized: string;
+} | null {
+  const trimmed = input.trim();
+  if (!trimmed) return null;
+
+  const isoRegex = /^(\d{4})[-/](\d{1,2})[-/](\d{1,2})(?:[T ](\d{1,2}):(\d{2}))?$/;
+  const dmyRegex = /^(\d{1,2})[-/](\d{1,2})[-/](\d{4})(?:[T ](\d{1,2}):(\d{2}))?$/;
+
+  let y = 0;
+  let m = 0;
+  let d = 0;
+  let h = defaultHours;
+  let min = defaultMinutes;
+  let hasTime = false;
+
+  const isoMatch = isoRegex.exec(trimmed);
+  if (isoMatch) {
+    const [, yStr, mStr, dStr, hStr, minStr] = isoMatch;
+    if (yStr !== undefined && mStr !== undefined && dStr !== undefined) {
+      y = Number(yStr);
+      m = Number(mStr);
+      d = Number(dStr);
+      if (hStr !== undefined && minStr !== undefined) {
+        h = Number(hStr);
+        min = Number(minStr);
+        hasTime = true;
+      }
+    }
+  } else {
+    const dmyMatch = dmyRegex.exec(trimmed);
+    if (dmyMatch) {
+      const [, dStr, mStr, yStr, hStr, minStr] = dmyMatch;
+      if (dStr !== undefined && mStr !== undefined && yStr !== undefined) {
+        d = Number(dStr);
+        m = Number(mStr);
+        y = Number(yStr);
+        if (hStr !== undefined && minStr !== undefined) {
+          h = Number(hStr);
+          min = Number(minStr);
+          hasTime = true;
+        }
+      }
+    } else {
+      return null;
+    }
+  }
+
+  if (!isValidDateParts(y, m, d)) {
+    return null;
+  }
+
+  if (includeTime) {
+    if (hasTime && !isValidTimeParts(h, min)) {
+      return null;
+    }
+    const normalized = formatDateString(y, m - 1, d, true, h, min);
+    return { year: y, month: m - 1, day: d, hours: h, minutes: min, normalized };
+  }
+
+  const normalized = formatDateString(y, m - 1, d, false);
+  return { year: y, month: m - 1, day: d, hours: 0, minutes: 0, normalized };
+}
+
 export function DatePicker({
   value,
   onChange,
-  placeholder = "Select date",
+  placeholder,
   "aria-label": ariaLabel,
   name,
   id,
@@ -115,6 +200,8 @@ export function DatePicker({
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const [inputValue, setInputValue] = useState(value ?? "");
+
   const parsed = parseDateValue(value, includeTime);
 
   const [viewYear, setViewYear] = useState(parsed.year);
@@ -123,6 +210,7 @@ export function DatePicker({
   const [timeMinutes, setTimeMinutes] = useState(parsed.minutes);
 
   useEffect(() => {
+    setInputValue(value ?? "");
     if (value) {
       const p = parseDateValue(value, includeTime);
       setViewYear(p.year);
@@ -146,7 +234,7 @@ export function DatePicker({
       }
     }
 
-    function handleKeyDown(event: KeyboardEvent): void {
+    function handleKeyDown(event: globalThis.KeyboardEvent): void {
       if (event.key === "Escape") {
         event.preventDefault();
         setIsOpen(false);
@@ -164,6 +252,70 @@ export function DatePicker({
   function toggleOpen(): void {
     if (disabled) return;
     setIsOpen((prev) => !prev);
+  }
+
+  function handleInputChange(nextText: string): void {
+    setInputValue(nextText);
+    if (nextText === "") {
+      if (clearable) {
+        onChange("");
+      }
+      return;
+    }
+    const parsedInput = parseManualInput(nextText, includeTime, timeHours, timeMinutes);
+    if (parsedInput !== null) {
+      setViewYear(parsedInput.year);
+      setViewMonth(parsedInput.month);
+      setTimeHours(parsedInput.hours);
+      setTimeMinutes(parsedInput.minutes);
+      onChange(parsedInput.normalized);
+    }
+  }
+
+  function handleInputBlur(): void {
+    const trimmed = inputValue.trim();
+    if (trimmed === "") {
+      if (clearable) {
+        setInputValue("");
+        onChange("");
+      } else {
+        setInputValue(value ?? "");
+      }
+      return;
+    }
+    const parsedInput = parseManualInput(trimmed, includeTime, timeHours, timeMinutes);
+    if (parsedInput !== null) {
+      setInputValue(parsedInput.normalized);
+      onChange(parsedInput.normalized);
+    } else {
+      setInputValue(value ?? "");
+    }
+  }
+
+  function handleInputKeyDown(event: ReactKeyboardEvent<HTMLInputElement>): void {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      const trimmed = inputValue.trim();
+      if (trimmed === "") {
+        if (clearable) {
+          setInputValue("");
+          onChange("");
+        }
+      } else {
+        const parsedInput = parseManualInput(trimmed, includeTime, timeHours, timeMinutes);
+        if (parsedInput !== null) {
+          setInputValue(parsedInput.normalized);
+          onChange(parsedInput.normalized);
+        }
+      }
+      setIsOpen(false);
+    } else if (event.key === "ArrowDown" && !isOpen && !disabled) {
+      event.preventDefault();
+      setIsOpen(true);
+    } else if (event.key === "Escape" && isOpen) {
+      event.preventDefault();
+      setIsOpen(false);
+    }
   }
 
   function handlePrevMonth(): void {
@@ -193,6 +345,7 @@ export function DatePicker({
       timeHours,
       timeMinutes
     );
+    setInputValue(formatted);
     onChange(formatted);
     if (!includeTime) {
       setIsOpen(false);
@@ -205,25 +358,31 @@ export function DatePicker({
     setTimeHours(clampedH);
     setTimeMinutes(clampedM);
 
-    if (value) {
-      const p = parseDateValue(value, includeTime);
-      const formatted = formatDateString(p.year, p.month, p.day, true, clampedH, clampedM);
-      onChange(formatted);
-    }
+    const baseValue =
+      value ?? formatDateString(viewYear, viewMonth, today.getDate(), true, clampedH, clampedM);
+    const p = parseDateValue(baseValue, true);
+    const formatted = formatDateString(p.year, p.month, p.day, true, clampedH, clampedM);
+    setInputValue(formatted);
+    onChange(formatted);
   }
 
   function handleSetToday(): void {
-    const today = new Date();
+    const todayDate = new Date();
     const formatted = formatDateString(
-      today.getFullYear(),
-      today.getMonth(),
-      today.getDate(),
+      todayDate.getFullYear(),
+      todayDate.getMonth(),
+      todayDate.getDate(),
       includeTime,
-      includeTime ? today.getHours() : 0,
-      includeTime ? today.getMinutes() : 0
+      includeTime ? todayDate.getHours() : 0,
+      includeTime ? todayDate.getMinutes() : 0
     );
-    setViewYear(today.getFullYear());
-    setViewMonth(today.getMonth());
+    setViewYear(todayDate.getFullYear());
+    setViewMonth(todayDate.getMonth());
+    if (includeTime) {
+      setTimeHours(todayDate.getHours());
+      setTimeMinutes(todayDate.getMinutes());
+    }
+    setInputValue(formatted);
     onChange(formatted);
     if (!includeTime) {
       setIsOpen(false);
@@ -231,6 +390,7 @@ export function DatePicker({
   }
 
   function handleClear(): void {
+    setInputValue("");
     onChange("");
     setIsOpen(false);
   }
@@ -272,11 +432,13 @@ export function DatePicker({
   const inputClasses = [
     "flex min-h-11 w-full items-center justify-between rounded-lg border border-border bg-surface-muted pl-3.5 pr-9 py-2.5 font-mono text-base text-foreground outline-none transition-colors duration-150 sm:text-sm",
     "hover:border-accent/50 focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface",
-    disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer",
+    disabled ? "cursor-not-allowed opacity-50" : "cursor-text",
     className
   ]
     .filter(Boolean)
     .join(" ");
+
+  const defaultPlaceholder = includeTime ? "YYYY-MM-DD HH:mm" : "YYYY-MM-DD";
 
   return (
     <div ref={containerRef} className="relative w-full min-w-[160px] sm:w-auto">
@@ -284,13 +446,16 @@ export function DatePicker({
         <input
           id={datePickerId}
           name={name}
+          type="text"
           aria-label={ariaLabel}
           aria-controls={isOpen ? popoverId : undefined}
-          placeholder={placeholder}
+          aria-expanded={isOpen}
+          placeholder={placeholder ?? defaultPlaceholder}
           disabled={disabled}
-          value={value ?? ""}
-          onChange={(e) => onChange(e.target.value)}
-          onClick={toggleOpen}
+          value={inputValue}
+          onChange={(e) => handleInputChange(e.target.value)}
+          onBlur={handleInputBlur}
+          onKeyDown={handleInputKeyDown}
           className={inputClasses}
         />
 
@@ -311,9 +476,11 @@ export function DatePicker({
           <button
             type="button"
             aria-label="Toggle calendar"
+            aria-haspopup="dialog"
+            aria-expanded={isOpen}
             disabled={disabled}
             onClick={toggleOpen}
-            className="rounded p-0.5 text-foreground-muted hover:text-accent focus:outline-none"
+            className="rounded p-0.5 text-foreground-muted hover:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
             <CalendarIcon size={16} />
           </button>

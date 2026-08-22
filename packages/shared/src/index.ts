@@ -585,6 +585,7 @@ export type {
 export {
   AccountRollupSchema,
   CategoryRollupSchema,
+  MONTHLY_ROLLUP_FORMULA_VERSION,
   MonthlyRollupSchema,
   MonthSchema
 } from "./report.js";

@@ -239,6 +239,13 @@
       "when": 1787379121002,
       "tag": "0033_next_sandman",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1787381296355,
+      "tag": "0034_harsh_scarecrow",
+      "breakpoints": true
     }
   ]
 }

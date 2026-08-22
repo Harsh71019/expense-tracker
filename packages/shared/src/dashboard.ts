@@ -43,9 +43,9 @@ const MoneyStatSchema = z.object({
 });
 
 const PercentStatSchema = z.object({
-  valuePct: z.number(),
+  valuePct: z.number().nullable(),
   deltaPct: z.number().nullable(),
-  trend: z.array(z.number())
+  trend: z.array(z.number().nullable())
 });
 
 export const DashboardStatsSchema = z.object({

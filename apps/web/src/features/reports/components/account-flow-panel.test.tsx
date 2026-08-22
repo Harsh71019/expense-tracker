@@ -27,6 +27,11 @@ const rollup: MonthlyRollup = {
   ],
   totalExpenseMinor: 0,
   totalIncomeMinor: 0,
+  totalCashOutflowMinor: 0,
+  totalConsumptionMinor: 0,
+  totalAssetFundingMinor: 0,
+  consumptionByCategory: [],
+  formulaVersion: 2,
   computedAt: new Date("2026-07-01T02:15:00.000Z")
 };
 

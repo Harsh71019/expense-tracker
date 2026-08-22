@@ -20,5 +20,7 @@ export function dateInputToUtc(value: string): Date {
 }
 
 export function dateToInput(value: Date | undefined): string {
-  return value === undefined ? "" : value.toISOString().slice(0, 10);
+  return value === undefined || Number.isNaN(value.getTime())
+    ? ""
+    : new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(value);
 }

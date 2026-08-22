@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { parseTransactionFilters, serializeTransactionFilters } from "./filters";
+import {
+  endOfISTDay,
+  isSameISTDay,
+  parseTransactionFilters,
+  serializeTransactionFilters,
+  startOfISTDay,
+  toISTDateInputValue
+} from "./filters";
 
 const accountId = "3fa85f64-5717-4562-b3fc-2c963f66beef";
 const categoryId = "3fa85f64-5717-4562-b3fc-2c963f66beff";
@@ -73,5 +80,48 @@ describe("transaction URL filters", () => {
     expect(serializeTransactionFilters({ accountId, limit: 25 })).toBe(
       "accountId=3fa85f64-5717-4562-b3fc-2c963f66beef&limit=25"
     );
+  });
+
+  describe("IST date helpers", () => {
+    it("converts YYYY-MM-DD to IST start and end UTC timestamps", () => {
+      const start = startOfISTDay("2026-08-15");
+      const end = endOfISTDay("2026-08-15");
+
+      expect(start).toBeDefined();
+      expect(end).toBeDefined();
+      // Aug 15 00:00:00 IST is Aug 14 18:30:00 UTC
+      expect(start?.toISOString()).toBe("2026-08-14T18:30:00.000Z");
+      // Aug 15 23:59:59.999 IST is Aug 15 18:29:59.999 UTC
+      expect(end?.toISOString()).toBe("2026-08-15T18:29:59.999Z");
+    });
+
+    it("returns undefined for empty or invalid date strings", () => {
+      expect(startOfISTDay("")).toBeUndefined();
+      expect(startOfISTDay("not-a-date")).toBeUndefined();
+      expect(endOfISTDay("")).toBeUndefined();
+      expect(endOfISTDay("not-a-date")).toBeUndefined();
+    });
+
+    it("formats dates to YYYY-MM-DD in Asia/Kolkata timezone", () => {
+      // Midnight in India
+      const istStart = new Date("2026-08-14T18:30:00.000Z");
+      expect(toISTDateInputValue(istStart)).toBe("2026-08-15");
+
+      // End of day in India
+      const istEnd = new Date("2026-08-15T18:29:59.999Z");
+      expect(toISTDateInputValue(istEnd)).toBe("2026-08-15");
+
+      expect(toISTDateInputValue(undefined)).toBe("");
+    });
+
+    it("correctly identifies if two dates are in the same IST day", () => {
+      const morning = new Date("2026-08-15T04:00:00.000Z"); // 09:30 AM IST
+      const evening = new Date("2026-08-15T16:00:00.000Z"); // 09:30 PM IST
+      const nextDayMorning = new Date("2026-08-16T04:00:00.000Z");
+
+      expect(isSameISTDay(morning, evening)).toBe(true);
+      expect(isSameISTDay(morning, nextDayMorning)).toBe(false);
+      expect(isSameISTDay(morning, undefined)).toBe(false);
+    });
   });
 });

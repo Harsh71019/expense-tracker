@@ -9,22 +9,18 @@ import { DatePicker, Select } from "@/components/ui";
 import { useAccounts } from "@/features/accounts";
 import { useCategories } from "@/features/categories";
 
-import { serializeTransactionFilters } from "../model/filters";
+import {
+  endOfISTDay,
+  isSameISTDay,
+  serializeTransactionFilters,
+  startOfISTDay,
+  toISTDateInputValue
+} from "../model/filters";
 
 const SEARCH_DEBOUNCE_MS = 400;
 const UNCATEGORIZED_FILTER_VALUE = "__uncategorized__";
 
-function toDateInputValue(value: Date | undefined): string {
-  return value === undefined || Number.isNaN(value.getTime())
-    ? ""
-    : value.toISOString().slice(0, 10);
-}
-
-function parseDate(value: string): Date | undefined {
-  if (value === "") return undefined;
-  const d = new Date(`${value}T00:00:00.000Z`);
-  return Number.isNaN(d.getTime()) ? undefined : d;
-}
+type DateFilterMode = "single" | "range";
 
 export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuery }>): ReactNode {
   const router = useRouter();
@@ -32,6 +28,24 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
   const categories = useCategories();
   const [query, setQuery] = useState(filters.q ?? "");
   const [filtersOpen, setFiltersOpen] = useState(false);
+
+  const isSingleDateFilter =
+    filters.from !== undefined &&
+    filters.to !== undefined &&
+    isSameISTDay(filters.from, filters.to);
+
+  const [dateMode, setDateMode] = useState<DateFilterMode>(
+    filters.from !== undefined && filters.to !== undefined && !isSingleDateFilter
+      ? "range"
+      : "single"
+  );
+
+  // Sync dateMode if filters change externally (e.g. URL navigation or preset)
+  useEffect(() => {
+    if (filters.from !== undefined && filters.to !== undefined) {
+      setDateMode(isSameISTDay(filters.from, filters.to) ? "single" : "range");
+    }
+  }, [filters.from, filters.to]);
 
   // Re-syncs from the URL when it changes out from under us (e.g. Clear, back button) —
   // deliberately excludes `query` itself so this doesn't fight the debounce below.
@@ -58,13 +72,14 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
     return () => clearTimeout(timeout);
   }, [filters, query, router]);
 
+  const hasDateFilter = filters.from !== undefined || filters.to !== undefined;
+
   const activeFilterCount = [
     filters.q,
     filters.accountId,
     filters.categoryId,
     filters.uncategorized,
-    filters.from,
-    filters.to
+    hasDateFilter ? true : undefined
   ].filter((value) => value !== undefined).length;
 
   const isFiltered = activeFilterCount > 0;
@@ -129,27 +144,71 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
     });
   }
 
-  function applyPreset(preset: "this-month" | "30-days" | "this-year"): void {
+  function handleExactDateChange(val: string): void {
+    if (val === "") {
+      navigate({ from: undefined, to: undefined });
+    } else {
+      navigate({ from: startOfISTDay(val), to: endOfISTDay(val) });
+    }
+  }
+
+  function applyPreset(
+    preset: "today" | "yesterday" | "this-month" | "30-days" | "this-year"
+  ): void {
     const todayStr = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(
       new Date()
     );
-    const [yStr, mStr, dStr] = todayStr.split("-");
-    const year = Number(yStr);
-    const month = (Number(mStr) || 1) - 1;
-    const day = Number(dStr) || 1;
-    const today = new Date(Date.UTC(year, month, day));
 
-    let fromDate: Date;
-    if (preset === "this-month") {
-      fromDate = new Date(Date.UTC(year, month, 1));
-    } else if (preset === "30-days") {
-      fromDate = new Date(Date.UTC(year, month, day - 30));
-    } else {
-      fromDate = new Date(Date.UTC(year, 0, 1));
+    if (preset === "today") {
+      navigate({ from: startOfISTDay(todayStr), to: endOfISTDay(todayStr) });
+      return;
     }
 
-    navigate({ from: fromDate, to: today });
+    if (preset === "yesterday") {
+      const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const yesterdayStr = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(
+        yesterday
+      );
+      navigate({ from: startOfISTDay(yesterdayStr), to: endOfISTDay(yesterdayStr) });
+      return;
+    }
+
+    const [yStr, mStr] = todayStr.split("-");
+    const year = yStr ?? "2026";
+    const month = mStr ?? "01";
+
+    let fromDate: Date | undefined;
+    if (preset === "this-month") {
+      fromDate = startOfISTDay(`${year}-${month}-01`);
+    } else if (preset === "30-days") {
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      const thirtyDaysAgoStr = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Kolkata"
+      }).format(thirtyDaysAgo);
+      fromDate = startOfISTDay(thirtyDaysAgoStr);
+    } else {
+      fromDate = startOfISTDay(`${year}-01-01`);
+    }
+
+    navigate({ from: fromDate, to: endOfISTDay(todayStr) });
   }
+
+  const dateBadgeLabel = (() => {
+    if (filters.from === undefined && filters.to === undefined) return null;
+    const fromStr = toISTDateInputValue(filters.from);
+    const toStr = toISTDateInputValue(filters.to);
+
+    if (fromStr !== "" && toStr !== "" && fromStr === toStr) {
+      return `Date: ${fromStr}`;
+    }
+    if (fromStr !== "" && toStr !== "") {
+      return `Date: ${fromStr} → ${toStr}`;
+    }
+    if (fromStr !== "") {
+      return `Date: From ${fromStr}`;
+    }
+    return `Date: Up to ${toStr}`;
+  })();
 
   return (
     <div
@@ -223,22 +282,68 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
           }
           onChange={handleCategoryFilterChange}
         />
-        <DatePicker
-          name="transactionFrom"
-          aria-label="From date"
-          placeholder="From date"
-          clearable
-          value={toDateInputValue(filters.from)}
-          onChange={(val) => navigate({ from: parseDate(val) })}
-        />
-        <DatePicker
-          name="transactionTo"
-          aria-label="To date"
-          placeholder="To date"
-          clearable
-          value={toDateInputValue(filters.to)}
-          onChange={(val) => navigate({ to: parseDate(val) })}
-        />
+
+        {/* Date Mode Toggle & Pickers */}
+        <div className="flex flex-wrap items-center gap-1.5">
+          <div className="flex items-center rounded-xl border border-border bg-surface-muted/70 p-0.5">
+            <button
+              type="button"
+              aria-label="Exact date mode"
+              aria-pressed={dateMode === "single"}
+              onClick={() => setDateMode("single")}
+              className={`rounded-lg px-2.5 py-1 font-mono text-2xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                dateMode === "single"
+                  ? "bg-surface-elevated text-accent shadow-xs"
+                  : "text-foreground-muted hover:text-foreground"
+              }`}
+            >
+              Single date
+            </button>
+            <button
+              type="button"
+              aria-label="Date range mode"
+              aria-pressed={dateMode === "range"}
+              onClick={() => setDateMode("range")}
+              className={`rounded-lg px-2.5 py-1 font-mono text-2xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                dateMode === "range"
+                  ? "bg-surface-elevated text-accent shadow-xs"
+                  : "text-foreground-muted hover:text-foreground"
+              }`}
+            >
+              Range
+            </button>
+          </div>
+
+          {dateMode === "single" ? (
+            <DatePicker
+              name="transactionExactDate"
+              aria-label="Filter by date"
+              placeholder="Filter by date"
+              clearable
+              value={toISTDateInputValue(filters.from)}
+              onChange={handleExactDateChange}
+            />
+          ) : (
+            <div className="flex flex-wrap items-center gap-2">
+              <DatePicker
+                name="transactionFrom"
+                aria-label="From date"
+                placeholder="From date"
+                clearable
+                value={toISTDateInputValue(filters.from)}
+                onChange={(val) => navigate({ from: startOfISTDay(val) })}
+              />
+              <DatePicker
+                name="transactionTo"
+                aria-label="To date"
+                placeholder="To date"
+                clearable
+                value={toISTDateInputValue(filters.to)}
+                onChange={(val) => navigate({ to: endOfISTDay(val) })}
+              />
+            </div>
+          )}
+        </div>
 
         {isFiltered ? (
           <button
@@ -261,6 +366,20 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
         <span className="font-mono text-2xs font-semibold text-foreground-muted uppercase">
           Quick dates:
         </span>
+        <button
+          type="button"
+          onClick={() => applyPreset("today")}
+          className="rounded-lg border border-border/60 bg-surface-muted/50 px-2.5 py-1 text-2xs font-semibold text-foreground-muted transition-colors hover:border-accent/40 hover:bg-surface-elevated hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        >
+          Today
+        </button>
+        <button
+          type="button"
+          onClick={() => applyPreset("yesterday")}
+          className="rounded-lg border border-border/60 bg-surface-muted/50 px-2.5 py-1 text-2xs font-semibold text-foreground-muted transition-colors hover:border-accent/40 hover:bg-surface-elevated hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        >
+          Yesterday
+        </button>
         <button
           type="button"
           onClick={() => applyPreset("this-month")}
@@ -338,12 +457,9 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
               </button>
             </span>
           )}
-          {(filters.from !== undefined || filters.to !== undefined) && (
+          {dateBadgeLabel !== null && (
             <span className="inline-flex items-center gap-1 rounded-full border border-accent/30 bg-accent-glow px-2.5 py-0.5 font-mono text-xs font-medium text-accent">
-              <span>
-                Date: {toDateInputValue(filters.from) || "Any"} →{" "}
-                {toDateInputValue(filters.to) || "Any"}
-              </span>
+              <span>{dateBadgeLabel}</span>
               <button
                 type="button"
                 onClick={() => navigate({ from: undefined, to: undefined })}

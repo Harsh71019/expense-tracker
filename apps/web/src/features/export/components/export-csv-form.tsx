@@ -9,7 +9,7 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { toast } from "@/lib/toast";
 
 import { useExportCsv } from "../hooks/use-export-csv";
-import { exportFilename, indiaCalendarDate } from "../model/export";
+import { exportFilename, indiaCalendarDateEnd, indiaCalendarDateStart } from "../model/export";
 
 export function ExportCsvForm(): ReactNode {
   const mutation = useExportCsv();
@@ -25,8 +25,8 @@ export function ExportCsvForm(): ReactNode {
       mode === "all"
         ? {}
         : {
-            ...(from === "" ? {} : { from: indiaCalendarDate(from) }),
-            ...(to === "" ? {} : { to: indiaCalendarDate(to) })
+            ...(from === "" ? {} : { from: indiaCalendarDateStart(from) }),
+            ...(to === "" ? {} : { to: indiaCalendarDateEnd(to) })
           }
     );
     if (!parsed.success) {

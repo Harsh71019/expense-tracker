@@ -35,11 +35,77 @@ describe("TxnFilters", () => {
     expect(mocks.push).toHaveBeenCalledWith("/transactions?q=chai");
   });
 
-  it("applies date filters immediately on change", () => {
+  it("filters by exact single date on change", () => {
     render(<TxnFilters filters={{ limit: 50 }} />);
 
-    fireEvent.change(screen.getByLabelText("From date"), { target: { value: "2026-07-01" } });
-    expect(mocks.push).toHaveBeenCalledWith("/transactions?from=2026-07-01T00%3A00%3A00.000Z");
+    fireEvent.change(screen.getByLabelText("Filter by date"), { target: { value: "2026-08-15" } });
+    expect(mocks.push).toHaveBeenCalledWith(
+      "/transactions?from=2026-08-14T18%3A30%3A00.000Z&to=2026-08-15T18%3A29%3A59.999Z"
+    );
+  });
+
+  it("switches to range mode and applies from and to date filters", () => {
+    render(<TxnFilters filters={{ limit: 50 }} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Date range mode" }));
+
+    fireEvent.change(screen.getByLabelText("From date"), { target: { value: "2026-08-01" } });
+    expect(mocks.push).toHaveBeenCalledWith("/transactions?from=2026-07-31T18%3A30%3A00.000Z");
+
+    fireEvent.change(screen.getByLabelText("To date"), { target: { value: "2026-08-15" } });
+    expect(mocks.push).toHaveBeenCalledWith("/transactions?to=2026-08-15T18%3A29%3A59.999Z");
+  });
+
+  it("applies today quick date preset", () => {
+    vi.setSystemTime(new Date("2026-08-23T12:00:00.000+05:30"));
+    render(<TxnFilters filters={{ limit: 50 }} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Today" }));
+    expect(mocks.push).toHaveBeenCalledWith(
+      "/transactions?from=2026-08-22T18%3A30%3A00.000Z&to=2026-08-23T18%3A29%3A59.999Z"
+    );
+  });
+
+  it("applies yesterday quick date preset", () => {
+    vi.setSystemTime(new Date("2026-08-23T12:00:00.000+05:30"));
+    render(<TxnFilters filters={{ limit: 50 }} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Yesterday" }));
+    expect(mocks.push).toHaveBeenCalledWith(
+      "/transactions?from=2026-08-21T18%3A30%3A00.000Z&to=2026-08-22T18%3A29%3A59.999Z"
+    );
+  });
+
+  it("displays single date active badge and removes filter on badge click", () => {
+    render(
+      <TxnFilters
+        filters={{
+          from: new Date("2026-08-14T18:30:00.000Z"),
+          to: new Date("2026-08-15T18:29:59.999Z"),
+          limit: 50
+        }}
+      />
+    );
+
+    expect(screen.getByText("Date: 2026-08-15")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Remove date filter" }));
+    expect(mocks.push).toHaveBeenCalledWith("/transactions");
+  });
+
+  it("displays date range active badge and removes filter on badge click", () => {
+    render(
+      <TxnFilters
+        filters={{
+          from: new Date("2026-07-31T18:30:00.000Z"),
+          to: new Date("2026-08-15T18:29:59.999Z"),
+          limit: 50
+        }}
+      />
+    );
+
+    expect(screen.getByText("Date: 2026-08-01 → 2026-08-15")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Remove date filter" }));
+    expect(mocks.push).toHaveBeenCalledWith("/transactions");
   });
 
   it("filters to uncategorized transactions", () => {

@@ -6,12 +6,14 @@ import {
   type AssetId,
   type TransactionId
 } from "@treasury-ops/shared";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 
 import { DATABASE_CONNECTION } from "../common/db/db.module.js";
 import type { DrizzleDb } from "../common/db/db.module.js";
 import type { DbTx } from "../common/db/db-txn.js";
 import { assetFundings } from "../common/db/schema/index.js";
+import { transactions } from "../common/db/schema/index.js";
+import { isActiveAssetFunding } from "../common/db/asset-funding-active.js";
 import { stripNulls } from "../common/db/strip-nulls.js";
 
 export type CreateAssetFunding = Readonly<{
@@ -125,6 +127,29 @@ export class AssetFundingRepository {
       .orderBy(desc(assetFundings.occurredAt), desc(assetFundings.id))
       .limit(limit);
     return rows.map(toAssetFunding);
+  }
+
+  async listActiveForAssets(
+    userId: string,
+    assetIds: readonly AssetId[]
+  ): Promise<ReadonlyArray<Readonly<{ assetId: AssetId; amountMinor: number; occurredAt: Date }>>> {
+    if (assetIds.length === 0) return [];
+    return this.db
+      .select({
+        assetId: assetFundings.assetId,
+        amountMinor: assetFundings.amountMinor,
+        occurredAt: assetFundings.occurredAt
+      })
+      .from(assetFundings)
+      .innerJoin(transactions, eq(transactions.id, assetFundings.transactionId))
+      .where(
+        and(
+          eq(assetFundings.userId, userId),
+          eq(transactions.userId, userId),
+          inArray(assetFundings.assetId, [...assetIds]),
+          isActiveAssetFunding()
+        )
+      );
   }
 }
 

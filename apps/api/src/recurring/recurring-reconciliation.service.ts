@@ -1,4 +1,4 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable, Optional } from "@nestjs/common";
 import {
   RecurringReconciliationSchema,
   type RecurringReconciliation,
@@ -28,6 +28,10 @@ import { reverseTransactionInTx } from "../transactions/reverse-transaction-in-t
 import { TransactionRepository } from "../transactions/transaction.repository.js";
 import type { TransactionCreatedHook } from "../transactions/transaction-created-hook.js";
 import {
+  TRANSACTION_REVERSAL_POLICY,
+  type TransactionReversalPolicy
+} from "../transactions/transaction-reversal-policy.js";
+import {
   RECONCILIATION_WINDOW_DAYS,
   matchIncomingTransaction
 } from "./recurring-reconciliation-matcher.js";
@@ -47,12 +51,20 @@ export class RecurringReconciliationService implements TransactionCreatedHook {
     private readonly notifications: NotificationOutboxRepository,
     private readonly audit: AuditRepository,
     private readonly idempotency: IdempotencyPostgresService,
-    @Inject(Logger) private readonly logger: ReconciliationLogger
+    @Inject(Logger) private readonly logger: ReconciliationLogger,
+    @Optional()
+    @Inject(TRANSACTION_REVERSAL_POLICY)
+    private readonly reversalPolicy?: TransactionReversalPolicy
   ) {}
 
   private reverseInTx(userId: string, transactionId: string, tx: DbTx) {
     return reverseTransactionInTx(
-      { transactions: this.transactions, accounts: this.accounts, audit: this.audit },
+      {
+        transactions: this.transactions,
+        accounts: this.accounts,
+        audit: this.audit,
+        policy: this.reversalPolicy
+      },
       userId,
       transactionId,
       tx

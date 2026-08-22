@@ -1,10 +1,18 @@
 import { Inject, Injectable } from "@nestjs/common";
 import type { CategoryRollup } from "@treasury-ops/shared";
 import { and, desc, eq, gte, inArray, lte, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 
 import { DATABASE_CONNECTION } from "../common/db/db.module.js";
 import type { DrizzleDb } from "../common/db/db.module.js";
-import { accounts, assets, assetValuations, transactions } from "../common/db/schema/index.js";
+import {
+  accounts,
+  assets,
+  assetValuations,
+  receivableEvents,
+  receivables,
+  transactions
+} from "../common/db/schema/index.js";
 
 const IST_TIME_ZONE = "Asia/Kolkata";
 
@@ -33,6 +41,7 @@ export class DashboardRepository {
         and(
           eq(transactions.userId, userId),
           eq(transactions.status, "posted"),
+          eq(transactions.purpose, "ordinary"),
           gte(transactions.occurredAt, from),
           lte(transactions.occurredAt, to)
         )
@@ -73,6 +82,7 @@ export class DashboardRepository {
         and(
           eq(transactions.userId, userId),
           eq(transactions.status, "posted"),
+          eq(transactions.purpose, "ordinary"),
           gte(transactions.occurredAt, from),
           lte(transactions.occurredAt, to)
         )
@@ -132,10 +142,20 @@ export class DashboardRepository {
    * ValuationRepository.findLatestForAssets, bounded to the past).
    */
   async assetsValueMinorAsOf(userId: string, asOf: Date): Promise<number> {
+    // Once a legacy `loan_receivable` asset has been backfilled into the
+    // receivables sub-ledger (plan doc §13), its historical value comes from
+    // `receivablesOutstandingMinorAsOf` instead -- excluded here so a
+    // migrated asset is never counted twice.
     const assetRows = await this.db
       .select({ id: assets.id })
       .from(assets)
-      .where(and(eq(assets.userId, userId), lte(assets.openedAt, asOf)));
+      .where(
+        and(
+          eq(assets.userId, userId),
+          lte(assets.openedAt, asOf),
+          sql`not exists (select 1 from ${receivables} where ${receivables.legacyAssetId} = ${assets.id})`
+        )
+      );
     if (assetRows.length === 0) return 0;
 
     const assetIds = assetRows.map((row) => row.id);
@@ -160,5 +180,33 @@ export class DashboardRepository {
       latest.set(row.assetId, row.valueMinor);
     }
     return [...latest.values()].reduce((sum, value) => sum + value, 0);
+  }
+
+  /**
+   * Historical receivables outstanding as of an instant -- effective-signed
+   * events (plan doc §8): a transactionless (opening-balance/correction/
+   * legacy) event contributes from its own `occurredAt`; a transaction-backed
+   * event contributes from `occurredAt` until its linked transaction's
+   * reversal `occurredAt`, if any, has passed `asOf`.
+   */
+  async receivablesOutstandingMinorAsOf(userId: string, asOf: Date): Promise<number> {
+    const reversalTxn = alias(transactions, "reversal_txn");
+    const increaseKinds = sql`${receivableEvents.kind} in ('opening', 'correction_increase', 'legacy_increase')`;
+    const decreaseKinds = sql`${receivableEvents.kind} in ('repayment', 'correction_decrease', 'legacy_decrease')`;
+    const effectiveAtAsOf = sql`(${receivableEvents.transactionId} is null or ${reversalTxn.id} is null or ${reversalTxn.occurredAt} > ${asOf})`;
+
+    const [row] = await this.db
+      .select({
+        outstandingMinor: sql<string>`coalesce(sum(case
+          when ${effectiveAtAsOf} and ${increaseKinds} then ${receivableEvents.amountMinor}
+          when ${effectiveAtAsOf} and ${decreaseKinds} then -${receivableEvents.amountMinor}
+          else 0 end), 0)::bigint`
+      })
+      .from(receivableEvents)
+      .leftJoin(transactions, eq(receivableEvents.transactionId, transactions.id))
+      .leftJoin(reversalTxn, eq(transactions.reversedBy, reversalTxn.id))
+      .where(and(eq(receivableEvents.userId, userId), lte(receivableEvents.occurredAt, asOf)));
+
+    return row === undefined ? 0 : Number(row.outstandingMinor);
   }
 }

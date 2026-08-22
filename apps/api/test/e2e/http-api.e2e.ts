@@ -28,7 +28,11 @@ import {
   SafetyBufferStateSchema,
   SafetyBufferVersionPageSchema,
   FinancialDiagnosticSchema,
-  EssentialBurnResponseSchema
+  EssentialBurnResponseSchema,
+  NetWorthSchema,
+  ReceivableEventPageSchema,
+  ReceivableMutationResultSchema,
+  ReceivableSchema
 } from "@treasury-ops/shared";
 import { GenericContainer } from "testcontainers";
 import type { StartedTestContainer } from "testcontainers";
@@ -1110,6 +1114,126 @@ describe("production HTTP composition", () => {
     expect(body.requiredCompleteMonths).toBe(3);
     expect(body.completeMonths).toHaveLength(3);
     expect(body.currentPartialMonth.excludedFromBaseline).toBe(true);
+  });
+
+  it("lends money, settles it in two partial repayments, and conserves net worth throughout", async () => {
+    const lenderAccount = await createAccount(
+      baseUrl,
+      sessionA,
+      "Debt Given Lender",
+      "bank",
+      50_000_00
+    );
+    const depositAccount = await createAccount(baseUrl, sessionA, "Debt Given Deposits", "bank", 0);
+
+    const netWorthBefore = await parseResponse(
+      await fetch(`${baseUrl}/api/v1/net-worth`, { headers: { cookie: sessionA } }),
+      NetWorthSchema
+    );
+
+    const createResponse = await fetch(`${baseUrl}/api/v1/receivables`, {
+      method: "POST",
+      headers: { ...JSON_HEADERS, cookie: sessionA, "idempotency-key": crypto.randomUUID() },
+      body: JSON.stringify({
+        fundingMode: "lend_now",
+        counterpartyName: "Rohan",
+        principalMinor: 10_000_00,
+        accountId: lenderAccount.id,
+        openedAt: new Date().toISOString(),
+        description: "Lent to Rohan"
+      })
+    });
+    expect(createResponse.status).toBe(201);
+    const created = await parseResponse(createResponse, ReceivableMutationResultSchema);
+    expect(created.receivable.outstandingMinor).toBe(10_000_00);
+    expect(created.receivable.status).toBe("active");
+
+    const netWorthAfterLend = await parseResponse(
+      await fetch(`${baseUrl}/api/v1/net-worth`, { headers: { cookie: sessionA } }),
+      NetWorthSchema
+    );
+    expect(netWorthAfterLend.netWorthMinor).toBe(netWorthBefore.netWorthMinor);
+
+    const firstRepayment = await fetch(
+      `${baseUrl}/api/v1/receivables/${created.receivable.id}/repayments`,
+      {
+        method: "POST",
+        headers: { ...JSON_HEADERS, cookie: sessionA, "idempotency-key": crypto.randomUUID() },
+        body: JSON.stringify({
+          captureMode: "receive_now",
+          accountId: depositAccount.id,
+          amountMinor: 2_500_00,
+          occurredAt: new Date().toISOString(),
+          description: "Repayment from Rohan"
+        })
+      }
+    );
+    expect(firstRepayment.status).toBe(201);
+    const afterFirst = await parseResponse(firstRepayment, ReceivableMutationResultSchema);
+    expect(afterFirst.receivable.outstandingMinor).toBe(7_500_00);
+    expect(afterFirst.receivable.status).toBe("active");
+
+    const secondRepayment = await fetch(
+      `${baseUrl}/api/v1/receivables/${created.receivable.id}/repayments`,
+      {
+        method: "POST",
+        headers: { ...JSON_HEADERS, cookie: sessionA, "idempotency-key": crypto.randomUUID() },
+        body: JSON.stringify({
+          captureMode: "receive_now",
+          accountId: depositAccount.id,
+          amountMinor: 7_500_00,
+          occurredAt: new Date().toISOString(),
+          description: "Final repayment from Rohan"
+        })
+      }
+    );
+    expect(secondRepayment.status).toBe(201);
+    const afterSecond = await parseResponse(secondRepayment, ReceivableMutationResultSchema);
+    expect(afterSecond.receivable.outstandingMinor).toBe(0);
+    expect(afterSecond.receivable.status).toBe("settled");
+
+    const detail = await parseResponse(
+      await fetch(`${baseUrl}/api/v1/receivables/${created.receivable.id}`, {
+        headers: { cookie: sessionA }
+      }),
+      ReceivableSchema
+    );
+    expect(detail.status).toBe("settled");
+    expect(detail.repaymentCount).toBe(2);
+    expect(detail.confirmedRepaidMinor).toBe(10_000_00);
+
+    const events = await parseResponse(
+      await fetch(`${baseUrl}/api/v1/receivables/${created.receivable.id}/events`, {
+        headers: { cookie: sessionA }
+      }),
+      ReceivableEventPageSchema
+    );
+    expect(events.items).toHaveLength(3);
+    expect(events.items.filter((event) => event.kind === "repayment")).toHaveLength(2);
+    expect(events.items.every((event) => !event.isReversed)).toBe(true);
+
+    const netWorthAfterSettle = await parseResponse(
+      await fetch(`${baseUrl}/api/v1/net-worth`, { headers: { cookie: sessionA } }),
+      NetWorthSchema
+    );
+    expect(netWorthAfterSettle.netWorthMinor).toBe(netWorthBefore.netWorthMinor);
+    expect(
+      netWorthAfterSettle.receivables.some((r) => r.receivableId === created.receivable.id)
+    ).toBe(false); // settled -> no longer outstanding, so it drops out of the active breakdown.
+
+    for (const path of [
+      "/api/v1/receivables",
+      `/api/v1/receivables/${created.receivable.id}`,
+      `/api/v1/receivables/${created.receivable.id}/events`
+    ]) {
+      const foreign = await fetch(`${baseUrl}${path}`, { headers: { cookie: sessionB } });
+      expect(foreign.status === 401 || foreign.status === 404 || foreign.status === 200).toBe(true);
+      if (path !== "/api/v1/receivables") {
+        // Cross-tenant access to a specific receivable must 404, not leak data.
+        if (foreign.status === 200)
+          throw new Error(`${path} leaked cross-tenant data to session B.`);
+      }
+    }
   });
 
   it("automatically probes every secured OpenAPI operation for an auth boundary", async () => {

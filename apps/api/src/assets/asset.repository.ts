@@ -1,10 +1,10 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { AssetSchema, type Asset, type AssetId, type CreateAsset } from "@treasury-ops/shared";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 
 import { DATABASE_CONNECTION } from "../common/db/db.module.js";
 import type { DrizzleDb } from "../common/db/db.module.js";
-import { assets } from "../common/db/schema/index.js";
+import { assets, receivables } from "../common/db/schema/index.js";
 import { stripNulls } from "../common/db/strip-nulls.js";
 import type { DbTx } from "../common/db/db-txn.js";
 
@@ -34,10 +34,19 @@ export class AssetRepository {
   }
 
   async list(userId: string): Promise<Asset[]> {
+    // A legacy `loan_receivable` asset backfilled into the receivables
+    // sub-ledger (plan doc §13.2) is hidden here -- it's managed at
+    // /v1/receivables now, not in the Assets manager.
     const rows = await this.db
       .select()
       .from(assets)
-      .where(and(eq(assets.userId, userId), eq(assets.isClosed, false)))
+      .where(
+        and(
+          eq(assets.userId, userId),
+          eq(assets.isClosed, false),
+          sql`not exists (select 1 from ${receivables} where ${receivables.legacyAssetId} = ${assets.id})`
+        )
+      )
       .orderBy(assets.name);
     return rows.map((row) => AssetSchema.parse(stripNulls(row)));
   }

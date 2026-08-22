@@ -1803,6 +1803,7 @@ export interface paths {
       };
     };
     put?: never;
+    /** @description Creating an asset with kind `loan_receivable` is deprecated; use POST /v1/receivables instead. For backward compatibility this still atomically creates a matching receivable (visible only through /v1/receivables) alongside the legacy asset anchor. */
     post: {
       parameters: {
         query?: never;
@@ -2201,6 +2202,86 @@ export interface paths {
     };
     put?: never;
     post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/receivables": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["listReceivables"];
+    put?: never;
+    post: operations["createReceivable"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/receivables/{receivableId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["getReceivable"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch: operations["updateReceivable"];
+    trace?: never;
+  };
+  "/v1/receivables/{receivableId}/events": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["listReceivableEvents"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/receivables/{receivableId}/repayments": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["recordReceivableRepayment"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/receivables/{receivableId}/corrections": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["createReceivableCorrection"];
     delete?: never;
     options?: never;
     head?: never;
@@ -8200,6 +8281,7 @@ export interface components {
         | "category.name_conflict"
         | "category.in_use"
         | "asset.invalid_valuation_sign"
+        | "asset.moved_to_receivables"
         | "goal.funding_source_in_use"
         | "goal.invalid_order"
         | "import.invalid_file"
@@ -8229,7 +8311,12 @@ export interface components {
         | "recurring.invalid_occurrence_source"
         | "recurring.occurrence_already_confirmed"
         | "recurring.detected_stream_not_reviewable"
-        | "pending_transaction.already_resolved";
+        | "pending_transaction.already_resolved"
+        | "receivable.overpayment"
+        | "receivable.correction_underflow"
+        | "receivable.reversal_blocked"
+        | "receivable.transaction_already_linked"
+        | "receivable.transaction_ineligible";
       reqId: string;
       /** Format: date-time */
       timestamp: string | null;
@@ -8914,6 +9001,139 @@ export interface components {
         /** Format: date-time */
         valuedAt: string | null;
       }[];
+      /** @default [] */
+      receivables: {
+        /** Format: uuid */
+        receivableId: string;
+        counterpartyName: string;
+        outstandingMinor: number;
+        /** Format: date-time */
+        asOf: string | null;
+      }[];
+    };
+    ReceivablePage: {
+      items: {
+        /** Format: uuid */
+        id: string;
+        counterpartyName: string;
+        note?: string;
+        /** Format: date-time */
+        openedAt: string | null;
+        /** Format: date-time */
+        dueAt?: string | null;
+        outstandingMinor: number;
+        confirmedRepaidMinor: number;
+        repaymentCount: number;
+        /** @enum {string} */
+        status: "active" | "settled" | "cancelled";
+        isMigrated: boolean;
+        /** Format: date-time */
+        createdAt: string | null;
+        /** Format: date-time */
+        updatedAt: string | null;
+      }[];
+      pageInfo: {
+        nextCursor: string | null;
+        hasMore: boolean;
+        limit: number;
+      };
+    };
+    ReceivableMutationResult: {
+      receivable: {
+        /** Format: uuid */
+        id: string;
+        counterpartyName: string;
+        note?: string;
+        /** Format: date-time */
+        openedAt: string | null;
+        /** Format: date-time */
+        dueAt?: string | null;
+        outstandingMinor: number;
+        confirmedRepaidMinor: number;
+        repaymentCount: number;
+        /** @enum {string} */
+        status: "active" | "settled" | "cancelled";
+        isMigrated: boolean;
+        /** Format: date-time */
+        createdAt: string | null;
+        /** Format: date-time */
+        updatedAt: string | null;
+      };
+      event: {
+        /** Format: uuid */
+        id: string;
+        /** Format: uuid */
+        receivableId: string;
+        /** @enum {string} */
+        kind:
+          | "opening"
+          | "repayment"
+          | "correction_increase"
+          | "correction_decrease"
+          | "legacy_increase"
+          | "legacy_decrease";
+        amountMinor: number;
+        /** Format: date-time */
+        occurredAt: string | null;
+        /** Format: uuid */
+        transactionId?: string;
+        reason?: string;
+        isReversed: boolean;
+        /** Format: date-time */
+        createdAt: string | null;
+      };
+      /** Format: uuid */
+      transactionId?: string;
+    };
+    Receivable: {
+      /** Format: uuid */
+      id: string;
+      counterpartyName: string;
+      note?: string;
+      /** Format: date-time */
+      openedAt: string | null;
+      /** Format: date-time */
+      dueAt?: string | null;
+      outstandingMinor: number;
+      confirmedRepaidMinor: number;
+      repaymentCount: number;
+      /** @enum {string} */
+      status: "active" | "settled" | "cancelled";
+      isMigrated: boolean;
+      /** Format: date-time */
+      createdAt: string | null;
+      /** Format: date-time */
+      updatedAt: string | null;
+    };
+    ReceivableEventPage: {
+      items: {
+        /** Format: uuid */
+        id: string;
+        /** Format: uuid */
+        receivableId: string;
+        /** @enum {string} */
+        kind:
+          | "opening"
+          | "repayment"
+          | "correction_increase"
+          | "correction_decrease"
+          | "legacy_increase"
+          | "legacy_decrease";
+        amountMinor: number;
+        /** Format: date-time */
+        occurredAt: string | null;
+        /** Format: uuid */
+        transactionId?: string;
+        reason?: string;
+        isReversed: boolean;
+        /** Format: date-time */
+        createdAt: string | null;
+      }[];
+      pageInfo: {
+        nextCursor: string | null;
+        hasMore: boolean;
+        limit: number;
+      };
     };
     MonthlyRollup: {
       userId: string;
@@ -11827,6 +12047,548 @@ export interface operations {
       };
       /** @description Not found */
       404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Validation failed */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Internal error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+    };
+  };
+  listReceivables: {
+    parameters: {
+      query?: {
+        status?: "active" | "settled" | "cancelled" | "all";
+        cursor?: string;
+        limit?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Receivables page */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ReceivablePage"];
+        };
+      };
+      /** @description Unauthenticated */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Validation failed */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Internal error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+    };
+  };
+  createReceivable: {
+    parameters: {
+      query?: never;
+      header: {
+        "Idempotency-Key": string;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        "application/json":
+          | {
+              /** @enum {string} */
+              fundingMode: "lend_now";
+              counterpartyName: string;
+              principalMinor: number;
+              /** Format: uuid */
+              accountId: string;
+              /** Format: date-time */
+              openedAt: string | null;
+              /** Format: date-time */
+              dueAt?: string | null;
+              note?: string;
+              description: string;
+            }
+          | {
+              /** @enum {string} */
+              fundingMode: "opening_balance";
+              counterpartyName: string;
+              outstandingMinor: number;
+              /** Format: date-time */
+              openedAt: string | null;
+              /** Format: date-time */
+              dueAt?: string | null;
+              note?: string;
+            };
+      };
+    };
+    responses: {
+      /** @description Idempotent replay of the created receivable */
+      200: {
+        headers: {
+          "Idempotency-Replayed": "true";
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ReceivableMutationResult"];
+        };
+      };
+      /** @description Created receivable */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ReceivableMutationResult"];
+        };
+      };
+      /** @description Unauthenticated */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Linked account not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Idempotency key was already used for different request intent */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Validation failed */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Internal error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+    };
+  };
+  getReceivable: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        receivableId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Receivable with derived totals */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Receivable"];
+        };
+      };
+      /** @description Unauthenticated */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Receivable not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Validation failed */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Internal error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+    };
+  };
+  updateReceivable: {
+    parameters: {
+      query?: never;
+      header: {
+        "Idempotency-Key": string;
+      };
+      path: {
+        receivableId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        "application/json": {
+          counterpartyName?: string;
+          note?: string | null;
+          /** Format: date-time */
+          dueAt?: string | null;
+        };
+      };
+    };
+    responses: {
+      /** @description Updated receivable, or idempotent replay */
+      200: {
+        headers: {
+          "Idempotency-Replayed"?: "true";
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Receivable"];
+        };
+      };
+      /** @description Unauthenticated */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Receivable not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Idempotency key was already used for different request intent */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Validation failed */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Internal error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+    };
+  };
+  listReceivableEvents: {
+    parameters: {
+      query?: {
+        cursor?: string;
+        limit?: number;
+      };
+      header?: never;
+      path: {
+        receivableId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Receivable event history */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ReceivableEventPage"];
+        };
+      };
+      /** @description Unauthenticated */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Receivable not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Validation failed */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Internal error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+    };
+  };
+  recordReceivableRepayment: {
+    parameters: {
+      query?: never;
+      header: {
+        "Idempotency-Key": string;
+      };
+      path: {
+        receivableId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        "application/json":
+          | {
+              /** @enum {string} */
+              captureMode: "receive_now";
+              /** Format: uuid */
+              accountId: string;
+              amountMinor: number;
+              /** Format: date-time */
+              occurredAt: string | null;
+              description: string;
+            }
+          | {
+              /** @enum {string} */
+              captureMode: "link_existing";
+              /** Format: uuid */
+              transactionId: string;
+            };
+      };
+    };
+    responses: {
+      /** @description Idempotent replay of the recorded repayment */
+      200: {
+        headers: {
+          "Idempotency-Replayed": "true";
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ReceivableMutationResult"];
+        };
+      };
+      /** @description Repayment recorded */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ReceivableMutationResult"];
+        };
+      };
+      /** @description Unauthenticated */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Receivable, account, or linked transaction not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Overpayment, ineligible transaction, or idempotency intent conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Validation failed */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Internal error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+    };
+  };
+  createReceivableCorrection: {
+    parameters: {
+      query?: never;
+      header: {
+        "Idempotency-Key": string;
+      };
+      path: {
+        receivableId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        "application/json": {
+          /** @enum {string} */
+          direction: "increase" | "decrease";
+          amountMinor: number;
+          reason: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Idempotent replay of the created correction */
+      200: {
+        headers: {
+          "Idempotency-Replayed": "true";
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ReceivableMutationResult"];
+        };
+      };
+      /** @description Correction recorded */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ReceivableMutationResult"];
+        };
+      };
+      /** @description Unauthenticated */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Receivable not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Correction would underflow outstanding balance, or idempotency intent conflict */
+      409: {
         headers: {
           [name: string]: unknown;
         };

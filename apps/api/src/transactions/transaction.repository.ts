@@ -31,6 +31,12 @@ import { normalizeTransactionText } from "../common/transaction-text/normalize-t
 const CursorPayloadSchema = z.object({ occurredAt: z.string().datetime(), id: z.string().uuid() });
 const IST_TIME_ZONE = "Asia/Kolkata";
 
+// Internal classification only -- never accepted from a public
+// CreateTransaction request body. Mirrors the `transaction_purpose` Postgres
+// enum (schema/enums.ts); kept as a plain union here rather than imported
+// from Drizzle since nothing else needs the pgEnum column-builder type.
+export type TransactionPurpose = "ordinary" | "receivable_principal";
+
 export type ReconciliationCandidateQuery = Readonly<{
   accountId: string;
   from: Date;
@@ -57,7 +63,8 @@ export class TransactionRepository {
     transferGroupId?: string,
     source: TransactionSource = "manual",
     billId?: CreditCardBillId,
-    recurringRuleId?: string
+    recurringRuleId?: string,
+    purpose: TransactionPurpose = "ordinary"
   ): Promise<Transaction> {
     const now = new Date();
     const [row] = await tx
@@ -74,6 +81,7 @@ export class TransactionRepository {
         tags: input.tags,
         source,
         status: "posted",
+        purpose,
         idempotencyKey: idempotencyKey ?? null,
         transferGroupId: transferGroupId ?? null,
         billId: billId ?? null,
@@ -84,6 +92,33 @@ export class TransactionRepository {
       .returning();
     if (row === undefined) throw new Error("Transaction insert did not return a row.");
     return toTransaction(row);
+  }
+
+  /**
+   * Reclassifies an already-posted, unlinked transaction's internal purpose
+   * (used only by `link_existing` receivable repayments -- see plan doc
+   * §10.4). Never changes any monetary field. Guarded the same way
+   * `attachToTransferGroup` is: posted only, so a reversed/reversal
+   * transaction can't be silently reclassified after the fact.
+   */
+  async reclassifyPurpose(
+    userId: string,
+    transactionId: string,
+    purpose: TransactionPurpose,
+    tx: DbTx
+  ): Promise<Transaction | null> {
+    const [row] = await tx
+      .update(transactions)
+      .set({ purpose, updatedAt: new Date() })
+      .where(
+        and(
+          eq(transactions.id, transactionId),
+          eq(transactions.userId, userId),
+          eq(transactions.status, "posted")
+        )
+      )
+      .returning();
+    return row === undefined ? null : toTransaction(row);
   }
 
   /**
@@ -172,6 +207,7 @@ export class TransactionRepository {
       monthlyWhere,
       eq(transactions.status, "posted"),
       eq(transactions.type, "expense"),
+      eq(transactions.purpose, "ordinary"),
       isNull(transactions.transferGroupId)
     );
     const logicalTransactionId = sql<string>`coalesce(${transactions.transferGroupId}::text, ${transactions.id}::text)`;

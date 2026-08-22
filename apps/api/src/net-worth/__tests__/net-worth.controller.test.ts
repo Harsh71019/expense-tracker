@@ -10,7 +10,8 @@ describe("NetWorthController", () => {
       asOf: new Date(),
       netWorthMinor: 500_000_00,
       accounts: [],
-      assets: []
+      assets: [],
+      receivables: []
     };
     const mockService = { get: vi.fn().mockResolvedValue(netWorth) };
 

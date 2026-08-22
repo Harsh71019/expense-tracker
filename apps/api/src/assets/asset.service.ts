@@ -13,8 +13,11 @@ import { DATABASE_CONNECTION } from "../common/db/db.module.js";
 import type { DrizzleDb } from "../common/db/db.module.js";
 import { withTxn } from "../common/db/db-txn.js";
 import type { DbTx } from "../common/db/db-txn.js";
+import { AssetMovedToReceivablesError } from "../common/errors/asset-moved-to-receivables.error.js";
 import { EntityNotFoundError } from "../common/errors/entity-not-found.error.js";
 import { InvalidValuationSignError } from "../common/errors/invalid-valuation-sign.error.js";
+import { ReceivableRepository } from "../receivables/receivable.repository.js";
+import { ReceivableService } from "../receivables/receivable.service.js";
 import { AssetRepository } from "./asset.repository.js";
 import { ValuationRepository } from "./valuation.repository.js";
 
@@ -24,7 +27,9 @@ export class AssetService {
     @Inject(DATABASE_CONNECTION) private readonly db: DrizzleDb,
     private readonly assets: AssetRepository,
     private readonly valuations: ValuationRepository,
-    private readonly audit: AuditRepository
+    private readonly audit: AuditRepository,
+    private readonly receivableService: ReceivableService,
+    private readonly receivables: ReceivableRepository
   ) {}
 
   async create(userId: string, input: CreateAsset): Promise<Asset> {
@@ -43,6 +48,28 @@ export class AssetService {
       valuationId: valuation.id,
       valueMinor: valuation.valueMinor
     });
+
+    // Staged POST /assets compatibility adapter (plan doc §13.3 step 3): a
+    // caller still creating a `loan_receivable` asset gets it transparently
+    // routed into the receivables sub-ledger too, atomically with the legacy
+    // anchor above, so it immediately shows up under Debt Given instead of
+    // requiring a later migration run. A zero opening value has nothing
+    // outstanding to track (and `opening_balance` mode requires a positive
+    // amount), so it's left as a plain legacy asset in that edge case.
+    if (input.kind === "loan_receivable" && input.openingValueMinor > 0) {
+      await this.receivableService.createInTx(
+        userId,
+        {
+          fundingMode: "opening_balance",
+          counterpartyName: input.name,
+          outstandingMinor: input.openingValueMinor,
+          openedAt: input.openedAt
+        },
+        tx,
+        asset.id
+      );
+    }
+
     return asset;
   }
 
@@ -55,6 +82,7 @@ export class AssetService {
   }
 
   async closeInTx(userId: string, assetId: AssetId, tx: DbTx): Promise<null> {
+    await this.assertNotMovedToReceivables(userId, assetId, tx);
     if (!(await this.assets.close(userId, assetId, tx))) {
       throw new EntityNotFoundError("Asset");
     }
@@ -76,6 +104,7 @@ export class AssetService {
     if (asset === null) {
       throw new EntityNotFoundError("Asset");
     }
+    await this.assertNotMovedToReceivables(userId, assetId, tx);
     if (asset.kind !== "loan_liability" && input.valueMinor < 0) {
       throw new InvalidValuationSignError();
     }
@@ -91,5 +120,16 @@ export class AssetService {
   async listValuations(userId: string, assetId: AssetId): Promise<ValuationPage> {
     const items = await this.valuations.listByAsset(userId, assetId);
     return { items, pageInfo: { nextCursor: null, hasMore: false, limit: items.length } };
+  }
+
+  private async assertNotMovedToReceivables(
+    userId: string,
+    assetId: AssetId,
+    tx: DbTx
+  ): Promise<void> {
+    const receivable = await this.receivables.findByLegacyAssetId(userId, assetId, tx);
+    if (receivable !== null) {
+      throw new AssetMovedToReceivablesError(receivable.id);
+    }
   }
 }

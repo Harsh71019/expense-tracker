@@ -14,7 +14,9 @@ import type { MonthlyLedgerExpenseFacts } from "./essential-burn.js";
  *
  * Rules:
  * - Scoped strictly by userId on both transactions and joined categories.
- * - Only posted, non-reversed, non-reversal, non-transfer expense transactions.
+ * - Only posted, non-reversed, non-reversal, non-transfer, ordinary-purpose
+ *   expense transactions (a receivable-principal lend disbursement is
+ *   balance-sheet movement, not essential/lifestyle burn).
  * - Categories include active and archived categories without distinction.
  * - SQL-level aggregation only; never loads unbounded transaction rows into memory.
  */
@@ -55,6 +57,7 @@ export class EssentialBurnRepository {
           eq(transactions.userId, userId),
           eq(transactions.type, "expense"),
           eq(transactions.status, "posted"),
+          eq(transactions.purpose, "ordinary"),
           isNull(transactions.reversalOf),
           isNull(transactions.reversedBy),
           isNull(transactions.transferGroupId),

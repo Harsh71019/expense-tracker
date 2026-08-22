@@ -204,6 +204,7 @@ export class BudgetRepository {
           eq(transactions.userId, userId),
           eq(transactions.status, "posted"),
           eq(transactions.type, "expense"),
+          eq(transactions.purpose, "ordinary"),
           sql`${transactions.transferGroupId} IS NULL`,
           gte(transactions.occurredAt, roughStart),
           lt(transactions.occurredAt, roughEnd),
@@ -245,6 +246,7 @@ export class BudgetRepository {
           inArray(transactions.categoryId, [...categoryIds]),
           eq(transactions.status, "posted"),
           eq(transactions.type, "expense"),
+          eq(transactions.purpose, "ordinary"),
           sql`${transactions.transferGroupId} IS NULL`,
           gte(transactions.occurredAt, start),
           lte(transactions.occurredAt, asOf)

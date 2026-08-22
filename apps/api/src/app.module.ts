@@ -46,6 +46,9 @@ import { RecurringModule } from "./recurring/recurring.module.js";
 import { RecurringDetectionModule } from "./recurring-detection/recurring-detection.module.js";
 import { SpendingChangeDetectionModule } from "./spending-change-detection/spending-change-detection.module.js";
 import { TransactionReconciliationHookModule } from "./recurring/transaction-reconciliation-hook.module.js";
+import { ReceivablesModule } from "./receivables/receivables.module.js";
+import { ReceivableTransactionReversalPolicyModule } from "./receivables/receivable-transaction-reversal-policy.module.js";
+import { NetWorthModule } from "./net-worth/net-worth.module.js";
 import { ReportsModule } from "./reports/reports.module.js";
 import { ReviewInboxModule } from "./review-inbox/review-inbox.module.js";
 import { SafetyBufferModule } from "./safety-buffer/safety-buffer.module.js";
@@ -101,6 +104,9 @@ function isUnthrottledPath(context: ExecutionContext): boolean {
     RecurringDetectionModule,
     SpendingChangeDetectionModule,
     TransactionReconciliationHookModule,
+    ReceivablesModule,
+    ReceivableTransactionReversalPolicyModule,
+    NetWorthModule,
     ReportsModule,
     SpendingWarningsModule,
     ReviewInboxModule,

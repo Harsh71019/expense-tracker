@@ -145,6 +145,7 @@
               "category.name_conflict",
               "category.in_use",
               "asset.invalid_valuation_sign",
+              "asset.moved_to_receivables",
               "goal.funding_source_in_use",
               "goal.invalid_order",
               "import.invalid_file",
@@ -174,7 +175,12 @@
               "recurring.invalid_occurrence_source",
               "recurring.occurrence_already_confirmed",
               "recurring.detected_stream_not_reviewable",
-              "pending_transaction.already_resolved"
+              "pending_transaction.already_resolved",
+              "receivable.overpayment",
+              "receivable.correction_underflow",
+              "receivable.reversal_blocked",
+              "receivable.transaction_already_linked",
+              "receivable.transaction_ineligible"
             ]
           },
           "reqId": {
@@ -1086,7 +1092,8 @@
                     "algorithmVersion",
                     "reason",
                     "confidenceBps"
-                  ]
+                  ],
+                  "additionalProperties": false
                 },
                 {
                   "type": "object",
@@ -1108,7 +1115,8 @@
                       "enum": ["frequent", "recent"]
                     }
                   },
-                  "required": ["categoryId", "evidenceCount", "algorithmVersion", "reason"]
+                  "required": ["categoryId", "evidenceCount", "algorithmVersion", "reason"],
+                  "additionalProperties": false
                 }
               ]
             },
@@ -2227,9 +2235,414 @@
               },
               "required": ["assetId", "name", "kind", "valueMinor", "valuedAt"]
             }
+          },
+          "receivables": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "receivableId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "counterpartyName": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80
+                },
+                "outstandingMinor": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "asOf": {
+                  "type": ["string", "null"],
+                  "format": "date-time"
+                }
+              },
+              "required": ["receivableId", "counterpartyName", "outstandingMinor", "asOf"]
+            },
+            "default": []
           }
         },
         "required": ["asOf", "netWorthMinor", "accounts", "assets"]
+      },
+      "ReceivablePage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "counterpartyName": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80
+                },
+                "note": {
+                  "type": "string",
+                  "maxLength": 500
+                },
+                "openedAt": {
+                  "type": ["string", "null"],
+                  "format": "date-time"
+                },
+                "dueAt": {
+                  "type": ["string", "null"],
+                  "format": "date-time"
+                },
+                "outstandingMinor": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "confirmedRepaidMinor": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "repaymentCount": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "status": {
+                  "type": "string",
+                  "enum": ["active", "settled", "cancelled"]
+                },
+                "isMigrated": {
+                  "type": "boolean"
+                },
+                "createdAt": {
+                  "type": ["string", "null"],
+                  "format": "date-time"
+                },
+                "updatedAt": {
+                  "type": ["string", "null"],
+                  "format": "date-time"
+                }
+              },
+              "required": [
+                "id",
+                "counterpartyName",
+                "openedAt",
+                "outstandingMinor",
+                "confirmedRepaidMinor",
+                "repaymentCount",
+                "status",
+                "isMigrated",
+                "createdAt",
+                "updatedAt"
+              ]
+            }
+          },
+          "pageInfo": {
+            "type": "object",
+            "properties": {
+              "nextCursor": {
+                "type": ["string", "null"]
+              },
+              "hasMore": {
+                "type": "boolean"
+              },
+              "limit": {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              }
+            },
+            "required": ["nextCursor", "hasMore", "limit"]
+          }
+        },
+        "required": ["items", "pageInfo"]
+      },
+      "ReceivableMutationResult": {
+        "type": "object",
+        "properties": {
+          "receivable": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "counterpartyName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80
+              },
+              "note": {
+                "type": "string",
+                "maxLength": 500
+              },
+              "openedAt": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              },
+              "dueAt": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              },
+              "outstandingMinor": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "confirmedRepaidMinor": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "repaymentCount": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "status": {
+                "type": "string",
+                "enum": ["active", "settled", "cancelled"]
+              },
+              "isMigrated": {
+                "type": "boolean"
+              },
+              "createdAt": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              },
+              "updatedAt": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "id",
+              "counterpartyName",
+              "openedAt",
+              "outstandingMinor",
+              "confirmedRepaidMinor",
+              "repaymentCount",
+              "status",
+              "isMigrated",
+              "createdAt",
+              "updatedAt"
+            ]
+          },
+          "event": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "receivableId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "opening",
+                  "repayment",
+                  "correction_increase",
+                  "correction_decrease",
+                  "legacy_increase",
+                  "legacy_decrease"
+                ]
+              },
+              "amountMinor": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              "occurredAt": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              },
+              "transactionId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 300
+              },
+              "isReversed": {
+                "type": "boolean"
+              },
+              "createdAt": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "id",
+              "receivableId",
+              "kind",
+              "amountMinor",
+              "occurredAt",
+              "isReversed",
+              "createdAt"
+            ]
+          },
+          "transactionId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": ["receivable", "event"]
+      },
+      "Receivable": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "counterpartyName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "openedAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "dueAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "outstandingMinor": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "confirmedRepaidMinor": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "repaymentCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "status": {
+            "type": "string",
+            "enum": ["active", "settled", "cancelled"]
+          },
+          "isMigrated": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "counterpartyName",
+          "openedAt",
+          "outstandingMinor",
+          "confirmedRepaidMinor",
+          "repaymentCount",
+          "status",
+          "isMigrated",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "ReceivableEventPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "receivableId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "opening",
+                    "repayment",
+                    "correction_increase",
+                    "correction_decrease",
+                    "legacy_increase",
+                    "legacy_decrease"
+                  ]
+                },
+                "amountMinor": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                "occurredAt": {
+                  "type": ["string", "null"],
+                  "format": "date-time"
+                },
+                "transactionId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "reason": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 300
+                },
+                "isReversed": {
+                  "type": "boolean"
+                },
+                "createdAt": {
+                  "type": ["string", "null"],
+                  "format": "date-time"
+                }
+              },
+              "required": [
+                "id",
+                "receivableId",
+                "kind",
+                "amountMinor",
+                "occurredAt",
+                "isReversed",
+                "createdAt"
+              ]
+            }
+          },
+          "pageInfo": {
+            "type": "object",
+            "properties": {
+              "nextCursor": {
+                "type": ["string", "null"]
+              },
+              "hasMore": {
+                "type": "boolean"
+              },
+              "limit": {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              }
+            },
+            "required": ["nextCursor", "hasMore", "limit"]
+          }
+        },
+        "required": ["items", "pageInfo"]
       },
       "MonthlyRollup": {
         "type": "object",
@@ -12528,6 +12941,7 @@
     },
     "/v1/assets": {
       "post": {
+        "description": "Creating an asset with kind `loan_receivable` is deprecated; use POST /v1/receivables instead. For backward compatibility this still atomically creates a matching receivable (visible only through /v1/receivables) alongside the legacy asset anchor.",
         "security": [
           {
             "cookieAuth": []
@@ -13038,6 +13452,881 @@
           },
           "401": {
             "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/receivables": {
+      "get": {
+        "operationId": "listReceivables",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["active", "settled", "cancelled", "all"],
+              "default": "active"
+            },
+            "required": false,
+            "name": "status",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": false,
+            "name": "cursor",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Receivables page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceivablePage"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createReceivable",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "Idempotency-Key",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "fundingMode": {
+                        "type": "string",
+                        "enum": ["lend_now"]
+                      },
+                      "counterpartyName": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 80
+                      },
+                      "principalMinor": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 9007199254740991
+                      },
+                      "accountId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "openedAt": {
+                        "type": ["string", "null"],
+                        "format": "date-time"
+                      },
+                      "dueAt": {
+                        "type": ["string", "null"],
+                        "format": "date-time"
+                      },
+                      "note": {
+                        "type": "string",
+                        "maxLength": 500
+                      },
+                      "description": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 500
+                      }
+                    },
+                    "required": [
+                      "fundingMode",
+                      "counterpartyName",
+                      "principalMinor",
+                      "accountId",
+                      "openedAt",
+                      "description"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "fundingMode": {
+                        "type": "string",
+                        "enum": ["opening_balance"]
+                      },
+                      "counterpartyName": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 80
+                      },
+                      "outstandingMinor": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 9007199254740991
+                      },
+                      "openedAt": {
+                        "type": ["string", "null"],
+                        "format": "date-time"
+                      },
+                      "dueAt": {
+                        "type": ["string", "null"],
+                        "format": "date-time"
+                      },
+                      "note": {
+                        "type": "string",
+                        "maxLength": 500
+                      }
+                    },
+                    "required": ["fundingMode", "counterpartyName", "outstandingMinor", "openedAt"],
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Idempotent replay of the created receivable",
+            "headers": {
+              "Idempotency-Replayed": {
+                "schema": {
+                  "type": "string",
+                  "enum": ["true"]
+                },
+                "required": true
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceivableMutationResult"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created receivable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceivableMutationResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Linked account not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency key was already used for different request intent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/receivables/{receivableId}": {
+      "get": {
+        "operationId": "getReceivable",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "receivableId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Receivable with derived totals",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Receivable"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Receivable not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "updateReceivable",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "receivableId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "Idempotency-Key",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "counterpartyName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "note": {
+                    "type": ["string", "null"],
+                    "maxLength": 500
+                  },
+                  "dueAt": {
+                    "type": ["string", "null"],
+                    "format": "date-time"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated receivable, or idempotent replay",
+            "headers": {
+              "Idempotency-Replayed": {
+                "schema": {
+                  "type": "string",
+                  "enum": ["true"]
+                },
+                "required": false
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Receivable"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Receivable not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency key was already used for different request intent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/receivables/{receivableId}/events": {
+      "get": {
+        "operationId": "listReceivableEvents",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "receivableId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": false,
+            "name": "cursor",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Receivable event history",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceivableEventPage"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Receivable not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/receivables/{receivableId}/repayments": {
+      "post": {
+        "operationId": "recordReceivableRepayment",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "receivableId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "Idempotency-Key",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "captureMode": {
+                        "type": "string",
+                        "enum": ["receive_now"]
+                      },
+                      "accountId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "amountMinor": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 9007199254740991
+                      },
+                      "occurredAt": {
+                        "type": ["string", "null"],
+                        "format": "date-time"
+                      },
+                      "description": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 500
+                      }
+                    },
+                    "required": [
+                      "captureMode",
+                      "accountId",
+                      "amountMinor",
+                      "occurredAt",
+                      "description"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "captureMode": {
+                        "type": "string",
+                        "enum": ["link_existing"]
+                      },
+                      "transactionId": {
+                        "type": "string",
+                        "format": "uuid"
+                      }
+                    },
+                    "required": ["captureMode", "transactionId"],
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Idempotent replay of the recorded repayment",
+            "headers": {
+              "Idempotency-Replayed": {
+                "schema": {
+                  "type": "string",
+                  "enum": ["true"]
+                },
+                "required": true
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceivableMutationResult"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Repayment recorded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceivableMutationResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Receivable, account, or linked transaction not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Overpayment, ineligible transaction, or idempotency intent conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/receivables/{receivableId}/corrections": {
+      "post": {
+        "operationId": "createReceivableCorrection",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "receivableId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "Idempotency-Key",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "direction": {
+                    "type": "string",
+                    "enum": ["increase", "decrease"]
+                  },
+                  "amountMinor": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 300
+                  }
+                },
+                "required": ["direction", "amountMinor", "reason"],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Idempotent replay of the created correction",
+            "headers": {
+              "Idempotency-Replayed": {
+                "schema": {
+                  "type": "string",
+                  "enum": ["true"]
+                },
+                "required": true
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceivableMutationResult"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Correction recorded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceivableMutationResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Receivable not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Correction would underflow outstanding balance, or idempotency intent conflict",
             "content": {
               "application/json": {
                 "schema": {

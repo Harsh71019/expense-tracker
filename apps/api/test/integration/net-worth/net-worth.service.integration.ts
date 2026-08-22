@@ -4,11 +4,19 @@ import { AccountRepository } from "../../../src/accounts/account.repository.js";
 import { AuditRepository } from "../../../src/audit/audit.repository.js";
 import { AssetRepository } from "../../../src/assets/asset.repository.js";
 import { AssetService } from "../../../src/assets/asset.service.js";
-import { NetWorthService } from "../../../src/assets/net-worth.service.js";
+import { NetWorthService } from "../../../src/net-worth/net-worth.service.js";
 import { ValuationRepository } from "../../../src/assets/valuation.repository.js";
+import { CategoryRepository } from "../../../src/categories/category.repository.js";
+import { ReceivableNetWorthReadService } from "../../../src/receivables/receivable-net-worth-read.service.js";
+import { ReceivableRepository } from "../../../src/receivables/receivable.repository.js";
+import { ReceivableService } from "../../../src/receivables/receivable.service.js";
+import { TransactionRepository } from "../../../src/transactions/transaction.repository.js";
+import { TransactionService } from "../../../src/transactions/transaction.service.js";
 import { withTxn } from "../../../src/common/db/db-txn.js";
 import { createTestDb, insertTestUser } from "../support/postgres-test-db.js";
 import type { TestDb } from "../support/postgres-test-db.js";
+
+const NOOP_LOGGER = { log: () => undefined, warn: () => undefined, error: () => undefined };
 
 describe("NetWorthService", () => {
   let testDb: TestDb;
@@ -23,13 +31,34 @@ describe("NetWorthService", () => {
     accounts = new AccountRepository(testDb.db);
     const assetRepository = new AssetRepository(testDb.db);
     const valuationRepository = new ValuationRepository(testDb.db);
+    const audit = new AuditRepository(testDb.db);
+    const receivableRepository = new ReceivableRepository(testDb.db);
+    const transactionRepository = new TransactionRepository(testDb.db);
+    const transactionsService = new TransactionService(
+      testDb.db,
+      accounts,
+      new CategoryRepository(testDb.db),
+      transactionRepository,
+      audit,
+      NOOP_LOGGER
+    );
+    const receivableService = new ReceivableService(
+      testDb.db,
+      receivableRepository,
+      transactionsService,
+      transactionRepository,
+      audit
+    );
     assets = new AssetService(
       testDb.db,
       assetRepository,
       valuationRepository,
-      new AuditRepository(testDb.db)
+      audit,
+      receivableService,
+      receivableRepository
     );
-    netWorth = new NetWorthService(accounts, assetRepository, valuationRepository);
+    const receivablesRead = new ReceivableNetWorthReadService(receivableRepository);
+    netWorth = new NetWorthService(accounts, assetRepository, valuationRepository, receivablesRead);
   }, 60_000);
 
   afterAll(async () => {

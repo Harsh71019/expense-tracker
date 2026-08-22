@@ -1,10 +1,21 @@
-import { accounts, creditCardBills, transactions } from "../../../src/common/db/schema/index.js";
+import {
+  accounts,
+  creditCardBills,
+  receivableEvents,
+  receivables,
+  transactions
+} from "../../../src/common/db/schema/index.js";
 import type { DrizzleDb } from "../../../src/common/db/db.module.js";
+
+const INCREASE_EVENT_KINDS = new Set(["opening", "correction_increase", "legacy_increase"]);
+const DECREASE_EVENT_KINDS = new Set(["repayment", "correction_decrease", "legacy_decrease"]);
 
 export async function assertLedgerInvariants(db: DrizzleDb): Promise<void> {
   const accountRows = await db.select().from(accounts);
   const transactionRows = await db.select().from(transactions);
   const billRows = await db.select().from(creditCardBills);
+  const receivableRows = await db.select().from(receivables);
+  const receivableEventRows = await db.select().from(receivableEvents);
   const billsById = new Map(billRows.map((bill) => [bill.id, bill]));
   const deltas = new Map<string, number>();
   const transferGroups = new Map<string, typeof transactionRows>();
@@ -59,6 +70,93 @@ export async function assertLedgerInvariants(db: DrizzleDb): Promise<void> {
       first.type === second.type
     ) {
       throw new Error(`Transfer group ${transferGroupId} does not conserve value.`);
+    }
+  }
+
+  const receivablesById = new Map(receivableRows.map((receivable) => [receivable.id, receivable]));
+  const transactionsById = new Map(
+    transactionRows.map((transaction) => [transaction.id, transaction])
+  );
+  const linkedTransactionIds = new Map<string, string>();
+  const runningBalanceByReceivable = new Map<string, number>();
+  const principalTransactionEventCount = new Map<string, number>();
+
+  for (const event of receivableEventRows) {
+    const receivable = receivablesById.get(event.receivableId);
+    if (receivable === undefined || receivable.userId !== event.userId) {
+      throw new Error(
+        `Receivable event ${event.id} references receivable ${event.receivableId} outside its tenant.`
+      );
+    }
+
+    let linkedTransaction: (typeof transactionRows)[number] | undefined;
+    if (event.transactionId !== null) {
+      linkedTransaction = transactionsById.get(event.transactionId);
+      if (linkedTransaction === undefined || linkedTransaction.userId !== event.userId) {
+        throw new Error(
+          `Receivable event ${event.id} references transaction ${event.transactionId} outside its tenant.`
+        );
+      }
+
+      const existingOwner = linkedTransactionIds.get(event.transactionId);
+      if (existingOwner !== undefined) {
+        throw new Error(
+          `Transaction ${event.transactionId} is linked from more than one receivable event.`
+        );
+      }
+      linkedTransactionIds.set(event.transactionId, event.id);
+
+      if (event.kind === "opening" && linkedTransaction.type !== "expense") {
+        throw new Error(
+          `Receivable opening event ${event.id}'s linked transaction is not an expense.`
+        );
+      }
+      if (event.kind === "repayment" && linkedTransaction.type !== "income") {
+        throw new Error(
+          `Receivable repayment event ${event.id}'s linked transaction is not income.`
+        );
+      }
+
+      if (linkedTransaction.purpose === "receivable_principal") {
+        principalTransactionEventCount.set(
+          linkedTransaction.id,
+          (principalTransactionEventCount.get(linkedTransaction.id) ?? 0) + 1
+        );
+      }
+    }
+
+    // Reversal-aware: a transaction-backed event stops contributing once its
+    // linked transaction has been reversed (plan doc §8); transactionless
+    // opening/correction/legacy events always contribute.
+    const isEffective = linkedTransaction === undefined || linkedTransaction.status !== "reversed";
+    if (isEffective) {
+      const signed = INCREASE_EVENT_KINDS.has(event.kind)
+        ? event.amountMinor
+        : DECREASE_EVENT_KINDS.has(event.kind)
+          ? -event.amountMinor
+          : 0;
+      runningBalanceByReceivable.set(
+        event.receivableId,
+        (runningBalanceByReceivable.get(event.receivableId) ?? 0) + signed
+      );
+    }
+  }
+
+  for (const transaction of transactionRows) {
+    if (transaction.purpose !== "receivable_principal") continue;
+    const linkedEventCount = principalTransactionEventCount.get(transaction.id) ?? 0;
+    if (linkedEventCount !== 1) {
+      throw new Error(
+        `Transaction ${transaction.id} has purpose receivable_principal but is linked from ${linkedEventCount} receivable events (expected exactly 1).`
+      );
+    }
+  }
+
+  for (const [receivableId, balance] of runningBalanceByReceivable) {
+    if (balance < 0) {
+      throw new Error(
+        `Receivable ${receivableId} has a negative derived outstanding balance (${balance}).`
+      );
     }
   }
 }

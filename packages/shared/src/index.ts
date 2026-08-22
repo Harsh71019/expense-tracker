@@ -541,6 +541,7 @@ export {
   ReceivablePageSchema,
   ReceivableSchema,
   ReceivableStatusSchema,
+  StoredReceivableSchema,
   UpdateReceivableMetadataSchema
 } from "./receivable.js";
 export type {
@@ -559,6 +560,7 @@ export type {
   ReceivablePage,
   RecordReceivableRepayment,
   ReceivableStatus,
+  StoredReceivable,
   UpdateReceivableMetadata
 } from "./receivable.js";
 export {

@@ -87,6 +87,7 @@ export class SpendingWarningsRepository {
           eq(transactions.userId, userId),
           eq(transactions.status, "posted"),
           eq(transactions.type, "expense"),
+          eq(transactions.purpose, "ordinary"),
           isNull(transactions.transferGroupId),
           gte(transactions.occurredAt, rangeStart),
           lt(transactions.occurredAt, analysisBoundary)
@@ -124,6 +125,7 @@ export class SpendingWarningsRepository {
           eq(transactions.userId, userId),
           eq(transactions.status, "posted"),
           eq(transactions.type, "expense"),
+          eq(transactions.purpose, "ordinary"),
           isNull(transactions.transferGroupId),
           gte(transactions.occurredAt, rangeStart),
           lt(transactions.occurredAt, analysisBoundary)
@@ -167,6 +169,7 @@ export class SpendingWarningsRepository {
           eq(transactions.userId, userId),
           eq(transactions.status, "posted"),
           eq(transactions.type, "expense"),
+          eq(transactions.purpose, "ordinary"),
           isNull(transactions.transferGroupId),
           gte(transactions.occurredAt, rangeStart),
           lt(transactions.occurredAt, analysisBoundary)
@@ -192,6 +195,7 @@ export class SpendingWarningsRepository {
           eq(transactions.userId, userId),
           eq(transactions.status, "posted"),
           eq(transactions.type, "expense"),
+          eq(transactions.purpose, "ordinary"),
           isNull(transactions.transferGroupId)
         )
       );

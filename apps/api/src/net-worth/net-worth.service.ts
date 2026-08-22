@@ -2,25 +2,32 @@ import { Injectable } from "@nestjs/common";
 import type { NetWorth } from "@treasury-ops/shared";
 
 import { AccountRepository } from "../accounts/account.repository.js";
-import { AssetRepository } from "./asset.repository.js";
-import { ValuationRepository } from "./valuation.repository.js";
+import { AssetRepository } from "../assets/asset.repository.js";
+import { ValuationRepository } from "../assets/valuation.repository.js";
+import { ReceivableNetWorthReadService } from "../receivables/receivable-net-worth-read.service.js";
 
 @Injectable()
 export class NetWorthService {
   constructor(
     private readonly accounts: AccountRepository,
     private readonly assets: AssetRepository,
-    private readonly valuations: ValuationRepository
+    private readonly valuations: ValuationRepository,
+    private readonly receivablesRead: ReceivableNetWorthReadService
   ) {}
 
   async get(userId: string): Promise<NetWorth> {
-    const [accounts, assets] = await Promise.all([
+    const [accounts, allAssets, receivables] = await Promise.all([
       this.accounts.list(userId),
-      this.assets.list(userId)
+      this.assets.list(userId),
+      this.receivablesRead.listActive(userId)
     ]);
+    // A backfilled legacy `loan_receivable` asset is represented by its
+    // migrated receivable instead (plan doc §13.2) -- excluded here so it
+    // isn't counted on both sides of the net-worth split.
+    const nonReceivableAssets = allAssets.filter((asset) => asset.kind !== "loan_receivable");
     const latest = await this.valuations.findLatestForAssets(
       userId,
-      assets.map((asset) => asset.id)
+      nonReceivableAssets.map((asset) => asset.id)
     );
 
     const netWorthAccounts = accounts.map((account) => ({
@@ -28,7 +35,7 @@ export class NetWorthService {
       name: account.name,
       balanceMinor: account.balanceMinor
     }));
-    const netWorthAssets = assets.map((asset) => {
+    const netWorthAssets = nonReceivableAssets.map((asset) => {
       const value = latest.get(asset.id);
       return {
         assetId: asset.id,
@@ -41,12 +48,14 @@ export class NetWorthService {
 
     const accountsMinor = netWorthAccounts.reduce((sum, account) => sum + account.balanceMinor, 0);
     const assetsMinor = netWorthAssets.reduce((sum, asset) => sum + asset.valueMinor, 0);
+    const receivablesMinor = receivables.reduce((sum, r) => sum + r.outstandingMinor, 0);
 
     return {
       asOf: new Date(),
-      netWorthMinor: accountsMinor + assetsMinor,
+      netWorthMinor: accountsMinor + assetsMinor + receivablesMinor,
       accounts: netWorthAccounts,
-      assets: netWorthAssets
+      assets: netWorthAssets,
+      receivables
     };
   }
 }

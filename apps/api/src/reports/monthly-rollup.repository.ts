@@ -38,6 +38,14 @@ export class MonthlyRollupRepository {
       lt(transactions.occurredAt, roughEnd),
       sql`${istMonth} = ${month}`
     );
+    // Receivable principal is balance-sheet movement, not earned income or
+    // spending (plan doc §12/ADR-DG-003) -- excluded only from the
+    // spend/income-labeled aggregates below. `byAccount.netMinor` keeps using
+    // `baseWhere` unfiltered: it reflects real cash movement per account
+    // (the same "balance reconstruction stays inclusive" rule as
+    // DashboardRepository.accountsBalanceMinorAsOf), not an earned/spent
+    // classification.
+    const spendIncomeWhere = and(baseWhere, eq(transactions.purpose, "ordinary"));
 
     // `::bigint`, not `::int` -- amountMinor is declared valid up to
     // Number.MAX_SAFE_INTEGER (packages/shared/src/transaction.ts), and a
@@ -56,7 +64,7 @@ export class MonthlyRollupRepository {
         txnCount: sql<number>`count(*)::int`
       })
       .from(transactions)
-      .where(baseWhere)
+      .where(spendIncomeWhere)
       .groupBy(transactions.categoryId);
 
     const byAccountRows = await this.db
@@ -74,7 +82,7 @@ export class MonthlyRollupRepository {
         totalIncomeMinor: sql<string>`coalesce(sum(case when ${transactions.type} = 'income' then ${transactions.amountMinor} else 0 end), 0)::bigint`
       })
       .from(transactions)
-      .where(baseWhere);
+      .where(spendIncomeWhere);
 
     const document = {
       userId,

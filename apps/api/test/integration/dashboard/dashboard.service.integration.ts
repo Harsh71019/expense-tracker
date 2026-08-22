@@ -17,11 +17,15 @@ import { DashboardService } from "../../../src/dashboard/dashboard.service.js";
 import { MonthlyRollupRepository } from "../../../src/reports/monthly-rollup.repository.js";
 import { MonthlyRollupService } from "../../../src/reports/monthly-rollup.service.js";
 import { RecurringRuleRepository } from "../../../src/recurring/recurring-rule.repository.js";
+import { ReceivableRepository } from "../../../src/receivables/receivable.repository.js";
+import { ReceivableService } from "../../../src/receivables/receivable.service.js";
 import { TransactionRepository } from "../../../src/transactions/transaction.repository.js";
+import { TransactionService } from "../../../src/transactions/transaction.service.js";
 import { createTestDb, insertTestUser } from "../support/postgres-test-db.js";
 import type { TestDb } from "../support/postgres-test-db.js";
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+const NOOP_LOGGER = { log: () => undefined, warn: () => undefined, error: () => undefined };
 
 describe("DashboardService", () => {
   let testDb: TestDb;
@@ -114,11 +118,31 @@ describe("DashboardService", () => {
     });
 
     // A fixed-deposit asset with two valuations, for the investments panel.
+    const dashboardAudit = new AuditRepository(testDb.db);
+    const dashboardReceivableRepository = new ReceivableRepository(testDb.db);
+    const dashboardTransactionRepository = new TransactionRepository(testDb.db);
+    const dashboardTransactionsService = new TransactionService(
+      testDb.db,
+      accounts,
+      categories,
+      dashboardTransactionRepository,
+      dashboardAudit,
+      NOOP_LOGGER
+    );
+    const dashboardReceivableService = new ReceivableService(
+      testDb.db,
+      dashboardReceivableRepository,
+      dashboardTransactionsService,
+      dashboardTransactionRepository,
+      dashboardAudit
+    );
     const assetService = new AssetService(
       testDb.db,
       assetRepository,
       valuations,
-      new AuditRepository(testDb.db)
+      dashboardAudit,
+      dashboardReceivableService,
+      dashboardReceivableRepository
     );
     await withTxn(testDb.db, async (tx) => {
       const fd = await assetService.createInTx(

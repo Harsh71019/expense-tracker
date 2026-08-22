@@ -27,12 +27,16 @@ import { EntityNotFoundError } from "../common/errors/entity-not-found.error.js"
 import { TransferMetadataRequiresGroupError } from "../common/errors/transfer-metadata-requires-group.error.js";
 import { LogEvent } from "../common/logging/events.js";
 import { toISTMonth } from "../common/time/ist.js";
-import { TransactionRepository } from "./transaction.repository.js";
+import { TransactionRepository, type TransactionPurpose } from "./transaction.repository.js";
 import {
   TRANSACTION_CREATED_HOOK,
   type TransactionCreatedHook
 } from "./transaction-created-hook.js";
 import { reverseTransactionInTx } from "./reverse-transaction-in-tx.js";
+import {
+  TRANSACTION_REVERSAL_POLICY,
+  type TransactionReversalPolicy
+} from "./transaction-reversal-policy.js";
 
 export type CreateTransactionResult = Readonly<{ transaction: Transaction; replayed: boolean }>;
 type TransactionLogger = Pick<Logger, "log" | "warn" | "error">;
@@ -48,7 +52,10 @@ export class TransactionService {
     @Inject(Logger) private readonly logger: TransactionLogger,
     @Optional()
     @Inject(TRANSACTION_CREATED_HOOK)
-    private readonly createdHook?: TransactionCreatedHook
+    private readonly createdHook?: TransactionCreatedHook,
+    @Optional()
+    @Inject(TRANSACTION_REVERSAL_POLICY)
+    private readonly reversalPolicy?: TransactionReversalPolicy
   ) {}
 
   async create(
@@ -67,32 +74,9 @@ export class TransactionService {
     source: TransactionSource
   ): Promise<CreateTransactionResult> {
     try {
-      const transaction = await withTxn(this.db, async (tx) => {
-        if (input.categoryId !== undefined) {
-          const category = await this.categories.findActiveById(userId, input.categoryId, tx);
-          if (category === null) throw new EntityNotFoundError("Category");
-          if (category.kind !== input.type) throw new CategoryKindMismatchError();
-        }
-
-        const deltaMinor = input.type === "income" ? input.amountMinor : -input.amountMinor;
-        assertBalanceDeltaApplied(
-          await this.accounts.applyBalanceDelta(userId, input.accountId, deltaMinor, tx)
-        );
-
-        const created = await this.transactions.create(
-          userId,
-          input,
-          idempotencyKey,
-          tx,
-          undefined,
-          source
-        );
-        await this.audit.record(userId, "transaction.create", created.id, tx);
-        if (source === "api") {
-          await this.createdHook?.onTransactionCreatedInTx(userId, created, tx);
-        }
-        return created;
-      });
+      const transaction = await withTxn(this.db, (tx) =>
+        this.createInTx(userId, input, idempotencyKey, tx, source)
+      );
       this.logger.log(
         {
           event: LogEvent.TransactionCreated,
@@ -118,6 +102,52 @@ export class TransactionService {
       );
       return { transaction, replayed: true };
     }
+  }
+
+  /**
+   * The `withTxn`-bound core of `create()`, extracted so another module's
+   * own transaction (e.g. `ReceivablesModule` posting a lend/repay leg
+   * alongside its own ledger rows) can post a transaction without opening a
+   * nested Postgres transaction. Unlike `create()`, this does not retry on a
+   * unique-violation idempotency-key collision -- the caller either provides
+   * its own idempotency wrapper (as `IdempotencyPostgresService.execute`
+   * does) or omits `idempotencyKey` entirely.
+   */
+  async createInTx(
+    userId: string,
+    input: CreateTransaction,
+    idempotencyKey: string | undefined,
+    tx: DbTx,
+    source: TransactionSource = "manual",
+    purpose: TransactionPurpose = "ordinary"
+  ): Promise<Transaction> {
+    if (input.categoryId !== undefined) {
+      const category = await this.categories.findActiveById(userId, input.categoryId, tx);
+      if (category === null) throw new EntityNotFoundError("Category");
+      if (category.kind !== input.type) throw new CategoryKindMismatchError();
+    }
+
+    const deltaMinor = input.type === "income" ? input.amountMinor : -input.amountMinor;
+    assertBalanceDeltaApplied(
+      await this.accounts.applyBalanceDelta(userId, input.accountId, deltaMinor, tx)
+    );
+
+    const created = await this.transactions.create(
+      userId,
+      input,
+      idempotencyKey,
+      tx,
+      undefined,
+      source,
+      undefined,
+      undefined,
+      purpose
+    );
+    await this.audit.record(userId, "transaction.create", created.id, tx);
+    if (source === "api") {
+      await this.createdHook?.onTransactionCreatedInTx(userId, created, tx);
+    }
+    return created;
   }
 
   list(userId: string, query: ListTransactionsQuery): Promise<TransactionPage> {
@@ -264,7 +294,12 @@ export class TransactionService {
    */
   reverseInTx(userId: string, transactionId: TransactionId, tx: DbTx): Promise<Transaction> {
     return reverseTransactionInTx(
-      { transactions: this.transactions, accounts: this.accounts, audit: this.audit },
+      {
+        transactions: this.transactions,
+        accounts: this.accounts,
+        audit: this.audit,
+        policy: this.reversalPolicy
+      },
       userId,
       transactionId,
       tx

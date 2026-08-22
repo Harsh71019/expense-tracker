@@ -77,6 +77,9 @@ export class ForecastingRepository {
         and(
           eq(transactions.userId, userId),
           eq(transactions.status, "posted"),
+          // Receivable principal is balance-sheet movement, not an
+          // income/expense signal the cashflow model should learn from.
+          eq(transactions.purpose, "ordinary"),
           gte(transactions.occurredAt, start),
           lte(transactions.occurredAt, asOf),
           lte(transactions.createdAt, asOf),

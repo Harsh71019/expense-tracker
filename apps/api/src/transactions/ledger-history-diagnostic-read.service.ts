@@ -23,7 +23,8 @@ export type LedgerHistoryDiagnosticFacts = z.infer<typeof LedgerHistoryDiagnosti
  * the financial readiness diagnostic.
  *
  * Requirements (docs/features/01-financial-profile-onboarding/03-onboarding-diagnostic/backend.md):
- * - Qualifying history: expense, posted, not reversed, not a reversal, not a transfer leg, essential category.
+ * - Qualifying history: expense, posted, ordinary purpose (not receivable
+ *   principal), not reversed, not a reversal, not a transfer leg, essential category.
  * - Counts distinct complete Asia/Kolkata calendar months strictly before the current partial month.
  * - Aggregated in SQL to avoid loading arbitrary numbers of transaction rows into memory.
  * - Read-only by construction; returns bounded aggregates and dates, NEVER spending amounts.
@@ -55,6 +56,7 @@ export class LedgerHistoryDiagnosticReadService {
           eq(transactions.userId, userId),
           eq(transactions.type, "expense"),
           eq(transactions.status, "posted"),
+          eq(transactions.purpose, "ordinary"),
           isNull(transactions.reversalOf),
           isNull(transactions.reversedBy),
           isNull(transactions.transferGroupId),

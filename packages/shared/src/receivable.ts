@@ -126,6 +126,21 @@ export const ReceivableEventSchema = z.object({
   createdAt: z.coerce.date()
 });
 
+// Raw stored metadata only (no derived balance/status) -- the shape a
+// repository row maps to before the service layer attaches the aggregated
+// fields below. Not part of the public API response.
+export const StoredReceivableSchema = z.object({
+  id: ReceivableIdSchema,
+  userId: z.string().min(1),
+  counterpartyName: CounterpartyNameSchema,
+  note: ReceivableNoteSchema.optional(),
+  openedAt: z.coerce.date(),
+  dueAt: z.coerce.date().optional(),
+  legacyAssetId: z.string().uuid().optional(),
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date()
+});
+
 export const ReceivableSchema = z.object({
   id: ReceivableIdSchema,
   counterpartyName: CounterpartyNameSchema,
@@ -175,6 +190,7 @@ export type CreateReceivableCorrection = z.infer<typeof CreateReceivableCorrecti
 export type ListReceivablesQuery = z.infer<typeof ListReceivablesQuerySchema>;
 export type ListReceivableEventsQuery = z.infer<typeof ListReceivableEventsQuerySchema>;
 export type ReceivableEvent = z.infer<typeof ReceivableEventSchema>;
+export type StoredReceivable = z.infer<typeof StoredReceivableSchema>;
 export type Receivable = z.infer<typeof ReceivableSchema>;
 export type ReceivablePage = z.infer<typeof ReceivablePageSchema>;
 export type ReceivableEventPage = z.infer<typeof ReceivableEventPageSchema>;

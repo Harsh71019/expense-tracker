@@ -41,7 +41,8 @@ function createService(overrides: Overrides = {}) {
         cashflowDaily: vi.fn().mockResolvedValue(new Map()),
         categoryTotals: vi.fn().mockResolvedValue([]),
         accountsBalanceMinorAsOf: vi.fn().mockResolvedValue(0),
-        assetsValueMinorAsOf: vi.fn().mockResolvedValue(0)
+        assetsValueMinorAsOf: vi.fn().mockResolvedValue(0),
+        receivablesOutstandingMinorAsOf: vi.fn().mockResolvedValue(0)
       } satisfies Record<string, unknown>)
   };
   const service = new DashboardService(
@@ -128,7 +129,8 @@ describe("DashboardService summary, activity, and stats", () => {
     };
     const dashboard = {
       accountsBalanceMinorAsOf: vi.fn().mockResolvedValue(50_000),
-      assetsValueMinorAsOf: vi.fn().mockResolvedValue(25_000)
+      assetsValueMinorAsOf: vi.fn().mockResolvedValue(25_000),
+      receivablesOutstandingMinorAsOf: vi.fn().mockResolvedValue(0)
     };
     const context = createService({ rollups, dashboard });
 

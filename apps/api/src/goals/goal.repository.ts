@@ -131,6 +131,9 @@ export class GoalRepository {
         and(
           eq(transactions.userId, userId),
           eq(transactions.status, "posted"),
+          // Receivable principal is balance-sheet movement, not a
+          // goal-contribution signal, even if a user tagged it (plan §12).
+          eq(transactions.purpose, "ordinary"),
           sql`${tag} = ANY(${transactions.tags})`
         )
       );

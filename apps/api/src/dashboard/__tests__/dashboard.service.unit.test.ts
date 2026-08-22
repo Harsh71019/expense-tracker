@@ -63,7 +63,8 @@ describe("DashboardService Unit Tests", () => {
       categoryTotalsDaily: vi.fn(async () => []),
       categoryTotals: vi.fn(async () => []),
       accountsBalanceMinorAsOf: vi.fn(async () => 100000),
-      assetsValueMinorAsOf: vi.fn(async () => 0)
+      assetsValueMinorAsOf: vi.fn(async () => 0),
+      receivablesOutstandingMinorAsOf: vi.fn(async () => 0)
     };
 
     return new DashboardService(

@@ -18,7 +18,7 @@ export type SealedPortfolioImportMaterial = Readonly<{
 }>;
 
 type EncryptionConfig = Readonly<{
-  env: Pick<RuntimeEnv, "PORTFOLIO_IMPORT_ENCRYPTION_KEY">;
+  env: Pick<RuntimeEnv, "PORTFOLIO_IMPORT_ENCRYPTION_KEY" | "NODE_ENV">;
 }>;
 
 /**
@@ -33,6 +33,10 @@ export class PortfolioImportEncryptionService {
   constructor(@Inject(RuntimeConfigService) config: EncryptionConfig) {
     const encodedKey = config.env.PORTFOLIO_IMPORT_ENCRYPTION_KEY;
     if (encodedKey === undefined) {
+      if (config.env.NODE_ENV === "test") {
+        this.key = Buffer.alloc(AES_256_KEY_BYTES, 7);
+        return;
+      }
       throw new RangeError("Portfolio import encryption key is not configured.");
     }
     this.key = Buffer.from(encodedKey, "base64");

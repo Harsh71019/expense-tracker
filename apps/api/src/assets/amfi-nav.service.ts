@@ -1,5 +1,10 @@
 import { Injectable } from "@nestjs/common";
-import { parsePositiveDecimalToMicroUnits } from "@treasury-ops/shared";
+import {
+  parsePositiveDecimalToMicroUnits,
+  type FundSchemeOption,
+  type FundSchemePlan,
+  type MarketInstrumentItem
+} from "@treasury-ops/shared";
 
 import { DependencyUnavailableError } from "../common/errors/dependency-unavailable.error.js";
 
@@ -8,6 +13,7 @@ const REQUEST_TIMEOUT_MS = 20_000;
 const MAX_RESPONSE_BYTES = 16 * 1024 * 1024;
 const NAV_LINE_FIELDS = 6;
 const DATE_PARTS = 3;
+const CATALOG_TTL_MS = 60 * 60_000; // 1 hour
 
 export type AmfiNavQuote = Readonly<{
   schemeCode: string;
@@ -18,6 +24,25 @@ export type AmfiNavQuote = Readonly<{
 /** Reads the official AMFI NAV feed once and keeps only the requested schemes. */
 @Injectable()
 export class AmfiNavService {
+  private cachedCatalog: { items: MarketInstrumentItem[]; fetchedAt: number } | null = null;
+
+  async getCatalog(): Promise<MarketInstrumentItem[]> {
+    const now = Date.now();
+    if (this.cachedCatalog !== null && now - this.cachedCatalog.fetchedAt < CATALOG_TTL_MS) {
+      return this.cachedCatalog.items;
+    }
+
+    const response = await this.fetchNavFeed();
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    if (bytes.byteLength > MAX_RESPONSE_BYTES) {
+      throw new DependencyUnavailableError("AMFI NAV feed exceeded the supported size limit.");
+    }
+    const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+    const items = parseAmfiCatalog(text);
+    this.cachedCatalog = { items, fetchedAt: now };
+    return items;
+  }
+
   async fetchTrackedQuotes(schemeCodes: ReadonlySet<string>): Promise<Map<string, AmfiNavQuote>> {
     if (schemeCodes.size === 0) return new Map();
 
@@ -46,6 +71,76 @@ export class AmfiNavService {
       throw new DependencyUnavailableError("AMFI NAV feed is temporarily unavailable.");
     }
   }
+}
+
+export function parseAmfiCatalog(text: string): MarketInstrumentItem[] {
+  const items: MarketInstrumentItem[] = [];
+  const seenCodes = new Set<string>();
+
+  for (const line of text.split(/\r?\n/u)) {
+    const fields = line.split(";");
+    if (fields.length !== NAV_LINE_FIELDS) continue;
+    const schemeCode = fields[0]?.trim();
+    const isinGrowth = fields[1]?.trim();
+    const isinDiv = fields[2]?.trim();
+    const schemeName = fields[3]?.trim();
+
+    if (
+      schemeCode === undefined ||
+      schemeName === undefined ||
+      schemeCode.length === 0 ||
+      schemeName.length === 0
+    ) {
+      continue;
+    }
+    if (seenCodes.has(schemeCode)) continue;
+    seenCodes.add(schemeCode);
+
+    const isin =
+      isinGrowth && isinGrowth.length > 0 && isinGrowth !== "-"
+        ? isinGrowth
+        : isinDiv && isinDiv.length > 0 && isinDiv !== "-"
+          ? isinDiv
+          : undefined;
+
+    items.push({
+      instrumentType: "mutual_fund",
+      provider: "amfi",
+      providerInstrumentId: schemeCode,
+      schemeCode,
+      ...(isin !== undefined ? { isin } : {}),
+      name: schemeName,
+      ...(parseSchemePlan(schemeName) !== undefined
+        ? { schemePlan: parseSchemePlan(schemeName) }
+        : {}),
+      ...(parseSchemeOption(schemeName) !== undefined
+        ? { schemeOption: parseSchemeOption(schemeName) }
+        : {}),
+      quoteUnit: "fund_unit"
+    });
+  }
+
+  return items;
+}
+
+function parseSchemePlan(name: string): FundSchemePlan | undefined {
+  const upper = name.toUpperCase();
+  if (upper.includes("DIRECT")) return "direct";
+  if (upper.includes("REGULAR")) return "regular";
+  return undefined;
+}
+
+function parseSchemeOption(name: string): FundSchemeOption | undefined {
+  const upper = name.toUpperCase();
+  if (upper.includes("GROWTH")) return "growth";
+  if (
+    upper.includes("IDCW") ||
+    upper.includes("DIVIDEND") ||
+    upper.includes("PAYOUT") ||
+    upper.includes("REINVEST")
+  )
+    return "idcw";
+  return undefined;
 }
 
 export function parseAmfiNavFeed(

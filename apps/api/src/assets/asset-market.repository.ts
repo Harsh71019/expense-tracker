@@ -14,7 +14,7 @@ import {
   type CreateAssetPositionEvent,
   type ListAssetPositionEventsQuery
 } from "@treasury-ops/shared";
-import { and, asc, desc, eq, isNull, lt, or } from "drizzle-orm";
+import { and, asc, desc, eq, isNull, like, lt, or } from "drizzle-orm";
 import { z } from "zod";
 
 import { DATABASE_CONNECTION, type DrizzleDb } from "../common/db/db.module.js";
@@ -227,6 +227,25 @@ export class AssetMarketRepository {
       .where(and(eq(assetPositionEvents.userId, userId), eq(assetPositionEvents.assetId, assetId)))
       .orderBy(desc(assetPositionEvents.occurredAt), desc(assetPositionEvents.id))
       .limit(limit);
+    return rows.map((row) => AssetPositionEventSchema.parse(stripNulls(row)));
+  }
+
+  async listPositionEventsBySourceReferencePrefix(
+    userId: string,
+    prefix: string,
+    tx?: DbTx
+  ): Promise<AssetPositionEvent[]> {
+    const executor = tx ?? this.db;
+    const rows = await executor
+      .select()
+      .from(assetPositionEvents)
+      .where(
+        and(
+          eq(assetPositionEvents.userId, userId),
+          like(assetPositionEvents.sourceReference, `${prefix}%`)
+        )
+      )
+      .orderBy(asc(assetPositionEvents.occurredAt), asc(assetPositionEvents.id));
     return rows.map((row) => AssetPositionEventSchema.parse(stripNulls(row)));
   }
 

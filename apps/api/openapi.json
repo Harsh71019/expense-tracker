@@ -191,7 +191,19 @@
               "receivable.correction_underflow",
               "receivable.reversal_blocked",
               "receivable.transaction_already_linked",
-              "receivable.transaction_ineligible"
+              "receivable.transaction_ineligible",
+              "portfolio_import.invalid_pdf",
+              "portfolio_import.file_too_large",
+              "portfolio_import.duplicate",
+              "portfolio_import.invalid_state",
+              "portfolio_import.password_required",
+              "portfolio_import.password_invalid",
+              "portfolio_import.unsupported_layout",
+              "portfolio_import.unsupported_scanned",
+              "portfolio_import.row_not_found",
+              "asset_market.quote_unavailable",
+              "asset_market.tax_context_unsupported",
+              "asset_market.disposal_context_insufficient"
             ]
           },
           "reqId": {
@@ -2935,7 +2947,7 @@
           },
           "source": {
             "type": "string",
-            "enum": ["manual", "maturity_projection"],
+            "enum": ["manual", "maturity_projection", "market_quote"],
             "default": "manual"
           },
           "id": {
@@ -2976,7 +2988,7 @@
                 },
                 "source": {
                   "type": "string",
-                  "enum": ["manual", "maturity_projection"],
+                  "enum": ["manual", "maturity_projection", "market_quote"],
                   "default": "manual"
                 },
                 "id": {
@@ -15877,7 +15889,7 @@
                   },
                   "source": {
                     "type": "string",
-                    "enum": ["manual", "maturity_projection"],
+                    "enum": ["manual", "maturity_projection", "market_quote"],
                     "default": "manual"
                   }
                 },
@@ -25686,6 +25698,2409 @@
           },
           "404": {
             "description": "Asset not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/assets/instruments": {
+      "get": {
+        "operationId": "searchMarketInstruments",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "mutual_fund",
+                "gold_etf",
+                "silver_etf",
+                "gold_fund",
+                "silver_fund",
+                "sgb",
+                "physical_gold",
+                "physical_silver"
+              ]
+            },
+            "required": false,
+            "name": "type",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            },
+            "required": false,
+            "name": "q",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": false,
+            "name": "cursor",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Search and discover market instruments",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "instrumentType": {
+                            "type": "string",
+                            "enum": [
+                              "mutual_fund",
+                              "gold_etf",
+                              "silver_etf",
+                              "gold_fund",
+                              "silver_fund",
+                              "sgb",
+                              "physical_gold",
+                              "physical_silver"
+                            ]
+                          },
+                          "provider": {
+                            "type": "string",
+                            "enum": ["amfi", "ibja", "goldapi", "metalpriceapi", "manual"]
+                          },
+                          "providerInstrumentId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 160
+                          },
+                          "schemeCode": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 160
+                          },
+                          "isin": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 160
+                          },
+                          "name": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 300
+                          },
+                          "schemePlan": {
+                            "type": "string",
+                            "enum": ["direct", "regular", "unknown"]
+                          },
+                          "schemeOption": {
+                            "type": "string",
+                            "enum": ["growth", "idcw", "unknown"]
+                          },
+                          "quoteUnit": {
+                            "type": "string",
+                            "enum": ["fund_unit", "gram"]
+                          }
+                        },
+                        "required": [
+                          "instrumentType",
+                          "provider",
+                          "providerInstrumentId",
+                          "name",
+                          "quoteUnit"
+                        ]
+                      }
+                    },
+                    "pageInfo": {
+                      "type": "object",
+                      "properties": {
+                        "nextCursor": {
+                          "type": ["string", "null"]
+                        },
+                        "hasMore": {
+                          "type": "boolean"
+                        },
+                        "limit": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0
+                        }
+                      },
+                      "required": ["nextCursor", "hasMore", "limit"]
+                    }
+                  },
+                  "required": ["items", "pageInfo"]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/assets/{assetId}/market-valuation": {
+      "get": {
+        "operationId": "getAssetMarketValuation",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "assetId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Market valuation details and quote freshness for an asset",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "assetId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "position": {
+                      "type": "object",
+                      "properties": {
+                        "assetId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "quantityMicroUnits": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "eventCount": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "asOf": {
+                          "type": ["string", "null"],
+                          "format": "date-time"
+                        }
+                      },
+                      "required": ["assetId", "quantityMicroUnits", "eventCount", "asOf"]
+                    },
+                    "quote": {
+                      "type": ["object", "null"],
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "userId": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "assetMarketLinkId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "provider": {
+                          "type": "string",
+                          "enum": ["amfi", "ibja", "goldapi", "metalpriceapi", "manual"]
+                        },
+                        "providerInstrumentId": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 160
+                        },
+                        "quoteUnit": {
+                          "type": "string",
+                          "enum": ["fund_unit", "gram"]
+                        },
+                        "priceMicroRupeesPerQuoteUnit": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991
+                        },
+                        "providerAsOf": {
+                          "type": ["string", "null"],
+                          "format": "date-time"
+                        },
+                        "fetchedAt": {
+                          "type": ["string", "null"],
+                          "format": "date-time"
+                        },
+                        "createdAt": {
+                          "type": ["string", "null"],
+                          "format": "date-time"
+                        },
+                        "freshness": {
+                          "type": "string",
+                          "enum": ["fresh", "delayed", "stale", "unavailable"]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "userId",
+                        "assetMarketLinkId",
+                        "provider",
+                        "providerInstrumentId",
+                        "quoteUnit",
+                        "priceMicroRupeesPerQuoteUnit",
+                        "providerAsOf",
+                        "fetchedAt",
+                        "createdAt",
+                        "freshness"
+                      ]
+                    },
+                    "valuation": {
+                      "type": ["object", "null"],
+                      "properties": {
+                        "valueMinor": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "valuedAt": {
+                          "type": ["string", "null"],
+                          "format": "date-time"
+                        },
+                        "source": {
+                          "type": "string",
+                          "enum": ["manual", "maturity_projection", "market_quote"],
+                          "default": "manual"
+                        },
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "assetId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "userId": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "createdAt": {
+                          "type": ["string", "null"],
+                          "format": "date-time"
+                        }
+                      },
+                      "required": ["valueMinor", "valuedAt", "id", "assetId", "userId", "createdAt"]
+                    },
+                    "estimatedValueMinor": {
+                      "type": ["integer", "null"],
+                      "minimum": 0
+                    },
+                    "asOf": {
+                      "type": ["string", "null"],
+                      "format": "date-time"
+                    },
+                    "lastReconciledAt": {
+                      "type": ["string", "null"],
+                      "format": "date-time"
+                    },
+                    "warnings": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "assetId",
+                    "position",
+                    "quote",
+                    "valuation",
+                    "estimatedValueMinor",
+                    "asOf",
+                    "lastReconciledAt",
+                    "warnings"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Asset not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/assets/{assetId}/market-refreshes": {
+      "post": {
+        "operationId": "refreshAssetMarketQuote",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "assetId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "Idempotency-Key",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Trigger market quote refresh for an asset",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "assetId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "position": {
+                      "type": "object",
+                      "properties": {
+                        "assetId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "quantityMicroUnits": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "eventCount": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "asOf": {
+                          "type": ["string", "null"],
+                          "format": "date-time"
+                        }
+                      },
+                      "required": ["assetId", "quantityMicroUnits", "eventCount", "asOf"]
+                    },
+                    "quote": {
+                      "type": ["object", "null"],
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "userId": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "assetMarketLinkId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "provider": {
+                          "type": "string",
+                          "enum": ["amfi", "ibja", "goldapi", "metalpriceapi", "manual"]
+                        },
+                        "providerInstrumentId": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 160
+                        },
+                        "quoteUnit": {
+                          "type": "string",
+                          "enum": ["fund_unit", "gram"]
+                        },
+                        "priceMicroRupeesPerQuoteUnit": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991
+                        },
+                        "providerAsOf": {
+                          "type": ["string", "null"],
+                          "format": "date-time"
+                        },
+                        "fetchedAt": {
+                          "type": ["string", "null"],
+                          "format": "date-time"
+                        },
+                        "createdAt": {
+                          "type": ["string", "null"],
+                          "format": "date-time"
+                        },
+                        "freshness": {
+                          "type": "string",
+                          "enum": ["fresh", "delayed", "stale", "unavailable"]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "userId",
+                        "assetMarketLinkId",
+                        "provider",
+                        "providerInstrumentId",
+                        "quoteUnit",
+                        "priceMicroRupeesPerQuoteUnit",
+                        "providerAsOf",
+                        "fetchedAt",
+                        "createdAt",
+                        "freshness"
+                      ]
+                    },
+                    "valuation": {
+                      "type": ["object", "null"],
+                      "properties": {
+                        "valueMinor": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "valuedAt": {
+                          "type": ["string", "null"],
+                          "format": "date-time"
+                        },
+                        "source": {
+                          "type": "string",
+                          "enum": ["manual", "maturity_projection", "market_quote"],
+                          "default": "manual"
+                        },
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "assetId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "userId": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "createdAt": {
+                          "type": ["string", "null"],
+                          "format": "date-time"
+                        }
+                      },
+                      "required": ["valueMinor", "valuedAt", "id", "assetId", "userId", "createdAt"]
+                    },
+                    "estimatedValueMinor": {
+                      "type": ["integer", "null"],
+                      "minimum": 0
+                    },
+                    "asOf": {
+                      "type": ["string", "null"],
+                      "format": "date-time"
+                    },
+                    "lastReconciledAt": {
+                      "type": ["string", "null"],
+                      "format": "date-time"
+                    },
+                    "warnings": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "assetId",
+                    "position",
+                    "quote",
+                    "valuation",
+                    "estimatedValueMinor",
+                    "asOf",
+                    "lastReconciledAt",
+                    "warnings"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Asset not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency key was already used for different request intent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/assets/{assetId}/disposal-estimates": {
+      "post": {
+        "operationId": "estimateAssetDisposal",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "assetId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "Idempotency-Key",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "quantityMicroUnits": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  },
+                  "disposalDate": {
+                    "type": ["string", "null"],
+                    "format": "date-time",
+                    "default": "2026-08-23T08:45:29.947Z"
+                  },
+                  "quoteOverrideMicroRupeesPerUnit": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  },
+                  "expectedOtherChargesMinor": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "default": 0
+                  },
+                  "dealerDeductionBps": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 10000
+                  },
+                  "taxContext": {
+                    "type": "object",
+                    "properties": {
+                      "taxYear": {
+                        "type": "string",
+                        "pattern": "^\\d{4}-\\d{2}$/u",
+                        "default": "2026-27"
+                      },
+                      "taxpayerType": {
+                        "type": "string",
+                        "enum": ["resident_individual", "nri", "huf", "company", "other"],
+                        "default": "resident_individual"
+                      },
+                      "ordinaryIncomeTaxRateBps": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 10000
+                      },
+                      "surchargeRateBps": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 10000
+                      },
+                      "equityLtcgExemptionRemainingMinor": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 12500000
+                      },
+                      "capitalLossOffsetMinor": {
+                        "type": "integer",
+                        "minimum": 0
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "FIFO disposal tax and realization estimate",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "assetId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "instrumentType": {
+                      "type": "string",
+                      "enum": [
+                        "mutual_fund",
+                        "gold_etf",
+                        "silver_etf",
+                        "gold_fund",
+                        "silver_fund",
+                        "sgb",
+                        "physical_gold",
+                        "physical_silver"
+                      ]
+                    },
+                    "quantityMicroUnits": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 9007199254740991
+                    },
+                    "quote": {
+                      "type": ["object", "null"],
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "userId": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "assetMarketLinkId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "provider": {
+                          "type": "string",
+                          "enum": ["amfi", "ibja", "goldapi", "metalpriceapi", "manual"]
+                        },
+                        "providerInstrumentId": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 160
+                        },
+                        "quoteUnit": {
+                          "type": "string",
+                          "enum": ["fund_unit", "gram"]
+                        },
+                        "priceMicroRupeesPerQuoteUnit": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991
+                        },
+                        "providerAsOf": {
+                          "type": ["string", "null"],
+                          "format": "date-time"
+                        },
+                        "fetchedAt": {
+                          "type": ["string", "null"],
+                          "format": "date-time"
+                        },
+                        "createdAt": {
+                          "type": ["string", "null"],
+                          "format": "date-time"
+                        },
+                        "freshness": {
+                          "type": "string",
+                          "enum": ["fresh", "delayed", "stale", "unavailable"]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "userId",
+                        "assetMarketLinkId",
+                        "provider",
+                        "providerInstrumentId",
+                        "quoteUnit",
+                        "priceMicroRupeesPerQuoteUnit",
+                        "providerAsOf",
+                        "fetchedAt",
+                        "createdAt",
+                        "freshness"
+                      ]
+                    },
+                    "grossProceedsMinor": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "deductions": {
+                      "type": "object",
+                      "properties": {
+                        "exitLoadMinor": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "sttMinor": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "dealerDeductionsMinor": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "otherChargesMinor": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "totalDeductionsMinor": {
+                          "type": "integer",
+                          "minimum": 0
+                        }
+                      },
+                      "required": [
+                        "exitLoadMinor",
+                        "sttMinor",
+                        "dealerDeductionsMinor",
+                        "otherChargesMinor",
+                        "totalDeductionsMinor"
+                      ]
+                    },
+                    "cashSettlementMinor": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "costBasisMinor": {
+                      "type": ["integer", "null"],
+                      "minimum": 0
+                    },
+                    "estimatedGainMinor": {
+                      "type": ["integer", "null"]
+                    },
+                    "estimatedTaxMinor": {
+                      "type": ["integer", "null"],
+                      "minimum": 0
+                    },
+                    "postTaxProceedsMinor": {
+                      "type": ["integer", "null"],
+                      "minimum": 0
+                    },
+                    "effectiveTaxRateBps": {
+                      "type": ["integer", "null"],
+                      "minimum": 0
+                    },
+                    "taxRuleId": {
+                      "type": ["string", "null"]
+                    },
+                    "taxSupportStatus": {
+                      "type": "string",
+                      "enum": [
+                        "supported",
+                        "unsupported_tax_context",
+                        "missing_cost_basis",
+                        "missing_quote"
+                      ]
+                    },
+                    "confidence": {
+                      "type": "string",
+                      "enum": ["estimate", "provisional", "unsupported"]
+                    },
+                    "lots": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "acquisitionEventId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "acquiredAt": {
+                            "type": ["string", "null"],
+                            "format": "date-time"
+                          },
+                          "quantityMicroUnits": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 9007199254740991
+                          },
+                          "costBasisMinor": {
+                            "type": ["integer", "null"],
+                            "minimum": 0
+                          },
+                          "holdingPeriodMonths": {
+                            "type": ["number", "null"],
+                            "minimum": 0
+                          },
+                          "term": {
+                            "type": "string",
+                            "enum": ["short_term", "long_term", "unknown"]
+                          },
+                          "gainLossMinor": {
+                            "type": ["integer", "null"]
+                          }
+                        },
+                        "required": [
+                          "acquiredAt",
+                          "quantityMicroUnits",
+                          "costBasisMinor",
+                          "holdingPeriodMonths",
+                          "term",
+                          "gainLossMinor"
+                        ]
+                      }
+                    },
+                    "assumptions": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "warnings": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "assetId",
+                    "quantityMicroUnits",
+                    "quote",
+                    "grossProceedsMinor",
+                    "deductions",
+                    "cashSettlementMinor",
+                    "costBasisMinor",
+                    "estimatedGainMinor",
+                    "estimatedTaxMinor",
+                    "postTaxProceedsMinor",
+                    "effectiveTaxRateBps",
+                    "taxRuleId",
+                    "taxSupportStatus",
+                    "confidence",
+                    "lots",
+                    "assumptions",
+                    "warnings"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Asset not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency key was already used for different request intent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/portfolio-imports/cas": {
+      "post": {
+        "operationId": "uploadPortfolioImportCas",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "Idempotency-Key",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "CAS statement uploaded and queued for parsing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "rowCount": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "includedCount": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "warningCount": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "errorCount": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "userId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "source": {
+                      "type": "string",
+                      "enum": ["kfintech_cams", "unknown"]
+                    },
+                    "filename": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 255
+                    },
+                    "fileHash": {
+                      "type": "string",
+                      "pattern": "^[a-f0-9]{64}$/u"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "queued",
+                        "parsing",
+                        "needs_review",
+                        "ready",
+                        "committing",
+                        "completed",
+                        "failed",
+                        "reverting",
+                        "reverted"
+                      ]
+                    },
+                    "statementAsOf": {
+                      "type": ["string", "null"],
+                      "format": "date-time"
+                    },
+                    "coverageFrom": {
+                      "type": ["string", "null"],
+                      "format": "date-time"
+                    },
+                    "coverageTo": {
+                      "type": ["string", "null"],
+                      "format": "date-time"
+                    },
+                    "failureCode": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "createdAt": {
+                      "type": ["string", "null"],
+                      "format": "date-time"
+                    },
+                    "updatedAt": {
+                      "type": ["string", "null"],
+                      "format": "date-time"
+                    },
+                    "completedAt": {
+                      "type": ["string", "null"],
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "rowCount",
+                    "includedCount",
+                    "warningCount",
+                    "errorCount",
+                    "id",
+                    "userId",
+                    "source",
+                    "filename",
+                    "fileHash",
+                    "status",
+                    "createdAt",
+                    "updatedAt"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency key was already used for different request intent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/portfolio-imports": {
+      "get": {
+        "operationId": "listPortfolioImports",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List user portfolio import batches",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "rowCount": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "includedCount": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "warningCount": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "errorCount": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "userId": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "source": {
+                        "type": "string",
+                        "enum": ["kfintech_cams", "unknown"]
+                      },
+                      "filename": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 255
+                      },
+                      "fileHash": {
+                        "type": "string",
+                        "pattern": "^[a-f0-9]{64}$/u"
+                      },
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "queued",
+                          "parsing",
+                          "needs_review",
+                          "ready",
+                          "committing",
+                          "completed",
+                          "failed",
+                          "reverting",
+                          "reverted"
+                        ]
+                      },
+                      "statementAsOf": {
+                        "type": ["string", "null"],
+                        "format": "date-time"
+                      },
+                      "coverageFrom": {
+                        "type": ["string", "null"],
+                        "format": "date-time"
+                      },
+                      "coverageTo": {
+                        "type": ["string", "null"],
+                        "format": "date-time"
+                      },
+                      "failureCode": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      },
+                      "createdAt": {
+                        "type": ["string", "null"],
+                        "format": "date-time"
+                      },
+                      "updatedAt": {
+                        "type": ["string", "null"],
+                        "format": "date-time"
+                      },
+                      "completedAt": {
+                        "type": ["string", "null"],
+                        "format": "date-time"
+                      }
+                    },
+                    "required": [
+                      "rowCount",
+                      "includedCount",
+                      "warningCount",
+                      "errorCount",
+                      "id",
+                      "userId",
+                      "source",
+                      "filename",
+                      "fileHash",
+                      "status",
+                      "createdAt",
+                      "updatedAt"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/portfolio-imports/{batchId}": {
+      "get": {
+        "operationId": "getPortfolioImportBatch",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "batchId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Portfolio import batch status and summary",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "rowCount": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "includedCount": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "warningCount": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "errorCount": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "userId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "source": {
+                      "type": "string",
+                      "enum": ["kfintech_cams", "unknown"]
+                    },
+                    "filename": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 255
+                    },
+                    "fileHash": {
+                      "type": "string",
+                      "pattern": "^[a-f0-9]{64}$/u"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "queued",
+                        "parsing",
+                        "needs_review",
+                        "ready",
+                        "committing",
+                        "completed",
+                        "failed",
+                        "reverting",
+                        "reverted"
+                      ]
+                    },
+                    "statementAsOf": {
+                      "type": ["string", "null"],
+                      "format": "date-time"
+                    },
+                    "coverageFrom": {
+                      "type": ["string", "null"],
+                      "format": "date-time"
+                    },
+                    "coverageTo": {
+                      "type": ["string", "null"],
+                      "format": "date-time"
+                    },
+                    "failureCode": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "createdAt": {
+                      "type": ["string", "null"],
+                      "format": "date-time"
+                    },
+                    "updatedAt": {
+                      "type": ["string", "null"],
+                      "format": "date-time"
+                    },
+                    "completedAt": {
+                      "type": ["string", "null"],
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "rowCount",
+                    "includedCount",
+                    "warningCount",
+                    "errorCount",
+                    "id",
+                    "userId",
+                    "source",
+                    "filename",
+                    "fileHash",
+                    "status",
+                    "createdAt",
+                    "updatedAt"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Batch not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/portfolio-imports/{batchId}/rows": {
+      "get": {
+        "operationId": "listPortfolioImportRows",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "batchId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "cursor",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated portfolio import staged rows",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "userId": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "batchId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "rowNumber": {
+                            "type": "integer",
+                            "exclusiveMinimum": 0
+                          },
+                          "rowKind": {
+                            "type": "string",
+                            "enum": ["holding", "transaction"]
+                          },
+                          "semanticFingerprint": {
+                            "type": "string",
+                            "pattern": "^[a-f0-9]{64}$/u"
+                          },
+                          "instrumentType": {
+                            "type": "string",
+                            "enum": [
+                              "mutual_fund",
+                              "gold_etf",
+                              "silver_etf",
+                              "gold_fund",
+                              "silver_fund",
+                              "sgb",
+                              "physical_gold",
+                              "physical_silver"
+                            ]
+                          },
+                          "isin": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 160
+                          },
+                          "schemeCode": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 160
+                          },
+                          "displayName": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 300
+                          },
+                          "folioReferenceMasked": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          "transactionType": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          "occurredAt": {
+                            "type": ["string", "null"],
+                            "format": "date-time"
+                          },
+                          "quantityMicroUnits": {
+                            "type": ["integer", "null"],
+                            "minimum": 1,
+                            "maximum": 9007199254740991
+                          },
+                          "grossAmountMinor": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 9007199254740991
+                          },
+                          "navMicroRupeesPerUnit": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 9007199254740991
+                          },
+                          "proposedAssetId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "matchStatus": {
+                            "type": "string",
+                            "enum": ["matched", "needs_confirmation", "unmatched", "ignored"]
+                          },
+                          "proposedAction": {
+                            "type": "string",
+                            "enum": ["create_asset", "append_event", "reconcile", "ignore"]
+                          },
+                          "include": {
+                            "type": "boolean"
+                          },
+                          "warningCode": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          "createdAt": {
+                            "type": ["string", "null"],
+                            "format": "date-time"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "userId",
+                          "batchId",
+                          "rowNumber",
+                          "rowKind",
+                          "semanticFingerprint",
+                          "instrumentType",
+                          "displayName",
+                          "quantityMicroUnits",
+                          "matchStatus",
+                          "proposedAction",
+                          "include",
+                          "createdAt"
+                        ]
+                      }
+                    },
+                    "pageInfo": {
+                      "type": "object",
+                      "properties": {
+                        "nextCursor": {
+                          "type": ["string", "null"]
+                        },
+                        "hasMore": {
+                          "type": "boolean"
+                        },
+                        "limit": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0
+                        }
+                      },
+                      "required": ["nextCursor", "hasMore", "limit"]
+                    }
+                  },
+                  "required": ["items", "pageInfo"]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Batch not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/portfolio-imports/{batchId}/rows/{rowId}": {
+      "patch": {
+        "operationId": "updatePortfolioImportRow",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "batchId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "rowId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "proposedAssetId": {
+                    "type": ["string", "null"],
+                    "format": "uuid"
+                  },
+                  "proposedAction": {
+                    "type": "string",
+                    "enum": ["create_asset", "append_event", "reconcile", "ignore"]
+                  },
+                  "include": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated portfolio import staged row",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "userId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "batchId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "rowNumber": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0
+                    },
+                    "rowKind": {
+                      "type": "string",
+                      "enum": ["holding", "transaction"]
+                    },
+                    "semanticFingerprint": {
+                      "type": "string",
+                      "pattern": "^[a-f0-9]{64}$/u"
+                    },
+                    "instrumentType": {
+                      "type": "string",
+                      "enum": [
+                        "mutual_fund",
+                        "gold_etf",
+                        "silver_etf",
+                        "gold_fund",
+                        "silver_fund",
+                        "sgb",
+                        "physical_gold",
+                        "physical_silver"
+                      ]
+                    },
+                    "isin": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 160
+                    },
+                    "schemeCode": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 160
+                    },
+                    "displayName": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    },
+                    "folioReferenceMasked": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "transactionType": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "occurredAt": {
+                      "type": ["string", "null"],
+                      "format": "date-time"
+                    },
+                    "quantityMicroUnits": {
+                      "type": ["integer", "null"],
+                      "minimum": 1,
+                      "maximum": 9007199254740991
+                    },
+                    "grossAmountMinor": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 9007199254740991
+                    },
+                    "navMicroRupeesPerUnit": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 9007199254740991
+                    },
+                    "proposedAssetId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "matchStatus": {
+                      "type": "string",
+                      "enum": ["matched", "needs_confirmation", "unmatched", "ignored"]
+                    },
+                    "proposedAction": {
+                      "type": "string",
+                      "enum": ["create_asset", "append_event", "reconcile", "ignore"]
+                    },
+                    "include": {
+                      "type": "boolean"
+                    },
+                    "warningCode": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "createdAt": {
+                      "type": ["string", "null"],
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "userId",
+                    "batchId",
+                    "rowNumber",
+                    "rowKind",
+                    "semanticFingerprint",
+                    "instrumentType",
+                    "displayName",
+                    "quantityMicroUnits",
+                    "matchStatus",
+                    "proposedAction",
+                    "include",
+                    "createdAt"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Row not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/portfolio-imports/{batchId}/commit": {
+      "post": {
+        "operationId": "commitPortfolioImportBatch",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "batchId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "Idempotency-Key",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Committed portfolio import batch into assets and position events",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "batch": {
+                      "type": "object",
+                      "properties": {
+                        "rowCount": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "includedCount": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "warningCount": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "errorCount": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "userId": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "source": {
+                          "type": "string",
+                          "enum": ["kfintech_cams", "unknown"]
+                        },
+                        "filename": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 255
+                        },
+                        "fileHash": {
+                          "type": "string",
+                          "pattern": "^[a-f0-9]{64}$/u"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "queued",
+                            "parsing",
+                            "needs_review",
+                            "ready",
+                            "committing",
+                            "completed",
+                            "failed",
+                            "reverting",
+                            "reverted"
+                          ]
+                        },
+                        "statementAsOf": {
+                          "type": ["string", "null"],
+                          "format": "date-time"
+                        },
+                        "coverageFrom": {
+                          "type": ["string", "null"],
+                          "format": "date-time"
+                        },
+                        "coverageTo": {
+                          "type": ["string", "null"],
+                          "format": "date-time"
+                        },
+                        "failureCode": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        "createdAt": {
+                          "type": ["string", "null"],
+                          "format": "date-time"
+                        },
+                        "updatedAt": {
+                          "type": ["string", "null"],
+                          "format": "date-time"
+                        },
+                        "completedAt": {
+                          "type": ["string", "null"],
+                          "format": "date-time"
+                        }
+                      },
+                      "required": [
+                        "rowCount",
+                        "includedCount",
+                        "warningCount",
+                        "errorCount",
+                        "id",
+                        "userId",
+                        "source",
+                        "filename",
+                        "fileHash",
+                        "status",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    },
+                    "committedRowCount": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  },
+                  "required": ["batch", "committedRowCount"]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Batch not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency key was already used for different request intent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/portfolio-imports/{batchId}/revert": {
+      "post": {
+        "operationId": "revertPortfolioImportBatch",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "batchId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "Idempotency-Key",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reverted portfolio import batch via compensating reversals",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "rowCount": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "includedCount": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "warningCount": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "errorCount": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "userId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "source": {
+                      "type": "string",
+                      "enum": ["kfintech_cams", "unknown"]
+                    },
+                    "filename": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 255
+                    },
+                    "fileHash": {
+                      "type": "string",
+                      "pattern": "^[a-f0-9]{64}$/u"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "queued",
+                        "parsing",
+                        "needs_review",
+                        "ready",
+                        "committing",
+                        "completed",
+                        "failed",
+                        "reverting",
+                        "reverted"
+                      ]
+                    },
+                    "statementAsOf": {
+                      "type": ["string", "null"],
+                      "format": "date-time"
+                    },
+                    "coverageFrom": {
+                      "type": ["string", "null"],
+                      "format": "date-time"
+                    },
+                    "coverageTo": {
+                      "type": ["string", "null"],
+                      "format": "date-time"
+                    },
+                    "failureCode": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "createdAt": {
+                      "type": ["string", "null"],
+                      "format": "date-time"
+                    },
+                    "updatedAt": {
+                      "type": ["string", "null"],
+                      "format": "date-time"
+                    },
+                    "completedAt": {
+                      "type": ["string", "null"],
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "rowCount",
+                    "includedCount",
+                    "warningCount",
+                    "errorCount",
+                    "id",
+                    "userId",
+                    "source",
+                    "filename",
+                    "fileHash",
+                    "status",
+                    "createdAt",
+                    "updatedAt"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Batch not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency key was already used for different request intent",
             "content": {
               "application/json": {
                 "schema": {

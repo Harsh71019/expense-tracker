@@ -22,6 +22,10 @@ import { MarketLinkedAssetService } from "./market-linked-asset.service.js";
 import { ValuationRepository } from "./valuation.repository.js";
 import { AssetFundingRepository } from "../asset-fundings/asset-funding.repository.js";
 
+import { InstrumentDiscoveryService } from "./instrument-discovery.service.js";
+import { AssetMarketValuationService } from "./asset-market-valuation.service.js";
+import { DisposalEstimateService } from "./disposal-estimate.service.js";
+
 @Module({
   imports: [AccountsModule, ReceivablesModule],
   controllers: [AssetController, AssetMarketController],
@@ -42,7 +46,10 @@ import { AssetFundingRepository } from "../asset-fundings/asset-funding.reposito
     MarketRatesRefreshService,
     MarketQuoteRepository,
     AmfiNavService,
-    MarketValuationRefreshService
+    MarketValuationRefreshService,
+    InstrumentDiscoveryService,
+    AssetMarketValuationService,
+    DisposalEstimateService
   ],
   // Export narrow read services for cross-module consumption (NetWorthModule
   // composes these with AccountsModule/ReceivablesModule -- see net-worth/).
@@ -59,7 +66,10 @@ import { AssetFundingRepository } from "../asset-fundings/asset-funding.reposito
     LiabilityAssetReadService,
     AssetDiagnosticReadService,
     MarketRatesService,
-    MarketQuoteRepository
+    MarketQuoteRepository,
+    InstrumentDiscoveryService,
+    AssetMarketValuationService,
+    DisposalEstimateService
   ]
 })
 export class AssetsModule {}

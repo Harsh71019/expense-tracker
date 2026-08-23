@@ -23,6 +23,8 @@ import { startRecurringDetectionWorker } from "./recurring-detection/recurring-d
 import { RecurringDetectionService } from "./recurring-detection/recurring-detection.service.js";
 import { startSpendingChangeDetectionWorker } from "./spending-change-detection/spending-change-detection.processor.js";
 import { SpendingChangeDetectionService } from "./spending-change-detection/spending-change-detection.service.js";
+import { PortfolioImportService } from "./portfolio-imports/portfolio-import.service.js";
+import { startPortfolioImportsWorker } from "./portfolio-imports/portfolio-import.processor.js";
 
 async function bootstrapWorker(): Promise<void> {
   const app = await NestFactory.createApplicationContext(AppModule);
@@ -76,6 +78,12 @@ async function bootstrapWorker(): Promise<void> {
     logger,
     loggingContext
   );
+  const portfolioImportsWorker = startPortfolioImportsWorker(
+    config,
+    app.get(PortfolioImportService),
+    logger,
+    loggingContext
+  );
   const forecastingWorker = startForecastingWorker(config, app.get(ForecastingService), logger);
   logger.log({ event: LogEvent.WorkerStarted, sha: config.env.GIT_SHA }, "worker process started");
   await app.get(NtfyOpsNotifierService).notify({
@@ -103,6 +111,7 @@ async function bootstrapWorker(): Promise<void> {
             spendingWarningsWorker.close(),
             recurringDetectionWorker.close(),
             spendingChangeDetectionWorker.close(),
+            portfolioImportsWorker.close(),
             forecastingWorker.close()
           ]);
           for (const result of results) {

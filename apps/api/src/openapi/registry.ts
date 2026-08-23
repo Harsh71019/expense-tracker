@@ -217,7 +217,19 @@ import {
   CreateAssetMarketLinkRequestSchema,
   CreateManualAssetPositionEventSchema,
   ListAssetPositionEventsQuerySchema,
-  ReverseAssetPositionEventResultSchema
+  ReverseAssetPositionEventResultSchema,
+  AssetMarketValuationDetailsSchema,
+  DisposalEstimateResultSchema,
+  EstimateDisposalRequestSchema,
+  ListMarketInstrumentsQuerySchema,
+  MarketInstrumentPageSchema,
+  PortfolioImportBatchCommitResultSchema,
+  PortfolioImportBatchIdSchema,
+  PortfolioImportBatchSchema,
+  PortfolioImportRowIdSchema,
+  PortfolioImportRowPageSchema,
+  PortfolioImportRowSchema,
+  UpdatePortfolioImportRowSchema
 } from "@treasury-ops/shared";
 import { z } from "zod";
 
@@ -2651,6 +2663,213 @@ registry.registerPath({
       ...json(AssetCurrentPosition)
     },
     404: { description: "Asset not found", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/v1/assets/instruments",
+  operationId: "searchMarketInstruments",
+  security: secured,
+  request: { query: ListMarketInstrumentsQuerySchema },
+  responses: {
+    200: {
+      description: "Search and discover market instruments",
+      ...json(MarketInstrumentPageSchema)
+    },
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/v1/assets/{assetId}/market-valuation",
+  operationId: "getAssetMarketValuation",
+  security: secured,
+  request: { params: assetId },
+  responses: {
+    200: {
+      description: "Market valuation details and quote freshness for an asset",
+      ...json(AssetMarketValuationDetailsSchema)
+    },
+    404: { description: "Asset not found", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/v1/assets/{assetId}/market-refreshes",
+  operationId: "refreshAssetMarketQuote",
+  security: secured,
+  request: {
+    params: assetId,
+    headers: idempotencyKeyHeaders
+  },
+  responses: {
+    200: {
+      description: "Trigger market quote refresh for an asset",
+      ...json(AssetMarketValuationDetailsSchema)
+    },
+    404: { description: "Asset not found", ...json(ProblemDetails) },
+    ...idempotencyConflictResponse,
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/v1/assets/{assetId}/disposal-estimates",
+  operationId: "estimateAssetDisposal",
+  security: secured,
+  request: {
+    params: assetId,
+    headers: idempotencyKeyHeaders,
+    body: json(EstimateDisposalRequestSchema)
+  },
+  responses: {
+    200: {
+      description: "FIFO disposal tax and realization estimate",
+      ...json(DisposalEstimateResultSchema)
+    },
+    404: { description: "Asset not found", ...json(ProblemDetails) },
+    ...idempotencyConflictResponse,
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/v1/portfolio-imports/cas",
+  operationId: "uploadPortfolioImportCas",
+  security: secured,
+  request: {
+    headers: idempotencyKeyHeaders
+  },
+  responses: {
+    202: {
+      description: "CAS statement uploaded and queued for parsing",
+      ...json(PortfolioImportBatchSchema)
+    },
+    ...idempotencyConflictResponse,
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/v1/portfolio-imports",
+  operationId: "listPortfolioImports",
+  security: secured,
+  responses: {
+    200: {
+      description: "List user portfolio import batches",
+      ...json(z.array(PortfolioImportBatchSchema))
+    },
+    ...problemResponses
+  }
+});
+
+const batchIdParams = z.object({ batchId: PortfolioImportBatchIdSchema });
+const rowIdParams = z.object({
+  batchId: PortfolioImportBatchIdSchema,
+  rowId: PortfolioImportRowIdSchema
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/v1/portfolio-imports/{batchId}",
+  operationId: "getPortfolioImportBatch",
+  security: secured,
+  request: { params: batchIdParams },
+  responses: {
+    200: {
+      description: "Portfolio import batch status and summary",
+      ...json(PortfolioImportBatchSchema)
+    },
+    404: { description: "Batch not found", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/v1/portfolio-imports/{batchId}/rows",
+  operationId: "listPortfolioImportRows",
+  security: secured,
+  request: {
+    params: batchIdParams,
+    query: z.object({
+      cursor: z.string().optional(),
+      limit: z.coerce.number().int().min(1).max(200).optional()
+    })
+  },
+  responses: {
+    200: {
+      description: "Paginated portfolio import staged rows",
+      ...json(PortfolioImportRowPageSchema)
+    },
+    404: { description: "Batch not found", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "patch",
+  path: "/v1/portfolio-imports/{batchId}/rows/{rowId}",
+  operationId: "updatePortfolioImportRow",
+  security: secured,
+  request: {
+    params: rowIdParams,
+    body: json(UpdatePortfolioImportRowSchema)
+  },
+  responses: {
+    200: {
+      description: "Updated portfolio import staged row",
+      ...json(PortfolioImportRowSchema)
+    },
+    404: { description: "Row not found", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/v1/portfolio-imports/{batchId}/commit",
+  operationId: "commitPortfolioImportBatch",
+  security: secured,
+  request: {
+    params: batchIdParams,
+    headers: idempotencyKeyHeaders
+  },
+  responses: {
+    200: {
+      description: "Committed portfolio import batch into assets and position events",
+      ...json(PortfolioImportBatchCommitResultSchema)
+    },
+    404: { description: "Batch not found", ...json(ProblemDetails) },
+    ...idempotencyConflictResponse,
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/v1/portfolio-imports/{batchId}/revert",
+  operationId: "revertPortfolioImportBatch",
+  security: secured,
+  request: {
+    params: batchIdParams,
+    headers: idempotencyKeyHeaders
+  },
+  responses: {
+    200: {
+      description: "Reverted portfolio import batch via compensating reversals",
+      ...json(PortfolioImportBatchSchema)
+    },
+    404: { description: "Batch not found", ...json(ProblemDetails) },
+    ...idempotencyConflictResponse,
     ...problemResponses
   }
 });

@@ -1,15 +1,20 @@
-import { Body, Controller, Get, Headers, Param, Post, Query, Res } from "@nestjs/common";
+import { Body, Controller, Get, Headers, HttpCode, Param, Post, Query, Res } from "@nestjs/common";
 import {
   AssetIdSchema,
   AssetPositionEventIdSchema,
   CreateMarketLinkedAssetSchema,
   CreateAssetMarketLinkRequestSchema,
   CreateManualAssetPositionEventSchema,
+  EstimateDisposalRequestSchema,
   ListAssetPositionEventsQuerySchema,
-  type AssetMarketLink,
+  ListMarketInstrumentsQuerySchema,
   type AssetCurrentPosition,
+  type AssetMarketLink,
+  type AssetMarketValuationDetails,
   type AssetPositionEvent,
   type AssetPositionEventPage,
+  type DisposalEstimateResult,
+  type MarketInstrumentPage,
   type MarketLinkedAssetCreationResult,
   type ReverseAssetPositionEventResult
 } from "@treasury-ops/shared";
@@ -20,7 +25,10 @@ import type { AuthenticatedUser } from "../auth/auth.guard.js";
 import { CurrentUser } from "../auth/current-user.decorator.js";
 import { AssetMarketLinkService } from "./asset-market-link.service.js";
 import { AssetMarketMutationService } from "./asset-market-mutation.service.js";
+import { AssetMarketValuationService } from "./asset-market-valuation.service.js";
 import { AssetPositionService } from "./asset-position.service.js";
+import { DisposalEstimateService } from "./disposal-estimate.service.js";
+import { InstrumentDiscoveryService } from "./instrument-discovery.service.js";
 
 const IdempotencyKeySchema = z.string().uuid();
 
@@ -29,8 +37,16 @@ export class AssetMarketController {
   constructor(
     private readonly links: AssetMarketLinkService,
     private readonly positions: AssetPositionService,
-    private readonly mutations: AssetMarketMutationService
+    private readonly mutations: AssetMarketMutationService,
+    private readonly instruments: InstrumentDiscoveryService,
+    private readonly valuations: AssetMarketValuationService,
+    private readonly disposalEstimates: DisposalEstimateService
   ) {}
+
+  @Get("instruments")
+  listInstruments(@Query() query: unknown): Promise<MarketInstrumentPage> {
+    return this.instruments.searchInstruments(ListMarketInstrumentsQuerySchema.parse(query));
+  }
 
   @Post("market-linked")
   async createMarketLinkedAsset(
@@ -96,6 +112,39 @@ export class AssetMarketController {
     @Param("assetId") assetId: string
   ): Promise<AssetCurrentPosition> {
     return this.positions.getCurrentPosition(user.id, AssetIdSchema.parse(assetId));
+  }
+
+  @Get(":assetId/market-valuation")
+  getMarketValuation(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("assetId") assetId: string
+  ): Promise<AssetMarketValuationDetails> {
+    return this.valuations.getValuationDetails(user.id, AssetIdSchema.parse(assetId));
+  }
+
+  @Post(":assetId/market-refreshes")
+  @HttpCode(202)
+  refreshMarketValuation(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("assetId") assetId: string,
+    @Headers("idempotency-key") key: string | undefined
+  ): Promise<{ status: "queued" | "completed"; assetId: string }> {
+    IdempotencyKeySchema.parse(key);
+    return this.valuations.triggerRefresh(user.id, AssetIdSchema.parse(assetId));
+  }
+
+  @Post(":assetId/disposal-estimates")
+  @HttpCode(200)
+  estimateDisposal(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("assetId") assetId: string,
+    @Body() body: unknown
+  ): Promise<DisposalEstimateResult> {
+    return this.disposalEstimates.estimateDisposal(
+      user.id,
+      AssetIdSchema.parse(assetId),
+      EstimateDisposalRequestSchema.parse(body)
+    );
   }
 
   @Post(":assetId/position-events")

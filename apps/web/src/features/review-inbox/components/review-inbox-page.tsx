@@ -1,20 +1,27 @@
 "use client";
 
-import type {
-  ReviewInboxPage as ReviewInboxPageData,
-  ReviewInboxSummary,
-  ReviewItem,
-  ReviewItemDismissReason,
-  ReviewItemFeedbackAction
+import {
+  ReviewInboxPageSchema,
+  type ReviewInboxPage as ReviewInboxPageData,
+  type ReviewInboxSummary,
+  type ReviewItem,
+  type ReviewItemDismissReason,
+  type ReviewItemFeedbackAction
 } from "@treasury-ops/shared";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 
 import { Button, PageHeader, StatCard } from "@/components/ui";
 import { apiClient } from "@/lib/api/client";
+import { toAppError } from "@/lib/api/problem";
+import { toast } from "@/lib/toast";
 
-import type { ReviewInboxFilters } from "../model/filters";
+import {
+  REVIEW_INBOX_PAGE_LIMIT,
+  toApiSourceType,
+  type ReviewInboxFilters
+} from "../model/filters";
 import { ReviewInboxEmpty } from "./review-inbox-empty";
 import { ReviewItemCard } from "./review-item-card";
 
@@ -31,8 +38,16 @@ export function ReviewInboxPage({
 }: ReviewInboxPageProps): ReactNode {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const filterKey = `${filters.filter}:${filters.status}`;
   const [items, setItems] = useState<readonly ReviewItem[]>(initialPage.items);
+  const [nextCursor, setNextCursor] = useState<string | null>(initialPage.nextCursor);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+  useEffect(() => {
+    setItems(initialPage.items);
+    setNextCursor(initialPage.nextCursor);
+  }, [filterKey, initialPage]);
 
   function updateQuery(params: Partial<Record<string, string>>): void {
     const nextParams = new URLSearchParams(searchParams.toString());
@@ -49,10 +64,14 @@ export function ReviewInboxPage({
   async function handleSync(): Promise<void> {
     setIsSyncing(true);
     try {
-      await apiClient.POST("/v1/review-inbox/sync");
+      const result = await apiClient.POST("/v1/review-inbox/sync");
+      if (result.error !== undefined) throw toAppError(result.error, result.response.status);
       router.refresh();
-    } catch {
-      // Handled gracefully
+      toast.success("Review inbox synced");
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "Could not sync review items. Try again.";
+      toast.error(message);
     } finally {
       setIsSyncing(false);
     }
@@ -60,16 +79,25 @@ export function ReviewInboxPage({
 
   async function handleDismiss(itemId: string, reason: ReviewItemDismissReason): Promise<void> {
     const idempotencyKey = crypto.randomUUID();
-    const res = await apiClient.POST("/v1/review-inbox/{id}/dismiss", {
-      params: {
-        path: { id: itemId },
-        header: { "Idempotency-Key": idempotencyKey }
-      },
-      body: { reason }
-    });
-    if (res.data?.item) {
-      setItems((prev) => prev.filter((i) => i.id !== itemId));
+    try {
+      const result = await apiClient.POST("/v1/review-inbox/{id}/dismiss", {
+        params: {
+          path: { id: itemId },
+          header: { "Idempotency-Key": idempotencyKey }
+        },
+        body: { reason }
+      });
+      if (result.error !== undefined) throw toAppError(result.error, result.response.status);
+      if (!result.data?.item) {
+        toast.error("Could not dismiss this review item.");
+        return;
+      }
+      setItems((prev) => prev.filter((item) => item.id !== itemId));
       router.refresh();
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "Could not dismiss this review item.";
+      toast.error(message);
     }
   }
 
@@ -84,16 +112,65 @@ export function ReviewInboxPage({
       notes !== undefined
         ? { action, feedbackRating: rating, notes }
         : { action, feedbackRating: rating };
-    const res = await apiClient.POST("/v1/review-inbox/{id}/feedback", {
-      params: {
-        path: { id: itemId },
-        header: { "Idempotency-Key": idempotencyKey }
-      },
-      body
-    });
-    if (res.data?.item) {
-      setItems((prev) => prev.filter((i) => i.id !== itemId));
+
+    try {
+      const result = await apiClient.POST("/v1/review-inbox/{id}/feedback", {
+        params: {
+          path: { id: itemId },
+          header: { "Idempotency-Key": idempotencyKey }
+        },
+        body
+      });
+      if (result.error !== undefined) throw toAppError(result.error, result.response.status);
+      if (!result.data?.item) {
+        toast.error("Could not submit feedback for this review item.");
+        return;
+      }
+      setItems((prev) => prev.filter((item) => item.id !== itemId));
       router.refresh();
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "Could not submit feedback for this review item.";
+      toast.error(message);
+    }
+  }
+
+  async function handleLoadMore(): Promise<void> {
+    if (!nextCursor) return;
+
+    setIsLoadingMore(true);
+    try {
+      const sourceType = toApiSourceType(filters.filter);
+      const query: {
+        limit: number;
+        status: typeof filters.status;
+        cursor: string;
+        sourceType?: NonNullable<typeof sourceType>;
+      } = {
+        limit: REVIEW_INBOX_PAGE_LIMIT,
+        status: filters.status,
+        cursor: nextCursor
+      };
+      if (sourceType !== undefined) {
+        query.sourceType = sourceType;
+      }
+
+      const result = await apiClient.GET("/v1/review-inbox", { params: { query } });
+      if (result.error !== undefined) throw toAppError(result.error, result.response.status);
+      const parsed = ReviewInboxPageSchema.safeParse(result.data);
+      if (!parsed.success) throw toAppError(undefined, result.response.status);
+
+      setItems((prev) => {
+        const existingIds = new Set(prev.map((item) => item.id));
+        const appended = parsed.data.items.filter((item) => !existingIds.has(item.id));
+        return [...prev, ...appended];
+      });
+      setNextCursor(parsed.data.nextCursor);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Could not load more review items.";
+      toast.error(message);
+    } finally {
+      setIsLoadingMore(false);
     }
   }
 
@@ -160,7 +237,6 @@ export function ReviewInboxPage({
       ) : null}
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-3">
-        {/* Source Filter Tabs */}
         <div
           className="flex flex-wrap items-center gap-1.5"
           role="tablist"
@@ -184,8 +260,8 @@ export function ReviewInboxPage({
                 onClick={() => updateQuery({ filter: tab.key, cursor: undefined })}
                 className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
                   isActive
-                    ? "bg-accent-glow text-accent font-semibold border border-accent/40"
-                    : "text-foreground-muted hover:text-foreground hover:bg-surface-muted/60"
+                    ? "border border-accent/40 bg-accent-glow font-semibold text-accent"
+                    : "text-foreground-muted hover:bg-surface-muted/60 hover:text-foreground"
                 }`}
               >
                 {tab.label}
@@ -194,22 +270,21 @@ export function ReviewInboxPage({
           })}
         </div>
 
-        {/* Status Filter */}
         <div className="flex items-center gap-1 text-xs">
-          {(["active", "dismissed", "resolved", "superseded"] as const).map((st) => {
-            const isSelected = filters.status === st;
+          {(["active", "dismissed", "resolved", "superseded"] as const).map((status) => {
+            const isSelected = filters.status === status;
             return (
               <button
-                key={st}
+                key={status}
                 type="button"
-                onClick={() => updateQuery({ status: st, cursor: undefined })}
+                onClick={() => updateQuery({ status, cursor: undefined })}
                 className={`rounded-md px-2.5 py-1 capitalize transition-colors ${
                   isSelected
-                    ? "bg-surface-muted text-foreground font-semibold border border-border"
+                    ? "border border-border bg-surface-muted font-semibold text-foreground"
                     : "text-foreground-muted hover:text-foreground"
                 }`}
               >
-                {st}
+                {status}
               </button>
             );
           })}
@@ -229,14 +304,10 @@ export function ReviewInboxPage({
             />
           ))}
 
-          {initialPage.nextCursor ? (
+          {nextCursor ? (
             <div className="flex justify-center pt-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => updateQuery({ cursor: initialPage.nextCursor ?? undefined })}
-              >
-                Load Next Page →
+              <Button variant="outline" size="sm" onClick={handleLoadMore} disabled={isLoadingMore}>
+                {isLoadingMore ? "Loading..." : "Load Next Page →"}
               </Button>
             </div>
           ) : null}

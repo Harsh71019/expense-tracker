@@ -67,7 +67,7 @@ export const DIAGNOSTIC_ACTION_MAP: Record<FinancialDiagnosticActionKey, Diagnos
   configure_safety_buffer: {
     key: "configure_safety_buffer",
     label: "Configure Safety Buffer",
-    href: "/safety-buffer",
+    href: "/goals?safety-buffer=open",
     description:
       "Define an explicit emergency reserve preference rather than using the default fallback policy.",
     stepIndex: 6

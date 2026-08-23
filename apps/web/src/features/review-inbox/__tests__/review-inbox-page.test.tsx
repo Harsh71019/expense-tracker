@@ -9,11 +9,16 @@ import { describe, expect, it, vi } from "vitest";
 
 import { ReviewInboxPage } from "../components/review-inbox-page";
 
-const { mockPush, mockRefresh, mockPost } = vi.hoisted(() => ({
-  mockPush: vi.fn(),
-  mockRefresh: vi.fn(),
-  mockPost: vi.fn()
-}));
+const { mockPush, mockRefresh, mockPost, mockGet, mockToastError, mockToastSuccess } = vi.hoisted(
+  () => ({
+    mockPush: vi.fn(),
+    mockRefresh: vi.fn(),
+    mockPost: vi.fn(),
+    mockGet: vi.fn(),
+    mockToastError: vi.fn(),
+    mockToastSuccess: vi.fn()
+  })
+);
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush, refresh: mockRefresh }),
@@ -22,7 +27,15 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("@/lib/api/client", () => ({
   apiClient: {
-    POST: mockPost
+    POST: mockPost,
+    GET: mockGet
+  }
+}));
+
+vi.mock("@/lib/toast", () => ({
+  toast: {
+    error: mockToastError,
+    success: mockToastSuccess
   }
 }));
 
@@ -169,5 +182,76 @@ describe("ReviewInboxPage", () => {
         body: { reason: "not_relevant" }
       })
     );
+  });
+
+  it("appends the next page when load more succeeds", async () => {
+    const user = userEvent.setup();
+    const secondItem: ReviewItem = {
+      ...dummyItem,
+      id: "22222222-2222-4222-8222-222222222222",
+      title: "Second Review Item"
+    };
+
+    mockGet.mockResolvedValueOnce({
+      data: {
+        items: [secondItem],
+        nextCursor: null,
+        totalActive: 2
+      }
+    });
+
+    const pageData: ReviewInboxPageData = {
+      items: [dummyItem],
+      nextCursor: "cursor-page-2",
+      totalActive: 2
+    };
+
+    render(
+      <ReviewInboxPage
+        initialPage={pageData}
+        summary={dummySummary}
+        filters={{ filter: "all", status: "active" }}
+      />
+    );
+
+    await user.click(screen.getByRole("button", { name: "Load Next Page →" }));
+
+    expect(mockGet).toHaveBeenCalledWith(
+      "/v1/review-inbox",
+      expect.objectContaining({
+        params: expect.objectContaining({
+          query: expect.objectContaining({
+            cursor: "cursor-page-2"
+          })
+        })
+      })
+    );
+    expect(screen.getByText("Second Review Item")).toBeDefined();
+  });
+
+  it("shows a toast when sync fails", async () => {
+    const user = userEvent.setup();
+    mockPost.mockResolvedValueOnce({
+      error: { title: "Sync failed" },
+      response: { status: 500 }
+    });
+
+    const pageData: ReviewInboxPageData = {
+      items: [dummyItem],
+      nextCursor: null,
+      totalActive: 1
+    };
+
+    render(
+      <ReviewInboxPage
+        initialPage={pageData}
+        summary={dummySummary}
+        filters={{ filter: "all", status: "active" }}
+      />
+    );
+
+    await user.click(screen.getByRole("button", { name: "Sync review items ↻" }));
+
+    expect(mockToastError).toHaveBeenCalled();
   });
 });

@@ -16,6 +16,10 @@ describe("DIAGNOSTIC_ACTION_MAP", () => {
     }
   });
 
+  it("routes configure_safety_buffer to the goals page with drawer query", () => {
+    expect(DIAGNOSTIC_ACTION_MAP.configure_safety_buffer.href).toBe("/goals?safety-buffer=open");
+  });
+
   it("safely handles null or undefined action keys", () => {
     expect(getDiagnosticActionConfig(null)).toBeNull();
     expect(getDiagnosticActionConfig(undefined)).toBeNull();

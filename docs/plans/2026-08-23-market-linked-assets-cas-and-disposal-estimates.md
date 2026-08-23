@@ -1351,6 +1351,31 @@ cryptography dependency or persisting plaintext credentials in PostgreSQL/Redis.
 runbook. A parser is not enabled for an issuer until sanitized fixtures prove that issuer's layout;
 scanned/image-only PDFs remain unsupported in V1.
 
+### ADR-10 — Conservative resident-individual disposal-estimate scope
+
+**Decision:** The initial estimator is available only for a user who explicitly declares a
+resident-individual, capital-asset context and provides the applicable tax year and marginal
+ordinary-income rate. It calculates only when deterministic FIFO lots contain acquisition date,
+quantity, and cost. V1 declines to estimate tax for non-residents, HUFs/entities, business
+inventory/dealer stock, incomplete cost history, and every SGB disposal/redemption until the
+original-issue and continuous-holding conditions can be proven. It must always return settlement
+cash when a quote is available, even where post-tax proceeds are unavailable.
+
+For a disposal on or after 23 July 2024, the initial reviewed rule table may cover physical gold
+and silver after a 24-month holding period, and equity-oriented mutual funds only when the
+required classification/STT evidence is present. Debt-oriented specified mutual funds remain
+outside V1 pending scheme classification and tax review. Every response identifies its rule
+version, inputs, exclusions, and uncertainty; it is never filing advice.
+
+**Why:** The current Income Tax Department material distinguishes 12-month listed/equity holding
+periods from the general 24-month period, section 50AA treatment for specified mutual funds, and
+specific 2026 SGB conditions. Refusing insufficient contexts is more accurate and safer than
+guessing a tax treatment from an asset name.
+
+**Trade-off:** The first release supports fewer asset/tax combinations, but each displayed tax
+estimate remains reproducible and conservative. Expansion requires dated legal review and golden
+tests for each new classification.
+
 ## 18. Open questions that must be resolved before implementation
 
 1. Which CAS issuer/layout does the user currently receive: CAMS, KFintech, MFCentral, CDSL, or NSDL?
@@ -1359,7 +1384,8 @@ scanned/image-only PDFs remain unsupported in V1.
    the first release for physical jewellery?
 4. Who will provision the paid IBJA subscription and production API credential?
 5. Should physical jewellery record stone/non-metal weight separately in the first release?
-6. Is the user always a resident individual for the supported estimate, and which tax year should launch first?
+6. Can the application require an explicit resident-individual declaration, and should the first
+   rule table target tax year 2026-27?
 7. Should asset funding with unknown units trigger a persistent reconciliation reminder after the expected allotment date?
 
 These questions change provider choice or supported product behavior. They do not change the core separation of holdings, quotes, valuations, and estimates.
@@ -1382,6 +1408,8 @@ Recheck every source at implementation time. Do not encode prose from this docum
 - [KFintech consolidated account statement request](https://mfs.kfintech.com/investor/General/ConsolidatedAccountStatement)
 - [CBIC GST sectoral FAQs](https://cbic-gst.gov.in/sectoral-faq.html)
 - [Income Tax Department capital-gains FAQ for the post-23-July-2024 regime](https://incometaxindia.gov.in/Lists/Latest%20News/Attachments/673/FAQs%20-New-Capital-Gains-Taxation-regime.pdf)
+- [Income Tax Department capital-gains guidance (2026)](https://wmstatic-prd.incometaxindia.gov.in/documents/20117/42998/Capital-Gain_2026-03-19_04-23-21_6cf0a8_en.pdf)
+- [Income Tax Department SGB clarification for tax year 2026-27](https://www.incometaxindia.gov.in/documents/20117/15766092/FAQs-Budget-2026.pdf)
 - [AMFI mutual-fund tax information](https://www.amfiindia.com/investor/knowledge-center-info?zoneName=TaxRegimeForMutualFunds)
 - [Income Tax Department Budget 2026 FAQs, including SGB changes](https://incometaxindia.gov.in/Documents/Budget2026/FAQs-Budget-2026.pdf)
 

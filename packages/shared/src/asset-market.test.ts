@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { CreateAssetMarketLinkSchema, CreateAssetPositionEventSchema } from "./asset-market.js";
+import {
+  CreateAssetMarketLinkSchema,
+  CreateAssetPositionEventSchema,
+  CreateManualAssetPositionEventSchema
+} from "./asset-market.js";
 
 const ASSET_ID = "123e4567-e89b-42d3-a456-426614174000";
 const EVENT_ID = "223e4567-e89b-42d3-a456-426614174000";
@@ -60,6 +64,24 @@ describe("market asset contracts", () => {
         ...base,
         eventType: "reversal",
         reversalOf: EVENT_ID
+      }).success
+    ).toBe(true);
+  });
+
+  it("keeps reversal and import provenance fields out of manual event requests", () => {
+    expect(
+      CreateManualAssetPositionEventSchema.safeParse({
+        eventType: "reversal",
+        quantityMicroUnits: 1,
+        occurredAt: "2026-08-23T00:00:00.000Z"
+      }).success
+    ).toBe(false);
+    expect(
+      CreateManualAssetPositionEventSchema.safeParse({
+        eventType: "opening",
+        quantityMicroUnits: 1,
+        occurredAt: "2026-08-23T00:00:00.000Z",
+        source: "cas"
       }).success
     ).toBe(true);
   });

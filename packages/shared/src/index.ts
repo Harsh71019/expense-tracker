@@ -234,13 +234,17 @@ export {
   AssetPositionEventSourceSchema,
   AssetPositionEventTypeSchema,
   CreateAssetMarketLinkSchema,
+  CreateAssetMarketLinkRequestSchema,
   CreateAssetPositionEventSchema,
+  CreateManualAssetPositionEventSchema,
   FundSchemeOptionSchema,
   FundSchemePlanSchema,
   MarketDataProviderSchema,
   MarketInstrumentTypeSchema,
   MarketPriceSchema,
   MarketQuoteUnitSchema,
+  ListAssetPositionEventsQuerySchema,
+  ReverseAssetPositionEventResultSchema,
   SgbAcquisitionChannelSchema
 } from "./asset-market.js";
 export type {
@@ -252,13 +256,17 @@ export type {
   AssetPositionEventSource,
   AssetPositionEventType,
   CreateAssetMarketLink,
+  CreateAssetMarketLinkRequest,
   CreateAssetPositionEvent,
+  CreateManualAssetPositionEvent,
   FundSchemeOption,
   FundSchemePlan,
   MarketDataProvider,
   MarketInstrumentType,
   MarketPrice,
   MarketQuoteUnit,
+  ListAssetPositionEventsQuery,
+  ReverseAssetPositionEventResult,
   SgbAcquisitionChannel
 } from "./asset-market.js";
 export {

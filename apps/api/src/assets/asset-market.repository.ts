@@ -1,21 +1,31 @@
 import { Inject, Injectable } from "@nestjs/common";
 import {
   AssetMarketLinkSchema,
+  AssetPositionEventIdSchema,
   AssetPositionEventSchema,
   type AssetId,
   type AssetMarketLink,
   type AssetMarketLinkId,
   type AssetPositionEvent,
   type AssetPositionEventId,
+  type AssetPositionEventPage,
   type CreateAssetMarketLink,
-  type CreateAssetPositionEvent
+  type CreateAssetPositionEvent,
+  type ListAssetPositionEventsQuery
 } from "@treasury-ops/shared";
-import { and, desc, eq, isNull } from "drizzle-orm";
+import { and, desc, eq, isNull, lt, or } from "drizzle-orm";
+import { z } from "zod";
 
 import { DATABASE_CONNECTION, type DrizzleDb } from "../common/db/db.module.js";
 import type { DbTx } from "../common/db/db-txn.js";
 import { assetMarketLinks, assetPositionEvents } from "../common/db/schema/index.js";
 import { stripNulls } from "../common/db/strip-nulls.js";
+import { decodeCursorPayload, encodeCursorPayload } from "../common/pagination/cursor.js";
+
+const PositionEventCursorSchema = z.object({
+  occurredAt: z.string().datetime(),
+  id: AssetPositionEventIdSchema
+});
 
 @Injectable()
 export class AssetMarketRepository {
@@ -70,6 +80,25 @@ export class AssetMarketRepository {
     return row === undefined ? null : AssetMarketLinkSchema.parse(stripNulls(row));
   }
 
+  async findActiveLinkByAssetIdForUpdate(
+    userId: string,
+    assetId: AssetId,
+    tx: DbTx
+  ): Promise<AssetMarketLink | null> {
+    const [row] = await tx
+      .select()
+      .from(assetMarketLinks)
+      .where(
+        and(
+          eq(assetMarketLinks.userId, userId),
+          eq(assetMarketLinks.assetId, assetId),
+          isNull(assetMarketLinks.supersededAt)
+        )
+      )
+      .for("update");
+    return row === undefined ? null : AssetMarketLinkSchema.parse(stripNulls(row));
+  }
+
   async findLinkByIdForUpdate(
     userId: string,
     linkId: AssetMarketLinkId,
@@ -90,6 +119,26 @@ export class AssetMarketRepository {
       .where(and(eq(assetMarketLinks.userId, userId), eq(assetMarketLinks.assetId, assetId)))
       .orderBy(desc(assetMarketLinks.effectiveFrom), desc(assetMarketLinks.id));
     return rows.map((row) => AssetMarketLinkSchema.parse(stripNulls(row)));
+  }
+
+  async supersedeActiveLink(
+    userId: string,
+    linkId: AssetMarketLinkId,
+    supersededAt: Date,
+    tx: DbTx
+  ): Promise<boolean> {
+    const rows = await tx
+      .update(assetMarketLinks)
+      .set({ supersededAt })
+      .where(
+        and(
+          eq(assetMarketLinks.userId, userId),
+          eq(assetMarketLinks.id, linkId),
+          isNull(assetMarketLinks.supersededAt)
+        )
+      )
+      .returning({ id: assetMarketLinks.id });
+    return rows.length === 1;
   }
 
   async createPositionEvent(
@@ -134,6 +183,20 @@ export class AssetMarketRepository {
     return row === undefined ? null : AssetPositionEventSchema.parse(stripNulls(row));
   }
 
+  async findReversalForPositionEvent(
+    userId: string,
+    eventId: AssetPositionEventId,
+    tx: DbTx
+  ): Promise<AssetPositionEvent | null> {
+    const [row] = await tx
+      .select()
+      .from(assetPositionEvents)
+      .where(
+        and(eq(assetPositionEvents.userId, userId), eq(assetPositionEvents.reversalOf, eventId))
+      );
+    return row === undefined ? null : AssetPositionEventSchema.parse(stripNulls(row));
+  }
+
   async listPositionEventsByAsset(
     userId: string,
     assetId: AssetId,
@@ -147,4 +210,58 @@ export class AssetMarketRepository {
       .limit(limit);
     return rows.map((row) => AssetPositionEventSchema.parse(stripNulls(row)));
   }
+
+  async findPositionEventPageByAsset(
+    userId: string,
+    assetId: AssetId,
+    query: ListAssetPositionEventsQuery
+  ): Promise<AssetPositionEventPage> {
+    const cursor = query.cursor === undefined ? null : decodePositionEventCursor(query.cursor);
+    const rows = await this.db
+      .select()
+      .from(assetPositionEvents)
+      .where(
+        and(
+          eq(assetPositionEvents.userId, userId),
+          eq(assetPositionEvents.assetId, assetId),
+          ...(cursor === null
+            ? []
+            : [
+                or(
+                  lt(assetPositionEvents.occurredAt, cursor.occurredAt),
+                  and(
+                    eq(assetPositionEvents.occurredAt, cursor.occurredAt),
+                    lt(assetPositionEvents.id, cursor.id)
+                  )
+                )
+              ])
+        )
+      )
+      .orderBy(desc(assetPositionEvents.occurredAt), desc(assetPositionEvents.id))
+      .limit(query.limit + 1);
+    const items = rows
+      .slice(0, query.limit)
+      .map((row) => AssetPositionEventSchema.parse(stripNulls(row)));
+    const last = items.at(-1);
+    return {
+      items,
+      pageInfo: {
+        nextCursor:
+          rows.length > query.limit && last !== undefined ? encodePositionEventCursor(last) : null,
+        hasMore: rows.length > query.limit,
+        limit: query.limit
+      }
+    };
+  }
+}
+
+function decodePositionEventCursor(
+  cursor: string
+): Readonly<{ occurredAt: Date; id: AssetPositionEventId }> {
+  const payload = decodeCursorPayload(cursor, PositionEventCursorSchema);
+  return { occurredAt: new Date(payload.occurredAt), id: payload.id };
+}
+
+function encodePositionEventCursor(event: AssetPositionEvent): string {
+  return encodeCursorPayload({ occurredAt: event.occurredAt.toISOString(), id: event.id });
 }

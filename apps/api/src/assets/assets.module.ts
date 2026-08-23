@@ -5,6 +5,9 @@ import { ReceivablesModule } from "../receivables/receivables.module.js";
 import { AssetController } from "./asset.controller.js";
 import { AssetRepository } from "./asset.repository.js";
 import { AssetMarketRepository } from "./asset-market.repository.js";
+import { AssetMarketLinkService } from "./asset-market-link.service.js";
+import { AssetMarketMutationService } from "./asset-market-mutation.service.js";
+import { AssetPositionService } from "./asset-position.service.js";
 import { AssetService } from "./asset.service.js";
 import { AssetMutationService } from "./asset-mutation.service.js";
 import { AssetDiagnosticReadService } from "./asset-diagnostic-read.service.js";
@@ -19,6 +22,9 @@ import { AssetFundingRepository } from "../asset-fundings/asset-funding.reposito
   providers: [
     AssetRepository,
     AssetMarketRepository,
+    AssetMarketLinkService,
+    AssetPositionService,
+    AssetMarketMutationService,
     AssetFundingRepository,
     AssetService,
     ValuationRepository,
@@ -34,6 +40,8 @@ import { AssetFundingRepository } from "../asset-fundings/asset-funding.reposito
   exports: [
     AssetRepository,
     AssetMarketRepository,
+    AssetMarketLinkService,
+    AssetPositionService,
     AssetFundingRepository,
     AssetService,
     ValuationRepository,

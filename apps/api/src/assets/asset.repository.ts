@@ -67,6 +67,15 @@ export class AssetRepository {
     return row === undefined ? null : AssetSchema.parse(stripNulls(row));
   }
 
+  async findByIdForUpdate(userId: string, assetId: AssetId, tx: DbTx): Promise<Asset | null> {
+    const [row] = await tx
+      .select()
+      .from(assets)
+      .where(and(eq(assets.userId, userId), eq(assets.id, assetId)))
+      .for("update");
+    return row === undefined ? null : AssetSchema.parse(stripNulls(row));
+  }
+
   async findOpenByIdForUpdate(userId: string, assetId: AssetId, tx: DbTx): Promise<Asset | null> {
     const [row] = await tx
       .select()

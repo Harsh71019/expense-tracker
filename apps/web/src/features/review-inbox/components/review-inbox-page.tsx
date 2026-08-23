@@ -15,6 +15,7 @@ import type { ReactNode } from "react";
 import { Button, PageHeader, StatCard } from "@/components/ui";
 import { apiClient } from "@/lib/api/client";
 import { toAppError } from "@/lib/api/problem";
+import { generateRequestId } from "@/lib/request-id";
 import { toast } from "@/lib/toast";
 
 import {
@@ -78,7 +79,7 @@ export function ReviewInboxPage({
   }
 
   async function handleDismiss(itemId: string, reason: ReviewItemDismissReason): Promise<void> {
-    const idempotencyKey = crypto.randomUUID();
+    const idempotencyKey = generateRequestId();
     try {
       const result = await apiClient.POST("/v1/review-inbox/{id}/dismiss", {
         params: {
@@ -107,7 +108,7 @@ export function ReviewInboxPage({
     rating: number,
     notes?: string
   ): Promise<void> {
-    const idempotencyKey = crypto.randomUUID();
+    const idempotencyKey = generateRequestId();
     const body =
       notes !== undefined
         ? { action, feedbackRating: rating, notes }

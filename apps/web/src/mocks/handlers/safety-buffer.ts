@@ -1,6 +1,8 @@
 import { CreateSafetyBufferPreferenceSchema } from "@treasury-ops/shared";
 import type { HttpHandler } from "msw";
 
+import { generateRequestId } from "@/lib/request-id";
+
 import type { MockHttp } from "./types";
 
 export function safetyBufferHandlers(http: MockHttp): HttpHandler[] {
@@ -33,7 +35,7 @@ export function safetyBufferHandlers(http: MockHttp): HttpHandler[] {
       const body = CreateSafetyBufferPreferenceSchema.parse(raw);
 
       return response(201).json({
-        id: crypto.randomUUID(),
+        id: generateRequestId(),
         userId: "mock-user",
         version: 2,
         mode: body.mode,

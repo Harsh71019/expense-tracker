@@ -14,6 +14,7 @@ import {
 import { apiClient } from "@/lib/api/client";
 import { toAppError } from "@/lib/api/problem";
 import { qk } from "@/lib/query/keys";
+import { generateRequestId } from "@/lib/request-id";
 
 export function useAssetMarketValuation(assetId: string | undefined) {
   return useQuery({
@@ -37,7 +38,7 @@ export function useRefreshMarketQuote() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (assetId: string): Promise<AssetMarketValuationDetails> => {
-      const idempotencyKey = crypto.randomUUID();
+      const idempotencyKey = generateRequestId();
       const result = await apiClient.POST("/v1/assets/{assetId}/market-refreshes", {
         params: {
           path: { assetId },
@@ -63,7 +64,7 @@ export function useEstimateDisposal(assetId: string) {
       quoteOverrideMicroRupeesPerUnit?: number;
       expectedOtherChargesMinor?: number;
     }): Promise<DisposalEstimateResult> => {
-      const idempotencyKey = crypto.randomUUID();
+      const idempotencyKey = generateRequestId();
       const result = await apiClient.POST("/v1/assets/{assetId}/disposal-estimates", {
         params: {
           path: { assetId },

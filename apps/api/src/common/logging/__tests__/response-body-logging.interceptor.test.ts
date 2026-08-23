@@ -21,11 +21,11 @@ describe("ResponseBodyLoggingInterceptor", () => {
     // @ts-expect-error - mock LoggingContextService
     const interceptor = new ResponseBodyLoggingInterceptor(context);
     const body = { id: "txn_1", amountMinor: 5000 };
+    const executionContext = buildExecutionContext("/api/v1/transactions");
+    const callHandler = buildCallHandler(body);
 
     // @ts-expect-error - mock ExecutionContext/CallHandler
-    await firstValueFrom(
-      interceptor.intercept(buildExecutionContext("/api/v1/transactions"), buildCallHandler(body))
-    );
+    await firstValueFrom(interceptor.intercept(executionContext, callHandler));
 
     expect(context.set).toHaveBeenCalledWith({ resBody: body });
   });
@@ -34,14 +34,11 @@ describe("ResponseBodyLoggingInterceptor", () => {
     const context = { set: vi.fn() };
     // @ts-expect-error - mock LoggingContextService
     const interceptor = new ResponseBodyLoggingInterceptor(context);
+    const executionContext = buildExecutionContext("/api/v1/transactions");
+    const callHandler = buildCallHandler(undefined);
 
-    await firstValueFrom(
-      // @ts-expect-error - mock ExecutionContext/CallHandler
-      interceptor.intercept(
-        buildExecutionContext("/api/v1/transactions"),
-        buildCallHandler(undefined)
-      )
-    );
+    // @ts-expect-error - mock ExecutionContext/CallHandler
+    await firstValueFrom(interceptor.intercept(executionContext, callHandler));
 
     expect(context.set).not.toHaveBeenCalled();
   });
@@ -51,11 +48,11 @@ describe("ResponseBodyLoggingInterceptor", () => {
     // @ts-expect-error - mock LoggingContextService
     const interceptor = new ResponseBodyLoggingInterceptor(context);
     const body = { session: { token: "secret-session-token" } };
+    const executionContext = buildExecutionContext("/api/v1/auth/session");
+    const callHandler = buildCallHandler(body);
 
-    await firstValueFrom(
-      // @ts-expect-error - mock ExecutionContext/CallHandler
-      interceptor.intercept(buildExecutionContext("/api/v1/auth/session"), buildCallHandler(body))
-    );
+    // @ts-expect-error - mock ExecutionContext/CallHandler
+    await firstValueFrom(interceptor.intercept(executionContext, callHandler));
 
     expect(context.set).not.toHaveBeenCalled();
   });
@@ -72,16 +69,16 @@ describe("ResponseBodyLoggingInterceptor", () => {
     const body = {
       items: Array.from({ length: 2000 }, (_, i) => ({ id: i, note: "x".repeat(20) }))
     };
+    const executionContext = buildExecutionContext("/api/v1/transactions");
+    const callHandler = buildCallHandler(body);
 
     // @ts-expect-error - mock ExecutionContext/CallHandler
-    await firstValueFrom(
-      interceptor.intercept(buildExecutionContext("/api/v1/transactions"), buildCallHandler(body))
-    );
+    await firstValueFrom(interceptor.intercept(executionContext, callHandler));
 
     expect(context.set).toHaveBeenCalledTimes(1);
     expect(typeof captured?.resBody).toBe("string");
-    expect(typeof captured?.resBody === "string" && captured.resBody.endsWith("…[truncated]")).toBe(
-      true
-    );
+    const truncated =
+      typeof captured?.resBody === "string" && captured.resBody.endsWith("…[truncated]");
+    expect(truncated).toBe(true);
   });
 });

@@ -22,6 +22,16 @@ const BatchesSchema = z.array(PortfolioImportBatchSchema);
 export function usePortfolioImportBatches() {
   return useQuery({
     queryKey: qk.portfolioImportBatches(),
+    refetchInterval: (query) => {
+      const hasProcessingBatch = query.state.data?.some(
+        (batch) =>
+          batch.status === "queued" ||
+          batch.status === "parsing" ||
+          batch.status === "committing" ||
+          batch.status === "reverting"
+      );
+      return hasProcessingBatch === true ? 2000 : false;
+    },
     queryFn: async (): Promise<PortfolioImportBatch[]> => {
       const result = await apiClient.GET("/v1/portfolio-imports");
       if (result.error !== undefined) throw toAppError(result.error, result.response.status);

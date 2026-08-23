@@ -13,8 +13,10 @@ import {
   type Transaction,
   type TransactionInsights,
   type TransactionPage,
+  type TransactionSort,
   type TransactionType
 } from "@treasury-ops/shared";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
@@ -30,6 +32,7 @@ import { useAccounts } from "@/features/accounts";
 import { useCategories } from "@/features/categories";
 import { useReverseTransfer } from "@/features/transfers/hooks/use-transfers";
 import { downloadCsvFile, generateTransactionsCsv } from "../model/export-csv";
+import { serializeTransactionFilters } from "../model/filters";
 import { toast } from "@/lib/toast";
 import { PendingTransactionsPanel } from "@/features/pending-transactions";
 
@@ -44,6 +47,7 @@ export function TxnList({
   initialInsights: TransactionInsights | null;
   initialPendingTransactions: PendingTransaction[];
 }>): ReactNode {
+  const router = useRouter();
   const list = useTxnList(filters, initialPage);
   const reverseTransfer = useReverseTransfer();
   const batchCategorize = useBatchCategorize();
@@ -55,6 +59,17 @@ export function TxnList({
   const [selectedIds, setSelectedIds] = useState<ReadonlySet<string>>(() => new Set());
   const [categoryId, setCategoryId] = useState("");
   const [batchError, setBatchError] = useState<string>();
+
+  function toggleSort(dimension: "date" | "amount"): void {
+    let nextSort: TransactionSort;
+    if (dimension === "date") {
+      nextSort = filters.sort === "date_asc" ? "date_desc" : "date_asc";
+    } else {
+      nextSort = filters.sort === "amount_desc" ? "amount_asc" : "amount_desc";
+    }
+    const next = serializeTransactionFilters({ ...filters, sort: nextSort, cursor: undefined });
+    router.push(next === "" ? "/transactions" : `/transactions?${next}`);
+  }
 
   const transactions = useMemo(
     () => (list.data?.pages ?? [initialPage]).flatMap((page) => page.items),
@@ -337,8 +352,42 @@ export function TxnList({
               <div>Description</div>
               <div>Category</div>
               <div>Account</div>
-              <div>Date</div>
-              <div className="text-right">Amount</div>
+              <div>
+                <button
+                  type="button"
+                  onClick={() => toggleSort("date")}
+                  className="inline-flex items-center gap-1 font-mono text-2xs font-bold tracking-wider uppercase text-foreground-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
+                  title="Toggle date sorting"
+                  aria-label={`Sort by date, currently ${filters.sort === "date_asc" ? "oldest first" : "newest first"}`}
+                >
+                  <span>Date</span>
+                  <span className="text-accent font-mono" aria-hidden="true">
+                    {filters.sort === "date_asc"
+                      ? "↑"
+                      : filters.sort === "date_desc" || filters.sort === undefined
+                        ? "↓"
+                        : "↕"}
+                  </span>
+                </button>
+              </div>
+              <div className="text-right">
+                <button
+                  type="button"
+                  onClick={() => toggleSort("amount")}
+                  className="ml-auto inline-flex items-center gap-1 font-mono text-2xs font-bold tracking-wider uppercase text-foreground-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
+                  title="Toggle amount sorting"
+                  aria-label={`Sort by amount, currently ${filters.sort === "amount_asc" ? "low to high" : filters.sort === "amount_desc" ? "high to low" : "unsorted"}`}
+                >
+                  <span>Amount</span>
+                  <span className="text-accent font-mono" aria-hidden="true">
+                    {filters.sort === "amount_desc"
+                      ? "↓"
+                      : filters.sort === "amount_asc"
+                        ? "↑"
+                        : "↕"}
+                  </span>
+                </button>
+              </div>
             </div>
           </div>
 

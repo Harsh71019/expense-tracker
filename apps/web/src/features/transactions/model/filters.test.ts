@@ -33,23 +33,53 @@ describe("transaction URL filters", () => {
       q: "groceries",
       tag: "goal:laptop",
       cursor: "2026-07-10T00:00:00.000Z_3fa85f64-5717-4562-b3fc-2c963f66be10",
-      limit: 25
+      limit: 25,
+      sort: "date_desc"
     });
   });
 
-  it("uses the first repeated value and keeps the documented default limit", () => {
+  it("uses the first repeated value and keeps the documented default limit and sort", () => {
     expect(
       parseTransactionFilters({ accountId: [accountId, "3fa85f64-5717-4562-b3fc-2c963f66bef0"] })
-    ).toEqual({ accountId, limit: 50 });
+    ).toEqual({ accountId, limit: 50, sort: "date_desc" });
   });
 
   it("fails closed for malformed URL state", () => {
     expect(parseTransactionFilters({ accountId: "not-an-object-id", limit: "1000" })).toEqual({
-      limit: 50
+      limit: 50,
+      sort: "date_desc"
     });
   });
 
-  it("serializes filters in canonical order and omits the default limit", () => {
+  it("parses and serializes amount filters and sort options", () => {
+    const exactFilters = parseTransactionFilters({
+      amountMinor: "10000",
+      sort: "amount_desc"
+    });
+    expect(exactFilters).toEqual({
+      amountMinor: 10000,
+      sort: "amount_desc",
+      limit: 50
+    });
+    expect(serializeTransactionFilters(exactFilters)).toBe("amountMinor=10000&sort=amount_desc");
+
+    const rangeFilters = parseTransactionFilters({
+      minAmountMinor: "5000",
+      maxAmountMinor: "20000",
+      sort: "amount_asc"
+    });
+    expect(rangeFilters).toEqual({
+      minAmountMinor: 5000,
+      maxAmountMinor: 20000,
+      sort: "amount_asc",
+      limit: 50
+    });
+    expect(serializeTransactionFilters(rangeFilters)).toBe(
+      "minAmountMinor=5000&maxAmountMinor=20000&sort=amount_asc"
+    );
+  });
+
+  it("serializes filters in canonical order and omits default limit and default date_desc sort", () => {
     expect(
       serializeTransactionFilters({
         accountId,
@@ -59,7 +89,8 @@ describe("transaction URL filters", () => {
         q: "groceries & household",
         tag: "goal:laptop",
         cursor: "cursor-1",
-        limit: 50
+        limit: 50,
+        sort: "date_desc"
       })
     ).toBe(
       "accountId=3fa85f64-5717-4562-b3fc-2c963f66beef&categoryId=3fa85f64-5717-4562-b3fc-2c963f66beff&from=2026-07-01T00%3A00%3A00.000Z&to=2026-07-16T00%3A00%3A00.000Z&q=groceries+%26+household&tag=goal%3Alaptop&cursor=cursor-1"
@@ -69,7 +100,8 @@ describe("transaction URL filters", () => {
   it("round-trips the uncategorized filter", () => {
     expect(parseTransactionFilters({ uncategorized: "true" })).toEqual({
       uncategorized: true,
-      limit: 50
+      limit: 50,
+      sort: "date_desc"
     });
     expect(serializeTransactionFilters({ uncategorized: true, limit: 50 })).toBe(
       "uncategorized=true"
@@ -80,6 +112,23 @@ describe("transaction URL filters", () => {
     expect(serializeTransactionFilters({ accountId, limit: 25 })).toBe(
       "accountId=3fa85f64-5717-4562-b3fc-2c963f66beef&limit=25"
     );
+  });
+
+  describe("Rupee and minor conversion helpers", () => {
+    it("converts rupee string to integer paise minor units", async () => {
+      const { parseRupeesToMinor, minorToRupeesInput } = await import("./filters");
+      expect(parseRupeesToMinor("100")).toBe(10000);
+      expect(parseRupeesToMinor("100.50")).toBe(10050);
+      expect(parseRupeesToMinor("1,500")).toBe(150000);
+      expect(parseRupeesToMinor("")).toBeUndefined();
+      expect(parseRupeesToMinor("abc")).toBeUndefined();
+      expect(parseRupeesToMinor("-50")).toBeUndefined();
+      expect(parseRupeesToMinor("0")).toBeUndefined();
+
+      expect(minorToRupeesInput(10000)).toBe("100");
+      expect(minorToRupeesInput(10050)).toBe("100.50");
+      expect(minorToRupeesInput(undefined)).toBe("");
+    });
   });
 
   describe("IST date helpers", () => {

@@ -297,7 +297,8 @@ describe("TransactionController", () => {
     expect(mockService.list).toHaveBeenCalledWith("user-1", {
       accountId: "3fa85f64-5717-4562-b3fc-2c963f66beef",
       q: "chai",
-      limit: 10
+      limit: 10,
+      sort: "date_desc"
     });
   });
 
@@ -308,7 +309,7 @@ describe("TransactionController", () => {
     const controller = new TransactionController(mockService);
 
     await controller.list(user, {});
-    expect(mockService.list).toHaveBeenCalledWith("user-1", { limit: 50 });
+    expect(mockService.list).toHaveBeenCalledWith("user-1", { limit: 50, sort: "date_desc" });
     expect(() => controller.list(user, { limit: "101" })).toThrow();
     expect(mockService.list).toHaveBeenCalledTimes(1);
   });

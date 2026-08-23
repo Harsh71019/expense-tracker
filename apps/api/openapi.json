@@ -12376,6 +12376,46 @@
           },
           {
             "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "required": false,
+            "name": "amountMinor",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "required": false,
+            "name": "minAmountMinor",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "required": false,
+            "name": "maxAmountMinor",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["date_desc", "date_asc", "amount_desc", "amount_asc"],
+              "default": "date_desc"
+            },
+            "required": false,
+            "name": "sort",
+            "in": "query"
+          },
+          {
+            "schema": {
               "type": "string",
               "minLength": 1,
               "maxLength": 200
@@ -16214,8 +16254,7 @@
                     "default": true
                   },
                   "effectiveFrom": {
-                    "type": ["string", "null"],
-                    "format": "date-time"
+                    "type": "string"
                   }
                 },
                 "required": [
@@ -16472,8 +16511,7 @@
                     "maximum": 9007199254740991
                   },
                   "occurredAt": {
-                    "type": ["string", "null"],
-                    "format": "date-time"
+                    "type": "string"
                   }
                 },
                 "required": ["eventType", "quantityMicroUnits", "occurredAt"]
@@ -25521,8 +25559,7 @@
                         "default": true
                       },
                       "effectiveFrom": {
-                        "type": ["string", "null"],
-                        "format": "date-time"
+                        "type": "string"
                       }
                     },
                     "required": [
@@ -25571,8 +25608,7 @@
                         "maximum": 9007199254740991
                       },
                       "occurredAt": {
-                        "type": ["string", "null"],
-                        "format": "date-time"
+                        "type": "string"
                       }
                     },
                     "required": ["eventType", "quantityMicroUnits", "occurredAt"]
@@ -26435,7 +26471,7 @@
                   "disposalDate": {
                     "type": ["string", "null"],
                     "format": "date-time",
-                    "default": "2026-08-23T08:45:29.947Z"
+                    "default": "2026-08-23T17:58:46.784Z"
                   },
                   "quoteOverrideMicroRupeesPerUnit": {
                     "type": "integer",

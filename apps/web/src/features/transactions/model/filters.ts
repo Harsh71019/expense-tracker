@@ -31,19 +31,37 @@ function appendIfDefined(params: URLSearchParams, key: string, value: string | u
 export function parseTransactionFilters(
   searchParams: TransactionSearchParams
 ): ListTransactionsQuery {
-  const result = ListTransactionsQuerySchema.safeParse({
-    accountId: getSingleValue(searchParams, "accountId"),
-    categoryId: getSingleValue(searchParams, "categoryId"),
-    uncategorized: getSingleValue(searchParams, "uncategorized"),
-    from: getSingleValue(searchParams, "from"),
-    to: getSingleValue(searchParams, "to"),
-    q: getSingleValue(searchParams, "q"),
-    tag: getSingleValue(searchParams, "tag"),
-    cursor: getSingleValue(searchParams, "cursor"),
-    limit: getSingleValue(searchParams, "limit")
-  });
+  const raw: Record<string, unknown> = {};
+  const accountId = getSingleValue(searchParams, "accountId");
+  if (accountId !== undefined) raw.accountId = accountId;
+  const categoryId = getSingleValue(searchParams, "categoryId");
+  if (categoryId !== undefined) raw.categoryId = categoryId;
+  const uncategorized = getSingleValue(searchParams, "uncategorized");
+  if (uncategorized !== undefined) raw.uncategorized = uncategorized;
+  const from = getSingleValue(searchParams, "from");
+  if (from !== undefined) raw.from = from;
+  const to = getSingleValue(searchParams, "to");
+  if (to !== undefined) raw.to = to;
+  const amountMinor = getSingleValue(searchParams, "amountMinor");
+  if (amountMinor !== undefined) raw.amountMinor = amountMinor;
+  const minAmountMinor = getSingleValue(searchParams, "minAmountMinor");
+  if (minAmountMinor !== undefined) raw.minAmountMinor = minAmountMinor;
+  const maxAmountMinor = getSingleValue(searchParams, "maxAmountMinor");
+  if (maxAmountMinor !== undefined) raw.maxAmountMinor = maxAmountMinor;
+  const sort = getSingleValue(searchParams, "sort");
+  if (sort !== undefined) raw.sort = sort;
+  const q = getSingleValue(searchParams, "q");
+  if (q !== undefined) raw.q = q;
+  const tag = getSingleValue(searchParams, "tag");
+  if (tag !== undefined) raw.tag = tag;
+  const cursor = getSingleValue(searchParams, "cursor");
+  if (cursor !== undefined) raw.cursor = cursor;
+  const limit = getSingleValue(searchParams, "limit");
+  if (limit !== undefined) raw.limit = limit;
 
-  return result.success ? result.data : { limit: 50 };
+  const result = ListTransactionsQuerySchema.safeParse(raw);
+
+  return result.success ? result.data : { limit: 50, sort: "date_desc" };
 }
 
 const IST_TIME_ZONE = "Asia/Kolkata";
@@ -110,6 +128,24 @@ export function serializeTransactionFilters(filters: ListTransactionsQuery): str
   }
   appendIfDefined(params, "from", filters.from?.toISOString());
   appendIfDefined(params, "to", filters.to?.toISOString());
+  appendIfDefined(
+    params,
+    "amountMinor",
+    filters.amountMinor !== undefined ? String(filters.amountMinor) : undefined
+  );
+  appendIfDefined(
+    params,
+    "minAmountMinor",
+    filters.minAmountMinor !== undefined ? String(filters.minAmountMinor) : undefined
+  );
+  appendIfDefined(
+    params,
+    "maxAmountMinor",
+    filters.maxAmountMinor !== undefined ? String(filters.maxAmountMinor) : undefined
+  );
+  if (filters.sort !== undefined && filters.sort !== "date_desc") {
+    params.set("sort", filters.sort);
+  }
   appendIfDefined(params, "q", filters.q);
   appendIfDefined(params, "tag", filters.tag);
   appendIfDefined(params, "cursor", filters.cursor);
@@ -118,4 +154,26 @@ export function serializeTransactionFilters(filters: ListTransactionsQuery): str
   }
 
   return params.toString();
+}
+
+/**
+ * Converts a user Rupees input string (e.g. "100", "100.50") into integer paise (minor units).
+ * Returns undefined if invalid or empty.
+ */
+export function parseRupeesToMinor(val: string): number | undefined {
+  const trimmed = val.trim().replace(/,/g, "");
+  if (trimmed === "" || !/^\d+(\.\d{1,2})?$/.test(trimmed)) return undefined;
+  const num = parseFloat(trimmed);
+  if (Number.isNaN(num) || num <= 0) return undefined;
+  const minor = Math.round(num * 100);
+  return Number.isSafeInteger(minor) && minor > 0 ? minor : undefined;
+}
+
+/**
+ * Formats minor units (paise) into a clean Rupees string for text inputs (e.g. 10000 -> "100", 10050 -> "100.50").
+ */
+export function minorToRupeesInput(minor: number | undefined): string {
+  if (minor === undefined || minor <= 0 || !Number.isSafeInteger(minor)) return "";
+  const rupees = minor / 100;
+  return Number.isInteger(rupees) ? String(rupees) : rupees.toFixed(2);
 }

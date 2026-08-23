@@ -151,20 +151,21 @@ describe("BatchCategorizeTransactionsSchema", () => {
 });
 
 describe("ListTransactionsQuerySchema", () => {
-  it("defaults the cursor page size to 50", () => {
-    expect(ListTransactionsQuerySchema.parse({})).toEqual({ limit: 50 });
+  it("defaults the cursor page size to 50 and sort to date_desc", () => {
+    expect(ListTransactionsQuerySchema.parse({})).toEqual({ limit: 50, sort: "date_desc" });
   });
 
   it("coerces date and limit query parameters", () => {
     expect(
       ListTransactionsQuerySchema.parse({ from: "2026-07-01T00:00:00.000Z", limit: "10" })
-    ).toEqual({ from: new Date("2026-07-01T00:00:00.000Z"), limit: 10 });
+    ).toEqual({ from: new Date("2026-07-01T00:00:00.000Z"), limit: 10, sort: "date_desc" });
   });
 
   it("parses the uncategorized query filter and rejects a conflicting category", () => {
     expect(ListTransactionsQuerySchema.parse({ uncategorized: "true" })).toEqual({
       uncategorized: true,
-      limit: 50
+      limit: 50,
+      sort: "date_desc"
     });
     expect(() =>
       ListTransactionsQuerySchema.parse({
@@ -176,6 +177,59 @@ describe("ListTransactionsQuerySchema", () => {
 
   it("rejects limits beyond the endpoint maximum", () => {
     expect(() => ListTransactionsQuerySchema.parse({ limit: "101" })).toThrow();
+  });
+
+  it("parses exact amount filter and sort option", () => {
+    expect(
+      ListTransactionsQuerySchema.parse({
+        amountMinor: "10000",
+        sort: "amount_desc"
+      })
+    ).toEqual({
+      amountMinor: 10000,
+      sort: "amount_desc",
+      limit: 50
+    });
+  });
+
+  it("parses min and max amount range filter", () => {
+    expect(
+      ListTransactionsQuerySchema.parse({
+        minAmountMinor: "5000",
+        maxAmountMinor: "20000",
+        sort: "amount_asc"
+      })
+    ).toEqual({
+      minAmountMinor: 5000,
+      maxAmountMinor: 20000,
+      sort: "amount_asc",
+      limit: 50
+    });
+  });
+
+  it("rejects min amount greater than max amount", () => {
+    expect(() =>
+      ListTransactionsQuerySchema.parse({
+        minAmountMinor: 20000,
+        maxAmountMinor: 5000
+      })
+    ).toThrow("Minimum amount cannot exceed maximum amount.");
+  });
+
+  it("rejects combining exact amount with min or max amount", () => {
+    expect(() =>
+      ListTransactionsQuerySchema.parse({
+        amountMinor: 10000,
+        minAmountMinor: 5000
+      })
+    ).toThrow("Exact amount cannot be combined with minimum or maximum amount filters.");
+
+    expect(() =>
+      ListTransactionsQuerySchema.parse({
+        amountMinor: 10000,
+        maxAmountMinor: 20000
+      })
+    ).toThrow("Exact amount cannot be combined with minimum or maximum amount filters.");
   });
 });
 

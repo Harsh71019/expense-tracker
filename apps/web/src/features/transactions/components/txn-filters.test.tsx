@@ -139,4 +139,84 @@ describe("TxnFilters", () => {
     fireEvent.click(screen.getByRole("button", { name: "Clear" }));
     expect(mocks.push).toHaveBeenCalledWith("/transactions");
   });
+
+  it("filters by exact amount in rupees", () => {
+    render(<TxnFilters filters={{ limit: 50 }} />);
+
+    fireEvent.change(screen.getByLabelText("Filter by exact amount"), {
+      target: { value: "100" }
+    });
+    expect(mocks.push).toHaveBeenCalledWith("/transactions?amountMinor=10000");
+  });
+
+  it("switches to amount range mode and applies min and max amount filters", () => {
+    render(<TxnFilters filters={{ limit: 50 }} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Amount range mode" }));
+
+    fireEvent.change(screen.getByLabelText("Minimum amount"), { target: { value: "50" } });
+    expect(mocks.push).toHaveBeenCalledWith("/transactions?minAmountMinor=5000");
+
+    fireEvent.change(screen.getByLabelText("Maximum amount"), { target: { value: "200" } });
+    expect(mocks.push).toHaveBeenCalledWith("/transactions?maxAmountMinor=20000");
+  });
+
+  it("applies quick amount presets", () => {
+    render(<TxnFilters filters={{ limit: 50 }} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "< ₹500" }));
+    expect(mocks.push).toHaveBeenCalledWith("/transactions?maxAmountMinor=50000");
+
+    fireEvent.click(screen.getByRole("button", { name: "₹500 – ₹2k" }));
+    expect(mocks.push).toHaveBeenCalledWith(
+      "/transactions?minAmountMinor=50000&maxAmountMinor=200000"
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "₹2k – ₹10k" }));
+    expect(mocks.push).toHaveBeenCalledWith(
+      "/transactions?minAmountMinor=200000&maxAmountMinor=1000000"
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "> ₹10k" }));
+    expect(mocks.push).toHaveBeenCalledWith("/transactions?minAmountMinor=1000000");
+  });
+
+  it("selects sort order from dropdown", () => {
+    render(<TxnFilters filters={{ limit: 50 }} />);
+
+    fireEvent.click(screen.getByRole("combobox", { name: "Sort transactions" }));
+    fireEvent.click(screen.getByRole("option", { name: "Amount: High to low" }));
+
+    expect(mocks.push).toHaveBeenCalledWith("/transactions?sort=amount_desc");
+  });
+
+  it("displays amount active badge and removes filter on click", () => {
+    render(
+      <TxnFilters
+        filters={{
+          amountMinor: 10000,
+          limit: 50
+        }}
+      />
+    );
+
+    expect(screen.getByText("Amount: ₹100.00")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Remove amount filter" }));
+    expect(mocks.push).toHaveBeenCalledWith("/transactions");
+  });
+
+  it("displays sort active badge and resets sort on click", () => {
+    render(
+      <TxnFilters
+        filters={{
+          sort: "amount_desc",
+          limit: 50
+        }}
+      />
+    );
+
+    expect(screen.getByText("Sort: Amount (High → Low)")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Reset sort to default" }));
+    expect(mocks.push).toHaveBeenCalledWith("/transactions");
+  });
 });

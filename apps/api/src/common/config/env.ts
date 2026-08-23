@@ -11,6 +11,8 @@ export const RuntimeEnvSchema = z.object({
   API_PORT: portSchema.default(4000),
   LOG_LEVEL: z.enum(["debug", "info", "warn", "error", "fatal"]).default("info"),
   LOG_PRETTY: booleanStringSchema.default(false),
+  SEQ_URL: z.string().url().optional(),
+  SEQ_API_KEY: z.string().min(1).optional(),
   SERVICE_ROLE: z.enum(["api", "worker"]).default("api"),
   DATABASE_URL: z.string().url(),
   DATABASE_POOL_MAX: z.coerce.number().int().min(1).max(100).default(10),

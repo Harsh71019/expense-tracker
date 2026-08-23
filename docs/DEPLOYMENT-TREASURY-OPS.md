@@ -79,6 +79,36 @@ Container 102 itself is already provisioned and out of scope here (managed indep
 
 `DATABASE_URL`/`REDIS_URL` in `.env` point at container 102's address — see `env.example`.
 
+### Observability (Seq)
+
+Structured logs (pino JSON) can additionally ship to [Seq](https://datalust.co/seq), a self-hosted log server, for searchable log history beyond `docker logs`. Deployed as a standalone container directly on the TreasuryOps app LXC (192.168.0.226) — not part of `docker-compose.yml`, since it's infra tooling rather than an app service:
+
+```bash
+ssh root@192.168.0.226 "docker run --name seq -d \
+  --restart unless-stopped \
+  -e ACCEPT_EULA=Y \
+  -e SEQ_FIRSTRUN_ADMINPASSWORD='<generated at creation>' \
+  -p 5341:80 \
+  -p 5342:5341 \
+  -v seq-data:/data \
+  datalust/seq:latest"
+```
+
+- UI: `http://192.168.0.226:5341` (`admin` / the password set at first run — rotate via the UI once logged in).
+- Ingestion endpoint: `http://192.168.0.226:5342` (raw CLEF, used by the `pino-seq` stream).
+- With authentication on, ingestion requires an API key (create one under Settings → API Keys in the UI) — set it as `SEQ_API_KEY` below.
+
+TreasuryOps opts in via two optional env vars (unset = Seq shipping disabled; logs still go to stdout/`docker logs` exactly as before):
+
+```
+SEQ_URL=http://192.168.0.226:5342
+SEQ_API_KEY=<api key created in Seq's UI>
+```
+
+Wired in `apps/api/src/common/logging/pino-destination.ts` via `pino.multistream`, alongside the existing stdout/`pino-pretty` destination — enabling or disabling Seq never changes what lands in `docker logs`.
+
+**Disk note:** Seq refuses new events once free disk space on the LXC drops below its internal safety threshold (the disk here is small — check `df -h /`; `docker builder prune -f` reclaims stale build cache). If ingestion silently stops, check `docker logs seq` for `Skipping indexing; free storage space...` before assuming the app-side wiring is broken.
+
 ### Update
 
 ```bash

@@ -14,6 +14,7 @@ import { RuntimeConfigService } from "./common/config/runtime-config.service.js"
 import { DbModule } from "./common/db/db.module.js";
 import { LoggingContextService } from "./common/logging/logging-context.service.js";
 import { LoggingModule } from "./common/logging/logging.module.js";
+import { createPinoDestination } from "./common/logging/pino-destination.js";
 import { PINO_REDACT_PATHS } from "./common/logging/redact-paths.js";
 import { MetricsController } from "./common/observability/metrics.controller.js";
 import { ObservabilityModule } from "./common/observability/observability.module.js";
@@ -125,47 +126,47 @@ function isUnthrottledPath(context: ExecutionContext): boolean {
     LoggerModule.forRootAsync({
       inject: [RuntimeConfigService, LoggingContextService],
       useFactory: (config: RuntimeConfigService, context: LoggingContextService) => ({
-        pinoHttp: {
-          level: config.env.LOG_LEVEL,
-          base: { service: config.env.SERVICE_ROLE, sha: config.env.GIT_SHA },
-          timestamp: pino.stdTimeFunctions.isoTime,
-          formatters: { level: (label) => ({ level: label }) },
-          ...(config.env.LOG_PRETTY
-            ? {
-                transport: {
-                  target: "pino-pretty",
-                  options: { colorize: true, singleLine: true, ignore: "pid,hostname" }
+        pinoHttp: [
+          {
+            level: config.env.LOG_LEVEL,
+            base: { service: config.env.SERVICE_ROLE, sha: config.env.GIT_SHA },
+            timestamp: pino.stdTimeFunctions.isoTime,
+            formatters: { level: (label) => ({ level: label }) },
+            redact: {
+              paths: [...PINO_REDACT_PATHS],
+              censor: "[REDACTED]"
+            },
+            serializers: {
+              req(request: Request) {
+                const serialized = pino.stdSerializers.req(request);
+                const url = request.originalUrl ?? request.url;
+                if (url.includes("/v1/category-recommendations")) {
+                  return { ...serialized, body: undefined };
                 }
+                return serialized;
               }
-            : {}),
-          redact: {
-            paths: [...PINO_REDACT_PATHS],
-            censor: "[REDACTED]"
-          },
-          serializers: {
-            req(request: Request) {
-              const serialized = pino.stdSerializers.req(request);
-              const url = request.originalUrl ?? request.url;
-              if (url.includes("/v1/category-recommendations")) {
-                return { ...serialized, body: undefined };
-              }
-              return serialized;
+            },
+            autoLogging: {
+              ignore: (request) =>
+                request.url === "/api/healthz" ||
+                request.url === "/api/readyz" ||
+                request.url === "/api/v1/metrics"
+            },
+            mixin: () => context.get() ?? {},
+            genReqId: (request, response) => {
+              const requestId = request.headers["x-request-id"];
+              const id = typeof requestId === "string" ? requestId : crypto.randomUUID();
+              response.setHeader("x-request-id", id);
+              return id;
             }
           },
-          autoLogging: {
-            ignore: (request) =>
-              request.url === "/api/healthz" ||
-              request.url === "/api/readyz" ||
-              request.url === "/api/v1/metrics"
-          },
-          mixin: () => context.get() ?? {},
-          genReqId: (request, response) => {
-            const requestId = request.headers["x-request-id"];
-            const id = typeof requestId === "string" ? requestId : crypto.randomUUID();
-            response.setHeader("x-request-id", id);
-            return id;
-          }
-        }
+          createPinoDestination({
+            logLevel: config.env.LOG_LEVEL,
+            logPretty: config.env.LOG_PRETTY,
+            seqUrl: config.env.SEQ_URL,
+            seqApiKey: config.env.SEQ_API_KEY
+          })
+        ]
       })
     }),
     HealthModule

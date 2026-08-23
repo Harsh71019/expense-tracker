@@ -5,8 +5,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { PortfolioImportWizard } from "./portfolio-import-wizard";
 
-const mocks = vi.hoisted(() => ({
-  batch: undefined as PortfolioImportBatch | undefined,
+type MockState = {
+  batch: PortfolioImportBatch | undefined;
+  deleteMutateAsync: ReturnType<typeof vi.fn>;
+  toastSuccess: ReturnType<typeof vi.fn>;
+};
+
+const mocks = vi.hoisted<MockState>(() => ({
+  batch: undefined,
   deleteMutateAsync: vi.fn(),
   toastSuccess: vi.fn()
 }));

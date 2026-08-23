@@ -42,7 +42,7 @@ The boundaries mean:
 
 The first production release will use manual CAS PDF upload. It will not log in to CAMS, KFintech, MFCentral, CDSL, NSDL, or an email account on the user's behalf. Official CAS generation is periodic and on-demand, not a daily holdings API. A user may request and upload a new CAS whenever needed, but the application should prompt for one after a purchase, SIP, switch, redemption, or during monthly reconciliation—not every day.
 
-For instruments with an approved quote source, daily value changes require only a quote refresh because units do not change without a transaction. Physical-metal valuations remain manual in the first release.
+Daily value changes require only a quote refresh because units do not change without a transaction. Physical-metal values use a clearly labelled indicative spot quote; they are not dealer buyback/appraisal quotes.
 
 ## 2. Product scope
 
@@ -54,7 +54,7 @@ The complete feature will provide:
 2. physical-gold and physical-silver position metadata, including weight and purity;
 3. append-only unit/weight events for opening positions, purchases, reinvestments, switches, redemptions, reconciliations, and reversals;
 4. manual, idempotent CAS PDF upload with asynchronous parsing and a review-before-commit workflow;
-5. scheduled AMFI NAV ingestion; physical-metal valuations remain manual until a licensed provider is separately approved;
+5. scheduled AMFI NAV ingestion and one free, indicative physical-metal spot provider;
 6. append-only quote snapshots and materialized `asset_valuations` compatible with the existing net-worth calculation;
 7. current position, quote source, provider timestamp, fetch timestamp, freshness, and current value on asset detail pages;
 8. a read-only disposal estimate for mutual funds, physical gold, physical silver, gold/silver ETFs, and—with separate rules—Sovereign Gold Bonds;
@@ -503,7 +503,8 @@ CAMS warns that CAS coverage may not include all demat holdings. The batch there
 |---|---|---|---|
 | Indian mutual-fund daily NAV | AMFI `NAVAll.txt` | Primary | Official daily batch; parse the decimal text, validate scheme code and date, and store only tracked instruments. |
 | Fund search/history convenience | MFAPI.in | Secondary/prototype | Useful free JSON and history access, but no contractual SLA should be assumed. Never make it the only recoverable mapping source. |
-| Indian gold/silver benchmark | None in V1 | Manual only | Do not scrape IBJA or use unofficial wrappers. A provider can be added only after a licensed source and its terms are explicitly approved. |
+| Indian gold/silver indicative spot | Gold API | V1 primary | Use the public XAU/INR and XAG/INR endpoints once daily. Preserve that these are global spot-derived reference prices, not IBJA or dealer buyback quotes. |
+| Indian gold/silver benchmark | IBJA | Deliberately deferred | Do not scrape IBJA or use unofficial wrappers. A future benchmark integration requires a separately approved licensed source. |
 | CAS generation | CAMS/KFintech/MFCentral/CDSL/NSDL | Manual input | No daily scraping. Use user-requested secure statement upload. |
 
 The provider abstraction must allow configuration without changing valuation logic:
@@ -525,6 +526,7 @@ Do not implement a generic “sync everything morning and evening” cron.
 Use provider-specific schedules:
 
 - AMFI: after expected end-of-day publication, initially around 23:15 IST, with a morning retry for missing dates;
+- Gold API: once daily after Indian market close, globally cached for all users; and
 - manual refresh: enqueue a rate-limited job and return `202`; do not call a provider in the HTTP request.
 
 The final times are configuration owned by the provider adapter and confirmed against its contract. Calendar computations use `Asia/Kolkata`; stored timestamps remain UTC.
@@ -1183,7 +1185,7 @@ Each phase is a separate reviewable change. Backend precedes frontend.
 ### Phase 0 — decisions and approvals
 
 - Approve one PDF extraction library after security/runtime evaluation.
-- Confirm that physical-metal valuations remain manual; do not select or implement a provider without a separately approved licensed source.
+- Confirm Gold API remains suitable for a personal, indicative spot quote; preserve the explicit non-IBJA/non-dealer label.
 - Confirm whether AMFI catalog is cached in Redis or a bounded application cache.
 - Approve CAS encryption/key-management runbook.
 - Have the initial tax-rule table reviewed against then-current Indian law.
@@ -1206,11 +1208,12 @@ Exit: manually linked assets and positions work without any provider or CAS.
 
 - Add quote snapshot schema and valuation provenance fields.
 - Implement AMFI adapter and tracked-instrument catalog/search cache.
+- Implement the Gold API XAU/INR and XAG/INR adapter and its spot-indicative provenance.
 - Add source-specific BullMQ jobs, schedules, retry/freshness behavior, and metrics.
 - Materialize daily valuations and migrate the asset detail read contract.
 - Keep existing market-rates API compatible.
 
-Exit: tracked mutual funds value automatically with visible provenance and stale behavior; physical metals retain their latest manual valuation.
+Exit: tracked mutual funds and physical metals value automatically with visible provenance and stale behavior; physical-metal values remain labelled as indicative spot.
 
 ### Phase 3 — portfolio/CAS imports
 
@@ -1311,20 +1314,22 @@ Each integration needs its own provider terms, secret management, retry, and dat
 
 **Trade-off:** Provider/parsing jobs must be resource-bounded so they cannot starve API processes.
 
-### ADR-8 — Physical-metal valuations remain manual until a licensed provider is approved
+### ADR-8 — Gold API is the V1 indicative physical-metal source
 
-**Decision:** Do not make production outbound rate calls for physical metals in V1. Keep manual
-valuations and manually linked physical positions as the only production value path. Do not scrape
-IBJA, use the `0xSaurabhx/IBJA-API` wrapper, or substitute another unapproved third-party service.
-Retain the market-data abstractions for a future licensed integration.
+**Decision:** Use Gold API's public `XAU/INR` and `XAG/INR` endpoints for a once-daily, globally
+cached physical-metal spot reference. Store its timestamp and convert its INR-per-troy-ounce
+decimal to the shared INR-per-gram quote unit with fixed-point bigint arithmetic. Label every
+result `spot_indicative`; it is neither an IBJA benchmark nor a dealer buyback/appraisal quote.
+Do not scrape IBJA or use the `0xSaurabhx/IBJA-API` wrapper.
 
-**Why:** A paid provider is not approved. IBJA's guidance directs valuation users to its official
-subscription, while an unofficial scraper cannot establish redistribution rights, reliability, or
-an appropriate valuation contract.
+**Why:** Gold API publishes free gold and silver price endpoints, including INR conversion, with
+no API key requirement. It meets the personal application's low-volume rate need without a paid
+subscription while retaining provider timestamp and provenance.
 
-**Trade-off:** Physical-metal values do not update automatically and have no provider freshness
-indicator. The application continues to show the latest manual valuation. Automatic valuation in
-Phase 2 applies to mutual funds only; a metal adapter requires a separate approval.
+**Trade-off:** The source offers no accuracy, availability, or financial-reliance warranty. It
+must never be used silently as a price for sale, tax calculation, or jewellery appraisal. A failed
+refresh leaves the last persisted value visible and stale; it does not fabricate a replacement.
+Manual valuation remains available as an explicit override.
 
 ### ADR-9 — Text-only `pdf-parse` extraction with application-level sealing
 
@@ -1373,10 +1378,9 @@ tests for each new classification.
 
 1. Which CAS issuer/layout does the user currently receive: CAMS, KFintech, MFCentral, CDSL, or NSDL?
 2. Does the desired CAS import include transaction history since inception, or only current holdings? Exact tax estimates require acquisition lots.
-3. No automatic physical-metal benchmark is enabled in V1. Is a manual dealer-buyback valuation
-   input needed in the first release for physical jewellery?
-4. A paid metal provider is not approved. Revisit only if automatic metal valuation becomes a
-   requirement.
+3. Is a manual dealer-buyback valuation input needed in the first release for physical jewellery,
+   in addition to the Gold API indicative spot reference?
+4. What stale threshold should the UI use for a Gold API quote before it shows a warning?
 5. Should physical jewellery record stone/non-metal weight separately in the first release?
 6. Can the application require an explicit resident-individual declaration, and should the first
    rule table target tax year 2026-27?
@@ -1393,6 +1397,8 @@ Recheck every source at implementation time. Do not encode prose from this docum
 - [MFAPI.in documentation](https://www.mfapi.in/docs/)
 - [IBJA rates](https://ibjarates.com/)
 - [IBJA official rates API and usage guidance](https://www.indiagoldratesapi.com/)
+- [Gold API price documentation](https://gold-api.com/docs)
+- [Gold API free price terms](https://gold-api.com/terms)
 - [MetalpriceAPI terms and commercial-use terms](https://metalpriceapi.com/terms)
 - [GoldAPI XAU/INR endpoint information](https://www.goldapi.io/price/XAU/INR/json)
 - [`pdf-parse` package documentation, including password-protected extraction](https://www.npmjs.com/package/pdf-parse)

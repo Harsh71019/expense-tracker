@@ -16,7 +16,7 @@ import { DATABASE_CONNECTION } from "../common/db/db.module.js";
 import type { DrizzleDb } from "../common/db/db.module.js";
 import { withTxn } from "../common/db/db-txn.js";
 import type { DbTx } from "../common/db/db-txn.js";
-import { InvalidCursorError } from "../common/errors/invalid-cursor.error.js";
+import { decodeCursorPayload, encodeCursorPayload } from "../common/pagination/cursor.js";
 import {
   categories,
   assetFundings,
@@ -450,19 +450,10 @@ export class SpendingWarningsRepository {
 }
 
 function encodeCursor(lastDetectedAt: Date, id: string): string {
-  return Buffer.from(
-    JSON.stringify({ lastDetectedAt: lastDetectedAt.toISOString(), id }),
-    "utf8"
-  ).toString("base64url");
+  return encodeCursorPayload({ lastDetectedAt: lastDetectedAt.toISOString(), id });
 }
 
 function decodeCursor(cursor: string): { lastDetectedAt: Date; id: string } {
-  try {
-    const payload = CursorPayloadSchema.parse(
-      JSON.parse(Buffer.from(cursor, "base64url").toString("utf8"))
-    );
-    return { lastDetectedAt: new Date(payload.lastDetectedAt), id: payload.id };
-  } catch {
-    throw new InvalidCursorError();
-  }
+  const payload = decodeCursorPayload(cursor, CursorPayloadSchema);
+  return { lastDetectedAt: new Date(payload.lastDetectedAt), id: payload.id };
 }

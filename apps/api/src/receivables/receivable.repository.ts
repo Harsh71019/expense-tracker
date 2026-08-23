@@ -19,7 +19,7 @@ import type { DrizzleDb } from "../common/db/db.module.js";
 import type { DbTx } from "../common/db/db-txn.js";
 import { receivableEvents, receivables, transactions } from "../common/db/schema/index.js";
 import { stripNulls } from "../common/db/strip-nulls.js";
-import { InvalidCursorError } from "../common/errors/invalid-cursor.error.js";
+import { decodeCursorPayload, encodeCursorPayload } from "../common/pagination/cursor.js";
 
 export type ReceivableSummary = Readonly<{
   totalOutstandingMinor: number;
@@ -461,18 +461,10 @@ function havingForStatus(status: ListReceivablesQuery["status"]) {
 }
 
 function encodeCursor(sortKey: Date, id: string): string {
-  return Buffer.from(JSON.stringify({ sortKey: sortKey.toISOString(), id }), "utf8").toString(
-    "base64url"
-  );
+  return encodeCursorPayload({ sortKey: sortKey.toISOString(), id });
 }
 
 function decodeCursor(cursor: string): { sortKey: Date; id: string } {
-  try {
-    const payload = CursorPayloadSchema.parse(
-      JSON.parse(Buffer.from(cursor, "base64url").toString("utf8"))
-    );
-    return { sortKey: new Date(payload.sortKey), id: payload.id };
-  } catch {
-    throw new InvalidCursorError();
-  }
+  const payload = decodeCursorPayload(cursor, CursorPayloadSchema);
+  return { sortKey: new Date(payload.sortKey), id: payload.id };
 }

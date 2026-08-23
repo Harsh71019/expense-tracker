@@ -13,7 +13,7 @@ import { DATABASE_CONNECTION } from "../common/db/db.module.js";
 import type { DrizzleDb } from "../common/db/db.module.js";
 import { creditCardBills, transactions } from "../common/db/schema/index.js";
 import type { DbTx } from "../common/db/db-txn.js";
-import { InvalidCursorError } from "../common/errors/invalid-cursor.error.js";
+import { decodeCursorPayload, encodeCursorPayload } from "../common/pagination/cursor.js";
 
 const BillCursorSchema = z.object({ dueDate: z.string().datetime(), id: z.string().uuid() });
 
@@ -184,16 +184,9 @@ function toBill(row: typeof creditCardBills.$inferSelect, paidMinor: number): Cr
 }
 
 function encodeCursor(dueDate: Date, id: string): string {
-  return Buffer.from(JSON.stringify({ dueDate: dueDate.toISOString(), id }), "utf8").toString(
-    "base64url"
-  );
+  return encodeCursorPayload({ dueDate: dueDate.toISOString(), id });
 }
 
 function decodeCursor(cursor: string): z.infer<typeof BillCursorSchema> {
-  try {
-    const parsed: unknown = JSON.parse(Buffer.from(cursor, "base64url").toString("utf8"));
-    return BillCursorSchema.parse(parsed);
-  } catch {
-    throw new InvalidCursorError();
-  }
+  return decodeCursorPayload(cursor, BillCursorSchema);
 }

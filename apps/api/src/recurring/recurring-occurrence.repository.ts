@@ -15,7 +15,7 @@ import type { DrizzleDb } from "../common/db/db.module.js";
 import { recurringOccurrences, recurringRules } from "../common/db/schema/index.js";
 import { stripNulls } from "../common/db/strip-nulls.js";
 import type { DbTx } from "../common/db/db-txn.js";
-import { InvalidCursorError } from "../common/errors/invalid-cursor.error.js";
+import { decodeCursorPayload, encodeCursorPayload } from "../common/pagination/cursor.js";
 import type { RecurringCandidate } from "./recurring-reconciliation-matcher.js";
 
 const OccurrenceCursorSchema = z.object({
@@ -240,16 +240,9 @@ function deriveStatus(
 }
 
 function encodeCursor(occurredAt: Date, id: string): string {
-  return Buffer.from(JSON.stringify({ occurredAt: occurredAt.toISOString(), id }), "utf8").toString(
-    "base64url"
-  );
+  return encodeCursorPayload({ occurredAt: occurredAt.toISOString(), id });
 }
 
 function decodeCursor(cursor: string): z.infer<typeof OccurrenceCursorSchema> {
-  try {
-    const parsed: unknown = JSON.parse(Buffer.from(cursor, "base64url").toString("utf8"));
-    return OccurrenceCursorSchema.parse(parsed);
-  } catch {
-    throw new InvalidCursorError();
-  }
+  return decodeCursorPayload(cursor, OccurrenceCursorSchema);
 }

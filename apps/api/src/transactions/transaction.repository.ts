@@ -19,7 +19,6 @@ import {
 import { and, desc, eq, gte, inArray, isNull, lt, lte, sql } from "drizzle-orm";
 import { z } from "zod";
 
-import { InvalidCursorError } from "../common/errors/invalid-cursor.error.js";
 import { DATABASE_CONNECTION } from "../common/db/db.module.js";
 import type { DrizzleDb } from "../common/db/db.module.js";
 import {
@@ -32,6 +31,7 @@ import { isActiveAssetFunding } from "../common/db/asset-funding-active.js";
 import { stripNulls } from "../common/db/strip-nulls.js";
 import type { DbTx } from "../common/db/db-txn.js";
 import { istMonthBounds, listISTMonthDayKeys } from "../common/time/ist.js";
+import { decodeCursorPayload, encodeCursorPayload } from "../common/pagination/cursor.js";
 import { normalizeTransactionText } from "../common/transaction-text/normalize-transaction-text.js";
 
 const CursorPayloadSchema = z.object({ occurredAt: z.string().datetime(), id: z.string().uuid() });
@@ -895,20 +895,12 @@ function toTransaction(row: TransactionRow): Transaction {
 }
 
 function encodeCursor(occurredAt: Date, id: string): string {
-  return Buffer.from(JSON.stringify({ occurredAt: occurredAt.toISOString(), id }), "utf8").toString(
-    "base64url"
-  );
+  return encodeCursorPayload({ occurredAt: occurredAt.toISOString(), id });
 }
 
 function decodeCursor(cursor: string): { occurredAt: Date; id: string } {
-  try {
-    const payload = CursorPayloadSchema.parse(
-      JSON.parse(Buffer.from(cursor, "base64url").toString("utf8"))
-    );
-    return { occurredAt: new Date(payload.occurredAt), id: payload.id };
-  } catch {
-    throw new InvalidCursorError();
-  }
+  const payload = decodeCursorPayload(cursor, CursorPayloadSchema);
+  return { occurredAt: new Date(payload.occurredAt), id: payload.id };
 }
 
 function escapeLike(value: string): string {

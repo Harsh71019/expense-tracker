@@ -232,9 +232,11 @@ export class AssetMarketRepository {
 
   async listAllPositionEventsByAsset(
     userId: string,
-    assetId: AssetId
+    assetId: AssetId,
+    tx?: DbTx
   ): Promise<AssetPositionEvent[]> {
-    const rows = await this.db
+    const executor = tx ?? this.db;
+    const rows = await executor
       .select()
       .from(assetPositionEvents)
       .where(and(eq(assetPositionEvents.userId, userId), eq(assetPositionEvents.assetId, assetId)))

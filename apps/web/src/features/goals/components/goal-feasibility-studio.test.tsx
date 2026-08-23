@@ -1,12 +1,26 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen } from "@testing-library/react";
 import type { Goal, GoalFeasibilityReport, SafetyBufferState } from "@treasury-ops/shared";
+import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 import { GoalFeasibilityStudio } from "./goal-feasibility-studio";
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: vi.fn(), refresh: vi.fn() })
+  useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
+  useSearchParams: () => new URLSearchParams()
 }));
+
+vi.mock("@/lib/api/client", () => ({
+  apiClient: {
+    POST: vi.fn()
+  }
+}));
+
+function renderWithQuery(ui: ReactNode): ReturnType<typeof render> {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
+}
 
 const mockGoals: Goal[] = [
   {
@@ -130,7 +144,7 @@ const mockSafetyBuffer: SafetyBufferState = {
 describe("GoalFeasibilityStudio", () => {
   it("renders scenario allocations and handles tab selection", () => {
     const onSelect = vi.fn();
-    render(
+    renderWithQuery(
       <GoalFeasibilityStudio
         feasibility={mockReport}
         safetyBuffer={mockSafetyBuffer}

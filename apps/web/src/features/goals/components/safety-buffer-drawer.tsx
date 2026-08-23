@@ -7,8 +7,15 @@ import {
   type SafetyBufferState
 } from "@treasury-ops/shared";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
+
+import { AmountInput } from "@/components/ui/amount-input";
+import { Button } from "@/components/ui/button";
+import { DialogSurface } from "@/components/ui/dialog";
+import { toast } from "@/lib/toast";
+
+import { useSaveSafetyBuffer } from "../hooks/use-goals";
 
 type SafetyBufferDrawerProps = Readonly<{
   open: boolean;
@@ -17,6 +24,10 @@ type SafetyBufferDrawerProps = Readonly<{
   activeGoals: readonly Goal[];
 }>;
 
+function defaultAmountMinor(state: SafetyBufferState | null): number {
+  return state?.preference?.amountMinor ?? 5_000_000;
+}
+
 export function SafetyBufferDrawer({
   open,
   onClose,
@@ -24,260 +35,224 @@ export function SafetyBufferDrawer({
   activeGoals
 }: SafetyBufferDrawerProps): ReactNode {
   const router = useRouter();
-  const [mode, setMode] = useState<SafetyBufferMode>(state?.preference?.mode ?? "essential_months");
-  const [amountRupees, setAmountRupees] = useState<string>(
-    state?.preference?.amountMinor ? (state.preference.amountMinor / 100).toString() : "50000"
-  );
-  const [months, setMonths] = useState<number>(state?.preference?.months ?? 3);
-  const [emergencyFundGoalId, setEmergencyFundGoalId] = useState<string>(
-    state?.preference?.emergencyFundGoalId ?? activeGoals[0]?.id ?? ""
-  );
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const saveSafetyBuffer = useSaveSafetyBuffer();
+  const [mode, setMode] = useState<SafetyBufferMode>("essential_months");
+  const [amountMinor, setAmountMinor] = useState(0);
+  const [months, setMonths] = useState(3);
+  const [emergencyFundGoalId, setEmergencyFundGoalId] = useState("");
+  const [error, setError] = useState<string>();
+
+  useEffect(() => {
+    if (!open) return;
+    setMode(state?.preference?.mode ?? "essential_months");
+    setAmountMinor(defaultAmountMinor(state));
+    setMonths(state?.preference?.months ?? 3);
+    setEmergencyFundGoalId(state?.preference?.emergencyFundGoalId ?? activeGoals[0]?.id ?? "");
+    setError(undefined);
+  }, [activeGoals, open, state]);
 
   if (!open) return null;
 
-  async function handleSubmit(e: FormEvent): Promise<void> {
-    e.preventDefault();
-    setSubmitting(true);
-    setError(null);
+  async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
+    event.preventDefault();
+    setError(undefined);
+
+    if (mode === "fixed_amount" && amountMinor <= 0) {
+      setError("Enter a valid amount greater than zero.");
+      return;
+    }
+    if (mode === "emergency_fund_goal" && emergencyFundGoalId === "") {
+      setError("Please select an emergency fund goal.");
+      return;
+    }
+
+    const payload =
+      mode === "fixed_amount"
+        ? { mode, amountMinor }
+        : mode === "essential_months"
+          ? { mode, months }
+          : { mode, emergencyFundGoalId };
 
     try {
-      const payload: {
-        mode: SafetyBufferMode;
-        amountMinor?: number;
-        months?: number;
-        emergencyFundGoalId?: string;
-      } = { mode };
-
-      if (mode === "fixed_amount") {
-        const rupees = parseFloat(amountRupees);
-        if (isNaN(rupees) || rupees < 0) {
-          setError("Please enter a valid amount.");
-          setSubmitting(false);
-          return;
-        }
-        payload.amountMinor = Math.round(rupees * 100);
-      } else if (mode === "essential_months") {
-        payload.months = months;
-      } else if (mode === "emergency_fund_goal") {
-        if (!emergencyFundGoalId) {
-          setError("Please select an emergency fund goal.");
-          setSubmitting(false);
-          return;
-        }
-        payload.emergencyFundGoalId = emergencyFundGoalId;
-      }
-
-      const res = await fetch("/api/v1/safety-buffer", {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          "idempotency-key": crypto.randomUUID()
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (!res.ok) {
-        const problem = await res.json().catch(() => ({}));
-        setError(problem.detail ?? "Failed to save safety buffer preference.");
-        setSubmitting(false);
-        return;
-      }
-
+      await saveSafetyBuffer.mutateAsync(payload);
+      toast.success("Safety buffer preferences saved");
       router.refresh();
       onClose();
-    } catch {
-      setError("An unexpected network error occurred.");
-    } finally {
-      setSubmitting(false);
+    } catch (caught: unknown) {
+      setError(
+        caught instanceof Error ? caught.message : "Failed to save safety buffer preference."
+      );
     }
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
-      <div className="w-full max-w-lg rounded-2xl border border-border bg-surface-elevated p-6 shadow-2xl">
-        <div className="flex items-center justify-between border-b border-border pb-4">
-          <div>
-            <h2 className="text-lg font-bold text-foreground">Safety Buffer Settings</h2>
-            <p className="text-xs text-foreground-muted">
-              Configure your reserve cushion before cash is allocated to goals
-            </p>
+    <DialogSurface
+      labelledBy="safety-buffer-title"
+      onClose={onClose}
+      variant="drawer"
+      panelClassName="max-w-lg"
+    >
+      <div className="flex items-center justify-between border-b border-border pb-4">
+        <div>
+          <h2 id="safety-buffer-title" className="text-lg font-bold text-foreground">
+            Safety Buffer Settings
+          </h2>
+          <p className="text-xs text-foreground-muted">
+            Configure your reserve cushion before cash is allocated to goals
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close dialog"
+          className="rounded-lg p-2 text-foreground-muted hover:bg-surface-muted hover:text-foreground"
+        >
+          ✕
+        </button>
+      </div>
+
+      {state ? (
+        <div className="my-4 space-y-1 rounded-xl border border-border bg-surface-muted/50 p-3.5 text-xs text-foreground-muted">
+          <div className="flex justify-between">
+            <span>Current Liquid Reserve:</span>
+            <span className="font-semibold text-foreground">
+              {formatMinor(state.liquidBalanceMinor)}
+            </span>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close dialog"
-            className="rounded-lg p-2 text-foreground-muted hover:bg-surface-muted hover:text-foreground"
-          >
-            ✕
-          </button>
+          <div className="flex justify-between">
+            <span>Target Safety Cushion:</span>
+            <span className="font-semibold text-foreground">{formatMinor(state.targetMinor)}</span>
+          </div>
+          {state.bufferGapMinor > 0 ? (
+            <div className="flex justify-between font-medium text-warning">
+              <span>Reserve Shortfall (to replenish first):</span>
+              <span>{formatMinor(state.bufferGapMinor)}</span>
+            </div>
+          ) : (
+            <div className="flex justify-between font-medium text-income">
+              <span>Buffer Surplus (fully funded):</span>
+              <span>+{formatMinor(state.bufferSurplusMinor)}</span>
+            </div>
+          )}
+        </div>
+      ) : null}
+
+      <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+        <div>
+          <p className="mb-1.5 block text-xs font-semibold text-foreground-muted">Cushion Method</p>
+          <div className="grid grid-cols-3 gap-2">
+            <button
+              type="button"
+              onClick={() => setMode("essential_months")}
+              className={`rounded-lg border px-3 py-2 text-center text-xs font-medium transition-colors ${
+                mode === "essential_months"
+                  ? "border-accent bg-accent/10 font-semibold text-accent"
+                  : "border-border bg-surface text-foreground hover:bg-surface-muted"
+              }`}
+            >
+              Expense Months
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("fixed_amount")}
+              className={`rounded-lg border px-3 py-2 text-center text-xs font-medium transition-colors ${
+                mode === "fixed_amount"
+                  ? "border-accent bg-accent/10 font-semibold text-accent"
+                  : "border-border bg-surface text-foreground hover:bg-surface-muted"
+              }`}
+            >
+              Fixed Amount
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("emergency_fund_goal")}
+              className={`rounded-lg border px-3 py-2 text-center text-xs font-medium transition-colors ${
+                mode === "emergency_fund_goal"
+                  ? "border-accent bg-accent/10 font-semibold text-accent"
+                  : "border-border bg-surface text-foreground hover:bg-surface-muted"
+              }`}
+            >
+              Linked Goal
+            </button>
+          </div>
         </div>
 
-        {state ? (
-          <div className="my-4 rounded-xl border border-border bg-surface-muted/50 p-3.5 text-xs text-foreground-muted space-y-1">
-            <div className="flex justify-between">
-              <span>Current Liquid Reserve:</span>
-              <span className="font-semibold text-foreground">
-                {formatMinor(state.liquidBalanceMinor)}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span>Target Safety Cushion:</span>
-              <span className="font-semibold text-foreground">
-                {formatMinor(state.targetMinor)}
-              </span>
-            </div>
-            {state.bufferGapMinor > 0 ? (
-              <div className="flex justify-between text-warning font-medium">
-                <span>Reserve Shortfall (to replenish first):</span>
-                <span>{formatMinor(state.bufferGapMinor)}</span>
-              </div>
+        {mode === "essential_months" ? (
+          <div>
+            <label
+              htmlFor="buffer-months"
+              className="mb-1 block text-xs font-semibold text-foreground-muted"
+            >
+              Number of Essential Expense Months
+            </label>
+            <select
+              id="buffer-months"
+              value={months}
+              onChange={(event) => setMonths(Number(event.target.value))}
+              className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground focus:border-accent focus:outline-none"
+            >
+              {[1, 2, 3, 4, 5, 6, 9, 12].map((monthCount) => (
+                <option key={monthCount} value={monthCount}>
+                  {monthCount} {monthCount === 1 ? "month" : "months"} of essential outflows
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-2xs text-foreground-muted">
+              Multiplies monthly recurring commitments and credit card bills.
+            </p>
+          </div>
+        ) : null}
+
+        {mode === "fixed_amount" ? (
+          <AmountInput
+            id="buffer-amount"
+            label="Fixed Liquid Cushion"
+            value={amountMinor}
+            onChange={setAmountMinor}
+            {...(error === undefined ? {} : { error })}
+          />
+        ) : null}
+
+        {mode === "emergency_fund_goal" ? (
+          <div>
+            <label
+              htmlFor="buffer-goal"
+              className="mb-1 block text-xs font-semibold text-foreground-muted"
+            >
+              Select Linked Emergency Goal
+            </label>
+            {activeGoals.length === 0 ? (
+              <p className="text-xs text-warning">No active goals available to link.</p>
             ) : (
-              <div className="flex justify-between text-income font-medium">
-                <span>Buffer Surplus (fully funded):</span>
-                <span>+{formatMinor(state.bufferSurplusMinor)}</span>
-              </div>
+              <select
+                id="buffer-goal"
+                value={emergencyFundGoalId}
+                onChange={(event) => setEmergencyFundGoalId(event.target.value)}
+                className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground focus:border-accent focus:outline-none"
+              >
+                {activeGoals.map((goal) => (
+                  <option key={goal.id} value={goal.id}>
+                    {goal.name} ({formatMinor(goal.targetMinor)})
+                  </option>
+                ))}
+              </select>
             )}
           </div>
         ) : null}
 
-        <form onSubmit={handleSubmit} className="mt-4 space-y-4">
-          <div>
-            <label className="block text-xs font-semibold text-foreground-muted mb-1.5">
-              Cushion Method
-            </label>
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => setMode("essential_months")}
-                className={`rounded-lg border px-3 py-2 text-xs font-medium text-center transition-colors ${
-                  mode === "essential_months"
-                    ? "border-accent bg-accent/10 text-accent font-semibold"
-                    : "border-border bg-surface hover:bg-surface-muted text-foreground"
-                }`}
-              >
-                Expense Months
-              </button>
-              <button
-                type="button"
-                onClick={() => setMode("fixed_amount")}
-                className={`rounded-lg border px-3 py-2 text-xs font-medium text-center transition-colors ${
-                  mode === "fixed_amount"
-                    ? "border-accent bg-accent/10 text-accent font-semibold"
-                    : "border-border bg-surface hover:bg-surface-muted text-foreground"
-                }`}
-              >
-                Fixed Amount
-              </button>
-              <button
-                type="button"
-                onClick={() => setMode("emergency_fund_goal")}
-                className={`rounded-lg border px-3 py-2 text-xs font-medium text-center transition-colors ${
-                  mode === "emergency_fund_goal"
-                    ? "border-accent bg-accent/10 text-accent font-semibold"
-                    : "border-border bg-surface hover:bg-surface-muted text-foreground"
-                }`}
-              >
-                Linked Goal
-              </button>
-            </div>
-          </div>
+        {error && mode !== "fixed_amount" ? (
+          <p className="text-xs font-medium text-expense">{error}</p>
+        ) : null}
 
-          {mode === "essential_months" ? (
-            <div>
-              <label
-                htmlFor="buffer-months"
-                className="block text-xs font-semibold text-foreground-muted mb-1"
-              >
-                Number of Essential Expense Months
-              </label>
-              <select
-                id="buffer-months"
-                value={months}
-                onChange={(e) => setMonths(Number(e.target.value))}
-                className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground focus:border-accent focus:outline-none"
-              >
-                {[1, 2, 3, 4, 5, 6, 9, 12].map((m) => (
-                  <option key={m} value={m}>
-                    {m} {m === 1 ? "month" : "months"} of essential outflows
-                  </option>
-                ))}
-              </select>
-              <p className="mt-1 text-2xs text-foreground-muted">
-                Multiplies monthly recurring commitments and credit card bills.
-              </p>
-            </div>
-          ) : null}
-
-          {mode === "fixed_amount" ? (
-            <div>
-              <label
-                htmlFor="buffer-rupees"
-                className="block text-xs font-semibold text-foreground-muted mb-1"
-              >
-                Fixed Liquid Cushion (₹)
-              </label>
-              <input
-                id="buffer-rupees"
-                type="number"
-                min="0"
-                step="1000"
-                value={amountRupees}
-                onChange={(e) => setAmountRupees(e.target.value)}
-                className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground focus:border-accent focus:outline-none"
-                placeholder="50000"
-              />
-            </div>
-          ) : null}
-
-          {mode === "emergency_fund_goal" ? (
-            <div>
-              <label
-                htmlFor="buffer-goal"
-                className="block text-xs font-semibold text-foreground-muted mb-1"
-              >
-                Select Linked Emergency Goal
-              </label>
-              {activeGoals.length === 0 ? (
-                <p className="text-xs text-warning">No active goals available to link.</p>
-              ) : (
-                <select
-                  id="buffer-goal"
-                  value={emergencyFundGoalId}
-                  onChange={(e) => setEmergencyFundGoalId(e.target.value)}
-                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground focus:border-accent focus:outline-none"
-                >
-                  {activeGoals.map((g) => (
-                    <option key={g.id} value={g.id}>
-                      {g.name} ({formatMinor(g.targetMinor)})
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
-          ) : null}
-
-          {error ? <p className="text-xs text-expense font-medium">{error}</p> : null}
-
-          <div className="flex justify-end gap-2 pt-4 border-t border-border">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-lg border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-surface-muted"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={submitting}
-              className="rounded-lg bg-accent px-4 py-2 text-xs font-semibold text-white hover:bg-accent-hover disabled:opacity-50"
-            >
-              {submitting ? "Saving..." : "Save Preferences"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <div className="flex justify-end gap-2 border-t border-border pt-4">
+          <Button type="button" variant="outline" size="sm" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="submit" size="sm" disabled={saveSafetyBuffer.isPending}>
+            {saveSafetyBuffer.isPending ? "Saving..." : "Save Preferences"}
+          </Button>
+        </div>
+      </form>
+    </DialogSurface>
   );
 }

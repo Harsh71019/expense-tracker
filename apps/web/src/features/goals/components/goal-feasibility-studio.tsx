@@ -7,7 +7,8 @@ import {
   type GoalScenarioType,
   type SafetyBufferState
 } from "@treasury-ops/shared";
-import { useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 
 import { SignedMoney } from "@/components/ui/money";
@@ -52,7 +53,14 @@ export function GoalFeasibilityStudio({
   selectedScenarioType,
   onSelectScenarioType
 }: GoalFeasibilityStudioProps): ReactNode {
+  const searchParams = useSearchParams();
   const [drawerOpen, setDrawerOpen] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get("safety-buffer") === "open") {
+      setDrawerOpen(true);
+    }
+  }, [searchParams]);
 
   if (!feasibility || activeGoals.length === 0) {
     return null;

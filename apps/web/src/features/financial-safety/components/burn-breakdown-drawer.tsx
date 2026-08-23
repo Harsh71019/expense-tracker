@@ -211,7 +211,7 @@ export function BurnBreakdownDrawer({ open, onClose, data }: BurnBreakdownDrawer
                 </Link>
                 <span className="text-foreground-muted">•</span>
                 <Link
-                  href="/settings?tab=categories"
+                  href="/categories"
                   className="inline-flex items-center gap-1 text-2xs font-semibold text-accent hover:underline"
                 >
                   <span>Review categories</span>

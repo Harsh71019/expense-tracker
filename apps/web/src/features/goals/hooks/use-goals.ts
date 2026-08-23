@@ -1,13 +1,17 @@
 import { useMutation, useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
 import {
+  CreateSafetyBufferPreferenceSchema,
   GoalContributionSchema,
   GoalSchema,
+  SafetyBufferPreferenceSchema,
   type CreateGoal,
   type CreateGoalContribution,
+  type CreateSafetyBufferPreference,
   type Goal,
   type GoalContribution,
   type GoalStatus,
   type ReorderGoals,
+  type SafetyBufferPreference,
   type UpdateGoal
 } from "@treasury-ops/shared";
 import { useState } from "react";
@@ -231,6 +235,60 @@ export function useReorderGoals(): ReturnType<typeof useMutation<void, Error, Re
           params: { header: { "Idempotency-Key": key } }
         });
         if (result.error !== undefined) throw toAppError(result.error, result.response.status);
+      } catch (error: unknown) {
+        if (error instanceof Error) throw error;
+        throw toNetworkError(error);
+      }
+    },
+    onSuccess: () => setKey(generateRequestId()),
+    onSettled: async () => {
+      await client.invalidateQueries({ queryKey: qk.goals() });
+    }
+  });
+}
+
+export function useSaveSafetyBuffer(): ReturnType<
+  typeof useMutation<SafetyBufferPreference, Error, CreateSafetyBufferPreference>
+> {
+  const client = useQueryClient();
+  const [key, setKey] = useState(generateRequestId);
+  return useMutation({
+    mutationFn: async (input): Promise<SafetyBufferPreference> => {
+      const parsed = CreateSafetyBufferPreferenceSchema.safeParse(input);
+      if (!parsed.success) {
+        throw new Error(parsed.error.issues[0]?.message ?? "Check the safety buffer details.");
+      }
+
+      try {
+        const body: {
+          mode: CreateSafetyBufferPreference["mode"];
+          amountMinor?: number;
+          months?: number;
+          emergencyFundGoalId?: string;
+          effectiveFrom?: string;
+        } = { mode: parsed.data.mode };
+
+        if (parsed.data.amountMinor !== undefined) {
+          body.amountMinor = parsed.data.amountMinor;
+        }
+        if (parsed.data.months !== undefined) {
+          body.months = parsed.data.months;
+        }
+        if (parsed.data.emergencyFundGoalId !== undefined) {
+          body.emergencyFundGoalId = parsed.data.emergencyFundGoalId;
+        }
+        if (parsed.data.effectiveFrom !== undefined) {
+          body.effectiveFrom = parsed.data.effectiveFrom.toISOString();
+        }
+
+        const result = await apiClient.POST("/v1/safety-buffer", {
+          body,
+          params: { header: { "Idempotency-Key": key } }
+        });
+        if (result.error !== undefined) throw toAppError(result.error, result.response.status);
+        const response = SafetyBufferPreferenceSchema.safeParse(result.data);
+        if (!response.success) throw toAppError(undefined, result.response.status);
+        return response.data;
       } catch (error: unknown) {
         if (error instanceof Error) throw error;
         throw toNetworkError(error);

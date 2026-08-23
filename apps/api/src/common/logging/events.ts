@@ -54,7 +54,10 @@ export const LogEvent = {
   SchedulerRunCompleted: "scheduler.run_completed",
   SchedulerRunFailed: "scheduler.run_failed",
   SchedulerRunOverlong: "scheduler.run_overlong",
-  SchedulerRunMissing: "scheduler.run_missing"
+  SchedulerRunMissing: "scheduler.run_missing",
+  NtfyPushFailed: "ntfy.push_failed",
+  ApiStarted: "api.started",
+  WorkerStarted: "worker.started"
 } as const;
 
 export type LogEvent = (typeof LogEvent)[keyof typeof LogEvent];

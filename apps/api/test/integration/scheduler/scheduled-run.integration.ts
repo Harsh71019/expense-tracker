@@ -6,6 +6,7 @@ import { createTestDb } from "../support/postgres-test-db.js";
 import type { TestDb } from "../support/postgres-test-db.js";
 
 const LOGGER = { log: vi.fn(), error: vi.fn() };
+const NTFY = { notify: vi.fn(async () => undefined) };
 
 describe("scheduled run leadership", () => {
   let testDb: TestDb;
@@ -15,7 +16,7 @@ describe("scheduled run leadership", () => {
   beforeAll(async () => {
     testDb = await createTestDb();
     runs = new ScheduledRunRepository(testDb.db);
-    coordinator = new ScheduledRunCoordinator(runs, LOGGER);
+    coordinator = new ScheduledRunCoordinator(runs, NTFY, LOGGER);
   });
 
   afterAll(async () => {

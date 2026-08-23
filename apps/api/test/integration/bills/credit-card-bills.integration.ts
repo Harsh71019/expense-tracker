@@ -28,6 +28,7 @@ import type { TestDb } from "../support/postgres-test-db.js";
 const USER_ID = "bill-user";
 const OTHER_USER_ID = "bill-other-user";
 const NOOP_LOGGER = { log: () => undefined, warn: () => undefined, error: () => undefined };
+const NOOP_NTFY = { notify: async () => undefined };
 const MAPPING = {
   date: "Date",
   description: "Description",
@@ -160,6 +161,7 @@ describe("credit-card bill lifecycle", () => {
       bills,
       transactions,
       new AuditRepository(testDb.db),
+      NOOP_NTFY,
       NOOP_LOGGER
     );
 

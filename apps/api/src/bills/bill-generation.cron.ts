@@ -10,6 +10,7 @@ import { DATABASE_CONNECTION } from "../common/db/db.module.js";
 import type { DrizzleDb } from "../common/db/db.module.js";
 import { withTxn } from "../common/db/db-txn.js";
 import { LogEvent } from "../common/logging/events.js";
+import { NtfyOpsNotifierService } from "../common/observability/ntfy-ops-notifier.service.js";
 import { toISTCalendarDate } from "../common/time/ist.js";
 import { parseExplicitDate } from "../common/time/parse-date.js";
 import { TransactionRepository } from "../transactions/transaction.repository.js";
@@ -26,6 +27,7 @@ export class BillGenerationCron {
     private readonly bills: CreditCardBillRepository,
     private readonly transactions: TransactionRepository,
     private readonly audit: AuditRepository,
+    @Inject(NtfyOpsNotifierService) private readonly ntfy: Pick<NtfyOpsNotifierService, "notify">,
     @Inject(Logger) private readonly logger: BillGenerationLogger
   ) {}
 
@@ -34,12 +36,29 @@ export class BillGenerationCron {
     if (this.config.env.SERVICE_ROLE !== "worker") return;
     const today = parseExplicitDate(toISTCalendarDate(new Date()), "YYYY-MM-DD");
     const dueCards = await this.accounts.findDueCreditCards(today);
+    let failedCount = 0;
     for (const account of dueCards) {
       await this.generateOne(account).catch((error: unknown) => {
+        failedCount += 1;
         this.logger.error(
           { event: LogEvent.CreditCardBillGenerationFailed, accountId: account.id, err: error },
           "credit-card bill generation failed"
         );
+      });
+    }
+    const succeededCount = dueCards.length - failedCount;
+    if (failedCount > 0) {
+      await this.ntfy.notify({
+        title: "❌ bills.generate had failures",
+        message: `${succeededCount} generated, ${failedCount} failed of ${dueCards.length} due`,
+        priority: "high",
+        tags: ["rotating_light"]
+      });
+    } else {
+      await this.ntfy.notify({
+        title: "✅ bills.generate",
+        message: `${succeededCount} bill(s) generated of ${dueCards.length} due`,
+        tags: ["white_check_mark"]
       });
     }
   }

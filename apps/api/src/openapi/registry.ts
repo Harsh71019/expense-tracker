@@ -2794,6 +2794,25 @@ registry.registerPath({
 });
 
 registry.registerPath({
+  method: "delete",
+  path: "/v1/portfolio-imports/{batchId}",
+  operationId: "deletePortfolioImportBatch",
+  security: secured,
+  request: {
+    params: batchIdParams,
+    headers: idempotencyKeyHeaders
+  },
+  responses: {
+    204: { description: "Discarded an uncommitted portfolio import batch" },
+    409: {
+      description: "Batch state or idempotency-key conflict",
+      ...json(ProblemDetails)
+    },
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
   method: "get",
   path: "/v1/portfolio-imports/{batchId}/rows",
   operationId: "listPortfolioImportRows",

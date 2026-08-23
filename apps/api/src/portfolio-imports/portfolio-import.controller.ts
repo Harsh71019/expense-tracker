@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Header,
   Headers,
@@ -93,6 +94,17 @@ export class PortfolioImportController {
     @Param("batchId") batchId: string
   ): Promise<PortfolioImportBatch> {
     return this.imports.getBatch(user.id, PortfolioImportBatchIdSchema.parse(batchId));
+  }
+
+  @Delete(":batchId")
+  @HttpCode(204)
+  deleteBatch(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("batchId") batchId: string,
+    @Headers("idempotency-key") key: string | undefined
+  ): Promise<void> {
+    IdempotencyKeySchema.parse(key);
+    return this.imports.deleteBatch(user.id, PortfolioImportBatchIdSchema.parse(batchId));
   }
 
   @Get(":batchId/rows")

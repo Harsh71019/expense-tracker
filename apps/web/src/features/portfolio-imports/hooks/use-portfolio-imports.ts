@@ -211,6 +211,27 @@ export function useCommitPortfolioImportBatch() {
   });
 }
 
+export function useDeletePortfolioImportBatch() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (batchId: string): Promise<void> => {
+      const idempotencyKey = generateRequestId();
+      const result = await apiClient.DELETE("/v1/portfolio-imports/{batchId}", {
+        params: {
+          path: { batchId },
+          header: { "Idempotency-Key": idempotencyKey }
+        }
+      });
+      if (result.error !== undefined) throw toAppError(result.error, result.response.status);
+    },
+    onSuccess: (_, batchId) => {
+      queryClient.removeQueries({ queryKey: qk.portfolioImportBatch(batchId) });
+      queryClient.removeQueries({ queryKey: ["portfolio-import-rows", batchId] });
+      void queryClient.invalidateQueries({ queryKey: qk.portfolioImportBatches() });
+    }
+  });
+}
+
 export function useRevertPortfolioImportBatch() {
   const queryClient = useQueryClient();
   return useMutation({

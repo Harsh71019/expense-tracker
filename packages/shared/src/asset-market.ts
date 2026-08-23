@@ -227,6 +227,29 @@ export const MarketPriceSchema = z.object({
   priceMicroRupeesPerQuoteUnit: PriceMicroRupeesPerQuoteUnitSchema
 });
 
+export const MarketQuoteIdSchema = z.string().uuid("Market quote id must be a UUID.");
+
+export const MarketQuoteSchema = z.object({
+  id: MarketQuoteIdSchema,
+  userId: z.string().min(1),
+  assetMarketLinkId: AssetMarketLinkIdSchema,
+  provider: MarketDataProviderSchema,
+  providerInstrumentId: z.string().trim().min(1).max(160),
+  quoteUnit: MarketQuoteUnitSchema,
+  priceMicroRupeesPerQuoteUnit: PriceMicroRupeesPerQuoteUnitSchema,
+  providerAsOf: z.coerce.date(),
+  fetchedAt: z.coerce.date(),
+  createdAt: z.coerce.date()
+});
+
+export const MarketValuationSchema = z.object({
+  assetId: AssetIdSchema,
+  quote: MarketQuoteSchema,
+  quantityMicroUnits: QuantityMicroUnitsSchema,
+  valueMinor: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),
+  valuedAt: z.coerce.date()
+});
+
 export type AssetMarketLinkId = z.infer<typeof AssetMarketLinkIdSchema>;
 export type AssetPositionEventId = z.infer<typeof AssetPositionEventIdSchema>;
 export type MarketInstrumentType = z.infer<typeof MarketInstrumentTypeSchema>;
@@ -304,3 +327,6 @@ function positionEventDirection(
 }
 export type ReverseAssetPositionEventResult = z.infer<typeof ReverseAssetPositionEventResultSchema>;
 export type MarketPrice = z.infer<typeof MarketPriceSchema>;
+export type MarketQuoteId = z.infer<typeof MarketQuoteIdSchema>;
+export type MarketQuote = z.infer<typeof MarketQuoteSchema>;
+export type MarketValuation = z.infer<typeof MarketValuationSchema>;

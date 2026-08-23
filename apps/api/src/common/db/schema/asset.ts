@@ -126,3 +126,47 @@ export const assetMarketLinks = pgTable(
     )
   ]
 );
+
+/**
+ * Tenant-scoped quote provenance for an active market link. A value is never
+ * updated in place: every provider observation is retained and valuations
+ * point to its timestamp through their own append-only history.
+ */
+export const marketQuoteSnapshots = pgTable(
+  "market_quote_snapshots",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id),
+    assetMarketLinkId: uuid("asset_market_link_id")
+      .notNull()
+      .references(() => assetMarketLinks.id),
+    provider: marketDataProviderEnum("provider").notNull(),
+    providerInstrumentId: text("provider_instrument_id").notNull(),
+    quoteUnit: marketQuoteUnitEnum("quote_unit").notNull(),
+    priceMicroRupeesPerQuoteUnit: bigint("price_micro_rupees_per_quote_unit", {
+      mode: "number"
+    }).notNull(),
+    providerAsOf: timestamp("provider_as_of", { withTimezone: true }).notNull(),
+    fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull()
+  },
+  (table) => [
+    check(
+      "market_quote_snapshots_price_safe_positive",
+      sql`${table.priceMicroRupeesPerQuoteUnit} BETWEEN 1 AND 9007199254740991`
+    ),
+    uniqueIndex("market_quote_snapshots_link_provider_asof_unique").on(
+      table.userId,
+      table.assetMarketLinkId,
+      table.provider,
+      table.providerAsOf
+    ),
+    index("market_quote_snapshots_user_link_provider_asof").on(
+      table.userId,
+      table.assetMarketLinkId,
+      table.providerAsOf.desc()
+    )
+  ]
+);

@@ -63,7 +63,7 @@ export const AssetSchema = z.object({
   updatedAt: z.coerce.date()
 });
 
-export const ValuationSourceSchema = z.enum(["manual", "maturity_projection"]);
+export const ValuationSourceSchema = z.enum(["manual", "maturity_projection", "market_quote"]);
 
 export const CreateValuationSchema = z.object({
   valueMinor: SignedMinorSchema,

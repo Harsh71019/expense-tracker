@@ -38,7 +38,11 @@ export const assetKindEnum = pgEnum("asset_kind", [
   "silver",
   "investment"
 ]);
-export const valuationSourceEnum = pgEnum("valuation_source", ["manual", "maturity_projection"]);
+export const valuationSourceEnum = pgEnum("valuation_source", [
+  "manual",
+  "maturity_projection",
+  "market_quote"
+]);
 export const marketInstrumentTypeEnum = pgEnum("market_instrument_type", [
   "mutual_fund",
   "gold_etf",

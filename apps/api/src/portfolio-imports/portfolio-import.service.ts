@@ -9,6 +9,7 @@ import {
   type PortfolioImportRowId,
   type PortfolioImportRowPage,
   type PortfolioImportSource,
+  type PortfolioImportStatus,
   type UpdatePortfolioImportRow
 } from "@treasury-ops/shared";
 
@@ -235,6 +236,22 @@ export class PortfolioImportService {
     return updatedRow;
   }
 
+  private async waitForBatchStatus(
+    userId: string,
+    batchId: PortfolioImportBatchId,
+    targetStatus: PortfolioImportStatus,
+    transientStatus: PortfolioImportStatus
+  ): Promise<PortfolioImportBatch | null> {
+    for (let i = 0; i < 50; i++) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      const current = await this.batches.findById(userId, batchId);
+      if (current?.status === targetStatus) return current;
+      if (current !== null && current.status !== transientStatus) return null;
+    }
+    const finalCheck = await this.batches.findById(userId, batchId);
+    return finalCheck?.status === targetStatus ? finalCheck : null;
+  }
+
   async commitBatch(
     userId: string,
     batchId: PortfolioImportBatchId
@@ -244,16 +261,18 @@ export class PortfolioImportService {
 
     if (batch.status === "completed") return batch;
     if (batch.status === "committing") {
-      // Wait for concurrent commit to complete
-      for (let i = 0; i < 20; i++) {
-        await new Promise((resolve) => setTimeout(resolve, 200));
-        const current = await this.batches.findById(userId, batchId);
-        if (current?.status === "completed") return current;
-      }
+      const completed = await this.waitForBatchStatus(userId, batchId, "completed", "committing");
+      if (completed !== null) return completed;
     }
     if (batch.status !== "ready" && batch.status !== "needs_review") {
+      const fresh = await this.batches.findById(userId, batchId);
+      if (fresh?.status === "completed") return fresh;
+      if (fresh?.status === "committing") {
+        const completed = await this.waitForBatchStatus(userId, batchId, "completed", "committing");
+        if (completed !== null) return completed;
+      }
       throw new PortfolioImportStateConflictError(
-        `Batch cannot be committed in status "${batch.status}".`
+        `Batch cannot be committed in status "${fresh?.status ?? batch.status}".`
       );
     }
 
@@ -261,6 +280,8 @@ export class PortfolioImportService {
       this.batches.startCommitting(userId, batchId, tx)
     );
     if (!started) {
+      const completed = await this.waitForBatchStatus(userId, batchId, "completed", "committing");
+      if (completed !== null) return completed;
       const current = await this.batches.findById(userId, batchId);
       if (current?.status === "completed") return current;
       throw new PortfolioImportStateConflictError("Concurrent commit in progress.");
@@ -377,15 +398,18 @@ export class PortfolioImportService {
 
     if (batch.status === "reverted") return batch;
     if (batch.status === "reverting") {
-      for (let i = 0; i < 20; i++) {
-        await new Promise((resolve) => setTimeout(resolve, 200));
-        const current = await this.batches.findById(userId, batchId);
-        if (current?.status === "reverted") return current;
-      }
+      const reverted = await this.waitForBatchStatus(userId, batchId, "reverted", "reverting");
+      if (reverted !== null) return reverted;
     }
     if (batch.status !== "completed") {
+      const fresh = await this.batches.findById(userId, batchId);
+      if (fresh?.status === "reverted") return fresh;
+      if (fresh?.status === "reverting") {
+        const reverted = await this.waitForBatchStatus(userId, batchId, "reverted", "reverting");
+        if (reverted !== null) return reverted;
+      }
       throw new PortfolioImportStateConflictError(
-        `Batch cannot be reverted in status "${batch.status}".`
+        `Batch cannot be reverted in status "${fresh?.status ?? batch.status}".`
       );
     }
 
@@ -393,6 +417,8 @@ export class PortfolioImportService {
       this.batches.startReverting(userId, batchId, tx)
     );
     if (!started) {
+      const reverted = await this.waitForBatchStatus(userId, batchId, "reverted", "reverting");
+      if (reverted !== null) return reverted;
       const current = await this.batches.findById(userId, batchId);
       if (current?.status === "reverted") return current;
       throw new PortfolioImportStateConflictError("Concurrent revert in progress.");

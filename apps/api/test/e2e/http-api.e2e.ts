@@ -3,6 +3,7 @@ import {
   AccountSchema,
   AssetSchema,
   AssetMarketLinkSchema,
+  AssetFundingMutationResultSchema,
   AssetCurrentPositionSchema,
   AssetPositionEventPageSchema,
   AssetPositionEventSchema,
@@ -40,7 +41,8 @@ import {
   ReceivableMutationResultSchema,
   ReceivablePageSchema,
   ReceivableSchema,
-  ReverseAssetPositionEventResultSchema
+  ReverseAssetPositionEventResultSchema,
+  ReverseAssetFundingResultSchema
 } from "@treasury-ops/shared";
 import { GenericContainer } from "testcontainers";
 import type { StartedTestContainer } from "testcontainers";
@@ -1434,6 +1436,86 @@ describe("production HTTP composition", () => {
       (await parseResponse(positionsResponse, AssetPositionEventPageSchema)).items
     ).toHaveLength(1);
     expect((await parseResponse(valuationsResponse, ValuationPageSchema)).items).toHaveLength(1);
+  });
+
+  it("records and reverses a funding-linked market position atomically", async () => {
+    const account = await createAccount(baseUrl, sessionA, "Market funding account");
+    const createdAsset = await parseResponse(
+      await fetch(`${baseUrl}/api/v1/assets/market-linked`, {
+        method: "POST",
+        headers: { ...JSON_HEADERS, cookie: sessionA, "idempotency-key": crypto.randomUUID() },
+        body: JSON.stringify({
+          asset: {
+            kind: "investment",
+            name: "Funding-linked index fund",
+            openedAt: "2026-08-23T00:00:00.000Z",
+            openingValueMinor: 10_000
+          },
+          marketLink: {
+            instrumentType: "mutual_fund",
+            provider: "amfi",
+            providerInstrumentId: "120503",
+            quoteUnit: "fund_unit",
+            effectiveFrom: "2026-08-23T00:00:00.000Z"
+          },
+          openingPosition: {
+            eventType: "opening",
+            quantityMicroUnits: 1_000_000,
+            occurredAt: "2026-08-23T00:00:00.000Z"
+          }
+        })
+      }),
+      MarketLinkedAssetCreationResultSchema
+    );
+    const fundingResponse = await fetch(`${baseUrl}/api/v1/asset-fundings/investments`, {
+      method: "POST",
+      headers: { ...JSON_HEADERS, cookie: sessionA, "idempotency-key": crypto.randomUUID() },
+      body: JSON.stringify({
+        accountId: account.id,
+        amountMinor: 5_000,
+        occurredAt: "2026-08-24T00:00:00.000Z",
+        description: "Fund purchase",
+        target: { kind: "existing_asset", assetId: createdAsset.asset.id },
+        position: { quantityMicroUnits: 500_000, chargesMinor: 50 }
+      })
+    });
+    expect(fundingResponse.status).toBe(201);
+    const funded = await parseResponse(fundingResponse, AssetFundingMutationResultSchema);
+
+    const positionsAfterFunding = await parseResponse(
+      await fetch(`${baseUrl}/api/v1/assets/${createdAsset.asset.id}/position-events?limit=50`, {
+        headers: { cookie: sessionA }
+      }),
+      AssetPositionEventPageSchema
+    );
+    expect(positionsAfterFunding.items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          eventType: "purchase",
+          assetFundingId: funded.funding.id,
+          transactionId: funded.transaction.id,
+          grossAmountMinor: 5_000,
+          chargesMinor: 50
+        })
+      ])
+    );
+
+    const reversed = await parseResponse(
+      await fetch(`${baseUrl}/api/v1/asset-fundings/${funded.funding.id}/reverse`, {
+        method: "POST",
+        headers: { cookie: sessionA, "idempotency-key": crypto.randomUUID() }
+      }),
+      ReverseAssetFundingResultSchema
+    );
+    expect(reversed.original.status).toBe("reversed");
+
+    const currentPosition = await parseResponse(
+      await fetch(`${baseUrl}/api/v1/assets/${createdAsset.asset.id}/position`, {
+        headers: { cookie: sessionA }
+      }),
+      AssetCurrentPositionSchema
+    );
+    expect(currentPosition.quantityMicroUnits).toBe(1_000_000);
   });
 
   it("automatically probes every secured OpenAPI operation for an auth boundary", async () => {

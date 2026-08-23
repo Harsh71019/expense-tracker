@@ -906,6 +906,11 @@ Legacy gold/silver `quantityMilliUnits` values are retained as compatibility cac
 `0039_late_legacy_metal_positions` adds one `legacy_backfill` opening event for each legacy asset
 that has no position history.
 
+`POST /asset-fundings/investments` and `POST /transactions/:id/asset-funding` accept optional
+position metadata for an already market-linked asset. When supplied, the ledger transaction,
+funding record, and purchase position event are committed together; reversing the funding appends
+the corresponding position reversal.
+
 Cursor pagination (`occurredAt + _id` compound cursor), not offset — offset paginating a growing ledger degrades and skips rows under concurrent writes. Opaque cursor strings are JSON + UTF-8 + base64url via `common/pagination/cursor.ts`; each list keeps its own payload schema so existing client-held cursors still decode.
 
 ---

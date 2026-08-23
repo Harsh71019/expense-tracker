@@ -13013,6 +13013,13 @@ export interface operations {
                       annualRateBps?: number;
                     };
               };
+          position?: {
+            quantityMicroUnits: number;
+            chargesMinor?: number;
+            taxesAtAcquisitionMinor?: number;
+            /** Format: date-time */
+            occurredAt?: string | null;
+          };
         };
       };
     };
@@ -13119,6 +13126,13 @@ export interface operations {
                       annualRateBps?: number;
                     };
               };
+          position?: {
+            quantityMicroUnits: number;
+            chargesMinor?: number;
+            taxesAtAcquisitionMinor?: number;
+            /** Format: date-time */
+            occurredAt?: string | null;
+          };
         };
       };
     };

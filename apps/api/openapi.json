@@ -14671,6 +14671,31 @@
                         "required": ["kind", "asset"]
                       }
                     ]
+                  },
+                  "position": {
+                    "type": "object",
+                    "properties": {
+                      "quantityMicroUnits": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 9007199254740991
+                      },
+                      "chargesMinor": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 9007199254740991
+                      },
+                      "taxesAtAcquisitionMinor": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 9007199254740991
+                      },
+                      "occurredAt": {
+                        "type": ["string", "null"],
+                        "format": "date-time"
+                      }
+                    },
+                    "required": ["quantityMicroUnits"]
                   }
                 },
                 "required": ["target"]
@@ -14874,6 +14899,31 @@
                         "required": ["kind", "asset"]
                       }
                     ]
+                  },
+                  "position": {
+                    "type": "object",
+                    "properties": {
+                      "quantityMicroUnits": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 9007199254740991
+                      },
+                      "chargesMinor": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 9007199254740991
+                      },
+                      "taxesAtAcquisitionMinor": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 9007199254740991
+                      },
+                      "occurredAt": {
+                        "type": ["string", "null"],
+                        "format": "date-time"
+                      }
+                    },
+                    "required": ["quantityMicroUnits"]
                   }
                 },
                 "required": ["accountId", "amountMinor", "occurredAt", "description", "target"]

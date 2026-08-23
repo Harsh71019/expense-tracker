@@ -15,6 +15,7 @@ import {
 } from "@treasury-ops/shared";
 
 import { AssetRepository } from "../assets/asset.repository.js";
+import { AssetPositionService } from "../assets/asset-position.service.js";
 import { AssetService } from "../assets/asset.service.js";
 import type { DbTx } from "../common/db/db-txn.js";
 import {
@@ -40,6 +41,7 @@ export class AssetFundingService implements TransactionReversalHook {
     private readonly transactionService: TransactionService,
     private readonly assets: AssetRepository,
     private readonly assetService: AssetService,
+    private readonly positions: AssetPositionService,
     private readonly rollups: MonthlyRollupRepository,
     private readonly audit: AuditRepository
   ) {}
@@ -71,6 +73,19 @@ export class AssetFundingService implements TransactionReversalHook {
       assetId: asset.id,
       transactionId: transaction.id
     });
+    if (input.position !== undefined) {
+      await this.positions.createFundingPositionInTx(
+        userId,
+        asset.id,
+        funding.id,
+        transaction.id,
+        transaction.amountMinor,
+        input.position,
+        transaction.occurredAt,
+        `asset-funding-position:${funding.id}`,
+        tx
+      );
+    }
     await this.rollups.invalidate(userId, toISTMonth(transaction.occurredAt), tx);
     return AssetFundingMutationResultSchema.parse({ funding, transaction, asset });
   }
@@ -119,6 +134,19 @@ export class AssetFundingService implements TransactionReversalHook {
       assetId: asset.id,
       transactionId: transaction.id
     });
+    if (input.position !== undefined) {
+      await this.positions.createFundingPositionInTx(
+        userId,
+        asset.id,
+        funding.id,
+        transaction.id,
+        transaction.amountMinor,
+        input.position,
+        transaction.occurredAt,
+        `asset-funding-position:${funding.id}`,
+        tx
+      );
+    }
     await this.rollups.invalidate(userId, toISTMonth(transaction.occurredAt), tx);
     return AssetFundingMutationResultSchema.parse({ funding, transaction, asset });
   }
@@ -135,6 +163,13 @@ export class AssetFundingService implements TransactionReversalHook {
     const reversal = await this.fundings.createReversal(userId, original, tx);
     const paired = await this.fundings.markReversed(userId, original.id, reversal.id, tx);
     if (paired === null) throw new AssetFundingNotReversibleError();
+    await this.positions.reverseFundingPositionInTx(
+      userId,
+      original.assetId,
+      original.id,
+      `asset-funding-position-reversal:${original.id}`,
+      tx
+    );
     await this.audit.record(userId, "asset_funding.reverse", original.id, tx, {
       reversalId: reversal.id
     });
@@ -153,6 +188,13 @@ export class AssetFundingService implements TransactionReversalHook {
     const reversal = await this.fundings.createReversal(userId, funding, tx);
     const paired = await this.fundings.markReversed(userId, funding.id, reversal.id, tx);
     if (paired === null) throw new AssetFundingNotReversibleError();
+    await this.positions.reverseFundingPositionInTx(
+      userId,
+      funding.assetId,
+      funding.id,
+      `asset-funding-position-reversal:${funding.id}`,
+      tx
+    );
     await this.audit.record(userId, "asset_funding.reverse", funding.id, tx, {
       reversalId: reversal.id,
       source: "transaction_reversal"

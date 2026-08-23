@@ -5,6 +5,9 @@ import {
   ReverseAssetPositionEventResultSchema,
   deriveAssetCurrentPosition,
   type AssetId,
+  type AssetFundingId,
+  type AssetFundingPositionMetadata,
+  type TransactionId,
   type AssetCurrentPosition,
   type AssetPositionEvent,
   type AssetPositionEventId,
@@ -75,6 +78,56 @@ export class AssetPositionService {
     );
     await this.audit.record(userId, "asset.position_event.create", event.id, tx, { assetId });
     return AssetPositionEventSchema.parse(event);
+  }
+
+  async createFundingPositionInTx(
+    userId: string,
+    assetId: AssetId,
+    fundingId: AssetFundingId,
+    transactionId: TransactionId,
+    grossAmountMinor: number,
+    input: AssetFundingPositionMetadata,
+    fallbackOccurredAt: Date,
+    sourceReference: string,
+    tx: DbTx
+  ): Promise<AssetPositionEvent> {
+    if ((await this.assets.findOpenByIdForUpdate(userId, assetId, tx)) === null) {
+      throw new EntityNotFoundError("Asset");
+    }
+    if ((await this.market.findActiveLinkByAssetIdForUpdate(userId, assetId, tx)) === null) {
+      throw new AssetMarketLinkRequiredError();
+    }
+    const event = await this.market.createPositionEvent(
+      userId,
+      {
+        assetId,
+        eventType: "purchase",
+        quantityMicroUnits: input.quantityMicroUnits,
+        grossAmountMinor,
+        chargesMinor: input.chargesMinor,
+        taxesAtAcquisitionMinor: input.taxesAtAcquisitionMinor,
+        occurredAt: input.occurredAt ?? fallbackOccurredAt,
+        transactionId,
+        assetFundingId: fundingId,
+        source: "manual",
+        sourceReference
+      },
+      tx
+    );
+    await this.audit.record(userId, "asset.position_event.create", event.id, tx, { assetId });
+    return AssetPositionEventSchema.parse(event);
+  }
+
+  async reverseFundingPositionInTx(
+    userId: string,
+    assetId: AssetId,
+    fundingId: AssetFundingId,
+    sourceReference: string,
+    tx: DbTx
+  ): Promise<void> {
+    const event = await this.market.findPositionEventByFundingIdForUpdate(userId, fundingId, tx);
+    if (event === null) return;
+    await this.reverseInTx(userId, assetId, event.id, sourceReference, tx);
   }
 
   async reverseInTx(

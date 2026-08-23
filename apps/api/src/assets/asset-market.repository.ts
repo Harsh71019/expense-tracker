@@ -8,6 +8,7 @@ import {
   type AssetMarketLinkId,
   type AssetPositionEvent,
   type AssetPositionEventId,
+  type AssetFundingId,
   type AssetPositionEventPage,
   type CreateAssetMarketLink,
   type CreateAssetPositionEvent,
@@ -179,6 +180,24 @@ export class AssetMarketRepository {
       .select()
       .from(assetPositionEvents)
       .where(and(eq(assetPositionEvents.userId, userId), eq(assetPositionEvents.id, eventId)))
+      .for("update");
+    return row === undefined ? null : AssetPositionEventSchema.parse(stripNulls(row));
+  }
+
+  async findPositionEventByFundingIdForUpdate(
+    userId: string,
+    fundingId: AssetFundingId,
+    tx: DbTx
+  ): Promise<AssetPositionEvent | null> {
+    const [row] = await tx
+      .select()
+      .from(assetPositionEvents)
+      .where(
+        and(
+          eq(assetPositionEvents.userId, userId),
+          eq(assetPositionEvents.assetFundingId, fundingId)
+        )
+      )
       .for("update");
     return row === undefined ? null : AssetPositionEventSchema.parse(stripNulls(row));
   }

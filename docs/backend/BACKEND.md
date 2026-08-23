@@ -870,6 +870,7 @@ GET    /assets/:id/market-link | POST /assets/:id/market-link
 GET    /assets/:id/position-events?cursor&limit | POST /assets/:id/position-events
 GET    /assets/:id/position                 reproducible net quantity replayed from position events
 POST   /assets/:id/position-events/:eventId/reversals
+
 GET    /net-worth                       accounts + non-receivable assets + receivables breakdown
 
 GET    /receivables?status&cursor       Debt Given: cursor-paginated, filtered by active/settled/
@@ -900,6 +901,10 @@ GET    /healthz                         liveness (Beszel/uptime checks)
 GET    /docs                            Interactive API documentation (Stoplight Elements)
 GET    /openapi.json                    Live OpenAPI 3.1 specification JSON
 ```
+
+Legacy gold/silver `quantityMilliUnits` values are retained as compatibility caches; migration
+`0039_late_legacy_metal_positions` adds one `legacy_backfill` opening event for each legacy asset
+that has no position history.
 
 Cursor pagination (`occurredAt + _id` compound cursor), not offset — offset paginating a growing ledger degrades and skips rows under concurrent writes. Opaque cursor strings are JSON + UTF-8 + base64url via `common/pagination/cursor.ts`; each list keeps its own payload schema so existing client-held cursors still decode.
 

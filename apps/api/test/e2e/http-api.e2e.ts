@@ -1467,20 +1467,32 @@ describe("production HTTP composition", () => {
       }),
       MarketLinkedAssetCreationResultSchema
     );
-    const fundingResponse = await fetch(`${baseUrl}/api/v1/asset-fundings/investments`, {
-      method: "POST",
-      headers: { ...JSON_HEADERS, cookie: sessionA, "idempotency-key": crypto.randomUUID() },
-      body: JSON.stringify({
-        accountId: account.id,
-        amountMinor: 5_000,
-        occurredAt: "2026-08-24T00:00:00.000Z",
-        description: "Fund purchase",
-        target: { kind: "existing_asset", assetId: createdAsset.asset.id },
-        position: { quantityMicroUnits: 500_000, chargesMinor: 50 }
-      })
-    });
-    expect(fundingResponse.status).toBe(201);
-    const funded = await parseResponse(fundingResponse, AssetFundingMutationResultSchema);
+    const fundingKey = crypto.randomUUID();
+    const fundingBody = {
+      accountId: account.id,
+      amountMinor: 5_000,
+      occurredAt: "2026-08-24T00:00:00.000Z",
+      description: "Fund purchase",
+      target: { kind: "existing_asset", assetId: createdAsset.asset.id },
+      position: { quantityMicroUnits: 500_000, chargesMinor: 50 }
+    };
+    const fundingResponses = await Promise.all(
+      Array.from({ length: 5 }, () =>
+        fetch(`${baseUrl}/api/v1/asset-fundings/investments`, {
+          method: "POST",
+          headers: { ...JSON_HEADERS, cookie: sessionA, "idempotency-key": fundingKey },
+          body: JSON.stringify(fundingBody)
+        })
+      )
+    );
+    expect(fundingResponses.filter((response) => response.status === 201)).toHaveLength(1);
+    expect(fundingResponses.filter((response) => response.status === 200)).toHaveLength(4);
+    const fundingResults = await Promise.all(
+      fundingResponses.map((response) => parseResponse(response, AssetFundingMutationResultSchema))
+    );
+    expect(new Set(fundingResults.map((result) => result.funding.id)).size).toBe(1);
+    const [funded] = fundingResults;
+    if (funded === undefined) throw new Error("Funding creation did not return a result.");
 
     const positionsAfterFunding = await parseResponse(
       await fetch(`${baseUrl}/api/v1/assets/${createdAsset.asset.id}/position-events?limit=50`, {

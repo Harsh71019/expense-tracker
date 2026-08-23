@@ -41,14 +41,34 @@ describe("TxnRow", () => {
     expect(screen.getByText("−₹20.00")).toBeVisible();
     expect(screen.getByText("Food & Dining")).toBeVisible();
     const row = screen.getByRole("button", { name: /Chai/ });
-    expect(row).toHaveClass("grid-cols-[minmax(0,1fr)_auto]", "md:grid-cols-[2.4fr_1fr_1fr_1.1fr]");
+    expect(row).toHaveClass(
+      "grid-cols-[minmax(0,1fr)_auto]",
+      "md:grid-cols-[2.2fr_1.1fr_1.1fr_1fr_1.1fr]"
+    );
     await user.click(row);
     expect(onOpen).toHaveBeenCalledWith(transaction);
   });
 
   it("shows a dash for an uncategorized transaction", () => {
+    const account = {
+      id: "3fa85f64-5717-4562-b3fc-2c963f66beff",
+      userId: "user-1",
+      name: "HDFC Bank",
+      type: "bank" as const,
+      currency: "INR" as const,
+      openingBalanceMinor: 0,
+      balanceMinor: 10000,
+      isArchived: false,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
     render(
-      <TxnRow transaction={{ ...base, status: "posted" }} category={undefined} onOpen={vi.fn()} />
+      <TxnRow
+        transaction={{ ...base, status: "posted" }}
+        category={undefined}
+        account={account}
+        onOpen={vi.fn()}
+      />
     );
     expect(screen.getByText("—")).toBeVisible();
   });

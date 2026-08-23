@@ -124,12 +124,12 @@ describe("TxnFilters", () => {
     const controls = document.querySelector("#transaction-filter-controls");
 
     expect(toggle).toHaveAttribute("aria-expanded", "false");
-    expect(controls).toHaveClass("hidden", "sm:contents");
+    expect(controls).toHaveClass("hidden", "sm:flex");
 
     fireEvent.click(toggle);
 
     expect(toggle).toHaveAttribute("aria-expanded", "true");
-    expect(controls).toHaveClass("grid");
+    expect(controls).toHaveClass("flex");
     expect(controls).not.toHaveClass("hidden");
   });
 

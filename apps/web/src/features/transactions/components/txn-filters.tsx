@@ -326,79 +326,119 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
 
   return (
     <div
-      className={`relative z-10 mb-5 flex flex-wrap items-center gap-3 rounded-2xl border p-3.5 backdrop-blur transition-all duration-200 ${
+      className={`relative z-10 mb-5 flex flex-col gap-3 rounded-2xl border p-3.5 backdrop-blur transition-all duration-200 ${
         isFiltered
           ? "border-accent/40 bg-surface-elevated/90 shadow-sm"
           : "border-border/80 bg-surface-elevated/90"
       }`}
     >
-      <div className="flex min-w-0 flex-1 basis-full items-center gap-2.5 rounded-xl border border-border/80 bg-surface-muted/60 px-3.5 transition-colors focus-within:border-accent/60 focus-within:bg-surface-muted focus-within:ring-2 focus-within:ring-accent/20 sm:min-w-56 sm:basis-auto">
-        <span className="text-foreground-muted/70 text-sm font-semibold" aria-hidden="true">
-          ⌕
-        </span>
-        <input
-          value={query}
-          name="transactionSearch"
-          autoComplete="off"
-          spellCheck={false}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search description…"
-          aria-label="Search description"
-          className="min-h-10 w-full bg-transparent py-2 text-base text-foreground outline-none placeholder:text-foreground-muted/60 sm:text-sm"
-        />
-        {query !== "" && (
-          <button
-            type="button"
-            onClick={() => setQuery("")}
-            aria-label="Clear search input"
-            className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-xs text-foreground-muted hover:bg-surface-elevated hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-          >
-            ✕
-          </button>
-        )}
+      {/* Primary Row: Search Bar + Account/Category/Sort Selects */}
+      <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex min-w-0 flex-1 basis-full items-center gap-2.5 rounded-xl border border-border/80 bg-surface-muted/60 px-3.5 transition-colors focus-within:border-accent/60 focus-within:bg-surface-muted focus-within:ring-2 focus-within:ring-accent/20 sm:min-w-64 sm:basis-auto">
+          <span className="text-foreground-muted/70 text-sm font-semibold" aria-hidden="true">
+            ⌕
+          </span>
+          <input
+            value={query}
+            name="transactionSearch"
+            autoComplete="off"
+            spellCheck={false}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search description…"
+            aria-label="Search description"
+            className="min-h-10 w-full bg-transparent py-2 text-base text-foreground outline-none placeholder:text-foreground-muted/60 sm:text-sm"
+          />
+          {query !== "" && (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              aria-label="Clear search input"
+              className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-xs text-foreground-muted hover:bg-surface-elevated hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+
+        {/* Mobile Accordion Toggle */}
+        <button
+          type="button"
+          aria-controls="transaction-filter-controls"
+          aria-expanded={filtersOpen}
+          onClick={() => setFiltersOpen((isOpen) => !isOpen)}
+          className="flex min-h-11 w-full items-center justify-between rounded-xl border border-border bg-surface-muted px-3.5 text-sm font-semibold text-foreground transition-colors hover:border-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:hidden"
+        >
+          <span>Filters</span>
+          <span className="flex items-center gap-2 text-foreground-muted">
+            {activeFilterCount > 0 ? (
+              <span className="rounded-full bg-accent/20 px-2 py-0.5 font-mono text-xs text-accent">
+                {activeFilterCount}
+              </span>
+            ) : null}
+            <span aria-hidden="true">{filtersOpen ? "−" : "+"}</span>
+          </span>
+        </button>
+
+        {/* Selects: Account, Category, Sort */}
+        <div
+          id="transaction-filter-controls"
+          className={`${filtersOpen ? "flex" : "hidden"} w-full flex-wrap items-center gap-2.5 sm:flex sm:w-auto`}
+        >
+          <Select
+            aria-label="Filter by account"
+            name="transactionAccount"
+            options={accountOptions}
+            value={filters.accountId ?? ""}
+            onChange={(value) => navigate({ accountId: value === "" ? undefined : value })}
+          />
+          <Select
+            aria-label="Filter by category"
+            name="transactionCategory"
+            options={categoryOptions}
+            value={
+              filters.uncategorized === true
+                ? UNCATEGORIZED_FILTER_VALUE
+                : (filters.categoryId ?? "")
+            }
+            onChange={handleCategoryFilterChange}
+          />
+          <Select
+            aria-label="Sort transactions"
+            name="transactionSort"
+            options={sortOptions}
+            value={filters.sort ?? "date_desc"}
+            onChange={(value) => {
+              const parsed = TransactionSortSchema.safeParse(value);
+              navigate({ sort: parsed.success ? parsed.data : undefined });
+            }}
+          />
+
+          {isFiltered ? (
+            <button
+              type="button"
+              onClick={clear}
+              aria-label="Clear"
+              title="Clear all filters (Esc)"
+              className="flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-border/80 bg-surface-muted/60 px-3.5 py-2 text-xs font-semibold text-foreground-muted transition-colors hover:border-expense/40 hover:bg-expense/10 hover:text-expense focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            >
+              <span>Clear</span>
+              <span className="rounded-full bg-accent/20 px-1.5 py-0.5 font-mono text-2xs text-accent">
+                {activeFilterCount}
+              </span>
+            </button>
+          ) : null}
+        </div>
       </div>
 
-      <button
-        type="button"
-        aria-controls="transaction-filter-controls"
-        aria-expanded={filtersOpen}
-        onClick={() => setFiltersOpen((isOpen) => !isOpen)}
-        className="flex min-h-11 w-full items-center justify-between rounded-xl border border-border bg-surface-muted px-3.5 text-sm font-semibold text-foreground transition-colors hover:border-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:hidden"
-      >
-        <span>Filters</span>
-        <span className="flex items-center gap-2 text-foreground-muted">
-          {activeFilterCount > 0 ? (
-            <span className="rounded-full bg-accent/20 px-2 py-0.5 font-mono text-xs text-accent">
-              {activeFilterCount}
-            </span>
-          ) : null}
-          <span aria-hidden="true">{filtersOpen ? "−" : "+"}</span>
-        </span>
-      </button>
-
+      {/* Secondary Controls Row: Amount & Date Value Filters */}
       <div
-        id="transaction-filter-controls"
-        className={`${filtersOpen ? "grid" : "hidden"} w-full grid-cols-1 gap-2.5 border-t border-border/70 pt-3 sm:contents`}
+        className={`${filtersOpen ? "flex" : "hidden"} w-full flex-wrap items-center justify-between gap-3 border-t border-border/60 pt-3 sm:flex`}
       >
-        <Select
-          aria-label="Filter by account"
-          name="transactionAccount"
-          options={accountOptions}
-          value={filters.accountId ?? ""}
-          onChange={(value) => navigate({ accountId: value === "" ? undefined : value })}
-        />
-        <Select
-          aria-label="Filter by category"
-          name="transactionCategory"
-          options={categoryOptions}
-          value={
-            filters.uncategorized === true ? UNCATEGORIZED_FILTER_VALUE : (filters.categoryId ?? "")
-          }
-          onChange={handleCategoryFilterChange}
-        />
-
-        {/* Amount Mode Toggle & Inputs */}
-        <div className="flex flex-wrap items-center gap-1.5">
+        {/* Amount Filter Controls */}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="font-mono text-2xs font-semibold text-foreground-muted uppercase">
+            Amount:
+          </span>
           <div className="flex items-center rounded-xl border border-border bg-surface-muted/70 p-0.5">
             <button
               type="button"
@@ -435,10 +475,10 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
                 type="text"
                 name="transactionExactAmount"
                 aria-label="Filter by exact amount"
-                placeholder="Exact amount (e.g. 100)"
+                placeholder="Exact amount"
                 value={exactAmount}
                 onChange={(e) => handleExactAmountChange(e.target.value)}
-                className="min-h-10 w-36 bg-transparent py-1.5 pl-1.5 text-sm font-mono text-foreground outline-none placeholder:text-foreground-muted/60"
+                className="min-h-10 w-32 bg-transparent py-1.5 pl-1.5 text-sm font-mono text-foreground outline-none placeholder:text-foreground-muted/60"
               />
               {exactAmount !== "" && (
                 <button
@@ -452,7 +492,7 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
               )}
             </div>
           ) : (
-            <div className="flex flex-wrap items-center gap-1.5">
+            <div className="flex items-center gap-1.5">
               <div className="relative flex items-center rounded-xl border border-border bg-surface-muted/60 px-2.5 focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/20">
                 <span className="font-mono text-xs text-foreground-muted">₹</span>
                 <input
@@ -502,8 +542,11 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
           )}
         </div>
 
-        {/* Date Mode Toggle & Pickers */}
-        <div className="flex flex-wrap items-center gap-1.5">
+        {/* Date Filter Controls */}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="font-mono text-2xs font-semibold text-foreground-muted uppercase">
+            Date:
+          </span>
           <div className="flex items-center rounded-xl border border-border bg-surface-muted/70 p-0.5">
             <button
               type="button"
@@ -563,37 +606,10 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
             </div>
           )}
         </div>
-
-        {/* Sort Select */}
-        <Select
-          aria-label="Sort transactions"
-          name="transactionSort"
-          options={sortOptions}
-          value={filters.sort ?? "date_desc"}
-          onChange={(value) => {
-            const parsed = TransactionSortSchema.safeParse(value);
-            navigate({ sort: parsed.success ? parsed.data : undefined });
-          }}
-        />
-
-        {isFiltered ? (
-          <button
-            type="button"
-            onClick={clear}
-            aria-label="Clear"
-            title="Clear all filters (Esc)"
-            className="flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-border/80 bg-surface-muted/60 px-3.5 py-2 text-xs font-semibold text-foreground-muted transition-colors hover:border-expense/40 hover:bg-expense/10 hover:text-expense focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-          >
-            <span>Clear</span>
-            <span className="rounded-full bg-accent/20 px-1.5 py-0.5 font-mono text-2xs text-accent">
-              {activeFilterCount}
-            </span>
-          </button>
-        ) : null}
       </div>
 
-      {/* Quick Presets (Dates & Amounts) */}
-      <div className="flex w-full flex-wrap items-center justify-between gap-y-2 pt-1">
+      {/* Quick Presets Row (Dates & Amounts) */}
+      <div className="flex w-full flex-wrap items-center justify-between gap-y-2 border-t border-border/50 pt-2.5">
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="font-mono text-2xs font-semibold text-foreground-muted uppercase">
             Quick dates:

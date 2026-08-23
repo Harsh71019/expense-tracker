@@ -988,8 +988,8 @@ Conventions: controllers do HTTP only; services own business rules and transacti
 
 ## 15. Security Hardening
 
-- **Rate limiting:** `@nestjs/throttler` backed by Redis — global 100 req/min per session, `POST /v1/auth/*` 10/min per IP, `POST /v1/imports` 5/hour. In front of that, NPMplus + CrowdSec if internet-exposed.
-- **Upload hardening:** 5 MB CSV cap, MIME + extension check, row cap (50k), cell length cap, **formula-injection neutralization on export** (prefix `=`, `+`, `-`, `@` cells with `'`) — the classic CSV export vuln everyone forgets.
+- **Rate limiting:** `@nestjs/throttler` backed by Redis — global 300 req/min keyed by session user when present (client IP otherwise, with `trust proxy` so NPMplus `X-Forwarded-For` is honored). `POST /v1/imports` is a tighter 5/hour bucket. Better Auth applies its own Redis-backed limits on `/api/auth/*` (100/min global, 10/min on email sign-in/sign-up). Health, readiness, and metrics are unthrottled.
+- **Upload and body hardening:** JSON bodies are capped at 256 KiB. Malformed JSON returns `400 common.malformed_request`; oversized JSON returns `413 common.payload_too_large` — both RFC 7807, not a generic 500. CSV uploads abort at the Multer parser when they exceed 5 MB (`413 import.file_too_large`) before buffering a larger body; MIME + extension + 50k-row checks remain in the import service. CSV **export** still prefixes `=`, `+`, `-`, `@` cells with `'` to neutralize formula injection.
 - **Headers & sessions:** helmet defaults, strict CORS (single origin), Better Auth cookies `httpOnly + secure + sameSite=strict`, session rotation on privilege change.
 - **AuthZ tests as a first-class suite:** every repository method takes `userId`; the test plan (§TESTING.md) includes a dedicated cross-tenant probe suite that tries to read/write another user's data through every endpoint. This suite existing is the multi-user readiness proof.
 - **Supply chain:** Renovate bot on the repo, `npm audit` + `trivy` image scan in CI (fail on critical), lockfile committed, Docker base images pinned by digest.

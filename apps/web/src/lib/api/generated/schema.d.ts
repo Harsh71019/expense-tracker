@@ -8631,6 +8631,8 @@ export interface components {
       /** @enum {string} */
       code:
         | "common.validation_failed"
+        | "common.malformed_request"
+        | "common.payload_too_large"
         | "common.not_found"
         | "common.invalid_cursor"
         | "common.idempotency_conflict"
@@ -8657,6 +8659,7 @@ export interface components {
         | "goal.funding_source_in_use"
         | "goal.invalid_order"
         | "import.invalid_file"
+        | "import.file_too_large"
         | "import.already_committed"
         | "import.invalid_state"
         | "bill.invalid_account_type"

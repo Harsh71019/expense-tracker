@@ -37,6 +37,7 @@ import { CategoryKindMismatchError } from "../common/errors/category-kind-mismat
 import { EntityNotFoundError } from "../common/errors/entity-not-found.error.js";
 import { ImportAlreadyCommittedError } from "../common/errors/import-already-committed.error.js";
 import { ImportBatchNotReadyError } from "../common/errors/import-batch-not-ready.error.js";
+import { ImportFileTooLargeError } from "../common/errors/import-file-too-large.error.js";
 import { InvalidImportFileError } from "../common/errors/invalid-import-file.error.js";
 import { LoggingContextService } from "../common/logging/logging-context.service.js";
 import { MetricsService } from "../common/observability/metrics.service.js";
@@ -848,9 +849,7 @@ export function assertValidImportFile(filename: string, mimetype: string, buffer
     throw new InvalidImportFileError("The uploaded file is empty.");
   }
   if (buffer.length > MAX_IMPORT_FILE_SIZE_BYTES) {
-    throw new InvalidImportFileError(
-      `File is ${buffer.length} bytes, exceeding the ${MAX_IMPORT_FILE_SIZE_BYTES}-byte cap.`
-    );
+    throw new ImportFileTooLargeError();
   }
 
   // An approximate, cheap row count (newline count, not a full CSV parse) —

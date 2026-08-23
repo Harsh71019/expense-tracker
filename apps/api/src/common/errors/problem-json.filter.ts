@@ -5,7 +5,15 @@ import type { Request, Response } from "express";
 import { Logger } from "nestjs-pino";
 import { ZodError } from "zod";
 
+import {
+  isExpressMalformedJson,
+  isExpressPayloadTooLarge,
+  isMulterFileTooLarge
+} from "../http/body-parser-errors.js";
 import { DomainError } from "./domain-error.js";
+import { ImportFileTooLargeError } from "./import-file-too-large.error.js";
+import { MalformedRequestError } from "./malformed-request.error.js";
+import { PayloadTooLargeError } from "./payload-too-large.error.js";
 
 type FieldError = Readonly<{ path: string; code: string; message: string }>;
 
@@ -32,17 +40,18 @@ export class ProblemJsonFilter implements ExceptionFilter {
     const request = context.getRequest<Request>();
     const response = context.getResponse<Response>();
     const reqId = requestId(response);
-    const problem = toProblemDetails(exception, request.originalUrl, reqId);
+    const normalized = normalizeRequestException(exception);
+    const problem = toProblemDetails(normalized, request.originalUrl, reqId);
 
-    if (!isExpectedException(exception)) {
+    if (!isExpectedException(normalized)) {
       this.logger.error(
         { err: exception, event: "http.unexpected_error", reqId },
         "unexpected request failure"
       );
     }
 
-    if (exception instanceof DomainError && exception.headers !== undefined) {
-      response.set(exception.headers);
+    if (normalized instanceof DomainError && normalized.headers !== undefined) {
+      response.set(normalized.headers);
     }
 
     response.status(problem.status).type("application/problem+json").send(problem);
@@ -127,6 +136,8 @@ function messageForHttpException(exception: HttpException, status: number): stri
   switch (status) {
     case HttpStatus.BAD_REQUEST:
       return "The request is invalid.";
+    case HttpStatus.PAYLOAD_TOO_LARGE:
+      return "The request payload is too large.";
     case HttpStatus.UNAUTHORIZED:
       return "Authentication required.";
     case HttpStatus.FORBIDDEN:
@@ -152,6 +163,10 @@ function messageForHttpException(exception: HttpException, status: number): stri
 
 function codeForStatus(status: number): ErrorCode {
   switch (status) {
+    case HttpStatus.BAD_REQUEST:
+      return "common.malformed_request";
+    case HttpStatus.PAYLOAD_TOO_LARGE:
+      return "common.payload_too_large";
     case HttpStatus.UNAUTHORIZED:
       return "auth.unauthenticated";
     case HttpStatus.FORBIDDEN:
@@ -182,4 +197,17 @@ function isExpectedException(exception: unknown): boolean {
     exception instanceof DomainError ||
     exception instanceof HttpException
   );
+}
+
+function normalizeRequestException(exception: unknown): unknown {
+  if (isExpressMalformedJson(exception)) {
+    return new MalformedRequestError();
+  }
+  if (isExpressPayloadTooLarge(exception)) {
+    return new PayloadTooLargeError();
+  }
+  if (isMulterFileTooLarge(exception)) {
+    return new ImportFileTooLargeError();
+  }
+  return exception;
 }

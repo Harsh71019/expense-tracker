@@ -12,7 +12,7 @@ import {
   UploadedFile,
   UseInterceptors
 } from "@nestjs/common";
-import { FileInterceptor } from "@nestjs/platform-express";
+import { Throttle } from "@nestjs/throttler";
 import {
   AccountIdSchema,
   ImportBatchIdSchema,
@@ -31,6 +31,7 @@ import { z } from "zod";
 import type { AuthenticatedUser } from "../auth/auth.guard.js";
 import { CurrentUser } from "../auth/current-user.decorator.js";
 import { InvalidImportFileError } from "../common/errors/invalid-import-file.error.js";
+import { csvUploadInterceptor } from "../common/http/csv-upload.js";
 import { ImportsService } from "./imports.service.js";
 
 const MetadataFieldSchema = z.object({
@@ -56,7 +57,8 @@ export class ImportsController {
 
   @Post()
   @HttpCode(202)
-  @UseInterceptors(FileInterceptor("file"))
+  @Throttle({ default: { limit: 5, ttl: 3_600_000, blockDuration: 3_600_000 } })
+  @UseInterceptors(csvUploadInterceptor)
   async upload(
     @CurrentUser() user: AuthenticatedUser,
     @UploadedFile() file: UploadedCsvFile | undefined,

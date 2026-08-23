@@ -12,7 +12,6 @@ import {
   UploadedFile,
   UseInterceptors
 } from "@nestjs/common";
-import { FileInterceptor } from "@nestjs/platform-express";
 import {
   AccountIdSchema,
   AcknowledgeExtraTransactionSchema,
@@ -42,6 +41,7 @@ import { z } from "zod";
 import type { AuthenticatedUser } from "../auth/auth.guard.js";
 import { CurrentUser } from "../auth/current-user.decorator.js";
 import { InvalidBillStatementFileError } from "../common/errors/invalid-bill-statement-file.error.js";
+import { csvUploadInterceptor } from "../common/http/csv-upload.js";
 import { BillReconciliationService } from "./bill-reconciliation.service.js";
 import { BillsService } from "./bills.service.js";
 
@@ -120,7 +120,7 @@ export class BillsController {
   }
 
   @Post(":billId/statement")
-  @UseInterceptors(FileInterceptor("file"))
+  @UseInterceptors(csvUploadInterceptor)
   async uploadStatement(
     @CurrentUser() user: AuthenticatedUser,
     @Param("billId") billId: string,

@@ -267,6 +267,13 @@
       "when": 1787418428961,
       "tag": "0037_outstanding_tyrannus",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1787460175926,
+      "tag": "0038_military_skin",
+      "breakpoints": true
     }
   ]
 }

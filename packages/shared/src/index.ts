@@ -226,6 +226,42 @@ export type {
   ValuationSource
 } from "./asset.js";
 export {
+  AssetMarketLinkIdSchema,
+  AssetMarketLinkSchema,
+  AssetPositionEventIdSchema,
+  AssetPositionEventPageSchema,
+  AssetPositionEventSchema,
+  AssetPositionEventSourceSchema,
+  AssetPositionEventTypeSchema,
+  CreateAssetMarketLinkSchema,
+  CreateAssetPositionEventSchema,
+  FundSchemeOptionSchema,
+  FundSchemePlanSchema,
+  MarketDataProviderSchema,
+  MarketInstrumentTypeSchema,
+  MarketPriceSchema,
+  MarketQuoteUnitSchema,
+  SgbAcquisitionChannelSchema
+} from "./asset-market.js";
+export type {
+  AssetMarketLink,
+  AssetMarketLinkId,
+  AssetPositionEvent,
+  AssetPositionEventId,
+  AssetPositionEventPage,
+  AssetPositionEventSource,
+  AssetPositionEventType,
+  CreateAssetMarketLink,
+  CreateAssetPositionEvent,
+  FundSchemeOption,
+  FundSchemePlan,
+  MarketDataProvider,
+  MarketInstrumentType,
+  MarketPrice,
+  MarketQuoteUnit,
+  SgbAcquisitionChannel
+} from "./asset-market.js";
+export {
   BudgetAlertPolicySchema,
   BudgetCategorySchema,
   BudgetIdSchema,

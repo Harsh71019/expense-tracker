@@ -7,6 +7,7 @@ export * from "./transaction.js";
 export * from "./audit.js";
 export * from "./asset.js";
 export * from "./asset-funding.js";
+export * from "./asset-position.js";
 export * from "./import.js";
 export * from "./category-rule.js";
 export * from "./notification.js";

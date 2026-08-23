@@ -4,6 +4,7 @@ import { AccountsModule } from "../accounts/accounts.module.js";
 import { ReceivablesModule } from "../receivables/receivables.module.js";
 import { AssetController } from "./asset.controller.js";
 import { AssetRepository } from "./asset.repository.js";
+import { AssetMarketRepository } from "./asset-market.repository.js";
 import { AssetService } from "./asset.service.js";
 import { AssetMutationService } from "./asset-mutation.service.js";
 import { AssetDiagnosticReadService } from "./asset-diagnostic-read.service.js";
@@ -17,6 +18,7 @@ import { AssetFundingRepository } from "../asset-fundings/asset-funding.reposito
   controllers: [AssetController],
   providers: [
     AssetRepository,
+    AssetMarketRepository,
     AssetFundingRepository,
     AssetService,
     ValuationRepository,
@@ -31,6 +33,7 @@ import { AssetFundingRepository } from "../asset-fundings/asset-funding.reposito
   // post-valuation funding contributions into an asset's current value.
   exports: [
     AssetRepository,
+    AssetMarketRepository,
     AssetFundingRepository,
     AssetService,
     ValuationRepository,

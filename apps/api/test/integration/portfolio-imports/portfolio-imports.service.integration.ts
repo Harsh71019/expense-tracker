@@ -265,4 +265,101 @@ describe("PortfolioImportsService integration", () => {
     const otherUserBatches = await service.listBatches(OTHER_USER_ID);
     expect(otherUserBatches.find((b) => b.id === user1Batch.id)).toBeUndefined();
   });
+
+  it("deletes a stuck parsing batch idempotently under concurrent retries", async () => {
+    const batch = await withTxn(testDb.db, (tx) =>
+      batchRepo.create(
+        USER_ID,
+        {
+          source: "kfintech_cams",
+          filename: "stuck-delete.pdf",
+          fileHash: "d".repeat(64),
+          status: "parsing"
+        },
+        tx
+      )
+    );
+    await withTxn(testDb.db, (tx) =>
+      rowRepo.insertChunk(
+        USER_ID,
+        batch.id,
+        [
+          {
+            rowNumber: 1,
+            rowKind: "holding",
+            semanticFingerprint: "d".repeat(64),
+            instrumentType: "mutual_fund",
+            displayName: "Stuck holding",
+            quantityMicroUnits: 1_000_000,
+            matchStatus: "unmatched",
+            proposedAction: "create_asset",
+            include: true
+          }
+        ],
+        tx
+      )
+    );
+
+    await Promise.all([
+      service.deleteBatch(USER_ID, batch.id),
+      service.deleteBatch(USER_ID, batch.id),
+      service.deleteBatch(USER_ID, batch.id),
+      service.deleteBatch(USER_ID, batch.id),
+      service.deleteBatch(USER_ID, batch.id)
+    ]);
+
+    expect(await batchRepo.findById(USER_ID, batch.id)).toBeNull();
+    expect(await rowRepo.listAllForBatch(USER_ID, batch.id)).toEqual([]);
+  });
+
+  it("keeps deletion tenant-scoped", async () => {
+    const batch = await withTxn(testDb.db, (tx) =>
+      batchRepo.create(
+        USER_ID,
+        {
+          source: "kfintech_cams",
+          filename: "tenant-delete.pdf",
+          fileHash: "e".repeat(64),
+          status: "failed"
+        },
+        tx
+      )
+    );
+
+    await service.deleteBatch(OTHER_USER_ID, batch.id);
+    expect(await batchRepo.findById(USER_ID, batch.id)).not.toBeNull();
+    await service.deleteBatch(USER_ID, batch.id);
+  });
+
+  it("rejects deletion after a batch reaches completed", async () => {
+    const batch = await withTxn(testDb.db, (tx) =>
+      batchRepo.create(
+        USER_ID,
+        {
+          source: "kfintech_cams",
+          filename: "completed-delete.pdf",
+          fileHash: "f".repeat(64),
+          status: "parsing"
+        },
+        tx
+      )
+    );
+    await withTxn(testDb.db, async (tx) => {
+      await batchRepo.markStaged(
+        USER_ID,
+        batch.id,
+        { rowCount: 0, includedCount: 0, warningCount: 0, errorCount: 0 },
+        {},
+        "ready",
+        tx
+      );
+      expect(await batchRepo.startCommitting(USER_ID, batch.id, tx)).toBe(true);
+      await batchRepo.markCommitted(USER_ID, batch.id, tx);
+    });
+
+    await expect(service.deleteBatch(USER_ID, batch.id)).rejects.toThrow(
+      'Batch cannot be deleted in status "completed"'
+    );
+    expect((await batchRepo.findById(USER_ID, batch.id))?.status).toBe("completed");
+  });
 });

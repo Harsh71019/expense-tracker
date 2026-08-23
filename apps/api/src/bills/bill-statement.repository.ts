@@ -27,7 +27,7 @@ import type { DrizzleDb } from "../common/db/db.module.js";
 import { billStatementRows, billStatementUploads } from "../common/db/schema/index.js";
 import { stripNulls } from "../common/db/strip-nulls.js";
 import type { DbTx } from "../common/db/db-txn.js";
-import { InvalidCursorError } from "../common/errors/invalid-cursor.error.js";
+import { decodeCursorPayload, encodeCursorPayload } from "../common/pagination/cursor.js";
 
 const StatementRowCursorSchema = z.object({ id: z.string().uuid() });
 
@@ -443,14 +443,9 @@ function statsFor(
 }
 
 function encodeCursor(id: string): string {
-  return Buffer.from(JSON.stringify({ id }), "utf8").toString("base64url");
+  return encodeCursorPayload({ id });
 }
 
 function decodeCursor(cursor: string): z.infer<typeof StatementRowCursorSchema> {
-  try {
-    const parsed: unknown = JSON.parse(Buffer.from(cursor, "base64url").toString("utf8"));
-    return StatementRowCursorSchema.parse(parsed);
-  } catch {
-    throw new InvalidCursorError();
-  }
+  return decodeCursorPayload(cursor, StatementRowCursorSchema);
 }

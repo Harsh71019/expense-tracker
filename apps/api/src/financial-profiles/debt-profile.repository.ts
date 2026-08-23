@@ -13,7 +13,7 @@ import { DATABASE_CONNECTION } from "../common/db/db.module.js";
 import type { DrizzleDb } from "../common/db/db.module.js";
 import type { DbTx } from "../common/db/db-txn.js";
 import { declaredDebts } from "../common/db/schema/index.js";
-import { InvalidCursorError } from "../common/errors/invalid-cursor.error.js";
+import { decodeCursorPayload, encodeCursorPayload } from "../common/pagination/cursor.js";
 import { StoredDeclaredDebtSchema, type StoredDeclaredDebt } from "./debt-policy.js";
 
 const CursorPayloadSchema = z.object({
@@ -164,19 +164,11 @@ export class DeclaredDebtRepository {
   }
 }
 
-export function encodeDebtCursor(createdAt: Date, id: string): string {
-  return Buffer.from(JSON.stringify({ createdAt: createdAt.toISOString(), id }), "utf8").toString(
-    "base64url"
-  );
+function encodeDebtCursor(createdAt: Date, id: string): string {
+  return encodeCursorPayload({ createdAt: createdAt.toISOString(), id });
 }
 
 function decodeCursor(cursor: string): { createdAt: Date; id: string } {
-  try {
-    const payload = CursorPayloadSchema.parse(
-      JSON.parse(Buffer.from(cursor, "base64url").toString("utf8"))
-    );
-    return { createdAt: new Date(payload.createdAt), id: payload.id };
-  } catch {
-    throw new InvalidCursorError();
-  }
+  const payload = decodeCursorPayload(cursor, CursorPayloadSchema);
+  return { createdAt: new Date(payload.createdAt), id: payload.id };
 }

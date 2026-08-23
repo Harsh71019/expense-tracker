@@ -19,6 +19,7 @@ import { assetFundings } from "../common/db/schema/index.js";
 import { transactions } from "../common/db/schema/index.js";
 import { assets } from "../common/db/schema/index.js";
 import { isActiveAssetFunding } from "../common/db/asset-funding-active.js";
+import { decodeCursorPayload, encodeCursorPayload } from "../common/pagination/cursor.js";
 import { stripNulls } from "../common/db/strip-nulls.js";
 
 export type CreateAssetFunding = Readonly<{
@@ -268,15 +269,10 @@ function toAssetFunding(row: typeof assetFundings.$inferSelect): AssetFunding {
 }
 
 function decodeCursor(cursor: string): { occurredAt: Date; id: string } {
-  const parsed = CursorPayloadSchema.parse(
-    JSON.parse(Buffer.from(cursor, "base64url").toString("utf8"))
-  );
+  const parsed = decodeCursorPayload(cursor, CursorPayloadSchema);
   return { occurredAt: new Date(parsed.occurredAt), id: parsed.id };
 }
 
 function encodeCursor(funding: AssetFunding): string {
-  return Buffer.from(
-    JSON.stringify({ occurredAt: funding.occurredAt.toISOString(), id: funding.id }),
-    "utf8"
-  ).toString("base64url");
+  return encodeCursorPayload({ occurredAt: funding.occurredAt.toISOString(), id: funding.id });
 }

@@ -14,7 +14,7 @@ import { DATABASE_CONNECTION } from "../common/db/db.module.js";
 import type { DrizzleDb } from "../common/db/db.module.js";
 import type { DbTx } from "../common/db/db-txn.js";
 import { financialProfiles, salaryVersions } from "../common/db/schema/index.js";
-import { InvalidCursorError } from "../common/errors/invalid-cursor.error.js";
+import { decodeCursorPayload, encodeCursorPayload } from "../common/pagination/cursor.js";
 
 const CursorPayloadSchema = z.object({
   effectiveFrom: z.string().datetime(),
@@ -177,19 +177,10 @@ export class FinancialProfileRepository {
 }
 
 export function encodeCursor(effectiveFrom: Date, id: string): string {
-  return Buffer.from(
-    JSON.stringify({ effectiveFrom: effectiveFrom.toISOString(), id }),
-    "utf8"
-  ).toString("base64url");
+  return encodeCursorPayload({ effectiveFrom: effectiveFrom.toISOString(), id });
 }
 
 function decodeCursor(cursor: string): { effectiveFrom: Date; id: string } {
-  try {
-    const payload = CursorPayloadSchema.parse(
-      JSON.parse(Buffer.from(cursor, "base64url").toString("utf8"))
-    );
-    return { effectiveFrom: new Date(payload.effectiveFrom), id: payload.id };
-  } catch {
-    throw new InvalidCursorError();
-  }
+  const payload = decodeCursorPayload(cursor, CursorPayloadSchema);
+  return { effectiveFrom: new Date(payload.effectiveFrom), id: payload.id };
 }

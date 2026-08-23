@@ -19,7 +19,7 @@ import {
   categories,
   transactions
 } from "../common/db/schema/index.js";
-import { InvalidCursorError } from "../common/errors/invalid-cursor.error.js";
+import { decodeCursorPayload, encodeCursorPayload } from "../common/pagination/cursor.js";
 import { stripNulls } from "../common/db/strip-nulls.js";
 import type { DailyCategorySpend } from "./budget-pacing.js";
 
@@ -343,21 +343,11 @@ function roughMonthBounds(month: string): { roughStart: Date; roughEnd: Date } {
   };
 }
 
-function encodeCursor(createdAt: Date, id: string): string {
-  return Buffer.from(JSON.stringify({ createdAt: createdAt.toISOString(), id }), "utf8").toString(
-    "base64url"
-  );
+export function encodeCursor(createdAt: Date, id: string): string {
+  return encodeCursorPayload({ createdAt: createdAt.toISOString(), id });
 }
 
 function decodeCursor(cursor: string): { createdAt: Date; id: string } {
-  try {
-    const payload = CursorPayloadSchema.parse(
-      JSON.parse(Buffer.from(cursor, "base64url").toString("utf8"))
-    );
-    return { createdAt: new Date(payload.createdAt), id: payload.id };
-  } catch {
-    throw new InvalidCursorError();
-  }
+  const payload = decodeCursorPayload(cursor, CursorPayloadSchema);
+  return { createdAt: new Date(payload.createdAt), id: payload.id };
 }
-
-export { encodeCursor };

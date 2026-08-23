@@ -61,6 +61,7 @@ Cross-module calls go through Nest DI (inject the other module's exported servic
 ### Other common/ utilities
 
 - `common/time/ist.ts` / `parse-date.ts` — all calendar math (cron dates, "today", month rollups) goes through these `Asia/Kolkata` helpers, never raw `Date` getters.
+- `common/pagination/cursor.ts` — JSON + UTF-8 + base64url codec for opaque list cursors. Repositories keep their own payload schemas so existing client-held cursors still decode; do not invent a second encoding.
 - `common/csv/parse-amount.ts` / `parse-csv-row.ts` — shared parsing used by `imports/`.
 - `common/logging/` — pino wiring; `request-context.middleware.ts` attaches a request-scoped child logger, `transaction-observer.service.ts` logs money-write outcomes, `events.ts` is the catalog of structured log event names. Use the injected logger, never bare `console.log` (enforced, see `AGENTS.md` §7).
 - `common/observability/` — `/metrics` endpoint and HTTP metrics middleware.

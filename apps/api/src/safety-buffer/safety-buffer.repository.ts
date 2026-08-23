@@ -11,27 +11,22 @@ import { z } from "zod";
 import { DATABASE_CONNECTION } from "../common/db/db.module.js";
 import type { DrizzleDb } from "../common/db/db.module.js";
 import type { DbTx } from "../common/db/db-txn.js";
+import { decodeCursorPayloadOrNull, encodeCursorPayload } from "../common/pagination/cursor.js";
 import { goals, safetyBufferPreferences } from "../common/db/schema/index.js";
 
 const CursorDataSchema = z.tuple([z.number().int(), z.number().int()]); // [effectiveFromEpoch, version]
 
 function encodeCursor(effectiveFrom: Date, version: number): string {
-  const payload = [effectiveFrom.getTime(), version];
-  return Buffer.from(JSON.stringify(payload)).toString("base64url");
+  return encodeCursorPayload([effectiveFrom.getTime(), version]);
 }
 
 function decodeCursor(cursor: string): { effectiveFrom: Date; version: number } | null {
-  try {
-    const raw = Buffer.from(cursor, "base64url").toString("utf8");
-    const parsed = CursorDataSchema.safeParse(JSON.parse(raw));
-    if (!parsed.success) return null;
-    return {
-      effectiveFrom: new Date(parsed.data[0]),
-      version: parsed.data[1]
-    };
-  } catch {
-    return null;
-  }
+  const parsed = decodeCursorPayloadOrNull(cursor, CursorDataSchema);
+  if (parsed === null) return null;
+  return {
+    effectiveFrom: new Date(parsed[0]),
+    version: parsed[1]
+  };
 }
 
 @Injectable()

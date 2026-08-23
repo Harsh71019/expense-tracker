@@ -29,6 +29,7 @@ import {
   transactions
 } from "../common/db/schema/index.js";
 import { toISTCalendarDate } from "../common/time/ist.js";
+import { decodeCursorPayloadOrNull, encodeCursorPayload } from "../common/pagination/cursor.js";
 import { calculateReviewPriority } from "./calculate-review-priority.js";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -41,23 +42,17 @@ function toRecord(value: unknown): Record<string, unknown> {
 
 const CursorDataSchema = z.tuple([z.number().int(), z.number().int(), z.string().uuid()]);
 
-export function encodeCursor(priorityScore: number, occurredAt: Date, id: string): string {
-  const payload = [priorityScore, occurredAt.getTime(), id];
-  return Buffer.from(JSON.stringify(payload)).toString("base64url");
+function encodeCursor(priorityScore: number, occurredAt: Date, id: string): string {
+  return encodeCursorPayload([priorityScore, occurredAt.getTime(), id]);
 }
 
-export function decodeCursor(
+function decodeCursor(
   cursor: string
 ): { priorityScore: number; occurredAt: Date; id: string } | null {
-  try {
-    const raw = Buffer.from(cursor, "base64url").toString("utf8");
-    const parsed = CursorDataSchema.safeParse(JSON.parse(raw));
-    if (!parsed.success) return null;
-    const [priorityScore, occurredAtMs, id] = parsed.data;
-    return { priorityScore, occurredAt: new Date(occurredAtMs), id };
-  } catch {
-    return null;
-  }
+  const parsed = decodeCursorPayloadOrNull(cursor, CursorDataSchema);
+  if (parsed === null) return null;
+  const [priorityScore, occurredAtMs, id] = parsed;
+  return { priorityScore, occurredAt: new Date(occurredAtMs), id };
 }
 
 export interface CandidateSourceItem {

@@ -885,7 +885,7 @@ GET    /docs                            Interactive API documentation (Stoplight
 GET    /openapi.json                    Live OpenAPI 3.1 specification JSON
 ```
 
-Cursor pagination (`occurredAt + _id` compound cursor), not offset — offset paginating a growing ledger degrades and skips rows under concurrent writes.
+Cursor pagination (`occurredAt + _id` compound cursor), not offset — offset paginating a growing ledger degrades and skips rows under concurrent writes. Opaque cursor strings are JSON + UTF-8 + base64url via `common/pagination/cursor.ts`; each list keeps its own payload schema so existing client-held cursors still decode.
 
 ---
 

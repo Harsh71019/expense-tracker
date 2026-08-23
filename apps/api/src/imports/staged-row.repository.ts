@@ -15,7 +15,7 @@ import { DATABASE_CONNECTION } from "../common/db/db.module.js";
 import type { DrizzleDb } from "../common/db/db.module.js";
 import type { DbTx } from "../common/db/db-txn.js";
 import { importBatches, stagedRows } from "../common/db/schema/index.js";
-import { InvalidCursorError } from "../common/errors/invalid-cursor.error.js";
+import { decodeCursorPayload, encodeCursorPayload } from "../common/pagination/cursor.js";
 
 export type NewStagedRow = Omit<StagedRow, "id" | "batchId">;
 
@@ -251,16 +251,9 @@ function isNullish(value: unknown): value is null | undefined {
 }
 
 function encodeCursor(rowNumber: number): string {
-  return Buffer.from(JSON.stringify({ rowNumber }), "utf8").toString("base64url");
+  return encodeCursorPayload({ rowNumber });
 }
 
 function decodeCursor(cursor: string): number {
-  try {
-    const payload = CursorPayloadSchema.parse(
-      JSON.parse(Buffer.from(cursor, "base64url").toString("utf8"))
-    );
-    return payload.rowNumber;
-  } catch {
-    throw new InvalidCursorError();
-  }
+  return decodeCursorPayload(cursor, CursorPayloadSchema).rowNumber;
 }

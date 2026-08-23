@@ -1317,12 +1317,29 @@ Each integration needs its own provider terms, secret management, retry, and dat
 
 **Trade-off:** Provider/parsing jobs must be resource-bounded so they cannot starve API processes.
 
+### ADR-8 — IBJA official rates are the production metal benchmark
+
+**Decision:** Use a paid, credentialed subscription to the official IBJA Rates API for production
+gold and silver benchmarks. Store the provider timestamp and preserve the provider's units: gold
+is INR/gram and silver is INR/kilogram, which must be converted to the shared INR/gram quote unit
+using fixed-point bigint arithmetic. Do not scrape rate webpages. MetalpriceAPI may be evaluated
+only as a separately approved secondary provider, never as a silent fallback.
+
+**Why:** IBJA publishes an India-specific benchmark and its API guidance directs valuation and
+financial-product users to the official subscription API. This fits the product's INR valuation
+contract more closely than a global spot quote converted through FX.
+
+**Trade-off:** Production ingestion cannot be enabled until an IBJA account, usage terms, and API
+credential are provisioned. Until then, the product retains the last persisted manual valuation;
+it does not synthesize or scrape a replacement quote.
+
 ## 18. Open questions that must be resolved before implementation
 
 1. Which CAS issuer/layout does the user currently receive: CAMS, KFintech, MFCentral, CDSL, or NSDL?
 2. Does the desired CAS import include transaction history since inception, or only current holdings? Exact tax estimates require acquisition lots.
-3. Which precious-metal value should be the default: IBJA benchmark, international spot converted to INR, or a specific dealer's buyback quote?
-4. Is a paid provider acceptable if required for stable automation and usage rights?
+3. IBJA official rates are the default benchmark. Is a separate dealer buyback override needed in
+   the first release for physical jewellery?
+4. Who will provision the paid IBJA subscription and production API credential?
 5. Should physical jewellery record stone/non-metal weight separately in the first release?
 6. Is the user always a resident individual for the supported estimate, and which tax year should launch first?
 7. Should asset funding with unknown units trigger a persistent reconciliation reminder after the expected allotment date?
@@ -1337,6 +1354,8 @@ Recheck every source at implementation time. Do not encode prose from this docum
 - [AMFI explanation of NAV](https://www.amfiindia.com/investor/knowledge-center-info?zoneName=NetAssetValueNAV)
 - [MFAPI.in documentation](https://www.mfapi.in/docs/)
 - [IBJA rates](https://ibjarates.com/)
+- [IBJA official rates API and usage guidance](https://www.indiagoldratesapi.com/)
+- [MetalpriceAPI terms and commercial-use terms](https://metalpriceapi.com/terms)
 - [GoldAPI XAU/INR endpoint information](https://www.goldapi.io/price/XAU/INR/json)
 - [Yahoo terms of service](https://legal.yahoo.com/xw/en/yahoo/terms/otos/index.html)
 - [NSDL-hosted SEBI circular: revised CAS issuance timelines (February 2025)](https://nsdl.co.in/downloadables/pdf/2025-0022-Policy-SEBI_circular_-_Revised_timelines_for_issuance_of_Consolidated_Account_Statement_%28CAS%29.pdf)

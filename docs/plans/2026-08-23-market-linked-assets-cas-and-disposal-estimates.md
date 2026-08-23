@@ -780,6 +780,32 @@ If cost basis, acquisition date, instrument classification, or required tax cont
 
 Capital-loss set-off, surcharge marginal relief, cess, annual exemption consumption, grandfathering, and rounding are easy to misstate. V1 may provide a bounded approximation only where explicitly modelled and tested. Unsupported cases return `unsupported_tax_context`, never a guessed number.
 
+### 9.5.1 Tax-rule review — approved calculator boundary (23 August 2026)
+
+This review approves a small, effective-dated implementation boundary; it does not approve tax
+filing, tax advice, or an estimate outside its recorded inputs. The rule implementation must be
+reviewed again for every Finance Act or Income-tax Act change before it is enabled for a new tax
+year.
+
+| Case | V1 outcome | Required evidence |
+| --- | --- | --- |
+| Physical gold or silver held as a resident individual's personal capital asset | Calculate a long-term estimate only when the lot was held for **more than 24 months**. For a transfer on or after 23 July 2024, the base long-term rate is 12.5% without indexation. A 24-month-or-shorter lot is short-term; calculate it only with an explicitly supplied, reviewed marginal-rate context. | Asset purpose, resident-individual declaration, acquisition/disposal dates, cost basis, and a rule version covering the disposal date. |
+| Unit of an equity-oriented mutual fund | Calculate 20% short-term treatment for a 12-month-or-shorter lot and 12.5% long-term treatment for a lot held longer than 12 months. Apply the ₹1.25 lakh long-term exemption only from the user-declared remaining aggregate allowance. | Effective-dated equity-oriented classification, qualifying STT-on-transfer evidence, lot dates/costs, and remaining annual exemption input. |
+| Specified mutual fund acquired on or after 1 April 2023 | Return settlement cash but no tax/post-tax estimate. Section 50AA deems the gain short-term, and its current definition covers debt/money-market-heavy funds and qualifying fund-of-funds. | The parser/catalog may label the case for review, but it must not infer a slab-rate result. |
+| Gold/silver ETF, gold fund-of-funds, unlisted products, MLDs, bonds/debentures, or any SGB route | Return settlement cash but no tax/post-tax estimate. | A future rule must separately prove the instrument classification and transfer route. In particular, no SGB case is auto-estimated. |
+
+The calculator must reject a rule when its legal effective interval does not include the disposal
+date, when surcharge/marginal-relief/rebate treatment cannot be represented, or when an
+unverified user declaration would materially alter the result. A completed response records
+whether it is **base capital-gains tax only** or includes an explicitly modelled surcharge and
+Health-and-Education-Cess calculation; it never labels an incomplete result as final tax.
+
+The primary-source basis at review time is the Income Tax Department's current holding-period
+guidance, section 112 general long-term-rate text, section 112A equity-fund conditions/rate,
+section 50AA specified-mutual-fund text, and the 2026 SGB clarification. The 2026 legal material
+also changes section numbering in places, so rule identifiers must be law-versioned rather than
+hard-coding an older section number as their meaning.
+
 ### 9.6 Example response
 
 ```json
@@ -1398,10 +1424,13 @@ original-issue and continuous-holding conditions can be proven. It must always r
 cash when a quote is available, even where post-tax proceeds are unavailable.
 
 For a disposal on or after 23 July 2024, the initial reviewed rule table may cover physical gold
-and silver after a 24-month holding period, and equity-oriented mutual funds only when the
-required classification/STT evidence is present. Debt-oriented specified mutual funds remain
-outside V1 pending scheme classification and tax review. Every response identifies its rule
-version, inputs, exclusions, and uncertainty; it is never filing advice.
+and silver held for more than 24 months, and equity-oriented mutual funds only when the required
+classification and transfer-STT evidence is present. The physical-metal long-term rule uses the
+post-change 12.5% base rate without indexation; the equity-fund long-term rule applies the
+aggregate ₹1.25 lakh allowance only when the user supplies the remaining amount. Specified mutual
+funds acquired on or after 1 April 2023, gold/silver ETFs and fund-of-funds, and every SGB
+disposal/redemption remain outside V1. Every response identifies its law/rule version, inputs,
+exclusions, and uncertainty; it is never filing advice.
 
 **Why:** The current Income Tax Department material distinguishes 12-month listed/equity holding
 periods from the general 24-month period, section 50AA treatment for specified mutual funds, and
@@ -1446,6 +1475,10 @@ Recheck every source at implementation time. Do not encode prose from this docum
 - [CBIC GST sectoral FAQs](https://cbic-gst.gov.in/sectoral-faq.html)
 - [Income Tax Department capital-gains FAQ for the post-23-July-2024 regime](https://incometaxindia.gov.in/Lists/Latest%20News/Attachments/673/FAQs%20-New-Capital-Gains-Taxation-regime.pdf)
 - [Income Tax Department capital-gains guidance (2026)](https://wmstatic-prd.incometaxindia.gov.in/documents/20117/42998/Capital-Gain_2026-03-19_04-23-21_6cf0a8_en.pdf)
+- [Income Tax Department: holding-period guidance](https://wmstatic-prd.incometaxindia.gov.in/web/guest/w/what-is-the-meaning-of-the-term-long-term-capital-asset-)
+- [Income Tax Department: section 112](https://wmstatic-prd.incometaxindia.gov.in/web/guest/w/section-112-63)
+- [Income Tax Department: section 112A](https://www.incometaxindia.gov.in/hi/w/section-112a-59)
+- [Income Tax Department: section 50AA](https://www.incometaxindia.gov.in/w/section-50aa-4)
 - [Income Tax Department SGB clarification for tax year 2026-27](https://www.incometaxindia.gov.in/documents/20117/15766092/FAQs-Budget-2026.pdf)
 - [AMFI mutual-fund tax information](https://www.amfiindia.com/investor/knowledge-center-info?zoneName=TaxRegimeForMutualFunds)
 - [Income Tax Department Budget 2026 FAQs, including SGB changes](https://incometaxindia.gov.in/Documents/Budget2026/FAQs-Budget-2026.pdf)

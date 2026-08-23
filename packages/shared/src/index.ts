@@ -537,6 +537,15 @@ export type {
   UploadImportMetadata
 } from "./import.js";
 export {
+  calculateMarketValueMinor,
+  FixedPointDecimalSchema,
+  parsePositiveDecimalToMicroUnits,
+  PriceMicroRupeesPerQuoteUnitSchema,
+  PurityBpsSchema,
+  QuantityMicroUnitsSchema
+} from "./fixed-point.js";
+export type { PriceMicroRupeesPerQuoteUnit, PurityBps, QuantityMicroUnits } from "./fixed-point.js";
+export {
   divideMinorAmount,
   formatMinor,
   formatMinorInput,

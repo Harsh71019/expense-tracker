@@ -3,6 +3,7 @@ import { Module } from "@nestjs/common";
 import { AccountsModule } from "../accounts/accounts.module.js";
 import { ReceivablesModule } from "../receivables/receivables.module.js";
 import { AssetController } from "./asset.controller.js";
+import { AssetMarketController } from "./asset-market.controller.js";
 import { AssetRepository } from "./asset.repository.js";
 import { AssetMarketRepository } from "./asset-market.repository.js";
 import { AssetMarketLinkService } from "./asset-market-link.service.js";
@@ -18,7 +19,7 @@ import { AssetFundingRepository } from "../asset-fundings/asset-funding.reposito
 
 @Module({
   imports: [AccountsModule, ReceivablesModule],
-  controllers: [AssetController],
+  controllers: [AssetController, AssetMarketController],
   providers: [
     AssetRepository,
     AssetMarketRepository,

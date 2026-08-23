@@ -2493,6 +2493,54 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/v1/assets/{assetId}/market-link": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["getAssetMarketLink"];
+    put?: never;
+    post: operations["setAssetMarketLink"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/assets/{assetId}/position-events": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["listAssetPositionEvents"];
+    put?: never;
+    post: operations["createAssetPositionEvent"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/assets/{assetId}/position-events/{eventId}/reversals": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["reverseAssetPositionEvent"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/v1/net-worth": {
     parameters: {
       query?: never;
@@ -8656,6 +8704,9 @@ export interface components {
         | "category.in_use"
         | "asset.invalid_valuation_sign"
         | "asset.moved_to_receivables"
+        | "asset_market.link_required"
+        | "asset_position_event.already_reversed"
+        | "asset_position_event.not_reversible"
         | "goal.funding_source_in_use"
         | "goal.invalid_order"
         | "import.invalid_file"
@@ -9626,6 +9677,204 @@ export interface components {
         nextCursor: string | null;
         hasMore: boolean;
         limit: number;
+      };
+    };
+    AssetMarketLink: {
+      /** Format: uuid */
+      assetId: string;
+      /** @enum {string} */
+      instrumentType:
+        | "mutual_fund"
+        | "gold_etf"
+        | "silver_etf"
+        | "gold_fund"
+        | "silver_fund"
+        | "sgb"
+        | "physical_gold"
+        | "physical_silver";
+      /** @enum {string} */
+      provider: "amfi" | "ibja" | "goldapi" | "metalpriceapi" | "manual";
+      providerInstrumentId: string;
+      isin?: string;
+      schemeCode?: string;
+      /** @enum {string} */
+      schemePlan?: "direct" | "regular" | "unknown";
+      /** @enum {string} */
+      schemeOption?: "growth" | "idcw" | "unknown";
+      /** @enum {string} */
+      acquisitionChannel?: "original_issue" | "secondary_market" | "unknown";
+      /** @enum {string} */
+      quoteUnit: "fund_unit" | "gram";
+      purityBps?: number;
+      /** @default true */
+      autoValuationEnabled: boolean;
+      /** Format: date-time */
+      effectiveFrom: string | null;
+      /** Format: uuid */
+      revisionOf?: string;
+      /** Format: uuid */
+      id: string;
+      userId: string;
+      /** Format: date-time */
+      supersededAt?: string | null;
+      /** Format: date-time */
+      createdAt: string | null;
+    };
+    AssetPositionEventPage: {
+      items: {
+        /** Format: uuid */
+        assetId: string;
+        /** @enum {string} */
+        eventType:
+          | "opening"
+          | "purchase"
+          | "reinvestment"
+          | "switch_in"
+          | "redemption"
+          | "switch_out"
+          | "reconciliation_in"
+          | "reconciliation_out"
+          | "reversal";
+        quantityMicroUnits: number;
+        grossAmountMinor?: number;
+        chargesMinor?: number;
+        taxesAtAcquisitionMinor?: number;
+        /** Format: date-time */
+        occurredAt: string | null;
+        /** Format: uuid */
+        transactionId?: string;
+        /** Format: uuid */
+        assetFundingId?: string;
+        /** @enum {string} */
+        source: "manual" | "cas" | "broker_import" | "legacy_backfill";
+        sourceReference: string;
+        /** Format: uuid */
+        portfolioImportRowId?: string;
+        /** Format: uuid */
+        reversalOf?: string;
+        /** Format: uuid */
+        id: string;
+        userId: string;
+        /** Format: date-time */
+        createdAt: string | null;
+      }[];
+      pageInfo: {
+        nextCursor: string | null;
+        hasMore: boolean;
+        limit: number;
+      };
+    };
+    AssetPositionEvent: {
+      /** Format: uuid */
+      assetId: string;
+      /** @enum {string} */
+      eventType:
+        | "opening"
+        | "purchase"
+        | "reinvestment"
+        | "switch_in"
+        | "redemption"
+        | "switch_out"
+        | "reconciliation_in"
+        | "reconciliation_out"
+        | "reversal";
+      quantityMicroUnits: number;
+      grossAmountMinor?: number;
+      chargesMinor?: number;
+      taxesAtAcquisitionMinor?: number;
+      /** Format: date-time */
+      occurredAt: string | null;
+      /** Format: uuid */
+      transactionId?: string;
+      /** Format: uuid */
+      assetFundingId?: string;
+      /** @enum {string} */
+      source: "manual" | "cas" | "broker_import" | "legacy_backfill";
+      sourceReference: string;
+      /** Format: uuid */
+      portfolioImportRowId?: string;
+      /** Format: uuid */
+      reversalOf?: string;
+      /** Format: uuid */
+      id: string;
+      userId: string;
+      /** Format: date-time */
+      createdAt: string | null;
+    };
+    ReverseAssetPositionEventResult: {
+      original: {
+        /** Format: uuid */
+        assetId: string;
+        /** @enum {string} */
+        eventType:
+          | "opening"
+          | "purchase"
+          | "reinvestment"
+          | "switch_in"
+          | "redemption"
+          | "switch_out"
+          | "reconciliation_in"
+          | "reconciliation_out"
+          | "reversal";
+        quantityMicroUnits: number;
+        grossAmountMinor?: number;
+        chargesMinor?: number;
+        taxesAtAcquisitionMinor?: number;
+        /** Format: date-time */
+        occurredAt: string | null;
+        /** Format: uuid */
+        transactionId?: string;
+        /** Format: uuid */
+        assetFundingId?: string;
+        /** @enum {string} */
+        source: "manual" | "cas" | "broker_import" | "legacy_backfill";
+        sourceReference: string;
+        /** Format: uuid */
+        portfolioImportRowId?: string;
+        /** Format: uuid */
+        reversalOf?: string;
+        /** Format: uuid */
+        id: string;
+        userId: string;
+        /** Format: date-time */
+        createdAt: string | null;
+      };
+      reversal: {
+        /** Format: uuid */
+        assetId: string;
+        /** @enum {string} */
+        eventType:
+          | "opening"
+          | "purchase"
+          | "reinvestment"
+          | "switch_in"
+          | "redemption"
+          | "switch_out"
+          | "reconciliation_in"
+          | "reconciliation_out"
+          | "reversal";
+        quantityMicroUnits: number;
+        grossAmountMinor?: number;
+        chargesMinor?: number;
+        taxesAtAcquisitionMinor?: number;
+        /** Format: date-time */
+        occurredAt: string | null;
+        /** Format: uuid */
+        transactionId?: string;
+        /** Format: uuid */
+        assetFundingId?: string;
+        /** @enum {string} */
+        source: "manual" | "cas" | "broker_import" | "legacy_backfill";
+        sourceReference: string;
+        /** Format: uuid */
+        portfolioImportRowId?: string;
+        /** Format: uuid */
+        reversalOf?: string;
+        /** Format: uuid */
+        id: string;
+        userId: string;
+        /** Format: date-time */
+        createdAt: string | null;
       };
     };
     NetWorth: {
@@ -13122,6 +13371,418 @@ export interface operations {
       };
       /** @description Asset not found */
       404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Validation failed */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Internal error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+    };
+  };
+  getAssetMarketLink: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        assetId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Active market-instrument link */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AssetMarketLink"];
+        };
+      };
+      /** @description Unauthenticated */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Asset or market link not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Validation failed */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Internal error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+    };
+  };
+  setAssetMarketLink: {
+    parameters: {
+      query?: never;
+      header: {
+        "Idempotency-Key": string;
+      };
+      path: {
+        assetId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        "application/json": {
+          /** @enum {string} */
+          instrumentType:
+            | "mutual_fund"
+            | "gold_etf"
+            | "silver_etf"
+            | "gold_fund"
+            | "silver_fund"
+            | "sgb"
+            | "physical_gold"
+            | "physical_silver";
+          /** @enum {string} */
+          provider: "amfi" | "ibja" | "goldapi" | "metalpriceapi" | "manual";
+          providerInstrumentId: string;
+          isin?: string;
+          schemeCode?: string;
+          /** @enum {string} */
+          schemePlan?: "direct" | "regular" | "unknown";
+          /** @enum {string} */
+          schemeOption?: "growth" | "idcw" | "unknown";
+          /** @enum {string} */
+          acquisitionChannel?: "original_issue" | "secondary_market" | "unknown";
+          /** @enum {string} */
+          quoteUnit: "fund_unit" | "gram";
+          purityBps?: number;
+          /** @default true */
+          autoValuationEnabled?: boolean;
+          /** Format: date-time */
+          effectiveFrom: string | null;
+        };
+      };
+    };
+    responses: {
+      /** @description Idempotent replay of the active market-instrument link */
+      200: {
+        headers: {
+          "Idempotency-Replayed": "true";
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AssetMarketLink"];
+        };
+      };
+      /** @description Created or revised market-instrument link */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AssetMarketLink"];
+        };
+      };
+      /** @description Unauthenticated */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Asset not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Idempotency key was already used for different request intent */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Validation failed */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Internal error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+    };
+  };
+  listAssetPositionEvents: {
+    parameters: {
+      query?: {
+        cursor?: string;
+        limit?: number;
+      };
+      header?: never;
+      path: {
+        assetId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Cursor-paginated position event history */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AssetPositionEventPage"];
+        };
+      };
+      /** @description Unauthenticated */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Asset not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Validation failed */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Internal error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+    };
+  };
+  createAssetPositionEvent: {
+    parameters: {
+      query?: never;
+      header: {
+        "Idempotency-Key": string;
+      };
+      path: {
+        assetId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        "application/json": {
+          /** @enum {string} */
+          eventType:
+            | "opening"
+            | "purchase"
+            | "reinvestment"
+            | "switch_in"
+            | "redemption"
+            | "switch_out"
+            | "reconciliation_in"
+            | "reconciliation_out"
+            | "reversal";
+          quantityMicroUnits: number;
+          grossAmountMinor?: number;
+          chargesMinor?: number;
+          taxesAtAcquisitionMinor?: number;
+          /** Format: date-time */
+          occurredAt: string | null;
+        };
+      };
+    };
+    responses: {
+      /** @description Idempotent replay of the created position event */
+      200: {
+        headers: {
+          "Idempotency-Replayed": "true";
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AssetPositionEvent"];
+        };
+      };
+      /** @description Created append-only position event */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AssetPositionEvent"];
+        };
+      };
+      /** @description Unauthenticated */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Asset not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Asset market link is required, or idempotency intent conflicts */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Validation failed */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Internal error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+    };
+  };
+  reverseAssetPositionEvent: {
+    parameters: {
+      query?: never;
+      header: {
+        "Idempotency-Key": string;
+      };
+      path: {
+        assetId: string;
+        eventId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Idempotent replay of the position-event reversal */
+      200: {
+        headers: {
+          "Idempotency-Replayed": "true";
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ReverseAssetPositionEventResult"];
+        };
+      };
+      /** @description Created append-only reversal event */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ReverseAssetPositionEventResult"];
+        };
+      };
+      /** @description Unauthenticated */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Asset or position event not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Position event is already reversed, not reversible, or idempotency intent conflicts */
+      409: {
         headers: {
           [name: string]: unknown;
         };

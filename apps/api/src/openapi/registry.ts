@@ -207,7 +207,15 @@ import {
   LinkTransactionToAssetSchema,
   CreateInvestmentTransactionSchema,
   ReverseAssetFundingResultSchema,
-  ListAssetFundingsQuerySchema
+  ListAssetFundingsQuerySchema,
+  AssetMarketLinkSchema,
+  AssetPositionEventIdSchema,
+  AssetPositionEventPageSchema,
+  AssetPositionEventSchema,
+  CreateAssetMarketLinkRequestSchema,
+  CreateManualAssetPositionEventSchema,
+  ListAssetPositionEventsQuerySchema,
+  ReverseAssetPositionEventResultSchema
 } from "@treasury-ops/shared";
 import { z } from "zod";
 
@@ -327,6 +335,12 @@ const AssetFundingPage = AssetFundingPageSchema.meta({ id: "AssetFundingPage" })
 const ReverseAssetFundingResult = ReverseAssetFundingResultSchema.meta({
   id: "ReverseAssetFundingResult"
 });
+const AssetMarketLink = AssetMarketLinkSchema.meta({ id: "AssetMarketLink" });
+const AssetPositionEvent = AssetPositionEventSchema.meta({ id: "AssetPositionEvent" });
+const AssetPositionEventPage = AssetPositionEventPageSchema.meta({ id: "AssetPositionEventPage" });
+const ReverseAssetPositionEventResult = ReverseAssetPositionEventResultSchema.meta({
+  id: "ReverseAssetPositionEventResult"
+});
 
 const reviewItemId = z.object({ id: ReviewItemIdSchema });
 
@@ -335,6 +349,10 @@ const categoryId = z.object({ categoryId: CategoryIdSchema });
 const categoryRuleId = z.object({ ruleId: CategoryRuleIdSchema });
 const transactionId = z.object({ transactionId: TransactionIdSchema });
 const assetId = z.object({ assetId: AssetIdSchema });
+const assetAndPositionEventId = z.object({
+  assetId: AssetIdSchema,
+  eventId: AssetPositionEventIdSchema
+});
 const receivableId = z.object({ receivableId: ReceivableIdSchema });
 const assetFundingId = z.object({ fundingId: AssetFundingIdSchema });
 const transferGroupId = z.object({ transferGroupId: TransferGroupIdSchema });
@@ -1027,6 +1045,110 @@ registry.registerPath({
   responses: {
     200: { description: "Valuations", ...json(ValuationPage) },
     404: { description: "Not found", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/v1/assets/{assetId}/market-link",
+  operationId: "getAssetMarketLink",
+  security: secured,
+  request: { params: assetId },
+  responses: {
+    200: { description: "Active market-instrument link", ...json(AssetMarketLink) },
+    404: { description: "Asset or market link not found", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/v1/assets/{assetId}/market-link",
+  operationId: "setAssetMarketLink",
+  security: secured,
+  request: {
+    params: assetId,
+    body: json(CreateAssetMarketLinkRequestSchema),
+    headers: idempotencyKeyHeaders
+  },
+  responses: {
+    200: {
+      description: "Idempotent replay of the active market-instrument link",
+      headers: replayedHeaders,
+      ...json(AssetMarketLink)
+    },
+    201: { description: "Created or revised market-instrument link", ...json(AssetMarketLink) },
+    404: { description: "Asset not found", ...json(ProblemDetails) },
+    ...idempotencyConflictResponse,
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/v1/assets/{assetId}/position-events",
+  operationId: "listAssetPositionEvents",
+  security: secured,
+  request: { params: assetId, query: ListAssetPositionEventsQuerySchema },
+  responses: {
+    200: {
+      description: "Cursor-paginated position event history",
+      ...json(AssetPositionEventPage)
+    },
+    404: { description: "Asset not found", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/v1/assets/{assetId}/position-events",
+  operationId: "createAssetPositionEvent",
+  security: secured,
+  request: {
+    params: assetId,
+    body: json(CreateManualAssetPositionEventSchema),
+    headers: idempotencyKeyHeaders
+  },
+  responses: {
+    200: {
+      description: "Idempotent replay of the created position event",
+      headers: replayedHeaders,
+      ...json(AssetPositionEvent)
+    },
+    201: { description: "Created append-only position event", ...json(AssetPositionEvent) },
+    404: { description: "Asset not found", ...json(ProblemDetails) },
+    409: {
+      description: "Asset market link is required, or idempotency intent conflicts",
+      ...json(ProblemDetails)
+    },
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/v1/assets/{assetId}/position-events/{eventId}/reversals",
+  operationId: "reverseAssetPositionEvent",
+  security: secured,
+  request: { params: assetAndPositionEventId, headers: idempotencyKeyHeaders },
+  responses: {
+    200: {
+      description: "Idempotent replay of the position-event reversal",
+      headers: replayedHeaders,
+      ...json(ReverseAssetPositionEventResult)
+    },
+    201: {
+      description: "Created append-only reversal event",
+      ...json(ReverseAssetPositionEventResult)
+    },
+    404: { description: "Asset or position event not found", ...json(ProblemDetails) },
+    409: {
+      description:
+        "Position event is already reversed, not reversible, or idempotency intent conflicts",
+      ...json(ProblemDetails)
+    },
     ...problemResponses
   }
 });

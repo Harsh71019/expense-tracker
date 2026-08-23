@@ -271,6 +271,16 @@ Loans given are receivables; loans taken are liabilities. Fixed deposits, gold, 
 
 `netWorth = accounts + latest asset valuations`, where liabilities are stored as a negative valuation. Gold and silver start with manual valuations; no external price-feed dependency is required.
 
+#### `asset_market_links` + `asset_position_events`
+
+Market-linked assets keep instrument identity separate from quantity and price. One active,
+tenant-scoped link identifies the provider instrument and quote unit; changing it creates a new
+revision and supersedes the previous link without rewriting historical provenance. Position events
+store only positive micro-unit quantities; the event type determines direction. They are
+append-only at both the service and database boundary: a correction is a linked `reversal` event,
+never an update or delete. Every create/reversal route requires `Idempotency-Key`, and position
+event history is cursor-paginated by `(occurredAt, id)`.
+
 `loan_receivable` is now migrated: an additive backfill ports every legacy `loan_receivable` asset into `receivables` below (linked via `receivables.legacy_asset_id`), and `GET /assets` hides backfilled rows going forward. Legacy asset/valuation rows are left untouched for rollback safety.
 
 #### `receivables` + `receivable_events` — Debt Given (money lent to other people)
@@ -854,6 +864,9 @@ GET    /category-rules | POST /category-rules | DELETE /category-rules/:id
 GET    /assets | POST /assets | POST /assets/:id/close   (POST kind=loan_receivable is a deprecated
                                                           compat path -> creates a receivable instead)
 GET    /assets/:id/valuations | POST /assets/:id/valuations
+GET    /assets/:id/market-link | POST /assets/:id/market-link
+GET    /assets/:id/position-events?cursor&limit | POST /assets/:id/position-events
+POST   /assets/:id/position-events/:eventId/reversals
 GET    /net-worth                       accounts + non-receivable assets + receivables breakdown
 
 GET    /receivables?status&cursor       Debt Given: cursor-paginated, filtered by active/settled/

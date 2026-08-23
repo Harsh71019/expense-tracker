@@ -2,6 +2,9 @@ import type { INestApplication } from "@nestjs/common";
 import {
   AccountSchema,
   AssetSchema,
+  AssetMarketLinkSchema,
+  AssetPositionEventPageSchema,
+  AssetPositionEventSchema,
   BatchCategorizeTransactionsResultSchema,
   CategorySchema,
   CategoryRecommendationResponseSchema,
@@ -33,7 +36,8 @@ import {
   ReceivableEventPageSchema,
   ReceivableMutationResultSchema,
   ReceivablePageSchema,
-  ReceivableSchema
+  ReceivableSchema,
+  ReverseAssetPositionEventResultSchema
 } from "@treasury-ops/shared";
 import { GenericContainer } from "testcontainers";
 import type { StartedTestContainer } from "testcontainers";
@@ -1260,6 +1264,92 @@ describe("production HTTP composition", () => {
     for (const path of [
       `/api/v1/receivables/${created.receivable.id}`,
       `/api/v1/receivables/${created.receivable.id}/events`
+    ]) {
+      const foreign = await fetch(`${baseUrl}${path}`, { headers: { cookie: sessionB } });
+      expect(foreign.status).toBe(404);
+    }
+  });
+
+  it("serves market links and position events with idempotency and tenant isolation", async () => {
+    const asset = await parseResponse(
+      await fetch(`${baseUrl}/api/v1/assets`, {
+        method: "POST",
+        headers: { ...JSON_HEADERS, cookie: sessionA, "idempotency-key": crypto.randomUUID() },
+        body: JSON.stringify({
+          kind: "investment",
+          name: "E2E index fund",
+          openedAt: "2026-08-23T00:00:00.000Z",
+          openingValueMinor: 10_000
+        })
+      }),
+      AssetSchema
+    );
+    const linkKey = crypto.randomUUID();
+    const linkBody = {
+      instrumentType: "mutual_fund",
+      provider: "amfi",
+      providerInstrumentId: "120503",
+      quoteUnit: "fund_unit",
+      effectiveFrom: "2026-08-23T00:00:00.000Z"
+    };
+    const linkResponse = await fetch(`${baseUrl}/api/v1/assets/${asset.id}/market-link`, {
+      method: "POST",
+      headers: { ...JSON_HEADERS, cookie: sessionA, "idempotency-key": linkKey },
+      body: JSON.stringify(linkBody)
+    });
+    expect(linkResponse.status).toBe(201);
+    const link = await parseResponse(linkResponse, AssetMarketLinkSchema);
+    expect(link.assetId).toBe(asset.id);
+
+    const eventKey = crypto.randomUUID();
+    const eventBody = {
+      eventType: "opening",
+      quantityMicroUnits: 1_000_000,
+      occurredAt: "2026-08-23T00:00:00.000Z"
+    };
+    const eventResponse = await fetch(`${baseUrl}/api/v1/assets/${asset.id}/position-events`, {
+      method: "POST",
+      headers: { ...JSON_HEADERS, cookie: sessionA, "idempotency-key": eventKey },
+      body: JSON.stringify(eventBody)
+    });
+    expect(eventResponse.status).toBe(201);
+    const event = await parseResponse(eventResponse, AssetPositionEventSchema);
+
+    const replay = await fetch(`${baseUrl}/api/v1/assets/${asset.id}/position-events`, {
+      method: "POST",
+      headers: { ...JSON_HEADERS, cookie: sessionA, "idempotency-key": eventKey },
+      body: JSON.stringify(eventBody)
+    });
+    expect(replay.status).toBe(200);
+    expect(replay.headers.get("idempotency-replayed")).toBe("true");
+    expect((await parseResponse(replay, AssetPositionEventSchema)).id).toBe(event.id);
+
+    const reversal = await fetch(
+      `${baseUrl}/api/v1/assets/${asset.id}/position-events/${event.id}/reversals`,
+      {
+        method: "POST",
+        headers: { ...JSON_HEADERS, cookie: sessionA, "idempotency-key": crypto.randomUUID() }
+      }
+    );
+    expect(reversal.status).toBe(201);
+    expect(
+      (await parseResponse(reversal, ReverseAssetPositionEventResultSchema)).reversal
+    ).toMatchObject({
+      eventType: "reversal",
+      reversalOf: event.id
+    });
+
+    const events = await parseResponse(
+      await fetch(`${baseUrl}/api/v1/assets/${asset.id}/position-events?limit=50`, {
+        headers: { cookie: sessionA }
+      }),
+      AssetPositionEventPageSchema
+    );
+    expect(events.items).toHaveLength(2);
+
+    for (const path of [
+      `/api/v1/assets/${asset.id}/market-link`,
+      `/api/v1/assets/${asset.id}/position-events`
     ]) {
       const foreign = await fetch(`${baseUrl}${path}`, { headers: { cookie: sessionB } });
       expect(foreign.status).toBe(404);

@@ -44,6 +44,12 @@ vi.mock("../hooks/use-asset-mutations", () => ({
   })
 }));
 
+vi.mock("../hooks/use-asset-market-valuation", () => ({
+  useAssetMarketValuation: () => ({ data: undefined }),
+  useRefreshMarketQuote: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useEstimateDisposal: () => ({ mutateAsync: vi.fn(), isPending: false })
+}));
+
 const mockFdAsset: Asset = {
   id: "fd-123",
   userId: "u1",
@@ -95,18 +101,19 @@ const mockValuations: ValuationPage = {
 
 const mockMarketRates: MarketRates = {
   asOf: new Date("2026-08-22T17:00:00.000Z"),
-  usdInr: 95.7,
+  source: "gold_api",
+  isStale: false,
   gold: {
-    priceUsdPerOz: 4680.0,
+    priceMicroRupeesPerGram: 14_400_000_000,
     priceMinorPerGram: 1440000,
     priceFormatted: "₹14,400.00 / g",
-    changePercent24h: 0.5
+    providerAsOf: new Date("2026-08-22T17:00:00.000Z")
   },
   silver: {
-    priceUsdPerOz: 52.0,
+    priceMicroRupeesPerGram: 160_000_000,
     priceMinorPerGram: 16000,
     priceFormatted: "₹160.00 / g",
-    changePercent24h: -0.2
+    providerAsOf: new Date("2026-08-22T17:00:00.000Z")
   }
 };
 
@@ -155,7 +162,7 @@ describe("AssetDetail", () => {
     expect(screen.getByText("₹14,400.00 / g")).toBeVisible();
     expect(screen.getByText("10.000")).toBeVisible();
 
-    const syncBtn = screen.getByRole("button", { name: "Sync to Market" });
+    const syncBtn = screen.getByRole("button", { name: "Sync indicative rate" });
     expect(syncBtn).toBeVisible();
 
     await user.click(syncBtn);
@@ -167,7 +174,9 @@ describe("AssetDetail", () => {
         source: "manual"
       })
     });
-    expect(mocks.toastSuccess).toHaveBeenCalledWith("Valuation synced to live market rate");
+    expect(mocks.toastSuccess).toHaveBeenCalledWith(
+      "Valuation synced to indicative spot reference"
+    );
   });
 
   it("allows opening and closing the close asset dialog", async () => {

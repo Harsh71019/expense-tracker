@@ -43,6 +43,7 @@ import { FinancialSafetyModule } from "./financial-safety/financial-safety.modul
 import { HealthModule } from "./health/health.module.js";
 import { GoalsModule } from "./goals/goals.module.js";
 import { ImportsModule } from "./imports/imports.module.js";
+import { PortfolioImportsModule } from "./portfolio-imports/portfolio-imports.module.js";
 import { ForecastingModule } from "./insights/forecasting/forecasting.module.js";
 import { NotificationsModule } from "./notifications/notifications.module.js";
 import { OpenApiModule } from "./openapi/openapi.module.js";
@@ -106,6 +107,7 @@ function isUnthrottledPath(context: ExecutionContext): boolean {
     AssetFundingsModule,
     TransactionAssetFundingHookModule,
     ImportsModule,
+    PortfolioImportsModule,
     ForecastingModule,
     ExportModule,
     RecurringModule,

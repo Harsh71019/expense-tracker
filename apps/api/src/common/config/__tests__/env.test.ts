@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import { parseRuntimeEnv } from "../env.js";
 
+const testEncryptionKey = Buffer.alloc(32, 1).toString("base64");
+
 describe("parseRuntimeEnv", () => {
   it("applies safe defaults to a valid environment", () => {
     const environment = parseRuntimeEnv({
@@ -9,7 +11,8 @@ describe("parseRuntimeEnv", () => {
       REDIS_URL: "redis://localhost:6379",
       TRUSTED_ORIGINS: "http://localhost:3000",
       BETTER_AUTH_SECRET: "a-very-long-test-secret-that-is-safe",
-      BETTER_AUTH_URL: "http://localhost:4000"
+      BETTER_AUTH_URL: "http://localhost:4000",
+      PORTFOLIO_IMPORT_ENCRYPTION_KEY: testEncryptionKey
     });
 
     expect(environment.API_PORT).toBe(4000);
@@ -53,6 +56,7 @@ describe("parseRuntimeEnv", () => {
         TRUSTED_ORIGINS: "http://localhost:3000",
         BETTER_AUTH_SECRET: "a-very-long-test-secret-that-is-safe",
         BETTER_AUTH_URL: "http://localhost:4000",
+        PORTFOLIO_IMPORT_ENCRYPTION_KEY: testEncryptionKey,
         AUTH_COOKIE_SECURE: "yes"
       })
     ).toThrow();
@@ -64,7 +68,8 @@ describe("parseRuntimeEnv", () => {
       REDIS_URL: "redis://localhost:6379",
       TRUSTED_ORIGINS: "http://localhost:3000",
       BETTER_AUTH_SECRET: "a-very-long-test-secret-that-is-safe",
-      BETTER_AUTH_URL: "http://localhost:4000"
+      BETTER_AUTH_URL: "http://localhost:4000",
+      PORTFOLIO_IMPORT_ENCRYPTION_KEY: testEncryptionKey
     };
 
     expect(() => parseRuntimeEnv({ ...base, DATABASE_POOL_MAX: "0" })).toThrow();

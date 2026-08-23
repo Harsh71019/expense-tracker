@@ -190,6 +190,7 @@ export {
   AssetFundingIdSchema,
   AssetFundingPageSchema,
   AssetFundingMutationResultSchema,
+  AssetFundingPositionMetadataSchema,
   AssetFundingSchema,
   AssetFundingStatusSchema,
   AssetFundingTargetSchema,
@@ -203,6 +204,7 @@ export type {
   AssetFundingId,
   AssetFundingPage,
   AssetFundingMutationResult,
+  AssetFundingPositionMetadata,
   AssetFundingStatus,
   AssetFundingTarget,
   CreateInvestmentTransaction,
@@ -225,6 +227,83 @@ export type {
   ValuationPage,
   ValuationSource
 } from "./asset.js";
+export {
+  AssetMarketLinkIdSchema,
+  AssetMarketLinkSchema,
+  AssetCurrentPositionSchema,
+  AssetPositionEventIdSchema,
+  AssetPositionEventPageSchema,
+  AssetPositionEventSchema,
+  AssetPositionEventSourceSchema,
+  AssetPositionEventTypeSchema,
+  CreateAssetMarketLinkSchema,
+  CreateAssetMarketLinkRequestSchema,
+  CreateAssetPositionEventSchema,
+  CreateManualAssetPositionEventSchema,
+  deriveAssetCurrentPosition,
+  FundSchemeOptionSchema,
+  FundSchemePlanSchema,
+  MarketDataProviderSchema,
+  MarketInstrumentTypeSchema,
+  MarketQuoteIdSchema,
+  MarketQuoteSchema,
+  MarketPriceSchema,
+  MarketValuationSchema,
+  MarketQuoteUnitSchema,
+  ListAssetPositionEventsQuerySchema,
+  ReverseAssetPositionEventResultSchema,
+  SgbAcquisitionChannelSchema,
+  MarketInstrumentItemSchema,
+  MarketInstrumentPageSchema,
+  ListMarketInstrumentsQuerySchema,
+  MarketQuoteFreshnessSchema,
+  MarketQuoteWithFreshnessSchema,
+  AssetMarketValuationDetailsSchema,
+  TaxpayerTypeSchema,
+  TaxContextInputSchema,
+  EstimateDisposalRequestSchema,
+  DisposalDeductionsSchema,
+  DisposalLotAllocationSchema,
+  DisposalEstimateResultSchema
+} from "./asset-market.js";
+export type {
+  AssetMarketLink,
+  AssetMarketLinkId,
+  AssetCurrentPosition,
+  AssetPositionEvent,
+  AssetPositionEventId,
+  AssetPositionEventPage,
+  AssetPositionEventSource,
+  AssetPositionEventType,
+  CreateAssetMarketLink,
+  CreateAssetMarketLinkRequest,
+  CreateAssetPositionEvent,
+  CreateManualAssetPositionEvent,
+  FundSchemeOption,
+  FundSchemePlan,
+  MarketDataProvider,
+  MarketInstrumentType,
+  MarketQuote,
+  MarketQuoteId,
+  MarketPrice,
+  MarketValuation,
+  MarketQuoteUnit,
+  ListAssetPositionEventsQuery,
+  ReverseAssetPositionEventResult,
+  SgbAcquisitionChannel,
+  MarketInstrumentItem,
+  MarketInstrumentPage,
+  ListMarketInstrumentsQuery,
+  MarketQuoteFreshness,
+  MarketQuoteWithFreshness,
+  AssetMarketValuationDetails,
+  TaxpayerType,
+  TaxContextInput,
+  EstimateDisposalRequest,
+  DisposalDeductions,
+  DisposalLotAllocation,
+  DisposalEstimateResult
+} from "./asset-market.js";
 export {
   BudgetAlertPolicySchema,
   BudgetCategorySchema,
@@ -536,6 +615,61 @@ export type {
   UpdateStagedRow,
   UploadImportMetadata
 } from "./import.js";
+export {
+  MAX_PORTFOLIO_IMPORT_FILE_SIZE_BYTES,
+  PortfolioImportBatchCommitResultSchema,
+  PortfolioImportBatchIdSchema,
+  PortfolioImportBatchSchema,
+  PortfolioImportRowActionSchema,
+  PortfolioImportRowIdSchema,
+  PortfolioImportRowKindSchema,
+  PortfolioImportRowMatchStatusSchema,
+  PortfolioImportRowPageSchema,
+  PortfolioImportRowSchema,
+  PortfolioImportSourceSchema,
+  PortfolioImportStatusSchema,
+  UpdatePortfolioImportRowSchema,
+  UploadPortfolioImportMetadataSchema
+} from "./portfolio-import.js";
+export type {
+  PortfolioImportBatch,
+  PortfolioImportBatchCommitResult,
+  PortfolioImportBatchId,
+  PortfolioImportRow,
+  PortfolioImportRowAction,
+  PortfolioImportRowId,
+  PortfolioImportRowKind,
+  PortfolioImportRowMatchStatus,
+  PortfolioImportRowPage,
+  PortfolioImportSource,
+  PortfolioImportStatus,
+  UpdatePortfolioImportRow,
+  UploadPortfolioImportMetadata
+} from "./portfolio-import.js";
+export {
+  calculateMarketValueMinor,
+  FixedPointDecimalSchema,
+  formatMicroUnits,
+  formatPricePerUnit,
+  microRupeesToMinorUnits,
+  microUnitsToMilliUnits,
+  parseMicroUnits,
+  parsePositiveDecimalToMicroUnits,
+  parsePricePerUnit,
+  parseTroyOunceInrToMicroRupeesPerGram,
+  PriceMicroRupeesPerQuoteUnitSchema,
+  PurityBpsSchema,
+  QuantityMicroUnitsSchema
+} from "./fixed-point.js";
+export type { PriceMicroRupeesPerQuoteUnit, PurityBps, QuantityMicroUnits } from "./fixed-point.js";
+export {
+  CreateMarketLinkedAssetSchema,
+  MarketLinkedAssetCreationResultSchema
+} from "./market-linked-asset.js";
+export type {
+  CreateMarketLinkedAsset,
+  MarketLinkedAssetCreationResult
+} from "./market-linked-asset.js";
 export {
   divideMinorAmount,
   formatMinor,

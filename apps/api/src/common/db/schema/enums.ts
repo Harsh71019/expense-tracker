@@ -38,11 +38,88 @@ export const assetKindEnum = pgEnum("asset_kind", [
   "silver",
   "investment"
 ]);
-export const valuationSourceEnum = pgEnum("valuation_source", ["manual", "maturity_projection"]);
+export const valuationSourceEnum = pgEnum("valuation_source", [
+  "manual",
+  "maturity_projection",
+  "market_quote"
+]);
+export const marketInstrumentTypeEnum = pgEnum("market_instrument_type", [
+  "mutual_fund",
+  "gold_etf",
+  "silver_etf",
+  "gold_fund",
+  "silver_fund",
+  "sgb",
+  "physical_gold",
+  "physical_silver"
+]);
+export const marketDataProviderEnum = pgEnum("market_data_provider", [
+  "amfi",
+  "ibja",
+  "goldapi",
+  "metalpriceapi",
+  "manual"
+]);
+export const fundSchemePlanEnum = pgEnum("fund_scheme_plan", ["direct", "regular", "unknown"]);
+export const fundSchemeOptionEnum = pgEnum("fund_scheme_option", ["growth", "idcw", "unknown"]);
+export const sgbAcquisitionChannelEnum = pgEnum("sgb_acquisition_channel", [
+  "original_issue",
+  "secondary_market",
+  "unknown"
+]);
+export const marketQuoteUnitEnum = pgEnum("market_quote_unit", ["fund_unit", "gram"]);
+export const assetPositionEventTypeEnum = pgEnum("asset_position_event_type", [
+  "opening",
+  "purchase",
+  "reinvestment",
+  "switch_in",
+  "redemption",
+  "switch_out",
+  "reconciliation_in",
+  "reconciliation_out",
+  "reversal"
+]);
+export const assetPositionEventSourceEnum = pgEnum("asset_position_event_source", [
+  "manual",
+  "cas",
+  "broker_import",
+  "legacy_backfill"
+]);
 export const assetFundingStatusEnum = pgEnum("asset_funding_status", [
   "posted",
   "reversed",
   "reversal"
+]);
+export const portfolioImportSourceEnum = pgEnum("portfolio_import_source", [
+  "kfintech_cams",
+  "unknown"
+]);
+export const portfolioImportStatusEnum = pgEnum("portfolio_import_status", [
+  "queued",
+  "parsing",
+  "needs_review",
+  "ready",
+  "committing",
+  "completed",
+  "failed",
+  "reverting",
+  "reverted"
+]);
+export const portfolioImportRowKindEnum = pgEnum("portfolio_import_row_kind", [
+  "holding",
+  "transaction"
+]);
+export const portfolioImportRowMatchStatusEnum = pgEnum("portfolio_import_row_match_status", [
+  "matched",
+  "needs_confirmation",
+  "unmatched",
+  "ignored"
+]);
+export const portfolioImportRowActionEnum = pgEnum("portfolio_import_row_action", [
+  "create_asset",
+  "append_event",
+  "reconcile",
+  "ignore"
 ]);
 export const importBatchStatusEnum = pgEnum("import_batch_status", [
   "pending",

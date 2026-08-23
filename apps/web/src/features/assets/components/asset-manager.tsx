@@ -81,9 +81,16 @@ export function AssetManager({ initialAssets, initialNetWorth }: AssetManagerPro
             Looking for money owed to you? See Debt Given →
           </Link>
         </div>
-        <Button type="button" className="w-full sm:w-auto" onClick={() => setCreateOpen(true)}>
-          <span className="mr-1 text-base leading-none">+</span> New asset
-        </Button>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <Link href="/portfolio-import" className="w-full sm:w-auto">
+            <Button type="button" variant="secondary" className="w-full sm:w-auto">
+              Import CAS Statement
+            </Button>
+          </Link>
+          <Button type="button" className="w-full sm:w-auto" onClick={() => setCreateOpen(true)}>
+            <span className="mr-1 text-base leading-none">+</span> New asset
+          </Button>
+        </div>
       </header>
 
       {netWorth.data === undefined ? null : <NetWorthHero netWorth={netWorth.data} />}

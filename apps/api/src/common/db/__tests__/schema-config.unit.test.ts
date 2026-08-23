@@ -5,6 +5,8 @@ import { describe, expect, it } from "vitest";
 import * as authSchema from "../auth-schema.js";
 import {
   accounts,
+  assetMarketLinks,
+  assetPositionEvents,
   assetValuations,
   assets,
   auditLog,
@@ -27,6 +29,8 @@ describe("Drizzle schema configuration", () => {
   it("materializes every application table's indexes, constraints, and foreign keys", () => {
     const tables = [
       accounts,
+      assetMarketLinks,
+      assetPositionEvents,
       assetValuations,
       assets,
       auditLog,

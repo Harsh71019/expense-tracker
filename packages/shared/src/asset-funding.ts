@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { AssetIdSchema, AssetSchema } from "./asset.js";
+import { QuantityMicroUnitsSchema } from "./fixed-point.js";
 import { PositiveMinorAmountSchema } from "./money.js";
 import { PageInfoSchema } from "./pagination.js";
 import { TransactionIdSchema, TransactionSchema } from "./transaction.js";
@@ -67,7 +68,17 @@ export const AssetFundingTargetSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("new_asset"), asset: NewFundedAssetSchema })
 ]);
 
-export const LinkTransactionToAssetSchema = z.object({ target: AssetFundingTargetSchema });
+export const AssetFundingPositionMetadataSchema = z.object({
+  quantityMicroUnits: QuantityMicroUnitsSchema,
+  chargesMinor: PositiveMinorAmountSchema.optional(),
+  taxesAtAcquisitionMinor: PositiveMinorAmountSchema.optional(),
+  occurredAt: z.coerce.date().optional()
+});
+
+export const LinkTransactionToAssetSchema = z.object({
+  target: AssetFundingTargetSchema,
+  position: AssetFundingPositionMetadataSchema.optional()
+});
 
 export const CreateInvestmentTransactionSchema = z.object({
   accountId: z.string().uuid("Account id must be a UUID."),
@@ -75,7 +86,8 @@ export const CreateInvestmentTransactionSchema = z.object({
   occurredAt: z.string().datetime({ offset: false }),
   description: z.string().trim().min(1).max(500),
   tags: z.array(z.string().trim().min(1).max(40)).max(20).default([]),
-  target: AssetFundingTargetSchema
+  target: AssetFundingTargetSchema,
+  position: AssetFundingPositionMetadataSchema.optional()
 });
 
 export const AssetFundingMutationResultSchema = z.object({
@@ -102,6 +114,7 @@ export type AssetFunding = z.infer<typeof AssetFundingSchema>;
 export type AssetFundingId = z.infer<typeof AssetFundingIdSchema>;
 export type AssetFundingStatus = z.infer<typeof AssetFundingStatusSchema>;
 export type AssetFundingTarget = z.infer<typeof AssetFundingTargetSchema>;
+export type AssetFundingPositionMetadata = z.infer<typeof AssetFundingPositionMetadataSchema>;
 export type LinkTransactionToAsset = z.infer<typeof LinkTransactionToAssetSchema>;
 export type CreateInvestmentTransaction = z.infer<typeof CreateInvestmentTransactionSchema>;
 export type AssetFundingMutationResult = z.infer<typeof AssetFundingMutationResultSchema>;

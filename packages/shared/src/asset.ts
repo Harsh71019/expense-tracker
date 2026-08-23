@@ -63,7 +63,7 @@ export const AssetSchema = z.object({
   updatedAt: z.coerce.date()
 });
 
-export const ValuationSourceSchema = z.enum(["manual", "maturity_projection"]);
+export const ValuationSourceSchema = z.enum(["manual", "maturity_projection", "market_quote"]);
 
 export const CreateValuationSchema = z.object({
   valueMinor: SignedMinorSchema,
@@ -106,15 +106,16 @@ export const NetWorthSchema = z.object({
 });
 
 export const MetalRateSchema = z.object({
-  priceUsdPerOz: z.number(),
+  priceMicroRupeesPerGram: z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
   priceMinorPerGram: z.number().int().nonnegative(),
   priceFormatted: z.string(),
-  changePercent24h: z.number().optional()
+  providerAsOf: z.coerce.date()
 });
 
 export const MarketRatesSchema = z.object({
   asOf: z.coerce.date(),
-  usdInr: z.number(),
+  source: z.literal("gold_api"),
+  isStale: z.boolean(),
   gold: MetalRateSchema,
   silver: MetalRateSchema
 });

@@ -25,6 +25,9 @@ export const ErrorCodes = [
   "category.in_use",
   "asset.invalid_valuation_sign",
   "asset.moved_to_receivables",
+  "asset_market.link_required",
+  "asset_position_event.already_reversed",
+  "asset_position_event.not_reversible",
   "goal.funding_source_in_use",
   "goal.invalid_order",
   "import.invalid_file",
@@ -60,7 +63,19 @@ export const ErrorCodes = [
   "receivable.correction_underflow",
   "receivable.reversal_blocked",
   "receivable.transaction_already_linked",
-  "receivable.transaction_ineligible"
+  "receivable.transaction_ineligible",
+  "portfolio_import.invalid_pdf",
+  "portfolio_import.file_too_large",
+  "portfolio_import.duplicate",
+  "portfolio_import.invalid_state",
+  "portfolio_import.password_required",
+  "portfolio_import.password_invalid",
+  "portfolio_import.unsupported_layout",
+  "portfolio_import.unsupported_scanned",
+  "portfolio_import.row_not_found",
+  "asset_market.quote_unavailable",
+  "asset_market.tax_context_unsupported",
+  "asset_market.disposal_context_insufficient"
 ] as const;
 
 export type ErrorCode = (typeof ErrorCodes)[number];

@@ -267,6 +267,34 @@
       "when": 1787418428961,
       "tag": "0037_outstanding_tyrannus",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1787460175926,
+      "tag": "0038_military_skin",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1787461000000,
+      "tag": "0039_late_legacy_metal_positions",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1787471393045,
+      "tag": "0040_famous_big_bertha",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1787471870971,
+      "tag": "0041_minor_darwin",
+      "breakpoints": true
     }
   ]
 }

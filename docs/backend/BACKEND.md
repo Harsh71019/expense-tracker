@@ -269,7 +269,17 @@ Loans given are receivables; loans taken are liabilities. Fixed deposits, gold, 
 }
 ```
 
-`netWorth = accounts + latest asset valuations`, where liabilities are stored as a negative valuation. Gold and silver start with manual valuations; no external price-feed dependency is required.
+`netWorth = accounts + latest asset valuations`, where liabilities are stored as a negative valuation. Gold and silver start with manual valuations. `GET /v1/assets/market-rates` additionally exposes a globally cached, once-daily Gold API spot reference for gold and silver; it is explicitly indicative, never an IBJA/dealer buyback quote. The response preserves provider timestamps and marks a cached value stale after 27 hours. A provider failure never fabricates a replacement price.
+
+#### `asset_market_links` + `asset_position_events`
+
+Market-linked assets keep instrument identity separate from quantity and price. One active,
+tenant-scoped link identifies the provider instrument and quote unit; changing it creates a new
+revision and supersedes the previous link without rewriting historical provenance. Position events
+store only positive micro-unit quantities; the event type determines direction. They are
+append-only at both the service and database boundary: a correction is a linked `reversal` event,
+never an update or delete. Every create/reversal route requires `Idempotency-Key`, and position
+event history is cursor-paginated by `(occurredAt, id)`.
 
 `loan_receivable` is now migrated: an additive backfill ports every legacy `loan_receivable` asset into `receivables` below (linked via `receivables.legacy_asset_id`), and `GET /assets` hides backfilled rows going forward. Legacy asset/valuation rows are left untouched for rollback safety.
 
@@ -854,6 +864,13 @@ GET    /category-rules | POST /category-rules | DELETE /category-rules/:id
 GET    /assets | POST /assets | POST /assets/:id/close   (POST kind=loan_receivable is a deprecated
                                                           compat path -> creates a receivable instead)
 GET    /assets/:id/valuations | POST /assets/:id/valuations
+POST   /assets/market-linked              atomically creates an investment/metal asset, its active
+                                         market-instrument link, valuation, and opening position
+GET    /assets/:id/market-link | POST /assets/:id/market-link
+GET    /assets/:id/position-events?cursor&limit | POST /assets/:id/position-events
+GET    /assets/:id/position                 reproducible net quantity replayed from position events
+POST   /assets/:id/position-events/:eventId/reversals
+
 GET    /net-worth                       accounts + non-receivable assets + receivables breakdown
 
 GET    /receivables?status&cursor       Debt Given: cursor-paginated, filtered by active/settled/
@@ -884,6 +901,15 @@ GET    /healthz                         liveness (Beszel/uptime checks)
 GET    /docs                            Interactive API documentation (Stoplight Elements)
 GET    /openapi.json                    Live OpenAPI 3.1 specification JSON
 ```
+
+Legacy gold/silver `quantityMilliUnits` values are retained as compatibility caches; migration
+`0039_late_legacy_metal_positions` adds one `legacy_backfill` opening event for each legacy asset
+that has no position history.
+
+`POST /asset-fundings/investments` and `POST /transactions/:id/asset-funding` accept optional
+position metadata for an already market-linked asset. When supplied, the ledger transaction,
+funding record, and purchase position event are committed together; reversing the funding appends
+the corresponding position reversal.
 
 Cursor pagination (`occurredAt + _id` compound cursor), not offset — offset paginating a growing ledger degrades and skips rows under concurrent writes. Opaque cursor strings are JSON + UTF-8 + base64url via `common/pagination/cursor.ts`; each list keeps its own payload schema so existing client-held cursors still decode.
 

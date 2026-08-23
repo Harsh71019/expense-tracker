@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  CreateAssetMarketLinkRequestSchema,
   CreateAssetMarketLinkSchema,
   CreateAssetPositionEventSchema,
   CreateManualAssetPositionEventSchema,
@@ -40,6 +41,53 @@ describe("market asset contracts", () => {
         ...overrides
       }).success
     ).toBe(false);
+  });
+
+  it.each([
+    null,
+    1704067200000,
+    "2026-08-23T00:00:00",
+    "2026-08-23T00:00:00+05:30",
+    "2026-08-23",
+    "invalid-date"
+  ])("rejects non-UTC and coerced timestamps in request schemas (%s)", (invalidDate) => {
+    expect(
+      CreateAssetMarketLinkRequestSchema.safeParse({
+        instrumentType: "mutual_fund",
+        provider: "amfi",
+        providerInstrumentId: "120716",
+        quoteUnit: "fund_unit",
+        effectiveFrom: invalidDate
+      }).success
+    ).toBe(false);
+
+    expect(
+      CreateManualAssetPositionEventSchema.safeParse({
+        eventType: "purchase",
+        quantityMicroUnits: 1_000_000,
+        occurredAt: invalidDate
+      }).success
+    ).toBe(false);
+  });
+
+  it("accepts valid ISO 8601 UTC timestamps ending in Z and transforms to Date", () => {
+    const linkParsed = CreateAssetMarketLinkRequestSchema.parse({
+      instrumentType: "mutual_fund",
+      provider: "amfi",
+      providerInstrumentId: "120716",
+      quoteUnit: "fund_unit",
+      effectiveFrom: "2026-08-23T10:00:00.000Z"
+    });
+    expect(linkParsed.effectiveFrom).toBeInstanceOf(Date);
+    expect(linkParsed.effectiveFrom.toISOString()).toBe("2026-08-23T10:00:00.000Z");
+
+    const eventParsed = CreateManualAssetPositionEventSchema.parse({
+      eventType: "purchase",
+      quantityMicroUnits: 1_000_000,
+      occurredAt: "2026-08-23T10:00:00.000Z"
+    });
+    expect(eventParsed.occurredAt).toBeInstanceOf(Date);
+    expect(eventParsed.occurredAt.toISOString()).toBe("2026-08-23T10:00:00.000Z");
   });
 
   it("requires reversal linkage only for reversal position events", () => {

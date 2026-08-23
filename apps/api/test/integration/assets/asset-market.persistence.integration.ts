@@ -245,10 +245,9 @@ describe("asset-market persistence", () => {
         occurredAt: now
       }
     };
+    const createKey = randomUUID();
     const results = await Promise.all(
-      Array.from({ length: 5 }, () =>
-        mutations.createMarketLinkedAsset(USER_ID, input, "523e4567-e89b-42d3-a456-426614174000")
-      )
+      Array.from({ length: 5 }, () => mutations.createMarketLinkedAsset(USER_ID, input, createKey))
     );
     expect(new Set(results.map((result) => result.result.asset.id)).size).toBe(1);
     expect(results.filter((result) => result.replayed).length).toBe(4);

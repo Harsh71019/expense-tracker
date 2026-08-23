@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Header,
   Headers,
   HttpCode,
   Param,
@@ -80,11 +81,13 @@ export class PortfolioImportController {
   }
 
   @Get()
+  @Header("Cache-Control", "no-store")
   list(@CurrentUser() user: AuthenticatedUser): Promise<PortfolioImportBatch[]> {
     return this.imports.listBatches(user.id);
   }
 
   @Get(":batchId")
+  @Header("Cache-Control", "no-store")
   getBatch(
     @CurrentUser() user: AuthenticatedUser,
     @Param("batchId") batchId: string
@@ -93,6 +96,7 @@ export class PortfolioImportController {
   }
 
   @Get(":batchId/rows")
+  @Header("Cache-Control", "no-store")
   getRows(
     @CurrentUser() user: AuthenticatedUser,
     @Param("batchId") batchId: string,

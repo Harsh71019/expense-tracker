@@ -1,4 +1,15 @@
-import { Body, Controller, Get, Headers, HttpCode, Param, Post, Query, Res } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Get,
+  Header,
+  Headers,
+  HttpCode,
+  Param,
+  Post,
+  Query,
+  Res
+} from "@nestjs/common";
 import {
   AssetIdSchema,
   AssetPositionEventIdSchema,
@@ -66,6 +77,7 @@ export class AssetMarketController {
   }
 
   @Get(":assetId/market-link")
+  @Header("Cache-Control", "no-store")
   getMarketLink(
     @CurrentUser() user: AuthenticatedUser,
     @Param("assetId") assetId: string
@@ -94,6 +106,7 @@ export class AssetMarketController {
   }
 
   @Get(":assetId/position-events")
+  @Header("Cache-Control", "no-store")
   listPositionEvents(
     @CurrentUser() user: AuthenticatedUser,
     @Param("assetId") assetId: string,
@@ -107,6 +120,7 @@ export class AssetMarketController {
   }
 
   @Get(":assetId/position")
+  @Header("Cache-Control", "no-store")
   getCurrentPosition(
     @CurrentUser() user: AuthenticatedUser,
     @Param("assetId") assetId: string
@@ -115,6 +129,7 @@ export class AssetMarketController {
   }
 
   @Get(":assetId/market-valuation")
+  @Header("Cache-Control", "no-store")
   getMarketValuation(
     @CurrentUser() user: AuthenticatedUser,
     @Param("assetId") assetId: string

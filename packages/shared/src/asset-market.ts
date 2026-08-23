@@ -189,10 +189,22 @@ export const AssetCurrentPositionSchema = z.object({
   asOf: z.coerce.date().nullable()
 });
 
+export const UtcDateTimeToDateSchema = z
+  .string()
+  .refine(
+    (value) => /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?Z$/.test(value),
+    "Timestamp must be an ISO 8601 UTC date-time ending in Z."
+  )
+  .transform((value) => new Date(value));
+
 export const CreateAssetMarketLinkRequestSchema = AssetMarketLinkFieldsSchema.omit({
   assetId: true,
   revisionOf: true
-}).superRefine(validateMarketLink);
+})
+  .extend({
+    effectiveFrom: UtcDateTimeToDateSchema
+  })
+  .superRefine(validateMarketLink);
 
 export const CreateManualAssetPositionEventSchema = AssetPositionEventFieldsSchema.omit({
   assetId: true,
@@ -202,15 +214,19 @@ export const CreateManualAssetPositionEventSchema = AssetPositionEventFieldsSche
   sourceReference: true,
   portfolioImportRowId: true,
   reversalOf: true
-}).superRefine((value, context) => {
-  if (value.eventType === "reversal") {
-    context.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "Use the reversal resource to reverse a position event.",
-      path: ["eventType"]
-    });
-  }
-});
+})
+  .extend({
+    occurredAt: UtcDateTimeToDateSchema
+  })
+  .superRefine((value, context) => {
+    if (value.eventType === "reversal") {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Use the reversal resource to reverse a position event.",
+        path: ["eventType"]
+      });
+    }
+  });
 
 export const ListAssetPositionEventsQuerySchema = z.object({
   cursor: z.string().min(1).optional(),

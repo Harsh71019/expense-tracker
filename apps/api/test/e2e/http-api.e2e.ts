@@ -1429,6 +1429,8 @@ describe("production HTTP composition", () => {
         headers: { cookie: sessionA }
       })
     ]);
+    expect(linkResponse.headers.get("cache-control")).toBe("no-store");
+    expect(positionsResponse.headers.get("cache-control")).toBe("no-store");
     expect((await parseResponse(linkResponse, AssetMarketLinkSchema)).id).toBe(
       created.marketLink.id
     );
@@ -1521,12 +1523,14 @@ describe("production HTTP composition", () => {
     );
     expect(reversed.original.status).toBe("reversed");
 
-    const currentPosition = await parseResponse(
-      await fetch(`${baseUrl}/api/v1/assets/${createdAsset.asset.id}/position`, {
+    const positionFetchResponse = await fetch(
+      `${baseUrl}/api/v1/assets/${createdAsset.asset.id}/position`,
+      {
         headers: { cookie: sessionA }
-      }),
-      AssetCurrentPositionSchema
+      }
     );
+    expect(positionFetchResponse.headers.get("cache-control")).toBe("no-store");
+    const currentPosition = await parseResponse(positionFetchResponse, AssetCurrentPositionSchema);
     expect(currentPosition.quantityMicroUnits).toBe(1_000_000);
   });
 

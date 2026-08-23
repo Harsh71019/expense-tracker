@@ -8779,7 +8779,7 @@ export interface paths {
     get: operations["getPortfolioImportBatch"];
     put?: never;
     post?: never;
-    delete?: never;
+    delete: operations["deletePortfolioImportBatch"];
     options?: never;
     head?: never;
     patch?: never;
@@ -15473,7 +15473,7 @@ export interface operations {
           quantityMicroUnits?: number;
           /**
            * Format: date-time
-           * @default 2026-08-23T17:58:46.784Z
+           * @default 2026-08-23T18:56:04.735Z
            */
           disposalDate?: string | null;
           quoteOverrideMicroRupeesPerUnit?: number;
@@ -15866,6 +15866,64 @@ export interface operations {
       };
       /** @description Batch not found */
       404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Validation failed */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Internal error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+    };
+  };
+  deletePortfolioImportBatch: {
+    parameters: {
+      query?: never;
+      header: {
+        "Idempotency-Key": string;
+      };
+      path: {
+        batchId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Discarded an uncommitted portfolio import batch */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Unauthenticated */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Batch state or idempotency-key conflict */
+      409: {
         headers: {
           [name: string]: unknown;
         };

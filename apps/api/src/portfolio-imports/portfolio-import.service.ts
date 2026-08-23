@@ -27,7 +27,10 @@ import {
 } from "../common/errors/portfolio-import.error.js";
 import { CasPdfExtractor } from "./cas-pdf-extractor.js";
 import { KfintechCamsCurrentHoldingsParser } from "./kfintech-cams-current-holdings-parser.js";
-import { PortfolioImportBatchRepository } from "./portfolio-import-batch.repository.js";
+import {
+  DISCARDABLE_PORTFOLIO_IMPORT_STATUSES,
+  PortfolioImportBatchRepository
+} from "./portfolio-import-batch.repository.js";
 import { PortfolioImportEncryptionService } from "./portfolio-import-encryption.service.js";
 import { PortfolioImportMatcherService } from "./portfolio-import-matcher.service.js";
 import { PortfolioImportPayloadRepository } from "./portfolio-import-payload.repository.js";
@@ -201,6 +204,31 @@ export class PortfolioImportService {
 
   async listBatches(userId: string): Promise<PortfolioImportBatch[]> {
     return this.batches.list(userId);
+  }
+
+  async deleteBatch(userId: string, batchId: PortfolioImportBatchId): Promise<void> {
+    await withTxn(this.db, async (tx) => {
+      const batch = await this.batches.findByIdForUpdate(userId, batchId, tx);
+      if (batch === null) return;
+      if (!isDiscardableStatus(batch.status)) {
+        throw new PortfolioImportStateConflictError(
+          `Batch cannot be deleted in status "${batch.status}" because it may have portfolio events.`
+        );
+      }
+
+      await this.rows.deleteAllForBatch(userId, batchId, tx);
+      await this.payloads.deleteByBatchId(userId, batchId, tx);
+      const deleted = await this.batches.deleteDiscardable(userId, batchId, tx);
+      if (!deleted) {
+        throw new PortfolioImportStateConflictError(
+          "The batch changed state before it could be deleted. Refresh and try again."
+        );
+      }
+      await this.audit.record(userId, "portfolio_import.delete", batchId, tx, {
+        filename: batch.filename,
+        previousStatus: batch.status
+      });
+    });
   }
 
   async getRowsPage(
@@ -488,4 +516,8 @@ function determineFailureCode(error: unknown): string {
   if (message.includes("unsupported")) return "unsupported_cas_layout";
   if (message.includes("pdf")) return "invalid_pdf";
   return "portfolio_import_failed";
+}
+
+function isDiscardableStatus(status: PortfolioImportStatus): boolean {
+  return DISCARDABLE_PORTFOLIO_IMPORT_STATUSES.some((candidate) => candidate === status);
 }

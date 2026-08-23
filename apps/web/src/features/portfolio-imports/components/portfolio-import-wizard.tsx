@@ -22,15 +22,18 @@ import {
   Loader2,
   Lock,
   RotateCcw,
+  Trash2,
   Upload
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { DialogSurface } from "@/components/ui/dialog";
 import { toast } from "@/lib/toast";
 
 import {
   useCommitPortfolioImportBatch,
+  useDeletePortfolioImportBatch,
   usePortfolioImportBatch,
   usePortfolioImportBatches,
   usePortfolioImportRows,
@@ -56,6 +59,7 @@ export function PortfolioImportWizard({ userAssets }: WizardProps): ReactNode {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<PortfolioImportBatch>();
 
   const batchesQuery = usePortfolioImportBatches();
   const activeBatchQuery = usePortfolioImportBatch(activeBatchId);
@@ -64,6 +68,7 @@ export function PortfolioImportWizard({ userAssets }: WizardProps): ReactNode {
   const uploadMutation = useUploadPortfolioImport();
   const updateRowMutation = useUpdatePortfolioImportRow();
   const commitMutation = useCommitPortfolioImportBatch();
+  const deleteMutation = useDeletePortfolioImportBatch();
   const revertMutation = useRevertPortfolioImportBatch();
 
   const activeBatch = activeBatchQuery.data;
@@ -108,6 +113,19 @@ export function PortfolioImportWizard({ userAssets }: WizardProps): ReactNode {
       toast.success("Portfolio import reverted via compensating entries.");
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to revert import";
+      toast.error(message);
+    }
+  }
+
+  async function handleDelete(): Promise<void> {
+    if (deleteTarget === undefined) return;
+    try {
+      await deleteMutation.mutateAsync(deleteTarget.id);
+      if (activeBatchId === deleteTarget.id) setActiveBatchId(undefined);
+      setDeleteTarget(undefined);
+      toast.success("Statement deleted. You can upload it again now.");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to delete statement";
       toast.error(message);
     }
   }
@@ -300,6 +318,16 @@ export function PortfolioImportWizard({ userAssets }: WizardProps): ReactNode {
                     {revertMutation.isPending ? "Reverting..." : "Revert Import"}
                   </Button>
                 )}
+                {activeBatch !== undefined && isDiscardableStatus(activeBatch.status) && (
+                  <Button
+                    type="button"
+                    variant="danger"
+                    disabled={deleteMutation.isPending}
+                    onClick={() => setDeleteTarget(activeBatch)}
+                  >
+                    <Trash2 className="h-4 w-4 mr-1.5" /> Delete Import
+                  </Button>
+                )}
               </div>
             </div>
 
@@ -423,13 +451,85 @@ export function PortfolioImportWizard({ userAssets }: WizardProps): ReactNode {
                       <RotateCcw className="h-3 w-3 mr-1" /> Revert
                     </Button>
                   )}
+                  {isDiscardableStatus(batch.status) && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      disabled={deleteMutation.isPending}
+                      onClick={() => setDeleteTarget(batch)}
+                      className="text-expense hover:text-expense"
+                    >
+                      <Trash2 className="h-3 w-3 mr-1" /> Delete
+                    </Button>
+                  )}
                 </div>
               </div>
             ))}
           </div>
         </div>
       )}
+
+      {deleteTarget !== undefined && (
+        <DeletePortfolioImportDialog
+          batch={deleteTarget}
+          isPending={deleteMutation.isPending}
+          onCancel={() => setDeleteTarget(undefined)}
+          onConfirm={() => void handleDelete()}
+        />
+      )}
     </div>
+  );
+}
+
+function isDiscardableStatus(status: PortfolioImportBatch["status"]): boolean {
+  return (
+    status === "queued" ||
+    status === "parsing" ||
+    status === "needs_review" ||
+    status === "ready" ||
+    status === "failed"
+  );
+}
+
+function DeletePortfolioImportDialog({
+  batch,
+  isPending,
+  onCancel,
+  onConfirm
+}: Readonly<{
+  batch: PortfolioImportBatch;
+  isPending: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+}>): ReactNode {
+  return (
+    <DialogSurface
+      labelledBy="delete-portfolio-import-title"
+      describedBy="delete-portfolio-import-description"
+      role="alertdialog"
+      onClose={onCancel}
+    >
+      <h2 id="delete-portfolio-import-title" className="text-lg font-bold text-foreground">
+        Delete this CAS import?
+      </h2>
+      <p
+        id="delete-portfolio-import-description"
+        className="mt-2 text-sm leading-relaxed text-foreground-muted"
+      >
+        This permanently removes <strong className="text-foreground">{batch.filename}</strong> and
+        its uncommitted review rows. It does not delete portfolio assets or committed position
+        history. You can upload the same statement again immediately.
+      </p>
+      <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <Button type="button" variant="secondary" disabled={isPending} onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button type="button" variant="danger" disabled={isPending} onClick={onConfirm}>
+          {isPending ? "Deleting..." : "Delete import"}
+        </Button>
+      </div>
+    </DialogSurface>
   );
 }
 

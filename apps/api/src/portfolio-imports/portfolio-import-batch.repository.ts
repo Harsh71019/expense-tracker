@@ -41,6 +41,14 @@ export type BatchCounts = Readonly<{
   errorCount: number;
 }>;
 
+export const DISCARDABLE_PORTFOLIO_IMPORT_STATUSES = [
+  "queued",
+  "parsing",
+  "needs_review",
+  "ready",
+  "failed"
+] as const satisfies readonly PortfolioImportStatus[];
+
 @Injectable()
 export class PortfolioImportBatchRepository {
   constructor(@Inject(DATABASE_CONNECTION) private readonly db: DrizzleDb) {}
@@ -83,6 +91,19 @@ export class PortfolioImportBatchRepository {
       .where(
         and(eq(portfolioImportBatches.userId, userId), eq(portfolioImportBatches.id, batchId))
       );
+    return row === undefined ? null : PortfolioImportBatchSchema.parse(stripNulls(row));
+  }
+
+  async findByIdForUpdate(
+    userId: string,
+    batchId: PortfolioImportBatchId,
+    tx: DbTx
+  ): Promise<PortfolioImportBatch | null> {
+    const [row] = await tx
+      .select()
+      .from(portfolioImportBatches)
+      .where(and(eq(portfolioImportBatches.userId, userId), eq(portfolioImportBatches.id, batchId)))
+      .for("update");
     return row === undefined ? null : PortfolioImportBatchSchema.parse(stripNulls(row));
   }
 
@@ -349,5 +370,23 @@ export class PortfolioImportBatchRepository {
           eq(portfolioImportBatches.status, "reverting")
         )
       );
+  }
+
+  async deleteDiscardable(
+    userId: string,
+    batchId: PortfolioImportBatchId,
+    tx: DbTx
+  ): Promise<boolean> {
+    const rows = await tx
+      .delete(portfolioImportBatches)
+      .where(
+        and(
+          eq(portfolioImportBatches.userId, userId),
+          eq(portfolioImportBatches.id, batchId),
+          inArray(portfolioImportBatches.status, DISCARDABLE_PORTFOLIO_IMPORT_STATUSES)
+        )
+      )
+      .returning({ id: portfolioImportBatches.id });
+    return rows.length === 1;
   }
 }

@@ -26,11 +26,12 @@ import {
   PortfolioImportTooLargeError
 } from "../common/errors/portfolio-import.error.js";
 import { CasPdfExtractor } from "./cas-pdf-extractor.js";
-import { KfintechCamsCasParser } from "./kfintech-cams-cas-parser.js";
+import { KfintechCamsCurrentHoldingsParser } from "./kfintech-cams-current-holdings-parser.js";
 import { PortfolioImportBatchRepository } from "./portfolio-import-batch.repository.js";
 import { PortfolioImportEncryptionService } from "./portfolio-import-encryption.service.js";
 import { PortfolioImportMatcherService } from "./portfolio-import-matcher.service.js";
 import { PortfolioImportPayloadRepository } from "./portfolio-import-payload.repository.js";
+import { appendPortfolioImportPositionEvent } from "./portfolio-import-position-reconciler.js";
 import { PortfolioImportsQueue } from "./portfolio-import.queue.js";
 import { PortfolioImportRowRepository } from "./portfolio-import-row.repository.js";
 
@@ -41,7 +42,7 @@ const PDF_MAGIC_BYTES = [0x25, 0x50, 0x44, 0x46, 0x2d]; // %PDF-
 @Injectable()
 export class PortfolioImportService {
   private readonly extractor = new CasPdfExtractor();
-  private readonly parser = new KfintechCamsCasParser();
+  private readonly parser = new KfintechCamsCurrentHoldingsParser();
 
   constructor(
     @Inject(DATABASE_CONNECTION) private readonly db: DrizzleDb,
@@ -297,7 +298,7 @@ export class PortfolioImportService {
           const schemeKey = row.isin ?? row.displayName;
           let assetId = row.proposedAssetId ?? createdAssetsByScheme.get(schemeKey) ?? null;
 
-          if (row.proposedAction === "create_asset" || assetId === null) {
+          if (assetId === null) {
             const created = await this.assets.create(
               userId,
               {
@@ -354,21 +355,12 @@ export class PortfolioImportService {
           }
 
           if (row.quantityMicroUnits !== null && row.quantityMicroUnits > 0) {
-            const eventType = determineEventType(row.rowKind, row.transactionType);
-            await this.market.createPositionEvent(
+            await appendPortfolioImportPositionEvent(
+              { assets: this.assets, market: this.market },
               userId,
-              {
-                assetId,
-                eventType,
-                quantityMicroUnits: row.quantityMicroUnits,
-                ...(row.grossAmountMinor !== null
-                  ? { grossAmountMinor: row.grossAmountMinor }
-                  : {}),
-                occurredAt: row.occurredAt ?? new Date(),
-                source: "cas",
-                sourceReference: `cas_batch_${batchId}_row_${row.rowNumber}`,
-                portfolioImportRowId: row.id
-              },
+              batchId,
+              assetId,
+              row,
               tx
             );
           }
@@ -496,30 +488,4 @@ function determineFailureCode(error: unknown): string {
   if (message.includes("unsupported")) return "unsupported_cas_layout";
   if (message.includes("pdf")) return "invalid_pdf";
   return "portfolio_import_failed";
-}
-
-function determineEventType(
-  rowKind: "holding" | "transaction",
-  transactionType: string | null | undefined
-):
-  | "opening"
-  | "purchase"
-  | "reinvestment"
-  | "switch_in"
-  | "redemption"
-  | "switch_out"
-  | "reconciliation_in" {
-  if (rowKind === "holding") return "reconciliation_in";
-  switch (transactionType) {
-    case "redemption":
-      return "redemption";
-    case "switch_out":
-      return "switch_out";
-    case "switch_in":
-      return "switch_in";
-    case "reinvestment":
-      return "reinvestment";
-    default:
-      return "purchase";
-  }
 }

@@ -8641,6 +8641,22 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/v1/assets/market-linked": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["createMarketLinkedAsset"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -12402,6 +12418,11 @@ export interface components {
         | "partial_month_excluded"
       )[];
     };
+    MarketLinkedAssetCreationResult: {
+      asset: components["schemas"]["Asset"];
+      marketLink: components["schemas"]["AssetMarketLink"];
+      openingPosition: components["schemas"]["AssetPositionEvent"];
+    };
   };
   responses: never;
   parameters: never;
@@ -14644,6 +14665,146 @@ export interface operations {
       };
       /** @description Pending transaction not found */
       404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Idempotency key was already used for different request intent */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Validation failed */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Internal error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+    };
+  };
+  createMarketLinkedAsset: {
+    parameters: {
+      query?: never;
+      header: {
+        "Idempotency-Key": string;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        "application/json": {
+          asset: {
+            /** @enum {string} */
+            kind:
+              | "loan_receivable"
+              | "loan_liability"
+              | "fixed_deposit"
+              | "gold"
+              | "silver"
+              | "investment";
+            name: string;
+            /** Format: date-time */
+            openedAt: string | null;
+            /** Format: date-time */
+            maturityAt?: string | null;
+            annualRateBps?: number;
+            quantityMilliUnits?: number;
+            openingValueMinor: number;
+          };
+          marketLink: {
+            /** @enum {string} */
+            instrumentType:
+              | "mutual_fund"
+              | "gold_etf"
+              | "silver_etf"
+              | "gold_fund"
+              | "silver_fund"
+              | "sgb"
+              | "physical_gold"
+              | "physical_silver";
+            /** @enum {string} */
+            provider: "amfi" | "ibja" | "goldapi" | "metalpriceapi" | "manual";
+            providerInstrumentId: string;
+            isin?: string;
+            schemeCode?: string;
+            /** @enum {string} */
+            schemePlan?: "direct" | "regular" | "unknown";
+            /** @enum {string} */
+            schemeOption?: "growth" | "idcw" | "unknown";
+            /** @enum {string} */
+            acquisitionChannel?: "original_issue" | "secondary_market" | "unknown";
+            /** @enum {string} */
+            quoteUnit: "fund_unit" | "gram";
+            purityBps?: number;
+            /** @default true */
+            autoValuationEnabled?: boolean;
+            /** Format: date-time */
+            effectiveFrom: string | null;
+          };
+          openingPosition: {
+            /** @enum {string} */
+            eventType:
+              | "opening"
+              | "purchase"
+              | "reinvestment"
+              | "switch_in"
+              | "redemption"
+              | "switch_out"
+              | "reconciliation_in"
+              | "reconciliation_out"
+              | "reversal";
+            quantityMicroUnits: number;
+            grossAmountMinor?: number;
+            chargesMinor?: number;
+            taxesAtAcquisitionMinor?: number;
+            /** Format: date-time */
+            occurredAt: string | null;
+          };
+        };
+      };
+    };
+    responses: {
+      /** @description Idempotent replay of the market-linked asset creation */
+      200: {
+        headers: {
+          "Idempotency-Replayed": "true";
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["MarketLinkedAssetCreationResult"];
+        };
+      };
+      /** @description Created asset, active market link, and opening position atomically */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["MarketLinkedAssetCreationResult"];
+        };
+      };
+      /** @description Unauthenticated */
+      401: {
         headers: {
           [name: string]: unknown;
         };

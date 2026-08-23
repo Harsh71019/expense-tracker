@@ -583,12 +583,21 @@ export type {
 export {
   calculateMarketValueMinor,
   FixedPointDecimalSchema,
+  microUnitsToMilliUnits,
   parsePositiveDecimalToMicroUnits,
   PriceMicroRupeesPerQuoteUnitSchema,
   PurityBpsSchema,
   QuantityMicroUnitsSchema
 } from "./fixed-point.js";
 export type { PriceMicroRupeesPerQuoteUnit, PurityBps, QuantityMicroUnits } from "./fixed-point.js";
+export {
+  CreateMarketLinkedAssetSchema,
+  MarketLinkedAssetCreationResultSchema
+} from "./market-linked-asset.js";
+export type {
+  CreateMarketLinkedAsset,
+  MarketLinkedAssetCreationResult
+} from "./market-linked-asset.js";
 export {
   divideMinorAmount,
   formatMinor,

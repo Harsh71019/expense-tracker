@@ -2,6 +2,7 @@ import { Injectable } from "@nestjs/common";
 import {
   AssetMarketLinkSchema,
   AssetPositionEventSchema,
+  MarketLinkedAssetCreationResultSchema,
   ReverseAssetPositionEventResultSchema,
   type AssetId,
   type AssetMarketLink,
@@ -9,6 +10,8 @@ import {
   type AssetPositionEventId,
   type CreateAssetMarketLinkRequest,
   type CreateManualAssetPositionEvent,
+  type CreateMarketLinkedAsset,
+  type MarketLinkedAssetCreationResult,
   type ReverseAssetPositionEventResult
 } from "@treasury-ops/shared";
 
@@ -18,14 +21,31 @@ import {
 } from "../common/idempotency/idempotency-postgres.service.js";
 import { AssetMarketLinkService } from "./asset-market-link.service.js";
 import { AssetPositionService } from "./asset-position.service.js";
+import { MarketLinkedAssetService } from "./market-linked-asset.service.js";
 
 @Injectable()
 export class AssetMarketMutationService {
   constructor(
     private readonly idempotency: IdempotencyPostgresService,
     private readonly links: AssetMarketLinkService,
-    private readonly positions: AssetPositionService
+    private readonly positions: AssetPositionService,
+    private readonly marketLinkedAssets: MarketLinkedAssetService
   ) {}
+
+  createMarketLinkedAsset(
+    userId: string,
+    input: CreateMarketLinkedAsset,
+    key: string
+  ): Promise<IdempotentResult<MarketLinkedAssetCreationResult>> {
+    return this.idempotency.execute(
+      userId,
+      "asset.market_linked.create",
+      key,
+      input,
+      MarketLinkedAssetCreationResultSchema,
+      (tx) => this.marketLinkedAssets.createInTx(userId, input, `market-linked-opening:${key}`, tx)
+    );
+  }
 
   setMarketLink(
     userId: string,

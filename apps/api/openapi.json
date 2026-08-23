@@ -11647,6 +11647,21 @@
           "classification",
           "limitations"
         ]
+      },
+      "MarketLinkedAssetCreationResult": {
+        "type": "object",
+        "properties": {
+          "asset": {
+            "$ref": "#/components/schemas/Asset"
+          },
+          "marketLink": {
+            "$ref": "#/components/schemas/AssetMarketLink"
+          },
+          "openingPosition": {
+            "$ref": "#/components/schemas/AssetPositionEvent"
+          }
+        },
+        "required": ["asset", "marketLink", "openingPosition"]
       }
     },
     "parameters": {}
@@ -25240,6 +25255,271 @@
           },
           "401": {
             "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/assets/market-linked": {
+      "post": {
+        "operationId": "createMarketLinkedAsset",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "Idempotency-Key",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "asset": {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "loan_receivable",
+                          "loan_liability",
+                          "fixed_deposit",
+                          "gold",
+                          "silver",
+                          "investment"
+                        ]
+                      },
+                      "name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 80
+                      },
+                      "openedAt": {
+                        "type": ["string", "null"],
+                        "format": "date-time"
+                      },
+                      "maturityAt": {
+                        "type": ["string", "null"],
+                        "format": "date-time"
+                      },
+                      "annualRateBps": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 10000
+                      },
+                      "quantityMilliUnits": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0
+                      },
+                      "openingValueMinor": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      }
+                    },
+                    "required": ["kind", "name", "openedAt", "openingValueMinor"]
+                  },
+                  "marketLink": {
+                    "type": "object",
+                    "properties": {
+                      "instrumentType": {
+                        "type": "string",
+                        "enum": [
+                          "mutual_fund",
+                          "gold_etf",
+                          "silver_etf",
+                          "gold_fund",
+                          "silver_fund",
+                          "sgb",
+                          "physical_gold",
+                          "physical_silver"
+                        ]
+                      },
+                      "provider": {
+                        "type": "string",
+                        "enum": ["amfi", "ibja", "goldapi", "metalpriceapi", "manual"]
+                      },
+                      "providerInstrumentId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 160
+                      },
+                      "isin": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 160
+                      },
+                      "schemeCode": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 160
+                      },
+                      "schemePlan": {
+                        "type": "string",
+                        "enum": ["direct", "regular", "unknown"]
+                      },
+                      "schemeOption": {
+                        "type": "string",
+                        "enum": ["growth", "idcw", "unknown"]
+                      },
+                      "acquisitionChannel": {
+                        "type": "string",
+                        "enum": ["original_issue", "secondary_market", "unknown"]
+                      },
+                      "quoteUnit": {
+                        "type": "string",
+                        "enum": ["fund_unit", "gram"]
+                      },
+                      "purityBps": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 10000
+                      },
+                      "autoValuationEnabled": {
+                        "type": "boolean",
+                        "default": true
+                      },
+                      "effectiveFrom": {
+                        "type": ["string", "null"],
+                        "format": "date-time"
+                      }
+                    },
+                    "required": [
+                      "instrumentType",
+                      "provider",
+                      "providerInstrumentId",
+                      "quoteUnit",
+                      "effectiveFrom"
+                    ]
+                  },
+                  "openingPosition": {
+                    "type": "object",
+                    "properties": {
+                      "eventType": {
+                        "type": "string",
+                        "enum": [
+                          "opening",
+                          "purchase",
+                          "reinvestment",
+                          "switch_in",
+                          "redemption",
+                          "switch_out",
+                          "reconciliation_in",
+                          "reconciliation_out",
+                          "reversal"
+                        ]
+                      },
+                      "quantityMicroUnits": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 9007199254740991
+                      },
+                      "grossAmountMinor": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 9007199254740991
+                      },
+                      "chargesMinor": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 9007199254740991
+                      },
+                      "taxesAtAcquisitionMinor": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 9007199254740991
+                      },
+                      "occurredAt": {
+                        "type": ["string", "null"],
+                        "format": "date-time"
+                      }
+                    },
+                    "required": ["eventType", "quantityMicroUnits", "occurredAt"]
+                  }
+                },
+                "required": ["asset", "marketLink", "openingPosition"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Idempotent replay of the market-linked asset creation",
+            "headers": {
+              "Idempotency-Replayed": {
+                "schema": {
+                  "type": "string",
+                  "enum": ["true"]
+                },
+                "required": true
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarketLinkedAssetCreationResult"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created asset, active market link, and opening position atomically",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarketLinkedAssetCreationResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency key was already used for different request intent",
             "content": {
               "application/json": {
                 "schema": {

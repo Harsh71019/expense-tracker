@@ -5,6 +5,7 @@ import {
   AssetMarketLinkSchema,
   AssetPositionEventPageSchema,
   AssetPositionEventSchema,
+  MarketLinkedAssetCreationResultSchema,
   BatchCategorizeTransactionsResultSchema,
   CategorySchema,
   CategoryRecommendationResponseSchema,
@@ -26,6 +27,7 @@ import {
   SalaryVersionSchema,
   TransactionInsightsSchema,
   TransactionSchema,
+  ValuationPageSchema,
   GoalFeasibilityReportSchema,
   SafetyBufferPreferenceSchema,
   SafetyBufferStateSchema,
@@ -1354,6 +1356,70 @@ describe("production HTTP composition", () => {
       const foreign = await fetch(`${baseUrl}${path}`, { headers: { cookie: sessionB } });
       expect(foreign.status).toBe(404);
     }
+  });
+
+  it("creates a market-linked asset, valuation, active link, and opening position atomically", async () => {
+    const key = crypto.randomUUID();
+    const body = {
+      asset: {
+        kind: "investment",
+        name: "Atomic E2E index fund",
+        openedAt: "2026-08-23T00:00:00.000Z",
+        openingValueMinor: 10_000
+      },
+      marketLink: {
+        instrumentType: "mutual_fund",
+        provider: "amfi",
+        providerInstrumentId: "120503",
+        quoteUnit: "fund_unit",
+        effectiveFrom: "2026-08-23T00:00:00.000Z"
+      },
+      openingPosition: {
+        eventType: "opening",
+        quantityMicroUnits: 1_000_000,
+        occurredAt: "2026-08-23T00:00:00.000Z"
+      }
+    };
+    const createdResponse = await fetch(`${baseUrl}/api/v1/assets/market-linked`, {
+      method: "POST",
+      headers: { ...JSON_HEADERS, cookie: sessionA, "idempotency-key": key },
+      body: JSON.stringify(body)
+    });
+    expect(createdResponse.status).toBe(201);
+    const created = await parseResponse(createdResponse, MarketLinkedAssetCreationResultSchema);
+    expect(createdResponse.headers.get("location")).toBe(`/api/v1/assets/${created.asset.id}`);
+    expect(created.marketLink.assetId).toBe(created.asset.id);
+    expect(created.openingPosition.assetId).toBe(created.asset.id);
+
+    const replayResponse = await fetch(`${baseUrl}/api/v1/assets/market-linked`, {
+      method: "POST",
+      headers: { ...JSON_HEADERS, cookie: sessionA, "idempotency-key": key },
+      body: JSON.stringify(body)
+    });
+    expect(replayResponse.status).toBe(200);
+    expect(replayResponse.headers.get("idempotency-replayed")).toBe("true");
+    expect(
+      (await parseResponse(replayResponse, MarketLinkedAssetCreationResultSchema)).asset.id
+    ).toBe(created.asset.id);
+
+    const [linkResponse, positionsResponse, valuationsResponse] = await Promise.all([
+      fetch(`${baseUrl}/api/v1/assets/${created.asset.id}/market-link`, {
+        headers: { cookie: sessionA }
+      }),
+      fetch(`${baseUrl}/api/v1/assets/${created.asset.id}/position-events?limit=50`, {
+        headers: { cookie: sessionA }
+      }),
+      fetch(`${baseUrl}/api/v1/assets/${created.asset.id}/valuations`, {
+        headers: { cookie: sessionA }
+      })
+    ]);
+    expect((await parseResponse(linkResponse, AssetMarketLinkSchema)).id).toBe(
+      created.marketLink.id
+    );
+    expect(
+      (await parseResponse(positionsResponse, AssetPositionEventPageSchema)).items
+    ).toHaveLength(1);
+    expect((await parseResponse(valuationsResponse, ValuationPageSchema)).items).toHaveLength(1);
   });
 
   it("automatically probes every secured OpenAPI operation for an auth boundary", async () => {

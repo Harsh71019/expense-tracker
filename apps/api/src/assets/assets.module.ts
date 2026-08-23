@@ -14,6 +14,7 @@ import { AssetMutationService } from "./asset-mutation.service.js";
 import { AssetDiagnosticReadService } from "./asset-diagnostic-read.service.js";
 import { LiabilityAssetReadService } from "./liability-asset-read.service.js";
 import { MarketRatesService } from "./market-rates.service.js";
+import { MarketLinkedAssetService } from "./market-linked-asset.service.js";
 import { ValuationRepository } from "./valuation.repository.js";
 import { AssetFundingRepository } from "../asset-fundings/asset-funding.repository.js";
 
@@ -25,6 +26,7 @@ import { AssetFundingRepository } from "../asset-fundings/asset-funding.reposito
     AssetMarketRepository,
     AssetMarketLinkService,
     AssetPositionService,
+    MarketLinkedAssetService,
     AssetMarketMutationService,
     AssetFundingRepository,
     AssetService,

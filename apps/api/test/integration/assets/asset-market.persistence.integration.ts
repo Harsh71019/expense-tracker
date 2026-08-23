@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
+import type { CreateMarketLinkedAsset } from "@treasury-ops/shared";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 
 import { AuditRepository } from "../../../src/audit/audit.repository.js";
@@ -9,10 +10,20 @@ import { AssetMarketMutationService } from "../../../src/assets/asset-market-mut
 import { AssetMarketRepository } from "../../../src/assets/asset-market.repository.js";
 import { AssetPositionService } from "../../../src/assets/asset-position.service.js";
 import { AssetRepository } from "../../../src/assets/asset.repository.js";
-import { assetPositionEvents, assets } from "../../../src/common/db/schema/index.js";
+import { AssetService } from "../../../src/assets/asset.service.js";
+import { MarketLinkedAssetService } from "../../../src/assets/market-linked-asset.service.js";
+import { ValuationRepository } from "../../../src/assets/valuation.repository.js";
+import {
+  assetMarketLinks,
+  assetPositionEvents,
+  assets,
+  assetValuations
+} from "../../../src/common/db/schema/index.js";
 import { withTxn } from "../../../src/common/db/db-txn.js";
 import { IdempotencyPostgresRepository } from "../../../src/common/idempotency/idempotency-postgres.repository.js";
 import { IdempotencyPostgresService } from "../../../src/common/idempotency/idempotency-postgres.service.js";
+import { ReceivableService } from "../../../src/receivables/receivable.service.js";
+import { focusedTestDouble } from "../../../src/test/mock-drizzle.js";
 import { assertLedgerInvariants } from "../support/assert-ledger-invariants.js";
 import { createTestDb, insertTestUser } from "../support/postgres-test-db.js";
 import type { TestDb } from "../support/postgres-test-db.js";
@@ -36,10 +47,18 @@ describe("asset-market persistence", () => {
     const audit = new AuditRepository(testDb.db);
     links = new AssetMarketLinkService(assetsRepository, repository, audit);
     positions = new AssetPositionService(assetsRepository, repository, audit);
+    const assetService = new AssetService(
+      testDb.db,
+      assetsRepository,
+      new ValuationRepository(testDb.db),
+      audit,
+      focusedTestDouble<ReceivableService>({})
+    );
     mutations = new AssetMarketMutationService(
       new IdempotencyPostgresService(testDb.db, new IdempotencyPostgresRepository(testDb.db)),
       links,
-      positions
+      positions,
+      new MarketLinkedAssetService(assetService, links, positions)
     );
   }, 60_000);
 
@@ -201,5 +220,65 @@ describe("asset-market persistence", () => {
       items: [{ eventType: "reversal" }, { eventType: "purchase" }],
       pageInfo: { hasMore: false, limit: 50 }
     });
+  });
+
+  it("creates one market-linked asset, valuation, link, and opening position under concurrency", async () => {
+    const now = new Date("2026-08-23T00:00:00.000Z");
+    const input: CreateMarketLinkedAsset = {
+      asset: {
+        kind: "investment",
+        name: "Concurrent index fund",
+        openedAt: now,
+        openingValueMinor: 10_000
+      },
+      marketLink: {
+        instrumentType: "mutual_fund",
+        provider: "amfi",
+        providerInstrumentId: "120503",
+        quoteUnit: "fund_unit",
+        autoValuationEnabled: true,
+        effectiveFrom: now
+      },
+      openingPosition: {
+        eventType: "opening",
+        quantityMicroUnits: 1_000_000,
+        occurredAt: now
+      }
+    };
+    const results = await Promise.all(
+      Array.from({ length: 5 }, () =>
+        mutations.createMarketLinkedAsset(USER_ID, input, "523e4567-e89b-42d3-a456-426614174000")
+      )
+    );
+    expect(new Set(results.map((result) => result.result.asset.id)).size).toBe(1);
+    expect(results.filter((result) => result.replayed).length).toBe(4);
+
+    const assetId = results[0]?.result.asset.id;
+    if (assetId === undefined)
+      throw new Error("Market-linked asset creation did not return an asset.");
+    const [storedAssets, storedLinks, storedPositions, storedValuations] = await Promise.all([
+      testDb.db
+        .select()
+        .from(assets)
+        .where(and(eq(assets.id, assetId), eq(assets.userId, USER_ID))),
+      testDb.db
+        .select()
+        .from(assetMarketLinks)
+        .where(and(eq(assetMarketLinks.assetId, assetId), eq(assetMarketLinks.userId, USER_ID))),
+      testDb.db
+        .select()
+        .from(assetPositionEvents)
+        .where(
+          and(eq(assetPositionEvents.assetId, assetId), eq(assetPositionEvents.userId, USER_ID))
+        ),
+      testDb.db
+        .select()
+        .from(assetValuations)
+        .where(and(eq(assetValuations.assetId, assetId), eq(assetValuations.userId, USER_ID)))
+    ]);
+    expect(storedAssets).toHaveLength(1);
+    expect(storedLinks).toHaveLength(1);
+    expect(storedPositions).toHaveLength(1);
+    expect(storedValuations).toHaveLength(1);
   });
 });

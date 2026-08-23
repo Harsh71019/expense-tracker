@@ -206,6 +206,7 @@ import {
   AssetFundingPageSchema,
   LinkTransactionToAssetSchema,
   CreateInvestmentTransactionSchema,
+  CreateMarketLinkedAssetSchema,
   ReverseAssetFundingResultSchema,
   ListAssetFundingsQuerySchema,
   AssetMarketLinkSchema,
@@ -337,6 +338,9 @@ const ReverseAssetFundingResult = ReverseAssetFundingResultSchema.meta({
 });
 const AssetMarketLink = AssetMarketLinkSchema.meta({ id: "AssetMarketLink" });
 const AssetPositionEvent = AssetPositionEventSchema.meta({ id: "AssetPositionEvent" });
+const MarketLinkedAssetCreationResult = z
+  .object({ asset: Asset, marketLink: AssetMarketLink, openingPosition: AssetPositionEvent })
+  .meta({ id: "MarketLinkedAssetCreationResult" });
 const AssetPositionEventPage = AssetPositionEventPageSchema.meta({ id: "AssetPositionEventPage" });
 const ReverseAssetPositionEventResult = ReverseAssetPositionEventResultSchema.meta({
   id: "ReverseAssetPositionEventResult"
@@ -2601,6 +2605,30 @@ registry.registerPath({
       description: "Trailing essential burn baseline derived from append-only ledger history",
       ...json(EssentialBurnResponse)
     },
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/v1/assets/market-linked",
+  operationId: "createMarketLinkedAsset",
+  security: secured,
+  request: {
+    body: json(CreateMarketLinkedAssetSchema),
+    headers: idempotencyKeyHeaders
+  },
+  responses: {
+    200: {
+      description: "Idempotent replay of the market-linked asset creation",
+      headers: replayedHeaders,
+      ...json(MarketLinkedAssetCreationResult)
+    },
+    201: {
+      description: "Created asset, active market link, and opening position atomically",
+      ...json(MarketLinkedAssetCreationResult)
+    },
+    ...idempotencyConflictResponse,
     ...problemResponses
   }
 });

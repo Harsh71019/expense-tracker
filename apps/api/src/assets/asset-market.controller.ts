@@ -2,12 +2,14 @@ import { Body, Controller, Get, Headers, Param, Post, Query, Res } from "@nestjs
 import {
   AssetIdSchema,
   AssetPositionEventIdSchema,
+  CreateMarketLinkedAssetSchema,
   CreateAssetMarketLinkRequestSchema,
   CreateManualAssetPositionEventSchema,
   ListAssetPositionEventsQuerySchema,
   type AssetMarketLink,
   type AssetPositionEvent,
   type AssetPositionEventPage,
+  type MarketLinkedAssetCreationResult,
   type ReverseAssetPositionEventResult
 } from "@treasury-ops/shared";
 import type { Response } from "express";
@@ -28,6 +30,23 @@ export class AssetMarketController {
     private readonly positions: AssetPositionService,
     private readonly mutations: AssetMarketMutationService
   ) {}
+
+  @Post("market-linked")
+  async createMarketLinkedAsset(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() body: unknown,
+    @Headers("idempotency-key") key: string | undefined,
+    @Res({ passthrough: true }) response: Response
+  ): Promise<MarketLinkedAssetCreationResult> {
+    const result = await this.mutations.createMarketLinkedAsset(
+      user.id,
+      CreateMarketLinkedAssetSchema.parse(body),
+      IdempotencyKeySchema.parse(key)
+    );
+    if (result.replayed) response.status(200).setHeader("Idempotency-Replayed", "true");
+    else response.setHeader("Location", `/api/v1/assets/${result.result.asset.id}`);
+    return result.result;
+  }
 
   @Get(":assetId/market-link")
   getMarketLink(

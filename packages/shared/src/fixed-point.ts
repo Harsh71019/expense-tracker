@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 const MICRO_UNITS_PER_UNIT = 1_000_000n;
+const MICRO_UNITS_PER_MILLI_UNIT = 1_000n;
 const PAISE_PER_RUPEE = 100n;
 const PURITY_BPS_DIVISOR = 10_000n;
 const MARKET_VALUE_DIVISOR = (MICRO_UNITS_PER_UNIT * MICRO_UNITS_PER_UNIT) / PAISE_PER_RUPEE;
@@ -75,4 +76,19 @@ export function calculateMarketValueMinor(
   const roundedMinor = (numerator + divisor / 2n) / divisor;
 
   return toSafeNonNegativeInteger(roundedMinor, "Market value in paise");
+}
+
+/**
+ * Converts a precise market quantity into the legacy thousandths-of-a-unit
+ * cache used by physical gold and silver assets. The conversion is exact: a
+ * fractional milli-unit must remain in the market position, not be rounded
+ * into the legacy cache.
+ */
+export function microUnitsToMilliUnits(quantityMicroUnits: QuantityMicroUnits): number {
+  const quantity = QuantityMicroUnitsSchema.parse(quantityMicroUnits);
+  const microUnits = BigInt(quantity);
+  if (microUnits % MICRO_UNITS_PER_MILLI_UNIT !== 0n) {
+    throw new RangeError("Quantity cannot be represented exactly in milli-units.");
+  }
+  return toSafePositiveInteger(microUnits / MICRO_UNITS_PER_MILLI_UNIT, "Quantity in milli-units");
 }

@@ -864,6 +864,8 @@ GET    /category-rules | POST /category-rules | DELETE /category-rules/:id
 GET    /assets | POST /assets | POST /assets/:id/close   (POST kind=loan_receivable is a deprecated
                                                           compat path -> creates a receivable instead)
 GET    /assets/:id/valuations | POST /assets/:id/valuations
+POST   /assets/market-linked              atomically creates an investment/metal asset, its active
+                                         market-instrument link, valuation, and opening position
 GET    /assets/:id/market-link | POST /assets/:id/market-link
 GET    /assets/:id/position-events?cursor&limit | POST /assets/:id/position-events
 POST   /assets/:id/position-events/:eventId/reversals

@@ -40,6 +40,46 @@ function response(): { status: ReturnType<typeof vi.fn>; setHeader: ReturnType<t
 }
 
 describe("AssetMarketController", () => {
+  it("creates a market-linked asset atomically and returns its location", async () => {
+    const created = { asset: { id: ASSET_ID }, marketLink: LINK, openingPosition: EVENT };
+    const mutations = {
+      createMarketLinkedAsset: vi.fn().mockResolvedValue({ result: created, replayed: false })
+    };
+    // @ts-expect-error Focused controller collaborators.
+    const controller = new AssetMarketController({}, {}, mutations);
+    const res = response();
+
+    await expect(
+      controller.createMarketLinkedAsset(
+        USER,
+        {
+          asset: {
+            kind: "investment",
+            name: "Index fund",
+            openedAt: NOW.toISOString(),
+            openingValueMinor: 10_000
+          },
+          marketLink: {
+            instrumentType: "mutual_fund",
+            provider: "amfi",
+            providerInstrumentId: "120503",
+            quoteUnit: "fund_unit",
+            effectiveFrom: NOW.toISOString()
+          },
+          openingPosition: {
+            eventType: "opening",
+            quantityMicroUnits: 1_000_000,
+            occurredAt: NOW.toISOString()
+          }
+        },
+        "723e4567-e89b-42d3-a456-426614174000",
+        // @ts-expect-error Focused response double.
+        res
+      )
+    ).resolves.toEqual(created);
+    expect(res.setHeader).toHaveBeenCalledWith("Location", `/api/v1/assets/${ASSET_ID}`);
+  });
+
   it("sets a market link and returns its location", async () => {
     const mutations = {
       setMarketLink: vi.fn().mockResolvedValue({ result: LINK, replayed: false })

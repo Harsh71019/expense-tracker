@@ -44,6 +44,7 @@ describe("OpenApiController", () => {
       expect(paths).toContain("/v1/spending-warnings");
       expect(paths).toContain("/v1/spending-warnings/{warningId}/dismiss");
       expect(paths).toContain("/v1/assets/{assetId}/market-link");
+      expect(paths).toContain("/v1/assets/market-linked");
       expect(paths).toContain("/v1/assets/{assetId}/position-events");
       expect(paths).toContain("/v1/assets/{assetId}/position-events/{eventId}/reversals");
     });
@@ -62,6 +63,7 @@ describe("OpenApiController", () => {
         spec.paths?.["/v1/assets/{assetId}/close"]?.post,
         spec.paths?.["/v1/assets/{assetId}/valuations"]?.post,
         spec.paths?.["/v1/assets/{assetId}/market-link"]?.post,
+        spec.paths?.["/v1/assets/market-linked"]?.post,
         spec.paths?.["/v1/assets/{assetId}/position-events"]?.post,
         spec.paths?.["/v1/assets/{assetId}/position-events/{eventId}/reversals"]?.post,
         spec.paths?.["/v1/transactions"]?.patch,

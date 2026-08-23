@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   calculateMarketValueMinor,
+  microUnitsToMilliUnits,
   parsePositiveDecimalToMicroUnits,
   PriceMicroRupeesPerQuoteUnitSchema,
   PurityBpsSchema,
@@ -50,5 +51,10 @@ describe("market fixed-point utilities", () => {
     expect(() =>
       calculateMarketValueMinor(Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER)
     ).toThrow(RangeError);
+  });
+
+  it("converts physical quantities to the legacy milli-unit cache only exactly", () => {
+    expect(microUnitsToMilliUnits(1_234_000)).toBe(1_234);
+    expect(() => microUnitsToMilliUnits(1_234_001)).toThrow(RangeError);
   });
 });

@@ -4,6 +4,8 @@ import { Logger } from "nestjs-pino";
 import pino from "pino";
 
 import { RuntimeConfigService } from "./common/config/runtime-config.service.js";
+import { LogEvent } from "./common/logging/events.js";
+import { NtfyOpsNotifierService } from "./common/observability/ntfy-ops-notifier.service.js";
 import { withDeadline } from "./common/process/deadline.js";
 import { createHttpApp } from "./http-app.js";
 
@@ -20,11 +22,18 @@ async function bootstrap(): Promise<void> {
   const config = app.get(RuntimeConfigService);
   await app.listen(config.env.API_PORT, "0.0.0.0");
 
+  const logger = app.get(Logger);
+  logger.log({ event: LogEvent.ApiStarted, sha: config.env.GIT_SHA }, "api process started");
+  await app.get(NtfyOpsNotifierService).notify({
+    title: "🔄 TreasuryOps api started",
+    message: `sha=${config.env.GIT_SHA}`,
+    tags: ["arrows_counterclockwise"]
+  });
+
   let isShuttingDown = false;
   const shutdown = async (signal: NodeJS.Signals): Promise<void> => {
     if (isShuttingDown) return;
     isShuttingDown = true;
-    const logger = app.get(Logger);
     logger.log({ event: "api.stopping", signal }, "api process stopping");
     try {
       await withDeadline(

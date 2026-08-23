@@ -13,6 +13,8 @@ export const RuntimeEnvSchema = z.object({
   LOG_PRETTY: booleanStringSchema.default(false),
   SEQ_URL: z.string().url().optional(),
   SEQ_API_KEY: z.string().min(1).optional(),
+  NTFY_URL: z.string().url().optional(),
+  NTFY_TOPIC: z.string().min(1).optional(),
   SERVICE_ROLE: z.enum(["api", "worker"]).default("api"),
   DATABASE_URL: z.string().url(),
   DATABASE_POOL_MAX: z.coerce.number().int().min(1).max(100).default(10),

@@ -8,6 +8,7 @@ import { startBillStatementsWorker } from "./bills/bill-statements.processor.js"
 import { RuntimeConfigService } from "./common/config/runtime-config.service.js";
 import { LogEvent } from "./common/logging/events.js";
 import { LoggingContextService } from "./common/logging/logging-context.service.js";
+import { NtfyOpsNotifierService } from "./common/observability/ntfy-ops-notifier.service.js";
 import { withDeadline } from "./common/process/deadline.js";
 import { RedisService } from "./common/redis/redis.service.js";
 import { ImportsService } from "./imports/imports.service.js";
@@ -76,7 +77,12 @@ async function bootstrapWorker(): Promise<void> {
     loggingContext
   );
   const forecastingWorker = startForecastingWorker(config, app.get(ForecastingService), logger);
-  logger.log({ event: "worker.started" }, "worker process started");
+  logger.log({ event: LogEvent.WorkerStarted, sha: config.env.GIT_SHA }, "worker process started");
+  await app.get(NtfyOpsNotifierService).notify({
+    title: "🔄 TreasuryOps worker started",
+    message: `sha=${config.env.GIT_SHA}`,
+    tags: ["arrows_counterclockwise"]
+  });
 
   let isShuttingDown = false;
   const shutdown = async (signal: NodeJS.Signals): Promise<void> => {

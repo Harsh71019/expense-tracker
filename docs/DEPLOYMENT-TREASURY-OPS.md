@@ -113,6 +113,22 @@ Wired in `apps/api/src/common/logging/pino-destination.ts` via `pino.multistream
 
 **Retention:** a 30-day retention policy is configured directly in Seq (Settings → Retention, or `POST /api/retentionpolicies` with `{"RetentionTime":"30.00:00:00","DataSource":"Stream"}`) — Seq prunes events older than that on its own internal schedule, no TreasuryOps-side cron needed. Adjust the window from the UI if 30 days proves too much/little for the disk.
 
+### Ops notifications (ntfy)
+
+ntfy already runs on the same box (`http://192.168.0.226:3007`, no auth) alongside every other home-lab app. `apps/api/src/common/observability/ntfy-ops-notifier.service.ts` pushes to it for two kinds of operational signal — deliberately separate from the domain-notification outbox (`notifications/`, still `LoggingNotificationAdapter` until that has a real adapter):
+
+- **Cron run outcomes** — one push per run for the daily/weekly business jobs only (`ScheduledRunCoordinator`'s `cadence: "daily"` jobs, plus `BillGenerationCron` and `ForecastingScheduleService` which don't route through the coordinator). High-frequency infra jobs (import dispatch every 10s, the notification-outbox sweep every minute, the scheduler watchdog every 15min) stay silent — notifying on those would be thousands of pushes a day. Both success (✅) and failure (❌, high priority) push.
+- **Process boot** — one push each time `main.ts` (api) or `worker.ts` (worker) starts, tagged with `GIT_SHA`. Since a Docker restart is always a fresh process boot, this covers "the server restarted" for any reason (deploy, crash-restart, manual restart) without needing to distinguish the cause.
+
+Configured via the same `NTFY_URL`/`NTFY_TOPIC` env vars as the (currently unused) domain-notification adapter:
+
+```
+NTFY_URL=http://192.168.0.226:3007
+NTFY_TOPIC=treasury_ops
+```
+
+Both unset (default) disables ops pushes entirely — `NtfyOpsNotifierService.notify()` no-ops and every call site's `await` returns immediately. Delivery is fire-and-forget: a failed push is logged (`ntfy.push_failed`) but never thrown, so a flaky ntfy server can't take down a cron run or block process boot.
+
 ### Update
 
 ```bash

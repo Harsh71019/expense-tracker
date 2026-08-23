@@ -18,8 +18,10 @@ describe("ScheduledRunCoordinator", () => {
       fail: vi.fn()
     };
     const logger = { log: vi.fn(), error: vi.fn() };
+    const ntfy = { notify: vi.fn().mockResolvedValue(undefined) };
     const coordinator = new ScheduledRunCoordinator(
       focusedTestDouble(runs),
+      focusedTestDouble(ntfy),
       focusedTestDouble(logger)
     );
 
@@ -40,12 +42,35 @@ describe("ScheduledRunCoordinator", () => {
       12
     );
     expect(logger.log).toHaveBeenCalled();
+    expect(ntfy.notify).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "✅ rollups.refresh" })
+    );
+  });
+
+  it("does not notify for minute-cadence jobs", async () => {
+    const runs = {
+      tryStart: vi.fn().mockResolvedValue({ id: "job:window" }),
+      complete: vi.fn().mockResolvedValue(true),
+      fail: vi.fn()
+    };
+    const ntfy = { notify: vi.fn().mockResolvedValue(undefined) };
+    const coordinator = new ScheduledRunCoordinator(
+      focusedTestDouble(runs),
+      focusedTestDouble(ntfy),
+      focusedTestDouble({ log: vi.fn(), error: vi.fn() })
+    );
+
+    await expect(coordinator.run("scheduler.watchdog", "minute", async () => 0)).resolves.toBe(
+      true
+    );
+    expect(ntfy.notify).not.toHaveBeenCalled();
   });
 
   it("skips work when another worker owns the schedule window", async () => {
     const task = vi.fn(async () => 1);
     const coordinator = new ScheduledRunCoordinator(
       focusedTestDouble({ tryStart: vi.fn().mockResolvedValue(null) }),
+      focusedTestDouble({ notify: vi.fn() }),
       focusedTestDouble({ log: vi.fn(), error: vi.fn() })
     );
 
@@ -53,14 +78,16 @@ describe("ScheduledRunCoordinator", () => {
     expect(task).not.toHaveBeenCalled();
   });
 
-  it("persists a bounded failure summary before rethrowing", async () => {
+  it("persists a bounded failure summary before rethrowing and notifies on daily cadence", async () => {
     const runs = {
       tryStart: vi.fn().mockResolvedValue({ id: "job:window" }),
       complete: vi.fn(),
       fail: vi.fn().mockResolvedValue(undefined)
     };
+    const ntfy = { notify: vi.fn().mockResolvedValue(undefined) };
     const coordinator = new ScheduledRunCoordinator(
       focusedTestDouble(runs),
+      focusedTestDouble(ntfy),
       focusedTestDouble({ log: vi.fn(), error: vi.fn() })
     );
 
@@ -75,6 +102,9 @@ describe("ScheduledRunCoordinator", () => {
       expect.any(Date),
       expect.any(Number),
       "work failed"
+    );
+    expect(ntfy.notify).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "❌ job failed", message: "work failed" })
     );
   });
 });

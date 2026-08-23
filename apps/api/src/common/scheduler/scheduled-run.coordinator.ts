@@ -4,6 +4,7 @@ import { Inject, Injectable } from "@nestjs/common";
 import { Logger } from "nestjs-pino";
 
 import { LogEvent } from "../logging/events.js";
+import { NtfyOpsNotifierService } from "../observability/ntfy-ops-notifier.service.js";
 import { toISTCalendarDate } from "../time/ist.js";
 import { ScheduledRunRepository } from "./scheduled-run.repository.js";
 
@@ -15,6 +16,7 @@ const DEFAULT_LEASE_MS = 60 * 60_000;
 export class ScheduledRunCoordinator {
   constructor(
     private readonly runs: ScheduledRunRepository,
+    @Inject(NtfyOpsNotifierService) private readonly ntfy: Pick<NtfyOpsNotifierService, "notify">,
     @Inject(Logger) private readonly logger: Pick<Logger, "log" | "error">
   ) {}
 
@@ -56,6 +58,13 @@ export class ScheduledRunCoordinator {
         },
         "scheduled run completed"
       );
+      if (cadence === "daily") {
+        await this.ntfy.notify({
+          title: `✅ ${jobName}`,
+          message: `completed in ${durationMs}ms — ${itemCount} item(s)`,
+          tags: ["white_check_mark"]
+        });
+      }
       return true;
     } catch (error) {
       const failedAt = new Date();
@@ -71,6 +80,14 @@ export class ScheduledRunCoordinator {
         },
         "scheduled run failed"
       );
+      if (cadence === "daily") {
+        await this.ntfy.notify({
+          title: `❌ ${jobName} failed`,
+          message: errorSummary(error),
+          priority: "high",
+          tags: ["rotating_light"]
+        });
+      }
       throw error;
     }
   }

@@ -9,7 +9,7 @@ import { glyphFor, IconGlyph, lighten } from "@/features/categories";
 import { PaymentRailBadge } from "./payment-rail-badge";
 
 export const TXN_ROW_GRID =
-  "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 md:grid-cols-[2.4fr_1fr_1fr_1.1fr] md:gap-4";
+  "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 md:grid-cols-[2.2fr_1.1fr_1.1fr_1fr_1.1fr] md:gap-4";
 
 const SOURCE_LABEL: Record<TransactionSource, string> = {
   manual: "Manual",
@@ -106,7 +106,7 @@ export function TxnRow({
               </span>
             ) : null}
             {account !== undefined ? (
-              <span className="hidden sm:inline-flex items-center gap-1 rounded-md border border-border/70 bg-surface-muted/60 px-1.5 py-0.5 text-2xs font-medium text-foreground-muted">
+              <span className="inline-flex md:hidden items-center gap-1 rounded-md border border-border/70 bg-surface-muted/60 px-1.5 py-0.5 text-2xs font-medium text-foreground-muted">
                 <span aria-hidden="true">{ACCOUNT_TYPE_ICON[account.type] ?? "💳"}</span>
                 <span className="truncate max-w-28">{account.name}</span>
               </span>
@@ -164,7 +164,23 @@ export function TxnRow({
         )}
       </div>
 
-      {/* 3. Date & Time */}
+      {/* 3. Account */}
+      <div
+        className={`hidden truncate text-xs font-medium text-foreground-muted md:block ${
+          isCompact ? "md:text-xs" : "md:text-sm"
+        }`}
+      >
+        {account !== undefined ? (
+          <span className="inline-flex items-center gap-1.5 truncate">
+            <span aria-hidden="true">{ACCOUNT_TYPE_ICON[account.type] ?? "💳"}</span>
+            <span className="truncate">{account.name}</span>
+          </span>
+        ) : (
+          "—"
+        )}
+      </div>
+
+      {/* 4. Date & Time */}
       <div className="col-start-2 row-start-2 text-right font-mono text-2xs font-medium text-foreground-muted md:col-auto md:row-auto md:text-left md:text-[13px]">
         <div>{dateFormatter.format(transaction.occurredAt)}</div>
         {!isCompact ? (
@@ -174,7 +190,7 @@ export function TxnRow({
         ) : null}
       </div>
 
-      {/* 4. Amount */}
+      {/* 5. Amount */}
       <div className="col-start-2 row-start-1 justify-self-end text-right md:col-auto md:row-auto">
         <Money
           minor={transaction.amountMinor}

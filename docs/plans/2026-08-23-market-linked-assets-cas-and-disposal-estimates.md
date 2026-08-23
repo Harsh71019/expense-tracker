@@ -1333,6 +1333,24 @@ contract more closely than a global spot quote converted through FX.
 credential are provisioned. Until then, the product retains the last persisted manual valuation;
 it does not synthesize or scrape a replacement quote.
 
+### ADR-9 — Text-only `pdf-parse` extraction with application-level sealing
+
+**Decision:** Use the Node 24-compatible `pdf-parse` package, pinned to an approved version, for
+text-only CAS extraction and password handling. Process a PDF only in the worker role; do not
+render it, execute embedded scripting, follow embedded links, or enqueue raw bytes/passwords.
+Seal transient PDF bytes and, only when needed for retry, the password separately with Node
+`crypto` AES-256-GCM using a 32-byte environment key and a fresh 96-bit nonce per encryption.
+The queue receives only the portfolio-import batch ID. A sweeper permanently removes both sealed
+fields after the configured TTL and successful parsing removes the sealed password immediately.
+
+**Why:** `pdf-parse` documents password-protected PDF extraction and supports the repository's
+Node 24 runtime. AES-GCM supplies confidentiality and tamper detection without adding a second
+cryptography dependency or persisting plaintext credentials in PostgreSQL/Redis.
+
+**Trade-off:** This adds one reviewed parsing dependency and an encryption-key rotation/recovery
+runbook. A parser is not enabled for an issuer until sanitized fixtures prove that issuer's layout;
+scanned/image-only PDFs remain unsupported in V1.
+
 ## 18. Open questions that must be resolved before implementation
 
 1. Which CAS issuer/layout does the user currently receive: CAMS, KFintech, MFCentral, CDSL, or NSDL?
@@ -1357,6 +1375,7 @@ Recheck every source at implementation time. Do not encode prose from this docum
 - [IBJA official rates API and usage guidance](https://www.indiagoldratesapi.com/)
 - [MetalpriceAPI terms and commercial-use terms](https://metalpriceapi.com/terms)
 - [GoldAPI XAU/INR endpoint information](https://www.goldapi.io/price/XAU/INR/json)
+- [`pdf-parse` package documentation, including password-protected extraction](https://www.npmjs.com/package/pdf-parse)
 - [Yahoo terms of service](https://legal.yahoo.com/xw/en/yahoo/terms/otos/index.html)
 - [NSDL-hosted SEBI circular: revised CAS issuance timelines (February 2025)](https://nsdl.co.in/downloadables/pdf/2025-0022-Policy-SEBI_circular_-_Revised_timelines_for_issuance_of_Consolidated_Account_Statement_%28CAS%29.pdf)
 - [CAMS consolidated account statement request](https://www.camsonline.com/Investors/Statements/CAS-CAMS)

@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import {
   calculateMarketValueMinor,
+  microRupeesToMinorUnits,
   microUnitsToMilliUnits,
   parsePositiveDecimalToMicroUnits,
+  parseTroyOunceInrToMicroRupeesPerGram,
   PriceMicroRupeesPerQuoteUnitSchema,
   PurityBpsSchema,
   QuantityMicroUnitsSchema
@@ -32,6 +34,14 @@ describe("market fixed-point utilities", () => {
     const nav = parsePositiveDecimalToMicroUnits("45.678901");
 
     expect(calculateMarketValueMinor(units, nav)).toBe(563_937);
+  });
+
+  it("converts INR-per-troy-ounce quotes to rounded INR-per-gram paise exactly", () => {
+    const priceMicroRupeesPerGram = parseTroyOunceInrToMicroRupeesPerGram("311.034768");
+
+    expect(priceMicroRupeesPerGram).toBe(10_000_000);
+    expect(microRupeesToMinorUnits(priceMicroRupeesPerGram)).toBe(1_000);
+    expect(microRupeesToMinorUnits(10_005_000)).toBe(1_001);
   });
 
   it("rounds final paise half up and applies physical-metal purity before that rounding", () => {

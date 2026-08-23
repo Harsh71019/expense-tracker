@@ -2111,7 +2111,7 @@ export interface paths {
       };
       requestBody?: never;
       responses: {
-        /** @description Live gold and silver market rates */
+        /** @description Gold API indicative gold and silver spot references. Cached values may be marked stale; they are not dealer buyback or IBJA benchmark quotes. */
         200: {
           headers: {
             [name: string]: unknown;
@@ -9629,18 +9629,22 @@ export interface components {
     MarketRates: {
       /** Format: date-time */
       asOf: string | null;
-      usdInr: number;
+      /** @enum {string} */
+      source: "gold_api";
+      isStale: boolean;
       gold: {
-        priceUsdPerOz: number;
+        priceMicroRupeesPerGram: number;
         priceMinorPerGram: number;
         priceFormatted: string;
-        changePercent24h?: number;
+        /** Format: date-time */
+        providerAsOf: string | null;
       };
       silver: {
-        priceUsdPerOz: number;
+        priceMicroRupeesPerGram: number;
         priceMinorPerGram: number;
         priceFormatted: string;
-        changePercent24h?: number;
+        /** Format: date-time */
+        providerAsOf: string | null;
       };
     };
     AssetFundingPage: {

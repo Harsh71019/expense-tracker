@@ -1,6 +1,12 @@
 "use client";
 
-import type { Asset, MarketRates, ValuationPage } from "@treasury-ops/shared";
+import {
+  calculateMarketValueMinor,
+  type Asset,
+  type MarketRates,
+  type MetalRate,
+  type ValuationPage
+} from "@treasury-ops/shared";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useId, useState } from "react";
@@ -100,10 +106,7 @@ export function AssetDetail({
         ? marketRates?.silver
         : undefined;
 
-  const liveMarketValueMinor =
-    quantityGrams !== undefined && metalRate !== undefined
-      ? Math.round(quantityGrams * metalRate.priceMinorPerGram)
-      : undefined;
+  const liveMarketValueMinor = calculateLegacyMetalMarketValue(asset.quantityMilliUnits, metalRate);
 
   const marketDiffMinor =
     liveMarketValueMinor !== undefined ? liveMarketValueMinor - currentValueMinor : undefined;
@@ -119,7 +122,7 @@ export function AssetDetail({
           source: "manual"
         }
       });
-      toast.success("Valuation synced to live market rate");
+      toast.success("Valuation synced to indicative spot reference");
     } catch {
       toast.error("Could not sync valuation");
     }
@@ -357,9 +360,13 @@ export function AssetDetail({
           <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-1.5">
               <div className="flex items-center gap-2">
-                <span className="flex h-2.5 w-2.5 rounded-full bg-income animate-pulse" />
+                <span
+                  className={`flex h-2.5 w-2.5 rounded-full ${
+                    marketRates?.isStale ? "bg-expense" : "bg-income animate-pulse"
+                  }`}
+                />
                 <p className="font-mono text-2xs font-bold tracking-widest text-accent uppercase">
-                  LIVE COMMODITY BENCHMARK (INDIA · INR)
+                  INDICATIVE SPOT REFERENCE (GOLD API · INR)
                 </p>
               </div>
               <h2 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
@@ -367,9 +374,9 @@ export function AssetDetail({
                 <span className="text-accent">{metalRate.priceFormatted}</span>
               </h2>
               <p className="text-xs text-foreground-muted">
-                Global spot @ ${metalRate.priceUsdPerOz.toFixed(2)}/oz · USD/INR @ ₹
-                {marketRates?.usdInr?.toFixed(2) ?? "—"} · As of{" "}
-                {marketRates ? timeFormatter.format(new Date(marketRates.asOf)) : "Live"}
+                Gold API global spot reference · Provider quote at{" "}
+                {timeFormatter.format(new Date(metalRate.providerAsOf))}
+                {marketRates?.isStale ? " · Stale — awaiting refresh" : ""}
               </p>
             </div>
 
@@ -405,7 +412,7 @@ export function AssetDetail({
                       size={14}
                       className={createValuation.isPending ? "animate-spin" : ""}
                     />
-                    {createValuation.isPending ? "Syncing…" : "Sync to Market"}
+                    {createValuation.isPending ? "Syncing…" : "Sync indicative rate"}
                   </Button>
                 ) : null}
               </div>
@@ -603,4 +610,21 @@ export function AssetDetail({
       ) : null}
     </div>
   );
+}
+
+function calculateLegacyMetalMarketValue(
+  quantityMilliUnits: number | undefined,
+  metalRate: MetalRate | undefined
+): number | undefined {
+  if (
+    quantityMilliUnits === undefined ||
+    !Number.isSafeInteger(quantityMilliUnits) ||
+    quantityMilliUnits < 1 ||
+    quantityMilliUnits > Math.floor(Number.MAX_SAFE_INTEGER / 1_000) ||
+    metalRate === undefined
+  ) {
+    return undefined;
+  }
+
+  return calculateMarketValueMinor(quantityMilliUnits * 1_000, metalRate.priceMicroRupeesPerGram);
 }

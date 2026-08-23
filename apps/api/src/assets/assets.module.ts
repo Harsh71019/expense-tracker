@@ -14,6 +14,7 @@ import { AssetMutationService } from "./asset-mutation.service.js";
 import { AssetDiagnosticReadService } from "./asset-diagnostic-read.service.js";
 import { LiabilityAssetReadService } from "./liability-asset-read.service.js";
 import { MarketRatesService } from "./market-rates.service.js";
+import { MarketRatesRefreshService } from "./market-rates-refresh.service.js";
 import { MarketLinkedAssetService } from "./market-linked-asset.service.js";
 import { ValuationRepository } from "./valuation.repository.js";
 import { AssetFundingRepository } from "../asset-fundings/asset-funding.repository.js";
@@ -34,7 +35,8 @@ import { AssetFundingRepository } from "../asset-fundings/asset-funding.reposito
     AssetMutationService,
     LiabilityAssetReadService,
     AssetDiagnosticReadService,
-    MarketRatesService
+    MarketRatesService,
+    MarketRatesRefreshService
   ],
   // Export narrow read services for cross-module consumption (NetWorthModule
   // composes these with AccountsModule/ReceivablesModule -- see net-worth/).

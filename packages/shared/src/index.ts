@@ -588,8 +588,10 @@ export type {
 export {
   calculateMarketValueMinor,
   FixedPointDecimalSchema,
+  microRupeesToMinorUnits,
   microUnitsToMilliUnits,
   parsePositiveDecimalToMicroUnits,
+  parseTroyOunceInrToMicroRupeesPerGram,
   PriceMicroRupeesPerQuoteUnitSchema,
   PurityBpsSchema,
   QuantityMicroUnitsSchema

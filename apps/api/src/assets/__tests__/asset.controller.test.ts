@@ -196,16 +196,19 @@ describe("AssetController", () => {
     const mockService = {};
     const sampleRates = {
       asOf: new Date(),
-      usdInr: 95.7,
+      source: "gold_api" as const,
+      isStale: false,
       gold: {
-        priceUsdPerOz: 4680.0,
+        priceMicroRupeesPerGram: 14_400_000_000,
         priceMinorPerGram: 1440000,
-        priceFormatted: "₹14,400.00 / g"
+        priceFormatted: "₹14,400.00 / g",
+        providerAsOf: new Date()
       },
       silver: {
-        priceUsdPerOz: 52.0,
+        priceMicroRupeesPerGram: 160_000_000,
         priceMinorPerGram: 16000,
-        priceFormatted: "₹160.00 / g"
+        priceFormatted: "₹160.00 / g",
+        providerAsOf: new Date()
       }
     };
     const mockRates = { getRates: vi.fn().mockResolvedValue(sampleRates) };

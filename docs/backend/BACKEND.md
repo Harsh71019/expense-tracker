@@ -269,7 +269,7 @@ Loans given are receivables; loans taken are liabilities. Fixed deposits, gold, 
 }
 ```
 
-`netWorth = accounts + latest asset valuations`, where liabilities are stored as a negative valuation. Gold and silver start with manual valuations; no external price-feed dependency is required.
+`netWorth = accounts + latest asset valuations`, where liabilities are stored as a negative valuation. Gold and silver start with manual valuations. `GET /v1/assets/market-rates` additionally exposes a globally cached, once-daily Gold API spot reference for gold and silver; it is explicitly indicative, never an IBJA/dealer buyback quote. The response preserves provider timestamps and marks a cached value stale after 27 hours. A provider failure never fabricates a replacement price.
 
 #### `asset_market_links` + `asset_position_events`
 

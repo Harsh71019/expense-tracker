@@ -3,8 +3,11 @@ import { z } from "zod";
 const MICRO_UNITS_PER_UNIT = 1_000_000n;
 const MICRO_UNITS_PER_MILLI_UNIT = 1_000n;
 const PAISE_PER_RUPEE = 100n;
+const MICRO_RUPEES_PER_PAISE = MICRO_UNITS_PER_UNIT / PAISE_PER_RUPEE;
 const PURITY_BPS_DIVISOR = 10_000n;
 const MARKET_VALUE_DIVISOR = (MICRO_UNITS_PER_UNIT * MICRO_UNITS_PER_UNIT) / PAISE_PER_RUPEE;
+const TROY_OUNCE_GRAMS_SCALE = 10_000_000n;
+const TROY_OUNCE_GRAMS_SCALED = 311_034_768n;
 
 export const QuantityMicroUnitsSchema = z.number().int().min(1).max(Number.MAX_SAFE_INTEGER);
 
@@ -56,6 +59,29 @@ export function parsePositiveDecimalToMicroUnits(input: string): number {
     BigInt(wholePart) * MICRO_UNITS_PER_UNIT + BigInt(retainedFraction) + (roundUp ? 1n : 0n);
 
   return toSafePositiveInteger(parsed, "Fixed-point value");
+}
+
+/**
+ * Converts an INR-per-troy-ounce decimal quote to INR-per-gram micro-rupees.
+ * The troy-ounce divisor is represented exactly as 31.1034768 grams and the
+ * final result is rounded half up once, so no binary float enters valuation.
+ */
+export function parseTroyOunceInrToMicroRupeesPerGram(input: string): number {
+  const priceMicroRupeesPerTroyOunce = BigInt(parsePositiveDecimalToMicroUnits(input));
+  const numerator = priceMicroRupeesPerTroyOunce * TROY_OUNCE_GRAMS_SCALE;
+  const roundedMicroRupeesPerGram =
+    (numerator + TROY_OUNCE_GRAMS_SCALED / 2n) / TROY_OUNCE_GRAMS_SCALED;
+
+  return toSafePositiveInteger(roundedMicroRupeesPerGram, "INR price per gram in micro-rupees");
+}
+
+/** Converts a positive micro-rupee quote to paise, rounding half up once. */
+export function microRupeesToMinorUnits(priceMicroRupees: PriceMicroRupeesPerQuoteUnit): number {
+  const price = PriceMicroRupeesPerQuoteUnitSchema.parse(priceMicroRupees);
+  return toSafePositiveInteger(
+    (BigInt(price) + MICRO_RUPEES_PER_PAISE / 2n) / MICRO_RUPEES_PER_PAISE,
+    "INR price in paise"
+  );
 }
 
 /**

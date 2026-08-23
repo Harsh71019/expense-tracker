@@ -975,7 +975,11 @@ registry.registerPath({
   path: "/v1/assets/market-rates",
   security: secured,
   responses: {
-    200: { description: "Live gold and silver market rates", ...json(MarketRates) },
+    200: {
+      description:
+        "Gold API indicative gold and silver spot references. Cached values may be marked stale; they are not dealer buyback or IBJA benchmark quotes.",
+      ...json(MarketRates)
+    },
     ...problemResponses
   }
 });

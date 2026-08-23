@@ -2776,14 +2776,20 @@
             "type": ["string", "null"],
             "format": "date-time"
           },
-          "usdInr": {
-            "type": "number"
+          "source": {
+            "type": "string",
+            "enum": ["gold_api"]
+          },
+          "isStale": {
+            "type": "boolean"
           },
           "gold": {
             "type": "object",
             "properties": {
-              "priceUsdPerOz": {
-                "type": "number"
+              "priceMicroRupeesPerGram": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
               },
               "priceMinorPerGram": {
                 "type": "integer",
@@ -2792,17 +2798,25 @@
               "priceFormatted": {
                 "type": "string"
               },
-              "changePercent24h": {
-                "type": "number"
+              "providerAsOf": {
+                "type": ["string", "null"],
+                "format": "date-time"
               }
             },
-            "required": ["priceUsdPerOz", "priceMinorPerGram", "priceFormatted"]
+            "required": [
+              "priceMicroRupeesPerGram",
+              "priceMinorPerGram",
+              "priceFormatted",
+              "providerAsOf"
+            ]
           },
           "silver": {
             "type": "object",
             "properties": {
-              "priceUsdPerOz": {
-                "type": "number"
+              "priceMicroRupeesPerGram": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
               },
               "priceMinorPerGram": {
                 "type": "integer",
@@ -2811,14 +2825,20 @@
               "priceFormatted": {
                 "type": "string"
               },
-              "changePercent24h": {
-                "type": "number"
+              "providerAsOf": {
+                "type": ["string", "null"],
+                "format": "date-time"
               }
             },
-            "required": ["priceUsdPerOz", "priceMinorPerGram", "priceFormatted"]
+            "required": [
+              "priceMicroRupeesPerGram",
+              "priceMinorPerGram",
+              "priceFormatted",
+              "providerAsOf"
+            ]
           }
         },
-        "required": ["asOf", "usdInr", "gold", "silver"]
+        "required": ["asOf", "source", "isStale", "gold", "silver"]
       },
       "AssetFundingPage": {
         "type": "object",
@@ -15513,7 +15533,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Live gold and silver market rates",
+            "description": "Gold API indicative gold and silver spot references. Cached values may be marked stale; they are not dealer buyback or IBJA benchmark quotes.",
             "content": {
               "application/json": {
                 "schema": {

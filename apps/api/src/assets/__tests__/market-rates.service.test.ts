@@ -1,119 +1,119 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
 import { MarketRatesService } from "../market-rates.service.js";
 
-describe("MarketRatesService", () => {
-  let service: MarketRatesService;
-  const originalFetch = globalThis.fetch;
+const CACHE_KEY = "treasury-ops:market-rates:gold-api:v1";
 
-  beforeEach(() => {
-    service = new MarketRatesService();
+function createCache(initialValue: string | null = null) {
+  let value = initialValue;
+  return {
+    get: vi.fn(async () => value),
+    set: vi.fn(async (_key: string, next: string) => {
+      value = next;
+    }),
+    delete: vi.fn(async () => {
+      value = null;
+    })
+  };
+}
+
+function response(symbol: "XAU" | "XAG", price: string, updatedAt: string): Response {
+  return new Response(JSON.stringify({ currency: "INR", symbol, price, updatedAt }), {
+    status: 200,
+    headers: { "content-type": "application/json" }
   });
+}
+
+describe("MarketRatesService", () => {
+  const originalFetch = globalThis.fetch;
 
   afterEach(() => {
     globalThis.fetch = originalFetch;
+    vi.useRealTimers();
     vi.restoreAllMocks();
   });
 
-  it("fetches and parses live metal rates correctly", async () => {
-    globalThis.fetch = vi.fn().mockImplementation((url: string | URL | Request) => {
-      const urlStr = url.toString();
-      if (urlStr.includes("GC%3DF") || urlStr.includes("GC=F")) {
-        return Promise.resolve({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              chart: {
-                result: [
-                  {
-                    meta: {
-                      regularMarketPrice: 4680.0,
-                      chartPreviousClose: 4600.0
-                    }
-                  }
-                ]
-              }
-            })
-        });
+  it("hydrates the shared cache from Gold API INR quotes using fixed-point conversion", async () => {
+    const cache = createCache();
+    const service = new MarketRatesService(cache);
+    globalThis.fetch = vi.fn((input: string | URL | Request) => {
+      const url = input.toString();
+      if (url.endsWith("/XAU/INR")) {
+        return Promise.resolve(response("XAU", "311.034768", "2026-08-23T12:00:00.000Z"));
       }
-      if (urlStr.includes("SI%3DF") || urlStr.includes("SI=F")) {
-        return Promise.resolve({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              chart: {
-                result: [
-                  {
-                    meta: {
-                      regularMarketPrice: 52.0,
-                      chartPreviousClose: 51.0
-                    }
-                  }
-                ]
-              }
-            })
-        });
+      if (url.endsWith("/XAG/INR")) {
+        return Promise.resolve(response("XAG", "31.1034768", "2026-08-23T12:01:00.000Z"));
       }
-      if (urlStr.includes("USDINR%3DX") || urlStr.includes("USDINR=X")) {
-        return Promise.resolve({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              chart: {
-                result: [
-                  {
-                    meta: {
-                      regularMarketPrice: 95.0,
-                      chartPreviousClose: 94.8
-                    }
-                  }
-                ]
-              }
-            })
-        });
-      }
-      return Promise.reject(new Error("Unexpected url"));
+      return Promise.reject(new Error("Unexpected Gold API path."));
     });
 
     const rates = await service.getRates();
 
-    expect(rates.usdInr).toBe(95.0);
-    expect(rates.gold.priceUsdPerOz).toBe(4680.0);
-    // (4680 * 95) / 31.1034768 = ~14294.22 => 1429422 paise
-    expect(rates.gold.priceMinorPerGram).toBeGreaterThan(1400000);
-    expect(rates.silver.priceUsdPerOz).toBe(52.0);
-    expect(rates.silver.priceMinorPerGram).toBeGreaterThan(15000);
+    expect(rates).toMatchObject({ source: "gold_api", isStale: false });
+    expect(rates.asOf).toEqual(new Date("2026-08-23T12:01:00.000Z"));
+    expect(rates.gold).toMatchObject({
+      priceMicroRupeesPerGram: 10_000_000,
+      priceMinorPerGram: 1_000,
+      priceFormatted: "₹10.00 / g"
+    });
+    expect(rates.silver).toMatchObject({
+      priceMicroRupeesPerGram: 1_000_000,
+      priceMinorPerGram: 100,
+      priceFormatted: "₹1.00 / g"
+    });
+    expect(cache.set).toHaveBeenCalledWith(CACHE_KEY, expect.any(String), 259_200);
+    expect(globalThis.fetch).toHaveBeenCalledTimes(2);
   });
 
-  it("returns fallback rates when fetch fails", async () => {
-    globalThis.fetch = vi.fn().mockRejectedValue(new Error("Network error"));
+  it("serves a stale cached quote without making an outbound request", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-25T16:00:00.000Z"));
+    const cache = createCache(
+      JSON.stringify({
+        asOf: "2026-08-23T12:00:00.000Z",
+        source: "gold_api",
+        isStale: false,
+        gold: {
+          priceMicroRupeesPerGram: 10_000_000,
+          priceMinorPerGram: 1_000,
+          priceFormatted: "₹10.00 / g",
+          providerAsOf: "2026-08-23T12:00:00.000Z"
+        },
+        silver: {
+          priceMicroRupeesPerGram: 1_000_000,
+          priceMinorPerGram: 100,
+          priceFormatted: "₹1.00 / g",
+          providerAsOf: "2026-08-23T12:00:00.000Z"
+        }
+      })
+    );
+    const service = new MarketRatesService(cache);
+    globalThis.fetch = vi.fn();
 
-    const rates = await service.getRates();
-
-    expect(rates.usdInr).toBe(95.7);
-    expect(rates.gold.priceUsdPerOz).toBe(4680.0);
-    expect(rates.silver.priceUsdPerOz).toBe(52.0);
+    await expect(service.getRates()).resolves.toMatchObject({ isStale: true });
+    expect(globalThis.fetch).not.toHaveBeenCalled();
   });
 
-  it("serves from cache within TTL", async () => {
-    let callCount = 0;
-    globalThis.fetch = vi.fn().mockImplementation(() => {
-      callCount += 1;
-      return Promise.resolve({
-        ok: true,
-        json: () =>
-          Promise.resolve({
-            chart: {
-              result: [{ meta: { regularMarketPrice: 100 } }]
-            }
-          })
-      });
+  it("does not invent fallback prices when Gold API and the cache are unavailable", async () => {
+    const service = new MarketRatesService(createCache());
+    globalThis.fetch = vi.fn(() => Promise.reject(new Error("Network error")));
+
+    await expect(service.getRates()).rejects.toThrow(
+      "Gold API market rates are temporarily unavailable."
+    );
+  });
+
+  it("discards malformed cached data before hydrating a fresh provider quote", async () => {
+    const cache = createCache("not-json");
+    const service = new MarketRatesService(cache);
+    globalThis.fetch = vi.fn((input: string | URL | Request) => {
+      const url = input.toString();
+      return Promise.resolve(
+        response(url.endsWith("/XAU/INR") ? "XAU" : "XAG", "311.034768", "2026-08-23T12:00:00.000Z")
+      );
     });
 
-    await service.getRates();
-    const callsAfterFirst = callCount;
-    expect(callsAfterFirst).toBe(3); // 3 symbols
-
-    await service.getRates();
-    expect(callCount).toBe(callsAfterFirst); // served from cache
+    await expect(service.getRates()).resolves.toMatchObject({ isStale: false });
+    expect(cache.delete).toHaveBeenCalledWith(CACHE_KEY);
   });
 });

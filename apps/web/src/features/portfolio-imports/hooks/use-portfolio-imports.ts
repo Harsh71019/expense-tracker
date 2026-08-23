@@ -15,6 +15,7 @@ import { z } from "zod";
 import { apiClient } from "@/lib/api/client";
 import { toAppError } from "@/lib/api/problem";
 import { qk } from "@/lib/query/keys";
+import { generateRequestId } from "@/lib/request-id";
 
 const BatchesSchema = z.array(PortfolioImportBatchSchema);
 
@@ -103,7 +104,7 @@ export function useUploadPortfolioImport() {
         formData.append("source", metadata.source);
       }
 
-      const idempotencyKey = crypto.randomUUID();
+      const idempotencyKey = generateRequestId();
       const response = await fetch("/api/v1/portfolio-imports/cas", {
         method: "POST",
         headers: {
@@ -180,7 +181,7 @@ export function useCommitPortfolioImportBatch() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (batchId: string): Promise<PortfolioImportBatch> => {
-      const idempotencyKey = crypto.randomUUID();
+      const idempotencyKey = generateRequestId();
       const result = await apiClient.POST("/v1/portfolio-imports/{batchId}/commit", {
         params: {
           path: { batchId },
@@ -204,7 +205,7 @@ export function useRevertPortfolioImportBatch() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (batchId: string): Promise<PortfolioImportBatch> => {
-      const idempotencyKey = crypto.randomUUID();
+      const idempotencyKey = generateRequestId();
       const result = await apiClient.POST("/v1/portfolio-imports/{batchId}/revert", {
         params: {
           path: { batchId },

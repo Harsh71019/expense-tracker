@@ -12656,6 +12656,10 @@ export interface operations {
         uncategorized?: "true" | "false";
         from?: string | null;
         to?: string | null;
+        amountMinor?: number;
+        minAmountMinor?: number;
+        maxAmountMinor?: number;
+        sort?: "date_desc" | "date_asc" | "amount_desc" | "amount_asc";
         q?: string;
         tag?: string;
         cursor?: string;
@@ -13747,8 +13751,7 @@ export interface operations {
           purityBps?: number;
           /** @default true */
           autoValuationEnabled?: boolean;
-          /** Format: date-time */
-          effectiveFrom: string | null;
+          effectiveFrom: string;
         };
       };
     };
@@ -13909,8 +13912,7 @@ export interface operations {
           grossAmountMinor?: number;
           chargesMinor?: number;
           taxesAtAcquisitionMinor?: number;
-          /** Format: date-time */
-          occurredAt: string | null;
+          occurredAt: string;
         };
       };
     };
@@ -14988,8 +14990,7 @@ export interface operations {
             purityBps?: number;
             /** @default true */
             autoValuationEnabled?: boolean;
-            /** Format: date-time */
-            effectiveFrom: string | null;
+            effectiveFrom: string;
           };
           openingPosition: {
             /** @enum {string} */
@@ -15007,8 +15008,7 @@ export interface operations {
             grossAmountMinor?: number;
             chargesMinor?: number;
             taxesAtAcquisitionMinor?: number;
-            /** Format: date-time */
-            occurredAt: string | null;
+            occurredAt: string;
           };
         };
       };
@@ -15473,7 +15473,7 @@ export interface operations {
           quantityMicroUnits?: number;
           /**
            * Format: date-time
-           * @default 2026-08-23T08:45:29.947Z
+           * @default 2026-08-23T17:58:46.784Z
            */
           disposalDate?: string | null;
           quoteOverrideMicroRupeesPerUnit?: number;

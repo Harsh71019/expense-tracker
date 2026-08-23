@@ -1,8 +1,12 @@
 "use client";
 
-import type { ListTransactionsQuery } from "@treasury-ops/shared";
+import {
+  formatMinor,
+  TransactionSortSchema,
+  type ListTransactionsQuery
+} from "@treasury-ops/shared";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 
 import { DatePicker, Select } from "@/components/ui";
@@ -12,6 +16,8 @@ import { useCategories } from "@/features/categories";
 import {
   endOfISTDay,
   isSameISTDay,
+  minorToRupeesInput,
+  parseRupeesToMinor,
   serializeTransactionFilters,
   startOfISTDay,
   toISTDateInputValue
@@ -21,6 +27,7 @@ const SEARCH_DEBOUNCE_MS = 400;
 const UNCATEGORIZED_FILTER_VALUE = "__uncategorized__";
 
 type DateFilterMode = "single" | "range";
+type AmountFilterMode = "exact" | "range";
 
 export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuery }>): ReactNode {
   const router = useRouter();
@@ -28,6 +35,10 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
   const categories = useCategories();
   const [query, setQuery] = useState(filters.q ?? "");
   const [filtersOpen, setFiltersOpen] = useState(false);
+
+  const [exactAmount, setExactAmount] = useState(() => minorToRupeesInput(filters.amountMinor));
+  const [minAmount, setMinAmount] = useState(() => minorToRupeesInput(filters.minAmountMinor));
+  const [maxAmount, setMaxAmount] = useState(() => minorToRupeesInput(filters.maxAmountMinor));
 
   const isSingleDateFilter =
     filters.from !== undefined &&
@@ -40,12 +51,28 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
       : "single"
   );
 
+  const [amountMode, setAmountMode] = useState<AmountFilterMode>(
+    filters.minAmountMinor !== undefined || filters.maxAmountMinor !== undefined ? "range" : "exact"
+  );
+
   // Sync dateMode if filters change externally (e.g. URL navigation or preset)
   useEffect(() => {
     if (filters.from !== undefined && filters.to !== undefined) {
       setDateMode(isSameISTDay(filters.from, filters.to) ? "single" : "range");
     }
   }, [filters.from, filters.to]);
+
+  // Sync amountMode and local input states if filters change externally
+  useEffect(() => {
+    if (filters.minAmountMinor !== undefined || filters.maxAmountMinor !== undefined) {
+      setAmountMode("range");
+    } else if (filters.amountMinor !== undefined) {
+      setAmountMode("exact");
+    }
+    setExactAmount(minorToRupeesInput(filters.amountMinor));
+    setMinAmount(minorToRupeesInput(filters.minAmountMinor));
+    setMaxAmount(minorToRupeesInput(filters.maxAmountMinor));
+  }, [filters.amountMinor, filters.minAmountMinor, filters.maxAmountMinor]);
 
   // Re-syncs from the URL when it changes out from under us (e.g. Clear, back button) —
   // deliberately excludes `query` itself so this doesn't fight the debounce below.
@@ -73,22 +100,32 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
   }, [filters, query, router]);
 
   const hasDateFilter = filters.from !== undefined || filters.to !== undefined;
+  const hasAmountFilter =
+    filters.amountMinor !== undefined ||
+    filters.minAmountMinor !== undefined ||
+    filters.maxAmountMinor !== undefined;
+  const hasSortFilter = filters.sort !== undefined && filters.sort !== "date_desc";
 
   const activeFilterCount = [
     filters.q,
     filters.accountId,
     filters.categoryId,
     filters.uncategorized,
-    hasDateFilter ? true : undefined
+    hasDateFilter ? true : undefined,
+    hasAmountFilter ? true : undefined,
+    hasSortFilter ? true : undefined
   ].filter((value) => value !== undefined).length;
 
   const isFiltered = activeFilterCount > 0;
 
-  function clear(): void {
+  const clear = useCallback((): void => {
     setQuery("");
+    setExactAmount("");
+    setMinAmount("");
+    setMaxAmount("");
     setFiltersOpen(false);
     router.push("/transactions");
-  }
+  }, [router]);
 
   // Keyboard shortcut: Press Escape to clear active filters when not in a modal or input
   useEffect(() => {
@@ -104,13 +141,12 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
         ) {
           return;
         }
-        setQuery("");
-        router.push("/transactions");
+        clear();
       }
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isFiltered, router]);
+  }, [isFiltered, clear]);
 
   const accountOptions = [
     { value: "", label: "All accounts" },
@@ -137,6 +173,13 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
     }))
   ];
 
+  const sortOptions = [
+    { value: "date_desc", label: "Date: Newest first" },
+    { value: "date_asc", label: "Date: Oldest first" },
+    { value: "amount_desc", label: "Amount: High to low" },
+    { value: "amount_asc", label: "Amount: Low to high" }
+  ];
+
   function handleCategoryFilterChange(value: string): void {
     navigate({
       categoryId: value === "" || value === UNCATEGORIZED_FILTER_VALUE ? undefined : value,
@@ -149,6 +192,30 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
       navigate({ from: undefined, to: undefined });
     } else {
       navigate({ from: startOfISTDay(val), to: endOfISTDay(val) });
+    }
+  }
+
+  function handleExactAmountChange(val: string): void {
+    setExactAmount(val);
+    const parsed = parseRupeesToMinor(val);
+    if (val === "" || parsed !== undefined) {
+      navigate({ amountMinor: parsed, minAmountMinor: undefined, maxAmountMinor: undefined });
+    }
+  }
+
+  function handleMinAmountChange(val: string): void {
+    setMinAmount(val);
+    const parsed = parseRupeesToMinor(val);
+    if (val === "" || parsed !== undefined) {
+      navigate({ minAmountMinor: parsed, amountMinor: undefined });
+    }
+  }
+
+  function handleMaxAmountChange(val: string): void {
+    setMaxAmount(val);
+    const parsed = parseRupeesToMinor(val);
+    if (val === "" || parsed !== undefined) {
+      navigate({ maxAmountMinor: parsed, amountMinor: undefined });
     }
   }
 
@@ -193,6 +260,22 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
     navigate({ from: fromDate, to: endOfISTDay(todayStr) });
   }
 
+  function applyAmountPreset(preset: "under-500" | "500-2000" | "2000-10000" | "over-10000"): void {
+    if (preset === "under-500") {
+      navigate({ amountMinor: undefined, minAmountMinor: undefined, maxAmountMinor: 50_000 });
+      return;
+    }
+    if (preset === "500-2000") {
+      navigate({ amountMinor: undefined, minAmountMinor: 50_000, maxAmountMinor: 200_000 });
+      return;
+    }
+    if (preset === "2000-10000") {
+      navigate({ amountMinor: undefined, minAmountMinor: 200_000, maxAmountMinor: 1_000_000 });
+      return;
+    }
+    navigate({ amountMinor: undefined, minAmountMinor: 1_000_000, maxAmountMinor: undefined });
+  }
+
   const dateBadgeLabel = (() => {
     if (filters.from === undefined && filters.to === undefined) return null;
     const fromStr = toISTDateInputValue(filters.from);
@@ -208,6 +291,37 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
       return `Date: From ${fromStr}`;
     }
     return `Date: Up to ${toStr}`;
+  })();
+
+  const amountBadgeLabel = (() => {
+    if (
+      filters.amountMinor === undefined &&
+      filters.minAmountMinor === undefined &&
+      filters.maxAmountMinor === undefined
+    ) {
+      return null;
+    }
+    if (filters.amountMinor !== undefined) {
+      return `Amount: ${formatMinor(filters.amountMinor)}`;
+    }
+    if (filters.minAmountMinor !== undefined && filters.maxAmountMinor !== undefined) {
+      return `Amount: ${formatMinor(filters.minAmountMinor)} → ${formatMinor(filters.maxAmountMinor)}`;
+    }
+    if (filters.minAmountMinor !== undefined) {
+      return `Amount: ≥ ${formatMinor(filters.minAmountMinor)}`;
+    }
+    if (filters.maxAmountMinor !== undefined) {
+      return `Amount: ≤ ${formatMinor(filters.maxAmountMinor)}`;
+    }
+    return null;
+  })();
+
+  const sortBadgeLabel = (() => {
+    if (filters.sort === undefined || filters.sort === "date_desc") return null;
+    if (filters.sort === "date_asc") return "Sort: Date (Oldest)";
+    if (filters.sort === "amount_desc") return "Sort: Amount (High → Low)";
+    if (filters.sort === "amount_asc") return "Sort: Amount (Low → High)";
+    return null;
   })();
 
   return (
@@ -283,6 +397,111 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
           onChange={handleCategoryFilterChange}
         />
 
+        {/* Amount Mode Toggle & Inputs */}
+        <div className="flex flex-wrap items-center gap-1.5">
+          <div className="flex items-center rounded-xl border border-border bg-surface-muted/70 p-0.5">
+            <button
+              type="button"
+              aria-label="Exact amount mode"
+              aria-pressed={amountMode === "exact"}
+              onClick={() => setAmountMode("exact")}
+              className={`rounded-lg px-2.5 py-1 font-mono text-2xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                amountMode === "exact"
+                  ? "bg-surface-elevated text-accent shadow-xs"
+                  : "text-foreground-muted hover:text-foreground"
+              }`}
+            >
+              Exact ₹
+            </button>
+            <button
+              type="button"
+              aria-label="Amount range mode"
+              aria-pressed={amountMode === "range"}
+              onClick={() => setAmountMode("range")}
+              className={`rounded-lg px-2.5 py-1 font-mono text-2xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                amountMode === "range"
+                  ? "bg-surface-elevated text-accent shadow-xs"
+                  : "text-foreground-muted hover:text-foreground"
+              }`}
+            >
+              Range ₹
+            </button>
+          </div>
+
+          {amountMode === "exact" ? (
+            <div className="relative flex items-center rounded-xl border border-border bg-surface-muted/60 px-3 focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/20">
+              <span className="font-mono text-xs text-foreground-muted">₹</span>
+              <input
+                type="text"
+                name="transactionExactAmount"
+                aria-label="Filter by exact amount"
+                placeholder="Exact amount (e.g. 100)"
+                value={exactAmount}
+                onChange={(e) => handleExactAmountChange(e.target.value)}
+                className="min-h-10 w-36 bg-transparent py-1.5 pl-1.5 text-sm font-mono text-foreground outline-none placeholder:text-foreground-muted/60"
+              />
+              {exactAmount !== "" && (
+                <button
+                  type="button"
+                  onClick={() => handleExactAmountChange("")}
+                  aria-label="Clear exact amount filter"
+                  className="grid h-6 w-6 place-items-center text-xs text-foreground-muted hover:text-foreground"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center gap-1.5">
+              <div className="relative flex items-center rounded-xl border border-border bg-surface-muted/60 px-2.5 focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/20">
+                <span className="font-mono text-xs text-foreground-muted">₹</span>
+                <input
+                  type="text"
+                  name="transactionMinAmount"
+                  aria-label="Minimum amount"
+                  placeholder="Min ₹"
+                  value={minAmount}
+                  onChange={(e) => handleMinAmountChange(e.target.value)}
+                  className="min-h-10 w-20 bg-transparent py-1.5 pl-1 text-sm font-mono text-foreground outline-none placeholder:text-foreground-muted/60"
+                />
+                {minAmount !== "" && (
+                  <button
+                    type="button"
+                    onClick={() => handleMinAmountChange("")}
+                    aria-label="Clear min amount filter"
+                    className="grid h-6 w-6 place-items-center text-xs text-foreground-muted hover:text-foreground"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+              <span className="text-xs text-foreground-muted">→</span>
+              <div className="relative flex items-center rounded-xl border border-border bg-surface-muted/60 px-2.5 focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/20">
+                <span className="font-mono text-xs text-foreground-muted">₹</span>
+                <input
+                  type="text"
+                  name="transactionMaxAmount"
+                  aria-label="Maximum amount"
+                  placeholder="Max ₹"
+                  value={maxAmount}
+                  onChange={(e) => handleMaxAmountChange(e.target.value)}
+                  className="min-h-10 w-20 bg-transparent py-1.5 pl-1 text-sm font-mono text-foreground outline-none placeholder:text-foreground-muted/60"
+                />
+                {maxAmount !== "" && (
+                  <button
+                    type="button"
+                    onClick={() => handleMaxAmountChange("")}
+                    aria-label="Clear max amount filter"
+                    className="grid h-6 w-6 place-items-center text-xs text-foreground-muted hover:text-foreground"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Date Mode Toggle & Pickers */}
         <div className="flex flex-wrap items-center gap-1.5">
           <div className="flex items-center rounded-xl border border-border bg-surface-muted/70 p-0.5">
@@ -345,6 +564,18 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
           )}
         </div>
 
+        {/* Sort Select */}
+        <Select
+          aria-label="Sort transactions"
+          name="transactionSort"
+          options={sortOptions}
+          value={filters.sort ?? "date_desc"}
+          onChange={(value) => {
+            const parsed = TransactionSortSchema.safeParse(value);
+            navigate({ sort: parsed.success ? parsed.data : undefined });
+          }}
+        />
+
         {isFiltered ? (
           <button
             type="button"
@@ -361,46 +592,82 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
         ) : null}
       </div>
 
-      {/* Quick Date Presets */}
-      <div className="flex w-full flex-wrap items-center gap-1.5 pt-1">
-        <span className="font-mono text-2xs font-semibold text-foreground-muted uppercase">
-          Quick dates:
-        </span>
-        <button
-          type="button"
-          onClick={() => applyPreset("today")}
-          className="rounded-lg border border-border/60 bg-surface-muted/50 px-2.5 py-1 text-2xs font-semibold text-foreground-muted transition-colors hover:border-accent/40 hover:bg-surface-elevated hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-        >
-          Today
-        </button>
-        <button
-          type="button"
-          onClick={() => applyPreset("yesterday")}
-          className="rounded-lg border border-border/60 bg-surface-muted/50 px-2.5 py-1 text-2xs font-semibold text-foreground-muted transition-colors hover:border-accent/40 hover:bg-surface-elevated hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-        >
-          Yesterday
-        </button>
-        <button
-          type="button"
-          onClick={() => applyPreset("this-month")}
-          className="rounded-lg border border-border/60 bg-surface-muted/50 px-2.5 py-1 text-2xs font-semibold text-foreground-muted transition-colors hover:border-accent/40 hover:bg-surface-elevated hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-        >
-          This Month
-        </button>
-        <button
-          type="button"
-          onClick={() => applyPreset("30-days")}
-          className="rounded-lg border border-border/60 bg-surface-muted/50 px-2.5 py-1 text-2xs font-semibold text-foreground-muted transition-colors hover:border-accent/40 hover:bg-surface-elevated hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-        >
-          Last 30 Days
-        </button>
-        <button
-          type="button"
-          onClick={() => applyPreset("this-year")}
-          className="rounded-lg border border-border/60 bg-surface-muted/50 px-2.5 py-1 text-2xs font-semibold text-foreground-muted transition-colors hover:border-accent/40 hover:bg-surface-elevated hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-        >
-          This Year
-        </button>
+      {/* Quick Presets (Dates & Amounts) */}
+      <div className="flex w-full flex-wrap items-center justify-between gap-y-2 pt-1">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="font-mono text-2xs font-semibold text-foreground-muted uppercase">
+            Quick dates:
+          </span>
+          <button
+            type="button"
+            onClick={() => applyPreset("today")}
+            className="rounded-lg border border-border/60 bg-surface-muted/50 px-2.5 py-1 text-2xs font-semibold text-foreground-muted transition-colors hover:border-accent/40 hover:bg-surface-elevated hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          >
+            Today
+          </button>
+          <button
+            type="button"
+            onClick={() => applyPreset("yesterday")}
+            className="rounded-lg border border-border/60 bg-surface-muted/50 px-2.5 py-1 text-2xs font-semibold text-foreground-muted transition-colors hover:border-accent/40 hover:bg-surface-elevated hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          >
+            Yesterday
+          </button>
+          <button
+            type="button"
+            onClick={() => applyPreset("this-month")}
+            className="rounded-lg border border-border/60 bg-surface-muted/50 px-2.5 py-1 text-2xs font-semibold text-foreground-muted transition-colors hover:border-accent/40 hover:bg-surface-elevated hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          >
+            This Month
+          </button>
+          <button
+            type="button"
+            onClick={() => applyPreset("30-days")}
+            className="rounded-lg border border-border/60 bg-surface-muted/50 px-2.5 py-1 text-2xs font-semibold text-foreground-muted transition-colors hover:border-accent/40 hover:bg-surface-elevated hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          >
+            Last 30 Days
+          </button>
+          <button
+            type="button"
+            onClick={() => applyPreset("this-year")}
+            className="rounded-lg border border-border/60 bg-surface-muted/50 px-2.5 py-1 text-2xs font-semibold text-foreground-muted transition-colors hover:border-accent/40 hover:bg-surface-elevated hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          >
+            This Year
+          </button>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="font-mono text-2xs font-semibold text-foreground-muted uppercase">
+            Quick amounts:
+          </span>
+          <button
+            type="button"
+            onClick={() => applyAmountPreset("under-500")}
+            className="rounded-lg border border-border/60 bg-surface-muted/50 px-2.5 py-1 text-2xs font-semibold text-foreground-muted transition-colors hover:border-accent/40 hover:bg-surface-elevated hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          >
+            &lt; ₹500
+          </button>
+          <button
+            type="button"
+            onClick={() => applyAmountPreset("500-2000")}
+            className="rounded-lg border border-border/60 bg-surface-muted/50 px-2.5 py-1 text-2xs font-semibold text-foreground-muted transition-colors hover:border-accent/40 hover:bg-surface-elevated hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          >
+            ₹500 – ₹2k
+          </button>
+          <button
+            type="button"
+            onClick={() => applyAmountPreset("2000-10000")}
+            className="rounded-lg border border-border/60 bg-surface-muted/50 px-2.5 py-1 text-2xs font-semibold text-foreground-muted transition-colors hover:border-accent/40 hover:bg-surface-elevated hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          >
+            ₹2k – ₹10k
+          </button>
+          <button
+            type="button"
+            onClick={() => applyAmountPreset("over-10000")}
+            className="rounded-lg border border-border/60 bg-surface-muted/50 px-2.5 py-1 text-2xs font-semibold text-foreground-muted transition-colors hover:border-accent/40 hover:bg-surface-elevated hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          >
+            &gt; ₹10k
+          </button>
+        </div>
       </div>
 
       {/* Active Filter Badges */}
@@ -465,6 +732,38 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
                 onClick={() => navigate({ from: undefined, to: undefined })}
                 className="hover:text-foreground focus-visible:outline-none"
                 aria-label="Remove date filter"
+              >
+                ×
+              </button>
+            </span>
+          )}
+          {amountBadgeLabel !== null && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-accent/30 bg-accent-glow px-2.5 py-0.5 font-mono text-xs font-medium text-accent">
+              <span>{amountBadgeLabel}</span>
+              <button
+                type="button"
+                onClick={() =>
+                  navigate({
+                    amountMinor: undefined,
+                    minAmountMinor: undefined,
+                    maxAmountMinor: undefined
+                  })
+                }
+                className="hover:text-foreground focus-visible:outline-none"
+                aria-label="Remove amount filter"
+              >
+                ×
+              </button>
+            </span>
+          )}
+          {sortBadgeLabel !== null && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-accent/30 bg-accent-glow px-2.5 py-0.5 font-mono text-xs font-medium text-accent">
+              <span>{sortBadgeLabel}</span>
+              <button
+                type="button"
+                onClick={() => navigate({ sort: undefined })}
+                className="hover:text-foreground focus-visible:outline-none"
+                aria-label="Reset sort to default"
               >
                 ×
               </button>

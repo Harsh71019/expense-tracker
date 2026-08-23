@@ -12,11 +12,12 @@ const mocks = vi.hoisted(() => ({
   fetchNextPage: vi.fn(),
   hasNextPage: true,
   fetching: false,
-  isError: false
+  isError: false,
+  push: vi.fn()
 }));
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: vi.fn() })
+  useRouter: () => ({ push: mocks.push })
 }));
 vi.mock("@/features/accounts", () => ({
   useAccounts: () => ({ data: [] })
@@ -244,5 +245,25 @@ describe("TxnList", () => {
       transactionIds: [transaction.id],
       categoryId: "3fa85f64-5717-4562-b3fc-2c963f66be99"
     });
+  });
+
+  it("toggles sorting when clicking Date and Amount column headers", async () => {
+    const user = userEvent.setup();
+    mocks.empty = false;
+    mocks.isError = false;
+    render(
+      <TxnList
+        filters={{ limit: 50, sort: "date_desc" }}
+        initialPage={page}
+        initialInsights={null}
+        initialPendingTransactions={pendingTransactions}
+      />
+    );
+
+    await user.click(screen.getByRole("button", { name: /Sort by date/ }));
+    expect(mocks.push).toHaveBeenCalledWith("/transactions?sort=date_asc");
+
+    await user.click(screen.getByRole("button", { name: /Sort by amount/ }));
+    expect(mocks.push).toHaveBeenCalledWith("/transactions?sort=amount_desc");
   });
 });

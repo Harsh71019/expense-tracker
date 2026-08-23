@@ -16,7 +16,7 @@ import {
   type TransactionType,
   type UpdateTransaction
 } from "@treasury-ops/shared";
-import { and, desc, eq, gte, inArray, isNull, lt, lte, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, isNull, lt, lte, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import { DATABASE_CONNECTION } from "../common/db/db.module.js";
@@ -34,7 +34,11 @@ import { istMonthBounds, listISTMonthDayKeys } from "../common/time/ist.js";
 import { decodeCursorPayload, encodeCursorPayload } from "../common/pagination/cursor.js";
 import { normalizeTransactionText } from "../common/transaction-text/normalize-transaction-text.js";
 
-const CursorPayloadSchema = z.object({ occurredAt: z.string().datetime(), id: z.string().uuid() });
+const CursorPayloadSchema = z.object({
+  occurredAt: z.string().datetime(),
+  amountMinor: z.number().int().optional(),
+  id: z.string().uuid()
+});
 const IST_TIME_ZONE = "Asia/Kolkata";
 
 // Internal classification only -- never accepted from a public
@@ -160,6 +164,7 @@ export class TransactionRepository {
 
   async findMany(userId: string, query: ListTransactionsQuery): Promise<TransactionPage> {
     const cursor = query.cursor === undefined ? null : decodeCursor(query.cursor);
+    const sort = query.sort ?? "date_desc";
     const conditions = [eq(transactions.userId, userId)];
     if (query.accountId !== undefined) conditions.push(eq(transactions.accountId, query.accountId));
     if (query.categoryId !== undefined)
@@ -167,6 +172,15 @@ export class TransactionRepository {
     if (query.uncategorized === true) conditions.push(isNull(transactions.categoryId));
     if (query.from !== undefined) conditions.push(gte(transactions.occurredAt, query.from));
     if (query.to !== undefined) conditions.push(lte(transactions.occurredAt, query.to));
+    if (query.amountMinor !== undefined) {
+      conditions.push(eq(transactions.amountMinor, query.amountMinor));
+    }
+    if (query.minAmountMinor !== undefined) {
+      conditions.push(gte(transactions.amountMinor, query.minAmountMinor));
+    }
+    if (query.maxAmountMinor !== undefined) {
+      conditions.push(lte(transactions.amountMinor, query.maxAmountMinor));
+    }
     if (query.q !== undefined) {
       conditions.push(sql`${transactions.description} ILIKE ${"%" + escapeLike(query.q) + "%"}`);
     }
@@ -174,24 +188,46 @@ export class TransactionRepository {
       conditions.push(sql`${query.tag} = ANY(${transactions.tags})`);
     }
     if (cursor !== null) {
-      conditions.push(
-        sql`(${transactions.occurredAt}, ${transactions.id}) < (${cursor.occurredAt}, ${cursor.id})`
-      );
+      if (sort === "date_desc") {
+        conditions.push(
+          sql`(${transactions.occurredAt}, ${transactions.id}) < (${cursor.occurredAt}, ${cursor.id})`
+        );
+      } else if (sort === "date_asc") {
+        conditions.push(
+          sql`(${transactions.occurredAt}, ${transactions.id}) > (${cursor.occurredAt}, ${cursor.id})`
+        );
+      } else if (sort === "amount_desc") {
+        conditions.push(
+          sql`(${transactions.amountMinor}, ${transactions.occurredAt}, ${transactions.id}) < (${cursor.amountMinor ?? 0}, ${cursor.occurredAt}, ${cursor.id})`
+        );
+      } else if (sort === "amount_asc") {
+        conditions.push(
+          sql`(${transactions.amountMinor}, ${transactions.occurredAt}, ${transactions.id}) > (${cursor.amountMinor ?? 0}, ${cursor.occurredAt}, ${cursor.id})`
+        );
+      }
     }
+
+    const orderBys =
+      sort === "date_asc"
+        ? [asc(transactions.occurredAt), asc(transactions.id)]
+        : sort === "amount_desc"
+          ? [desc(transactions.amountMinor), desc(transactions.occurredAt), desc(transactions.id)]
+          : sort === "amount_asc"
+            ? [asc(transactions.amountMinor), asc(transactions.occurredAt), asc(transactions.id)]
+            : [desc(transactions.occurredAt), desc(transactions.id)];
 
     const rows = await this.db
       .select()
       .from(transactions)
       .where(and(...conditions))
-      .orderBy(desc(transactions.occurredAt), desc(transactions.id))
+      .orderBy(...orderBys)
       .limit(query.limit + 1);
 
     const page = rows.slice(0, query.limit);
     const items = page.map(toTransaction);
     const last = items.at(-1);
     const hasMore = rows.length > query.limit;
-    const nextCursor =
-      hasMore && last !== undefined ? encodeCursor(last.occurredAt, last.id) : null;
+    const nextCursor = hasMore && last !== undefined ? encodeCursor(last) : null;
 
     return { items, pageInfo: { nextCursor, hasMore, limit: query.limit } };
   }
@@ -894,13 +930,21 @@ function toTransaction(row: TransactionRow): Transaction {
   });
 }
 
-function encodeCursor(occurredAt: Date, id: string): string {
-  return encodeCursorPayload({ occurredAt: occurredAt.toISOString(), id });
+function encodeCursor(transaction: Transaction): string {
+  return encodeCursorPayload({
+    occurredAt: transaction.occurredAt.toISOString(),
+    amountMinor: transaction.amountMinor,
+    id: transaction.id
+  });
 }
 
-function decodeCursor(cursor: string): { occurredAt: Date; id: string } {
+function decodeCursor(cursor: string): { occurredAt: Date; amountMinor?: number; id: string } {
   const payload = decodeCursorPayload(cursor, CursorPayloadSchema);
-  return { occurredAt: new Date(payload.occurredAt), id: payload.id };
+  return {
+    occurredAt: new Date(payload.occurredAt),
+    ...(payload.amountMinor !== undefined ? { amountMinor: payload.amountMinor } : {}),
+    id: payload.id
+  };
 }
 
 function escapeLike(value: string): string {

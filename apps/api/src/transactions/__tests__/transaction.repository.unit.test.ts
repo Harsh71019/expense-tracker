@@ -52,11 +52,52 @@ describe("TransactionRepository Unit Tests", () => {
       categoryId: "123e4567-e89b-12d3-a456-426614174002",
       q: "Coffee",
       from: new Date("2026-01-01"),
-      to: new Date("2026-01-02")
+      to: new Date("2026-01-02"),
+      amountMinor: 5000,
+      sort: "date_desc"
     });
 
     expect(res.items).toHaveLength(1);
     expect(res.pageInfo.hasMore).toBe(false);
+  });
+
+  it("findMany supports amount range filtering and different sort options with cursor", async () => {
+    const row2 = {
+      ...sampleTxRow,
+      id: "123e4567-e89b-12d3-a456-426614174099",
+      amountMinor: 15000
+    };
+    const mockDb = createMockDrizzleDb([sampleTxRow, row2]);
+    const repo = new TransactionRepository(mockDb);
+
+    const resAmountDesc = await repo.findMany("u1", {
+      limit: 1,
+      minAmountMinor: 1000,
+      maxAmountMinor: 20000,
+      sort: "amount_desc"
+    });
+
+    expect(resAmountDesc.items).toHaveLength(1);
+    expect(resAmountDesc.pageInfo.hasMore).toBe(true);
+    expect(resAmountDesc.pageInfo.nextCursor).toBeTruthy();
+
+    // Now query with cursor and amount_asc
+    const cursor = resAmountDesc.pageInfo.nextCursor;
+    if (cursor === null) throw new Error("Expected nextCursor to be present");
+    const resAmountAsc = await repo.findMany("u1", {
+      limit: 1,
+      cursor,
+      sort: "amount_asc"
+    });
+    expect(resAmountAsc.items).toHaveLength(1);
+
+    // Query with date_asc sort
+    const resDateAsc = await repo.findMany("u1", {
+      limit: 1,
+      cursor,
+      sort: "date_asc"
+    });
+    expect(resDateAsc.items).toHaveLength(1);
   });
 
   it("system discovery returns each unreconciled API row with its owning user", async () => {

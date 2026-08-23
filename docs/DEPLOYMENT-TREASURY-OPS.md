@@ -107,7 +107,11 @@ SEQ_API_KEY=<api key created in Seq's UI>
 
 Wired in `apps/api/src/common/logging/pino-destination.ts` via `pino.multistream`, alongside the existing stdout/`pino-pretty` destination — enabling or disabling Seq never changes what lands in `docker logs`.
 
+**Response bodies** are captured too, via a global `ResponseBodyLoggingInterceptor` (`apps/api/src/common/logging/response-body-logging.interceptor.ts`) that attaches the controller's return value to the request's log line as `resBody`. Two guardrails: `/api/v1/auth/*` routes are skipped entirely (Better Auth responses can carry session tokens), and any response serializing past ~8KB is truncated to a capped string instead of the full object. `PINO_REDACT_PATHS`' existing `*.password`/`*.secret`/`*.token`/`*.description` wildcards apply to `resBody`'s top-level fields the same way they already apply to `req`'s.
+
 **Disk note:** Seq refuses new events once free disk space on the LXC drops below its internal safety threshold (the disk here is small — check `df -h /`; `docker builder prune -f` reclaims stale build cache). If ingestion silently stops, check `docker logs seq` for `Skipping indexing; free storage space...` before assuming the app-side wiring is broken.
+
+**Retention:** a 30-day retention policy is configured directly in Seq (Settings → Retention, or `POST /api/retentionpolicies` with `{"RetentionTime":"30.00:00:00","DataSource":"Stream"}`) — Seq prunes events older than that on its own internal schedule, no TreasuryOps-side cron needed. Adjust the window from the UI if 30 days proves too much/little for the disk.
 
 ### Update
 

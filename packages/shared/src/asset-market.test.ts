@@ -3,7 +3,9 @@ import { describe, expect, it } from "vitest";
 import {
   CreateAssetMarketLinkSchema,
   CreateAssetPositionEventSchema,
-  CreateManualAssetPositionEventSchema
+  CreateManualAssetPositionEventSchema,
+  deriveAssetCurrentPosition,
+  AssetPositionEventSchema
 } from "./asset-market.js";
 
 const ASSET_ID = "123e4567-e89b-42d3-a456-426614174000";
@@ -84,5 +86,47 @@ describe("market asset contracts", () => {
         source: "cas"
       }).success
     ).toBe(true);
+  });
+
+  it("replays inbound, outbound, and reversal position events exactly", () => {
+    const opening = AssetPositionEventSchema.parse({
+      id: EVENT_ID,
+      userId: "u1",
+      assetId: ASSET_ID,
+      eventType: "opening",
+      quantityMicroUnits: 2_000_000,
+      occurredAt: "2026-08-20T00:00:00.000Z",
+      source: "manual",
+      sourceReference: "manual:opening",
+      createdAt: "2026-08-20T00:00:00.000Z"
+    });
+    const redemption = AssetPositionEventSchema.parse({
+      id: "323e4567-e89b-42d3-a456-426614174000",
+      userId: "u1",
+      assetId: ASSET_ID,
+      eventType: "redemption",
+      quantityMicroUnits: 500_000,
+      occurredAt: "2026-08-21T00:00:00.000Z",
+      source: "manual",
+      sourceReference: "manual:redemption",
+      createdAt: "2026-08-21T00:00:00.000Z"
+    });
+    const reversal = AssetPositionEventSchema.parse({
+      id: "423e4567-e89b-42d3-a456-426614174000",
+      userId: "u1",
+      assetId: ASSET_ID,
+      eventType: "reversal",
+      quantityMicroUnits: 500_000,
+      occurredAt: "2026-08-22T00:00:00.000Z",
+      source: "manual",
+      sourceReference: "manual:redemption-reversal",
+      reversalOf: redemption.id,
+      createdAt: "2026-08-22T00:00:00.000Z"
+    });
+    expect(deriveAssetCurrentPosition(ASSET_ID, [opening, redemption, reversal])).toMatchObject({
+      quantityMicroUnits: 2_000_000,
+      eventCount: 3,
+      asOf: new Date("2026-08-22T00:00:00.000Z")
+    });
   });
 });

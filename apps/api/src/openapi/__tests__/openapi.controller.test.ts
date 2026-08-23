@@ -46,6 +46,7 @@ describe("OpenApiController", () => {
       expect(paths).toContain("/v1/assets/{assetId}/market-link");
       expect(paths).toContain("/v1/assets/market-linked");
       expect(paths).toContain("/v1/assets/{assetId}/position-events");
+      expect(paths).toContain("/v1/assets/{assetId}/position");
       expect(paths).toContain("/v1/assets/{assetId}/position-events/{eventId}/reversals");
     });
 

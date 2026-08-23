@@ -7,6 +7,7 @@ import {
   CreateManualAssetPositionEventSchema,
   ListAssetPositionEventsQuerySchema,
   type AssetMarketLink,
+  type AssetCurrentPosition,
   type AssetPositionEvent,
   type AssetPositionEventPage,
   type MarketLinkedAssetCreationResult,
@@ -87,6 +88,14 @@ export class AssetMarketController {
       AssetIdSchema.parse(assetId),
       ListAssetPositionEventsQuerySchema.parse(query)
     );
+  }
+
+  @Get(":assetId/position")
+  getCurrentPosition(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("assetId") assetId: string
+  ): Promise<AssetCurrentPosition> {
+    return this.positions.getCurrentPosition(user.id, AssetIdSchema.parse(assetId));
   }
 
   @Post(":assetId/position-events")

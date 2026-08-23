@@ -33,6 +33,13 @@ const EVENT = {
   createdAt: NOW
 };
 
+const CURRENT_POSITION = {
+  assetId: ASSET_ID,
+  quantityMicroUnits: 1_000_000,
+  eventCount: 1,
+  asOf: NOW
+};
+
 function response(): { status: ReturnType<typeof vi.fn>; setHeader: ReturnType<typeof vi.fn> } {
   const result = { status: vi.fn(), setHeader: vi.fn() };
   result.status.mockReturnValue(result);
@@ -149,7 +156,8 @@ describe("AssetMarketController", () => {
       listByAsset: vi.fn().mockResolvedValue({
         items: [EVENT],
         pageInfo: { nextCursor: null, hasMore: false, limit: 50 }
-      })
+      }),
+      getCurrentPosition: vi.fn().mockResolvedValue(CURRENT_POSITION)
     };
     // @ts-expect-error Focused controller collaborators.
     const controller = new AssetMarketController(links, positions, {});
@@ -160,7 +168,9 @@ describe("AssetMarketController", () => {
     ).resolves.toMatchObject({
       items: [EVENT]
     });
+    await expect(controller.getCurrentPosition(USER, ASSET_ID)).resolves.toEqual(CURRENT_POSITION);
     expect(links.getActive).toHaveBeenCalledWith(USER.id, ASSET_ID);
     expect(positions.listByAsset).toHaveBeenCalledWith(USER.id, ASSET_ID, { limit: 50 });
+    expect(positions.getCurrentPosition).toHaveBeenCalledWith(USER.id, ASSET_ID);
   });
 });

@@ -868,6 +868,7 @@ POST   /assets/market-linked              atomically creates an investment/metal
                                          market-instrument link, valuation, and opening position
 GET    /assets/:id/market-link | POST /assets/:id/market-link
 GET    /assets/:id/position-events?cursor&limit | POST /assets/:id/position-events
+GET    /assets/:id/position                 reproducible net quantity replayed from position events
 POST   /assets/:id/position-events/:eventId/reversals
 GET    /net-worth                       accounts + non-receivable assets + receivables breakdown
 

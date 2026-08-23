@@ -210,6 +210,7 @@ import {
   ReverseAssetFundingResultSchema,
   ListAssetFundingsQuerySchema,
   AssetMarketLinkSchema,
+  AssetCurrentPositionSchema,
   AssetPositionEventIdSchema,
   AssetPositionEventPageSchema,
   AssetPositionEventSchema,
@@ -337,6 +338,7 @@ const ReverseAssetFundingResult = ReverseAssetFundingResultSchema.meta({
   id: "ReverseAssetFundingResult"
 });
 const AssetMarketLink = AssetMarketLinkSchema.meta({ id: "AssetMarketLink" });
+const AssetCurrentPosition = AssetCurrentPositionSchema.meta({ id: "AssetCurrentPosition" });
 const AssetPositionEvent = AssetPositionEventSchema.meta({ id: "AssetPositionEvent" });
 const MarketLinkedAssetCreationResult = z
   .object({ asset: Asset, marketLink: AssetMarketLink, openingPosition: AssetPositionEvent })
@@ -2629,6 +2631,22 @@ registry.registerPath({
       ...json(MarketLinkedAssetCreationResult)
     },
     ...idempotencyConflictResponse,
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/v1/assets/{assetId}/position",
+  operationId: "getAssetCurrentPosition",
+  security: secured,
+  request: { params: assetId },
+  responses: {
+    200: {
+      description: "Current position replayed from append-only events",
+      ...json(AssetCurrentPosition)
+    },
+    404: { description: "Asset not found", ...json(ProblemDetails) },
     ...problemResponses
   }
 });

@@ -8657,6 +8657,22 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/v1/assets/{assetId}/position": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["getAssetCurrentPosition"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -12423,6 +12439,14 @@ export interface components {
       marketLink: components["schemas"]["AssetMarketLink"];
       openingPosition: components["schemas"]["AssetPositionEvent"];
     };
+    AssetCurrentPosition: {
+      /** Format: uuid */
+      assetId: string;
+      quantityMicroUnits: number;
+      eventCount: number;
+      /** Format: date-time */
+      asOf: string | null;
+    };
   };
   responses: never;
   parameters: never;
@@ -14814,6 +14838,64 @@ export interface operations {
       };
       /** @description Idempotency key was already used for different request intent */
       409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Validation failed */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Internal error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+    };
+  };
+  getAssetCurrentPosition: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        assetId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Current position replayed from append-only events */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AssetCurrentPosition"];
+        };
+      };
+      /** @description Unauthenticated */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Asset not found */
+      404: {
         headers: {
           [name: string]: unknown;
         };

@@ -228,6 +228,7 @@ export type {
 export {
   AssetMarketLinkIdSchema,
   AssetMarketLinkSchema,
+  AssetCurrentPositionSchema,
   AssetPositionEventIdSchema,
   AssetPositionEventPageSchema,
   AssetPositionEventSchema,
@@ -237,6 +238,7 @@ export {
   CreateAssetMarketLinkRequestSchema,
   CreateAssetPositionEventSchema,
   CreateManualAssetPositionEventSchema,
+  deriveAssetCurrentPosition,
   FundSchemeOptionSchema,
   FundSchemePlanSchema,
   MarketDataProviderSchema,
@@ -250,6 +252,7 @@ export {
 export type {
   AssetMarketLink,
   AssetMarketLinkId,
+  AssetCurrentPosition,
   AssetPositionEvent,
   AssetPositionEventId,
   AssetPositionEventPage,

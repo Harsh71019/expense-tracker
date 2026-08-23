@@ -3,6 +3,7 @@ import {
   AccountSchema,
   AssetSchema,
   AssetMarketLinkSchema,
+  AssetCurrentPositionSchema,
   AssetPositionEventPageSchema,
   AssetPositionEventSchema,
   MarketLinkedAssetCreationResultSchema,
@@ -1349,9 +1350,22 @@ describe("production HTTP composition", () => {
     );
     expect(events.items).toHaveLength(2);
 
+    const currentPosition = await parseResponse(
+      await fetch(`${baseUrl}/api/v1/assets/${asset.id}/position`, {
+        headers: { cookie: sessionA }
+      }),
+      AssetCurrentPositionSchema
+    );
+    expect(currentPosition).toMatchObject({
+      assetId: asset.id,
+      quantityMicroUnits: 0,
+      eventCount: 2
+    });
+
     for (const path of [
       `/api/v1/assets/${asset.id}/market-link`,
-      `/api/v1/assets/${asset.id}/position-events`
+      `/api/v1/assets/${asset.id}/position-events`,
+      `/api/v1/assets/${asset.id}/position`
     ]) {
       const foreign = await fetch(`${baseUrl}${path}`, { headers: { cookie: sessionB } });
       expect(foreign.status).toBe(404);

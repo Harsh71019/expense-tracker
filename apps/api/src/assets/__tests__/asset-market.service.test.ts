@@ -104,6 +104,21 @@ function createLinkService(
 }
 
 describe("AssetPositionService", () => {
+  it("derives the current position by replaying all tenant-scoped events", async () => {
+    const events = [EVENT];
+    const context = createPositionService({
+      assets: { findById: vi.fn().mockResolvedValue(ASSET) },
+      market: { listAllPositionEventsByAsset: vi.fn().mockResolvedValue(events) }
+    });
+
+    await expect(context.service.getCurrentPosition("u1", ASSET_ID)).resolves.toMatchObject({
+      assetId: ASSET_ID,
+      quantityMicroUnits: 1_000_000,
+      eventCount: 1
+    });
+    expect(context.market.listAllPositionEventsByAsset).toHaveBeenCalledWith("u1", ASSET_ID);
+  });
+
   it("records a manual position event only after the asset has a market link", async () => {
     const market = {
       findActiveLinkByAssetIdForUpdate: vi.fn().mockResolvedValue(LINK),

@@ -3,7 +3,9 @@ import {
   AssetPositionEventPageSchema,
   AssetPositionEventSchema,
   ReverseAssetPositionEventResultSchema,
+  deriveAssetCurrentPosition,
   type AssetId,
+  type AssetCurrentPosition,
   type AssetPositionEvent,
   type AssetPositionEventId,
   type AssetPositionEventPage,
@@ -40,6 +42,16 @@ export class AssetPositionService {
       throw new EntityNotFoundError("Asset");
     return AssetPositionEventPageSchema.parse(
       await this.market.findPositionEventPageByAsset(userId, assetId, query)
+    );
+  }
+
+  async getCurrentPosition(userId: string, assetId: AssetId): Promise<AssetCurrentPosition> {
+    if ((await this.assets.findById(userId, assetId)) === null) {
+      throw new EntityNotFoundError("Asset");
+    }
+    return deriveAssetCurrentPosition(
+      assetId,
+      await this.market.listAllPositionEventsByAsset(userId, assetId)
     );
   }
 

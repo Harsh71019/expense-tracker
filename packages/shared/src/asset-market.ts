@@ -7,7 +7,7 @@ import {
 } from "./fixed-point.js";
 import { PositiveMinorAmountSchema } from "./money.js";
 import { PageInfoSchema } from "./pagination.js";
-import { AssetIdSchema } from "./asset.js";
+import { AssetIdSchema, type AssetId } from "./asset.js";
 import { AssetFundingIdSchema } from "./asset-funding.js";
 import { TransactionIdSchema } from "./transaction.js";
 
@@ -182,6 +182,13 @@ export const AssetPositionEventPageSchema = z.object({
   pageInfo: PageInfoSchema
 });
 
+export const AssetCurrentPositionSchema = z.object({
+  assetId: AssetIdSchema,
+  quantityMicroUnits: z.number().int().min(Number.MIN_SAFE_INTEGER).max(Number.MAX_SAFE_INTEGER),
+  eventCount: z.number().int().nonnegative(),
+  asOf: z.coerce.date().nullable()
+});
+
 export const CreateAssetMarketLinkRequestSchema = AssetMarketLinkFieldsSchema.omit({
   assetId: true,
   revisionOf: true
@@ -237,6 +244,63 @@ export type CreateAssetPositionEvent = z.infer<typeof CreateAssetPositionEventSc
 export type CreateManualAssetPositionEvent = z.infer<typeof CreateManualAssetPositionEventSchema>;
 export type AssetPositionEvent = z.infer<typeof AssetPositionEventSchema>;
 export type AssetPositionEventPage = z.infer<typeof AssetPositionEventPageSchema>;
+export type AssetCurrentPosition = z.infer<typeof AssetCurrentPositionSchema>;
 export type ListAssetPositionEventsQuery = z.infer<typeof ListAssetPositionEventsQuerySchema>;
+
+const InboundPositionEventTypes = new Set<AssetPositionEventType>([
+  "opening",
+  "purchase",
+  "reinvestment",
+  "switch_in",
+  "reconciliation_in"
+]);
+
+/**
+ * Replays an append-only position stream without mutating event history.
+ * Reversals negate the original event's direction and are intentionally not
+ * interpreted as a generic outbound event.
+ */
+export function deriveAssetCurrentPosition(
+  assetId: AssetId,
+  events: readonly AssetPositionEvent[]
+): AssetCurrentPosition {
+  const eventsById = new Map(events.map((event) => [event.id, event]));
+  let quantity = 0n;
+  for (const event of events) {
+    const direction = positionEventDirection(event, eventsById);
+    quantity += direction * BigInt(event.quantityMicroUnits);
+  }
+  if (quantity < BigInt(Number.MIN_SAFE_INTEGER) || quantity > BigInt(Number.MAX_SAFE_INTEGER)) {
+    throw new RangeError("Current position exceeds the supported safe-integer range.");
+  }
+  const latest = events.reduce<AssetPositionEvent | undefined>(
+    (current, event) =>
+      current === undefined || event.occurredAt > current.occurredAt ? event : current,
+    undefined
+  );
+  return AssetCurrentPositionSchema.parse({
+    assetId,
+    quantityMicroUnits: Number(quantity),
+    eventCount: events.length,
+    asOf: latest?.occurredAt ?? null
+  });
+}
+
+function positionEventDirection(
+  event: AssetPositionEvent,
+  eventsById: ReadonlyMap<AssetPositionEventId, AssetPositionEvent>
+): bigint {
+  if (event.eventType !== "reversal") {
+    return InboundPositionEventTypes.has(event.eventType) ? 1n : -1n;
+  }
+  if (event.reversalOf === undefined) {
+    throw new RangeError("A reversal event is missing its original event reference.");
+  }
+  const original = eventsById.get(event.reversalOf);
+  if (original === undefined || original.eventType === "reversal") {
+    throw new RangeError("A reversal event references an invalid original event.");
+  }
+  return InboundPositionEventTypes.has(original.eventType) ? -1n : 1n;
+}
 export type ReverseAssetPositionEventResult = z.infer<typeof ReverseAssetPositionEventResultSchema>;
 export type MarketPrice = z.infer<typeof MarketPriceSchema>;

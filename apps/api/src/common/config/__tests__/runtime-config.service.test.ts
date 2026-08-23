@@ -18,6 +18,7 @@ describe("RuntimeConfigService", () => {
     process.env.TRUSTED_ORIGINS = "http://localhost:3000, https://treasury-ops.app";
     process.env.BETTER_AUTH_SECRET = "a-very-long-test-secret-that-is-safe";
     process.env.BETTER_AUTH_URL = "http://localhost:4000";
+    process.env.PORTFOLIO_IMPORT_ENCRYPTION_KEY = Buffer.alloc(32, 1).toString("base64");
 
     const service = new RuntimeConfigService();
 

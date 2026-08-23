@@ -90,6 +90,37 @@ export const assetFundingStatusEnum = pgEnum("asset_funding_status", [
   "reversed",
   "reversal"
 ]);
+export const portfolioImportSourceEnum = pgEnum("portfolio_import_source", [
+  "kfintech_cams",
+  "unknown"
+]);
+export const portfolioImportStatusEnum = pgEnum("portfolio_import_status", [
+  "queued",
+  "parsing",
+  "needs_review",
+  "ready",
+  "committing",
+  "completed",
+  "failed",
+  "reverting",
+  "reverted"
+]);
+export const portfolioImportRowKindEnum = pgEnum("portfolio_import_row_kind", [
+  "holding",
+  "transaction"
+]);
+export const portfolioImportRowMatchStatusEnum = pgEnum("portfolio_import_row_match_status", [
+  "matched",
+  "needs_confirmation",
+  "unmatched",
+  "ignored"
+]);
+export const portfolioImportRowActionEnum = pgEnum("portfolio_import_row_action", [
+  "create_asset",
+  "append_event",
+  "reconcile",
+  "ignore"
+]);
 export const importBatchStatusEnum = pgEnum("import_batch_status", [
   "pending",
   "pending_parse",

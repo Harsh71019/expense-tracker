@@ -592,6 +592,34 @@ export type {
   UploadImportMetadata
 } from "./import.js";
 export {
+  PortfolioImportBatchIdSchema,
+  PortfolioImportBatchSchema,
+  PortfolioImportRowActionSchema,
+  PortfolioImportRowIdSchema,
+  PortfolioImportRowKindSchema,
+  PortfolioImportRowMatchStatusSchema,
+  PortfolioImportRowPageSchema,
+  PortfolioImportRowSchema,
+  PortfolioImportSourceSchema,
+  PortfolioImportStatusSchema,
+  UpdatePortfolioImportRowSchema,
+  UploadPortfolioImportMetadataSchema
+} from "./portfolio-import.js";
+export type {
+  PortfolioImportBatch,
+  PortfolioImportBatchId,
+  PortfolioImportRow,
+  PortfolioImportRowAction,
+  PortfolioImportRowId,
+  PortfolioImportRowKind,
+  PortfolioImportRowMatchStatus,
+  PortfolioImportRowPage,
+  PortfolioImportSource,
+  PortfolioImportStatus,
+  UpdatePortfolioImportRow,
+  UploadPortfolioImportMetadata
+} from "./portfolio-import.js";
+export {
   calculateMarketValueMinor,
   FixedPointDecimalSchema,
   microRupeesToMinorUnits,

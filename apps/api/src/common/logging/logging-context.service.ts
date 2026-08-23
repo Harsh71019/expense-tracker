@@ -11,6 +11,7 @@ export type LogContext = Readonly<{
   traceId?: string;
   apiKeyId?: string;
   apiKeyPrefix?: string;
+  resBody?: unknown;
 }>;
 
 @Injectable()

@@ -451,8 +451,9 @@ CasParser
   parse(input: Uint8Array): ParsedPortfolioStatement
 
 implementations
-  CAMS CAS adapter
-  KFintech CAS adapter
+  KFintech/CAMS joint CAS adapter
+  CAMS-only CAS adapter
+  KFintech-only CAS adapter
   MFCentral CAS adapter
   CDSL CAS adapter
   NSDL CAS adapter
@@ -468,6 +469,37 @@ The concrete PDF extraction library requires approval before installation. Evalu
 - security history and transitive dependency size.
 
 Scanned-image OCR is out of scope for V1. Return a typed `unsupported_scanned_statement` problem rather than invoking a remote OCR service or guessing.
+
+#### 6.3.1 Verified initial adapter: KFintech/CAMS joint CAS
+
+The first supported fixture family is the jointly branded KFintech/CAMS consolidated account
+statement. A real, user-provided password-protected statement was inspected locally on 23 August
+2026 and was not copied to the repository, test fixtures, logs, or extracted-text artifacts. It
+contains a native text/table layer over four A4 pages, so this adapter remains text-only and must
+not invoke OCR or page rendering in production.
+
+Detection requires all of the following structural markers after password-protected text
+extraction: the KFintech and CAMS issuer markers, `Consolidated Account Statement`, `PORTFOLIO
+SUMMARY`, and the transaction-column sequence `Date`, `Transaction`, `Amount`, `Units`, `Price`,
+`Unit Balance`. An unrecognized combination is `unsupported_statement_layout`, not a best-effort
+parse.
+
+Each folio block starts with `Folio No` and contains registrar/scheme metadata, an optional ISIN,
+an opening-unit balance, zero or more transaction rows, and a closing-unit/NAV/cost/market-value
+summary. The parser must:
+
+- retain only the scheme identity, optional ISIN, masked folio reference, transaction date/type,
+  quantity, amount, NAV, and closing position facts required for the import review;
+- ignore PAN, KYC/PAN status, investor name, address, email, mobile number, nominees, advisers,
+  and legal/exit-load boilerplate;
+- treat `*** No transactions during this statement period ***` as a holdings-only folio rather
+  than a transaction; and
+- verify each parsed row with fixed-point parsers and reconcile the calculated running-unit
+  balance to the reported closing balance before staging it. A mismatch is a review warning and
+  never an automatic position mutation.
+
+Sanitized fixtures must be manually authored from this documented grammar. They may not derive
+from, contain fragments of, or retain identifiers from a production CAS.
 
 ### 6.4 Matching rules
 
@@ -1349,6 +1381,12 @@ cryptography dependency or persisting plaintext credentials in PostgreSQL/Redis.
 runbook. A parser is not enabled for an issuer until sanitized fixtures prove that issuer's layout;
 scanned/image-only PDFs remain unsupported in V1.
 
+**Validation:** The initial KFintech/CAMS joint layout is now approved for an adapter after local
+inspection of a real encrypted statement. Its PDF-level encryption is only an input boundary, not
+the application's at-rest protection: the upload path must decrypt in a bounded process and seal
+the resulting bytes with the application AES-GCM key before the worker receives the batch ID.
+Only the documented table grammar is retained; the statement and extracted text are discarded.
+
 ### ADR-10 — Conservative resident-individual disposal-estimate scope
 
 **Decision:** The initial estimator is available only for a user who explicitly declares a
@@ -1376,15 +1414,14 @@ tests for each new classification.
 
 ## 18. Open questions that must be resolved before implementation
 
-1. Which CAS issuer/layout does the user currently receive: CAMS, KFintech, MFCentral, CDSL, or NSDL?
-2. Does the desired CAS import include transaction history since inception, or only current holdings? Exact tax estimates require acquisition lots.
-3. Is a manual dealer-buyback valuation input needed in the first release for physical jewellery,
+1. Does the desired CAS import include transaction history since inception, or only current holdings? Exact tax estimates require acquisition lots.
+2. Is a manual dealer-buyback valuation input needed in the first release for physical jewellery,
    in addition to the Gold API indicative spot reference?
-4. What stale threshold should the UI use for a Gold API quote before it shows a warning?
-5. Should physical jewellery record stone/non-metal weight separately in the first release?
-6. Can the application require an explicit resident-individual declaration, and should the first
+3. What stale threshold should the UI use for a Gold API quote before it shows a warning?
+4. Should physical jewellery record stone/non-metal weight separately in the first release?
+5. Can the application require an explicit resident-individual declaration, and should the first
    rule table target tax year 2026-27?
-7. Should asset funding with unknown units trigger a persistent reconciliation reminder after the expected allotment date?
+6. Should asset funding with unknown units trigger a persistent reconciliation reminder after the expected allotment date?
 
 These questions change provider choice or supported product behavior. They do not change the core separation of holdings, quotes, valuations, and estimates.
 

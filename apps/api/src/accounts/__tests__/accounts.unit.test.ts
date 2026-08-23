@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { EntityNotFoundError } from "../../common/errors/entity-not-found.error.js";
 import { createMockDrizzleDb } from "../../test/mock-drizzle.js";
 import { AccountMutationService } from "../account-mutation.service.js";
 import { AccountService } from "../account.service.js";
@@ -30,6 +31,37 @@ describe("Account Services Unit Tests", () => {
       const res = await service.list("u1");
       expect(res).toHaveLength(1);
       expect(res[0]?.name).toBe("Savings");
+    });
+
+    it("returns owned account details and delegates the selected insights range", async () => {
+      const mockDb = createMockDrizzleDb();
+      const mockRepo = {
+        findById: vi.fn().mockResolvedValue(sampleAccount)
+      };
+      const mockInsights = {
+        get: vi.fn().mockResolvedValue({ range: "1y" })
+      };
+      // @ts-expect-error focused service doubles
+      const service = new AccountService(mockDb, mockRepo, mockInsights);
+
+      await expect(service.get("u1", sampleAccount.id)).resolves.toBe(sampleAccount);
+      await expect(service.getInsights("u1", sampleAccount.id, "1y")).resolves.toEqual({
+        range: "1y"
+      });
+      expect(mockInsights.get).toHaveBeenCalledWith(
+        "u1",
+        sampleAccount,
+        expect.objectContaining({ range: "1y", bucket: "month" })
+      );
+    });
+
+    it("does not resolve a missing or foreign account", async () => {
+      const mockDb = createMockDrizzleDb();
+      const mockRepo = { findById: vi.fn().mockResolvedValue(null) };
+      // @ts-expect-error focused service doubles
+      const service = new AccountService(mockDb, mockRepo, { get: vi.fn() });
+
+      await expect(service.get("u2", sampleAccount.id)).rejects.toBeInstanceOf(EntityNotFoundError);
     });
   });
 

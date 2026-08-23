@@ -69,9 +69,11 @@ describe("transaction data hooks", () => {
       error: undefined,
       response
     });
-    const hook = renderHook(() => useTxnList({ limit: 10, from: timestamp }, initialPage), {
-      wrapper
-    });
+    const hook = renderHook(
+      () =>
+        useTxnList({ accountId: transaction.accountId, limit: 10, from: timestamp }, initialPage),
+      { wrapper }
+    );
 
     await waitFor(() => expect(hook.result.current.isSuccess).toBe(true));
     await hook.result.current.fetchNextPage();
@@ -81,6 +83,7 @@ describe("transaction data hooks", () => {
       params: {
         query: expect.objectContaining({
           cursor: "next-page",
+          accountId: transaction.accountId,
           from: timestamp.toISOString(),
           limit: 10
         })

@@ -53,6 +53,25 @@ describe("AccountController", () => {
     expect(mockService.list).toHaveBeenCalledWith("user-1");
   });
 
+  it("returns one account and account-scoped insights with validated input", async () => {
+    const accountId = "3fa85f64-5717-4562-b3fc-2c963f66beef";
+    const account = { id: accountId, name: "Savings" };
+    const insights = { range: "90d" };
+    const mockService = {
+      get: vi.fn().mockResolvedValue(account),
+      getInsights: vi.fn().mockResolvedValue(insights)
+    };
+
+    // @ts-expect-error - focused AccountService mock for unit testing
+    const controller = new AccountController(mockService);
+
+    await expect(controller.get(user, accountId)).resolves.toBe(account);
+    await expect(controller.insights(user, accountId, { range: "90d" })).resolves.toBe(insights);
+    expect(mockService.get).toHaveBeenCalledWith("user-1", accountId);
+    expect(mockService.getInsights).toHaveBeenCalledWith("user-1", accountId, "90d");
+    expect(() => controller.insights(user, accountId, { range: "7d" })).toThrow();
+  });
+
   it("calls archive on the account service", async () => {
     const mockService = {
       create: vi.fn(),

@@ -127,16 +127,17 @@ apps/web/
 
 ## 3. Rendering Strategy (per route, decided up front)
 
-| Route           | Strategy                                                                                             | Why                                                                                  |
-| --------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| Dashboard `/`   | RSC + `<Suspense>` streaming; balances card streams before charts                                    | Reads `monthly_rollups` — cheap; stream so first paint is instant on Jio in a tunnel |
-| `/transactions` | Hybrid: first page RSC (real HTML, sharable/filterable URL) → hands cursor to client infinite scroll | Best of both: fast first paint + smooth pagination without full reloads              |
-| `/add`          | Client component, statically rendered shell                                                          | Must be interactive instantly; works offline (§7)                                    |
-| `/imports/*`    | Client-heavy (file handling, editable preview table) inside RSC shell                                | Inherently interactive                                                               |
-| `/reports/*`    | RSC data + client chart components (`recharts` dynamic-imported)                                     | Charts are the only heavy JS — keep them out of the main bundle                      |
-| `/goals/*`      | Hybrid: goals and first contribution page from RSC, interactive mutations via Query                  | Fast initial progress plus fresh plans, reorder, and cursor pagination               |
-| `/debts-given/*` | Hybrid: first receivable page + net-worth summary from RSC, creation/repayment/correction via Query | Fast initial list plus optimistic-free (invalidate-after-atomic-write) mutations     |
-| `/login`        | Static shell + client form                                                                           | —                                                                                    |
+| Route                   | Strategy                                                                                             | Why                                                                                   |
+| ----------------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Dashboard `/`           | RSC + `<Suspense>` streaming; balances card streams before charts                                    | Reads `monthly_rollups` — cheap; stream so first paint is instant on Jio in a tunnel  |
+| `/transactions`         | Hybrid: first page RSC (real HTML, sharable/filterable URL) → hands cursor to client infinite scroll | Best of both: fast first paint + smooth pagination without full reloads               |
+| `/accounts/[accountId]` | Hybrid: account/insights/first ledger page from RSC → cursor pagination in a client island           | Accurate full-range charts plus an account-locked passbook without a client waterfall |
+| `/add`                  | Client component, statically rendered shell                                                          | Must be interactive instantly; works offline (§7)                                     |
+| `/imports/*`            | Client-heavy (file handling, editable preview table) inside RSC shell                                | Inherently interactive                                                                |
+| `/reports/*`            | RSC data + client chart components (`recharts` dynamic-imported)                                     | Charts are the only heavy JS — keep them out of the main bundle                       |
+| `/goals/*`              | Hybrid: goals and first contribution page from RSC, interactive mutations via Query                  | Fast initial progress plus fresh plans, reorder, and cursor pagination                |
+| `/debts-given/*`        | Hybrid: first receivable page + net-worth summary from RSC, creation/repayment/correction via Query  | Fast initial list plus optimistic-free (invalidate-after-atomic-write) mutations      |
+| `/login`                | Static shell + client form                                                                           | —                                                                                     |
 
 **Global rules:**
 

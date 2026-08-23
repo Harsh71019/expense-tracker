@@ -69,7 +69,7 @@ describe("AccountManager", () => {
     await waitFor(() => expect(mocks.toastSuccess).toHaveBeenCalledWith("Account archived"));
   });
 
-  it("opens the account detail dialog on click without triggering it from Archive", async () => {
+  it("links the account card to its detail route without triggering it from Archive", async () => {
     const user = userEvent.setup();
     render(<AccountManager initialAccounts={[account]} />);
 
@@ -78,11 +78,10 @@ describe("AccountManager", () => {
     expect(screen.queryByText(account.id)).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Cancel" }));
 
-    await user.click(screen.getByRole("button", { name: "View details for HDFC" }));
-    expect(screen.getByText(account.id)).toBeVisible();
-
-    await user.click(screen.getByRole("button", { name: "Close account details" }));
-    expect(screen.queryByText(account.id)).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "View details for HDFC" })).toHaveAttribute(
+      "href",
+      `/accounts/${account.id}`
+    );
   });
 
   it("keeps the operation error visible and also raises a toast", async () => {

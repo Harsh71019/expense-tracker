@@ -118,3 +118,30 @@ export function microUnitsToMilliUnits(quantityMicroUnits: QuantityMicroUnits): 
   }
   return toSafePositiveInteger(microUnits / MICRO_UNITS_PER_MILLI_UNIT, "Quantity in milli-units");
 }
+
+/** Formats micro-units (integer divided by 1,000,000) as a string with up to 6 decimal places. */
+export function formatMicroUnits(microUnits: number): string {
+  const isNegative = microUnits < 0;
+  const abs = Math.abs(microUnits);
+  const whole = Math.floor(abs / 1_000_000);
+  const frac = (abs % 1_000_000).toString().padStart(6, "0").replace(/0+$/u, "");
+  const formatted = frac.length > 0 ? `${whole}.${frac}` : `${whole}`;
+  return isNegative ? `-${formatted}` : formatted;
+}
+
+/** Parses a decimal string (e.g. "123.456789") into micro-units (integer). */
+export function parseMicroUnits(input: string): number {
+  return parsePositiveDecimalToMicroUnits(input);
+}
+
+/** Formats price in micro-rupees per unit as INR decimal string. */
+export function formatPricePerUnit(priceMicroRupees: number): string {
+  const whole = Math.floor(priceMicroRupees / 1_000_000);
+  const frac = (priceMicroRupees % 1_000_000).toString().padStart(6, "0").slice(0, 4);
+  return `${whole}.${frac}`;
+}
+
+/** Parses price in rupees decimal string into micro-rupees. */
+export function parsePricePerUnit(input: string): number {
+  return parsePositiveDecimalToMicroUnits(input);
+}

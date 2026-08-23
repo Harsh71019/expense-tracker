@@ -52,13 +52,13 @@ export const PortfolioImportBatchSchema = BatchCountsSchema.extend({
   filename: z.string().min(1).max(255),
   fileHash: z.string().regex(/^[a-f0-9]{64}$/u),
   status: PortfolioImportStatusSchema,
-  statementAsOf: z.coerce.date().nullable(),
-  coverageFrom: z.coerce.date().nullable(),
-  coverageTo: z.coerce.date().nullable(),
-  failureCode: z.string().min(1).max(100).nullable(),
+  statementAsOf: z.coerce.date().optional(),
+  coverageFrom: z.coerce.date().optional(),
+  coverageTo: z.coerce.date().optional(),
+  failureCode: z.string().min(1).max(100).optional(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
-  completedAt: z.coerce.date().nullable()
+  completedAt: z.coerce.date().optional()
 });
 
 export const PortfolioImportRowSchema = z.object({
@@ -69,20 +69,20 @@ export const PortfolioImportRowSchema = z.object({
   rowKind: PortfolioImportRowKindSchema,
   semanticFingerprint: z.string().regex(/^[a-f0-9]{64}$/u),
   instrumentType: MarketInstrumentTypeSchema,
-  isin: z.string().min(1).max(160).nullable(),
-  schemeCode: z.string().min(1).max(160).nullable(),
+  isin: z.string().min(1).max(160).optional(),
+  schemeCode: z.string().min(1).max(160).optional(),
   displayName: z.string().min(1).max(300),
-  folioReferenceMasked: z.string().min(1).max(100).nullable(),
-  transactionType: z.string().min(1).max(100).nullable(),
-  occurredAt: z.coerce.date().nullable(),
+  folioReferenceMasked: z.string().min(1).max(100).optional(),
+  transactionType: z.string().min(1).max(100).optional(),
+  occurredAt: z.coerce.date().optional(),
   quantityMicroUnits: QuantityMicroUnitsSchema.nullable(),
-  grossAmountMinor: PositiveMinorAmountSchema.nullable(),
-  navMicroRupeesPerUnit: PriceMicroRupeesPerQuoteUnitSchema.nullable(),
-  proposedAssetId: AssetIdSchema.nullable(),
+  grossAmountMinor: PositiveMinorAmountSchema.optional(),
+  navMicroRupeesPerUnit: PriceMicroRupeesPerQuoteUnitSchema.optional(),
+  proposedAssetId: AssetIdSchema.optional(),
   matchStatus: PortfolioImportRowMatchStatusSchema,
   proposedAction: PortfolioImportRowActionSchema,
   include: z.boolean(),
-  warningCode: z.string().min(1).max(100).nullable(),
+  warningCode: z.string().min(1).max(100).optional(),
   createdAt: z.coerce.date()
 });
 
@@ -110,6 +110,13 @@ export const UpdatePortfolioImportRowSchema = z
     "At least one review field is required."
   );
 
+export const MAX_PORTFOLIO_IMPORT_FILE_SIZE_BYTES = 5 * 1024 * 1024;
+
+export const PortfolioImportBatchCommitResultSchema = z.object({
+  batch: PortfolioImportBatchSchema,
+  committedRowCount: z.number().int().nonnegative()
+});
+
 export type PortfolioImportBatchId = z.infer<typeof PortfolioImportBatchIdSchema>;
 export type PortfolioImportRowId = z.infer<typeof PortfolioImportRowIdSchema>;
 export type PortfolioImportSource = z.infer<typeof PortfolioImportSourceSchema>;
@@ -122,3 +129,6 @@ export type PortfolioImportRow = z.infer<typeof PortfolioImportRowSchema>;
 export type PortfolioImportRowPage = z.infer<typeof PortfolioImportRowPageSchema>;
 export type UploadPortfolioImportMetadata = z.infer<typeof UploadPortfolioImportMetadataSchema>;
 export type UpdatePortfolioImportRow = z.infer<typeof UpdatePortfolioImportRowSchema>;
+export type PortfolioImportBatchCommitResult = z.infer<
+  typeof PortfolioImportBatchCommitResultSchema
+>;

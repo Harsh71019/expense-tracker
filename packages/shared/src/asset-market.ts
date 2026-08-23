@@ -7,7 +7,7 @@ import {
 } from "./fixed-point.js";
 import { PositiveMinorAmountSchema } from "./money.js";
 import { PageInfoSchema } from "./pagination.js";
-import { AssetIdSchema, type AssetId } from "./asset.js";
+import { AssetIdSchema, ValuationSchema, type AssetId } from "./asset.js";
 import { AssetFundingIdSchema } from "./asset-funding.js";
 import { TransactionIdSchema } from "./transaction.js";
 
@@ -330,3 +330,124 @@ export type MarketPrice = z.infer<typeof MarketPriceSchema>;
 export type MarketQuoteId = z.infer<typeof MarketQuoteIdSchema>;
 export type MarketQuote = z.infer<typeof MarketQuoteSchema>;
 export type MarketValuation = z.infer<typeof MarketValuationSchema>;
+
+export const MarketInstrumentItemSchema = z.object({
+  instrumentType: MarketInstrumentTypeSchema,
+  provider: MarketDataProviderSchema,
+  providerInstrumentId: z.string().min(1).max(160),
+  schemeCode: z.string().min(1).max(160).optional(),
+  isin: z.string().min(1).max(160).optional(),
+  name: z.string().min(1).max(300),
+  schemePlan: FundSchemePlanSchema.optional(),
+  schemeOption: FundSchemeOptionSchema.optional(),
+  quoteUnit: MarketQuoteUnitSchema
+});
+
+export const MarketInstrumentPageSchema = z.object({
+  items: z.array(MarketInstrumentItemSchema),
+  pageInfo: PageInfoSchema
+});
+
+export const ListMarketInstrumentsQuerySchema = z.object({
+  type: MarketInstrumentTypeSchema.optional(),
+  q: z.string().trim().min(1).max(100).optional(),
+  cursor: z.string().min(1).optional(),
+  limit: z.coerce.number().int().min(1).max(200).default(50)
+});
+
+export const MarketQuoteFreshnessSchema = z.enum(["fresh", "delayed", "stale", "unavailable"]);
+
+export const MarketQuoteWithFreshnessSchema = MarketQuoteSchema.extend({
+  freshness: MarketQuoteFreshnessSchema
+});
+
+export const AssetMarketValuationDetailsSchema = z.object({
+  assetId: AssetIdSchema,
+  position: AssetCurrentPositionSchema,
+  quote: MarketQuoteWithFreshnessSchema.nullable(),
+  valuation: ValuationSchema.nullable(),
+  estimatedValueMinor: z.number().int().nonnegative().nullable(),
+  asOf: z.coerce.date().nullable(),
+  lastReconciledAt: z.coerce.date().nullable(),
+  warnings: z.array(z.string())
+});
+
+export const TaxpayerTypeSchema = z.enum(["resident_individual", "nri", "huf", "company", "other"]);
+
+export const TaxContextInputSchema = z.object({
+  taxYear: z
+    .string()
+    .regex(/^\d{4}-\d{2}$/u, "Tax year format must be YYYY-YY (e.g. 2026-27).")
+    .default("2026-27"),
+  taxpayerType: TaxpayerTypeSchema.default("resident_individual"),
+  ordinaryIncomeTaxRateBps: z.number().int().min(0).max(10000).optional(),
+  surchargeRateBps: z.number().int().min(0).max(10000).optional(),
+  equityLtcgExemptionRemainingMinor: z.number().int().min(0).max(12500000).optional(),
+  capitalLossOffsetMinor: z.number().int().min(0).optional()
+});
+
+export const EstimateDisposalRequestSchema = z.object({
+  quantityMicroUnits: QuantityMicroUnitsSchema.optional(),
+  disposalDate: z.coerce.date().default(() => new Date()),
+  quoteOverrideMicroRupeesPerUnit: PriceMicroRupeesPerQuoteUnitSchema.optional(),
+  expectedOtherChargesMinor: z.number().int().min(0).default(0),
+  dealerDeductionBps: z.number().int().min(0).max(10000).optional(),
+  taxContext: TaxContextInputSchema.optional()
+});
+
+export const DisposalDeductionsSchema = z.object({
+  exitLoadMinor: z.number().int().nonnegative(),
+  sttMinor: z.number().int().nonnegative(),
+  dealerDeductionsMinor: z.number().int().nonnegative(),
+  otherChargesMinor: z.number().int().nonnegative(),
+  totalDeductionsMinor: z.number().int().nonnegative()
+});
+
+export const DisposalLotAllocationSchema = z.object({
+  acquisitionEventId: AssetPositionEventIdSchema.optional(),
+  acquiredAt: z.coerce.date().nullable(),
+  quantityMicroUnits: QuantityMicroUnitsSchema,
+  costBasisMinor: z.number().int().nonnegative().nullable(),
+  holdingPeriodMonths: z.number().nonnegative().nullable(),
+  term: z.enum(["short_term", "long_term", "unknown"]),
+  gainLossMinor: z.number().int().nullable()
+});
+
+export const DisposalEstimateResultSchema = z.object({
+  assetId: AssetIdSchema,
+  instrumentType: MarketInstrumentTypeSchema.optional(),
+  quantityMicroUnits: QuantityMicroUnitsSchema,
+  quote: MarketQuoteWithFreshnessSchema.nullable(),
+  grossProceedsMinor: z.number().int().nonnegative(),
+  deductions: DisposalDeductionsSchema,
+  cashSettlementMinor: z.number().int().nonnegative(),
+  costBasisMinor: z.number().int().nonnegative().nullable(),
+  estimatedGainMinor: z.number().int().nullable(),
+  estimatedTaxMinor: z.number().int().nonnegative().nullable(),
+  postTaxProceedsMinor: z.number().int().nonnegative().nullable(),
+  effectiveTaxRateBps: z.number().int().nonnegative().nullable(),
+  taxRuleId: z.string().nullable(),
+  taxSupportStatus: z.enum([
+    "supported",
+    "unsupported_tax_context",
+    "missing_cost_basis",
+    "missing_quote"
+  ]),
+  confidence: z.enum(["estimate", "provisional", "unsupported"]),
+  lots: z.array(DisposalLotAllocationSchema),
+  assumptions: z.array(z.string()),
+  warnings: z.array(z.string())
+});
+
+export type MarketInstrumentItem = z.infer<typeof MarketInstrumentItemSchema>;
+export type MarketInstrumentPage = z.infer<typeof MarketInstrumentPageSchema>;
+export type ListMarketInstrumentsQuery = z.infer<typeof ListMarketInstrumentsQuerySchema>;
+export type MarketQuoteFreshness = z.infer<typeof MarketQuoteFreshnessSchema>;
+export type MarketQuoteWithFreshness = z.infer<typeof MarketQuoteWithFreshnessSchema>;
+export type AssetMarketValuationDetails = z.infer<typeof AssetMarketValuationDetailsSchema>;
+export type TaxpayerType = z.infer<typeof TaxpayerTypeSchema>;
+export type TaxContextInput = z.infer<typeof TaxContextInputSchema>;
+export type EstimateDisposalRequest = z.infer<typeof EstimateDisposalRequestSchema>;
+export type DisposalDeductions = z.infer<typeof DisposalDeductionsSchema>;
+export type DisposalLotAllocation = z.infer<typeof DisposalLotAllocationSchema>;
+export type DisposalEstimateResult = z.infer<typeof DisposalEstimateResultSchema>;

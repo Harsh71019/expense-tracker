@@ -252,7 +252,19 @@ export {
   MarketQuoteUnitSchema,
   ListAssetPositionEventsQuerySchema,
   ReverseAssetPositionEventResultSchema,
-  SgbAcquisitionChannelSchema
+  SgbAcquisitionChannelSchema,
+  MarketInstrumentItemSchema,
+  MarketInstrumentPageSchema,
+  ListMarketInstrumentsQuerySchema,
+  MarketQuoteFreshnessSchema,
+  MarketQuoteWithFreshnessSchema,
+  AssetMarketValuationDetailsSchema,
+  TaxpayerTypeSchema,
+  TaxContextInputSchema,
+  EstimateDisposalRequestSchema,
+  DisposalDeductionsSchema,
+  DisposalLotAllocationSchema,
+  DisposalEstimateResultSchema
 } from "./asset-market.js";
 export type {
   AssetMarketLink,
@@ -278,7 +290,19 @@ export type {
   MarketQuoteUnit,
   ListAssetPositionEventsQuery,
   ReverseAssetPositionEventResult,
-  SgbAcquisitionChannel
+  SgbAcquisitionChannel,
+  MarketInstrumentItem,
+  MarketInstrumentPage,
+  ListMarketInstrumentsQuery,
+  MarketQuoteFreshness,
+  MarketQuoteWithFreshness,
+  AssetMarketValuationDetails,
+  TaxpayerType,
+  TaxContextInput,
+  EstimateDisposalRequest,
+  DisposalDeductions,
+  DisposalLotAllocation,
+  DisposalEstimateResult
 } from "./asset-market.js";
 export {
   BudgetAlertPolicySchema,
@@ -592,6 +616,8 @@ export type {
   UploadImportMetadata
 } from "./import.js";
 export {
+  MAX_PORTFOLIO_IMPORT_FILE_SIZE_BYTES,
+  PortfolioImportBatchCommitResultSchema,
   PortfolioImportBatchIdSchema,
   PortfolioImportBatchSchema,
   PortfolioImportRowActionSchema,
@@ -607,6 +633,7 @@ export {
 } from "./portfolio-import.js";
 export type {
   PortfolioImportBatch,
+  PortfolioImportBatchCommitResult,
   PortfolioImportBatchId,
   PortfolioImportRow,
   PortfolioImportRowAction,
@@ -622,9 +649,13 @@ export type {
 export {
   calculateMarketValueMinor,
   FixedPointDecimalSchema,
+  formatMicroUnits,
+  formatPricePerUnit,
   microRupeesToMinorUnits,
   microUnitsToMilliUnits,
+  parseMicroUnits,
   parsePositiveDecimalToMicroUnits,
+  parsePricePerUnit,
   parseTroyOunceInrToMicroRupeesPerGram,
   PriceMicroRupeesPerQuoteUnitSchema,
   PurityBpsSchema,

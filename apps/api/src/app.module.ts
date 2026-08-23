@@ -1,5 +1,5 @@
 import { Module } from "@nestjs/common";
-import { APP_GUARD } from "@nestjs/core";
+import { APP_GUARD, APP_INTERCEPTOR } from "@nestjs/core";
 import { ScheduleModule } from "@nestjs/schedule";
 import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import type { ExecutionContext } from "@nestjs/common";
@@ -16,6 +16,7 @@ import { LoggingContextService } from "./common/logging/logging-context.service.
 import { LoggingModule } from "./common/logging/logging.module.js";
 import { createPinoDestination } from "./common/logging/pino-destination.js";
 import { PINO_REDACT_PATHS } from "./common/logging/redact-paths.js";
+import { ResponseBodyLoggingInterceptor } from "./common/logging/response-body-logging.interceptor.js";
 import { MetricsController } from "./common/observability/metrics.controller.js";
 import { ObservabilityModule } from "./common/observability/observability.module.js";
 import { IdempotencyModule } from "./common/idempotency/idempotency.module.js";
@@ -172,6 +173,9 @@ function isUnthrottledPath(context: ExecutionContext): boolean {
     HealthModule
   ],
   controllers: [MetricsController],
-  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }]
+  providers: [
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_INTERCEPTOR, useClass: ResponseBodyLoggingInterceptor }
+  ]
 })
 export class AppModule {}

@@ -95,6 +95,14 @@ export const qk = {
   salaryVersions: (limit: number) =>
     [...financialProfileRoot, "salary-versions", { limit }] as const,
   protection: () => [...financialProfileRoot, "protection"] as const,
+  declaredDebt: (debtId: string) => [...financialProfileRoot, "debts", "detail", debtId] as const,
+  portfolioImportBatches: () => ["portfolio-import-batches"] as const,
+  portfolioImportBatch: (batchId: string) => ["portfolio-import-batches", batchId] as const,
+  portfolioImportRows: (batchId: string, filters?: { cursor?: string; limit?: number }) =>
+    ["portfolio-import-rows", batchId, filters ?? {}] as const,
+  assetMarketValuation: (assetId: string) => ["asset-market-valuation", assetId] as const,
+  instrumentSearch: (type?: string, query?: string) =>
+    ["instrument-search", type ?? "all", query ?? ""] as const,
   declaredDebts: () => [...financialProfileRoot, "debts"] as const,
   declaredDebtList: (filters: Readonly<{ status: DeclaredDebtStatus; limit: number }>) =>
     [...financialProfileRoot, "debts", "list", filters] as const,

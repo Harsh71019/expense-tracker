@@ -1,6 +1,7 @@
 "use client";
 
 import type { ColumnMapping, ImportBatch } from "@treasury-ops/shared";
+import Link from "next/link";
 import { useState } from "react";
 import type { ReactNode } from "react";
 import { toast } from "@/lib/toast";
@@ -160,9 +161,16 @@ export function ImportWizard({
           </p>
         </div>
         {view === "list" ? (
-          <Button type="button" onClick={startWizard}>
-            <span className="mr-1 text-base leading-none">+</span> New import
-          </Button>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <Link href="/portfolio-import">
+              <Button type="button" variant="secondary">
+                Import CAS PDF Statement
+              </Button>
+            </Link>
+            <Button type="button" onClick={startWizard}>
+              <span className="mr-1 text-base leading-none">+</span> New import
+            </Button>
+          </div>
         ) : null}
       </header>
 

@@ -2416,7 +2416,7 @@ export interface paths {
              * @default manual
              * @enum {string}
              */
-            source?: "manual" | "maturity_projection";
+            source?: "manual" | "maturity_projection" | "market_quote";
           };
         };
       };
@@ -8673,6 +8673,182 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/v1/assets/instruments": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["searchMarketInstruments"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/assets/{assetId}/market-valuation": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["getAssetMarketValuation"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/assets/{assetId}/market-refreshes": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["refreshAssetMarketQuote"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/assets/{assetId}/disposal-estimates": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["estimateAssetDisposal"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/portfolio-imports/cas": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["uploadPortfolioImportCas"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/portfolio-imports": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["listPortfolioImports"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/portfolio-imports/{batchId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["getPortfolioImportBatch"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/portfolio-imports/{batchId}/rows": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["listPortfolioImportRows"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/portfolio-imports/{batchId}/rows/{rowId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch: operations["updatePortfolioImportRow"];
+    trace?: never;
+  };
+  "/v1/portfolio-imports/{batchId}/commit": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["commitPortfolioImportBatch"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/portfolio-imports/{batchId}/revert": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["revertPortfolioImportBatch"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -8774,7 +8950,19 @@ export interface components {
         | "receivable.correction_underflow"
         | "receivable.reversal_blocked"
         | "receivable.transaction_already_linked"
-        | "receivable.transaction_ineligible";
+        | "receivable.transaction_ineligible"
+        | "portfolio_import.invalid_pdf"
+        | "portfolio_import.file_too_large"
+        | "portfolio_import.duplicate"
+        | "portfolio_import.invalid_state"
+        | "portfolio_import.password_required"
+        | "portfolio_import.password_invalid"
+        | "portfolio_import.unsupported_layout"
+        | "portfolio_import.unsupported_scanned"
+        | "portfolio_import.row_not_found"
+        | "asset_market.quote_unavailable"
+        | "asset_market.tax_context_unsupported"
+        | "asset_market.disposal_context_insufficient";
       reqId: string;
       /** Format: date-time */
       timestamp: string | null;
@@ -9682,7 +9870,7 @@ export interface components {
        * @default manual
        * @enum {string}
        */
-      source: "manual" | "maturity_projection";
+      source: "manual" | "maturity_projection" | "market_quote";
       /** Format: uuid */
       id: string;
       /** Format: uuid */
@@ -9700,7 +9888,7 @@ export interface components {
          * @default manual
          * @enum {string}
          */
-        source: "manual" | "maturity_projection";
+        source: "manual" | "maturity_projection" | "market_quote";
         /** Format: uuid */
         id: string;
         /** Format: uuid */
@@ -14914,6 +15102,1200 @@ export interface operations {
       };
       /** @description Asset not found */
       404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Validation failed */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Internal error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+    };
+  };
+  searchMarketInstruments: {
+    parameters: {
+      query?: {
+        type?:
+          | "mutual_fund"
+          | "gold_etf"
+          | "silver_etf"
+          | "gold_fund"
+          | "silver_fund"
+          | "sgb"
+          | "physical_gold"
+          | "physical_silver";
+        q?: string;
+        cursor?: string;
+        limit?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Search and discover market instruments */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            items: {
+              /** @enum {string} */
+              instrumentType:
+                | "mutual_fund"
+                | "gold_etf"
+                | "silver_etf"
+                | "gold_fund"
+                | "silver_fund"
+                | "sgb"
+                | "physical_gold"
+                | "physical_silver";
+              /** @enum {string} */
+              provider: "amfi" | "ibja" | "goldapi" | "metalpriceapi" | "manual";
+              providerInstrumentId: string;
+              schemeCode?: string;
+              isin?: string;
+              name: string;
+              /** @enum {string} */
+              schemePlan?: "direct" | "regular" | "unknown";
+              /** @enum {string} */
+              schemeOption?: "growth" | "idcw" | "unknown";
+              /** @enum {string} */
+              quoteUnit: "fund_unit" | "gram";
+            }[];
+            pageInfo: {
+              nextCursor: string | null;
+              hasMore: boolean;
+              limit: number;
+            };
+          };
+        };
+      };
+      /** @description Unauthenticated */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Validation failed */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Internal error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+    };
+  };
+  getAssetMarketValuation: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        assetId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Market valuation details and quote freshness for an asset */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** Format: uuid */
+            assetId: string;
+            position: {
+              /** Format: uuid */
+              assetId: string;
+              quantityMicroUnits: number;
+              eventCount: number;
+              /** Format: date-time */
+              asOf: string | null;
+            };
+            quote: {
+              /** Format: uuid */
+              id: string;
+              userId: string;
+              /** Format: uuid */
+              assetMarketLinkId: string;
+              /** @enum {string} */
+              provider: "amfi" | "ibja" | "goldapi" | "metalpriceapi" | "manual";
+              providerInstrumentId: string;
+              /** @enum {string} */
+              quoteUnit: "fund_unit" | "gram";
+              priceMicroRupeesPerQuoteUnit: number;
+              /** Format: date-time */
+              providerAsOf: string | null;
+              /** Format: date-time */
+              fetchedAt: string | null;
+              /** Format: date-time */
+              createdAt: string | null;
+              /** @enum {string} */
+              freshness: "fresh" | "delayed" | "stale" | "unavailable";
+            } | null;
+            valuation: {
+              valueMinor: number;
+              /** Format: date-time */
+              valuedAt: string | null;
+              /**
+               * @default manual
+               * @enum {string}
+               */
+              source: "manual" | "maturity_projection" | "market_quote";
+              /** Format: uuid */
+              id: string;
+              /** Format: uuid */
+              assetId: string;
+              userId: string;
+              /** Format: date-time */
+              createdAt: string | null;
+            } | null;
+            estimatedValueMinor: number | null;
+            /** Format: date-time */
+            asOf: string | null;
+            /** Format: date-time */
+            lastReconciledAt: string | null;
+            warnings: string[];
+          };
+        };
+      };
+      /** @description Unauthenticated */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Asset not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Validation failed */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Internal error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+    };
+  };
+  refreshAssetMarketQuote: {
+    parameters: {
+      query?: never;
+      header: {
+        "Idempotency-Key": string;
+      };
+      path: {
+        assetId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Trigger market quote refresh for an asset */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** Format: uuid */
+            assetId: string;
+            position: {
+              /** Format: uuid */
+              assetId: string;
+              quantityMicroUnits: number;
+              eventCount: number;
+              /** Format: date-time */
+              asOf: string | null;
+            };
+            quote: {
+              /** Format: uuid */
+              id: string;
+              userId: string;
+              /** Format: uuid */
+              assetMarketLinkId: string;
+              /** @enum {string} */
+              provider: "amfi" | "ibja" | "goldapi" | "metalpriceapi" | "manual";
+              providerInstrumentId: string;
+              /** @enum {string} */
+              quoteUnit: "fund_unit" | "gram";
+              priceMicroRupeesPerQuoteUnit: number;
+              /** Format: date-time */
+              providerAsOf: string | null;
+              /** Format: date-time */
+              fetchedAt: string | null;
+              /** Format: date-time */
+              createdAt: string | null;
+              /** @enum {string} */
+              freshness: "fresh" | "delayed" | "stale" | "unavailable";
+            } | null;
+            valuation: {
+              valueMinor: number;
+              /** Format: date-time */
+              valuedAt: string | null;
+              /**
+               * @default manual
+               * @enum {string}
+               */
+              source: "manual" | "maturity_projection" | "market_quote";
+              /** Format: uuid */
+              id: string;
+              /** Format: uuid */
+              assetId: string;
+              userId: string;
+              /** Format: date-time */
+              createdAt: string | null;
+            } | null;
+            estimatedValueMinor: number | null;
+            /** Format: date-time */
+            asOf: string | null;
+            /** Format: date-time */
+            lastReconciledAt: string | null;
+            warnings: string[];
+          };
+        };
+      };
+      /** @description Unauthenticated */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Asset not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Idempotency key was already used for different request intent */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Validation failed */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Internal error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+    };
+  };
+  estimateAssetDisposal: {
+    parameters: {
+      query?: never;
+      header: {
+        "Idempotency-Key": string;
+      };
+      path: {
+        assetId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        "application/json": {
+          quantityMicroUnits?: number;
+          /**
+           * Format: date-time
+           * @default 2026-08-23T08:45:29.947Z
+           */
+          disposalDate?: string | null;
+          quoteOverrideMicroRupeesPerUnit?: number;
+          /** @default 0 */
+          expectedOtherChargesMinor?: number;
+          dealerDeductionBps?: number;
+          taxContext?: {
+            /** @default 2026-27 */
+            taxYear?: string;
+            /**
+             * @default resident_individual
+             * @enum {string}
+             */
+            taxpayerType?: "resident_individual" | "nri" | "huf" | "company" | "other";
+            ordinaryIncomeTaxRateBps?: number;
+            surchargeRateBps?: number;
+            equityLtcgExemptionRemainingMinor?: number;
+            capitalLossOffsetMinor?: number;
+          };
+        };
+      };
+    };
+    responses: {
+      /** @description FIFO disposal tax and realization estimate */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** Format: uuid */
+            assetId: string;
+            /** @enum {string} */
+            instrumentType?:
+              | "mutual_fund"
+              | "gold_etf"
+              | "silver_etf"
+              | "gold_fund"
+              | "silver_fund"
+              | "sgb"
+              | "physical_gold"
+              | "physical_silver";
+            quantityMicroUnits: number;
+            quote: {
+              /** Format: uuid */
+              id: string;
+              userId: string;
+              /** Format: uuid */
+              assetMarketLinkId: string;
+              /** @enum {string} */
+              provider: "amfi" | "ibja" | "goldapi" | "metalpriceapi" | "manual";
+              providerInstrumentId: string;
+              /** @enum {string} */
+              quoteUnit: "fund_unit" | "gram";
+              priceMicroRupeesPerQuoteUnit: number;
+              /** Format: date-time */
+              providerAsOf: string | null;
+              /** Format: date-time */
+              fetchedAt: string | null;
+              /** Format: date-time */
+              createdAt: string | null;
+              /** @enum {string} */
+              freshness: "fresh" | "delayed" | "stale" | "unavailable";
+            } | null;
+            grossProceedsMinor: number;
+            deductions: {
+              exitLoadMinor: number;
+              sttMinor: number;
+              dealerDeductionsMinor: number;
+              otherChargesMinor: number;
+              totalDeductionsMinor: number;
+            };
+            cashSettlementMinor: number;
+            costBasisMinor: number | null;
+            estimatedGainMinor: number | null;
+            estimatedTaxMinor: number | null;
+            postTaxProceedsMinor: number | null;
+            effectiveTaxRateBps: number | null;
+            taxRuleId: string | null;
+            /** @enum {string} */
+            taxSupportStatus:
+              "supported" | "unsupported_tax_context" | "missing_cost_basis" | "missing_quote";
+            /** @enum {string} */
+            confidence: "estimate" | "provisional" | "unsupported";
+            lots: {
+              /** Format: uuid */
+              acquisitionEventId?: string;
+              /** Format: date-time */
+              acquiredAt: string | null;
+              quantityMicroUnits: number;
+              costBasisMinor: number | null;
+              holdingPeriodMonths: number | null;
+              /** @enum {string} */
+              term: "short_term" | "long_term" | "unknown";
+              gainLossMinor: number | null;
+            }[];
+            assumptions: string[];
+            warnings: string[];
+          };
+        };
+      };
+      /** @description Unauthenticated */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Asset not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Idempotency key was already used for different request intent */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Validation failed */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Internal error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+    };
+  };
+  uploadPortfolioImportCas: {
+    parameters: {
+      query?: never;
+      header: {
+        "Idempotency-Key": string;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description CAS statement uploaded and queued for parsing */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            rowCount: number;
+            includedCount: number;
+            warningCount: number;
+            errorCount: number;
+            /** Format: uuid */
+            id: string;
+            userId: string;
+            /** @enum {string} */
+            source: "kfintech_cams" | "unknown";
+            filename: string;
+            fileHash: string;
+            /** @enum {string} */
+            status:
+              | "queued"
+              | "parsing"
+              | "needs_review"
+              | "ready"
+              | "committing"
+              | "completed"
+              | "failed"
+              | "reverting"
+              | "reverted";
+            /** Format: date-time */
+            statementAsOf?: string | null;
+            /** Format: date-time */
+            coverageFrom?: string | null;
+            /** Format: date-time */
+            coverageTo?: string | null;
+            failureCode?: string;
+            /** Format: date-time */
+            createdAt: string | null;
+            /** Format: date-time */
+            updatedAt: string | null;
+            /** Format: date-time */
+            completedAt?: string | null;
+          };
+        };
+      };
+      /** @description Unauthenticated */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Idempotency key was already used for different request intent */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Validation failed */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Internal error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+    };
+  };
+  listPortfolioImports: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List user portfolio import batches */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            rowCount: number;
+            includedCount: number;
+            warningCount: number;
+            errorCount: number;
+            /** Format: uuid */
+            id: string;
+            userId: string;
+            /** @enum {string} */
+            source: "kfintech_cams" | "unknown";
+            filename: string;
+            fileHash: string;
+            /** @enum {string} */
+            status:
+              | "queued"
+              | "parsing"
+              | "needs_review"
+              | "ready"
+              | "committing"
+              | "completed"
+              | "failed"
+              | "reverting"
+              | "reverted";
+            /** Format: date-time */
+            statementAsOf?: string | null;
+            /** Format: date-time */
+            coverageFrom?: string | null;
+            /** Format: date-time */
+            coverageTo?: string | null;
+            failureCode?: string;
+            /** Format: date-time */
+            createdAt: string | null;
+            /** Format: date-time */
+            updatedAt: string | null;
+            /** Format: date-time */
+            completedAt?: string | null;
+          }[];
+        };
+      };
+      /** @description Unauthenticated */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Validation failed */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Internal error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+    };
+  };
+  getPortfolioImportBatch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        batchId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Portfolio import batch status and summary */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            rowCount: number;
+            includedCount: number;
+            warningCount: number;
+            errorCount: number;
+            /** Format: uuid */
+            id: string;
+            userId: string;
+            /** @enum {string} */
+            source: "kfintech_cams" | "unknown";
+            filename: string;
+            fileHash: string;
+            /** @enum {string} */
+            status:
+              | "queued"
+              | "parsing"
+              | "needs_review"
+              | "ready"
+              | "committing"
+              | "completed"
+              | "failed"
+              | "reverting"
+              | "reverted";
+            /** Format: date-time */
+            statementAsOf?: string | null;
+            /** Format: date-time */
+            coverageFrom?: string | null;
+            /** Format: date-time */
+            coverageTo?: string | null;
+            failureCode?: string;
+            /** Format: date-time */
+            createdAt: string | null;
+            /** Format: date-time */
+            updatedAt: string | null;
+            /** Format: date-time */
+            completedAt?: string | null;
+          };
+        };
+      };
+      /** @description Unauthenticated */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Batch not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Validation failed */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Internal error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+    };
+  };
+  listPortfolioImportRows: {
+    parameters: {
+      query?: {
+        cursor?: string;
+        limit?: number;
+      };
+      header?: never;
+      path: {
+        batchId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Paginated portfolio import staged rows */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            items: {
+              /** Format: uuid */
+              id: string;
+              userId: string;
+              /** Format: uuid */
+              batchId: string;
+              rowNumber: number;
+              /** @enum {string} */
+              rowKind: "holding" | "transaction";
+              semanticFingerprint: string;
+              /** @enum {string} */
+              instrumentType:
+                | "mutual_fund"
+                | "gold_etf"
+                | "silver_etf"
+                | "gold_fund"
+                | "silver_fund"
+                | "sgb"
+                | "physical_gold"
+                | "physical_silver";
+              isin?: string;
+              schemeCode?: string;
+              displayName: string;
+              folioReferenceMasked?: string;
+              transactionType?: string;
+              /** Format: date-time */
+              occurredAt?: string | null;
+              quantityMicroUnits: number | null;
+              grossAmountMinor?: number;
+              navMicroRupeesPerUnit?: number;
+              /** Format: uuid */
+              proposedAssetId?: string;
+              /** @enum {string} */
+              matchStatus: "matched" | "needs_confirmation" | "unmatched" | "ignored";
+              /** @enum {string} */
+              proposedAction: "create_asset" | "append_event" | "reconcile" | "ignore";
+              include: boolean;
+              warningCode?: string;
+              /** Format: date-time */
+              createdAt: string | null;
+            }[];
+            pageInfo: {
+              nextCursor: string | null;
+              hasMore: boolean;
+              limit: number;
+            };
+          };
+        };
+      };
+      /** @description Unauthenticated */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Batch not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Validation failed */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Internal error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+    };
+  };
+  updatePortfolioImportRow: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        batchId: string;
+        rowId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        "application/json": {
+          /** Format: uuid */
+          proposedAssetId?: string | null;
+          /** @enum {string} */
+          proposedAction?: "create_asset" | "append_event" | "reconcile" | "ignore";
+          include?: boolean;
+        };
+      };
+    };
+    responses: {
+      /** @description Updated portfolio import staged row */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** Format: uuid */
+            id: string;
+            userId: string;
+            /** Format: uuid */
+            batchId: string;
+            rowNumber: number;
+            /** @enum {string} */
+            rowKind: "holding" | "transaction";
+            semanticFingerprint: string;
+            /** @enum {string} */
+            instrumentType:
+              | "mutual_fund"
+              | "gold_etf"
+              | "silver_etf"
+              | "gold_fund"
+              | "silver_fund"
+              | "sgb"
+              | "physical_gold"
+              | "physical_silver";
+            isin?: string;
+            schemeCode?: string;
+            displayName: string;
+            folioReferenceMasked?: string;
+            transactionType?: string;
+            /** Format: date-time */
+            occurredAt?: string | null;
+            quantityMicroUnits: number | null;
+            grossAmountMinor?: number;
+            navMicroRupeesPerUnit?: number;
+            /** Format: uuid */
+            proposedAssetId?: string;
+            /** @enum {string} */
+            matchStatus: "matched" | "needs_confirmation" | "unmatched" | "ignored";
+            /** @enum {string} */
+            proposedAction: "create_asset" | "append_event" | "reconcile" | "ignore";
+            include: boolean;
+            warningCode?: string;
+            /** Format: date-time */
+            createdAt: string | null;
+          };
+        };
+      };
+      /** @description Unauthenticated */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Row not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Validation failed */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Internal error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+    };
+  };
+  commitPortfolioImportBatch: {
+    parameters: {
+      query?: never;
+      header: {
+        "Idempotency-Key": string;
+      };
+      path: {
+        batchId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Committed portfolio import batch into assets and position events */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            batch: {
+              rowCount: number;
+              includedCount: number;
+              warningCount: number;
+              errorCount: number;
+              /** Format: uuid */
+              id: string;
+              userId: string;
+              /** @enum {string} */
+              source: "kfintech_cams" | "unknown";
+              filename: string;
+              fileHash: string;
+              /** @enum {string} */
+              status:
+                | "queued"
+                | "parsing"
+                | "needs_review"
+                | "ready"
+                | "committing"
+                | "completed"
+                | "failed"
+                | "reverting"
+                | "reverted";
+              /** Format: date-time */
+              statementAsOf?: string | null;
+              /** Format: date-time */
+              coverageFrom?: string | null;
+              /** Format: date-time */
+              coverageTo?: string | null;
+              failureCode?: string;
+              /** Format: date-time */
+              createdAt: string | null;
+              /** Format: date-time */
+              updatedAt: string | null;
+              /** Format: date-time */
+              completedAt?: string | null;
+            };
+            committedRowCount: number;
+          };
+        };
+      };
+      /** @description Unauthenticated */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Batch not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Idempotency key was already used for different request intent */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Validation failed */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Internal error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+    };
+  };
+  revertPortfolioImportBatch: {
+    parameters: {
+      query?: never;
+      header: {
+        "Idempotency-Key": string;
+      };
+      path: {
+        batchId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Reverted portfolio import batch via compensating reversals */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            rowCount: number;
+            includedCount: number;
+            warningCount: number;
+            errorCount: number;
+            /** Format: uuid */
+            id: string;
+            userId: string;
+            /** @enum {string} */
+            source: "kfintech_cams" | "unknown";
+            filename: string;
+            fileHash: string;
+            /** @enum {string} */
+            status:
+              | "queued"
+              | "parsing"
+              | "needs_review"
+              | "ready"
+              | "committing"
+              | "completed"
+              | "failed"
+              | "reverting"
+              | "reverted";
+            /** Format: date-time */
+            statementAsOf?: string | null;
+            /** Format: date-time */
+            coverageFrom?: string | null;
+            /** Format: date-time */
+            coverageTo?: string | null;
+            failureCode?: string;
+            /** Format: date-time */
+            createdAt: string | null;
+            /** Format: date-time */
+            updatedAt: string | null;
+            /** Format: date-time */
+            completedAt?: string | null;
+          };
+        };
+      };
+      /** @description Unauthenticated */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Batch not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Idempotency key was already used for different request intent */
+      409: {
         headers: {
           [name: string]: unknown;
         };

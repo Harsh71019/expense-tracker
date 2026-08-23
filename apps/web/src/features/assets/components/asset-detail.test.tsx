@@ -44,6 +44,12 @@ vi.mock("../hooks/use-asset-mutations", () => ({
   })
 }));
 
+vi.mock("../hooks/use-asset-market-valuation", () => ({
+  useAssetMarketValuation: () => ({ data: undefined }),
+  useRefreshMarketQuote: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useEstimateDisposal: () => ({ mutateAsync: vi.fn(), isPending: false })
+}));
+
 const mockFdAsset: Asset = {
   id: "fd-123",
   userId: "u1",

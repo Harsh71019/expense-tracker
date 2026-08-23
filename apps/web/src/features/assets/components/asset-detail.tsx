@@ -2,6 +2,9 @@
 
 import {
   calculateMarketValueMinor,
+  formatMicroUnits,
+  formatMinor,
+  formatPricePerUnit,
   type Asset,
   type MarketRates,
   type MetalRate,
@@ -14,6 +17,7 @@ import type { CSSProperties, ReactNode } from "react";
 import {
   ArrowDownRight,
   ArrowUpRight,
+  Calculator,
   CheckCircle2,
   History,
   Plus,
@@ -22,6 +26,7 @@ import {
   XCircle
 } from "lucide-react";
 
+import { Badge } from "@/components/ui/badge";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { Button } from "@/components/ui/button";
 import { SignedMoney } from "@/components/ui/money";
@@ -29,6 +34,10 @@ import { tint } from "@/features/categories";
 import { toast } from "@/lib/toast";
 
 import { useAsset } from "../hooks/use-asset";
+import {
+  useAssetMarketValuation,
+  useRefreshMarketQuote
+} from "../hooks/use-asset-market-valuation";
 import { useCloseAsset, useCreateValuation } from "../hooks/use-asset-mutations";
 import { useMarketRates } from "../hooks/use-market-rates";
 import { useValuations } from "../hooks/use-valuations";
@@ -40,6 +49,7 @@ import {
 } from "../model/asset-visuals";
 import { AddValuationDialog } from "./add-valuation-dialog";
 import { CloseAssetDialog } from "./close-asset-dialog";
+import { DisposalEstimateModal } from "./disposal-estimate-modal";
 
 const dateFormatter = new Intl.DateTimeFormat("en-IN", {
   day: "2-digit",
@@ -82,6 +92,11 @@ export function AssetDetail({
 
   const [addValuationOpen, setAddValuationOpen] = useState(false);
   const [closeAssetOpen, setCloseAssetOpen] = useState(false);
+  const [disposalOpen, setDisposalOpen] = useState(false);
+
+  const marketValuationQuery = useAssetMarketValuation(asset.id);
+  const marketValuation = marketValuationQuery.data;
+  const refreshQuoteMutation = useRefreshMarketQuote();
 
   const color = ASSET_KIND_COLOR[asset.kind];
   const latest = valuationItems[0];
@@ -214,6 +229,14 @@ export function AssetDetail({
           <div className="flex flex-wrap items-center gap-3">
             {!asset.isClosed ? (
               <>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setDisposalOpen(true)}
+                  className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border border-border/80"
+                >
+                  <Calculator size={14} /> Estimate Disposal / Tax
+                </Button>
                 <Button
                   type="button"
                   variant="primary"
@@ -421,6 +444,125 @@ export function AssetDetail({
         </section>
       ) : null}
 
+      {/* Market-Linked Valuation Section */}
+      {marketValuation !== undefined &&
+        (marketValuation.quote !== null || marketValuation.position.quantityMicroUnits > 0) && (
+          <section
+            aria-label="Market Valuation Details"
+            className="rounded-3xl border border-border bg-surface-elevated p-6 shadow-sm space-y-4"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-border">
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="text-base font-bold text-foreground">Market-Linked Valuation</h2>
+                  {marketValuation.quote && (
+                    <Badge
+                      variant={
+                        marketValuation.quote.freshness === "fresh"
+                          ? "success"
+                          : marketValuation.quote.freshness === "delayed"
+                            ? "pending"
+                            : marketValuation.quote.freshness === "stale"
+                              ? "problem"
+                              : "info"
+                      }
+                    >
+                      Quote: {marketValuation.quote.freshness}
+                    </Badge>
+                  )}
+                  {marketValuation.lastReconciledAt && (
+                    <Badge variant="accent">
+                      Reconciled from CAS (
+                      {dateFormatter.format(new Date(marketValuation.lastReconciledAt))})
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-xs text-foreground-muted mt-0.5">
+                  Live AMFI NAV / Spot pricing linked to {asset.name}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  disabled={refreshQuoteMutation.isPending}
+                  onClick={async () => {
+                    try {
+                      await refreshQuoteMutation.mutateAsync(asset.id);
+                      toast.success("Market quote refreshed");
+                    } catch {
+                      toast.error("Failed to refresh market quote");
+                    }
+                  }}
+                >
+                  <RefreshCw
+                    size={12}
+                    className={`mr-1.5 ${refreshQuoteMutation.isPending ? "animate-spin" : ""}`}
+                  />
+                  Refresh Quote
+                </Button>
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="sm"
+                  onClick={() => setDisposalOpen(true)}
+                >
+                  <Calculator size={12} className="mr-1.5" /> Estimate Tax
+                </Button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="rounded-xl border border-border bg-surface-muted/40 p-3.5">
+                <p className="text-[11px] text-foreground-muted">Units / Holdings</p>
+                <p className="text-lg font-bold font-mono text-foreground mt-0.5">
+                  {formatMicroUnits(marketValuation.position.quantityMicroUnits)} units
+                </p>
+                <p className="text-[10px] text-foreground-muted mt-0.5">
+                  {marketValuation.position.eventCount} ledger position events
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-border bg-surface-muted/40 p-3.5">
+                <p className="text-[11px] text-foreground-muted">Live NAV / Price</p>
+                <p className="text-lg font-bold font-mono text-foreground mt-0.5">
+                  {marketValuation.quote
+                    ? `₹${formatPricePerUnit(marketValuation.quote.priceMicroRupeesPerQuoteUnit)}`
+                    : "Unavailable"}
+                </p>
+                {marketValuation.quote && (
+                  <p className="text-[10px] text-foreground-muted mt-0.5">
+                    As of {dateFormatter.format(new Date(marketValuation.quote.providerAsOf))}
+                  </p>
+                )}
+              </div>
+
+              <div className="rounded-xl border border-border bg-surface-muted/40 p-3.5">
+                <p className="text-[11px] text-foreground-muted">Estimated Market Value</p>
+                <p className="text-lg font-bold font-mono text-accent mt-0.5">
+                  {marketValuation.estimatedValueMinor !== null
+                    ? `₹${formatMinor(marketValuation.estimatedValueMinor)}`
+                    : "—"}
+                </p>
+                {marketValuation.estimatedValueMinor !== null && latest !== undefined && (
+                  <p
+                    className={`text-[10px] font-mono mt-0.5 font-semibold ${
+                      marketValuation.estimatedValueMinor - latest.valueMinor >= 0
+                        ? "text-emerald-500"
+                        : "text-rose-500"
+                    }`}
+                  >
+                    {marketValuation.estimatedValueMinor - latest.valueMinor >= 0 ? "+" : ""}₹
+                    {formatMinor(marketValuation.estimatedValueMinor - latest.valueMinor)} vs book
+                  </p>
+                )}
+              </div>
+            </div>
+          </section>
+        )}
+
       {/* Trajectory Growth Chart Card */}
       {chronologicalValues.length > 1 ? (
         <section
@@ -608,6 +750,13 @@ export function AssetDetail({
           onConfirm={handleConfirmClose}
         />
       ) : null}
+
+      <DisposalEstimateModal
+        asset={asset}
+        valuationDetails={marketValuation}
+        open={disposalOpen}
+        onOpenChange={setDisposalOpen}
+      />
     </div>
   );
 }

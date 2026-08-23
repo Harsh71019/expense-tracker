@@ -152,6 +152,9 @@ importers:
       pino:
         specifier: 10.3.1
         version: 10.3.1
+      pino-seq:
+        specifier: 4.0.0
+        version: 4.0.0(pino@10.3.1)
       reflect-metadata:
         specifier: 0.2.2
         version: 0.2.2
@@ -8634,6 +8637,15 @@ packages:
       }
     hasBin: true
 
+  pino-seq@4.0.0:
+    resolution:
+      {
+        integrity: sha512-w9V+y6tqpke/xbywC4/foRPPDa44w39Yi3dOufacbe3gBWCdYpSN8Y1R7RJ8NmuaDFVsK2HLeKOh9gJ4ugA/MQ==
+      }
+    engines: { node: ">=18.0.0" }
+    peerDependencies:
+      pino: 10.x
+
   pino-std-serializers@7.1.0:
     resolution:
       {
@@ -9296,6 +9308,13 @@ packages:
         integrity: sha512-1gnZf7DFcoIcajTjTwjwuDjzuz4PPcY2StKPlsGAQ1+YH20IRVrBaXSWmdjowTJ6u8Rc01PoYOGHXfP1mYcZNQ==
       }
     engines: { node: ">= 18" }
+
+  seq-logging@3.0.0:
+    resolution:
+      {
+        integrity: sha512-ys5QV0745vxBCWuZBPSkgoobuLoUMxTSz1g7ZclHqX1tXXKFLyRIIn8V89EPgDnfRiWfoSo4KSxy/E0MtOYYyw==
+      }
+    engines: { node: ">=14.18" }
 
   serve-static@2.2.1:
     resolution:
@@ -15841,6 +15860,13 @@ snapshots:
       sonic-boom: 4.2.1
       strip-json-comments: 5.0.3
 
+  pino-seq@4.0.0(pino@10.3.1):
+    dependencies:
+      pino: 10.3.1
+      seq-logging: 3.0.0
+    transitivePeerDependencies:
+      - encoding
+
   pino-std-serializers@7.1.0: {}
 
   pino@10.3.1:
@@ -16290,6 +16316,13 @@ snapshots:
       statuses: 2.0.2
     transitivePeerDependencies:
       - supports-color
+
+  seq-logging@3.0.0:
+    dependencies:
+      abort-controller: 3.0.0
+      node-fetch: 2.7.0
+    transitivePeerDependencies:
+      - encoding
 
   serve-static@2.2.1:
     dependencies:

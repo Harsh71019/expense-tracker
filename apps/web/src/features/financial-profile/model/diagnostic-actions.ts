@@ -94,6 +94,14 @@ export const DIAGNOSTIC_ACTION_MAP: Record<FinancialDiagnosticActionKey, Diagnos
     description:
       "Record investments, fixed deposits, gold, and properties to build your full balance sheet.",
     stepIndex: 9
+  },
+  configure_reserves: {
+    key: "configure_reserves",
+    label: "Classify Emergency Reserves",
+    href: "/settings?tab=reserves",
+    description:
+      "Choose which existing accounts and assets count as emergency reserves, and how quickly each is accessible.",
+    stepIndex: 10
   }
 };
 

@@ -203,7 +203,8 @@
               "portfolio_import.row_not_found",
               "asset_market.quote_unavailable",
               "asset_market.tax_context_unsupported",
-              "asset_market.disposal_context_insufficient"
+              "asset_market.disposal_context_insufficient",
+              "financial_safety.unsupported_reserve_source"
             ]
           },
           "reqId": {
@@ -5355,6 +5356,7 @@
               "review_assets",
               "refresh_asset_valuations",
               "create_goal",
+              "configure_reserves",
               null
             ]
           },
@@ -5376,7 +5378,8 @@
                     "safety_buffer",
                     "assets",
                     "asset_valuations",
-                    "goals"
+                    "goals",
+                    "reserve_sources"
                   ]
                 },
                 "status": {
@@ -5398,7 +5401,8 @@
                     "ledger",
                     "safety_buffer",
                     "assets",
-                    "goals"
+                    "goals",
+                    "reserves"
                   ]
                 },
                 "lastUpdatedAt": {
@@ -5435,6 +5439,7 @@
                     "review_assets",
                     "refresh_asset_valuations",
                     "create_goal",
+                    "configure_reserves",
                     null
                   ]
                 },
@@ -11677,6 +11682,399 @@
           "completeMonths",
           "currentPartialMonth",
           "classification",
+          "limitations"
+        ]
+      },
+      "ReserveSourcePage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "sourceKind": {
+                  "type": "string",
+                  "enum": ["account", "asset"]
+                },
+                "sourceId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "displayName": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "sourceType": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "enum": ["bank", "credit_card", "cash", "wallet", "investment"]
+                    },
+                    {
+                      "type": "string",
+                      "enum": [
+                        "loan_receivable",
+                        "loan_liability",
+                        "fixed_deposit",
+                        "gold",
+                        "silver",
+                        "investment"
+                      ]
+                    }
+                  ]
+                },
+                "configuration": {
+                  "type": ["object", "null"],
+                  "properties": {
+                    "liquidityTier": {
+                      "type": "string",
+                      "enum": ["instant", "t_plus_1", "locked"]
+                    },
+                    "isIncluded": {
+                      "type": "boolean"
+                    },
+                    "eligibleCapMinor": {
+                      "type": ["integer", "null"],
+                      "minimum": 1,
+                      "maximum": 9007199254740991
+                    },
+                    "effectiveFrom": {
+                      "type": ["string", "null"],
+                      "format": "date-time"
+                    },
+                    "configuredAt": {
+                      "type": ["string", "null"],
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "liquidityTier",
+                    "isIncluded",
+                    "eligibleCapMinor",
+                    "effectiveFrom",
+                    "configuredAt"
+                  ]
+                },
+                "currentValueMinor": {
+                  "type": ["integer", "null"],
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "valuedAt": {
+                  "type": ["string", "null"],
+                  "format": "date-time"
+                },
+                "freshness": {
+                  "type": "string",
+                  "enum": ["fresh", "stale", "missing", "not_applicable"]
+                },
+                "eligibleMinor": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "eligibility": {
+                  "type": "string",
+                  "enum": ["eligible", "ineligible"]
+                },
+                "exclusionReason": {
+                  "type": "string",
+                  "enum": [
+                    "none",
+                    "not_configured",
+                    "user_excluded",
+                    "locked",
+                    "unsupported_account_type",
+                    "unsupported_asset_kind",
+                    "archived_account",
+                    "closed_asset",
+                    "missing_valuation",
+                    "stale_valuation",
+                    "non_positive_value",
+                    "cap_results_in_zero",
+                    "potential_double_count"
+                  ]
+                },
+                "isUnavailable": {
+                  "type": "boolean"
+                },
+                "lastUpdatedAt": {
+                  "type": ["string", "null"],
+                  "format": "date-time"
+                }
+              },
+              "required": [
+                "sourceKind",
+                "sourceId",
+                "displayName",
+                "sourceType",
+                "configuration",
+                "currentValueMinor",
+                "valuedAt",
+                "freshness",
+                "eligibleMinor",
+                "eligibility",
+                "exclusionReason",
+                "isUnavailable",
+                "lastUpdatedAt"
+              ]
+            }
+          },
+          "pageInfo": {
+            "type": "object",
+            "properties": {
+              "nextCursor": {
+                "type": ["string", "null"]
+              },
+              "hasMore": {
+                "type": "boolean"
+              },
+              "limit": {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              }
+            },
+            "required": ["nextCursor", "hasMore", "limit"]
+          }
+        },
+        "required": ["items", "pageInfo"]
+      },
+      "ReserveSource": {
+        "type": "object",
+        "properties": {
+          "sourceKind": {
+            "type": "string",
+            "enum": ["account", "asset"]
+          },
+          "sourceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "displayName": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sourceType": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": ["bank", "credit_card", "cash", "wallet", "investment"]
+              },
+              {
+                "type": "string",
+                "enum": [
+                  "loan_receivable",
+                  "loan_liability",
+                  "fixed_deposit",
+                  "gold",
+                  "silver",
+                  "investment"
+                ]
+              }
+            ]
+          },
+          "configuration": {
+            "type": ["object", "null"],
+            "properties": {
+              "liquidityTier": {
+                "type": "string",
+                "enum": ["instant", "t_plus_1", "locked"]
+              },
+              "isIncluded": {
+                "type": "boolean"
+              },
+              "eligibleCapMinor": {
+                "type": ["integer", "null"],
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              "effectiveFrom": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              },
+              "configuredAt": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "liquidityTier",
+              "isIncluded",
+              "eligibleCapMinor",
+              "effectiveFrom",
+              "configuredAt"
+            ]
+          },
+          "currentValueMinor": {
+            "type": ["integer", "null"],
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "valuedAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "freshness": {
+            "type": "string",
+            "enum": ["fresh", "stale", "missing", "not_applicable"]
+          },
+          "eligibleMinor": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "eligibility": {
+            "type": "string",
+            "enum": ["eligible", "ineligible"]
+          },
+          "exclusionReason": {
+            "type": "string",
+            "enum": [
+              "none",
+              "not_configured",
+              "user_excluded",
+              "locked",
+              "unsupported_account_type",
+              "unsupported_asset_kind",
+              "archived_account",
+              "closed_asset",
+              "missing_valuation",
+              "stale_valuation",
+              "non_positive_value",
+              "cap_results_in_zero",
+              "potential_double_count"
+            ]
+          },
+          "isUnavailable": {
+            "type": "boolean"
+          },
+          "lastUpdatedAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "sourceKind",
+          "sourceId",
+          "displayName",
+          "sourceType",
+          "configuration",
+          "currentValueMinor",
+          "valuedAt",
+          "freshness",
+          "eligibleMinor",
+          "eligibility",
+          "exclusionReason",
+          "isUnavailable",
+          "lastUpdatedAt"
+        ]
+      },
+      "ReserveSummary": {
+        "type": "object",
+        "properties": {
+          "computedAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "asOf": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "sourceThrough": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "formulaVersion": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "policyVersion": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "timezone": {
+            "type": "string",
+            "enum": ["Asia/Kolkata"]
+          },
+          "configuredSourceCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "currentlyEligibleSourceCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "instantMinor": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "tPlusOneMinor": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "totalEligibleMinor": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "lockedMinor": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "staleExcludedMinor": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "missingValueSourceCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "staleSourceCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "excludedSourceCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "limitations": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "no_candidates_available",
+                "no_sources_configured",
+                "configured_but_none_eligible",
+                "missing_valuations_present",
+                "stale_valuations_present",
+                "locked_sources_present",
+                "archived_or_closed_sources_present"
+              ]
+            }
+          }
+        },
+        "required": [
+          "computedAt",
+          "asOf",
+          "sourceThrough",
+          "formulaVersion",
+          "policyVersion",
+          "timezone",
+          "configuredSourceCount",
+          "currentlyEligibleSourceCount",
+          "instantMinor",
+          "tPlusOneMinor",
+          "totalEligibleMinor",
+          "lockedMinor",
+          "staleExcludedMinor",
+          "missingValueSourceCount",
+          "staleSourceCount",
+          "excludedSourceCount",
           "limitations"
         ]
       },
@@ -25429,6 +25827,305 @@
         }
       }
     },
+    "/v1/financial-safety/reserve-sources": {
+      "get": {
+        "operationId": "listReserveSources",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "cursor",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["account", "asset"]
+            },
+            "required": false,
+            "name": "sourceKind",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": ["boolean", "null"]
+            },
+            "required": false,
+            "name": "configured",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": ["boolean", "null"]
+            },
+            "required": false,
+            "name": "eligible",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Every account/asset candidate the user owns, with its current classification (if any) and evaluated eligibility",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReserveSourcePage"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/financial-safety/reserve-sources/{sourceKind}/{sourceId}": {
+      "put": {
+        "operationId": "updateReserveSource",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["account", "asset"]
+            },
+            "required": true,
+            "name": "sourceKind",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "sourceId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "Idempotency-Key",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "liquidityTier": {
+                    "type": "string",
+                    "enum": ["instant", "t_plus_1", "locked"]
+                  },
+                  "isIncluded": {
+                    "type": "boolean"
+                  },
+                  "eligibleCapMinor": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  },
+                  "effectiveFrom": {
+                    "type": ["string", "null"],
+                    "format": "date-time"
+                  }
+                },
+                "required": ["liquidityTier", "isIncluded"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated reserve source classification, or idempotent replay",
+            "headers": {
+              "Idempotency-Replayed": {
+                "schema": {
+                  "type": "string",
+                  "enum": ["true"]
+                },
+                "required": false
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReserveSource"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Source not found for this tenant",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency key was already used for different request intent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/financial-safety/reserves": {
+      "get": {
+        "operationId": "getReserves",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": ["string", "null"],
+              "format": "date-time"
+            },
+            "required": false,
+            "name": "asOf",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Canonical current reserve totals -- instant/T+1/locked/total eligible -- evaluated fresh from account balances and asset valuations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReserveSummary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/assets/market-linked": {
       "post": {
         "operationId": "createMarketLinkedAsset",
@@ -26471,7 +27168,7 @@
                   "disposalDate": {
                     "type": ["string", "null"],
                     "format": "date-time",
-                    "default": "2026-08-23T18:56:04.735Z"
+                    "default": "2026-08-25T16:57:18.282Z"
                   },
                   "quoteOverrideMicroRupeesPerUnit": {
                     "type": "integer",

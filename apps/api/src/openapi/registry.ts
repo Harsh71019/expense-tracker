@@ -189,6 +189,14 @@ import {
   FinancialDiagnosticSchema,
   EssentialBurnQuerySchema,
   EssentialBurnResponseSchema,
+  ListReserveSourcesQuerySchema,
+  ReserveSourceIdSchema,
+  ReserveSourceKindSchema,
+  ReserveSourcePageSchema,
+  ReserveSourceSchema,
+  ReserveSummaryQuerySchema,
+  ReserveSummarySchema,
+  UpdateReserveSourceSchema,
   CreateReceivableCorrectionSchema,
   CreateReceivableSchema,
   ListReceivableEventsQuerySchema,
@@ -342,6 +350,9 @@ const SafetyBufferVersionPage = SafetyBufferVersionPageSchema.meta({
 });
 const FinancialDiagnostic = FinancialDiagnosticSchema.meta({ id: "FinancialDiagnostic" });
 const EssentialBurnResponse = EssentialBurnResponseSchema.meta({ id: "EssentialBurnResponse" });
+const ReserveSource = ReserveSourceSchema.meta({ id: "ReserveSource" });
+const ReserveSourcePage = ReserveSourcePageSchema.meta({ id: "ReserveSourcePage" });
+const ReserveSummary = ReserveSummarySchema.meta({ id: "ReserveSummary" });
 const AssetFundingMutationResult = AssetFundingMutationResultSchema.meta({
   id: "AssetFundingMutationResult"
 });
@@ -364,6 +375,10 @@ const reviewItemId = z.object({ id: ReviewItemIdSchema });
 
 const accountId = z.object({ accountId: AccountIdSchema });
 const categoryId = z.object({ categoryId: CategoryIdSchema });
+const reserveSourceKindAndId = z.object({
+  sourceKind: ReserveSourceKindSchema,
+  sourceId: ReserveSourceIdSchema
+});
 const categoryRuleId = z.object({ ruleId: CategoryRuleIdSchema });
 const transactionId = z.object({ transactionId: TransactionIdSchema });
 const assetId = z.object({ assetId: AssetIdSchema });
@@ -2622,6 +2637,60 @@ registry.registerPath({
     200: {
       description: "Trailing essential burn baseline derived from append-only ledger history",
       ...json(EssentialBurnResponse)
+    },
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/v1/financial-safety/reserve-sources",
+  operationId: "listReserveSources",
+  security: secured,
+  request: { query: ListReserveSourcesQuerySchema },
+  responses: {
+    200: {
+      description:
+        "Every account/asset candidate the user owns, with its current classification (if any) and evaluated eligibility",
+      ...json(ReserveSourcePage)
+    },
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "put",
+  path: "/v1/financial-safety/reserve-sources/{sourceKind}/{sourceId}",
+  operationId: "updateReserveSource",
+  security: secured,
+  request: {
+    params: reserveSourceKindAndId,
+    body: json(UpdateReserveSourceSchema),
+    headers: idempotencyKeyHeaders
+  },
+  responses: {
+    200: {
+      description: "Updated reserve source classification, or idempotent replay",
+      headers: optionalReplayHeaders,
+      ...json(ReserveSource)
+    },
+    404: { description: "Source not found for this tenant", ...json(ProblemDetails) },
+    ...idempotencyConflictResponse,
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/v1/financial-safety/reserves",
+  operationId: "getReserves",
+  security: secured,
+  request: { query: ReserveSummaryQuerySchema },
+  responses: {
+    200: {
+      description:
+        "Canonical current reserve totals -- instant/T+1/locked/total eligible -- evaluated fresh from account balances and asset valuations",
+      ...json(ReserveSummary)
     },
     ...problemResponses
   }

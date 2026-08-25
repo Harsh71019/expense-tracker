@@ -63,6 +63,21 @@ export class AccountRepository {
     return rows.map(toAccount);
   }
 
+  /**
+   * Every account the user owns, archived included. Used where a caller must
+   * show an archived account rather than silently drop it -- e.g. the
+   * reserve source manager, which shows an archived account's classification
+   * as unavailable instead of deleting it.
+   */
+  async listAll(userId: string): Promise<Account[]> {
+    const rows = await this.db
+      .select()
+      .from(accounts)
+      .where(eq(accounts.userId, userId))
+      .orderBy(accounts.name);
+    return rows.map(toAccount);
+  }
+
   async findActiveById(userId: string, accountId: AccountId, tx?: DbTx): Promise<Account | null> {
     const executor = tx ?? this.db;
     const [row] = await executor

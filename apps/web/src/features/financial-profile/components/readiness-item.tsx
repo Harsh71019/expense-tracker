@@ -32,7 +32,8 @@ const ITEM_TITLES: Record<FinancialDiagnosticKey, string> = {
   safety_buffer: "Emergency Safety Buffer",
   assets: "Asset Holdings",
   asset_valuations: "Asset Valuations",
-  goals: "Financial Goals"
+  goals: "Financial Goals",
+  reserve_sources: "Emergency Reserve Sources"
 };
 
 const ITEM_DESCRIPTIONS: Record<FinancialDiagnosticKey, string> = {
@@ -46,7 +47,8 @@ const ITEM_DESCRIPTIONS: Record<FinancialDiagnosticKey, string> = {
   safety_buffer: "Configured emergency buffer reserve policy and targets.",
   assets: "Investments, fixed deposits, gold, and properties owned.",
   asset_valuations: "Up-to-date valuations reflecting true current net worth.",
-  goals: "Target amounts and deadlines for upcoming financial milestones."
+  goals: "Target amounts and deadlines for upcoming financial milestones.",
+  reserve_sources: "Accounts and assets explicitly classified as emergency reserves."
 };
 
 function getStatusBadge(status: FinancialReadinessStatus): ReactNode {

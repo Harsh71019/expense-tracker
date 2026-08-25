@@ -9,6 +9,7 @@ import { describe, expect, it } from "vitest";
 import type { AccountDiagnosticFacts } from "../../accounts/account-diagnostic-read.service.js";
 import type { AssetDiagnosticFacts } from "../../assets/asset-diagnostic-read.service.js";
 import type { CategoryDiagnosticFacts } from "../../categories/category-diagnostic-read.service.js";
+import type { ReserveSourceDiagnosticFacts } from "../../financial-safety/reserve-source-diagnostic-read.service.js";
 import type { GoalDiagnosticFacts } from "../../goals/goal-diagnostic-read.service.js";
 import type { LedgerHistoryDiagnosticFacts } from "../../transactions/ledger-history-diagnostic-read.service.js";
 import {
@@ -115,6 +116,14 @@ function createFixture(overrides: Partial<ReadinessEvaluatorInput> = {}): Readin
     lastUpdatedAt: null
   };
 
+  const reserveSourceFacts: ReserveSourceDiagnosticFacts = {
+    hasCandidates: false,
+    configuredSourceCount: 0,
+    currentlyEligibleSourceCount: 0,
+    missingOrStaleConfiguredCount: 0,
+    lastUpdatedAt: null
+  };
+
   return {
     userId: "test-user",
     asOf: ASOF,
@@ -128,6 +137,7 @@ function createFixture(overrides: Partial<ReadinessEvaluatorInput> = {}): Readin
     ledgerHistoryFacts,
     assetFacts,
     goalFacts,
+    reserveSourceFacts,
     ...overrides
   };
 }
@@ -555,6 +565,13 @@ describe("evaluateFinancialReadiness pure evaluator", () => {
         totalGoalCount: 2,
         hasActiveGoals: true,
         lastUpdatedAt: ASOF
+      },
+      reserveSourceFacts: {
+        hasCandidates: true,
+        configuredSourceCount: 2,
+        currentlyEligibleSourceCount: 2,
+        missingOrStaleConfiguredCount: 0,
+        lastUpdatedAt: ASOF
       }
     });
 
@@ -568,5 +585,81 @@ describe("evaluateFinancialReadiness pure evaluator", () => {
     expect(result.availableCapabilities).toContain("essential_burn");
     expect(result.availableCapabilities).toContain("goal_feasibility");
     expect(result.nextAction).toBeNull();
+  });
+
+  it("marks reserve_sources missing when no classification is configured", () => {
+    const input = createFixture({
+      reserveSourceFacts: {
+        hasCandidates: true,
+        configuredSourceCount: 0,
+        currentlyEligibleSourceCount: 0,
+        missingOrStaleConfiguredCount: 0,
+        lastUpdatedAt: null
+      }
+    });
+    const result = evaluateFinancialReadiness(input);
+    const item = result.items.find((i) => i.key === "reserve_sources");
+    expect(item?.status).toBe("missing");
+    expect(item?.attention).toBe("blocking");
+    expect(item?.action).toBe("configure_reserves");
+    expect(item?.limitationKeys).toContain("reserve_sources.not_configured");
+  });
+
+  it("marks reserve_sources limited when configured but nothing currently counts", () => {
+    const input = createFixture({
+      reserveSourceFacts: {
+        hasCandidates: true,
+        configuredSourceCount: 2,
+        currentlyEligibleSourceCount: 0,
+        missingOrStaleConfiguredCount: 1,
+        lastUpdatedAt: ASOF
+      }
+    });
+    const result = evaluateFinancialReadiness(input);
+    const item = result.items.find((i) => i.key === "reserve_sources");
+    expect(item?.status).toBe("limited");
+    expect(item?.attention).toBe("warning");
+    expect(item?.action).toBe("configure_reserves");
+    expect(item?.limitationKeys).toContain("reserve_sources.none_currently_eligible");
+    expect(item?.limitationKeys).toContain("reserve_sources.contains_missing_or_stale");
+  });
+
+  it("marks reserve_sources ready as soon as one source currently contributes a positive amount", () => {
+    const input = createFixture({
+      reserveSourceFacts: {
+        hasCandidates: true,
+        configuredSourceCount: 2,
+        currentlyEligibleSourceCount: 1,
+        missingOrStaleConfiguredCount: 1,
+        lastUpdatedAt: ASOF
+      }
+    });
+    const result = evaluateFinancialReadiness(input);
+    const item = result.items.find((i) => i.key === "reserve_sources");
+    expect(item?.status).toBe("ready");
+    expect(item?.attention).toBe("none");
+    expect(item?.action).toBeNull();
+  });
+
+  it("never leaks a financial amount field into the diagnostic response", () => {
+    const input = createFixture();
+    const result = evaluateFinancialReadiness(input);
+    const serialized = JSON.stringify(result);
+    expect(serialized).not.toMatch(/amountMinor|balanceMinor|valueMinor|eligibleMinor/);
+  });
+
+  it("keeps financial_runway unavailable regardless of reserve source readiness", () => {
+    const input = createFixture({
+      reserveSourceFacts: {
+        hasCandidates: true,
+        configuredSourceCount: 3,
+        currentlyEligibleSourceCount: 3,
+        missingOrStaleConfiguredCount: 0,
+        lastUpdatedAt: ASOF
+      }
+    });
+    const result = evaluateFinancialReadiness(input);
+    expect(result.unavailableCapabilities).toContain("financial_runway");
+    expect(result.availableCapabilities).not.toContain("financial_runway");
   });
 });

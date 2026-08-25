@@ -18,6 +18,7 @@ import {
 import type { AccountDiagnosticFacts } from "../accounts/account-diagnostic-read.service.js";
 import type { AssetDiagnosticFacts } from "../assets/asset-diagnostic-read.service.js";
 import type { CategoryDiagnosticFacts } from "../categories/category-diagnostic-read.service.js";
+import type { ReserveSourceDiagnosticFacts } from "../financial-safety/reserve-source-diagnostic-read.service.js";
 import type { GoalDiagnosticFacts } from "../goals/goal-diagnostic-read.service.js";
 import type { LedgerHistoryDiagnosticFacts } from "../transactions/ledger-history-diagnostic-read.service.js";
 
@@ -37,6 +38,7 @@ export interface ReadinessEvaluatorInput {
   readonly ledgerHistoryFacts: LedgerHistoryDiagnosticFacts;
   readonly assetFacts: AssetDiagnosticFacts;
   readonly goalFacts: GoalDiagnosticFacts;
+  readonly reserveSourceFacts: ReserveSourceDiagnosticFacts;
 }
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
@@ -82,7 +84,8 @@ export function evaluateFinancialReadiness(input: ReadinessEvaluatorInput): Fina
     categoryFacts,
     ledgerHistoryFacts,
     assetFacts,
-    goalFacts
+    goalFacts,
+    reserveSourceFacts
   } = input;
 
   const items: FinancialReadinessItem[] = [];
@@ -532,6 +535,49 @@ export function evaluateFinancialReadiness(input: ReadinessEvaluatorInput): Fina
     limitationKeys: goalsStatus === "ready" ? [] : ["goals.none_recorded"]
   });
 
+  // 12. Reserve Sources
+  let reserveStatus: FinancialReadinessStatus;
+  let reserveAttention: FinancialAttentionLevel;
+  let reserveSummaryKey: string;
+  const reserveLimitationKeys: string[] = [];
+
+  if (reserveSourceFacts.currentlyEligibleSourceCount > 0) {
+    reserveStatus = "ready";
+    reserveAttention = "none";
+    reserveSummaryKey = "reserve_sources.ready";
+  } else if (reserveSourceFacts.configuredSourceCount > 0) {
+    reserveStatus = "limited";
+    reserveAttention = "warning";
+    reserveSummaryKey = "reserve_sources.limited";
+    reserveLimitationKeys.push("reserve_sources.none_currently_eligible");
+  } else {
+    reserveStatus = "missing";
+    reserveAttention = "blocking";
+    reserveSummaryKey = "reserve_sources.missing";
+    reserveLimitationKeys.push("reserve_sources.not_configured");
+  }
+
+  if (reserveSourceFacts.missingOrStaleConfiguredCount > 0) {
+    reserveLimitationKeys.push("reserve_sources.contains_missing_or_stale");
+  }
+
+  items.push({
+    key: "reserve_sources",
+    status: reserveStatus,
+    attention: reserveAttention,
+    source: "reserves",
+    lastUpdatedAt: reserveSourceFacts.lastUpdatedAt,
+    requiredFor: ["financial_runway", "safety_ladder"],
+    action: reserveStatus === "ready" ? null : "configure_reserves",
+    evidence: createEvidence({
+      activeCount: reserveSourceFacts.configuredSourceCount,
+      observedCount: reserveSourceFacts.currentlyEligibleSourceCount,
+      staleCount: reserveSourceFacts.missingOrStaleConfiguredCount
+    }),
+    summaryKey: reserveSummaryKey,
+    limitationKeys: reserveLimitationKeys
+  });
+
   // Capability Availability Evaluation
   const availableCapabilities: FinancialCapabilityKey[] = [];
   const unavailableCapabilities: FinancialCapabilityKey[] = [];
@@ -596,6 +642,8 @@ export function evaluateFinancialReadiness(input: ReadinessEvaluatorInput): Fina
     nextAction = "review_debts";
   } else if (safetyBufferStatus !== "ready") {
     nextAction = "configure_safety_buffer";
+  } else if (reserveStatus !== "ready") {
+    nextAction = "configure_reserves";
   } else if (
     assetFacts.hasActiveAssets &&
     (valuationsStatus === "stale" || valuationsStatus === "limited")

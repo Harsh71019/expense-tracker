@@ -12,6 +12,7 @@ import { AssetPositionService } from "./asset-position.service.js";
 import { AssetService } from "./asset.service.js";
 import { AssetMutationService } from "./asset-mutation.service.js";
 import { AssetDiagnosticReadService } from "./asset-diagnostic-read.service.js";
+import { AssetReserveCandidateReadService } from "./asset-reserve-candidate-read.service.js";
 import { LiabilityAssetReadService } from "./liability-asset-read.service.js";
 import { MarketRatesService } from "./market-rates.service.js";
 import { MarketRatesRefreshService } from "./market-rates-refresh.service.js";
@@ -42,6 +43,7 @@ import { DisposalEstimateService } from "./disposal-estimate.service.js";
     AssetMutationService,
     LiabilityAssetReadService,
     AssetDiagnosticReadService,
+    AssetReserveCandidateReadService,
     MarketRatesService,
     MarketRatesRefreshService,
     MarketQuoteRepository,
@@ -65,6 +67,7 @@ import { DisposalEstimateService } from "./disposal-estimate.service.js";
     ValuationRepository,
     LiabilityAssetReadService,
     AssetDiagnosticReadService,
+    AssetReserveCandidateReadService,
     MarketRatesService,
     MarketQuoteRepository,
     InstrumentDiscoveryService,

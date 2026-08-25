@@ -50,7 +50,8 @@ export const FinancialDiagnosticKeySchema = z.enum([
   "safety_buffer",
   "assets",
   "asset_valuations",
-  "goals"
+  "goals",
+  "reserve_sources"
 ]);
 
 export const FinancialDiagnosticSourceKeySchema = z.enum([
@@ -62,7 +63,8 @@ export const FinancialDiagnosticSourceKeySchema = z.enum([
   "ledger",
   "safety_buffer",
   "assets",
-  "goals"
+  "goals",
+  "reserves"
 ]);
 
 export const FinancialDiagnosticActionKeySchema = z.enum([
@@ -75,7 +77,8 @@ export const FinancialDiagnosticActionKeySchema = z.enum([
   "configure_safety_buffer",
   "review_assets",
   "refresh_asset_valuations",
-  "create_goal"
+  "create_goal",
+  "configure_reserves"
 ]);
 
 export const FINANCIAL_DIAGNOSTIC_ACTION_KEYS = FinancialDiagnosticActionKeySchema.options;

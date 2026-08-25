@@ -309,6 +309,12 @@ export const safetyBufferModeEnum = pgEnum("safety_buffer_mode", [
   "essential_months",
   "emergency_fund_goal"
 ]);
+export const reserveSourceKindEnum = pgEnum("reserve_source_kind", ["account", "asset"]);
+export const reserveLiquidityTierEnum = pgEnum("reserve_liquidity_tier", [
+  "instant",
+  "t_plus_1",
+  "locked"
+]);
 export const receivableEventKindEnum = pgEnum("receivable_event_kind", [
   "opening",
   "repayment",

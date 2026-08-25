@@ -46,7 +46,8 @@ describe("financial-diagnostic shared contracts", () => {
       "safety_buffer",
       "assets",
       "asset_valuations",
-      "goals"
+      "goals",
+      "reserve_sources"
     ];
     for (const key of valid) {
       expect(FinancialDiagnosticKeySchema.parse(key)).toBe(key);
@@ -64,7 +65,8 @@ describe("financial-diagnostic shared contracts", () => {
       "ledger",
       "safety_buffer",
       "assets",
-      "goals"
+      "goals",
+      "reserves"
     ];
     for (const source of valid) {
       expect(FinancialDiagnosticSourceKeySchema.parse(source)).toBe(source);
@@ -83,7 +85,8 @@ describe("financial-diagnostic shared contracts", () => {
       "configure_safety_buffer",
       "review_assets",
       "refresh_asset_valuations",
-      "create_goal"
+      "create_goal",
+      "configure_reserves"
     ];
     for (const action of valid) {
       expect(FinancialDiagnosticActionKeySchema.parse(action)).toBe(action);

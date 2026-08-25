@@ -36,6 +36,9 @@ import {
   SafetyBufferVersionPageSchema,
   FinancialDiagnosticSchema,
   EssentialBurnResponseSchema,
+  ReserveSourceSchema,
+  ReserveSourcePageSchema,
+  ReserveSummarySchema,
   NetWorthSchema,
   ReceivableEventPageSchema,
   ReceivableMutationResultSchema,
@@ -1021,7 +1024,7 @@ describe("production HTTP composition", () => {
       );
     }
     const diagnosticA = await parseResponse(rawDiagnosticA, FinancialDiagnosticSchema);
-    expect(diagnosticA.items.length).toBe(11);
+    expect(diagnosticA.items.length).toBe(12);
     expect(diagnosticA.readyCount).toBeGreaterThanOrEqual(1);
 
     const rawDiagnosticB = await fetch(`${baseUrl}/api/v1/financial-profile/diagnostic`, {
@@ -1149,6 +1152,148 @@ describe("production HTTP composition", () => {
     expect(body.requiredCompleteMonths).toBe(3);
     expect(body.completeMonths).toHaveLength(3);
     expect(body.currentPartialMonth.excludedFromBaseline).toBe(true);
+  });
+
+  it("serves emergency reserve source endpoints with idempotency, tenancy, and validation boundaries", async () => {
+    const unauthenticated = await Promise.all(
+      ["/api/v1/financial-safety/reserve-sources", "/api/v1/financial-safety/reserves"].map(
+        (path) => fetch(`${baseUrl}${path}`)
+      )
+    );
+    for (const response of unauthenticated) expect(response.status).toBe(401);
+
+    const account = await createAccount(baseUrl, sessionA, "Reserve Savings", "bank", 500_000);
+
+    // GET reserve-sources includes the unconfigured candidate.
+    const initialPage = await parseResponse(
+      await fetch(`${baseUrl}/api/v1/financial-safety/reserve-sources`, {
+        headers: { cookie: sessionA }
+      }),
+      ReserveSourcePageSchema
+    );
+    const candidate = initialPage.items.find((item) => item.sourceId === account.id);
+    expect(candidate?.configuration).toBeNull();
+    expect(candidate?.exclusionReason).toBe("not_configured");
+
+    // Invalid source kind / source id are rejected before any write.
+    const invalidKind = await fetch(
+      `${baseUrl}/api/v1/financial-safety/reserve-sources/not_a_kind/${account.id}`,
+      {
+        method: "PUT",
+        headers: { ...JSON_HEADERS, cookie: sessionA, "idempotency-key": crypto.randomUUID() },
+        body: JSON.stringify({ liquidityTier: "instant", isIncluded: true })
+      }
+    );
+    expect(invalidKind.status).toBe(422);
+
+    const invalidId = await fetch(
+      `${baseUrl}/api/v1/financial-safety/reserve-sources/account/not-a-uuid`,
+      {
+        method: "PUT",
+        headers: { ...JSON_HEADERS, cookie: sessionA, "idempotency-key": crypto.randomUUID() },
+        body: JSON.stringify({ liquidityTier: "instant", isIncluded: true })
+      }
+    );
+    expect(invalidId.status).toBe(422);
+
+    const invalidBody = await fetch(
+      `${baseUrl}/api/v1/financial-safety/reserve-sources/account/${account.id}`,
+      {
+        method: "PUT",
+        headers: { ...JSON_HEADERS, cookie: sessionA, "idempotency-key": crypto.randomUUID() },
+        body: JSON.stringify({ liquidityTier: "not_a_tier", isIncluded: true })
+      }
+    );
+    expect(invalidBody.status).toBe(422);
+
+    const missingKey = await fetch(
+      `${baseUrl}/api/v1/financial-safety/reserve-sources/account/${account.id}`,
+      {
+        method: "PUT",
+        headers: { ...JSON_HEADERS, cookie: sessionA },
+        body: JSON.stringify({ liquidityTier: "instant", isIncluded: true })
+      }
+    );
+    expect(missingKey.status).toBe(422);
+
+    // A real PUT classifies the account -- planning metadata only.
+    const idempotencyKey = crypto.randomUUID();
+    const classifyResponse = await fetch(
+      `${baseUrl}/api/v1/financial-safety/reserve-sources/account/${account.id}`,
+      {
+        method: "PUT",
+        headers: { ...JSON_HEADERS, cookie: sessionA, "idempotency-key": idempotencyKey },
+        body: JSON.stringify({ liquidityTier: "instant", isIncluded: true })
+      }
+    );
+    expect(classifyResponse.status).toBe(200);
+    const classified = ReserveSourceSchema.parse(await classifyResponse.json());
+    expect(classified.eligibility).toBe("eligible");
+    expect(classified.eligibleMinor).toBe(500_000);
+
+    // Replaying the same Idempotency-Key returns the same result and is flagged.
+    const replayResponse = await fetch(
+      `${baseUrl}/api/v1/financial-safety/reserve-sources/account/${account.id}`,
+      {
+        method: "PUT",
+        headers: { ...JSON_HEADERS, cookie: sessionA, "idempotency-key": idempotencyKey },
+        body: JSON.stringify({ liquidityTier: "instant", isIncluded: true })
+      }
+    );
+    expect(replayResponse.status).toBe(200);
+    expect(replayResponse.headers.get("idempotency-replayed")).toBe("true");
+    const replayed = ReserveSourceSchema.parse(await replayResponse.json());
+    expect(replayed).toEqual(classified);
+
+    // The reserve aggregate reflects the classification.
+    const summary = await parseResponse(
+      await fetch(`${baseUrl}/api/v1/financial-safety/reserves`, {
+        headers: { cookie: sessionA }
+      }),
+      ReserveSummarySchema
+    );
+    expect(summary.instantMinor).toBe(500_000);
+    expect(summary.totalEligibleMinor).toBe(500_000);
+    expect(summary.configuredSourceCount).toBeGreaterThanOrEqual(1);
+
+    // A credit_card account can never be classified.
+    const creditCard = await createAccount(
+      baseUrl,
+      sessionA,
+      "Reserve Credit Card",
+      "credit_card",
+      0
+    );
+    const unsupported = await fetch(
+      `${baseUrl}/api/v1/financial-safety/reserve-sources/account/${creditCard.id}`,
+      {
+        method: "PUT",
+        headers: { ...JSON_HEADERS, cookie: sessionA, "idempotency-key": crypto.randomUUID() },
+        body: JSON.stringify({ liquidityTier: "instant", isIncluded: true })
+      }
+    );
+    expect(unsupported.status).toBe(422);
+
+    // Cross-tenant: sessionB cannot classify sessionA's account, and cannot see it listed.
+    const foreignAttempt = await fetch(
+      `${baseUrl}/api/v1/financial-safety/reserve-sources/account/${account.id}`,
+      {
+        method: "PUT",
+        headers: { ...JSON_HEADERS, cookie: sessionB, "idempotency-key": crypto.randomUUID() },
+        body: JSON.stringify({ liquidityTier: "instant", isIncluded: true })
+      }
+    );
+    expect(foreignAttempt.status).toBe(404);
+    const foreignProblem = ProblemDetailsSchema.parse(await foreignAttempt.json());
+    expect(foreignProblem.status).toBe(404);
+
+    const foreignPage = await parseResponse(
+      await fetch(`${baseUrl}/api/v1/financial-safety/reserve-sources`, {
+        headers: { cookie: sessionB }
+      }),
+      ReserveSourcePageSchema
+    );
+    expect(foreignPage.items.some((item) => item.sourceId === account.id)).toBe(false);
   });
 
   it("lends money, settles it in two partial repayments, and conserves net worth throughout", async () => {

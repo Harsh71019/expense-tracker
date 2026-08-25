@@ -89,8 +89,21 @@ export const qk = {
   financialProfileState: () => [...financialProfileRoot, "state"] as const,
   financialDiagnostic: (asOf?: string) =>
     [...financialProfileRoot, "diagnostic", asOf ?? "latest"] as const,
+  financialSafety: () => financialSafetyRoot,
   essentialBurn: (asOf?: string) =>
     [...financialSafetyRoot, "essential-burn", asOf ?? "latest"] as const,
+  reserveSources: () => [...financialSafetyRoot, "reserve-sources"] as const,
+  reserveSourceList: (
+    filters: Readonly<{
+      limit?: number;
+      cursor?: string;
+      sourceKind?: string;
+      configured?: boolean;
+      eligible?: boolean;
+    }>
+  ) => [...financialSafetyRoot, "reserve-sources", "list", filters] as const,
+  reserveSummary: (asOf?: string) =>
+    [...financialSafetyRoot, "reserves", asOf ?? "latest"] as const,
   salaryStatistics: () => [...financialProfileRoot, "salary-statistics"] as const,
   salaryVersions: (limit: number) =>
     [...financialProfileRoot, "salary-versions", { limit }] as const,

@@ -3,6 +3,7 @@ export const SETTINGS_TABS = [
   { id: "appearance", label: "Appearance" },
   { id: "income", label: "Income" },
   { id: "protection", label: "Protection & Debt" },
+  { id: "reserves", label: "Emergency reserves" },
   { id: "api-keys", label: "API keys" }
 ] as const;
 

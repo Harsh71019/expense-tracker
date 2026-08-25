@@ -1082,7 +1082,25 @@ export {
   EssentialBurnObservationStatusSchema,
   EssentialBurnQualitySchema,
   EssentialBurnQuerySchema,
-  EssentialBurnResponseSchema
+  EssentialBurnResponseSchema,
+  RESERVE_FORMULA_VERSION,
+  RESERVE_POLICY_VERSION,
+  RESERVE_TIMEZONE,
+  ReserveSourceKindSchema,
+  ReserveLiquidityTierSchema,
+  ReserveSourceEligibilitySchema,
+  ReserveSourceExclusionReasonSchema,
+  ReserveValueFreshnessSchema,
+  ReserveSourceIdSchema,
+  ReserveSourceConfigurationSchema,
+  UpdateReserveSourceSchema,
+  ReserveSourceTypeSchema,
+  ReserveSourceSchema,
+  ReserveSourcePageSchema,
+  ListReserveSourcesQuerySchema,
+  ReserveSummaryQuerySchema,
+  ReserveLimitationKeySchema,
+  ReserveSummarySchema
 } from "./financial-safety.js";
 export type {
   EssentialBurnClassification,
@@ -1092,5 +1110,20 @@ export type {
   EssentialBurnObservationStatus,
   EssentialBurnQuality,
   EssentialBurnQuery,
-  EssentialBurnResponse
+  EssentialBurnResponse,
+  ReserveSourceKind,
+  ReserveLiquidityTier,
+  ReserveSourceEligibility,
+  ReserveSourceExclusionReason,
+  ReserveValueFreshness,
+  ReserveSourceId,
+  ReserveSourceConfiguration,
+  UpdateReserveSource,
+  ReserveSourceType,
+  ReserveSource,
+  ReserveSourcePage,
+  ListReserveSourcesQuery,
+  ReserveSummaryQuery,
+  ReserveLimitationKey,
+  ReserveSummary
 } from "./financial-safety.js";

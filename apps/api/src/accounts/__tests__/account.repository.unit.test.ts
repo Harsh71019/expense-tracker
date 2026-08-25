@@ -45,6 +45,15 @@ describe("AccountRepository Unit Tests", () => {
     expect(res).toHaveLength(1);
   });
 
+  it("listAll returns every account regardless of archived state", async () => {
+    const mockDb = createMockDrizzleDb([{ ...sampleAccountRow, isArchived: true }]);
+    const repo = new AccountRepository(mockDb);
+
+    const res = await repo.listAll("u1");
+    expect(res).toHaveLength(1);
+    expect(res[0]?.isArchived).toBe(true);
+  });
+
   it("findById returns account or null", async () => {
     const mockDb = createMockDrizzleDb([sampleAccountRow]);
     const repo = new AccountRepository(mockDb);

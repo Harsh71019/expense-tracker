@@ -8641,6 +8641,54 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/v1/financial-safety/reserve-sources": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["listReserveSources"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/financial-safety/reserve-sources/{sourceKind}/{sourceId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put: operations["updateReserveSource"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/financial-safety/reserves": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["getReserves"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/v1/assets/market-linked": {
     parameters: {
       query?: never;
@@ -8962,7 +9010,8 @@ export interface components {
         | "portfolio_import.row_not_found"
         | "asset_market.quote_unavailable"
         | "asset_market.tax_context_unsupported"
-        | "asset_market.disposal_context_insufficient";
+        | "asset_market.disposal_context_insufficient"
+        | "financial_safety.unsupported_reserve_source";
       reqId: string;
       /** Format: date-time */
       timestamp: string | null;
@@ -10671,6 +10720,7 @@ export interface components {
         | "review_assets"
         | "refresh_asset_valuations"
         | "create_goal"
+        | "configure_reserves"
         | null;
       items: {
         /** @enum {string} */
@@ -10685,7 +10735,8 @@ export interface components {
           | "safety_buffer"
           | "assets"
           | "asset_valuations"
-          | "goals";
+          | "goals"
+          | "reserve_sources";
         /** @enum {string} */
         status: "missing" | "estimated" | "limited" | "ready" | "stale";
         /** @enum {string} */
@@ -10700,7 +10751,8 @@ export interface components {
           | "ledger"
           | "safety_buffer"
           | "assets"
-          | "goals";
+          | "goals"
+          | "reserves";
         /** Format: date-time */
         lastUpdatedAt: string | null;
         requiredFor: (
@@ -10726,6 +10778,7 @@ export interface components {
           | "review_assets"
           | "refresh_asset_valuations"
           | "create_goal"
+          | "configure_reserves"
           | null;
         evidence: {
           /** @default null */
@@ -12624,6 +12677,150 @@ export interface components {
         | "insufficient_history"
         | "no_history"
         | "partial_month_excluded"
+      )[];
+    };
+    ReserveSourcePage: {
+      items: {
+        /** @enum {string} */
+        sourceKind: "account" | "asset";
+        /** Format: uuid */
+        sourceId: string;
+        displayName: string;
+        sourceType:
+          | ("bank" | "credit_card" | "cash" | "wallet" | "investment")
+          | (
+              | "loan_receivable"
+              | "loan_liability"
+              | "fixed_deposit"
+              | "gold"
+              | "silver"
+              | "investment"
+            );
+        configuration: {
+          /** @enum {string} */
+          liquidityTier: "instant" | "t_plus_1" | "locked";
+          isIncluded: boolean;
+          eligibleCapMinor: number | null;
+          /** Format: date-time */
+          effectiveFrom: string | null;
+          /** Format: date-time */
+          configuredAt: string | null;
+        } | null;
+        currentValueMinor: number | null;
+        /** Format: date-time */
+        valuedAt: string | null;
+        /** @enum {string} */
+        freshness: "fresh" | "stale" | "missing" | "not_applicable";
+        eligibleMinor: number;
+        /** @enum {string} */
+        eligibility: "eligible" | "ineligible";
+        /** @enum {string} */
+        exclusionReason:
+          | "none"
+          | "not_configured"
+          | "user_excluded"
+          | "locked"
+          | "unsupported_account_type"
+          | "unsupported_asset_kind"
+          | "archived_account"
+          | "closed_asset"
+          | "missing_valuation"
+          | "stale_valuation"
+          | "non_positive_value"
+          | "cap_results_in_zero"
+          | "potential_double_count";
+        isUnavailable: boolean;
+        /** Format: date-time */
+        lastUpdatedAt: string | null;
+      }[];
+      pageInfo: {
+        nextCursor: string | null;
+        hasMore: boolean;
+        limit: number;
+      };
+    };
+    ReserveSource: {
+      /** @enum {string} */
+      sourceKind: "account" | "asset";
+      /** Format: uuid */
+      sourceId: string;
+      displayName: string;
+      sourceType:
+        | ("bank" | "credit_card" | "cash" | "wallet" | "investment")
+        | (
+            | "loan_receivable"
+            | "loan_liability"
+            | "fixed_deposit"
+            | "gold"
+            | "silver"
+            | "investment"
+          );
+      configuration: {
+        /** @enum {string} */
+        liquidityTier: "instant" | "t_plus_1" | "locked";
+        isIncluded: boolean;
+        eligibleCapMinor: number | null;
+        /** Format: date-time */
+        effectiveFrom: string | null;
+        /** Format: date-time */
+        configuredAt: string | null;
+      } | null;
+      currentValueMinor: number | null;
+      /** Format: date-time */
+      valuedAt: string | null;
+      /** @enum {string} */
+      freshness: "fresh" | "stale" | "missing" | "not_applicable";
+      eligibleMinor: number;
+      /** @enum {string} */
+      eligibility: "eligible" | "ineligible";
+      /** @enum {string} */
+      exclusionReason:
+        | "none"
+        | "not_configured"
+        | "user_excluded"
+        | "locked"
+        | "unsupported_account_type"
+        | "unsupported_asset_kind"
+        | "archived_account"
+        | "closed_asset"
+        | "missing_valuation"
+        | "stale_valuation"
+        | "non_positive_value"
+        | "cap_results_in_zero"
+        | "potential_double_count";
+      isUnavailable: boolean;
+      /** Format: date-time */
+      lastUpdatedAt: string | null;
+    };
+    ReserveSummary: {
+      /** Format: date-time */
+      computedAt: string | null;
+      /** Format: date-time */
+      asOf: string | null;
+      /** Format: date-time */
+      sourceThrough: string | null;
+      formulaVersion: number;
+      policyVersion: number;
+      /** @enum {string} */
+      timezone: "Asia/Kolkata";
+      configuredSourceCount: number;
+      currentlyEligibleSourceCount: number;
+      instantMinor: number;
+      tPlusOneMinor: number;
+      totalEligibleMinor: number;
+      lockedMinor: number;
+      staleExcludedMinor: number;
+      missingValueSourceCount: number;
+      staleSourceCount: number;
+      excludedSourceCount: number;
+      limitations: (
+        | "no_candidates_available"
+        | "no_sources_configured"
+        | "configured_but_none_eligible"
+        | "missing_valuations_present"
+        | "stale_valuations_present"
+        | "locked_sources_present"
+        | "archived_or_closed_sources_present"
       )[];
     };
     MarketLinkedAssetCreationResult: {
@@ -14933,6 +15130,190 @@ export interface operations {
       };
     };
   };
+  listReserveSources: {
+    parameters: {
+      query?: {
+        cursor?: string;
+        limit?: number;
+        sourceKind?: "account" | "asset";
+        configured?: boolean | null;
+        eligible?: boolean | null;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Every account/asset candidate the user owns, with its current classification (if any) and evaluated eligibility */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ReserveSourcePage"];
+        };
+      };
+      /** @description Unauthenticated */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Validation failed */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Internal error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+    };
+  };
+  updateReserveSource: {
+    parameters: {
+      query?: never;
+      header: {
+        "Idempotency-Key": string;
+      };
+      path: {
+        sourceKind: "account" | "asset";
+        sourceId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        "application/json": {
+          /** @enum {string} */
+          liquidityTier: "instant" | "t_plus_1" | "locked";
+          isIncluded: boolean;
+          eligibleCapMinor?: number;
+          /** Format: date-time */
+          effectiveFrom?: string | null;
+        };
+      };
+    };
+    responses: {
+      /** @description Updated reserve source classification, or idempotent replay */
+      200: {
+        headers: {
+          "Idempotency-Replayed"?: "true";
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ReserveSource"];
+        };
+      };
+      /** @description Unauthenticated */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Source not found for this tenant */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Idempotency key was already used for different request intent */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Validation failed */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Internal error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+    };
+  };
+  getReserves: {
+    parameters: {
+      query?: {
+        asOf?: string | null;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Canonical current reserve totals -- instant/T+1/locked/total eligible -- evaluated fresh from account balances and asset valuations */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ReserveSummary"];
+        };
+      };
+      /** @description Unauthenticated */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Validation failed */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Internal error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+    };
+  };
   createMarketLinkedAsset: {
     parameters: {
       query?: never;
@@ -15473,7 +15854,7 @@ export interface operations {
           quantityMicroUnits?: number;
           /**
            * Format: date-time
-           * @default 2026-08-23T18:56:04.735Z
+           * @default 2026-08-25T16:57:18.282Z
            */
           disposalDate?: string | null;
           quoteOverrideMicroRupeesPerUnit?: number;

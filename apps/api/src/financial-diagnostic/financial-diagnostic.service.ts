@@ -12,6 +12,7 @@ import { CategoryDiagnosticReadService } from "../categories/category-diagnostic
 import { DebtProfileService } from "../financial-profiles/debt-profile.service.js";
 import { FinancialProfileService } from "../financial-profiles/financial-profile.service.js";
 import { ProtectionService } from "../financial-profiles/protection.service.js";
+import { ReserveSourceDiagnosticReadService } from "../financial-safety/reserve-source-diagnostic-read.service.js";
 import { GoalDiagnosticReadService } from "../goals/goal-diagnostic-read.service.js";
 import { SafetyBufferService } from "../safety-buffer/safety-buffer.service.js";
 import { LedgerHistoryDiagnosticReadService } from "../transactions/ledger-history-diagnostic-read.service.js";
@@ -42,7 +43,8 @@ export class FinancialDiagnosticService {
     private readonly profiles: FinancialProfileService,
     private readonly protection: ProtectionService,
     private readonly debts: DebtProfileService,
-    private readonly safetyBuffer: SafetyBufferService
+    private readonly safetyBuffer: SafetyBufferService,
+    private readonly reserveSources: ReserveSourceDiagnosticReadService
   ) {}
 
   async getDiagnostic(userId: string, asOf: Date = new Date()): Promise<FinancialDiagnostic> {
@@ -58,7 +60,8 @@ export class FinancialDiagnosticService {
       financialProfileState,
       protectionState,
       declaredDebts,
-      safetyBufferState
+      safetyBufferState,
+      reserveSourceFacts
     ] = await Promise.all([
       this.accounts.getAccountDiagnosticFacts(userId),
       this.categories.getCategoryDiagnosticFacts(userId),
@@ -68,7 +71,8 @@ export class FinancialDiagnosticService {
       this.profiles.getState(userId, asOf),
       this.protection.getState(userId, asOf),
       this.loadAllActiveDebts(userId),
-      this.safetyBuffer.getState(userId, asOf)
+      this.safetyBuffer.getState(userId, asOf),
+      this.reserveSources.getReserveSourceDiagnosticFacts(userId, asOf)
     ]);
 
     const diagnostic = evaluateFinancialReadiness({
@@ -83,7 +87,8 @@ export class FinancialDiagnosticService {
       categoryFacts,
       ledgerHistoryFacts,
       assetFacts,
-      goalFacts
+      goalFacts,
+      reserveSourceFacts
     });
 
     const parsed = FinancialDiagnosticSchema.parse(diagnostic);

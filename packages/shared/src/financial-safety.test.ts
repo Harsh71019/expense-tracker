@@ -12,7 +12,20 @@ import {
   EssentialBurnQualitySchema,
   EssentialBurnQuerySchema,
   EssentialBurnResponseSchema,
-  type EssentialBurnResponse
+  RESERVE_FORMULA_VERSION,
+  RESERVE_POLICY_VERSION,
+  RESERVE_TIMEZONE,
+  ReserveLimitationKeySchema,
+  ReserveLiquidityTierSchema,
+  ReserveSourceExclusionReasonSchema,
+  ReserveSourceKindSchema,
+  ReserveSourceSchema,
+  ReserveSummaryQuerySchema,
+  ReserveSummarySchema,
+  ListReserveSourcesQuerySchema,
+  UpdateReserveSourceSchema,
+  type EssentialBurnResponse,
+  type ReserveSource
 } from "./financial-safety.js";
 
 const VALID_RESPONSE_FIXTURE: EssentialBurnResponse = {
@@ -294,5 +307,210 @@ describe("financial-safety shared contracts", () => {
     expect(dateQuery.asOf?.toISOString()).toBe("2026-08-18T10:00:00.000Z");
 
     expect(() => EssentialBurnQuerySchema.parse({ asOf: "not-a-date" })).toThrow();
+  });
+});
+
+describe("emergency reserve source shared contracts", () => {
+  const baseConfiguration = {
+    liquidityTier: "instant" as const,
+    isIncluded: true,
+    eligibleCapMinor: null,
+    effectiveFrom: new Date("2026-08-01T00:00:00.000Z"),
+    configuredAt: new Date("2026-08-01T00:00:00.000Z")
+  };
+
+  const validAccountSource: ReserveSource = {
+    sourceKind: "account",
+    sourceId: "11111111-1111-4111-8111-111111111111",
+    displayName: "HDFC Savings",
+    sourceType: "bank",
+    configuration: baseConfiguration,
+    currentValueMinor: 500_000,
+    valuedAt: null,
+    freshness: "not_applicable",
+    eligibleMinor: 500_000,
+    eligibility: "eligible",
+    exclusionReason: "none",
+    isUnavailable: false,
+    lastUpdatedAt: new Date("2026-08-01T00:00:00.000Z")
+  };
+
+  const validAssetSource: ReserveSource = {
+    sourceKind: "asset",
+    sourceId: "22222222-2222-4222-8222-222222222222",
+    displayName: "SBI FD",
+    sourceType: "fixed_deposit",
+    configuration: { ...baseConfiguration, liquidityTier: "t_plus_1" },
+    currentValueMinor: 1_000_000,
+    valuedAt: new Date("2026-08-01T00:00:00.000Z"),
+    freshness: "fresh",
+    eligibleMinor: 1_000_000,
+    eligibility: "eligible",
+    exclusionReason: "none",
+    isUnavailable: false,
+    lastUpdatedAt: new Date("2026-08-01T00:00:00.000Z")
+  };
+
+  it("validates every source kind", () => {
+    for (const kind of ["account", "asset"]) {
+      expect(ReserveSourceKindSchema.parse(kind)).toBe(kind);
+    }
+    expect(() => ReserveSourceKindSchema.parse("liability")).toThrow();
+  });
+
+  it("validates every liquidity tier", () => {
+    for (const tier of ["instant", "t_plus_1", "locked"]) {
+      expect(ReserveLiquidityTierSchema.parse(tier)).toBe(tier);
+    }
+    expect(() => ReserveLiquidityTierSchema.parse("weekly")).toThrow();
+  });
+
+  it("validates every closed exclusion reason and rejects an unknown one", () => {
+    const reasons = [
+      "none",
+      "not_configured",
+      "user_excluded",
+      "locked",
+      "unsupported_account_type",
+      "unsupported_asset_kind",
+      "archived_account",
+      "closed_asset",
+      "missing_valuation",
+      "stale_valuation",
+      "non_positive_value",
+      "cap_results_in_zero",
+      "potential_double_count"
+    ];
+    for (const reason of reasons) {
+      expect(ReserveSourceExclusionReasonSchema.parse(reason)).toBe(reason);
+    }
+    expect(() => ReserveSourceExclusionReasonSchema.parse("bank_holiday")).toThrow();
+  });
+
+  it("validates a valid account source and a valid asset source", () => {
+    expect(ReserveSourceSchema.parse(validAccountSource).sourceKind).toBe("account");
+    expect(ReserveSourceSchema.parse(validAssetSource).sourceKind).toBe("asset");
+  });
+
+  it("rejects a negative eligible cap", () => {
+    expect(() =>
+      UpdateReserveSourceSchema.parse({
+        liquidityTier: "instant",
+        isIncluded: true,
+        eligibleCapMinor: -1
+      })
+    ).toThrow();
+  });
+
+  it("rejects a fractional eligible cap", () => {
+    expect(() =>
+      UpdateReserveSourceSchema.parse({
+        liquidityTier: "instant",
+        isIncluded: true,
+        eligibleCapMinor: 100.5
+      })
+    ).toThrow();
+  });
+
+  it("rejects an unsafe (beyond MAX_SAFE_INTEGER) eligible cap", () => {
+    expect(() =>
+      UpdateReserveSourceSchema.parse({
+        liquidityTier: "instant",
+        isIncluded: true,
+        eligibleCapMinor: Number.MAX_SAFE_INTEGER + 10
+      })
+    ).toThrow();
+  });
+
+  it("rejects a zero eligible cap", () => {
+    expect(() =>
+      UpdateReserveSourceSchema.parse({
+        liquidityTier: "instant",
+        isIncluded: true,
+        eligibleCapMinor: 0
+      })
+    ).toThrow();
+  });
+
+  it("accepts an UpdateReserveSource without a cap", () => {
+    const parsed = UpdateReserveSourceSchema.parse({
+      liquidityTier: "locked",
+      isIncluded: false
+    });
+    expect(parsed.eligibleCapMinor).toBeUndefined();
+  });
+
+  it("rejects an invalid cursor limit below 1 or above 200", () => {
+    expect(() => ListReserveSourcesQuerySchema.parse({ limit: 0 })).toThrow();
+    expect(() => ListReserveSourcesQuerySchema.parse({ limit: 201 })).toThrow();
+  });
+
+  it("defaults the list query limit to 50", () => {
+    expect(ListReserveSourcesQuerySchema.parse({}).limit).toBe(50);
+  });
+
+  it("coerces and rejects malformed asOf dates on the reserve summary query", () => {
+    const parsed = ReserveSummaryQuerySchema.parse({ asOf: "2026-08-18T00:00:00.000Z" });
+    expect(parsed.asOf).toBeInstanceOf(Date);
+    expect(() => ReserveSummaryQuerySchema.parse({ asOf: "not-a-date" })).toThrow();
+  });
+
+  it("rejects an unknown limitation key on the summary", () => {
+    expect(() => ReserveLimitationKeySchema.parse("arbitrary_limitation")).toThrow();
+  });
+
+  it("requires the aggregate's money totals to be safe, non-negative integers", () => {
+    const validSummary = {
+      computedAt: new Date(),
+      asOf: new Date(),
+      sourceThrough: new Date(),
+      formulaVersion: RESERVE_FORMULA_VERSION,
+      policyVersion: RESERVE_POLICY_VERSION,
+      timezone: RESERVE_TIMEZONE,
+      configuredSourceCount: 1,
+      currentlyEligibleSourceCount: 1,
+      instantMinor: 100_000,
+      tPlusOneMinor: 0,
+      totalEligibleMinor: 100_000,
+      lockedMinor: 0,
+      staleExcludedMinor: 0,
+      missingValueSourceCount: 0,
+      staleSourceCount: 0,
+      excludedSourceCount: 0,
+      limitations: []
+    };
+    expect(ReserveSummarySchema.parse(validSummary).totalEligibleMinor).toBe(100_000);
+
+    expect(() => ReserveSummarySchema.parse({ ...validSummary, instantMinor: -1 })).toThrow();
+    expect(() => ReserveSummarySchema.parse({ ...validSummary, instantMinor: 1.5 })).toThrow();
+    expect(() =>
+      ReserveSummarySchema.parse({
+        ...validSummary,
+        instantMinor: Number.MAX_SAFE_INTEGER + 10
+      })
+    ).toThrow();
+  });
+
+  it("rejects a timezone other than the fixed Asia/Kolkata literal", () => {
+    const summary = {
+      computedAt: new Date(),
+      asOf: new Date(),
+      sourceThrough: new Date(),
+      formulaVersion: 1,
+      policyVersion: 1,
+      timezone: "UTC",
+      configuredSourceCount: 0,
+      currentlyEligibleSourceCount: 0,
+      instantMinor: 0,
+      tPlusOneMinor: 0,
+      totalEligibleMinor: 0,
+      lockedMinor: 0,
+      staleExcludedMinor: 0,
+      missingValueSourceCount: 0,
+      staleSourceCount: 0,
+      excludedSourceCount: 0,
+      limitations: []
+    };
+    expect(() => ReserveSummarySchema.parse(summary)).toThrow();
   });
 });

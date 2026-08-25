@@ -8,6 +8,7 @@ import { DeveloperAccessSection } from "./sections/developer-access-section";
 import { IncomeSection } from "./sections/income-section";
 import { ProfileSection } from "./sections/profile-section";
 import { ProtectionSection } from "./sections/protection-section";
+import { ReservesSection } from "./sections/reserves-section";
 import { SettingsTabList } from "./settings-tab-list";
 import { settingsTabFromParam } from "./settings-tabs";
 import type { SettingsTab } from "./settings-tabs";
@@ -25,6 +26,9 @@ async function renderTab(tab: SettingsTab): Promise<ReactNode> {
   }
   if (tab === "protection") {
     return ProtectionSection();
+  }
+  if (tab === "reserves") {
+    return ReservesSection();
   }
   if (tab === "api-keys") {
     return DeveloperAccessSection();

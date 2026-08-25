@@ -5,6 +5,7 @@ import { AccountInsightsRepository } from "../../../src/accounts/account-insight
 import { AccountService } from "../../../src/accounts/account.service.js";
 import { AccountDiagnosticReadService } from "../../../src/accounts/account-diagnostic-read.service.js";
 import { AssetDiagnosticReadService } from "../../../src/assets/asset-diagnostic-read.service.js";
+import { AssetReserveCandidateReadService } from "../../../src/assets/asset-reserve-candidate-read.service.js";
 import { AuditRepository } from "../../../src/audit/audit.repository.js";
 import { CategoryRepository } from "../../../src/categories/category.repository.js";
 import { CategoryDiagnosticReadService } from "../../../src/categories/category-diagnostic-read.service.js";
@@ -17,6 +18,8 @@ import { FinancialProfileRepository } from "../../../src/financial-profiles/fina
 import { FinancialProfileService } from "../../../src/financial-profiles/financial-profile.service.js";
 import { ProtectionRepository } from "../../../src/financial-profiles/protection.repository.js";
 import { ProtectionService } from "../../../src/financial-profiles/protection.service.js";
+import { ReserveSourceDiagnosticReadService } from "../../../src/financial-safety/reserve-source-diagnostic-read.service.js";
+import { ReserveSourceRepository } from "../../../src/financial-safety/reserve-source.repository.js";
 import { GoalDiagnosticReadService } from "../../../src/goals/goal-diagnostic-read.service.js";
 import { ForecastingRepository } from "../../../src/insights/forecasting/forecasting.repository.js";
 import { LiabilityAssetReadService } from "../../../src/assets/liability-asset-read.service.js";
@@ -99,6 +102,14 @@ describe("FinancialDiagnosticService Integration", () => {
       idempotency
     );
 
+    const reserveSourceRepo = new ReserveSourceRepository(db);
+    const assetReserveCandidates = new AssetReserveCandidateReadService(db);
+    const reserveSourceDiagnostic = new ReserveSourceDiagnosticReadService(
+      reserveSourceRepo,
+      accountRepo,
+      assetReserveCandidates
+    );
+
     service = new FinancialDiagnosticService(
       dummyLogger,
       accountDiagnostic,
@@ -109,7 +120,8 @@ describe("FinancialDiagnosticService Integration", () => {
       profileService,
       protectionService,
       debtService,
-      safetyBufferService
+      safetyBufferService,
+      reserveSourceDiagnostic
     );
 
     for (const userId of ["user-a", "user-b", "user-cold"]) {
@@ -129,7 +141,7 @@ describe("FinancialDiagnosticService Integration", () => {
     expect(diagnostic.nextAction).toBe("configure_salary");
     expect(diagnostic.readyCount).toBe(0);
     expect(diagnostic.totalRequiredCount).toBe(6);
-    expect(diagnostic.items.length).toBe(11);
+    expect(diagnostic.items.length).toBe(12);
 
     const salaryItem = diagnostic.items.find((i) => i.key === "salary");
     expect(salaryItem?.status).toBe("missing");

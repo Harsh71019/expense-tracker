@@ -75,7 +75,8 @@ export const ErrorCodes = [
   "portfolio_import.row_not_found",
   "asset_market.quote_unavailable",
   "asset_market.tax_context_unsupported",
-  "asset_market.disposal_context_insufficient"
+  "asset_market.disposal_context_insufficient",
+  "financial_safety.unsupported_reserve_source"
 ] as const;
 
 export type ErrorCode = (typeof ErrorCodes)[number];

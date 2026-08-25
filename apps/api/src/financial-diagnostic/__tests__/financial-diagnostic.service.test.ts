@@ -163,6 +163,15 @@ describe("FinancialDiagnosticService", () => {
     const safetyBufferService = {
       getState: vi.fn().mockResolvedValue(mockSafetyBuffer)
     };
+    const reserveSourceService = {
+      getReserveSourceDiagnosticFacts: vi.fn().mockResolvedValue({
+        hasCandidates: false,
+        configuredSourceCount: 0,
+        currentlyEligibleSourceCount: 0,
+        missingOrStaleConfiguredCount: 0,
+        lastUpdatedAt: null
+      })
+    };
 
     const service = new FinancialDiagnosticService(
       loggerMock,
@@ -175,12 +184,17 @@ describe("FinancialDiagnosticService", () => {
       profileService,
       protectionService,
       debtService,
-      safetyBufferService
+      safetyBufferService,
+      reserveSourceService
     );
 
     const result = await service.getDiagnostic("user-1", ASOF);
 
-    expect(result.items.length).toBe(11);
+    expect(result.items.length).toBe(12);
+    expect(reserveSourceService.getReserveSourceDiagnosticFacts).toHaveBeenCalledWith(
+      "user-1",
+      ASOF
+    );
     expect(accountsService.getAccountDiagnosticFacts).toHaveBeenCalledWith("user-1");
     expect(categoriesService.getCategoryDiagnosticFacts).toHaveBeenCalledWith("user-1");
     expect(ledgerHistoryService.getLedgerHistoryDiagnosticFacts).toHaveBeenCalledWith(
@@ -222,7 +236,8 @@ describe("FinancialDiagnosticService", () => {
       { getState: vi.fn().mockResolvedValue({}) },
       { getState: vi.fn().mockResolvedValue({}) },
       { list: vi.fn().mockResolvedValue({}) },
-      { getState: vi.fn().mockResolvedValue({}) }
+      { getState: vi.fn().mockResolvedValue({}) },
+      { getReserveSourceDiagnosticFacts: vi.fn().mockResolvedValue({}) }
     );
 
     await expect(service.getDiagnostic("user-1", ASOF)).rejects.toThrow("Database connection lost");
@@ -288,111 +303,104 @@ describe("FinancialDiagnosticService", () => {
       loggerMock,
       // @ts-expect-error - mock services for unit testing
       {
-        getAccountDiagnosticFacts: vi
-          .fn()
-          .mockResolvedValue({
-            activeCount: 0,
-            nonCreditCardCount: 0,
-            creditCardCount: 0,
-            creditCardOnly: false,
-            liquidCount: 0,
-            lastUpdatedAt: null
-          })
+        getAccountDiagnosticFacts: vi.fn().mockResolvedValue({
+          activeCount: 0,
+          nonCreditCardCount: 0,
+          creditCardCount: 0,
+          creditCardOnly: false,
+          liquidCount: 0,
+          lastUpdatedAt: null
+        })
       },
       {
-        getCategoryDiagnosticFacts: vi
-          .fn()
-          .mockResolvedValue({
-            activeExpenseCategoryCount: 0,
-            essentialExpenseCategoryCount: 0,
-            totalActiveCategoryCount: 0,
-            lastUpdatedAt: null
-          })
+        getCategoryDiagnosticFacts: vi.fn().mockResolvedValue({
+          activeExpenseCategoryCount: 0,
+          essentialExpenseCategoryCount: 0,
+          totalActiveCategoryCount: 0,
+          lastUpdatedAt: null
+        })
       },
       {
-        getLedgerHistoryDiagnosticFacts: vi
-          .fn()
-          .mockResolvedValue({
-            completeMonthCount: 0,
-            qualifyingTransactionCount: 0,
-            latestExpenseAt: null,
-            oldestExpenseAt: null
-          })
+        getLedgerHistoryDiagnosticFacts: vi.fn().mockResolvedValue({
+          completeMonthCount: 0,
+          qualifyingTransactionCount: 0,
+          latestExpenseAt: null,
+          oldestExpenseAt: null
+        })
       },
       {
-        getAssetDiagnosticFacts: vi
-          .fn()
-          .mockResolvedValue({
-            activeAssetCount: 0,
-            missingValuationCount: 0,
-            staleValuationCount: 0,
-            latestValuationAt: null,
-            hasActiveAssets: false,
-            lastUpdatedAt: null
-          })
+        getAssetDiagnosticFacts: vi.fn().mockResolvedValue({
+          activeAssetCount: 0,
+          missingValuationCount: 0,
+          staleValuationCount: 0,
+          latestValuationAt: null,
+          hasActiveAssets: false,
+          lastUpdatedAt: null
+        })
       },
       {
-        getGoalDiagnosticFacts: vi
-          .fn()
-          .mockResolvedValue({
-            activeGoalCount: 0,
-            targetDatedGoalCount: 0,
-            hasEmergencyFundGoal: false,
-            lastUpdatedAt: null
-          })
+        getGoalDiagnosticFacts: vi.fn().mockResolvedValue({
+          activeGoalCount: 0,
+          targetDatedGoalCount: 0,
+          hasEmergencyFundGoal: false,
+          lastUpdatedAt: null
+        })
       },
       {
-        getState: vi
-          .fn()
-          .mockResolvedValue({
-            configured: false,
-            profile: null,
-            currentSalaryVersion: null,
-            upcomingSalaryVersion: null,
-            suggestedMonthlyWorkMinutes: 9600,
-            asOf: ASOF
-          })
+        getState: vi.fn().mockResolvedValue({
+          configured: false,
+          profile: null,
+          currentSalaryVersion: null,
+          upcomingSalaryVersion: null,
+          suggestedMonthlyWorkMinutes: 9600,
+          asOf: ASOF
+        })
       },
       {
-        getState: vi
-          .fn()
-          .mockResolvedValue({
-            configured: false,
-            currentSnapshot: null,
-            upcomingSnapshot: null,
-            asOf: ASOF,
-            dataQuality: "unavailable",
-            termCover: {
-              state: "not_configured",
-              expiryState: "not_applicable",
-              expiresOn: null,
-              hasIndependentCover: false,
-              hasEmployerCover: false
-            },
-            healthCover: {
-              state: "not_configured",
-              expiryState: "not_applicable",
-              expiresOn: null,
-              hasIndependentCover: false,
-              hasEmployerCover: false
-            },
-            expiringSoonDays: 90,
-            limitations: []
-          })
+        getState: vi.fn().mockResolvedValue({
+          configured: false,
+          currentSnapshot: null,
+          upcomingSnapshot: null,
+          asOf: ASOF,
+          dataQuality: "unavailable",
+          termCover: {
+            state: "not_configured",
+            expiryState: "not_applicable",
+            expiresOn: null,
+            hasIndependentCover: false,
+            hasEmployerCover: false
+          },
+          healthCover: {
+            state: "not_configured",
+            expiryState: "not_applicable",
+            expiresOn: null,
+            hasIndependentCover: false,
+            hasEmployerCover: false
+          },
+          expiringSoonDays: 90,
+          limitations: []
+        })
       },
       debtServiceMock,
       {
-        getState: vi
-          .fn()
-          .mockResolvedValue({
-            isFallback: true,
-            fallbackPolicy: "zero_balance_default",
-            targetMinor: 0,
-            liquidBalanceMinor: 0,
-            bufferGapMinor: 0,
-            bufferSurplusMinor: 0,
-            monthlyEssentialOutflowMinor: 0
-          })
+        getState: vi.fn().mockResolvedValue({
+          isFallback: true,
+          fallbackPolicy: "zero_balance_default",
+          targetMinor: 0,
+          liquidBalanceMinor: 0,
+          bufferGapMinor: 0,
+          bufferSurplusMinor: 0,
+          monthlyEssentialOutflowMinor: 0
+        })
+      },
+      {
+        getReserveSourceDiagnosticFacts: vi.fn().mockResolvedValue({
+          hasCandidates: false,
+          configuredSourceCount: 0,
+          currentlyEligibleSourceCount: 0,
+          missingOrStaleConfiguredCount: 0,
+          lastUpdatedAt: null
+        })
       }
     );
 

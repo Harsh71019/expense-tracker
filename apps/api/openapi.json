@@ -12078,6 +12078,463 @@
           "limitations"
         ]
       },
+      "SafetyEvaluation": {
+        "type": "object",
+        "properties": {
+          "evaluationId": {
+            "type": ["string", "null"],
+            "format": "uuid"
+          },
+          "snapshotStatus": {
+            "type": "string",
+            "enum": ["persisted", "live"]
+          },
+          "computedAt": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "asOf": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "sourceThrough": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "formulaVersion": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "policyVersion": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "inputFingerprint": {
+            "type": "string",
+            "minLength": 1
+          },
+          "quality": {
+            "type": "string",
+            "enum": ["complete", "limited"]
+          },
+          "currentStage": {
+            "type": "string",
+            "enum": ["ground_zero", "building_fortress", "buffer_layer", "wealth_ready"]
+          },
+          "nextAction": {
+            "type": "string",
+            "enum": [
+              "configure_salary",
+              "configure_protection",
+              "review_debts",
+              "review_categories",
+              "review_transactions",
+              "configure_reserves",
+              "refresh_asset_valuations",
+              "configure_safety_buffer",
+              "none"
+            ]
+          },
+          "runway": {
+            "type": "object",
+            "properties": {
+              "availability": {
+                "type": "string",
+                "enum": ["available", "unavailable"]
+              },
+              "unavailableReason": {
+                "type": ["string", "null"],
+                "enum": [
+                  "essential_burn_unavailable",
+                  "essential_burn_zero",
+                  "no_eligible_reserve_source",
+                  "eligible_reserve_zero",
+                  null
+                ]
+              },
+              "tier": {
+                "type": "string",
+                "enum": ["critical", "healthy", "fortified", "unavailable"]
+              },
+              "runwayBasisPoints": {
+                "type": ["integer", "null"],
+                "minimum": 0
+              },
+              "runwayDays": {
+                "type": ["integer", "null"],
+                "minimum": 0
+              },
+              "eligibleReserveMinor": {
+                "type": ["integer", "null"],
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "essentialBurnMinor": {
+                "type": ["integer", "null"],
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "observedCompleteMonthCount": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 3
+              },
+              "policyDaysPerMonth": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "criticalThresholdBasisPoints": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "fortifiedThresholdBasisPoints": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "availability",
+              "unavailableReason",
+              "tier",
+              "runwayBasisPoints",
+              "runwayDays",
+              "eligibleReserveMinor",
+              "essentialBurnMinor",
+              "observedCompleteMonthCount",
+              "policyDaysPerMonth",
+              "criticalThresholdBasisPoints",
+              "fortifiedThresholdBasisPoints"
+            ]
+          },
+          "target": {
+            "type": "object",
+            "properties": {
+              "policyTargetMinor": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "userTargetMinor": {
+                "type": ["integer", "null"],
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "effectiveTargetMinor": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "targetSource": {
+                "type": "string",
+                "enum": ["policy", "user_preference"]
+              },
+              "targetMonths": {
+                "type": ["integer", "null"],
+                "minimum": 1
+              },
+              "currentGapMinor": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "currentSurplusMinor": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "policyTargetMinor",
+              "userTargetMinor",
+              "effectiveTargetMinor",
+              "targetSource",
+              "targetMonths",
+              "currentGapMinor",
+              "currentSurplusMinor"
+            ]
+          },
+          "checks": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string",
+                  "enum": [
+                    "term_protection",
+                    "health_protection",
+                    "high_cost_debt",
+                    "essential_burn",
+                    "emergency_reserves",
+                    "emergency_runway",
+                    "sinking_fund_buffer"
+                  ]
+                },
+                "stage": {
+                  "type": "string",
+                  "enum": ["ground_zero", "building_fortress", "buffer_layer", "wealth_ready"]
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "complete",
+                    "incomplete",
+                    "unknown",
+                    "warning",
+                    "not_applicable",
+                    "not_assessable"
+                  ]
+                },
+                "attention": {
+                  "type": "string",
+                  "enum": ["none", "information", "warning", "blocking"]
+                },
+                "summaryKey": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "evidence": {
+                  "type": "object",
+                  "properties": {
+                    "observedCount": {
+                      "type": ["integer", "null"],
+                      "minimum": 0,
+                      "default": null
+                    },
+                    "requiredCount": {
+                      "type": ["integer", "null"],
+                      "minimum": 0,
+                      "default": null
+                    },
+                    "coverageMinor": {
+                      "type": ["integer", "null"],
+                      "minimum": 0,
+                      "maximum": 9007199254740991,
+                      "default": null
+                    },
+                    "benchmarkMinor": {
+                      "type": ["integer", "null"],
+                      "minimum": 0,
+                      "maximum": 9007199254740991,
+                      "default": null
+                    },
+                    "ratioBps": {
+                      "type": ["integer", "null"],
+                      "minimum": 0,
+                      "default": null
+                    },
+                    "activeDebtCount": {
+                      "type": ["integer", "null"],
+                      "minimum": 0,
+                      "default": null
+                    },
+                    "highCostDebtCount": {
+                      "type": ["integer", "null"],
+                      "minimum": 0,
+                      "default": null
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "limitationKeys": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "action": {
+                  "type": ["string", "null"],
+                  "enum": [
+                    "configure_salary",
+                    "configure_protection",
+                    "review_debts",
+                    "review_categories",
+                    "review_transactions",
+                    "configure_reserves",
+                    "refresh_asset_valuations",
+                    "configure_safety_buffer",
+                    "none",
+                    null
+                  ]
+                }
+              },
+              "required": [
+                "key",
+                "stage",
+                "status",
+                "attention",
+                "summaryKey",
+                "evidence",
+                "limitationKeys",
+                "action"
+              ]
+            }
+          },
+          "limitations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "essentialBurnEvidence": {
+            "type": "object",
+            "properties": {
+              "averageMonthlyEssentialMinor": {
+                "type": ["integer", "null"],
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "observedCompleteMonthCount": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 3
+              },
+              "quality": {
+                "type": "string",
+                "enum": ["unavailable", "limited", "complete"]
+              }
+            },
+            "required": ["averageMonthlyEssentialMinor", "observedCompleteMonthCount", "quality"]
+          },
+          "reserveEvidence": {
+            "type": "object",
+            "properties": {
+              "totalEligibleMinor": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "instantMinor": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "tPlusOneMinor": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "lockedMinor": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "staleExcludedMinor": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "currentlyEligibleSourceCount": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "configuredSourceCount": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "totalEligibleMinor",
+              "instantMinor",
+              "tPlusOneMinor",
+              "lockedMinor",
+              "staleExcludedMinor",
+              "currentlyEligibleSourceCount",
+              "configuredSourceCount"
+            ]
+          },
+          "protectionEvidence": {
+            "type": "object",
+            "properties": {
+              "termCoverState": {
+                "type": "string",
+                "enum": [
+                  "not_configured",
+                  "complete",
+                  "incomplete",
+                  "unknown",
+                  "employer_only",
+                  "none_declared",
+                  "not_applicable"
+                ]
+              },
+              "healthCoverState": {
+                "type": "string",
+                "enum": [
+                  "not_configured",
+                  "complete",
+                  "incomplete",
+                  "unknown",
+                  "employer_only",
+                  "none_declared",
+                  "not_applicable"
+                ]
+              },
+              "incomeBasis": {
+                "type": "string",
+                "enum": ["annual_ctc", "annualized_net_income", "unknown"]
+              },
+              "incomeBasisQuality": {
+                "type": "string",
+                "enum": ["confirmed", "estimated", "unavailable"]
+              },
+              "termBenchmarkMinor": {
+                "type": ["integer", "null"],
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "healthBenchmarkMinor": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "termCoverState",
+              "healthCoverState",
+              "incomeBasis",
+              "incomeBasisQuality",
+              "termBenchmarkMinor",
+              "healthBenchmarkMinor"
+            ]
+          },
+          "debtEvidence": {
+            "type": "object",
+            "properties": {
+              "activeDebtCount": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "highCostDebtCount": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": ["activeDebtCount", "highCostDebtCount"]
+          }
+        },
+        "required": [
+          "evaluationId",
+          "snapshotStatus",
+          "computedAt",
+          "asOf",
+          "sourceThrough",
+          "formulaVersion",
+          "policyVersion",
+          "inputFingerprint",
+          "quality",
+          "currentStage",
+          "nextAction",
+          "runway",
+          "target",
+          "checks",
+          "limitations",
+          "essentialBurnEvidence",
+          "reserveEvidence",
+          "protectionEvidence",
+          "debtEvidence"
+        ]
+      },
       "MarketLinkedAssetCreationResult": {
         "type": "object",
         "properties": {
@@ -26126,6 +26583,177 @@
         }
       }
     },
+    "/v1/financial-safety/evaluation": {
+      "get": {
+        "operationId": "getSafetyEvaluation",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": ["string", "null"],
+              "format": "date-time"
+            },
+            "required": false,
+            "name": "asOf",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Composed Safety Evaluation and runway. Returns a matching persisted snapshot when one exists for the current inputs, otherwise a live result with evaluationId null. Never mutates state.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SafetyEvaluation"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/financial-safety/evaluations/refresh": {
+      "post": {
+        "operationId": "refreshSafetyEvaluation",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "Idempotency-Key",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "asOf": {
+                    "type": ["string", "null"],
+                    "format": "date-time"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Idempotent replay of the refreshed Safety Evaluation",
+            "headers": {
+              "Idempotency-Replayed": {
+                "schema": {
+                  "type": "string",
+                  "enum": ["true"]
+                },
+                "required": true
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SafetyEvaluation"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Persisted a new immutable Safety Evaluation, or returned the existing one matching identical inputs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SafetyEvaluation"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Idempotency key was already used for different request intent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/assets/market-linked": {
       "post": {
         "operationId": "createMarketLinkedAsset",
@@ -27168,7 +27796,7 @@
                   "disposalDate": {
                     "type": ["string", "null"],
                     "format": "date-time",
-                    "default": "2026-08-25T16:57:18.282Z"
+                    "default": "2026-08-26T02:10:31.260Z"
                   },
                   "quoteOverrideMicroRupeesPerUnit": {
                     "type": "integer",

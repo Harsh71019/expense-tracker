@@ -42,7 +42,9 @@ vi.mock("@/features/financial-profile", () => ({
 }));
 vi.mock("@/features/financial-safety", () => ({
   EssentialBurnCard: ({ initialData }: { initialData: unknown }) =>
-    initialData ? <div>Essential Monthly Burn Card</div> : null
+    initialData ? <div>Essential Monthly Burn Card</div> : null,
+  SafetyStatusPanel: ({ initialData }: { initialData: unknown }) =>
+    initialData ? <div>Safety Status Panel</div> : null
 }));
 
 const stats: DashboardStats = {

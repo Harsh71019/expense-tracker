@@ -18,8 +18,13 @@ import { FinancialProfileRepository } from "../../../src/financial-profiles/fina
 import { FinancialProfileService } from "../../../src/financial-profiles/financial-profile.service.js";
 import { ProtectionRepository } from "../../../src/financial-profiles/protection.repository.js";
 import { ProtectionService } from "../../../src/financial-profiles/protection.service.js";
+import { EssentialBurnRepository } from "../../../src/financial-safety/essential-burn.repository.js";
+import { EssentialBurnService } from "../../../src/financial-safety/essential-burn.service.js";
 import { ReserveSourceDiagnosticReadService } from "../../../src/financial-safety/reserve-source-diagnostic-read.service.js";
 import { ReserveSourceRepository } from "../../../src/financial-safety/reserve-source.repository.js";
+import { ReserveValueService } from "../../../src/financial-safety/reserve-value.service.js";
+import { SafetyEvaluationRepository } from "../../../src/financial-safety/safety-evaluation.repository.js";
+import { SafetyEvaluationService } from "../../../src/financial-safety/safety-evaluation.service.js";
 import { GoalDiagnosticReadService } from "../../../src/goals/goal-diagnostic-read.service.js";
 import { ForecastingRepository } from "../../../src/insights/forecasting/forecasting.repository.js";
 import { LiabilityAssetReadService } from "../../../src/assets/liability-asset-read.service.js";
@@ -110,6 +115,28 @@ describe("FinancialDiagnosticService Integration", () => {
       assetReserveCandidates
     );
 
+    const essentialBurnService = new EssentialBurnService(
+      dummyLogger,
+      new EssentialBurnRepository(db)
+    );
+    const reserveValueService = new ReserveValueService(
+      dummyLogger,
+      reserveSourceRepo,
+      accountRepo,
+      assetReserveCandidates
+    );
+    const safetyEvaluationService = new SafetyEvaluationService(
+      dummyLogger,
+      essentialBurnService,
+      reserveValueService,
+      protectionService,
+      profileService,
+      debtService,
+      safetyBufferService,
+      new SafetyEvaluationRepository(db),
+      idempotency
+    );
+
     service = new FinancialDiagnosticService(
       dummyLogger,
       accountDiagnostic,
@@ -121,7 +148,8 @@ describe("FinancialDiagnosticService Integration", () => {
       protectionService,
       debtService,
       safetyBufferService,
-      reserveSourceDiagnostic
+      reserveSourceDiagnostic,
+      safetyEvaluationService
     );
 
     for (const userId of ["user-a", "user-b", "user-cold"]) {

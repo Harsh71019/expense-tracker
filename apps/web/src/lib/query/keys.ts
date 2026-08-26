@@ -104,6 +104,9 @@ export const qk = {
   ) => [...financialSafetyRoot, "reserve-sources", "list", filters] as const,
   reserveSummary: (asOf?: string) =>
     [...financialSafetyRoot, "reserves", asOf ?? "latest"] as const,
+  safetyEvaluations: () => [...financialSafetyRoot, "evaluation"] as const,
+  safetyEvaluation: (asOf?: string) =>
+    [...financialSafetyRoot, "evaluation", asOf ?? "latest"] as const,
   salaryStatistics: () => [...financialProfileRoot, "salary-statistics"] as const,
   salaryVersions: (limit: number) =>
     [...financialProfileRoot, "salary-versions", { limit }] as const,

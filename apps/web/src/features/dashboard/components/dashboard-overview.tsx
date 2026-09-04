@@ -80,7 +80,10 @@ export function DashboardOverview({
 
       <SafetyStatusPanel initialData={initialSafetyEvaluation} />
 
-      <DataReadinessPanel initialDiagnostic={initialDiagnostic} />
+      <DataReadinessPanel
+        initialDiagnostic={initialDiagnostic}
+        showAction={!initialSafetyEvaluation || initialSafetyEvaluation.nextAction === "none"}
+      />
 
       <EssentialBurnCard initialData={initialEssentialBurn} />
 

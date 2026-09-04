@@ -99,3 +99,42 @@ export function criticalMarkerRatio(runway: SafetyRunway): number {
 export function formatRunwayDays(runwayDays: number): string {
   return runwayDays === 1 ? "1 day" : `${runwayDays} days`;
 }
+
+const LIMITATION_KEY_COPY: Readonly<Record<string, string>> = {
+  "term_protection.not_configured": "Term life protection is not configured",
+  "term_protection.none_declared": "No independent term cover is declared",
+  "term_protection.employer_only": "Only employer-provided term cover is declared",
+  "term_protection.amount_missing": "Term cover amount has not been recorded",
+  "term_protection.expired": "The term life policy has expired",
+  "term_protection.below_minimum": "Term cover is below the 10x annual income benchmark",
+  "term_protection.expiring_soon": "Term cover is expiring within 90 days",
+  "health_protection.not_configured": "Health protection is not configured",
+  "health_protection.none_declared": "No independent health cover is declared",
+  "health_protection.employer_only": "Only employer-provided health cover is declared",
+  "health_protection.amount_missing": "Health cover amount has not been recorded",
+  "health_protection.expired": "The health policy has expired",
+  "health_protection.below_minimum": "Health cover is below the ₹15,00,000 benchmark",
+  "health_protection.expiring_soon": "Health cover is expiring within 90 days",
+  "debt.high_cost_present": "Active debts with interest rates above the high-cost threshold remain",
+  "burn.unavailable": "Essential burn history is unavailable",
+  "burn.limited": "Essential burn is based on limited expense history",
+  "reserve.no_sources_configured": "No emergency reserve sources are configured",
+  "reserve.configured_but_none_eligible":
+    "Configured reserve sources exist, but none are currently eligible",
+  "reserve.stale_or_missing_present": "Eligible reserves contain stale or missing valuations",
+  "runway.essential_burn_unavailable": "Essential burn has not been calculated yet",
+  "runway.essential_burn_zero": "Essential burn is zero",
+  "runway.no_eligible_reserve_source": "No eligible emergency reserve sources are configured",
+  "runway.eligible_reserve_zero": "Classified emergency reserves total zero",
+  "runway.below_target": "Runway is below your target",
+  "sinking_fund.not_assessable": "Sinking funds are not yet assessable",
+  current_category_metadata_in_use: "Using current category metadata classification"
+};
+
+/** Formats a machine limitation key into an accessible, user-facing explanation. */
+export function formatLimitationKey(key: string): string {
+  const mapped = LIMITATION_KEY_COPY[key];
+  if (mapped !== undefined) return mapped;
+  const cleaned = key.replace(/[._]/g, " ").trim();
+  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+}

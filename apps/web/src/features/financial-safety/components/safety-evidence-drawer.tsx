@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 
 import { Money } from "@/components/ui/money";
 import { DialogSurface } from "@/components/ui/dialog";
+import { formatLimitationKey } from "../model/runway-presentation";
 
 export interface SafetyEvidenceDrawerProps {
   readonly open: boolean;
@@ -52,7 +53,8 @@ export function SafetyEvidenceDrawer({
           </h2>
           <p id="safety-evidence-description" className="mt-0.5 text-xs text-foreground-muted">
             Computed{" "}
-            {evaluation.computedAt.toLocaleDateString("en-IN", {
+            {new Date(evaluation.computedAt).toLocaleDateString("en-IN", {
+              timeZone: "Asia/Kolkata",
               day: "numeric",
               month: "short",
               year: "numeric",
@@ -60,7 +62,8 @@ export function SafetyEvidenceDrawer({
               minute: "2-digit"
             })}{" "}
             · source through{" "}
-            {evaluation.sourceThrough.toLocaleDateString("en-IN", {
+            {new Date(evaluation.sourceThrough).toLocaleDateString("en-IN", {
+              timeZone: "Asia/Kolkata",
               day: "numeric",
               month: "short",
               year: "numeric"
@@ -282,7 +285,7 @@ export function SafetyEvidenceDrawer({
             </h3>
             <ul className="mt-2 list-disc space-y-0.5 pl-4 text-2xs text-foreground-muted">
               {evaluation.limitations.map((key) => (
-                <li key={key}>{key}</li>
+                <li key={key}>{formatLimitationKey(key)}</li>
               ))}
             </ul>
           </section>

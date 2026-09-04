@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   criticalMarkerRatio,
+  formatLimitationKey,
   formatRunwayDays,
   formatRunwayMonths,
   getRunwayTierCopy,
@@ -113,5 +114,21 @@ describe("getRunwayUnavailableCopy", () => {
 
   it("falls back to a generic message for a null reason", () => {
     expect(getRunwayUnavailableCopy(null)).toBeTruthy();
+  });
+});
+
+describe("formatLimitationKey", () => {
+  it("maps known limitation keys to human-friendly descriptions", () => {
+    expect(formatLimitationKey("reserve.stale_or_missing_present")).toBe(
+      "Eligible reserves contain stale or missing valuations"
+    );
+    expect(formatLimitationKey("term_protection.expired")).toBe("The term life policy has expired");
+    expect(formatLimitationKey("runway.below_target")).toBe("Runway is below your target");
+  });
+
+  it("formats unknown limitation keys cleanly without underscores or dots", () => {
+    expect(formatLimitationKey("custom_limitation_key.sub_item")).toBe(
+      "Custom limitation key sub item"
+    );
   });
 });

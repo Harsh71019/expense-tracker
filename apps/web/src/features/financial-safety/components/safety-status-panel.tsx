@@ -7,6 +7,7 @@ import type { ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "@/lib/toast";
 import { useRefreshSafetyEvaluation } from "../hooks/use-refresh-safety-evaluation";
 import { useSafetyEvaluation } from "../hooks/use-safety-evaluation";
 import { getSafetyActionConfig } from "../model/safety-actions";
@@ -101,7 +102,15 @@ export function SafetyStatusPanel({
             disabled={refresh.isPending}
             onClick={() => {
               refresh.mutate(undefined, {
-                onSuccess: () => setAnnouncement("Safety evaluation refreshed.")
+                onSuccess: () => {
+                  setAnnouncement("Safety evaluation refreshed.");
+                  toast.success("Safety evaluation refreshed.");
+                },
+                onError: (err) => {
+                  const message =
+                    err instanceof Error ? err.message : "Failed to refresh safety evaluation.";
+                  toast.error(message);
+                }
               });
             }}
           >
@@ -121,7 +130,7 @@ export function SafetyStatusPanel({
         </p>
       ) : null}
 
-      <RunwayClock evaluation={data} />
+      <RunwayClock evaluation={data} showNextAction={false} />
 
       {nextActionConfig ? (
         <div className="rounded-2xl border border-accent/30 bg-accent-glow p-4">

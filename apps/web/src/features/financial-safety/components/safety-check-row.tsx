@@ -19,6 +19,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { Badge } from "@/components/ui/badge";
+import { formatLimitationKey } from "../model/runway-presentation";
 import { getSafetyActionConfig } from "../model/safety-actions";
 
 const CHECK_TITLES: Record<SafetyCheckKey, string> = {
@@ -173,7 +174,7 @@ export function SafetyCheckRow({ check }: SafetyCheckRowProps): ReactNode {
       {check.limitationKeys.length > 0 ? (
         <ul className="mt-2 list-disc space-y-0.5 pl-8 text-2xs text-foreground-muted">
           {check.limitationKeys.map((key) => (
-            <li key={key}>{key}</li>
+            <li key={key}>{formatLimitationKey(key)}</li>
           ))}
         </ul>
       ) : null}

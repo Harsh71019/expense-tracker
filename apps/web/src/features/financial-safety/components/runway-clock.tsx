@@ -19,6 +19,7 @@ import { SafetyNextAction } from "./safety-next-action";
 
 export interface RunwayClockProps {
   readonly evaluation: SafetyEvaluation;
+  readonly showNextAction?: boolean;
 }
 
 /**
@@ -31,7 +32,7 @@ export interface RunwayClockProps {
  * and a written description, and the fill bar has a full text equivalent
  * below it for screen readers and narrow layouts alike.
  */
-export function RunwayClock({ evaluation }: RunwayClockProps): ReactNode {
+export function RunwayClock({ evaluation, showNextAction = true }: RunwayClockProps): ReactNode {
   const { runway, quality } = evaluation;
   const tierCopy = getRunwayTierCopy(runway.tier);
 
@@ -47,7 +48,7 @@ export function RunwayClock({ evaluation }: RunwayClockProps): ReactNode {
         <p className="mt-1 text-xs text-foreground-muted">
           {getRunwayUnavailableCopy(runway.unavailableReason)}
         </p>
-        {action ? (
+        {showNextAction && action ? (
           <div className="mt-4">
             <SafetyNextAction action={action} />
           </div>

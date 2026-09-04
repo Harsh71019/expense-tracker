@@ -69,6 +69,7 @@ export {
   getRunwayUnavailableCopy,
   formatRunwayMonths,
   formatRunwayDays,
+  formatLimitationKey,
   runwayGeometryRatio,
   criticalMarkerRatio,
   type RunwayTierCopy

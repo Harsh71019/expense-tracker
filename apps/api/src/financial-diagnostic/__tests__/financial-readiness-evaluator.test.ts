@@ -1,7 +1,9 @@
 import {
+  SAFETY_MIN_HEALTH_COVER_MINOR,
   type FinancialProfileState,
   type ProtectionState,
   type SafetyBufferState,
+  type SafetyEvaluation,
   type DeclaredDebtPage
 } from "@treasury-ops/shared";
 import { describe, expect, it } from "vitest";
@@ -124,6 +126,70 @@ function createFixture(overrides: Partial<ReadinessEvaluatorInput> = {}): Readin
     lastUpdatedAt: null
   };
 
+  const safetyEvaluation: SafetyEvaluation = {
+    evaluationId: null,
+    snapshotStatus: "live",
+    computedAt: COMPUTED_AT,
+    asOf: ASOF,
+    sourceThrough: ASOF,
+    formulaVersion: 1,
+    policyVersion: 1,
+    inputFingerprint: "fixture-fingerprint",
+    quality: "limited",
+    currentStage: "ground_zero",
+    nextAction: "configure_salary",
+    runway: {
+      availability: "unavailable",
+      unavailableReason: "essential_burn_unavailable",
+      tier: "unavailable",
+      runwayBasisPoints: null,
+      runwayDays: null,
+      eligibleReserveMinor: 0,
+      essentialBurnMinor: null,
+      observedCompleteMonthCount: 0,
+      policyDaysPerMonth: 30,
+      criticalThresholdBasisPoints: 30_000,
+      fortifiedThresholdBasisPoints: 60_000
+    },
+    target: {
+      policyTargetMinor: 0,
+      userTargetMinor: null,
+      effectiveTargetMinor: 0,
+      targetSource: "policy",
+      targetMonths: 6,
+      currentGapMinor: 0,
+      currentSurplusMinor: 0
+    },
+    checks: [],
+    limitations: [],
+    essentialBurnEvidence: {
+      averageMonthlyEssentialMinor: null,
+      observedCompleteMonthCount: 0,
+      quality: "unavailable"
+    },
+    reserveEvidence: {
+      totalEligibleMinor: 0,
+      instantMinor: 0,
+      tPlusOneMinor: 0,
+      lockedMinor: 0,
+      staleExcludedMinor: 0,
+      currentlyEligibleSourceCount: 0,
+      configuredSourceCount: 0
+    },
+    protectionEvidence: {
+      termCoverState: "not_configured",
+      healthCoverState: "not_configured",
+      incomeBasis: "unknown",
+      incomeBasisQuality: "unavailable",
+      termBenchmarkMinor: null,
+      healthBenchmarkMinor: SAFETY_MIN_HEALTH_COVER_MINOR
+    },
+    debtEvidence: {
+      activeDebtCount: 0,
+      highCostDebtCount: 0
+    }
+  };
+
   return {
     userId: "test-user",
     asOf: ASOF,
@@ -138,6 +204,7 @@ function createFixture(overrides: Partial<ReadinessEvaluatorInput> = {}): Readin
     assetFacts,
     goalFacts,
     reserveSourceFacts,
+    safetyEvaluation,
     ...overrides
   };
 }
@@ -151,7 +218,7 @@ describe("evaluateFinancialReadiness pure evaluator", () => {
     expect(result.readyCount).toBe(0);
     expect(result.totalRequiredCount).toBe(6);
     expect(result.nextAction).toBe("configure_salary");
-    expect(result.availableCapabilities).toEqual([]);
+    expect(result.availableCapabilities).toEqual(["safety_ladder"]);
     expect(result.unavailableCapabilities).toContain("salary_statistics");
     expect(result.unavailableCapabilities).toContain("life_hour");
     expect(result.unavailableCapabilities).toContain("essential_burn");
@@ -572,7 +639,70 @@ describe("evaluateFinancialReadiness pure evaluator", () => {
         currentlyEligibleSourceCount: 2,
         missingOrStaleConfiguredCount: 0,
         lastUpdatedAt: ASOF
-      }
+      },
+      safetyEvaluation: {
+        evaluationId: "55555555-5555-4555-8555-555555555555",
+        snapshotStatus: "persisted",
+        computedAt: ASOF,
+        asOf: ASOF,
+        sourceThrough: ASOF,
+        formulaVersion: 1,
+        policyVersion: 1,
+        inputFingerprint: "fixture-fingerprint-ready",
+        quality: "complete",
+        currentStage: "buffer_layer",
+        nextAction: "none",
+        runway: {
+          availability: "available",
+          unavailableReason: null,
+          tier: "fortified",
+          runwayBasisPoints: 90_000,
+          runwayDays: 270,
+          eligibleReserveMinor: 45_00_000,
+          essentialBurnMinor: 5_00_000,
+          observedCompleteMonthCount: 3,
+          policyDaysPerMonth: 30,
+          criticalThresholdBasisPoints: 30_000,
+          fortifiedThresholdBasisPoints: 60_000
+        },
+        target: {
+          policyTargetMinor: 30_00_000,
+          userTargetMinor: 5_000_000,
+          effectiveTargetMinor: 5_000_000,
+          targetSource: "user_preference",
+          targetMonths: null,
+          currentGapMinor: 0,
+          currentSurplusMinor: 40_00_000
+        },
+        checks: [],
+        limitations: [],
+        essentialBurnEvidence: {
+          averageMonthlyEssentialMinor: 5_00_000,
+          observedCompleteMonthCount: 3,
+          quality: "complete"
+        },
+        reserveEvidence: {
+          totalEligibleMinor: 45_00_000,
+          instantMinor: 45_00_000,
+          tPlusOneMinor: 0,
+          lockedMinor: 0,
+          staleExcludedMinor: 0,
+          currentlyEligibleSourceCount: 2,
+          configuredSourceCount: 2
+        },
+        protectionEvidence: {
+          termCoverState: "complete",
+          healthCoverState: "complete",
+          incomeBasis: "annualized_net_income",
+          incomeBasisQuality: "estimated",
+          termBenchmarkMinor: 1_80_00_000,
+          healthBenchmarkMinor: SAFETY_MIN_HEALTH_COVER_MINOR
+        },
+        debtEvidence: {
+          activeDebtCount: 0,
+          highCostDebtCount: 0
+        }
+      } satisfies SafetyEvaluation
     });
 
     const result = evaluateFinancialReadiness(input);
@@ -584,6 +714,8 @@ describe("evaluateFinancialReadiness pure evaluator", () => {
     expect(result.availableCapabilities).toContain("life_hour");
     expect(result.availableCapabilities).toContain("essential_burn");
     expect(result.availableCapabilities).toContain("goal_feasibility");
+    expect(result.availableCapabilities).toContain("financial_runway");
+    expect(result.availableCapabilities).toContain("safety_ladder");
     expect(result.nextAction).toBeNull();
   });
 
@@ -661,5 +793,69 @@ describe("evaluateFinancialReadiness pure evaluator", () => {
     const result = evaluateFinancialReadiness(input);
     expect(result.unavailableCapabilities).toContain("financial_runway");
     expect(result.availableCapabilities).not.toContain("financial_runway");
+  });
+
+  it("makes safety_ladder available even when its checks fail financially", () => {
+    const input = createFixture();
+    const result = evaluateFinancialReadiness(input);
+    expect(result.availableCapabilities).toContain("safety_ladder");
+  });
+
+  it("prefers the Safety Evaluation's next action once diagnostic scaffolding is ready", () => {
+    const input = createFixture({
+      financialProfileState: {
+        configured: true,
+        profile: {
+          userId: "test-user",
+          monthlyWorkMinutes: 9600,
+          salaryCreditDay: 1,
+          expectedAnnualIncrementBps: null,
+          incomeStability: "stable",
+          createdAt: ASOF,
+          updatedAt: ASOF
+        },
+        currentSalaryVersion: {
+          id: "11111111-1111-4111-8111-111111111111",
+          userId: "test-user",
+          netMonthlySalaryMinor: 15_00_000,
+          annualCtcMinor: null,
+          effectiveFrom: new Date("2026-04-01T00:00:00.000Z"),
+          source: "manually_confirmed",
+          createdAt: ASOF
+        },
+        upcomingSalaryVersion: null,
+        suggestedMonthlyWorkMinutes: 9600,
+        asOf: ASOF
+      },
+      accountFacts: {
+        activeCount: 1,
+        nonCreditCardCount: 1,
+        creditCardCount: 0,
+        creditCardOnly: false,
+        liquidCount: 1,
+        lastUpdatedAt: ASOF
+      },
+      categoryFacts: {
+        activeExpenseCategoryCount: 3,
+        essentialExpenseCategoryCount: 2,
+        totalActiveCategoryCount: 4,
+        lastUpdatedAt: ASOF
+      },
+      ledgerHistoryFacts: {
+        completeMonthCount: 3,
+        qualifyingTransactionCount: 25,
+        latestExpenseAt: new Date("2026-08-05T00:00:00.000Z"),
+        oldestExpenseAt: new Date("2026-05-01T00:00:00.000Z"),
+        months: ["2026-05", "2026-06", "2026-07"],
+        hasCurrentMonthExpenses: true
+      },
+      safetyEvaluation: {
+        ...createFixture().safetyEvaluation,
+        nextAction: "review_debts"
+      }
+    });
+
+    const result = evaluateFinancialReadiness(input);
+    expect(result.nextAction).toBe("review_debts");
   });
 });

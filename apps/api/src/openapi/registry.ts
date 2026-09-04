@@ -197,6 +197,9 @@ import {
   ReserveSummaryQuerySchema,
   ReserveSummarySchema,
   UpdateReserveSourceSchema,
+  SafetyEvaluationQuerySchema,
+  SafetyEvaluationRefreshRequestSchema,
+  SafetyEvaluationSchema,
   CreateReceivableCorrectionSchema,
   CreateReceivableSchema,
   ListReceivableEventsQuerySchema,
@@ -353,6 +356,7 @@ const EssentialBurnResponse = EssentialBurnResponseSchema.meta({ id: "EssentialB
 const ReserveSource = ReserveSourceSchema.meta({ id: "ReserveSource" });
 const ReserveSourcePage = ReserveSourcePageSchema.meta({ id: "ReserveSourcePage" });
 const ReserveSummary = ReserveSummarySchema.meta({ id: "ReserveSummary" });
+const SafetyEvaluation = SafetyEvaluationSchema.meta({ id: "SafetyEvaluation" });
 const AssetFundingMutationResult = AssetFundingMutationResultSchema.meta({
   id: "AssetFundingMutationResult"
 });
@@ -2692,6 +2696,44 @@ registry.registerPath({
         "Canonical current reserve totals -- instant/T+1/locked/total eligible -- evaluated fresh from account balances and asset valuations",
       ...json(ReserveSummary)
     },
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "get",
+  path: "/v1/financial-safety/evaluation",
+  operationId: "getSafetyEvaluation",
+  security: secured,
+  request: { query: SafetyEvaluationQuerySchema },
+  responses: {
+    200: {
+      description:
+        "Composed Safety Evaluation and runway. Returns a matching persisted snapshot when one exists for the current inputs, otherwise a live result with evaluationId null. Never mutates state.",
+      ...json(SafetyEvaluation)
+    },
+    ...problemResponses
+  }
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/v1/financial-safety/evaluations/refresh",
+  operationId: "refreshSafetyEvaluation",
+  security: secured,
+  request: { body: json(SafetyEvaluationRefreshRequestSchema), headers: idempotencyKeyHeaders },
+  responses: {
+    200: {
+      description: "Idempotent replay of the refreshed Safety Evaluation",
+      headers: replayedHeaders,
+      ...json(SafetyEvaluation)
+    },
+    201: {
+      description:
+        "Persisted a new immutable Safety Evaluation, or returned the existing one matching identical inputs",
+      ...json(SafetyEvaluation)
+    },
+    ...idempotencyConflictResponse,
     ...problemResponses
   }
 });

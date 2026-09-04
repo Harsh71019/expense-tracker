@@ -172,6 +172,12 @@ describe("FinancialDiagnosticService", () => {
         lastUpdatedAt: null
       })
     };
+    const safetyEvaluationService = {
+      getEvaluation: vi.fn().mockResolvedValue({
+        nextAction: "configure_salary",
+        runway: { availability: "unavailable" }
+      })
+    };
 
     const service = new FinancialDiagnosticService(
       loggerMock,
@@ -185,7 +191,8 @@ describe("FinancialDiagnosticService", () => {
       protectionService,
       debtService,
       safetyBufferService,
-      reserveSourceService
+      reserveSourceService,
+      safetyEvaluationService
     );
 
     const result = await service.getDiagnostic("user-1", ASOF);
@@ -207,6 +214,7 @@ describe("FinancialDiagnosticService", () => {
     expect(protectionService.getState).toHaveBeenCalledWith("user-1", ASOF);
     expect(debtService.list).toHaveBeenCalledWith("user-1", { status: "active", limit: 200 });
     expect(safetyBufferService.getState).toHaveBeenCalledWith("user-1", ASOF);
+    expect(safetyEvaluationService.getEvaluation).toHaveBeenCalledWith("user-1", ASOF);
 
     expect(loggerMock.log).toHaveBeenCalled();
     const firstCall = loggerMock.log.mock.calls[0];
@@ -237,7 +245,8 @@ describe("FinancialDiagnosticService", () => {
       { getState: vi.fn().mockResolvedValue({}) },
       { list: vi.fn().mockResolvedValue({}) },
       { getState: vi.fn().mockResolvedValue({}) },
-      { getReserveSourceDiagnosticFacts: vi.fn().mockResolvedValue({}) }
+      { getReserveSourceDiagnosticFacts: vi.fn().mockResolvedValue({}) },
+      { getEvaluation: vi.fn().mockResolvedValue({}) }
     );
 
     await expect(service.getDiagnostic("user-1", ASOF)).rejects.toThrow("Database connection lost");
@@ -400,6 +409,12 @@ describe("FinancialDiagnosticService", () => {
           currentlyEligibleSourceCount: 0,
           missingOrStaleConfiguredCount: 0,
           lastUpdatedAt: null
+        })
+      },
+      {
+        getEvaluation: vi.fn().mockResolvedValue({
+          nextAction: "configure_salary",
+          runway: { availability: "unavailable" }
         })
       }
     );

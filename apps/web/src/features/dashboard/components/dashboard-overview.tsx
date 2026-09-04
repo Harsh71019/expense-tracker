@@ -9,6 +9,7 @@ import type {
   EssentialBurnResponse,
   MonthlySpending,
   RecurringForecast,
+  SafetyEvaluation,
   SpendMix,
   TopSpendingItem
 } from "@treasury-ops/shared";
@@ -16,7 +17,7 @@ import type { ReactNode } from "react";
 
 import { BudgetDashboardPanel } from "@/features/budgets";
 import { DataReadinessPanel } from "@/features/financial-profile";
-import { EssentialBurnCard } from "@/features/financial-safety";
+import { EssentialBurnCard, SafetyStatusPanel } from "@/features/financial-safety";
 
 import { useInvestments } from "../hooks/use-investments";
 import { useMonthlySpending } from "../hooks/use-monthly-spending";
@@ -41,6 +42,7 @@ type DashboardOverviewProps = Readonly<{
   initialBudgets: BudgetPage | null;
   initialDiagnostic?: FinancialDiagnostic | null;
   initialEssentialBurn?: EssentialBurnResponse | null;
+  initialSafetyEvaluation?: SafetyEvaluation | null;
 }>;
 
 export function DashboardOverview({
@@ -53,7 +55,8 @@ export function DashboardOverview({
   initialInvestments,
   initialBudgets,
   initialDiagnostic = null,
-  initialEssentialBurn = null
+  initialEssentialBurn = null,
+  initialSafetyEvaluation = null
 }: DashboardOverviewProps): ReactNode {
   const statsQuery = useStats(initialStats);
   const monthlySpendingQuery = useMonthlySpending(initialMonthlySpending);
@@ -75,7 +78,12 @@ export function DashboardOverview({
         </div>
       </header>
 
-      <DataReadinessPanel initialDiagnostic={initialDiagnostic} />
+      <SafetyStatusPanel initialData={initialSafetyEvaluation} />
+
+      <DataReadinessPanel
+        initialDiagnostic={initialDiagnostic}
+        showAction={!initialSafetyEvaluation || initialSafetyEvaluation.nextAction === "none"}
+      />
 
       <EssentialBurnCard initialData={initialEssentialBurn} />
 

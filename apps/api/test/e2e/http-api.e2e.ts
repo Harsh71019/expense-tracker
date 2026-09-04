@@ -39,6 +39,7 @@ import {
   ReserveSourceSchema,
   ReserveSourcePageSchema,
   ReserveSummarySchema,
+  SafetyEvaluationSchema,
   NetWorthSchema,
   ReceivableEventPageSchema,
   ReceivableMutationResultSchema,
@@ -1294,6 +1295,96 @@ describe("production HTTP composition", () => {
       ReserveSourcePageSchema
     );
     expect(foreignPage.items.some((item) => item.sourceId === account.id)).toBe(false);
+  });
+
+  it("serves the safety evaluation and refresh endpoints with idempotency, tenancy, and validation boundaries", async () => {
+    const unauthenticatedGet = await fetch(`${baseUrl}/api/v1/financial-safety/evaluation`);
+    expect(unauthenticatedGet.status).toBe(401);
+
+    const unauthenticatedRefresh = await fetch(
+      `${baseUrl}/api/v1/financial-safety/evaluations/refresh`,
+      { method: "POST", headers: JSON_HEADERS }
+    );
+    expect(unauthenticatedRefresh.status).toBe(401);
+
+    // sessionB has no essential-burn history and no configured reserve source
+    // in this suite -- runway must never fake a zero-month result here.
+    const coldEvaluation = await parseResponse(
+      await fetch(`${baseUrl}/api/v1/financial-safety/evaluation`, {
+        headers: { cookie: sessionB }
+      }),
+      SafetyEvaluationSchema
+    );
+    expect(coldEvaluation.evaluationId).toBeNull();
+    expect(coldEvaluation.snapshotStatus).toBe("live");
+    expect(coldEvaluation.runway.availability).toBe("unavailable");
+    expect(coldEvaluation.runway.runwayBasisPoints).toBeNull();
+    expect(coldEvaluation.currentStage).toBe("ground_zero");
+
+    const invalidAsOf = await fetch(
+      `${baseUrl}/api/v1/financial-safety/evaluation?asOf=not-a-date`,
+      { headers: { cookie: sessionB } }
+    );
+    expect(invalidAsOf.status).toBe(422);
+
+    const missingKeyRefresh = await fetch(
+      `${baseUrl}/api/v1/financial-safety/evaluations/refresh`,
+      { method: "POST", headers: { ...JSON_HEADERS, cookie: sessionB } }
+    );
+    expect(missingKeyRefresh.status).toBe(422);
+
+    const invalidKeyRefresh = await fetch(
+      `${baseUrl}/api/v1/financial-safety/evaluations/refresh`,
+      {
+        method: "POST",
+        headers: { ...JSON_HEADERS, cookie: sessionB, "idempotency-key": "not-a-uuid" }
+      }
+    );
+    expect(invalidKeyRefresh.status).toBe(422);
+
+    // A real refresh persists exactly one immutable snapshot.
+    const refreshKey = crypto.randomUUID();
+    const refreshResponse = await fetch(`${baseUrl}/api/v1/financial-safety/evaluations/refresh`, {
+      method: "POST",
+      headers: { ...JSON_HEADERS, cookie: sessionB, "idempotency-key": refreshKey },
+      body: JSON.stringify({})
+    });
+    expect(refreshResponse.status).toBe(201);
+    const refreshed = SafetyEvaluationSchema.parse(await refreshResponse.json());
+    expect(refreshed.evaluationId).not.toBeNull();
+    expect(refreshed.snapshotStatus).toBe("persisted");
+    expect(refreshed.runway.availability).toBe("unavailable");
+
+    // Replaying the same Idempotency-Key returns the same persisted evaluation.
+    const replayResponse = await fetch(`${baseUrl}/api/v1/financial-safety/evaluations/refresh`, {
+      method: "POST",
+      headers: { ...JSON_HEADERS, cookie: sessionB, "idempotency-key": refreshKey },
+      body: JSON.stringify({})
+    });
+    expect(replayResponse.status).toBe(200);
+    expect(replayResponse.headers.get("idempotency-replayed")).toBe("true");
+    const replayed = SafetyEvaluationSchema.parse(await replayResponse.json());
+    expect(replayed.evaluationId).toBe(refreshed.evaluationId);
+
+    // A subsequent GET under identical facts finds the persisted snapshot
+    // rather than recomputing a live result.
+    const followUpGet = await parseResponse(
+      await fetch(`${baseUrl}/api/v1/financial-safety/evaluation`, {
+        headers: { cookie: sessionB }
+      }),
+      SafetyEvaluationSchema
+    );
+    expect(followUpGet.evaluationId).toBe(refreshed.evaluationId);
+    expect(followUpGet.snapshotStatus).toBe("persisted");
+
+    // Cross-tenant: sessionA's own evaluation is never sessionB's snapshot.
+    const sessionAEvaluation = await parseResponse(
+      await fetch(`${baseUrl}/api/v1/financial-safety/evaluation`, {
+        headers: { cookie: sessionA }
+      }),
+      SafetyEvaluationSchema
+    );
+    expect(sessionAEvaluation.evaluationId).not.toBe(refreshed.evaluationId);
   });
 
   it("lends money, settles it in two partial repayments, and conserves net worth throughout", async () => {

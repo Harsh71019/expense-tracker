@@ -7,15 +7,48 @@ import { toast } from "@/lib/toast";
 
 import { MaskedValue } from "./masked-value";
 
+function fallbackCopyTextToClipboard(text: string): boolean {
+  if (typeof document === "undefined") return false;
+
+  try {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = "fixed";
+    textArea.style.left = "-999999px";
+    textArea.style.top = "-999999px";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    const copied = document.execCommand("copy");
+    document.body.removeChild(textArea);
+    return copied;
+  } catch {
+    return false;
+  }
+}
+
 export function ApiKeyReveal({
   apiKey,
   onDismiss
 }: Readonly<{ apiKey: string; onDismiss: () => void }>): ReactNode {
   async function copy(): Promise<void> {
-    try {
-      await navigator.clipboard.writeText(apiKey);
+    if (
+      typeof navigator !== "undefined" &&
+      navigator.clipboard !== undefined &&
+      typeof navigator.clipboard.writeText === "function"
+    ) {
+      try {
+        await navigator.clipboard.writeText(apiKey);
+        toast.success("Copied to clipboard");
+        return;
+      } catch {
+        // The Clipboard API can reject in non-secure contexts or when permission is denied.
+      }
+    }
+
+    if (fallbackCopyTextToClipboard(apiKey)) {
       toast.success("Copied to clipboard");
-    } catch {
+    } else {
       toast.error("Could not copy this key");
     }
   }

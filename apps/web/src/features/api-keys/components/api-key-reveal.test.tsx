@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ApiKeyReveal } from "./api-key-reveal";
 
@@ -10,9 +10,16 @@ vi.mock("@/lib/toast", () => ({
 }));
 
 describe("ApiKeyReveal", () => {
+  const originalExecCommand = document.execCommand;
+
   beforeEach(() => {
     mocks.toastSuccess.mockReset();
     mocks.toastError.mockReset();
+  });
+
+  afterEach(() => {
+    document.execCommand = originalExecCommand;
+    vi.unstubAllGlobals();
   });
 
   it("shows the raw key, copies it, and dismisses", async () => {
@@ -42,8 +49,10 @@ describe("ApiKeyReveal", () => {
     expect(onDismiss).toHaveBeenCalled();
   });
 
-  it("reports when the clipboard rejects the copy", async () => {
+  it("uses the browser fallback when the Clipboard API rejects the copy", async () => {
     const user = userEvent.setup();
+    const execCommand = vi.fn().mockReturnValue(true);
+    document.execCommand = execCommand;
     vi.stubGlobal("navigator", {
       ...navigator,
       clipboard: { writeText: vi.fn().mockRejectedValue(new Error("denied")) }
@@ -52,6 +61,7 @@ describe("ApiKeyReveal", () => {
     render(<ApiKeyReveal apiKey="ak_verysecret123" onDismiss={vi.fn()} />);
     await user.click(screen.getByRole("button", { name: "Copy" }));
 
-    expect(mocks.toastError).toHaveBeenCalledWith("Could not copy this key");
+    expect(execCommand).toHaveBeenCalledWith("copy");
+    expect(mocks.toastSuccess).toHaveBeenCalledWith("Copied to clipboard");
   });
 });

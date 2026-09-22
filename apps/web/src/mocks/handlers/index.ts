@@ -20,6 +20,7 @@ import { reportHandlers } from "./reports";
 import { recurringHandlers } from "./recurring";
 import { reviewInboxHandlers } from "./review-inbox";
 import { safetyBufferHandlers } from "./safety-buffer";
+import { safetyEvaluationHandlers } from "./safety-evaluation";
 import { spendingWarningHandlers } from "./spending-warnings";
 import { transactionHandlers } from "./transactions";
 import { transferHandlers } from "./transfers";
@@ -44,6 +45,7 @@ export function createHandlers(baseUrl: string, store: MockStore): HttpHandler[]
     ...transferHandlers(http, store),
     ...goalHandlers(http, store),
     ...safetyBufferHandlers(http),
+    ...safetyEvaluationHandlers(http),
     ...assetHandlers(http, store),
     ...netWorthHandlers(http, store),
     ...importHandlers(http, store),

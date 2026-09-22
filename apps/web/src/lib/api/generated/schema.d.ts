@@ -8689,6 +8689,38 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/v1/financial-safety/evaluation": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations["getSafetyEvaluation"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/financial-safety/evaluations/refresh": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations["refreshSafetyEvaluation"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/v1/assets/market-linked": {
     parameters: {
       query?: never;
@@ -12823,6 +12855,161 @@ export interface components {
         | "archived_or_closed_sources_present"
       )[];
     };
+    SafetyEvaluation: {
+      /** Format: uuid */
+      evaluationId: string | null;
+      /** @enum {string} */
+      snapshotStatus: "persisted" | "live";
+      /** Format: date-time */
+      computedAt: string | null;
+      /** Format: date-time */
+      asOf: string | null;
+      /** Format: date-time */
+      sourceThrough: string | null;
+      formulaVersion: number;
+      policyVersion: number;
+      inputFingerprint: string;
+      /** @enum {string} */
+      quality: "complete" | "limited";
+      /** @enum {string} */
+      currentStage: "ground_zero" | "building_fortress" | "buffer_layer" | "wealth_ready";
+      /** @enum {string} */
+      nextAction:
+        | "configure_salary"
+        | "configure_protection"
+        | "review_debts"
+        | "review_categories"
+        | "review_transactions"
+        | "configure_reserves"
+        | "refresh_asset_valuations"
+        | "configure_safety_buffer"
+        | "none";
+      runway: {
+        /** @enum {string} */
+        availability: "available" | "unavailable";
+        /** @enum {string|null} */
+        unavailableReason:
+          | "essential_burn_unavailable"
+          | "essential_burn_zero"
+          | "no_eligible_reserve_source"
+          | "eligible_reserve_zero"
+          | null;
+        /** @enum {string} */
+        tier: "critical" | "healthy" | "fortified" | "unavailable";
+        runwayBasisPoints: number | null;
+        runwayDays: number | null;
+        eligibleReserveMinor: number | null;
+        essentialBurnMinor: number | null;
+        observedCompleteMonthCount: number;
+        policyDaysPerMonth: number;
+        criticalThresholdBasisPoints: number;
+        fortifiedThresholdBasisPoints: number;
+      };
+      target: {
+        policyTargetMinor: number;
+        userTargetMinor: number | null;
+        effectiveTargetMinor: number;
+        /** @enum {string} */
+        targetSource: "policy" | "user_preference";
+        targetMonths: number | null;
+        currentGapMinor: number;
+        currentSurplusMinor: number;
+      };
+      checks: {
+        /** @enum {string} */
+        key:
+          | "term_protection"
+          | "health_protection"
+          | "high_cost_debt"
+          | "essential_burn"
+          | "emergency_reserves"
+          | "emergency_runway"
+          | "sinking_fund_buffer";
+        /** @enum {string} */
+        stage: "ground_zero" | "building_fortress" | "buffer_layer" | "wealth_ready";
+        /** @enum {string} */
+        status:
+          "complete" | "incomplete" | "unknown" | "warning" | "not_applicable" | "not_assessable";
+        /** @enum {string} */
+        attention: "none" | "information" | "warning" | "blocking";
+        summaryKey: string;
+        evidence: {
+          /** @default null */
+          observedCount: number | null;
+          /** @default null */
+          requiredCount: number | null;
+          /** @default null */
+          coverageMinor: number | null;
+          /** @default null */
+          benchmarkMinor: number | null;
+          /** @default null */
+          ratioBps: number | null;
+          /** @default null */
+          activeDebtCount: number | null;
+          /** @default null */
+          highCostDebtCount: number | null;
+        };
+        limitationKeys: string[];
+        /** @enum {string|null} */
+        action:
+          | "configure_salary"
+          | "configure_protection"
+          | "review_debts"
+          | "review_categories"
+          | "review_transactions"
+          | "configure_reserves"
+          | "refresh_asset_valuations"
+          | "configure_safety_buffer"
+          | "none"
+          | null;
+      }[];
+      limitations: string[];
+      essentialBurnEvidence: {
+        averageMonthlyEssentialMinor: number | null;
+        observedCompleteMonthCount: number;
+        /** @enum {string} */
+        quality: "unavailable" | "limited" | "complete";
+      };
+      reserveEvidence: {
+        totalEligibleMinor: number;
+        instantMinor: number;
+        tPlusOneMinor: number;
+        lockedMinor: number;
+        staleExcludedMinor: number;
+        currentlyEligibleSourceCount: number;
+        configuredSourceCount: number;
+      };
+      protectionEvidence: {
+        /** @enum {string} */
+        termCoverState:
+          | "not_configured"
+          | "complete"
+          | "incomplete"
+          | "unknown"
+          | "employer_only"
+          | "none_declared"
+          | "not_applicable";
+        /** @enum {string} */
+        healthCoverState:
+          | "not_configured"
+          | "complete"
+          | "incomplete"
+          | "unknown"
+          | "employer_only"
+          | "none_declared"
+          | "not_applicable";
+        /** @enum {string} */
+        incomeBasis: "annual_ctc" | "annualized_net_income" | "unknown";
+        /** @enum {string} */
+        incomeBasisQuality: "confirmed" | "estimated" | "unavailable";
+        termBenchmarkMinor: number | null;
+        healthBenchmarkMinor: number;
+      };
+      debtEvidence: {
+        activeDebtCount: number;
+        highCostDebtCount: number;
+      };
+    };
     MarketLinkedAssetCreationResult: {
       asset: components["schemas"]["Asset"];
       marketLink: components["schemas"]["AssetMarketLink"];
@@ -15314,6 +15501,130 @@ export interface operations {
       };
     };
   };
+  getSafetyEvaluation: {
+    parameters: {
+      query?: {
+        asOf?: string | null;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Composed Safety Evaluation and runway. Returns a matching persisted snapshot when one exists for the current inputs, otherwise a live result with evaluationId null. Never mutates state. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SafetyEvaluation"];
+        };
+      };
+      /** @description Unauthenticated */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Validation failed */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Internal error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+    };
+  };
+  refreshSafetyEvaluation: {
+    parameters: {
+      query?: never;
+      header: {
+        "Idempotency-Key": string;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        "application/json": {
+          /** Format: date-time */
+          asOf?: string | null;
+        };
+      };
+    };
+    responses: {
+      /** @description Idempotent replay of the refreshed Safety Evaluation */
+      200: {
+        headers: {
+          "Idempotency-Replayed": "true";
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SafetyEvaluation"];
+        };
+      };
+      /** @description Persisted a new immutable Safety Evaluation, or returned the existing one matching identical inputs */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SafetyEvaluation"];
+        };
+      };
+      /** @description Unauthenticated */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Idempotency key was already used for different request intent */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Validation failed */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+      /** @description Internal error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProblemDetails"];
+        };
+      };
+    };
+  };
   createMarketLinkedAsset: {
     parameters: {
       query?: never;
@@ -15854,7 +16165,7 @@ export interface operations {
           quantityMicroUnits?: number;
           /**
            * Format: date-time
-           * @default 2026-08-25T16:57:18.282Z
+           * @default 2026-08-26T02:10:31.260Z
            */
           disposalDate?: string | null;
           quoteOverrideMicroRupeesPerUnit?: number;

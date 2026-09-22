@@ -12,6 +12,7 @@ import { getDiagnosticActionConfig } from "../model/diagnostic-actions";
 export interface DataReadinessPanelProps {
   readonly initialDiagnostic: FinancialDiagnostic | null;
   readonly className?: string;
+  readonly showAction?: boolean;
 }
 
 function getStatusMiniDot(status: FinancialReadinessStatus): ReactNode {
@@ -31,7 +32,8 @@ function getStatusMiniDot(status: FinancialReadinessStatus): ReactNode {
 
 export function DataReadinessPanel({
   initialDiagnostic,
-  className = ""
+  className = "",
+  showAction = true
 }: DataReadinessPanelProps): ReactNode {
   const { data: diagnostic } = useFinancialDiagnostic(initialDiagnostic);
 
@@ -77,7 +79,7 @@ export function DataReadinessPanel({
         </div>
 
         <div className="flex items-center gap-2">
-          {nextActionConfig ? (
+          {showAction && nextActionConfig ? (
             <Link
               href={nextActionConfig.href}
               className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-accent-foreground shadow-sm transition-all hover:bg-accent-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"

@@ -6,6 +6,7 @@ import type {
   EssentialBurnResponse,
   MonthlySpending,
   RecurringForecast,
+  SafetyEvaluation,
   SpendMix,
   TopSpendingItem
 } from "@treasury-ops/shared";
@@ -37,12 +38,25 @@ vi.mock("@/features/reports/components/pie-chart", () => ({
   PieChart: () => <svg role="img" aria-label="pie" />
 }));
 vi.mock("@/features/financial-profile", () => ({
-  DataReadinessPanel: ({ initialDiagnostic }: { initialDiagnostic: unknown }) =>
-    initialDiagnostic ? <div>Copilot Data Readiness</div> : null
+  DataReadinessPanel: ({
+    initialDiagnostic,
+    showAction
+  }: {
+    initialDiagnostic: unknown;
+    showAction?: boolean;
+  }) =>
+    initialDiagnostic ? (
+      <div>
+        Copilot Data Readiness
+        {showAction ? <span>Action Visible</span> : <span>Action Hidden</span>}
+      </div>
+    ) : null
 }));
 vi.mock("@/features/financial-safety", () => ({
   EssentialBurnCard: ({ initialData }: { initialData: unknown }) =>
-    initialData ? <div>Essential Monthly Burn Card</div> : null
+    initialData ? <div>Essential Monthly Burn Card</div> : null,
+  SafetyStatusPanel: ({ initialData }: { initialData: unknown }) =>
+    initialData ? <div>Safety Status Panel</div> : null
 }));
 
 const stats: DashboardStats = {
@@ -224,5 +238,303 @@ describe("DashboardOverview", () => {
     );
 
     expect(screen.getByText("Essential Monthly Burn Card")).toBeVisible();
+  });
+
+  it("renders SafetyStatusPanel when initialSafetyEvaluation is provided", () => {
+    setup();
+    const safetyEvaluation: SafetyEvaluation = {
+      evaluationId: null,
+      snapshotStatus: "live",
+      computedAt: new Date("2026-08-18T10:00:00.000Z"),
+      asOf: new Date("2026-08-18T10:00:00.000Z"),
+      sourceThrough: new Date("2026-08-01T00:00:00.000Z"),
+      formulaVersion: 1,
+      policyVersion: 1,
+      inputFingerprint: "fp",
+      quality: "complete",
+      currentStage: "building_fortress",
+      nextAction: "configure_reserves",
+      runway: {
+        availability: "available",
+        unavailableReason: null,
+        tier: "healthy",
+        runwayBasisPoints: 45_000,
+        runwayDays: 135,
+        eligibleReserveMinor: 4_50_000_00,
+        essentialBurnMinor: 1_00_000_00,
+        observedCompleteMonthCount: 3,
+        policyDaysPerMonth: 30,
+        criticalThresholdBasisPoints: 30_000,
+        fortifiedThresholdBasisPoints: 60_000
+      },
+      target: {
+        policyTargetMinor: 6_00_000_00,
+        userTargetMinor: null,
+        effectiveTargetMinor: 6_00_000_00,
+        targetSource: "policy",
+        targetMonths: 6,
+        currentGapMinor: 1_50_000_00,
+        currentSurplusMinor: 0
+      },
+      checks: [],
+      limitations: [],
+      essentialBurnEvidence: {
+        averageMonthlyEssentialMinor: 1_00_000_00,
+        observedCompleteMonthCount: 3,
+        quality: "complete"
+      },
+      reserveEvidence: {
+        totalEligibleMinor: 4_50_000_00,
+        instantMinor: 3_00_000_00,
+        tPlusOneMinor: 1_50_000_00,
+        lockedMinor: 0,
+        staleExcludedMinor: 0,
+        currentlyEligibleSourceCount: 2,
+        configuredSourceCount: 2
+      },
+      protectionEvidence: {
+        termCoverState: "complete",
+        healthCoverState: "complete",
+        incomeBasis: "annual_ctc",
+        incomeBasisQuality: "confirmed",
+        termBenchmarkMinor: 10_000_000_00,
+        healthBenchmarkMinor: 1_000_000_00
+      },
+      debtEvidence: {
+        activeDebtCount: 0,
+        highCostDebtCount: 0
+      }
+    };
+
+    render(
+      <DashboardOverview
+        initialStats={stats}
+        initialMonthlySpending={monthlySpending}
+        initialCashflow={cashflow}
+        initialSpendMix={spendMix}
+        initialTopSpending={topSpending}
+        initialRecurringForecast={recurringForecast}
+        initialInvestments={investments}
+        initialBudgets={null}
+        initialSafetyEvaluation={safetyEvaluation}
+      />
+    );
+
+    expect(screen.getByText("Safety Status Panel")).toBeVisible();
+  });
+
+  it("suppresses DataReadinessPanel action when initialSafetyEvaluation has an actionable nextAction", () => {
+    setup();
+    const diagnostic = {
+      computedAt: new Date("2026-08-18T10:00:00.000Z"),
+      sourceThrough: new Date("2026-08-18T10:00:00.000Z"),
+      formulaVersion: 1,
+      policyVersion: 1,
+      overallStatus: "setup_required" as const,
+      readyCount: 1,
+      totalRequiredCount: 4,
+      availableCapabilities: [],
+      unavailableCapabilities: [],
+      nextAction: "configure_salary" as const,
+      items: [],
+      limitations: []
+    };
+    const safetyEvaluation: SafetyEvaluation = {
+      evaluationId: null,
+      snapshotStatus: "live",
+      computedAt: new Date("2026-08-18T10:00:00.000Z"),
+      asOf: new Date("2026-08-18T10:00:00.000Z"),
+      sourceThrough: new Date("2026-08-01T00:00:00.000Z"),
+      formulaVersion: 1,
+      policyVersion: 1,
+      inputFingerprint: "fp",
+      quality: "complete",
+      currentStage: "building_fortress",
+      nextAction: "configure_reserves",
+      runway: {
+        availability: "available",
+        unavailableReason: null,
+        tier: "healthy",
+        runwayBasisPoints: 45_000,
+        runwayDays: 135,
+        eligibleReserveMinor: 4_50_000_00,
+        essentialBurnMinor: 1_00_000_00,
+        observedCompleteMonthCount: 3,
+        policyDaysPerMonth: 30,
+        criticalThresholdBasisPoints: 30_000,
+        fortifiedThresholdBasisPoints: 60_000
+      },
+      target: {
+        policyTargetMinor: 6_00_000_00,
+        userTargetMinor: null,
+        effectiveTargetMinor: 6_00_000_00,
+        targetSource: "policy",
+        targetMonths: 6,
+        currentGapMinor: 1_50_000_00,
+        currentSurplusMinor: 0
+      },
+      checks: [],
+      limitations: [],
+      essentialBurnEvidence: {
+        averageMonthlyEssentialMinor: 1_00_000_00,
+        observedCompleteMonthCount: 3,
+        quality: "complete"
+      },
+      reserveEvidence: {
+        totalEligibleMinor: 4_50_000_00,
+        instantMinor: 3_00_000_00,
+        tPlusOneMinor: 1_50_000_00,
+        lockedMinor: 0,
+        staleExcludedMinor: 0,
+        currentlyEligibleSourceCount: 2,
+        configuredSourceCount: 2
+      },
+      protectionEvidence: {
+        termCoverState: "complete",
+        healthCoverState: "complete",
+        incomeBasis: "annual_ctc",
+        incomeBasisQuality: "confirmed",
+        termBenchmarkMinor: 10_000_000_00,
+        healthBenchmarkMinor: 1_000_000_00
+      },
+      debtEvidence: {
+        activeDebtCount: 0,
+        highCostDebtCount: 0
+      }
+    };
+
+    render(
+      <DashboardOverview
+        initialStats={stats}
+        initialMonthlySpending={monthlySpending}
+        initialCashflow={cashflow}
+        initialSpendMix={spendMix}
+        initialTopSpending={topSpending}
+        initialRecurringForecast={recurringForecast}
+        initialInvestments={investments}
+        initialBudgets={null}
+        initialDiagnostic={diagnostic}
+        initialSafetyEvaluation={safetyEvaluation}
+      />
+    );
+
+    expect(screen.getByText("Action Hidden")).toBeVisible();
+    expect(screen.queryByText("Action Visible")).not.toBeInTheDocument();
+  });
+
+  it("shows DataReadinessPanel action when initialSafetyEvaluation is missing or nextAction is none", () => {
+    setup();
+    const diagnostic = {
+      computedAt: new Date("2026-08-18T10:00:00.000Z"),
+      sourceThrough: new Date("2026-08-18T10:00:00.000Z"),
+      formulaVersion: 1,
+      policyVersion: 1,
+      overallStatus: "setup_required" as const,
+      readyCount: 1,
+      totalRequiredCount: 4,
+      availableCapabilities: [],
+      unavailableCapabilities: [],
+      nextAction: "configure_salary" as const,
+      items: [],
+      limitations: []
+    };
+
+    const { rerender } = render(
+      <DashboardOverview
+        initialStats={stats}
+        initialMonthlySpending={monthlySpending}
+        initialCashflow={cashflow}
+        initialSpendMix={spendMix}
+        initialTopSpending={topSpending}
+        initialRecurringForecast={recurringForecast}
+        initialInvestments={investments}
+        initialBudgets={null}
+        initialDiagnostic={diagnostic}
+        initialSafetyEvaluation={null}
+      />
+    );
+
+    expect(screen.getByText("Action Visible")).toBeVisible();
+
+    const noneSafetyEvaluation: SafetyEvaluation = {
+      evaluationId: null,
+      snapshotStatus: "live",
+      computedAt: new Date("2026-08-18T10:00:00.000Z"),
+      asOf: new Date("2026-08-18T10:00:00.000Z"),
+      sourceThrough: new Date("2026-08-01T00:00:00.000Z"),
+      formulaVersion: 1,
+      policyVersion: 1,
+      inputFingerprint: "fp",
+      quality: "complete",
+      currentStage: "building_fortress",
+      nextAction: "none",
+      runway: {
+        availability: "available",
+        unavailableReason: null,
+        tier: "healthy",
+        runwayBasisPoints: 45_000,
+        runwayDays: 135,
+        eligibleReserveMinor: 4_50_000_00,
+        essentialBurnMinor: 1_00_000_00,
+        observedCompleteMonthCount: 3,
+        policyDaysPerMonth: 30,
+        criticalThresholdBasisPoints: 30_000,
+        fortifiedThresholdBasisPoints: 60_000
+      },
+      target: {
+        policyTargetMinor: 6_00_000_00,
+        userTargetMinor: null,
+        effectiveTargetMinor: 6_00_000_00,
+        targetSource: "policy",
+        targetMonths: 6,
+        currentGapMinor: 1_50_000_00,
+        currentSurplusMinor: 0
+      },
+      checks: [],
+      limitations: [],
+      essentialBurnEvidence: {
+        averageMonthlyEssentialMinor: 1_00_000_00,
+        observedCompleteMonthCount: 3,
+        quality: "complete"
+      },
+      reserveEvidence: {
+        totalEligibleMinor: 4_50_000_00,
+        instantMinor: 3_00_000_00,
+        tPlusOneMinor: 1_50_000_00,
+        lockedMinor: 0,
+        staleExcludedMinor: 0,
+        currentlyEligibleSourceCount: 2,
+        configuredSourceCount: 2
+      },
+      protectionEvidence: {
+        termCoverState: "complete",
+        healthCoverState: "complete",
+        incomeBasis: "annual_ctc",
+        incomeBasisQuality: "confirmed",
+        termBenchmarkMinor: 10_000_000_00,
+        healthBenchmarkMinor: 1_000_000_00
+      },
+      debtEvidence: {
+        activeDebtCount: 0,
+        highCostDebtCount: 0
+      }
+    };
+
+    rerender(
+      <DashboardOverview
+        initialStats={stats}
+        initialMonthlySpending={monthlySpending}
+        initialCashflow={cashflow}
+        initialSpendMix={spendMix}
+        initialTopSpending={topSpending}
+        initialRecurringForecast={recurringForecast}
+        initialInvestments={investments}
+        initialBudgets={null}
+        initialDiagnostic={diagnostic}
+        initialSafetyEvaluation={noneSafetyEvaluation}
+      />
+    );
+
+    expect(screen.getByText("Action Visible")).toBeVisible();
   });
 });

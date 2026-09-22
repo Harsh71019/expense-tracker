@@ -75,10 +75,14 @@ export function OnboardingWizard({
               <ArrowRight className="h-4 w-4" />
             </Link>
           ) : (
-            <div className="inline-flex items-center gap-2 rounded-xl border border-income/30 bg-income/10 px-4 py-2.5 text-xs font-semibold text-income">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 rounded-xl border border-income/30 bg-income/10 px-4 py-2.5 text-xs font-semibold text-income transition-colors hover:bg-income/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-income"
+            >
               <CheckCircle2 className="h-4 w-4" />
-              <span>Diagnostic Complete</span>
-            </div>
+              <span>View Dashboard</span>
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
           )}
         </div>
 
@@ -96,7 +100,7 @@ export function OnboardingWizard({
           </div>
         </div>
 
-        {/* Next recommended step callout */}
+        {/* Next recommended step or completion callout */}
         {nextActionConfig ? (
           <div className="mt-5 flex items-start gap-3 rounded-xl border border-accent/20 bg-accent/5 p-4">
             <Sparkles className="h-5 w-5 shrink-0 text-accent mt-0.5" />
@@ -114,7 +118,26 @@ export function OnboardingWizard({
               <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </div>
-        ) : null}
+        ) : (
+          <div className="mt-5 flex items-start gap-3 rounded-xl border border-income/30 bg-income/5 p-4">
+            <CheckCircle2 className="h-5 w-5 shrink-0 text-income mt-0.5" />
+            <div className="flex-1">
+              <h4 className="text-sm font-semibold text-foreground">
+                All Core Prerequisites Completed
+              </h4>
+              <p className="mt-0.5 text-xs text-foreground-muted">
+                Your Financial Runway Clock and Safety Ladder are active on your dashboard.
+              </p>
+            </div>
+            <Link
+              href="/"
+              className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-income hover:underline"
+            >
+              <span>View Dashboard</span>
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* Capabilities breakdown */}

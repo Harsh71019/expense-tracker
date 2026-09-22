@@ -1,15 +1,18 @@
-import { Body, Controller, Get, Headers, Param, Put, Query, Res } from "@nestjs/common";
+import { Body, Controller, Get, Headers, Param, Post, Put, Query, Res } from "@nestjs/common";
 import {
   EssentialBurnQuerySchema,
   ListReserveSourcesQuerySchema,
   ReserveSourceIdSchema,
   ReserveSourceKindSchema,
   ReserveSummaryQuerySchema,
+  SafetyEvaluationQuerySchema,
+  SafetyEvaluationRefreshRequestSchema,
   UpdateReserveSourceSchema,
   type EssentialBurnResponse,
   type ReserveSource,
   type ReserveSourcePage,
-  type ReserveSummary
+  type ReserveSummary,
+  type SafetyEvaluation
 } from "@treasury-ops/shared";
 import type { Response } from "express";
 import { z } from "zod";
@@ -19,6 +22,7 @@ import { CurrentUser } from "../auth/current-user.decorator.js";
 import { EssentialBurnService } from "./essential-burn.service.js";
 import { ReserveSourceService } from "./reserve-source.service.js";
 import { ReserveValueService } from "./reserve-value.service.js";
+import { SafetyEvaluationService } from "./safety-evaluation.service.js";
 
 const IdempotencyKeySchema = z.string().uuid();
 
@@ -36,7 +40,8 @@ export class FinancialSafetyController {
   constructor(
     private readonly essentialBurn: EssentialBurnService,
     private readonly reserveSourceService: ReserveSourceService,
-    private readonly reserveValueService: ReserveValueService
+    private readonly reserveValueService: ReserveValueService,
+    private readonly safetyEvaluationService: SafetyEvaluationService
   ) {}
 
   @Get("essential-burn")
@@ -97,5 +102,35 @@ export class FinancialSafetyController {
     return asOf === undefined
       ? this.reserveValueService.getSummary(user.id)
       : this.reserveValueService.getSummary(user.id, asOf);
+  }
+
+  @Get("evaluation")
+  getEvaluation(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query() query: unknown
+  ): Promise<SafetyEvaluation> {
+    const { asOf } = SafetyEvaluationQuerySchema.parse(query);
+    return this.safetyEvaluationService.getEvaluation(user.id, asOf ?? new Date());
+  }
+
+  @Post("evaluations/refresh")
+  async refreshEvaluation(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() body: unknown,
+    @Headers("idempotency-key") key: string | undefined,
+    @Res({ passthrough: true }) response: Response
+  ): Promise<SafetyEvaluation> {
+    const idempotencyKey = IdempotencyKeySchema.parse(key);
+    const { asOf } = SafetyEvaluationRefreshRequestSchema.parse(body ?? {});
+
+    // `asOf` is passed through as-is (possibly undefined) -- the service
+    // fingerprints the idempotency request on the client-supplied value, not
+    // on a server-resolved "now", so two replay calls that both omit `asOf`
+    // still fingerprint identically instead of racing a spurious 409.
+    const result = await this.safetyEvaluationService.refresh(user.id, idempotencyKey, asOf);
+    if (result.replayed) {
+      response.status(200).setHeader("Idempotency-Replayed", "true");
+    }
+    return result.result;
   }
 }

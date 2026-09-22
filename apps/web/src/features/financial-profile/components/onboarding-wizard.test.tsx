@@ -96,4 +96,31 @@ describe("OnboardingWizard", () => {
     render(<OnboardingWizard initialDiagnostic={null} />);
     expect(screen.getByText(/Unable to load financial readiness diagnostic/i)).toBeInTheDocument();
   });
+
+  it("renders completion callout and View Dashboard link when all core prerequisites are completed", () => {
+    const completedDiagnostic: FinancialDiagnostic = {
+      ...DIAGNOSTIC_FIXTURE,
+      overallStatus: "ready",
+      readyCount: 4,
+      totalRequiredCount: 4,
+      nextAction: null,
+      availableCapabilities: ["salary_statistics", "life_hour", "essential_burn", "safety_ladder"],
+      unavailableCapabilities: []
+    };
+
+    render(<OnboardingWizard initialDiagnostic={completedDiagnostic} />);
+
+    expect(screen.getByText("100%")).toBeInTheDocument();
+    expect(screen.getByText("All Core Prerequisites Completed")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Your Financial Runway Clock and Safety Ladder are active on your dashboard."
+      )
+    ).toBeInTheDocument();
+    const dashboardLinks = screen.getAllByRole("link", { name: /View Dashboard/i });
+    expect(dashboardLinks.length).toBeGreaterThanOrEqual(1);
+    for (const link of dashboardLinks) {
+      expect(link).toHaveAttribute("href", "/");
+    }
+  });
 });

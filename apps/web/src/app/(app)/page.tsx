@@ -16,6 +16,7 @@ import {
 } from "@/features/dashboard";
 import { getFinancialDiagnostic } from "@/features/financial-profile/server/get-financial-diagnostic";
 import { getEssentialBurn } from "@/features/financial-safety/server/get-essential-burn";
+import { getSafetyEvaluation } from "@/features/financial-safety/server/get-safety-evaluation";
 
 export default async function DashboardPage(): Promise<ReactNode> {
   const [
@@ -28,7 +29,8 @@ export default async function DashboardPage(): Promise<ReactNode> {
     investments,
     budgets,
     diagnostic,
-    essentialBurn
+    essentialBurn,
+    safetyEvaluation
   ] = await Promise.all([
     getStats(),
     getMonthlySpending(),
@@ -39,7 +41,8 @@ export default async function DashboardPage(): Promise<ReactNode> {
     getInvestments(),
     getBudgetPage(false, 200),
     getFinancialDiagnostic(),
-    getEssentialBurn()
+    getEssentialBurn(),
+    getSafetyEvaluation()
   ]);
 
   return (
@@ -54,6 +57,7 @@ export default async function DashboardPage(): Promise<ReactNode> {
       initialBudgets={budgets}
       initialDiagnostic={diagnostic}
       initialEssentialBurn={essentialBurn}
+      initialSafetyEvaluation={safetyEvaluation}
     />
   );
 }

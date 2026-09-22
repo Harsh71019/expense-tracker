@@ -12,6 +12,7 @@ import {
   type FinancialReadinessStatus,
   type ProtectionState,
   type SafetyBufferState,
+  type SafetyEvaluation,
   type DeclaredDebtPage
 } from "@treasury-ops/shared";
 
@@ -39,6 +40,7 @@ export interface ReadinessEvaluatorInput {
   readonly assetFacts: AssetDiagnosticFacts;
   readonly goalFacts: GoalDiagnosticFacts;
   readonly reserveSourceFacts: ReserveSourceDiagnosticFacts;
+  readonly safetyEvaluation: SafetyEvaluation;
 }
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
@@ -85,7 +87,8 @@ export function evaluateFinancialReadiness(input: ReadinessEvaluatorInput): Fina
     ledgerHistoryFacts,
     assetFacts,
     goalFacts,
-    reserveSourceFacts
+    reserveSourceFacts,
+    safetyEvaluation
   } = input;
 
   const items: FinancialReadinessItem[] = [];
@@ -614,9 +617,26 @@ export function evaluateFinancialReadiness(input: ReadinessEvaluatorInput): Fina
     unavailableCapabilities.push("goal_feasibility");
   }
 
+  // Financial runway: Essential Burn usable, a positive eligible reserve
+  // source exists, and the Safety Evaluation itself could calculate runway.
+  // A protection or debt gap must never hide an otherwise calculable runway.
+  if (
+    burnStatus === "ready" &&
+    reserveStatus === "ready" &&
+    safetyEvaluation.runway.availability === "available"
+  ) {
+    availableCapabilities.push("financial_runway");
+  } else {
+    unavailableCapabilities.push("financial_runway");
+  }
+
+  // Safety ladder: available as soon as the evaluation can render checks at
+  // all -- every check has an explicit incomplete/unknown/not-assessable
+  // state, so "available" means calculable, not healthy. A critical result is
+  // never hidden for being critical.
+  availableCapabilities.push("safety_ladder");
+
   // Planned engines remain unavailable in V1
-  unavailableCapabilities.push("financial_runway");
-  unavailableCapabilities.push("safety_ladder");
   unavailableCapabilities.push("payday_plan");
   unavailableCapabilities.push("wealth_allocation");
   unavailableCapabilities.push("projections");
@@ -632,6 +652,13 @@ export function evaluateFinancialReadiness(input: ReadinessEvaluatorInput): Fina
     nextAction = "review_categories";
   } else if (burnStatus !== "ready") {
     nextAction = "review_transactions";
+  } else if (safetyEvaluation.nextAction !== "none") {
+    // Once the diagnostic's own scaffolding (salary, accounts, categories,
+    // burn history) is ready, the Safety Evaluation's own next action takes
+    // precedence -- it already composes protection, debt, reserve, and burn
+    // readiness in one deterministic priority order, so the dashboard never
+    // shows two contradictory primary actions.
+    nextAction = safetyEvaluation.nextAction;
   } else if (
     protectionReadiness !== "ready" ||
     protectionAttention === "blocking" ||

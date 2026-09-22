@@ -30,6 +30,7 @@ import { TransferRow } from "./transfer-row";
 import { TransactionInsightsCards } from "./transaction-insights-cards";
 import { useAccounts } from "@/features/accounts";
 import { useCategories } from "@/features/categories";
+import { useExportCsv } from "@/features/export/hooks/use-export-csv";
 import { useReverseTransfer } from "@/features/transfers/hooks/use-transfers";
 import { downloadCsvFile, generateTransactionsCsv } from "../model/export-csv";
 import { serializeTransactionFilters } from "../model/filters";
@@ -53,6 +54,7 @@ export function TxnList({
   const batchCategorize = useBatchCategorize();
   const accounts = useAccounts();
   const categories = useCategories();
+  const exportCsv = useExportCsv();
   const [createOpen, setCreateOpen] = useState(false);
   const [density, setDensity] = useState<"comfortable" | "compact">("comfortable");
   const [selected, setSelected] = useState<Transaction>();
@@ -193,18 +195,26 @@ export function TxnList({
     }
   }
 
-  function handleExportCsv(): void {
-    const toExport = selectedTransactions.length > 0 ? selectedTransactions : transactions;
-    if (toExport.length === 0) {
+  async function handleFilteredExportCsv(): Promise<void> {
+    if (transactions.length === 0) {
       toast.error("No transactions to export");
       return;
     }
-    const csvContent = generateTransactionsCsv(toExport, categoryById, accountById);
-    const dateStr = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(
-      new Date()
-    );
-    downloadCsvFile(`treasury-ops-transactions-${dateStr}.csv`, csvContent);
-    toast.success(`Exported ${toExport.length} transactions to CSV`);
+    try {
+      const csvContent = await exportCsv.mutateAsync(filters);
+      downloadCsvFile(transactionExportFilename(), csvContent);
+      toast.success("Exported all matching transactions to CSV");
+    } catch (caught: unknown) {
+      const message = caught instanceof Error ? caught.message : "Could not prepare the export.";
+      toast.error(message);
+    }
+  }
+
+  function handleSelectedExportCsv(): void {
+    if (selectedTransactions.length === 0) return;
+    const csvContent = generateTransactionsCsv(selectedTransactions, categoryById, accountById);
+    downloadCsvFile(transactionExportFilename(), csvContent);
+    toast.success(`Exported ${selectedTransactions.length} selected transactions to CSV`);
   }
 
   return (
@@ -218,10 +228,11 @@ export function TxnList({
             <Button
               type="button"
               variant="secondary"
-              onClick={handleExportCsv}
+              disabled={exportCsv.isPending}
+              onClick={() => void handleFilteredExportCsv()}
               className="hidden sm:inline-flex"
             >
-              Export CSV
+              {exportCsv.isPending ? "Exporting…" : "Export CSV"}
             </Button>
             <Button className="w-full sm:w-auto" type="button" onClick={() => setCreateOpen(true)}>
               <span className="mr-1 text-base leading-none">+</span> Add transaction
@@ -319,7 +330,7 @@ export function TxnList({
           }}
           onClear={clearSelection}
           onApply={() => void applyCategory()}
-          onExport={handleExportCsv}
+          onExport={handleSelectedExportCsv}
         />
       )}
 
@@ -507,6 +518,11 @@ export function TxnList({
       )}
     </section>
   );
+}
+
+function transactionExportFilename(): string {
+  const date = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(new Date());
+  return `treasury-ops-transactions-${date}.csv`;
 }
 
 function BatchCategoryBar({

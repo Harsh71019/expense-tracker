@@ -36,18 +36,39 @@ describe("ExportController", () => {
     expect(response.send).toHaveBeenCalledWith("Date,Amount\r\n");
   });
 
-  it("validates and forwards from/to query params", async () => {
+  it("validates and forwards all transaction filter query params", async () => {
     const mockService = { generateCsv: vi.fn().mockResolvedValue("") };
     // @ts-expect-error - mock ExportService for unit testing
     const controller = new ExportController(mockService);
     const response = mockResponse();
 
-    // @ts-expect-error - mock Response for unit testing
-    await controller.csv(user, { from: "2026-01-01", to: "2026-02-01" }, response);
+    await controller.csv(
+      user,
+      {
+        accountId: "3fa85f64-5717-4562-b3fc-2c963f66beff",
+        uncategorized: "true",
+        from: "2026-01-01",
+        to: "2026-02-01",
+        minAmountMinor: "5000",
+        maxAmountMinor: "10000",
+        sort: "amount_asc",
+        q: "rent",
+        tag: "home"
+      },
+      // @ts-expect-error - mock Response for unit testing
+      response
+    );
 
     expect(mockService.generateCsv).toHaveBeenCalledWith("user-1", {
+      accountId: "3fa85f64-5717-4562-b3fc-2c963f66beff",
+      uncategorized: true,
       from: new Date("2026-01-01"),
-      to: new Date("2026-02-01")
+      to: new Date("2026-02-01"),
+      minAmountMinor: 5000,
+      maxAmountMinor: 10000,
+      sort: "amount_asc",
+      q: "rent",
+      tag: "home"
     });
   });
 

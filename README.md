@@ -31,7 +31,7 @@ See `docs/backend/BACKEND.md` for the full target architecture, `AGENTS.md` for 
 - **Reports** — monthly rollups + nightly refresh cron
 - **Notifications** — outbox pattern, BullMQ delivery worker, circuit breaker on outbound calls, periodic sweep
 - **Balance verification** — weekly consistency-check cron comparing ledger vs. computed balances
-- **CSV export**
+- **CSV export** — exports every posted transaction matching the active transaction-page filters
 - **Budgets** — per-category monthly budget targets with spend tracking
 - **Goals** — savings/funding goals with ordered funding sources
 - **Credit card bills** — statement cycles, reconciliation, overpayment/underpayment handling

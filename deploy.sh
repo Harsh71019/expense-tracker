@@ -54,12 +54,14 @@ fi
 
 echo "==> Running database migrations (one-shot)..."
 # Runs drizzle-kit migrate and exits; failure aborts the deploy BEFORE anything restarts
-# --no-build: reuse the image already built/loaded above instead of Compose's bake builder,
-# which errors ("build tag cannot contain a digest") rebuilding this service on newer Compose
-docker compose --env-file .env run --rm --no-build migrate
+# --pull never: belt-and-suspenders for migrate's pull_policy: never (docker-compose.yml) --
+# without it, `run` on a service declaring both image: and build: defaults to building via
+# Compose's bake builder even when the image is already loaded, and bake then errors on it
+docker compose --env-file .env run --rm --pull never migrate
 
 echo "==> Restarting containers..."
-# --no-build: same reason as the migrate run above -- web has a build: stanza too
+# --no-build: belt-and-suspenders for web's pull_policy: never (docker-compose.yml), same
+# bake-on-build reasoning as migrate above -- `up` has a real --no-build flag, unlike `run`
 docker compose --env-file .env up -d --no-build
 
 # nginx resolves upstream container IPs once at startup and caches them --

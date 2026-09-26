@@ -38,6 +38,7 @@ services:
   # anything else restarts, same as before.
   migrate:
     image: treasury-ops-api:local
+    pull_policy: never
     build:
       context: .
       dockerfile: apps/api/Dockerfile
@@ -102,6 +103,8 @@ services:
       start_period: 20s
 
   web:
+    image: treasury-ops-web:latest
+    pull_policy: never
     build:
       context: .
       dockerfile: apps/web/Dockerfile

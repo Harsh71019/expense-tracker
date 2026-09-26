@@ -54,10 +54,13 @@ fi
 
 echo "==> Running database migrations (one-shot)..."
 # Runs drizzle-kit migrate and exits; failure aborts the deploy BEFORE anything restarts
-docker compose --env-file .env run --rm migrate
+# --no-build: reuse the image already built/loaded above instead of Compose's bake builder,
+# which errors ("build tag cannot contain a digest") rebuilding this service on newer Compose
+docker compose --env-file .env run --rm --no-build migrate
 
 echo "==> Restarting containers..."
-docker compose --env-file .env up -d
+# --no-build: same reason as the migrate run above -- web has a build: stanza too
+docker compose --env-file .env up -d --no-build
 
 # nginx resolves upstream container IPs once at startup and caches them --
 # recreating api/web (new container IPs on the docker network) without

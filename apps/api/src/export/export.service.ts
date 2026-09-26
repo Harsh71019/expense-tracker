@@ -7,7 +7,7 @@ import { toISTCalendarDate } from "../common/time/ist.js";
 import { TransactionRepository } from "../transactions/transaction.repository.js";
 import { neutralizeFormulaInjection, toCsvDocument } from "./csv-format.js";
 
-const PAGE_SIZE = 200;
+const PAGE_SIZE = 100;
 const CSV_HEADER = [
   "Date",
   "Type",
@@ -63,8 +63,7 @@ export class ExportService {
     let cursor: string | undefined;
     for (;;) {
       const page = await this.transactions.findMany(userId, {
-        from: query.from,
-        to: query.to,
+        ...query,
         cursor,
         limit: PAGE_SIZE
       });

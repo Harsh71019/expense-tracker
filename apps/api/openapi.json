@@ -18637,6 +18637,41 @@
         "parameters": [
           {
             "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": false,
+            "name": "accountId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": false,
+            "name": "categoryId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": ["true"]
+                },
+                {
+                  "type": "string",
+                  "enum": ["false"]
+                }
+              ]
+            },
+            "required": false,
+            "name": "uncategorized",
+            "in": "query"
+          },
+          {
+            "schema": {
               "type": ["string", "null"],
               "format": "date-time"
             },
@@ -18651,6 +18686,65 @@
             },
             "required": false,
             "name": "to",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "required": false,
+            "name": "amountMinor",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "required": false,
+            "name": "minAmountMinor",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "required": false,
+            "name": "maxAmountMinor",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["date_desc", "date_asc", "amount_desc", "amount_asc"]
+            },
+            "required": false,
+            "name": "sort",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "required": false,
+            "name": "q",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 40
+            },
+            "required": false,
+            "name": "tag",
             "in": "query"
           }
         ],

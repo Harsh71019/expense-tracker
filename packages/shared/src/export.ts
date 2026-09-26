@@ -1,8 +1,7 @@
 import { z } from "zod";
 
-export const ExportCsvQuerySchema = z.object({
-  from: z.coerce.date().optional(),
-  to: z.coerce.date().optional()
-});
+import { TransactionFiltersSchema } from "./transaction.js";
+
+export const ExportCsvQuerySchema = TransactionFiltersSchema;
 
 export type ExportCsvQuery = z.infer<typeof ExportCsvQuerySchema>;

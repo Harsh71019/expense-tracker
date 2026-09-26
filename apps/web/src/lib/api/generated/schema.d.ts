@@ -2782,8 +2782,17 @@ export interface paths {
     get: {
       parameters: {
         query?: {
+          accountId?: string;
+          categoryId?: string;
+          uncategorized?: "true" | "false";
           from?: string | null;
           to?: string | null;
+          amountMinor?: number;
+          minAmountMinor?: number;
+          maxAmountMinor?: number;
+          sort?: "date_desc" | "date_asc" | "amount_desc" | "amount_asc";
+          q?: string;
+          tag?: string;
         };
         header?: never;
         path?: never;

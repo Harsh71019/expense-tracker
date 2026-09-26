@@ -15,8 +15,21 @@ export function useExportCsv(): UseMutationResult<string, Error, ExportCsvQuery>
         const result = await apiClient.GET("/v1/export/csv", {
           params: {
             query: {
+              ...(query.accountId === undefined ? {} : { accountId: query.accountId }),
+              ...(query.categoryId === undefined ? {} : { categoryId: query.categoryId }),
+              ...(query.uncategorized === true ? { uncategorized: "true" as const } : {}),
               ...(query.from === undefined ? {} : { from: query.from.toISOString() }),
-              ...(query.to === undefined ? {} : { to: query.to.toISOString() })
+              ...(query.to === undefined ? {} : { to: query.to.toISOString() }),
+              ...(query.amountMinor === undefined ? {} : { amountMinor: query.amountMinor }),
+              ...(query.minAmountMinor === undefined
+                ? {}
+                : { minAmountMinor: query.minAmountMinor }),
+              ...(query.maxAmountMinor === undefined
+                ? {}
+                : { maxAmountMinor: query.maxAmountMinor }),
+              ...(query.sort === undefined ? {} : { sort: query.sort }),
+              ...(query.q === undefined ? {} : { q: query.q }),
+              ...(query.tag === undefined ? {} : { tag: query.tag })
             }
           }
         });

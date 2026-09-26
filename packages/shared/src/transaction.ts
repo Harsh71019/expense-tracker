@@ -88,7 +88,7 @@ export const BatchCategorizeTransactionsResultSchema = z.object({
 
 export const TransactionSortSchema = z.enum(["date_desc", "date_asc", "amount_desc", "amount_asc"]);
 
-export const ListTransactionsQuerySchema = z
+export const TransactionFiltersSchema = z
   .object({
     accountId: AccountIdSchema.optional(),
     categoryId: CategoryIdSchema.optional(),
@@ -103,11 +103,9 @@ export const ListTransactionsQuerySchema = z
     amountMinor: z.coerce.number().int().min(1).max(Number.MAX_SAFE_INTEGER).optional(),
     minAmountMinor: z.coerce.number().int().min(1).max(Number.MAX_SAFE_INTEGER).optional(),
     maxAmountMinor: z.coerce.number().int().min(1).max(Number.MAX_SAFE_INTEGER).optional(),
-    sort: TransactionSortSchema.default("date_desc").optional(),
+    sort: TransactionSortSchema.optional(),
     q: z.string().trim().min(1).max(200).optional(),
-    tag: z.string().trim().min(1).max(40).optional(),
-    cursor: z.string().min(1).optional(),
-    limit: z.coerce.number().int().min(1).max(100).default(50)
+    tag: z.string().trim().min(1).max(40).optional()
   })
   .refine((value) => !(value.uncategorized === true && value.categoryId !== undefined), {
     message: "Category and uncategorized filters cannot be used together.",
@@ -132,6 +130,12 @@ export const ListTransactionsQuerySchema = z
       path: ["amountMinor"]
     }
   );
+
+export const ListTransactionsQuerySchema = TransactionFiltersSchema.safeExtend({
+  sort: TransactionSortSchema.default("date_desc").optional(),
+  cursor: z.string().min(1).optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(50)
+});
 
 export const TransactionPageSchema = z.object({
   items: z.array(TransactionSchema),
@@ -203,6 +207,7 @@ export type Transaction = z.infer<typeof TransactionSchema>;
 export type TransactionId = z.infer<typeof TransactionIdSchema>;
 export type TransactionType = z.infer<typeof TransactionTypeSchema>;
 export type TransactionSort = z.infer<typeof TransactionSortSchema>;
+export type TransactionFilters = z.infer<typeof TransactionFiltersSchema>;
 export type ListTransactionsQuery = z.infer<typeof ListTransactionsQuerySchema>;
 export type TransactionPage = z.infer<typeof TransactionPageSchema>;
 export type TransactionActivityDay = z.infer<typeof TransactionActivityDaySchema>;

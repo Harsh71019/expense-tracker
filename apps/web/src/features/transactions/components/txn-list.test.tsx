@@ -1,7 +1,7 @@
 import { render, screen, within } from "@testing-library/react";
 import type { PendingTransaction } from "@treasury-ops/shared";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { TxnList } from "./txn-list";
 
@@ -13,7 +13,12 @@ const mocks = vi.hoisted(() => ({
   hasNextPage: true,
   fetching: false,
   isError: false,
-  push: vi.fn()
+  push: vi.fn(),
+  exportCsv: vi.fn(),
+  exportPending: false,
+  downloadCsvFile: vi.fn(),
+  toastSuccess: vi.fn(),
+  toastError: vi.fn()
 }));
 
 vi.mock("next/navigation", () => ({
@@ -47,8 +52,15 @@ vi.mock("../hooks/use-batch-categorize", () => ({
     isPending: mocks.batchPending
   })
 }));
+vi.mock("@/features/export/hooks/use-export-csv", () => ({
+  useExportCsv: () => ({ mutateAsync: mocks.exportCsv, isPending: mocks.exportPending })
+}));
+vi.mock("../model/export-csv", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../model/export-csv")>();
+  return { ...actual, downloadCsvFile: mocks.downloadCsvFile };
+});
 vi.mock("@/lib/toast", () => ({
-  toast: { success: vi.fn(), error: vi.fn() }
+  toast: { success: mocks.toastSuccess, error: mocks.toastError }
 }));
 vi.mock("@/features/transfers/hooks/use-transfers", () => ({
   useReverseTransfer: () => ({ mutate: vi.fn(), isPending: false })
@@ -122,6 +134,14 @@ vi.mock("./create-txn-sheet", () => ({
 describe("TxnList", () => {
   const page = { items: [], pageInfo: { nextCursor: null, hasMore: false, limit: 50 } };
   const pendingTransactions: PendingTransaction[] = [];
+
+  beforeEach(() => {
+    mocks.exportCsv.mockReset();
+    mocks.downloadCsvFile.mockReset();
+    mocks.toastSuccess.mockReset();
+    mocks.toastError.mockReset();
+    mocks.exportPending = false;
+  });
 
   it("opens the detail drawer on row click, paginates, and surfaces refresh errors", async () => {
     const user = userEvent.setup();
@@ -265,5 +285,38 @@ describe("TxnList", () => {
 
     await user.click(screen.getByRole("button", { name: /Sort by amount/ }));
     expect(mocks.push).toHaveBeenCalledWith("/transactions?sort=amount_desc");
+  });
+
+  it("exports every transaction matching the active filters through the server", async () => {
+    const user = userEvent.setup();
+    const filters = {
+      accountId: transaction.accountId,
+      from: new Date("2026-08-01T00:00:00.000Z"),
+      minAmountMinor: 1_000,
+      q: "refund",
+      tag: "work",
+      sort: "amount_desc" as const,
+      limit: 50
+    };
+    mocks.empty = false;
+    mocks.isError = false;
+    mocks.exportCsv.mockResolvedValue("Date,Amount\r\n2026-08-01,40.00\r\n");
+    render(
+      <TxnList
+        filters={filters}
+        initialPage={page}
+        initialInsights={null}
+        initialPendingTransactions={pendingTransactions}
+      />
+    );
+
+    await user.click(screen.getByRole("button", { name: "Export CSV" }));
+
+    expect(mocks.exportCsv).toHaveBeenCalledWith(filters);
+    expect(mocks.downloadCsvFile).toHaveBeenCalledWith(
+      expect.stringMatching(/^treasury-ops-transactions-\d{4}-\d{2}-\d{2}\.csv$/),
+      "Date,Amount\r\n2026-08-01,40.00\r\n"
+    );
+    expect(mocks.toastSuccess).toHaveBeenCalledWith("Exported all matching transactions to CSV");
   });
 });

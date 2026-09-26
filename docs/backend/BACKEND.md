@@ -891,7 +891,9 @@ GET    /budgets | PUT /budgets/:categoryId | PATCH /budgets/:budgetId/archive
 
 GET    /reports/monthly/:month          reads monthly_rollups
 GET    /reports/cashflow?from&to
-GET    /export/csv?from&to              your data back out, always
+GET    /export/csv?from&to&accountId&categoryId&uncategorized&amountMinor&
+       minAmountMinor&maxAmountMinor&sort&q&tag
+                                        all posted transactions matching the transaction-page filters
 
 GET    /spending-warnings?kind&severity&cursor&limit   reads the persisted snapshot only, never scans
 POST   /spending-warnings/:warningId/dismiss           Idempotency-Key required; scoped to the episode

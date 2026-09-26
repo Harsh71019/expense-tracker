@@ -33,13 +33,13 @@ git worktree add --quiet -d "${WORKDIR}/src" "${TARGET_TAG}"
 cd "${WORKDIR}/src"
 
 echo "==> Building treasury-ops-api:local for ${PLATFORM}..."
-docker buildx build --platform "${PLATFORM}" -f apps/api/Dockerfile -t treasury-ops-api:local --load .
+docker buildx build --platform "${PLATFORM}" -f apps/api/Dockerfile -t treasury-ops-api:local --provenance=false --sbom=false --load .
 
 echo "==> Building treasury-ops-web:latest for ${PLATFORM}..."
 docker buildx build --platform "${PLATFORM}" -f apps/web/Dockerfile -t treasury-ops-web:latest \
   --build-arg NEXT_PUBLIC_API_URL=/api \
   --build-arg INTERNAL_API_URL=http://api:4000/api \
-  --load .
+  --provenance=false --sbom=false --load .
 
 IMAGE_TAR="${WORKDIR}/treasury-ops-images.tar.gz"
 echo "==> Saving images to ${IMAGE_TAR}..."
@@ -60,5 +60,5 @@ ssh "${REMOTE_HOST}" "
   # first so SKIP_BUILD support is guaranteed present regardless of which
   # (possibly older) tag deploy.sh is about to check out for the app code.
   git checkout origin/main -- deploy.sh
-  SKIP_BUILD=1 bash deploy.sh ${TARGET_TAG}
+  SKIP_BUILD=1 COMPOSE_BAKE=false bash deploy.sh ${TARGET_TAG}
 "

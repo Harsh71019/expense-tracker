@@ -53,11 +53,14 @@ else
 fi
 
 echo "==> Running database migrations (one-shot)..."
-# Runs drizzle-kit migrate and exits; failure aborts the deploy BEFORE anything restarts
-# --pull never: belt-and-suspenders for migrate's pull_policy: never (docker-compose.yml) --
-# without it, `run` on a service declaring both image: and build: defaults to building via
-# Compose's bake builder even when the image is already loaded, and bake then errors on it
-docker compose --env-file .env run --rm --pull never migrate
+# Runs drizzle-kit migrate and exits; failure aborts the deploy BEFORE anything restarts.
+# Deliberately bypasses `docker compose run` -- on this server's Compose version it tries to
+# rebuild `migrate` via the bake builder regardless of pull_policy/image settings, and bake
+# fails on the digest it derives ("build tag cannot contain a digest"). migrate needs no
+# docker-network hostname resolution (DATABASE_URL/REDIS_URL point at container 102 by LAN
+# IP, not a compose service name), so a plain `docker run` against the already-loaded image
+# is equivalent and can never trigger a build.
+docker run --rm --env-file .env treasury-ops-api:local node_modules/drizzle-kit/bin.cjs migrate
 
 echo "==> Restarting containers..."
 # --no-build: belt-and-suspenders for web's pull_policy: never (docker-compose.yml), same

@@ -32,12 +32,17 @@ services:
         max-file: "3"
 
   # One-shot: runs drizzle-kit migrate, exits 0. Gates everything else.
-  # No depends_on the local `postgres` service above -- in production, Postgres is
-  # shared infra (container 102), reached over the network via DATABASE_URL. A
-  # migrate failure (including "can't reach the DB") aborts the deploy before
-  # anything else restarts, same as before.
+  # No depends_on the local `postgres` service above -- in production, DATABASE_URL points
+  # at `shared-postgres`, a sibling container on this same host/network (see shared-services
+  # compose project), not this local throwaway one. A migrate failure (including "can't
+  # reach the DB") aborts the deploy before anything else restarts, same as before.
+  # deploy.sh runs this via a plain `docker run` (not `docker compose run`/`up`) and
+  # explicitly scopes `up -d` to api/worker/web/proxy -- api/worker deliberately do NOT
+  # declare depends_on: migrate, since Compose has no visibility into a run it didn't
+  # orchestrate itself; deploy.sh's own script ordering (migrate, then up -d) is what
+  # actually guarantees migrations finish first.
   migrate:
-    image: treasury-ops-api:local
+    image: treasury-ops-api:${IMAGE_TAG:-local}
     pull_policy: never
     build:
       context: .
@@ -53,7 +58,7 @@ services:
     logging: *json_logging
 
   api:
-    image: treasury-ops-api:local
+    image: treasury-ops-api:${IMAGE_TAG:-local}
     pull_policy: never
     restart: unless-stopped
     env_file: .env
@@ -61,9 +66,6 @@ services:
       NODE_ENV: production
       SERVICE_ROLE: api
       GIT_SHA: ${GIT_SHA:-development}
-    depends_on:
-      migrate:
-        condition: service_completed_successfully
     networks:
       - treasury-ops-net
     logging: *json_logging
@@ -81,7 +83,7 @@ services:
       start_period: 20s
 
   worker:
-    image: treasury-ops-api:local
+    image: treasury-ops-api:${IMAGE_TAG:-local}
     pull_policy: never
     command: ["dist/worker.js"]
     restart: unless-stopped
@@ -89,9 +91,6 @@ services:
     environment:
       NODE_ENV: production
       SERVICE_ROLE: worker
-    depends_on:
-      migrate:
-        condition: service_completed_successfully
     networks:
       - treasury-ops-net
     logging: *json_logging
@@ -103,7 +102,7 @@ services:
       start_period: 20s
 
   web:
-    image: treasury-ops-web:latest
+    image: treasury-ops-web:${IMAGE_TAG:-latest}
     pull_policy: never
     build:
       context: .

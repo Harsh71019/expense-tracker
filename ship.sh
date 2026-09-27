@@ -32,18 +32,21 @@ echo "==> Checking out ${TARGET_TAG} into a scratch worktree (your working tree 
 git worktree add --quiet -d "${WORKDIR}/src" "${TARGET_TAG}"
 cd "${WORKDIR}/src"
 
-echo "==> Building treasury-ops-api:local for ${PLATFORM}..."
-docker buildx build --platform "${PLATFORM}" -f apps/api/Dockerfile -t treasury-ops-api:local --provenance=false --sbom=false --load .
+# Tagged per-version (never :local/:latest) so retagging on a later deploy can't drop this
+# version's repo@digest association out from under any container still referencing it --
+# see deploy.sh's IMAGE_TAG comment for the incident this fixes.
+echo "==> Building treasury-ops-api:${TARGET_TAG} for ${PLATFORM}..."
+docker buildx build --platform "${PLATFORM}" -f apps/api/Dockerfile -t "treasury-ops-api:${TARGET_TAG}" --provenance=false --sbom=false --load .
 
-echo "==> Building treasury-ops-web:latest for ${PLATFORM}..."
-docker buildx build --platform "${PLATFORM}" -f apps/web/Dockerfile -t treasury-ops-web:latest \
+echo "==> Building treasury-ops-web:${TARGET_TAG} for ${PLATFORM}..."
+docker buildx build --platform "${PLATFORM}" -f apps/web/Dockerfile -t "treasury-ops-web:${TARGET_TAG}" \
   --build-arg NEXT_PUBLIC_API_URL=/api \
   --build-arg INTERNAL_API_URL=http://api:4000/api \
   --provenance=false --sbom=false --load .
 
 IMAGE_TAR="${WORKDIR}/treasury-ops-images.tar.gz"
 echo "==> Saving images to ${IMAGE_TAR}..."
-docker save treasury-ops-api:local treasury-ops-web:latest | gzip > "${IMAGE_TAR}"
+docker save "treasury-ops-api:${TARGET_TAG}" "treasury-ops-web:${TARGET_TAG}" | gzip > "${IMAGE_TAR}"
 echo "    $(du -h "${IMAGE_TAR}" | cut -f1)"
 
 echo "==> Copying to ${REMOTE_HOST}..."
@@ -56,9 +59,9 @@ ssh "${REMOTE_HOST}" "
   rm -f /tmp/treasury-ops-images.tar.gz
   cd ${REMOTE_DIR}
   git fetch origin main --tags --quiet
-  # deploy.sh checks out TARGET_TAG on itself mid-run -- refresh it from main
-  # first so SKIP_BUILD support is guaranteed present regardless of which
-  # (possibly older) tag deploy.sh is about to check out for the app code.
-  git checkout origin/main -- deploy.sh
+  # deploy.sh checks out TARGET_TAG on itself mid-run -- refresh deploy infrastructure
+  # (this file, plus docker-compose.yml/nginx.conf) from main first so fixes to those are
+  # guaranteed present regardless of which (possibly older) tag is being deployed as app code.
+  git checkout origin/main -- deploy.sh docker-compose.yml nginx.conf
   SKIP_BUILD=1 COMPOSE_BAKE=false bash deploy.sh ${TARGET_TAG}
 "

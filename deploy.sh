@@ -56,11 +56,14 @@ echo "==> Running database migrations (one-shot)..."
 # Runs drizzle-kit migrate and exits; failure aborts the deploy BEFORE anything restarts.
 # Deliberately bypasses `docker compose run` -- on this server's Compose version it tries to
 # rebuild `migrate` via the bake builder regardless of pull_policy/image settings, and bake
-# fails on the digest it derives ("build tag cannot contain a digest"). migrate needs no
-# docker-network hostname resolution (DATABASE_URL/REDIS_URL point at container 102 by LAN
-# IP, not a compose service name), so a plain `docker run` against the already-loaded image
-# is equivalent and can never trigger a build.
-docker run --rm --env-file .env treasury-ops-api:local node_modules/drizzle-kit/bin.cjs migrate
+# fails on the digest it derives ("build tag cannot contain a digest"). A plain `docker run`
+# against the already-loaded image is equivalent and can never trigger a build.
+# --network: DATABASE_URL/REDIS_URL point at `shared-postgres`/`shared-redis` -- separate
+# containers on THIS host, on the same Compose-managed bridge network (not a LAN IP as
+# previously assumed), so this needs to join that network to resolve those hostnames.
+# <project>_<network-key> is Compose's default network name; there is no explicit `name:`
+# override in docker-compose.yml's networks: section, so this must match the project name.
+docker run --rm --env-file .env --network treasury-ops_treasury-ops-net treasury-ops-api:local node_modules/drizzle-kit/bin.cjs migrate
 
 echo "==> Restarting containers..."
 # --no-build: belt-and-suspenders for web's pull_policy: never (docker-compose.yml), same

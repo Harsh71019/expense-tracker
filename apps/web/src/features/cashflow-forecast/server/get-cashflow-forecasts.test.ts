@@ -89,6 +89,17 @@ describe("getCashflowForecasts", () => {
     });
   });
 
+  it("returns null forecasts when the API sends an empty successful response", async () => {
+    mocks.GET.mockResolvedValue({ response: { status: 200 } });
+    const { getCashflowForecasts } = await import("./get-cashflow-forecasts");
+
+    await expect(getCashflowForecasts()).resolves.toEqual({
+      thirtyDay: null,
+      sixtyDay: null,
+      ninetyDay: null
+    });
+  });
+
   it("returns parsed snapshots when available", async () => {
     mocks.GET.mockImplementation(
       async (_url: string, { params }: { params: { query: { days: number } } }) => {

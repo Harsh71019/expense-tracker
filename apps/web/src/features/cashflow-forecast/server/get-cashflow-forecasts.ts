@@ -21,7 +21,7 @@ async function getForecast(days: 30 | 60 | 90): Promise<CashflowForecastSnapshot
   if (result.error !== undefined) {
     throw toAppError(result.error, result.response.status);
   }
-  if (result.data === null) {
+  if (result.data === null || result.data === undefined) {
     return null;
   }
   const parsed = CashflowForecastSnapshotSchema.safeParse(result.data);

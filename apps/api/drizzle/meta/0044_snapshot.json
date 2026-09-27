@@ -1,5 +1,5 @@
 {
-  "id": "24f2cd79-5333-4cad-ae12-744bc095421a",
+  "id": "c3d03143-fb98-47d3-b576-9c3c8afa1ab1",
   "prevId": "8e02e5ba-0c06-46f8-a691-cca4e765b6ca",
   "version": "7",
   "dialect": "postgresql",
@@ -3448,15 +3448,6 @@
           "tableFrom": "staged_rows",
           "tableTo": "categories",
           "columnsFrom": ["suggestion_category_id"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "staged_rows_matched_transaction_id_transactions_id_fk": {
-          "name": "staged_rows_matched_transaction_id_transactions_id_fk",
-          "tableFrom": "staged_rows",
-          "tableTo": "transactions",
-          "columnsFrom": ["matched_transaction_id"],
           "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"

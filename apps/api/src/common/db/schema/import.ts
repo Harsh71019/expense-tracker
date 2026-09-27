@@ -20,7 +20,6 @@ import {
   importWorkflowOperationEnum,
   transactionTypeEnum
 } from "./enums.js";
-import { transactions } from "./transaction.js";
 
 export const importBatches = pgTable(
   "import_batches",
@@ -92,7 +91,10 @@ export const stagedRows = pgTable(
     nearDuplicateOutcome: text("near_duplicate_outcome"),
     nearDuplicateConfidenceBps: integer("near_duplicate_confidence_bps"),
     nearDuplicateResult: jsonb("near_duplicate_result"),
-    matchedTransactionId: uuid("matched_transaction_id").references(() => transactions.id),
+    // Tenant/type/amount/date ownership is validated before assignment. This
+    // deliberately has no FK because transactions already reference import
+    // batches; importing that schema here would create a module cycle.
+    matchedTransactionId: uuid("matched_transaction_id"),
     statementReference: text("statement_reference"),
     statementClosingBalanceMinor: bigint("statement_closing_balance_minor", { mode: "number" }),
     problems: text("problems").array().notNull().default([]),

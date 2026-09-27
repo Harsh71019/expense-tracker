@@ -71,6 +71,35 @@ echo "==> Running database migrations (one-shot)..."
 # override in docker-compose.yml's networks: section, so this must match the project name.
 docker run --rm --env-file .env --network treasury-ops_treasury-ops-net "treasury-ops-api:${IMAGE_TAG}" node_modules/drizzle-kit/bin.cjs migrate
 
+# A separate homelab-wide convention (not tracked in this repo) writes docker-compose.override.yml
+# per app -- Compose auto-merges it over docker-compose.yml on every command. It pins api/worker/
+# migrate/web to a hardcoded image digest and labels itself "update-policy: manual", meaning
+# updating this file's pin was always meant to be part of deploying, just never wired in -- found
+# after that stale Sep-13 pin (still v0.22.3) silently overrode every image: field here all night,
+# causing every up -d failure ("No such image: treasury-ops-api@sha256:...") regardless of what
+# this repo's docker-compose.yml said. It also pins api's GIT_SHA env var, which would otherwise
+# make /api/healthz report a stale version forever even with the image itself fixed.
+if [ -f docker-compose.override.yml ]; then
+  echo "==> Syncing pinned image/GIT_SHA references in docker-compose.override.yml..."
+  python3 - "${IMAGE_TAG}" "${GIT_SHA}" <<'PYEOF'
+import json, os, sys
+image_tag, git_sha = sys.argv[1], sys.argv[2]
+path = "docker-compose.override.yml"
+mode = os.stat(path).st_mode
+with open(path) as f:
+    data = json.load(f)
+repos = {"api": "treasury-ops-api", "worker": "treasury-ops-api", "migrate": "treasury-ops-api", "web": "treasury-ops-web"}
+for svc, repo in repos.items():
+    if svc in data.get("services", {}):
+        data["services"][svc]["image"] = f"{repo}:{image_tag}"
+if "api" in data.get("services", {}):
+    data["services"]["api"].setdefault("environment", {})["GIT_SHA"] = git_sha
+with open(path, "w") as f:
+    json.dump(data, f, indent=2)
+os.chmod(path, mode)
+PYEOF
+fi
+
 echo "==> Restarting containers..."
 # --no-build: belt-and-suspenders for web's pull_policy: never (docker-compose.yml), same
 # bake-on-build reasoning as migrate above -- `up` has a real --no-build flag, unlike `run`

@@ -33,6 +33,12 @@ git checkout --quiet "${TARGET_TAG}"
 
 NEW_SHA="$(git rev-parse --short HEAD)"
 export GIT_SHA="${TARGET_TAG}+${NEW_SHA}"
+# Images are tagged per-version (treasury-ops-api:${IMAGE_TAG}), never a mutable :local/:latest
+# that gets overwritten every deploy -- see docker-compose.yml's image: fields. Retagging a
+# mutable tag drops the OLD digest's repo association, which broke Compose's recreate/create
+# for any container still referencing it ("No such image: treasury-ops-api@sha256:...") --
+# a stale tag never gets reused now, so that digest lookup always keeps resolving.
+export IMAGE_TAG="${TARGET_TAG}"
 
 if [ "${PREV_TAG}" = "${TARGET_TAG}" ]; then
   echo "==> Already on ${TARGET_TAG}. Rebuilding anyway (env/Dockerfile changes)..."
@@ -41,7 +47,7 @@ echo "==> Deploying ${TARGET_TAG} (${NEW_SHA})"
 
 if [ "${SKIP_BUILD:-}" = "1" ]; then
   echo "==> Skipping build (SKIP_BUILD=1) -- expecting images already loaded, e.g. via ship.sh"
-  for image in treasury-ops-api:local treasury-ops-web:latest; do
+  for image in "treasury-ops-api:${IMAGE_TAG}" "treasury-ops-web:${IMAGE_TAG}"; do
     if ! docker image inspect "${image}" > /dev/null 2>&1; then
       echo "!!  SKIP_BUILD=1 but ${image} isn't loaded. Run ship.sh first, or drop SKIP_BUILD to build here."
       exit 1
@@ -63,12 +69,17 @@ echo "==> Running database migrations (one-shot)..."
 # previously assumed), so this needs to join that network to resolve those hostnames.
 # <project>_<network-key> is Compose's default network name; there is no explicit `name:`
 # override in docker-compose.yml's networks: section, so this must match the project name.
-docker run --rm --env-file .env --network treasury-ops_treasury-ops-net treasury-ops-api:local node_modules/drizzle-kit/bin.cjs migrate
+docker run --rm --env-file .env --network treasury-ops_treasury-ops-net "treasury-ops-api:${IMAGE_TAG}" node_modules/drizzle-kit/bin.cjs migrate
 
 echo "==> Restarting containers..."
 # --no-build: belt-and-suspenders for web's pull_policy: never (docker-compose.yml), same
 # bake-on-build reasoning as migrate above -- `up` has a real --no-build flag, unlike `run`
-docker compose --env-file .env up -d --no-build
+# Explicit service list excludes migrate: it now runs entirely outside Compose (above), but
+# an unscoped `up -d` still tries to reconcile every declared service including migrate, and
+# errors trying to recreate it if a stale/leftover migrate container references an image ID
+# that's since been replaced (hit this exact case: a container from weeks ago, back when
+# migrate still ran via `docker compose run`, referencing a now-gone image by digest)
+docker compose --env-file .env up -d --no-build api worker web proxy
 
 # nginx resolves upstream container IPs once at startup and caches them --
 # recreating api/web (new container IPs on the docker network) without
@@ -77,7 +88,14 @@ docker compose --env-file .env up -d --no-build
 echo "==> Restarting proxy to pick up new upstream container IPs..."
 docker compose --env-file .env restart proxy
 
-echo "==> Pruning old images..."
+echo "==> Pruning old versioned images (keeping current + previous 2 for rollback)..."
+# Per-version tags (see IMAGE_TAG above) never go dangling on their own since nothing
+# retags/overwrites them -- `docker image prune` alone would never clean these up, so old
+# versions must be pruned by tag explicitly, or they accumulate forever on this small LXC.
+for repo in treasury-ops-api treasury-ops-web; do
+  docker images "${repo}" --format '{{.Tag}}' | grep -v '^<none>$' | sort -rV | tail -n +3 \
+    | xargs -r -I{} docker rmi "${repo}:{}"
+done
 docker image prune -f
 
 echo "==> Waiting for health checks..."

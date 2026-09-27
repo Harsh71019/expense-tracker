@@ -22,6 +22,8 @@ type MappingDraft = Readonly<{
   amount: string;
   debit: string;
   credit: string;
+  reference: string;
+  balance: string;
 }>;
 
 const emptyDraft: MappingDraft = {
@@ -31,7 +33,9 @@ const emptyDraft: MappingDraft = {
   amountConvention: "debit_credit_cols",
   amount: "",
   debit: "",
-  credit: ""
+  credit: "",
+  reference: "",
+  balance: ""
 };
 
 function fromMapping(mapping: ColumnMapping): MappingDraft {
@@ -42,18 +46,25 @@ function fromMapping(mapping: ColumnMapping): MappingDraft {
     amountConvention: mapping.amountConvention,
     amount: mapping.amount ?? "",
     debit: mapping.debit ?? "",
-    credit: mapping.credit ?? ""
+    credit: mapping.credit ?? "",
+    reference: mapping.reference ?? "",
+    balance: mapping.balance ?? ""
   };
 }
 
 function toMapping(draft: MappingDraft): unknown {
+  const statementColumns = {
+    ...(draft.reference.trim() === "" ? {} : { reference: draft.reference }),
+    ...(draft.balance.trim() === "" ? {} : { balance: draft.balance })
+  };
   return draft.amountConvention === "single_signed"
     ? {
         date: draft.date,
         description: draft.description,
         dateFormat: draft.dateFormat,
         amountConvention: draft.amountConvention,
-        amount: draft.amount
+        amount: draft.amount,
+        ...statementColumns
       }
     : {
         date: draft.date,
@@ -61,7 +72,8 @@ function toMapping(draft: MappingDraft): unknown {
         dateFormat: draft.dateFormat,
         amountConvention: draft.amountConvention,
         debit: draft.debit,
-        credit: draft.credit
+        credit: draft.credit,
+        ...statementColumns
       };
 }
 
@@ -166,6 +178,39 @@ export function ColumnMappingForm({
         placeholder="Narration…"
         className={inputClasses}
       />
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label htmlFor="map-reference" className={labelClasses}>
+            Bank reference column{" "}
+            <span className="font-normal text-foreground-muted">(optional)</span>
+          </label>
+          <input
+            id="map-reference"
+            name="referenceColumn"
+            autoComplete="off"
+            value={effectiveDraft.reference}
+            onChange={(event) => update({ ...effectiveDraft, reference: event.target.value })}
+            placeholder="Chq./Ref.No.…"
+            className={inputClasses}
+          />
+        </div>
+        <div>
+          <label htmlFor="map-balance" className={labelClasses}>
+            Closing balance column{" "}
+            <span className="font-normal text-foreground-muted">(for reconciliation)</span>
+          </label>
+          <input
+            id="map-balance"
+            name="balanceColumn"
+            autoComplete="off"
+            value={effectiveDraft.balance}
+            onChange={(event) => update({ ...effectiveDraft, balance: event.target.value })}
+            placeholder="Closing Balance…"
+            className={inputClasses}
+          />
+        </div>
+      </div>
 
       <span className={labelClasses}>How are amounts stored?</span>
       <div className="flex flex-col gap-2.5 sm:flex-row">

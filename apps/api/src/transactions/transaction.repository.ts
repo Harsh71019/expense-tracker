@@ -519,6 +519,30 @@ export class TransactionRepository {
   }
 
   /**
+   * Signed ledger movement strictly before a boundary. Every append-only row
+   * participates, including reversals; filtering by current status would
+   * remove the original side of a compensated entry and corrupt history.
+   */
+  async sumAccountDeltaBefore(userId: string, accountId: string, before: Date): Promise<number> {
+    const [row] = await this.db
+      .select({
+        total:
+          sql<number>`COALESCE(SUM(CASE WHEN ${transactions.type} = 'income' THEN ${transactions.amountMinor} ELSE -${transactions.amountMinor} END), 0)`.mapWith(
+            Number
+          )
+      })
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.userId, userId),
+          eq(transactions.accountId, accountId),
+          lt(transactions.occurredAt, before)
+        )
+      );
+    return row?.total ?? 0;
+  }
+
+  /**
    * Bounded candidate blocking for statement assignment. The caller derives
    * the small type/amount/date sets from parsed statement rows; no narration
    * is part of this database predicate.

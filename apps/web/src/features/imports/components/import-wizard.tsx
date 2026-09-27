@@ -1,6 +1,10 @@
 "use client";
 
-import type { ColumnMapping, ImportBatch } from "@treasury-ops/shared";
+import type {
+  ColumnMapping,
+  ImportBatch,
+  StatementReconciliationInput
+} from "@treasury-ops/shared";
 import Link from "next/link";
 import { useState } from "react";
 import type { ReactNode } from "react";
@@ -26,6 +30,8 @@ import { UploadStep } from "./upload-step";
 
 type WizardStep = 0 | 1 | 2;
 
+const DEFAULT_STATEMENT_PERIOD = currentISTMonthRange();
+
 export function ImportWizard({
   initialBatches
 }: Readonly<{ initialBatches: ImportBatch[] }>): ReactNode {
@@ -41,10 +47,13 @@ export function ImportWizard({
   const [step, setStep] = useState<WizardStep>(0);
   const [accountId, setAccountId] = useState("");
   const [file, setFile] = useState<File>();
+  const [periodFrom, setPeriodFrom] = useState(DEFAULT_STATEMENT_PERIOD.from);
+  const [periodThrough, setPeriodThrough] = useState(DEFAULT_STATEMENT_PERIOD.through);
   const [mapping, setMapping] = useState<ColumnMapping>();
   const [mappingError, setMappingError] = useState<string>();
   const [currentBatch, setCurrentBatch] = useState<ImportBatch>();
   const [includedCount, setIncludedCount] = useState(0);
+  const [reconciliationReady, setReconciliationReady] = useState(false);
   const [commitOpen, setCommitOpen] = useState(false);
   const [revertTarget, setRevertTarget] = useState<ImportBatch>();
   const [deleteTarget, setDeleteTarget] = useState<ImportBatch>();
@@ -59,17 +68,23 @@ export function ImportWizard({
     setStep(0);
     setAccountId("");
     setFile(undefined);
+    setPeriodFrom(DEFAULT_STATEMENT_PERIOD.from);
+    setPeriodThrough(DEFAULT_STATEMENT_PERIOD.through);
     setMapping(undefined);
     setMappingError(undefined);
     setCurrentBatch(undefined);
     setIncludedCount(0);
+    setReconciliationReady(false);
   }
 
   function resumeBatch(batch: ImportBatch): void {
     setView("wizard");
     setStep(2);
     setAccountId(batch.accountId);
+    setPeriodFrom(batch.reconciliation?.periodFrom ?? "");
+    setPeriodThrough(batch.reconciliation?.periodThrough ?? "");
     setCurrentBatch(batch);
+    setReconciliationReady(batch.reconciliation === undefined);
   }
 
   function back(): void {
@@ -90,9 +105,22 @@ export function ImportWizard({
       setStep(1);
       return;
     }
-    if (mapping === undefined || file === undefined) return;
+    if (
+      mapping === undefined ||
+      mapping.balance === undefined ||
+      file === undefined ||
+      periodFrom === "" ||
+      periodThrough === ""
+    )
+      return;
+    const reconciliation: StatementReconciliationInput = {
+      periodFrom,
+      periodThrough,
+      balanceColumn: mapping.balance,
+      ...(mapping.reference === undefined ? {} : { referenceColumn: mapping.reference })
+    };
     try {
-      const batch = await upload.mutateAsync({ file, accountId, mapping });
+      const batch = await upload.mutateAsync({ file, accountId, mapping, reconciliation });
       setCurrentBatch(batch);
       if (batch.status === "staged") {
         setStep(2);
@@ -142,8 +170,13 @@ export function ImportWizard({
     }
   }
 
-  const canLeaveUpload = accountId !== "" && file !== undefined;
-  const canLeaveMap = mapping !== undefined;
+  const canLeaveUpload =
+    accountId !== "" &&
+    file !== undefined &&
+    periodFrom !== "" &&
+    periodThrough !== "" &&
+    periodFrom <= periodThrough;
+  const canLeaveMap = mapping !== undefined && mapping.balance !== undefined;
   const nextEnabled = step === 0 ? canLeaveUpload : canLeaveMap;
   const backLabel = step === 0 ? "Cancel" : step === 1 ? "Back" : "Save & exit";
 
@@ -198,6 +231,12 @@ export function ImportWizard({
               onAccountChange={setAccountId}
               file={file}
               onFileChange={setFile}
+              periodFrom={periodFrom}
+              periodThrough={periodThrough}
+              onPeriodChange={(from, through) => {
+                setPeriodFrom(from);
+                setPeriodThrough(through);
+              }}
             />
           ) : null}
 
@@ -207,7 +246,12 @@ export function ImportWizard({
               accountName={accountName}
               onChange={(nextMapping, nextError) => {
                 setMapping(nextMapping);
-                setMappingError(nextError);
+                setMappingError(
+                  nextError ??
+                    (nextMapping?.balance === undefined
+                      ? "Choose the running or closing balance column to reconcile this statement."
+                      : undefined)
+                );
               }}
             />
           ) : null}
@@ -217,6 +261,8 @@ export function ImportWizard({
               batchId={currentBatch.id}
               categories={categoryItems}
               onCountsChange={setIncludedCount}
+              reconciliationEnabled={currentBatch.reconciliation !== undefined}
+              onReconciliationReady={setReconciliationReady}
             />
           ) : null}
 
@@ -242,7 +288,11 @@ export function ImportWizard({
                 {upload.isPending ? "Uploading…" : step === 0 ? "Map columns →" : "Review rows →"}
               </Button>
             ) : (
-              <Button type="button" onClick={() => setCommitOpen(true)}>
+              <Button
+                type="button"
+                disabled={!reconciliationReady}
+                onClick={() => setCommitOpen(true)}
+              >
                 Commit {includedCount} transactions
               </Button>
             )}
@@ -278,4 +328,23 @@ export function ImportWizard({
       )}
     </section>
   );
+}
+
+function currentISTMonthRange(): Readonly<{ from: string; through: string }> {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit"
+  }).formatToParts(new Date());
+  const yearPart = parts.find((part) => part.type === "year")?.value;
+  const monthPart = parts.find((part) => part.type === "month")?.value;
+  if (yearPart === undefined || monthPart === undefined) {
+    throw new Error("Could not determine the current India calendar month.");
+  }
+  const month = `${yearPart}-${monthPart}`;
+  const finalDay = new Date(Date.UTC(Number(yearPart), Number(monthPart), 0)).getUTCDate();
+  return {
+    from: `${month}-01`,
+    through: `${month}-${String(finalDay).padStart(2, "0")}`
+  };
 }

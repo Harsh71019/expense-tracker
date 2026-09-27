@@ -34,6 +34,7 @@ export const importBatches = pgTable(
     filename: text("filename").notNull(),
     fileHash: text("file_hash").notNull(),
     mapping: jsonb("mapping").notNull(),
+    reconciliation: jsonb("reconciliation"),
     fileContentBase64: text("file_content_base64"),
     status: importBatchStatusEnum("status").notNull(),
     workflowOperation: importWorkflowOperationEnum("workflow_operation"),
@@ -90,6 +91,12 @@ export const stagedRows = pgTable(
     nearDuplicateOutcome: text("near_duplicate_outcome"),
     nearDuplicateConfidenceBps: integer("near_duplicate_confidence_bps"),
     nearDuplicateResult: jsonb("near_duplicate_result"),
+    // Tenant/type/amount/date ownership is validated before assignment. This
+    // deliberately has no FK because transactions already reference import
+    // batches; importing that schema here would create a module cycle.
+    matchedTransactionId: uuid("matched_transaction_id"),
+    statementReference: text("statement_reference"),
+    statementClosingBalanceMinor: bigint("statement_closing_balance_minor", { mode: "number" }),
     problems: text("problems").array().notNull().default([]),
     isDuplicate: boolean("is_duplicate").notNull(),
     include: boolean("include").notNull(),
@@ -97,6 +104,9 @@ export const stagedRows = pgTable(
   },
   (table) => [
     index("staged_rows_batch_id").on(table.batchId),
-    index("staged_rows_created_at").on(table.createdAt)
+    index("staged_rows_created_at").on(table.createdAt),
+    uniqueIndex("staged_rows_batch_match_unique")
+      .on(table.batchId, table.matchedTransactionId)
+      .where(sql`${table.matchedTransactionId} IS NOT NULL`)
   ]
 );

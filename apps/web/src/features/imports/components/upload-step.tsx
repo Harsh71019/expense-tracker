@@ -34,6 +34,9 @@ type UploadStepProps = Readonly<{
   onAccountChange: (accountId: string) => void;
   file: File | undefined;
   onFileChange: (file: File | undefined) => void;
+  periodFrom?: string;
+  periodThrough?: string;
+  onPeriodChange?: (from: string, through: string) => void;
 }>;
 
 export function UploadStep({
@@ -41,7 +44,10 @@ export function UploadStep({
   accountId,
   onAccountChange,
   file,
-  onFileChange
+  onFileChange,
+  periodFrom = "",
+  periodThrough = "",
+  onPeriodChange = () => undefined
 }: UploadStepProps): ReactNode {
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<FileError>();
@@ -76,6 +82,16 @@ export function UploadStep({
     }))
   ];
 
+  function selectMonth(month: string): void {
+    if (!/^\d{4}-\d{2}$/.test(month)) return;
+    const [yearPart, monthPart] = month.split("-");
+    const year = Number(yearPart);
+    const monthNumber = Number(monthPart);
+    if (!Number.isSafeInteger(year) || !Number.isSafeInteger(monthNumber)) return;
+    const finalDay = new Date(Date.UTC(year, monthNumber, 0)).getUTCDate();
+    onPeriodChange(`${month}-01`, `${month}-${String(finalDay).padStart(2, "0")}`);
+  }
+
   return (
     <div className="mt-5.5 animate-fade-in rounded-[18px] border border-border bg-surface-elevated p-4 sm:p-6.5">
       <div className="mt-0 mb-2 block text-xs font-semibold text-foreground">
@@ -90,6 +106,58 @@ export function UploadStep({
         placeholder="Select an account"
         onChange={onAccountChange}
       />
+
+      <div className="mt-5 grid gap-4 sm:grid-cols-3">
+        <div>
+          <label
+            htmlFor="statement-month"
+            className="mb-2 block text-xs font-semibold text-foreground"
+          >
+            Whole month shortcut
+          </label>
+          <input
+            id="statement-month"
+            type="month"
+            onChange={(event) => selectMonth(event.target.value)}
+            className="min-h-11 w-full rounded-[11px] border border-border bg-surface-muted px-3.5 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
+          />
+        </div>
+        <div>
+          <label
+            htmlFor="statement-from"
+            className="mb-2 block text-xs font-semibold text-foreground"
+          >
+            Statement starts
+          </label>
+          <input
+            id="statement-from"
+            type="date"
+            value={periodFrom}
+            onChange={(event) => onPeriodChange(event.target.value, periodThrough)}
+            className="min-h-11 w-full rounded-[11px] border border-border bg-surface-muted px-3.5 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
+          />
+        </div>
+        <div>
+          <label
+            htmlFor="statement-through"
+            className="mb-2 block text-xs font-semibold text-foreground"
+          >
+            Statement ends
+          </label>
+          <input
+            id="statement-through"
+            type="date"
+            min={periodFrom}
+            value={periodThrough}
+            onChange={(event) => onPeriodChange(periodFrom, event.target.value)}
+            className="min-h-11 w-full rounded-[11px] border border-border bg-surface-muted px-3.5 py-2.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
+          />
+        </div>
+      </div>
+      <p className="mt-2 text-xs text-foreground-muted">
+        Partial and multi-month statements are supported. Pick the exact first and last date covered
+        by this file.
+      </p>
 
       <label
         htmlFor="import-file"

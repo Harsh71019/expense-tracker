@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { COLUMN_MAPPING_PRESETS, ColumnMappingSchema, StagedRowSchema } from "./import.js";
+import {
+  COLUMN_MAPPING_PRESETS,
+  ColumnMappingSchema,
+  StagedRowSchema,
+  StatementReconciliationInputSchema
+} from "./import.js";
 
 describe("COLUMN_MAPPING_PRESETS", () => {
   it("every preset is a valid ColumnMapping", () => {
@@ -59,5 +64,41 @@ describe("StagedRowSchema category suggestions", () => {
       include: true
     });
     expect(row.suggestedCategoryId).not.toBe(row.categorySuggestion?.categoryId);
+  });
+});
+
+describe("StatementReconciliationInputSchema", () => {
+  it("accepts partial and multi-month statement ranges", () => {
+    expect(
+      StatementReconciliationInputSchema.parse({
+        periodFrom: "2026-09-01",
+        periodThrough: "2026-09-23",
+        balanceColumn: "Closing Balance"
+      }).periodThrough
+    ).toBe("2026-09-23");
+    expect(
+      StatementReconciliationInputSchema.parse({
+        periodFrom: "2026-07-01",
+        periodThrough: "2026-09-30",
+        balanceColumn: "Closing Balance"
+      }).periodFrom
+    ).toBe("2026-07-01");
+  });
+
+  it("rejects reversed and impossible ranges", () => {
+    expect(() =>
+      StatementReconciliationInputSchema.parse({
+        periodFrom: "2026-09-23",
+        periodThrough: "2026-09-01",
+        balanceColumn: "Closing Balance"
+      })
+    ).toThrow();
+    expect(() =>
+      StatementReconciliationInputSchema.parse({
+        periodFrom: "2026-02-30",
+        periodThrough: "2026-03-01",
+        balanceColumn: "Closing Balance"
+      })
+    ).toThrow();
   });
 });

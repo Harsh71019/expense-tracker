@@ -11,7 +11,8 @@ type UpdateStagedRowRequest = UpdateStagedRow & Readonly<{ batchId: string; stag
 type DefinedUpdate =
   | Readonly<{ include: boolean }>
   | Readonly<{ suggestedCategoryId: string | null }>
-  | Readonly<{ include: boolean; suggestedCategoryId: string | null }>;
+  | Readonly<{ include: boolean; suggestedCategoryId: string | null }>
+  | Readonly<{ matchedTransactionId: string | null }>;
 
 async function patchRow(
   batchId: string,
@@ -35,9 +36,13 @@ export function useUpdateStagedRow(): UseMutationResult<StagedRow, Error, Update
       batchId,
       stagedRowId,
       include,
-      suggestedCategoryId
+      suggestedCategoryId,
+      matchedTransactionId
     }): Promise<StagedRow> => {
       try {
+        if (matchedTransactionId !== undefined) {
+          return await patchRow(batchId, stagedRowId, { matchedTransactionId });
+        }
         if (include === undefined) {
           if (suggestedCategoryId === undefined) {
             throw new Error("A staged-row update requires at least one field.");
@@ -52,7 +57,11 @@ export function useUpdateStagedRow(): UseMutationResult<StagedRow, Error, Update
         throw toNetworkError(error);
       }
     },
-    onSettled: (_data, _error, variables) =>
-      void queryClient.invalidateQueries({ queryKey: qk.importPreview(variables.batchId) })
+    onSettled: async (_data, _error, variables) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: qk.importPreview(variables.batchId) }),
+        queryClient.invalidateQueries({ queryKey: qk.importReconciliation(variables.batchId) })
+      ]);
+    }
   });
 }

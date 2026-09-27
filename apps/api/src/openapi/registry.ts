@@ -96,6 +96,7 @@ import {
   ValuationPageSchema,
   NetWorthSchema,
   ImportBatchSchema,
+  ImportReconciliationSummarySchema,
   AccountImportMappingSchema,
   ImportBatchIdSchema,
   PreviewStagedRowsQuerySchema,
@@ -270,6 +271,9 @@ const Valuation = ValuationSchema.meta({ id: "Valuation" });
 const ValuationPage = ValuationPageSchema.meta({ id: "ValuationPage" });
 const NetWorth = NetWorthSchema.meta({ id: "NetWorth" });
 const ImportBatch = ImportBatchSchema.meta({ id: "ImportBatch" });
+const ImportReconciliationSummary = ImportReconciliationSummarySchema.meta({
+  id: "ImportReconciliationSummary"
+});
 const AccountImportMapping = AccountImportMappingSchema.meta({ id: "AccountImportMapping" });
 const StagedRow = StagedRowSchema.meta({ id: "StagedRow" });
 const StagedRowPage = StagedRowPageSchema.meta({ id: "StagedRowPage" });
@@ -553,6 +557,21 @@ registry.registerPath({
   responses: {
     200: { description: "Staged row page", ...json(StagedRowPage) },
     404: { description: "Not found", ...json(ProblemDetails) },
+    ...problemResponses
+  }
+});
+registry.registerPath({
+  method: "get",
+  path: "/v1/imports/{importBatchId}/reconciliation",
+  security: secured,
+  request: { params: importBatchId },
+  responses: {
+    200: {
+      description: "Live statement reconciliation summary",
+      ...json(ImportReconciliationSummary)
+    },
+    404: { description: "Not found", ...json(ProblemDetails) },
+    409: { description: "Import is not a reconciliation", ...json(ProblemDetails) },
     ...problemResponses
   }
 });
@@ -1829,7 +1848,11 @@ registry.registerPath({
           schema: z.object({
             file: z.string().describe("CSV statement file to upload (binary)"),
             accountId: z.string().describe("Account ID to import to"),
-            mapping: z.string().describe("JSON string containing ColumnMapping")
+            mapping: z.string().describe("JSON string containing ColumnMapping"),
+            reconciliation: z
+              .string()
+              .optional()
+              .describe("JSON statement range and balance-column metadata")
           })
         }
       }

@@ -5,7 +5,10 @@ import {
   ALLOWED_IMPORT_FILE_EXTENSIONS,
   ALLOWED_IMPORT_MIME_TYPES,
   MAX_IMPORT_FILE_SIZE_BYTES,
-  MAX_IMPORT_ROWS
+  MAX_IMPORT_ROWS,
+  ImportReconciliationSummarySchema,
+  parseMinor,
+  sumMinorAmounts
 } from "@treasury-ops/shared";
 import type {
   AccountId,
@@ -14,10 +17,14 @@ import type {
   ImportBatch,
   ImportBatchId,
   ImportBatchStats,
+  ImportReconciliation,
+  ImportReconciliationSummary,
   ParsedRow,
   StagedRow,
   StagedRowId,
   StagedRowPage,
+  StatementReconciliationInput,
+  TransactionId,
   UpdateStagedRow
 } from "@treasury-ops/shared";
 import { parse } from "csv-parse/sync";
@@ -41,7 +48,8 @@ import { ImportFileTooLargeError } from "../common/errors/import-file-too-large.
 import { InvalidImportFileError } from "../common/errors/invalid-import-file.error.js";
 import { LoggingContextService } from "../common/logging/logging-context.service.js";
 import { MetricsService } from "../common/observability/metrics.service.js";
-import { addDaysUtc, istCalendarDateStartUtc } from "../common/time/ist.js";
+import { parseExplicitDate } from "../common/time/parse-date.js";
+import { addDaysUtc, istCalendarDateStartUtc, toISTCalendarDate } from "../common/time/ist.js";
 import { TransactionRepository } from "../transactions/transaction.repository.js";
 import { computeDedupeFingerprintV2 } from "./dedupe-fingerprint-v2.js";
 import { computeDedupeHash } from "./dedupe-hash.js";
@@ -77,6 +85,7 @@ type ParsedImportRow = Readonly<{
   problems: readonly string[];
   dedupeHashV1?: string | undefined;
   dedupeFingerprintV2?: string | undefined;
+  matchDescription?: string | undefined;
 }>;
 
 @Injectable()
@@ -110,7 +119,8 @@ export class ImportsService {
     filename: string,
     mimetype: string,
     buffer: Buffer,
-    mapping: ColumnMapping
+    mapping: ColumnMapping,
+    reconciliation?: StatementReconciliationInput
   ): Promise<ImportBatch> {
     assertValidImportFile(filename, mimetype, buffer);
 
@@ -121,13 +131,20 @@ export class ImportsService {
     }
 
     const correlationId = this.context.get()?.reqId ?? crypto.randomUUID();
-    return withTxn(this.db, (tx) =>
-      this.batches.create(userId, accountId, filename, fileHash, mapping, {
-        fileContentBase64: buffer.toString("base64"),
-        correlationId,
-        tx
-      })
-    );
+    return withTxn(this.db, (tx) => {
+      const workflow = { fileContentBase64: buffer.toString("base64"), correlationId, tx };
+      return reconciliation === undefined
+        ? this.batches.create(userId, accountId, filename, fileHash, mapping, workflow)
+        : this.batches.create(
+            userId,
+            accountId,
+            filename,
+            fileHash,
+            mapping,
+            workflow,
+            reconciliation
+          );
+    });
   }
 
   async runWorkflow(data: ImportWorkflowJobData): Promise<void> {
@@ -157,6 +174,7 @@ export class ImportsService {
         payload.accountId,
         payload.mapping,
         Buffer.from(payload.fileContentBase64, "base64").toString("utf8"),
+        payload.reconciliation,
         data.claimToken,
         heartbeat
       );
@@ -198,6 +216,7 @@ export class ImportsService {
     accountId: string,
     mapping: ColumnMapping,
     fileContent: string,
+    reconciliation?: ImportReconciliation,
     claimToken?: string,
     heartbeat?: () => Promise<boolean>
   ): Promise<void> {
@@ -242,6 +261,20 @@ export class ImportsService {
       if (parsed === undefined) {
         return { rowNumber, raw, parsed, problems };
       }
+      if (
+        reconciliation !== undefined &&
+        (toISTCalendarDate(parsed.occurredAt) < reconciliation.periodFrom ||
+          toISTCalendarDate(parsed.occurredAt) > reconciliation.periodThrough)
+      ) {
+        problems.push(
+          `Date is outside the selected ${reconciliation.periodFrom} to ${reconciliation.periodThrough} range.`
+        );
+      }
+      const statementReference = statementCell(raw, reconciliation?.referenceColumn);
+      const matchDescription =
+        statementReference === undefined
+          ? parsed.description
+          : `${parsed.description} ${statementReference}`;
       const dedupeHashV1 = computeDedupeHash(
         userId,
         accountId,
@@ -257,7 +290,15 @@ export class ImportsService {
         parsed.amountMinor,
         parsed.description
       );
-      return { rowNumber, raw, parsed, problems, dedupeHashV1, dedupeFingerprintV2 };
+      return {
+        rowNumber,
+        raw,
+        parsed,
+        problems,
+        dedupeHashV1,
+        dedupeFingerprintV2,
+        matchDescription
+      };
     });
 
     const candidateFingerprintsV2 = rows.flatMap((row) =>
@@ -327,11 +368,27 @@ export class ImportsService {
             }),
         problems: row.problems,
         isDuplicate,
-        include: !isDuplicate
+        ...(reconciliation === undefined
+          ? {}
+          : statementFields(row.raw, reconciliation, row.problems)),
+        include: !isDuplicate && row.problems.length === 0
       };
     });
 
-    await this.attachNearDuplicateEvidence(userId, accountId, rows, stagedRows);
+    await this.attachNearDuplicateEvidence(
+      userId,
+      accountId,
+      rows,
+      stagedRows,
+      reconciliation !== undefined
+    );
+    if (reconciliation !== undefined) {
+      duplicates = stagedRows.filter(
+        (row) => row.isDuplicate || row.matchedTransactionId !== undefined
+      ).length;
+      const completed = completeStatementReconciliation(reconciliation, stagedRows);
+      await this.batches.updateReconciliation(userId, batchId, completed);
+    }
 
     for (let start = 0; start < stagedRows.length; start += STAGED_ROW_INSERT_CHUNK_SIZE) {
       await assertWorkflowLease(heartbeat);
@@ -370,7 +427,8 @@ export class ImportsService {
     userId: string,
     accountId: string,
     rows: readonly ParsedImportRow[],
-    stagedRows: NewStagedRow[]
+    stagedRows: NewStagedRow[],
+    statementMode: boolean
   ): Promise<void> {
     const scorable = rows.flatMap((row, index) => {
       const stagedRow = stagedRows[index];
@@ -381,7 +439,7 @@ export class ImportsService {
           type: row.parsed.type,
           amountMinor: row.parsed.amountMinor,
           occurredAt: row.parsed.occurredAt,
-          description: row.parsed.description
+          description: row.matchDescription ?? row.parsed.description
         }
       ];
     });
@@ -409,6 +467,7 @@ export class ImportsService {
       byTypeAndAmount.set(key, bucket);
     }
 
+    const usedTransactionIds = new Set<TransactionId>();
     for (const row of scorable) {
       const bucket = byTypeAndAmount.get(`${row.type}|${row.amountMinor}`) ?? [];
       const blocked = bucket.filter(
@@ -421,7 +480,19 @@ export class ImportsService {
       );
       if (result.outcome === "abstained") continue;
       const stagedRow = stagedRows[row.index];
-      if (stagedRow !== undefined) stagedRow.nearDuplicateResult = result;
+      if (stagedRow !== undefined) {
+        stagedRow.nearDuplicateResult = result;
+        if (statementMode) {
+          stagedRow.include = false;
+          if (
+            result.outcome === "match" &&
+            !usedTransactionIds.has(result.evidence.candidateTransactionId)
+          ) {
+            stagedRow.matchedTransactionId = result.evidence.candidateTransactionId;
+            usedTransactionIds.add(result.evidence.candidateTransactionId);
+          }
+        }
+      }
     }
   }
 
@@ -448,6 +519,98 @@ export class ImportsService {
     return this.stagedRows.findByBatchId(userId, batchId, cursor, limit);
   }
 
+  async getReconciliationSummary(
+    userId: string,
+    batchId: ImportBatchId
+  ): Promise<ImportReconciliationSummary> {
+    const batch = await this.batches.findById(userId, batchId);
+    if (batch === null) throw new EntityNotFoundError("Import batch");
+    const reconciliation = batch.reconciliation;
+    if (reconciliation === undefined) {
+      throw new ImportBatchNotReadyError(
+        "This import was not uploaded as a statement reconciliation."
+      );
+    }
+    const account = await this.accounts.findById(userId, batch.accountId);
+    if (account === null) throw new EntityNotFoundError("Account");
+    const rows = await this.stagedRows.findAllForBatch(userId, batchId);
+    const includableFingerprints = rows.flatMap((row) =>
+      row.include && row.dedupeFingerprintV2 !== undefined ? [row.dedupeFingerprintV2] : []
+    );
+    const landedFingerprints = await this.transactions.findExistingDedupeFingerprintsV2(
+      userId,
+      includableFingerprints
+    );
+    const rowsPendingPost = rows.filter(
+      (row): row is StagedRow & Readonly<{ parsed: ParsedRow; dedupeFingerprintV2: string }> =>
+        row.include &&
+        row.parsed !== undefined &&
+        row.dedupeFingerprintV2 !== undefined &&
+        !landedFingerprints.has(row.dedupeFingerprintV2)
+    );
+    const from = statementDateStart(reconciliation.periodFrom);
+    const throughExclusive = addDaysUtc(statementDateStart(reconciliation.periodThrough), 1);
+    const [beforeFrom, beforeThrough] = await Promise.all([
+      this.transactions.sumAccountDeltaBefore(userId, batch.accountId, from),
+      this.transactions.sumAccountDeltaBefore(userId, batch.accountId, throughExclusive)
+    ]);
+    const ledgerOpeningBalanceMinor = sumMinorAmounts([account.openingBalanceMinor, beforeFrom]);
+    const ledgerClosingBalanceMinor = sumMinorAmounts([account.openingBalanceMinor, beforeThrough]);
+    const pendingDelta =
+      batch.status === "committed"
+        ? 0
+        : sumMinorAmounts(rowsPendingPost.map((row) => signedMovement(row.parsed)));
+    const projectedClosingBalanceMinor = sumMinorAmounts([ledgerClosingBalanceMinor, pendingDelta]);
+    const matchedRows = rows.filter(
+      (row) =>
+        row.isDuplicate ||
+        row.matchedTransactionId !== undefined ||
+        (row.dedupeFingerprintV2 !== undefined && landedFingerprints.has(row.dedupeFingerprintV2))
+    ).length;
+    const rowsToAdd = batch.status === "committed" ? 0 : rowsPendingPost.length;
+    const rowsNeedingReview = rows.filter(
+      (row) =>
+        row.parsed === undefined ||
+        row.problems.length > 0 ||
+        (!row.include && !row.isDuplicate && row.matchedTransactionId === undefined)
+    ).length;
+    const openingDifferenceMinor =
+      reconciliation.statementOpeningBalanceMinor === undefined
+        ? undefined
+        : sumMinorAmounts([
+            ledgerOpeningBalanceMinor,
+            -reconciliation.statementOpeningBalanceMinor
+          ]);
+    const closingDifferenceMinor =
+      reconciliation.statementClosingBalanceMinor === undefined
+        ? undefined
+        : sumMinorAmounts([
+            projectedClosingBalanceMinor,
+            -reconciliation.statementClosingBalanceMinor
+          ]);
+    const reconciled =
+      reconciliation.balanceChainValid === true &&
+      openingDifferenceMinor === 0 &&
+      closingDifferenceMinor === 0 &&
+      rowsNeedingReview === 0;
+    return ImportReconciliationSummarySchema.parse({
+      periodFrom: reconciliation.periodFrom,
+      periodThrough: reconciliation.periodThrough,
+      statementOpeningBalanceMinor: reconciliation.statementOpeningBalanceMinor,
+      statementClosingBalanceMinor: reconciliation.statementClosingBalanceMinor,
+      ledgerOpeningBalanceMinor,
+      ledgerClosingBalanceMinor,
+      projectedClosingBalanceMinor,
+      openingDifferenceMinor,
+      closingDifferenceMinor,
+      balanceChainValid: reconciliation.balanceChainValid ?? false,
+      matchedRows,
+      rowsToAdd,
+      rowsNeedingReview,
+      reconciled
+    });
+  }
+
   async updateRow(
     userId: string,
     batchId: ImportBatchId,
@@ -469,6 +632,12 @@ export class ImportsService {
       }
     }
 
+    if (patch.matchedTransactionId !== undefined && patch.matchedTransactionId !== null) {
+      const row = await this.stagedRows.findById(userId, batchId, rowId);
+      if (row === null) throw new EntityNotFoundError("Staged row");
+      await this.assertValidStatementMatch(userId, batch, row, patch.matchedTransactionId);
+    }
+
     const updated = await this.stagedRows.updateRow(userId, batchId, rowId, patch);
     if (updated === null) throw new EntityNotFoundError("Staged row");
     return updated;
@@ -488,6 +657,14 @@ export class ImportsService {
       throw new ImportBatchNotReadyError(
         `Only a staged batch can be queued for commit (current status: "${batch.status}").`
       );
+    }
+    if (batch.reconciliation !== undefined) {
+      const summary = await this.getReconciliationSummary(userId, batchId);
+      if (!summary.reconciled) {
+        throw new ImportBatchNotReadyError(
+          "Resolve statement matches until the opening and projected closing balances agree before committing."
+        );
+      }
     }
     const queuedWorkflow = await this.batches.queueWorkflow(
       userId,
@@ -743,6 +920,40 @@ export class ImportsService {
     return reverted;
   }
 
+  private async assertValidStatementMatch(
+    userId: string,
+    batch: ImportBatch,
+    row: StagedRow,
+    transactionId: TransactionId
+  ): Promise<void> {
+    if (batch.reconciliation === undefined || row.parsed === undefined) {
+      throw new ImportBatchNotReadyError("Only a parsed statement row can be matched.");
+    }
+    const [transaction, statementRows] = await Promise.all([
+      this.transactions.findById(userId, transactionId),
+      this.stagedRows.findAllForBatch(userId, batch.id)
+    ]);
+    if (
+      transaction === null ||
+      transaction.accountId !== batch.accountId ||
+      transaction.status !== "posted" ||
+      transaction.type !== row.parsed.type ||
+      transaction.amountMinor !== row.parsed.amountMinor ||
+      calendarDayDistance(transaction.occurredAt, row.parsed.occurredAt) > NEAR_DUPLICATE_DAY_WINDOW
+    ) {
+      throw new EntityNotFoundError("Matching account transaction");
+    }
+    if (
+      statementRows.some(
+        (candidate) => candidate.id !== row.id && candidate.matchedTransactionId === transactionId
+      )
+    ) {
+      throw new ImportBatchNotReadyError(
+        "That ledger transaction is already matched to another statement row."
+      );
+    }
+  }
+
   private async getConcurrentWorkflow(
     userId: string,
     batchId: ImportBatchId,
@@ -823,6 +1034,117 @@ function candidateWindowBounds(
     start: addDaysUtc(istCalendarDateStartUtc(new Date(earliestMs)), -NEAR_DUPLICATE_DAY_WINDOW),
     end: addDaysUtc(istCalendarDateStartUtc(new Date(latestMs)), NEAR_DUPLICATE_DAY_WINDOW + 1)
   };
+}
+
+function statementFields(
+  raw: Record<string, string>,
+  reconciliation: ImportReconciliation,
+  problems: string[]
+): Pick<NewStagedRow, "statementReference" | "statementClosingBalanceMinor"> {
+  const statementReference = statementCell(raw, reconciliation.referenceColumn);
+  const statementClosingBalanceMinor = parseStatementBalance(
+    raw,
+    reconciliation.balanceColumn,
+    problems
+  );
+  return {
+    ...(statementReference === undefined ? {} : { statementReference }),
+    ...(statementClosingBalanceMinor === undefined ? {} : { statementClosingBalanceMinor })
+  };
+}
+
+function statementCell(
+  raw: Record<string, string>,
+  column: string | undefined
+): string | undefined {
+  if (column === undefined) return undefined;
+  const value = raw[column]?.trim();
+  return value === undefined || value === "" ? undefined : value;
+}
+
+function parseStatementBalance(
+  raw: Record<string, string>,
+  column: string,
+  problems: string[]
+): number | undefined {
+  const value = raw[column]?.trim();
+  if (value === undefined || value === "") {
+    problems.push(`Row is missing a closing balance in column "${column}".`);
+    return undefined;
+  }
+  const parenthesized = value.startsWith("(") && value.endsWith(")");
+  const negative = value.startsWith("-") || parenthesized;
+  const unsigned = parenthesized
+    ? value.slice(1, -1).trim()
+    : negative
+      ? value.slice(1).trim()
+      : value;
+  try {
+    const magnitude = parseMinor(unsigned);
+    return negative ? -magnitude : magnitude;
+  } catch {
+    problems.push(`Closing balance in column "${column}" is invalid.`);
+    return undefined;
+  }
+}
+
+function completeStatementReconciliation(
+  reconciliation: ImportReconciliation,
+  rows: readonly NewStagedRow[]
+): ImportReconciliation {
+  const parsedRows = rows.filter(
+    (row): row is NewStagedRow & Readonly<{ parsed: ParsedRow }> => row.parsed !== undefined
+  );
+  if (parsedRows.length === 0) {
+    return {
+      ...reconciliation,
+      balanceChainValid: false,
+      balanceProblemRows: []
+    };
+  }
+  const firstInFile = parsedRows[0];
+  const lastInFile = parsedRows.at(-1);
+  if (firstInFile === undefined || lastInFile === undefined) {
+    throw new Error("Parsed statement rows unexpectedly disappeared.");
+  }
+  const descending = firstInFile.parsed.occurredAt > lastInFile.parsed.occurredAt;
+  const chronological = [...parsedRows].sort((left, right) => {
+    const dateDifference = left.parsed.occurredAt.getTime() - right.parsed.occurredAt.getTime();
+    if (dateDifference !== 0) return dateDifference;
+    return descending ? right.rowNumber - left.rowNumber : left.rowNumber - right.rowNumber;
+  });
+  const problemRows: number[] = [];
+  let previousClosing: number | undefined;
+  let statementOpeningBalanceMinor: number | undefined;
+  for (const row of chronological) {
+    const closing = row.statementClosingBalanceMinor;
+    if (closing === undefined) {
+      problemRows.push(row.rowNumber);
+      continue;
+    }
+    const movement = signedMovement(row.parsed);
+    if (previousClosing === undefined) {
+      statementOpeningBalanceMinor = sumMinorAmounts([closing, -movement]);
+    } else if (sumMinorAmounts([previousClosing, movement]) !== closing) {
+      problemRows.push(row.rowNumber);
+    }
+    previousClosing = closing;
+  }
+  return {
+    ...reconciliation,
+    ...(statementOpeningBalanceMinor === undefined ? {} : { statementOpeningBalanceMinor }),
+    ...(previousClosing === undefined ? {} : { statementClosingBalanceMinor: previousClosing }),
+    balanceChainValid: problemRows.length === 0 && chronological.length === rows.length,
+    balanceProblemRows: problemRows
+  };
+}
+
+function signedMovement(parsed: ParsedRow): number {
+  return parsed.type === "income" ? parsed.amountMinor : -parsed.amountMinor;
+}
+
+function statementDateStart(calendarDate: string): Date {
+  return istCalendarDateStartUtc(parseExplicitDate(calendarDate, "YYYY-MM-DD"));
 }
 
 function assertCategoryKind(

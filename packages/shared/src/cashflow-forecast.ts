@@ -96,8 +96,14 @@ export const CashflowForecastSnapshotSchema = z
     computedAt: z.coerce.date()
   })
   .readonly();
+const toFirstItem = (value: unknown): unknown => (Array.isArray(value) ? value[0] : value);
+const toNumericHorizon = (value: unknown): unknown => {
+  const item = toFirstItem(value);
+  return typeof item === "string" ? Number(item) : item;
+};
+
 export const CashflowForecastQuerySchema = z.object({
-  days: CashflowForecastHorizonSchema.default(30)
+  days: z.preprocess(toNumericHorizon, CashflowForecastHorizonSchema).default(30)
 });
 
 export type CashflowForecastSnapshot = z.infer<typeof CashflowForecastSnapshotSchema>;

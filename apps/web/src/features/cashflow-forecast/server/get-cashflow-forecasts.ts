@@ -4,6 +4,7 @@ import {
 } from "@treasury-ops/shared";
 import { cache } from "react";
 
+import { toAppError } from "@/lib/api/problem";
 import { getServerApiClient } from "@/lib/api/server";
 
 export type CashflowForecasts = Readonly<{
@@ -17,11 +18,17 @@ async function getForecast(days: 30 | 60 | 90): Promise<CashflowForecastSnapshot
   const result = await client.GET("/v1/insights/cash-flow-forecast", {
     params: { query: { days } }
   });
+  if (result.error !== undefined) {
+    throw toAppError(result.error, result.response.status);
+  }
+  if (result.data === null) {
+    return null;
+  }
   const parsed = CashflowForecastSnapshotSchema.safeParse(result.data);
-  if (!parsed.success && result.data !== null) {
+  if (!parsed.success) {
     throw new Error(`Invalid ${days}-day cash-flow forecast response.`);
   }
-  return parsed.success ? parsed.data : null;
+  return parsed.data;
 }
 
 export const getCashflowForecasts = cache(async (): Promise<CashflowForecasts> => {

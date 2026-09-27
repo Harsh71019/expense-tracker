@@ -1,7 +1,12 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import type { Category, StagedRow, StagedRowPage } from "@treasury-ops/shared";
+import {
+  formatSignedCompactMinor,
+  type Category,
+  type StagedRow,
+  type StagedRowPage
+} from "@treasury-ops/shared";
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 
@@ -11,6 +16,7 @@ import { qk } from "@/lib/query/keys";
 import { toast } from "@/lib/toast";
 
 import { useStagedRows } from "../hooks/use-staged-rows";
+import { useImportReconciliation } from "../hooks/use-import-reconciliation";
 import { useUpdateStagedRow } from "../hooks/use-update-staged-row";
 
 const EMPTY_PAGE: StagedRowPage = {
@@ -29,11 +35,20 @@ type ReviewStepProps = Readonly<{
   batchId: string;
   categories: readonly Category[];
   onCountsChange: (includedCount: number) => void;
+  reconciliationEnabled?: boolean;
+  onReconciliationReady?: (ready: boolean) => void;
 }>;
 
-export function ReviewStep({ batchId, categories, onCountsChange }: ReviewStepProps): ReactNode {
+export function ReviewStep({
+  batchId,
+  categories,
+  onCountsChange,
+  reconciliationEnabled = true,
+  onReconciliationReady
+}: ReviewStepProps): ReactNode {
   const queryClient = useQueryClient();
   const list = useStagedRows(batchId, EMPTY_PAGE);
+  const reconciliation = useImportReconciliation(batchId, reconciliationEnabled);
   const update = useUpdateStagedRow();
   const [editedRowIds, setEditedRowIds] = useState<ReadonlySet<string>>(new Set());
 
@@ -51,6 +66,10 @@ export function ReviewStep({ batchId, categories, onCountsChange }: ReviewStepPr
   useEffect(() => {
     onCountsChange(included);
   }, [included, onCountsChange]);
+
+  useEffect(() => {
+    onReconciliationReady?.(!reconciliationEnabled || reconciliation.data?.reconciled === true);
+  }, [onReconciliationReady, reconciliation.data?.reconciled, reconciliationEnabled]);
 
   function toggleInclude(row: StagedRow): void {
     update.mutate(
@@ -91,8 +110,74 @@ export function ReviewStep({ batchId, categories, onCountsChange }: ReviewStepPr
     );
   }
 
+  function acceptSuggestedMatch(row: StagedRow): void {
+    const result = row.nearDuplicateResult;
+    if (result === undefined || result.outcome === "abstained") return;
+    const transactionId =
+      result.outcome === "match"
+        ? result.evidence.candidateTransactionId
+        : result.topEvidence.candidateTransactionId;
+    update.mutate(
+      { batchId, stagedRowId: row.id, matchedTransactionId: transactionId },
+      {
+        onSuccess: () => toast.success("Statement row matched to the ledger"),
+        onError: (error) => toast.error(error.message || "Could not match this row")
+      }
+    );
+  }
+
   return (
     <>
+      {reconciliation.data === undefined ? null : (
+        <div className="mt-5.5 animate-fade-in rounded-2xl border border-border bg-surface-elevated p-4 sm:px-6.5 sm:py-5.5">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-semibold text-foreground">Balance reconciliation</h2>
+              <p className="mt-1 text-xs text-foreground-muted">
+                {reconciliation.data.periodFrom} through {reconciliation.data.periodThrough}
+              </p>
+            </div>
+            <span
+              className={`rounded-full px-2.5 py-1 text-xs font-semibold ${reconciliation.data.reconciled ? "bg-income/10 text-income" : "bg-warning/10 text-warning"}`}
+            >
+              {reconciliation.data.reconciled ? "Ready to reconcile" : "Needs review"}
+            </span>
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <BalanceMetric
+              label="Statement opening"
+              value={reconciliation.data.statementOpeningBalanceMinor}
+            />
+            <BalanceMetric
+              label="Ledger opening"
+              value={reconciliation.data.ledgerOpeningBalanceMinor}
+            />
+            <BalanceMetric
+              label="Statement closing"
+              value={reconciliation.data.statementClosingBalanceMinor}
+            />
+            <BalanceMetric
+              label="Projected ledger closing"
+              value={reconciliation.data.projectedClosingBalanceMinor}
+            />
+          </div>
+          <p
+            className={`mt-4 border-t border-border pt-3 text-sm ${reconciliation.data.closingDifferenceMinor === 0 ? "text-income" : "text-warning"}`}
+          >
+            Closing difference:{" "}
+            {reconciliation.data.closingDifferenceMinor === undefined
+              ? "Unavailable"
+              : formatSignedCompactMinor(reconciliation.data.closingDifferenceMinor)}{" "}
+            · {reconciliation.data.matchedRows} matched · {reconciliation.data.rowsToAdd} to add ·{" "}
+            {reconciliation.data.rowsNeedingReview} need review
+          </p>
+          {!reconciliation.data.balanceChainValid ? (
+            <p className="mt-2 text-xs text-expense">
+              The statement running-balance chain has a gap or an invalid balance cell.
+            </p>
+          ) : null}
+        </div>
+      )}
       <div className="mt-5.5 animate-fade-in rounded-2xl border border-border bg-surface-elevated p-4 sm:px-6.5 sm:py-5.5">
         <div className="grid grid-cols-2 gap-5 sm:flex sm:flex-wrap sm:gap-8">
           <div>
@@ -203,6 +288,31 @@ export function ReviewStep({ batchId, categories, onCountsChange }: ReviewStepPr
                     ))}
                   </div>
                 ) : null}
+                {row.matchedTransactionId !== undefined ? (
+                  <p className="mt-1 text-2xs font-semibold text-income">
+                    Matched to an existing ledger transaction
+                  </p>
+                ) : row.nearDuplicateResult !== undefined &&
+                  row.nearDuplicateResult.outcome !== "abstained" ? (
+                  <div className="mt-1 flex flex-wrap items-center gap-2">
+                    <span className="text-2xs font-semibold text-warning">
+                      {row.nearDuplicateResult.outcome === "ambiguous"
+                        ? "Possible ledger match"
+                        : "Likely ledger match"}
+                    </span>
+                    <button
+                      type="button"
+                      disabled={update.isPending}
+                      onClick={() => acceptSuggestedMatch(row)}
+                      className="rounded-md border border-warning/30 px-2 py-1 text-2xs font-semibold text-warning hover:bg-warning/10"
+                    >
+                      Use ledger match
+                    </button>
+                    <span className="text-2xs text-foreground-muted">
+                      or tick the row to add it
+                    </span>
+                  </div>
+                ) : null}
               </div>
               <div className="col-start-3 row-start-2 text-right md:w-32">
                 {parsed === undefined ? (
@@ -260,6 +370,20 @@ export function ReviewStep({ batchId, categories, onCountsChange }: ReviewStepPr
         ) : null}
       </div>
     </>
+  );
+}
+
+function BalanceMetric({
+  label,
+  value
+}: Readonly<{ label: string; value: number | undefined }>): ReactNode {
+  return (
+    <div>
+      <div className="font-mono text-base font-semibold text-foreground">
+        {value === undefined ? "—" : formatSignedCompactMinor(value)}
+      </div>
+      <div className="mt-0.5 text-2xs text-foreground-muted">{label}</div>
+    </div>
   );
 }
 

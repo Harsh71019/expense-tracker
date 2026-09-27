@@ -365,6 +365,8 @@ export interface paths {
             accountId: string;
             /** @description JSON string containing ColumnMapping */
             mapping: string;
+            /** @description JSON statement range and balance-column metadata */
+            reconciliation?: string;
           };
         };
       };
@@ -578,6 +580,88 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/v1/imports/{importBatchId}/reconciliation": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          importBatchId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description Live statement reconciliation summary */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ImportReconciliationSummary"];
+          };
+        };
+        /** @description Unauthenticated */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Import is not a reconciliation */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Validation failed */
+        422: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+        /** @description Internal error */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["ProblemDetails"];
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/v1/imports/{importBatchId}/rows/{stagedRowId}": {
     parameters: {
       query?: never;
@@ -607,6 +691,8 @@ export interface paths {
             include?: boolean;
             /** Format: uuid */
             suggestedCategoryId?: string | null;
+            /** Format: uuid */
+            matchedTransactionId?: string | null;
           };
         };
       };
@@ -9116,6 +9202,18 @@ export interface components {
         amount?: string;
         debit?: string;
         credit?: string;
+        reference?: string;
+        balance?: string;
+      };
+      reconciliation?: {
+        periodFrom: string;
+        periodThrough: string;
+        referenceColumn?: string;
+        balanceColumn: string;
+        statementOpeningBalanceMinor?: number;
+        statementClosingBalanceMinor?: number;
+        balanceChainValid?: boolean;
+        balanceProblemRows?: number[];
       };
       /** @enum {string} */
       status:
@@ -9166,6 +9264,8 @@ export interface components {
         amount?: string;
         debit?: string;
         credit?: string;
+        reference?: string;
+        balance?: string;
       } | null;
     };
     StagedRowPage: {
@@ -9245,6 +9345,10 @@ export interface components {
               reason: "no_candidates" | "insufficient_evidence";
               algorithmVersion: number;
             };
+        /** Format: uuid */
+        matchedTransactionId?: string;
+        statementReference?: string;
+        statementClosingBalanceMinor?: number;
         problems: string[];
         isDuplicate: boolean;
         include: boolean;
@@ -9254,6 +9358,22 @@ export interface components {
         hasMore: boolean;
         limit: number;
       };
+    };
+    ImportReconciliationSummary: {
+      periodFrom: string;
+      periodThrough: string;
+      statementOpeningBalanceMinor?: number;
+      statementClosingBalanceMinor?: number;
+      ledgerOpeningBalanceMinor: number;
+      ledgerClosingBalanceMinor: number;
+      projectedClosingBalanceMinor: number;
+      openingDifferenceMinor?: number;
+      closingDifferenceMinor?: number;
+      balanceChainValid: boolean;
+      matchedRows: number;
+      rowsToAdd: number;
+      rowsNeedingReview: number;
+      reconciled: boolean;
     };
     StagedRow: {
       /** Format: uuid */
@@ -9330,6 +9450,10 @@ export interface components {
             reason: "no_candidates" | "insufficient_evidence";
             algorithmVersion: number;
           };
+      /** Format: uuid */
+      matchedTransactionId?: string;
+      statementReference?: string;
+      statementClosingBalanceMinor?: number;
       problems: string[];
       isDuplicate: boolean;
       include: boolean;
@@ -11879,6 +12003,8 @@ export interface components {
           amount?: string;
           debit?: string;
           credit?: string;
+          reference?: string;
+          balance?: string;
         };
         /** @enum {string} */
         status: "pending" | "staged" | "failed";
@@ -11978,6 +12104,8 @@ export interface components {
         amount?: string;
         debit?: string;
         credit?: string;
+        reference?: string;
+        balance?: string;
       };
       /** @enum {string} */
       status: "pending" | "staged" | "failed";
@@ -16174,7 +16302,7 @@ export interface operations {
           quantityMicroUnits?: number;
           /**
            * Format: date-time
-           * @default 2026-08-26T02:10:31.260Z
+           * @default 2026-09-27T04:07:15.418Z
            */
           disposalDate?: string | null;
           quoteOverrideMicroRupeesPerUnit?: number;

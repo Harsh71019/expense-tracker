@@ -625,6 +625,9 @@ staged_rows (+ batch.status = 'staged')
    ▼
 GET /imports/:id/preview                ← UI shows parsed rows, flags dupes/problems,
    │                                       lets you untick rows & fix category guesses
+   │
+GET /imports/:id/reconciliation         ← for statement-mode uploads: live opening/closing
+   │                                       balances, projected close, match/add/review counts
    ▼
 POST /imports/:id/commit
    │  202 after the durable command transitions to commit_queued
@@ -678,6 +681,8 @@ requires both precision and coverage to improve before promotion.
 **Details that matter for Indian bank CSVs:**
 
 - **Column mapping is saved per account** (`import_batches.mapping`), so HDFC's `Txn Date / Narration / Withdrawal Amt / Deposit Amt` is a one-time setup. Support both single-signed-amount and separate debit/credit column conventions. Batch creation uses the database statement timestamp (not a JavaScript millisecond timestamp), so two rapid uploads still have a deterministic latest mapping.
+- **Statement reconciliation mode:** the upload includes an account, exact `periodFrom` / `periodThrough` coverage, and a running/closing-balance column; a whole-month selector is only a UI shortcut. Partial ranges and multi-month statements use the same half-open IST boundaries. Parsing verifies every row is inside the selected range, validates the statement's running-balance chain, infers its opening balance from the first movement, and compares statement opening/closing balances with ledger history. The projected close includes only reviewed rows still marked to add. Commit is blocked until the opening balance, projected closing balance, running-balance chain, and all row decisions reconcile.
+- **Statement row matching:** exact import fingerprints remain the first duplicate guard. Statement-mode near matches then use the existing same-account/type/exact-amount/±1-day block, with an optional bank reference appended only to matching evidence. Sufficient matches are excluded from posting and linked one-to-one to an existing transaction; ambiguous rows default to review and can either accept the suggested ledger match or be explicitly included as missing. A per-batch unique index prevents one ledger transaction from satisfying two statement rows.
 - **Date parsing:** enforce explicit `dateFormat` from the mapping (`DD/MM/YYYY` default) — never auto-guess, that's how 04/07 becomes April 7th.
 - **`dedupeFingerprintV2` = sha256(fingerprintVersion|normalizerVersion|userId|accountId|type|date(day)|amountMinor|normalizedTextV2)**, using the shared, versioned narration normalizer (`common/transaction-text`). Type-aware, unlike v1: a same-day/same-amount/same-narration expense and its reversal no longer collide. New imports no longer populate the legacy `dedupeHash` column; existing pre-migration rows keep it, and a type-filtered fallback lookup against it preserves compatibility without ever reinterpreting a stored v1 hash.
 - **Near-duplicate review evidence**: for rows that are not exact duplicates, one bounded, tenant-scoped candidate query per file (not per row) blocks on same account/type/exact amount and a ±1 IST-day window, then scores token Jaccard similarity, exact extracted bank reference, and shared normalized counterparty key. The result is always an explicit `match` / `ambiguous` / `abstained` outcome with compact, narration-free evidence (method, confidence in basis points, algorithm version) — advisory only, it never excludes a row, and abstains rather than guessing when evidence is insufficient or ambiguous. Same-day identical transactions (two ₹20 chai UPIs) are still flagged as _possible_ dupes in preview rather than silently dropped — the user decides.
@@ -850,7 +855,8 @@ POST   /imports                         upload CSV (multipart)
 GET    /imports                         batch history
 GET    /imports/accounts/:accountId/mapping  last mapping for an owned active account
 GET    /imports/:id/preview             staged rows + dupe flags
-PATCH  /imports/:id/rows/:rowId         toggle include / fix category
+GET    /imports/:id/reconciliation      live statement balance and row-decision summary
+PATCH  /imports/:id/rows/:rowId         toggle include / fix category / accept ledger match
 POST   /imports/:id/commit
 POST   /imports/:id/revert
 

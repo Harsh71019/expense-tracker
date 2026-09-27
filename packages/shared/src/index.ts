@@ -583,6 +583,8 @@ export {
   DateFormatSchema,
   ImportBatchIdSchema,
   ImportBatchSchema,
+  ImportReconciliationSchema,
+  ImportReconciliationSummarySchema,
   ImportFailureCodeSchema,
   ImportBatchStatsSchema,
   ImportBatchStatusSchema,
@@ -593,6 +595,7 @@ export {
   StagedRowIdSchema,
   StagedRowPageSchema,
   StagedRowSchema,
+  StatementReconciliationInputSchema,
   UpdateStagedRowSchema,
   UploadImportMetadataSchema
 } from "./import.js";
@@ -607,11 +610,14 @@ export type {
   ImportBatchStats,
   ImportBatchStatus,
   ImportFailureCode,
+  ImportReconciliation,
+  ImportReconciliationSummary,
   ParsedRow,
   PreviewStagedRowsQuery,
   StagedRow,
   StagedRowId,
   StagedRowPage,
+  StatementReconciliationInput,
   UpdateStagedRow,
   UploadImportMetadata
 } from "./import.js";

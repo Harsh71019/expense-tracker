@@ -5,7 +5,7 @@ import { CategoryIdSchema } from "./category.js";
 import { CategorySuggestionSchema } from "./category-suggestion.js";
 import { NearDuplicateResultSchema } from "./near-duplicate.js";
 import { PageInfoSchema } from "./pagination.js";
-import { TransactionTypeSchema } from "./transaction.js";
+import { TransactionIdSchema, TransactionTypeSchema } from "./transaction.js";
 
 /** AGENTS.md §8: "respect the existing caps (5MB, 50k rows, MIME check)." */
 export const MAX_IMPORT_FILE_SIZE_BYTES = 5 * 1024 * 1024;
@@ -34,7 +34,9 @@ export const ColumnMappingSchema = z
     amountConvention: AmountConventionSchema,
     amount: z.string().trim().min(1).optional(),
     debit: z.string().trim().min(1).optional(),
-    credit: z.string().trim().min(1).optional()
+    credit: z.string().trim().min(1).optional(),
+    reference: z.string().trim().min(1).optional(),
+    balance: z.string().trim().min(1).optional()
   })
   .refine((value) => value.amountConvention !== "single_signed" || value.amount !== undefined, {
     message: "single_signed mapping requires an amount column.",
@@ -73,6 +75,50 @@ export const ImportBatchStatsSchema = z.object({
   committed: z.number().int().min(0)
 });
 
+const StatementCalendarDateSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, "Use a YYYY-MM-DD calendar date.")
+  .refine((value) => {
+    const date = new Date(`${value}T00:00:00.000Z`);
+    return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+  }, "Use a real calendar date.");
+
+export const StatementReconciliationInputSchema = z
+  .object({
+    periodFrom: StatementCalendarDateSchema,
+    periodThrough: StatementCalendarDateSchema,
+    referenceColumn: z.string().trim().min(1).optional(),
+    balanceColumn: z.string().trim().min(1)
+  })
+  .refine((value) => value.periodFrom <= value.periodThrough, {
+    message: "Statement start date must be on or before its end date.",
+    path: ["periodThrough"]
+  });
+
+export const ImportReconciliationSchema = StatementReconciliationInputSchema.extend({
+  statementOpeningBalanceMinor: z.number().int().safe().optional(),
+  statementClosingBalanceMinor: z.number().int().safe().optional(),
+  balanceChainValid: z.boolean().optional(),
+  balanceProblemRows: z.array(z.number().int().positive()).optional()
+});
+
+export const ImportReconciliationSummarySchema = z.object({
+  periodFrom: StatementCalendarDateSchema,
+  periodThrough: StatementCalendarDateSchema,
+  statementOpeningBalanceMinor: z.number().int().safe().optional(),
+  statementClosingBalanceMinor: z.number().int().safe().optional(),
+  ledgerOpeningBalanceMinor: z.number().int().safe(),
+  ledgerClosingBalanceMinor: z.number().int().safe(),
+  projectedClosingBalanceMinor: z.number().int().safe(),
+  openingDifferenceMinor: z.number().int().safe().optional(),
+  closingDifferenceMinor: z.number().int().safe().optional(),
+  balanceChainValid: z.boolean(),
+  matchedRows: z.number().int().min(0),
+  rowsToAdd: z.number().int().min(0),
+  rowsNeedingReview: z.number().int().min(0),
+  reconciled: z.boolean()
+});
+
 export const ImportBatchSchema = z.object({
   id: ImportBatchIdSchema,
   userId: z.string().min(1),
@@ -80,6 +126,7 @@ export const ImportBatchSchema = z.object({
   filename: z.string().min(1),
   fileHash: z.string().min(1),
   mapping: ColumnMappingSchema,
+  reconciliation: ImportReconciliationSchema.optional(),
   status: ImportBatchStatusSchema,
   failureCode: ImportFailureCodeSchema.optional(),
   failedAt: z.coerce.date().optional(),
@@ -108,6 +155,9 @@ export const StagedRowSchema = z.object({
   suggestedCategoryId: CategoryIdSchema.optional(),
   categorySuggestion: CategorySuggestionSchema.optional(),
   nearDuplicateResult: NearDuplicateResultSchema.optional(),
+  matchedTransactionId: TransactionIdSchema.optional(),
+  statementReference: z.string().optional(),
+  statementClosingBalanceMinor: z.number().int().safe().optional(),
   problems: z.array(z.string()),
   isDuplicate: z.boolean(),
   include: z.boolean()
@@ -115,7 +165,8 @@ export const StagedRowSchema = z.object({
 
 export const UploadImportMetadataSchema = z.object({
   accountId: AccountIdSchema,
-  mapping: ColumnMappingSchema
+  mapping: ColumnMappingSchema,
+  reconciliation: StatementReconciliationInputSchema.optional()
 });
 
 /**
@@ -132,7 +183,9 @@ export const COLUMN_MAPPING_PRESETS = {
     dateFormat: "DD/MM/YYYY",
     amountConvention: "debit_credit_cols",
     debit: "Withdrawal Amt.",
-    credit: "Deposit Amt."
+    credit: "Deposit Amt.",
+    reference: "Chq./Ref.No.",
+    balance: "Closing Balance"
   },
   icici: {
     date: "Transaction Date",
@@ -140,7 +193,9 @@ export const COLUMN_MAPPING_PRESETS = {
     dateFormat: "DD/MM/YYYY",
     amountConvention: "debit_credit_cols",
     debit: "Withdrawal Amount (INR)",
-    credit: "Deposit Amount (INR)"
+    credit: "Deposit Amount (INR)",
+    reference: "Cheque Number",
+    balance: "Balance (INR)"
   }
 } as const satisfies Record<string, ColumnMapping>;
 
@@ -163,11 +218,16 @@ export const StagedRowPageSchema = z.object({
 export const UpdateStagedRowSchema = z
   .object({
     include: z.boolean().optional(),
-    suggestedCategoryId: CategoryIdSchema.nullable().optional()
+    suggestedCategoryId: CategoryIdSchema.nullable().optional(),
+    matchedTransactionId: TransactionIdSchema.nullable().optional()
   })
-  .refine((value) => value.include !== undefined || value.suggestedCategoryId !== undefined, {
-    message: "At least one field must be provided."
-  });
+  .refine(
+    (value) =>
+      value.include !== undefined ||
+      value.suggestedCategoryId !== undefined ||
+      value.matchedTransactionId !== undefined,
+    { message: "At least one field must be provided." }
+  );
 
 export type DateFormat = z.infer<typeof DateFormatSchema>;
 export type AmountConvention = z.infer<typeof AmountConventionSchema>;
@@ -177,6 +237,9 @@ export type StagedRowId = z.infer<typeof StagedRowIdSchema>;
 export type ImportBatchStatus = z.infer<typeof ImportBatchStatusSchema>;
 export type ImportFailureCode = z.infer<typeof ImportFailureCodeSchema>;
 export type ImportBatchStats = z.infer<typeof ImportBatchStatsSchema>;
+export type StatementReconciliationInput = z.infer<typeof StatementReconciliationInputSchema>;
+export type ImportReconciliation = z.infer<typeof ImportReconciliationSchema>;
+export type ImportReconciliationSummary = z.infer<typeof ImportReconciliationSummarySchema>;
 export type ImportBatch = z.infer<typeof ImportBatchSchema>;
 export type ParsedRow = z.infer<typeof ParsedRowSchema>;
 export type StagedRow = z.infer<typeof StagedRowSchema>;

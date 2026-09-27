@@ -72,6 +72,9 @@ export class StagedRowRepository {
         nearDuplicateOutcome: row.nearDuplicateResult?.outcome ?? null,
         nearDuplicateConfidenceBps: nearDuplicateConfidenceBps(row.nearDuplicateResult),
         nearDuplicateResult: row.nearDuplicateResult ?? null,
+        matchedTransactionId: row.matchedTransactionId ?? null,
+        statementReference: row.statementReference ?? null,
+        statementClosingBalanceMinor: row.statementClosingBalanceMinor ?? null,
         problems: [...row.problems],
         isDuplicate: row.isDuplicate,
         include: row.include,
@@ -137,6 +140,15 @@ export class StagedRowRepository {
     return rows.map(toStagedRow);
   }
 
+  async findAllForBatch(userId: string, batchId: ImportBatchId): Promise<StagedRow[]> {
+    const rows = await this.db
+      .select()
+      .from(stagedRows)
+      .where(and(eq(stagedRows.batchId, batchId), this.ownedBatch(userId)))
+      .orderBy(asc(stagedRows.rowNumber));
+    return rows.map(toStagedRow);
+  }
+
   /**
    * Toggling `include`/`suggestedCategoryId` — the preview screen's edits.
    * A row with no parsed data (it failed to parse) can never be flipped to
@@ -155,6 +167,11 @@ export class StagedRowRepository {
     if (patch.suggestedCategoryId !== undefined) {
       set.suggestedCategoryId = patch.suggestedCategoryId;
     }
+    if (patch.matchedTransactionId !== undefined) {
+      set.matchedTransactionId = patch.matchedTransactionId;
+      if (patch.matchedTransactionId !== null) set.include = false;
+    }
+    if (patch.include === true) set.matchedTransactionId = null;
 
     const conditions = [
       eq(stagedRows.id, rowId),
@@ -240,6 +257,9 @@ function toStagedRow(row: typeof stagedRows.$inferSelect): StagedRow {
     suggestedCategoryId: row.suggestedCategoryId ?? undefined,
     categorySuggestion,
     nearDuplicateResult,
+    matchedTransactionId: row.matchedTransactionId ?? undefined,
+    statementReference: row.statementReference ?? undefined,
+    statementClosingBalanceMinor: row.statementClosingBalanceMinor ?? undefined,
     problems: row.problems,
     isDuplicate: row.isDuplicate,
     include: row.include

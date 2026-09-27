@@ -22,6 +22,7 @@ import {
   UploadImportMetadataSchema,
   type AccountImportMapping,
   type ImportBatch,
+  type ImportReconciliationSummary,
   type StagedRow,
   type StagedRowPage
 } from "@treasury-ops/shared";
@@ -36,7 +37,8 @@ import { ImportsService } from "./imports.service.js";
 
 const MetadataFieldSchema = z.object({
   accountId: z.string(),
-  mapping: z.string()
+  mapping: z.string(),
+  reconciliation: z.string().optional()
 });
 
 /**
@@ -69,15 +71,28 @@ export class ImportsController {
       throw new InvalidImportFileError('No file was uploaded under the "file" field.');
     }
 
-    const { accountId, mapping } = UploadImportMetadataSchema.parse(parseMetadataFields(body));
-    const batch = await this.imports.createBatch(
-      user.id,
-      accountId,
-      file.originalname,
-      file.mimetype,
-      file.buffer,
-      mapping
+    const { accountId, mapping, reconciliation } = UploadImportMetadataSchema.parse(
+      parseMetadataFields(body)
     );
+    const batch =
+      reconciliation === undefined
+        ? await this.imports.createBatch(
+            user.id,
+            accountId,
+            file.originalname,
+            file.mimetype,
+            file.buffer,
+            mapping
+          )
+        : await this.imports.createBatch(
+            user.id,
+            accountId,
+            file.originalname,
+            file.mimetype,
+            file.buffer,
+            mapping,
+            reconciliation
+          );
     response.setHeader("Location", `/api/v1/imports/${batch.id}`);
     return batch;
   }
@@ -104,6 +119,14 @@ export class ImportsController {
   ): Promise<StagedRowPage> {
     const { cursor, limit } = PreviewStagedRowsQuerySchema.parse(query);
     return this.imports.preview(user.id, ImportBatchIdSchema.parse(importBatchId), cursor, limit);
+  }
+
+  @Get(":importBatchId/reconciliation")
+  reconciliation(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("importBatchId") importBatchId: string
+  ): Promise<ImportReconciliationSummary> {
+    return this.imports.getReconciliationSummary(user.id, ImportBatchIdSchema.parse(importBatchId));
   }
 
   @Patch(":importBatchId/rows/:stagedRowId")
@@ -150,12 +173,24 @@ export class ImportsController {
 }
 
 function parseMetadataFields(body: unknown): unknown {
-  const { accountId, mapping } = MetadataFieldSchema.parse(body);
+  const { accountId, mapping, reconciliation } = MetadataFieldSchema.parse(body);
   let parsedMapping: unknown;
+  let parsedReconciliation: unknown;
   try {
     parsedMapping = JSON.parse(mapping);
   } catch {
     throw new InvalidImportFileError('The "mapping" field must be valid JSON.');
   }
-  return { accountId, mapping: parsedMapping };
+  if (reconciliation !== undefined) {
+    try {
+      parsedReconciliation = JSON.parse(reconciliation);
+    } catch {
+      throw new InvalidImportFileError('The "reconciliation" field must be valid JSON.');
+    }
+  }
+  return {
+    accountId,
+    mapping: parsedMapping,
+    ...(parsedReconciliation === undefined ? {} : { reconciliation: parsedReconciliation })
+  };
 }

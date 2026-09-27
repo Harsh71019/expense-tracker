@@ -77,6 +77,12 @@ export function ImportList({
               <p className="mt-0.5 text-[12.5px] font-medium text-foreground-muted">
                 {account?.name ?? "Unavailable account"} · {dateLine(batch)}
               </p>
+              {batch.reconciliation === undefined ? null : (
+                <p className="mt-1 font-mono text-2xs text-foreground-muted">
+                  Statement range {batch.reconciliation.periodFrom} →{" "}
+                  {batch.reconciliation.periodThrough}
+                </p>
+              )}
             </div>
             <div className="flex shrink-0 gap-6.5">
               <div className="text-right">

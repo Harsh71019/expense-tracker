@@ -3,13 +3,16 @@ import { randomUUID } from "node:crypto";
 import { Inject, Injectable } from "@nestjs/common";
 import {
   ColumnMappingSchema,
+  ImportReconciliationSchema,
   ImportBatchSchema,
   type AccountId,
   type ColumnMapping,
   type ImportBatch,
   type ImportBatchId,
   type ImportBatchStats,
-  type ImportBatchStatus
+  type ImportBatchStatus,
+  type ImportReconciliation,
+  type StatementReconciliationInput
 } from "@treasury-ops/shared";
 import { and, desc, eq, inArray, isNull, lt, lte, or, sql } from "drizzle-orm";
 
@@ -29,6 +32,7 @@ type CreateWorkflowOptions = Readonly<{
 type WorkflowPayload = Readonly<{
   accountId: AccountId;
   mapping: ColumnMapping;
+  reconciliation?: ImportReconciliation;
   fileContentBase64: string;
 }>;
 
@@ -60,7 +64,8 @@ export class ImportBatchRepository {
     filename: string,
     fileHash: string,
     mapping: ColumnMapping,
-    workflow?: CreateWorkflowOptions
+    workflow?: CreateWorkflowOptions,
+    reconciliation?: StatementReconciliationInput
   ): Promise<ImportBatch> {
     const executor = workflow?.tx ?? this.db;
     const [row] = await executor
@@ -71,6 +76,7 @@ export class ImportBatchRepository {
         filename,
         fileHash,
         mapping,
+        reconciliation: reconciliation ?? null,
         fileContentBase64: workflow?.fileContentBase64 ?? null,
         status: workflow === undefined ? "pending" : "pending_parse",
         workflowOperation: workflow === undefined ? null : "parse",
@@ -148,6 +154,7 @@ export class ImportBatchRepository {
       .select({
         accountId: importBatches.accountId,
         mapping: importBatches.mapping,
+        reconciliation: importBatches.reconciliation,
         fileContentBase64: importBatches.fileContentBase64
       })
       .from(importBatches)
@@ -156,8 +163,22 @@ export class ImportBatchRepository {
     return {
       accountId: row.accountId,
       mapping: ColumnMappingSchema.parse(row.mapping),
+      ...(row.reconciliation === null
+        ? {}
+        : { reconciliation: ImportReconciliationSchema.parse(row.reconciliation) }),
       fileContentBase64: row.fileContentBase64
     };
+  }
+
+  async updateReconciliation(
+    userId: string,
+    batchId: ImportBatchId,
+    reconciliation: ImportReconciliation
+  ): Promise<void> {
+    await this.db
+      .update(importBatches)
+      .set({ reconciliation, updatedAt: new Date() })
+      .where(and(eq(importBatches.userId, userId), eq(importBatches.id, batchId)));
   }
 
   async systemClaimReady(
@@ -563,6 +584,7 @@ function toImportBatch(row: typeof importBatches.$inferSelect): ImportBatch {
     filename: row.filename,
     fileHash: row.fileHash,
     mapping: row.mapping,
+    ...(row.reconciliation === null ? {} : { reconciliation: row.reconciliation }),
     status: row.status,
     failureCode: stripped.failureCode,
     failedAt: stripped.failedAt,

@@ -1,7 +1,12 @@
 "use client";
 
 import { useMutation, useQueryClient, type UseMutationResult } from "@tanstack/react-query";
-import { ImportBatchSchema, type ColumnMapping, type ImportBatch } from "@treasury-ops/shared";
+import {
+  ImportBatchSchema,
+  type ColumnMapping,
+  type ImportBatch,
+  type StatementReconciliationInput
+} from "@treasury-ops/shared";
 
 import { toAppError, toNetworkError } from "@/lib/api/problem";
 import { qk } from "@/lib/query/keys";
@@ -10,16 +15,20 @@ export type UploadImportRequest = Readonly<{
   file: File;
   accountId: string;
   mapping: ColumnMapping;
+  reconciliation?: StatementReconciliationInput;
 }>;
 
 export function useUploadImport(): UseMutationResult<ImportBatch, Error, UploadImportRequest> {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ file, accountId, mapping }): Promise<ImportBatch> => {
+    mutationFn: async ({ file, accountId, mapping, reconciliation }): Promise<ImportBatch> => {
       const body = new FormData();
       body.append("file", file);
       body.append("accountId", accountId);
       body.append("mapping", JSON.stringify(mapping));
+      if (reconciliation !== undefined) {
+        body.append("reconciliation", JSON.stringify(reconciliation));
+      }
       try {
         if (process.env.NEXT_PUBLIC_MOCK_API === "1") {
           const { ensureMockWorkerStarted } = await import("@/mocks/browser");

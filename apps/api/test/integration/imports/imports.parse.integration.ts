@@ -199,6 +199,47 @@ describe("Imports parse pipeline (real BullMQ worker against real Redis)", () =>
     });
   }, 20_000);
 
+  it("reconciles an explicitly selected partial range from its running balances", async () => {
+    const mapping: ColumnMapping = { ...MAPPING, balance: "Closing Balance" };
+    const reconciliation = {
+      periodFrom: "2026-07-04",
+      periodThrough: "2026-07-05",
+      balanceColumn: "Closing Balance"
+    } as const;
+    const batch = await batches.create(
+      "user-a",
+      accountIdA,
+      "partial-range.csv",
+      "sha256:partial-range",
+      mapping,
+      undefined,
+      reconciliation
+    );
+    const csv = [
+      "Txn Date,Narration,Amount,Closing Balance",
+      "04/07/2026,Chai Point,-20.00,-20.00",
+      "05/07/2026,Refund,5.00,-15.00"
+    ].join("\n");
+
+    await service.parseFile(batch.id, "user-a", accountIdA, mapping, csv, reconciliation);
+
+    const summary = await service.getReconciliationSummary("user-a", batch.id);
+    expect(summary).toMatchObject({
+      periodFrom: "2026-07-04",
+      periodThrough: "2026-07-05",
+      statementOpeningBalanceMinor: 0,
+      statementClosingBalanceMinor: -1_500,
+      projectedClosingBalanceMinor: -1_500,
+      openingDifferenceMinor: 0,
+      closingDifferenceMinor: 0,
+      balanceChainValid: true,
+      matchedRows: 0,
+      rowsToAdd: 2,
+      rowsNeedingReview: 0,
+      reconciled: true
+    });
+  });
+
   it("re-parsing the same batch (a BullMQ retry) clears and re-derives staged_rows instead of duplicating them", async () => {
     const stagedRows = new StagedRowRepository(testDb.db);
     const transactions = new TransactionRepository(testDb.db);

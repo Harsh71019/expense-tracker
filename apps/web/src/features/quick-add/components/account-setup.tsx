@@ -6,6 +6,7 @@ import type { FormEvent, ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { SectionHeader } from "@/components/ui/section-header";
 import { Select } from "@/components/ui/select";
 import { useCreateAccount } from "@/features/accounts";
 import { userErrorMessage } from "@/lib/errors";
@@ -50,12 +51,12 @@ export function AccountSetup(): ReactNode {
       <p className="font-mono text-2xs font-bold tracking-widest text-foreground-muted uppercase">
         First step
       </p>
-      <h1 className="mt-1 text-xl font-semibold tracking-tight text-foreground">
-        Create your first account
-      </h1>
-      <p className="mt-2 text-sm text-foreground-muted">
-        Choose where this expense is coming from. You can add more accounts later.
-      </p>
+      <div className="mt-1">
+        <SectionHeader
+          title="Create your first account"
+          description="Choose where this expense is coming from. You can add more accounts later."
+        />
+      </div>
       <form className="mt-6 space-y-6 flex flex-col" onSubmit={submit}>
         <Input
           id="account-name"

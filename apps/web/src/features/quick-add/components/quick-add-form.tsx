@@ -74,7 +74,11 @@ export function QuickAddForm(): ReactNode {
   }
 
   if (accounts.isLoading) {
-    return <p className="text-sm text-foreground-muted">Loading your accounts…</p>;
+    return (
+      <div className="rounded-xl border border-border bg-surface-elevated p-6 sm:p-8">
+        <p className="text-sm text-foreground-muted">Loading your accounts…</p>
+      </div>
+    );
   }
 
   if ((accounts.data ?? []).filter((account) => !account.isArchived).length === 0) {
@@ -82,68 +86,60 @@ export function QuickAddForm(): ReactNode {
   }
 
   return (
-    <section>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          Capture it while it’s fresh
-        </h1>
-        <p className="mt-1.5 text-sm text-foreground-muted">
-          Every save is idempotent and recorded in the ledger.
-        </p>
-      </div>
-      <form
-        onSubmit={form.handleSubmit(submit)}
-        className="space-y-6 rounded-xl border border-border bg-surface-elevated p-4 sm:p-6"
+    <form
+      onSubmit={form.handleSubmit(submit)}
+      className="space-y-6 rounded-xl border border-border bg-surface-elevated p-4 sm:p-6"
+    >
+      <div
+        className="relative grid grid-cols-2 rounded-lg bg-surface-muted p-1 border border-border/50"
+        aria-label="Transaction type"
       >
+        {/* Animated active sliding pill */}
         <div
-          className="relative grid grid-cols-2 rounded-lg bg-surface-muted p-1 border border-border/50"
-          aria-label="Transaction type"
-        >
-          {/* Animated active sliding pill */}
-          <div
-            className={`absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-md bg-surface-elevated border border-border transition-transform duration-200 ease-out ${
-              type === "expense" ? "translate-x-1" : "translate-x-[calc(100%+3px)]"
-            }`}
-            aria-hidden="true"
-          />
-          {(["expense", "income"] as const).map((value) => (
-            <button
-              key={value}
-              type="button"
-              aria-pressed={type === value}
-              className={`relative z-10 flex min-h-11 items-center justify-center rounded-lg py-2 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-                type === value ? "text-accent" : "text-foreground-muted hover:text-foreground"
-              }`}
-              onClick={() => {
-                form.setValue("type", value, { shouldValidate: true });
-                const currentCategoryId = form.getValues("categoryId");
-                if (currentCategoryId === undefined) return;
-                const stillEligible = (categories.data ?? []).some(
-                  (category) =>
-                    category.id === currentCategoryId &&
-                    category.kind === value &&
-                    !category.isArchived
-                );
-                if (!stillEligible) {
-                  form.setValue("categoryId", undefined, { shouldValidate: true });
-                }
-              }}
-            >
-              {value === "expense" ? "Expense" : "Income"}
-            </button>
-          ))}
-        </div>
-        <AmountInput
-          id="amountMinor"
-          label="Amount"
-          value={form.watch("amountMinor")}
-          onChange={(amountMinor) =>
-            form.setValue("amountMinor", amountMinor, { shouldValidate: true })
-          }
-          {...(form.formState.errors.amountMinor?.message === undefined
-            ? {}
-            : { error: form.formState.errors.amountMinor.message })}
+          className={`absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-md bg-surface-elevated border border-border transition-transform duration-200 ease-out ${
+            type === "expense" ? "translate-x-1" : "translate-x-[calc(100%+3px)]"
+          }`}
+          aria-hidden="true"
         />
+        {(["expense", "income"] as const).map((value) => (
+          <button
+            key={value}
+            type="button"
+            aria-pressed={type === value}
+            className={`relative z-10 flex min-h-11 items-center justify-center rounded-lg py-2 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+              type === value ? "text-accent" : "text-foreground-muted hover:text-foreground"
+            }`}
+            onClick={() => {
+              form.setValue("type", value, { shouldValidate: true });
+              const currentCategoryId = form.getValues("categoryId");
+              if (currentCategoryId === undefined) return;
+              const stillEligible = (categories.data ?? []).some(
+                (category) =>
+                  category.id === currentCategoryId &&
+                  category.kind === value &&
+                  !category.isArchived
+              );
+              if (!stillEligible) {
+                form.setValue("categoryId", undefined, { shouldValidate: true });
+              }
+            }}
+          >
+            {value === "expense" ? "Expense" : "Income"}
+          </button>
+        ))}
+      </div>
+      <AmountInput
+        id="amountMinor"
+        label="Amount"
+        value={form.watch("amountMinor")}
+        onChange={(amountMinor) =>
+          form.setValue("amountMinor", amountMinor, { shouldValidate: true })
+        }
+        {...(form.formState.errors.amountMinor?.message === undefined
+          ? {}
+          : { error: form.formState.errors.amountMinor.message })}
+      />
+      <div className="grid gap-6 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5 font-mono text-2xs font-bold tracking-wider text-foreground-muted uppercase">
           <span>Account</span>
           <Select
@@ -165,20 +161,6 @@ export function QuickAddForm(): ReactNode {
             </span>
           )}
         </div>
-        <div className="flex flex-col">
-          <Input
-            id="description"
-            label="What was it?"
-            placeholder="Chai near the station…"
-            autoComplete="off"
-            {...form.register("description")}
-          />
-          {form.formState.errors.description?.message === undefined ? null : (
-            <p className="text-expense font-mono text-2xs mt-1.5 rounded-lg border border-expense/25 bg-expense/10 px-2.5 py-0.5 self-start">
-              {form.formState.errors.description.message}
-            </p>
-          )}
-        </div>
         <div className="flex flex-col gap-1.5 font-mono text-2xs font-bold tracking-wider text-foreground-muted uppercase">
           <span>Category</span>
           <CategoryPicker
@@ -194,6 +176,22 @@ export function QuickAddForm(): ReactNode {
             label="Category"
           />
         </div>
+      </div>
+      <div className="flex flex-col">
+        <Input
+          id="description"
+          label="What was it?"
+          placeholder="Chai near the station…"
+          autoComplete="off"
+          {...form.register("description")}
+        />
+        {form.formState.errors.description?.message === undefined ? null : (
+          <p className="text-expense font-mono text-2xs mt-1.5 rounded-lg border border-expense/25 bg-expense/10 px-2.5 py-0.5 self-start">
+            {form.formState.errors.description.message}
+          </p>
+        )}
+      </div>
+      <div className="grid gap-6 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5 font-mono text-2xs font-bold tracking-wider text-foreground-muted uppercase">
           <span>When</span>
           <DatePicker
@@ -211,7 +209,7 @@ export function QuickAddForm(): ReactNode {
         </div>
         <Input
           id="tags"
-          label="Tags (optional, comma separated)"
+          label="Tags (optional)"
           name="tags"
           placeholder="food, commute…"
           autoComplete="off"
@@ -227,28 +225,28 @@ export function QuickAddForm(): ReactNode {
             )
           }
         />
-        {create.isError && !(create.error instanceof ValidationError) ? (
-          <p
-            role="alert"
-            className="text-expense border border-expense/20 bg-expense/10 px-3.5 py-2.5 rounded-lg font-mono text-2xs font-semibold text-center"
-          >
-            Could not save. Your entry is still ready to retry.
-          </p>
-        ) : null}
-        {create.isSuccess ? (
-          <p
-            role="status"
-            className="text-income border border-income/20 bg-income/10 px-3.5 py-2.5 rounded-lg font-mono text-2xs font-semibold text-center animate-fade-in"
-          >
-            Saved to your ledger.
-          </p>
-        ) : null}
-        <div className="sticky bottom-[calc(var(--mobile-nav-height)+env(safe-area-inset-bottom,0px))] z-20 -mx-4 border-t border-border bg-surface-elevated/95 p-4 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none">
-          <Button type="submit" className="w-full py-3" disabled={create.isPending}>
-            {create.isPending ? "Posting safely…" : "Add to ledger"}
-          </Button>
-        </div>
-      </form>
-    </section>
+      </div>
+      {create.isError && !(create.error instanceof ValidationError) ? (
+        <p
+          role="alert"
+          className="text-expense border border-expense/20 bg-expense/10 px-3.5 py-2.5 rounded-lg font-mono text-2xs font-semibold text-center"
+        >
+          Could not save. Your entry is still ready to retry.
+        </p>
+      ) : null}
+      {create.isSuccess ? (
+        <p
+          role="status"
+          className="text-income border border-income/20 bg-income/10 px-3.5 py-2.5 rounded-lg font-mono text-2xs font-semibold text-center animate-fade-in"
+        >
+          Saved to your ledger.
+        </p>
+      ) : null}
+      <div className="sticky bottom-[calc(var(--mobile-nav-height)+env(safe-area-inset-bottom,0px))] z-20 -mx-4 border-t border-border bg-surface-elevated/95 p-4 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none">
+        <Button type="submit" className="w-full py-3" disabled={create.isPending}>
+          {create.isPending ? "Posting safely…" : "Add to ledger"}
+        </Button>
+      </div>
+    </form>
   );
 }

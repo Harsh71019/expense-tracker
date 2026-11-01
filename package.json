@@ -50,7 +50,8 @@
     "overrides": {
       "@typescript-eslint/typescript-estree>typescript": "npm:@typescript/typescript6@6.0.2",
       "vite": "7.3.6",
-      "proxy-addr": "2.0.8"
+      "proxy-addr": "2.0.8",
+      "@better-auth/utils": "0.4.2"
     },
     "onlyBuiltDependencies": [
       "@swc/core"

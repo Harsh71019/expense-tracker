@@ -120,7 +120,7 @@ export function BudgetsPage({ initialPage, categories }: BudgetsPageProps): Reac
             Monthly budgets
           </h1>
           <p className="mt-0.5 text-xs text-foreground-muted">
-            Category spending limits and live utilization
+            Category spending limits and live utilization, including subcategories
             {firstPage === undefined ? "" : ` · ${monthLabel(firstPage.month)}`}.
           </p>
         </div>

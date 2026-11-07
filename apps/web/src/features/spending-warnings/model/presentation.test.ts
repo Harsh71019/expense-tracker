@@ -205,7 +205,7 @@ describe("investigationHref", () => {
 
   it("links a category spike to the transactions list with categoryId and window", () => {
     expect(investigationHref(categoryWarning)).toBe(
-      "/transactions?categoryId=3fa85f64-5717-4562-b3fc-2c963f66bc01&from=2026-06-24T00%3A00%3A00.000Z&to=2026-07-24T00%3A00%3A00.000Z"
+      "/transactions?categoryId=3fa85f64-5717-4562-b3fc-2c963f66bc01&includeSubcategories=true&from=2026-06-24T00%3A00%3A00.000Z&to=2026-07-24T00%3A00%3A00.000Z"
     );
   });
 

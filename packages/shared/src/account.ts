@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { CategoryColorSchema, CategoryIdSchema } from "./category.js";
+import { CategoryRollupNodeSchema } from "./category-tree.js";
 
 const AccountBalanceMinorSchema = z
   .number()
@@ -37,8 +38,13 @@ export const AccountSpendingCategorySchema = z.object({
   categoryId: CategoryIdSchema.optional(),
   name: z.string().trim().min(1).max(80),
   color: CategoryColorSchema.optional(),
+  /** This account's spend on the root category and all its descendants. */
   amountMinor: z.number().int().min(1).max(Number.MAX_SAFE_INTEGER),
-  transactionCount: z.number().int().min(1)
+  /** The part of `amountMinor` booked on this category itself. */
+  directAmountMinor: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER),
+  transactionCount: z.number().int().min(1),
+  /** Pre-ordered descendants with spend. Their amounts are already inside `amountMinor`. */
+  children: z.array(CategoryRollupNodeSchema)
 });
 
 export const AccountInsightsSchema = z.object({

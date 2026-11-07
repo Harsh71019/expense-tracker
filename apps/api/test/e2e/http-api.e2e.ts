@@ -9,6 +9,7 @@ import {
   AssetPositionEventSchema,
   MarketLinkedAssetCreationResultSchema,
   BatchCategorizeTransactionsResultSchema,
+  BudgetPageSchema,
   CategorySchema,
   CategoryRecommendationResponseSchema,
   CreditCardPaymentResultSchema,
@@ -18,6 +19,7 @@ import {
   FinancialProfileSchema,
   FinancialProfileStateSchema,
   ImportBatchSchema,
+  MonthlyReportSchema,
   PendingTransactionSchema,
   ProblemDetailsSchema,
   ReviewInboxPageSchema,
@@ -27,6 +29,7 @@ import {
   SalaryStatisticsSchema,
   SalaryVersionPageSchema,
   SalaryVersionSchema,
+  TopSpendingItemSchema,
   TransactionInsightsSchema,
   TransactionSchema,
   ValuationPageSchema,
@@ -53,6 +56,7 @@ import type { StartedTestContainer } from "testcontainers";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { z } from "zod";
 
+import { toISTMonth } from "../../src/common/time/ist.js";
 import { ImportBatchRepository } from "../../src/imports/import-batch.repository.js";
 import { OpenApiController } from "../../src/openapi/openapi.controller.js";
 import { assertLedgerInvariants } from "../integration/support/assert-ledger-invariants.js";
@@ -233,6 +237,107 @@ describe("production HTTP composition", () => {
     expect(
       (await parseResponse(insightsResponse, TransactionInsightsSchema)).lifetimeTransactionCount
     ).toBeGreaterThanOrEqual(2);
+  });
+
+  it("rolls child spend up to its parent over HTTP without changing totals or leaking across users", async () => {
+    const account = await createAccount(baseUrl, sessionA, "HTTP rollup");
+    const post = async (session: string, path: string, body: object): Promise<Response> =>
+      fetch(`${baseUrl}/api/v1/${path}`, {
+        method: "POST",
+        headers: { ...JSON_HEADERS, cookie: session, "idempotency-key": crypto.randomUUID() },
+        body: JSON.stringify(body)
+      });
+    const createCategory = async (name: string, parentId?: string): Promise<string> => {
+      const response = await post(sessionA, "categories", {
+        name,
+        kind: "expense",
+        ...(parentId === undefined ? {} : { parentId })
+      });
+      expect(response.status).toBe(201);
+      return (await parseResponse(response, CategorySchema)).id;
+    };
+    const parent = await createCategory("Rollup transport");
+    const child = await createCategory("Rollup cab", parent);
+    const grandchild = await createCategory("Rollup uber", child);
+    const occurredAt = new Date().toISOString();
+    for (const [categoryId, amountMinor] of [
+      [parent, 100],
+      [child, 200],
+      [grandchild, 400]
+    ] as const) {
+      const response = await post(sessionA, "transactions", {
+        accountId: account.id,
+        categoryId,
+        type: "expense",
+        amountMinor,
+        occurredAt,
+        description: "Rollup ride",
+        tags: []
+      });
+      expect(response.status).toBe(201);
+    }
+
+    const month = toISTMonth(new Date());
+    const reportResponse = await fetch(`${baseUrl}/api/v1/reports/monthly/${month}`, {
+      headers: { cookie: sessionA }
+    });
+    expect(reportResponse.status).toBe(200);
+    const report = await parseResponse(reportResponse, MonthlyReportSchema);
+    const rows = report.consumptionTree.filter((node) =>
+      [parent, child, grandchild].includes(node.categoryId ?? "")
+    );
+    expect(rows.map((node) => [node.name, node.depth, node.totalSpentMinor])).toEqual([
+      ["Rollup transport", 0, 700],
+      ["Rollup cab", 1, 600],
+      ["Rollup uber", 2, 400]
+    ]);
+    const roots = report.consumptionTree.filter((node) => node.depth === 0);
+    expect(roots.reduce((sum, node) => sum + node.totalSpentMinor, 0)).toBe(
+      report.totalConsumptionMinor
+    );
+
+    const topResponse = await fetch(`${baseUrl}/api/v1/dashboard/top-spending?range=1M&limit=20`, {
+      headers: { cookie: sessionA }
+    });
+    expect(topResponse.status).toBe(200);
+    const top = await parseResponse(topResponse, z.array(TopSpendingItemSchema));
+    expect(top.find((item) => item.categoryId === parent)).toMatchObject({
+      amountMinor: 700,
+      directAmountMinor: 100
+    });
+
+    const budgetResponse = await fetch(`${baseUrl}/api/v1/budgets/${parent}`, {
+      method: "PUT",
+      headers: { ...JSON_HEADERS, cookie: sessionA, "idempotency-key": crypto.randomUUID() },
+      body: JSON.stringify({ limitMinor: 10_000 })
+    });
+    expect(budgetResponse.status).toBe(200);
+    const budgetsResponse = await fetch(`${baseUrl}/api/v1/budgets`, {
+      headers: { cookie: sessionA }
+    });
+    const budgetPage = await parseResponse(budgetsResponse, BudgetPageSchema);
+    expect(budgetPage.items.find((item) => item.category.id === parent)?.spentMinor).toBe(700);
+
+    const filtered = await fetch(
+      `${baseUrl}/api/v1/transactions?categoryId=${parent}&includeSubcategories=true`,
+      { headers: { cookie: sessionA } }
+    );
+    const page = await parseResponse(filtered, z.object({ items: z.array(TransactionSchema) }));
+    expect(page.items.map((txn) => txn.amountMinor).sort((a, b) => a - b)).toEqual([100, 200, 400]);
+
+    // Another user sees none of it, by id or in their own breakdowns.
+    const foreignFilter = await fetch(
+      `${baseUrl}/api/v1/transactions?categoryId=${parent}&includeSubcategories=true`,
+      { headers: { cookie: sessionB } }
+    );
+    expect(
+      (await parseResponse(foreignFilter, z.object({ items: z.array(TransactionSchema) }))).items
+    ).toEqual([]);
+    const foreignReport = await fetch(`${baseUrl}/api/v1/reports/monthly/${month}`, {
+      headers: { cookie: sessionB }
+    });
+    const foreign = await parseResponse(foreignReport, MonthlyReportSchema);
+    expect(foreign.consumptionTree.some((node) => node.categoryId === parent)).toBe(false);
   });
 
   it("assigns one category to a selected transaction batch and replays safely", async () => {

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { AccountIdSchema } from "./account.js";
 import { AssetIdSchema, AssetKindSchema } from "./asset.js";
 import { CategoryIdSchema } from "./category.js";
+import { CategoryRollupNodeSchema } from "./category-tree.js";
 import { MonthSchema } from "./report.js";
 import { RecurringRuleIdSchema } from "./recurring.js";
 import { TransactionIdSchema, TransactionTypeSchema } from "./transaction.js";
@@ -98,8 +99,14 @@ export const TopSpendingItemSchema = z.object({
   name: z.string(),
   icon: z.string().optional(),
   color: z.string().optional(),
+  isArchived: z.boolean(),
+  /** Spend on this root category and all its descendants. Items never overlap, so they can be summed. */
   amountMinor: z.number().int().min(0),
-  txnCount: z.number().int().min(0)
+  /** The part of `amountMinor` booked on this category itself. */
+  directAmountMinor: z.number().int().min(0),
+  txnCount: z.number().int().min(0),
+  /** Pre-ordered descendants with spend. Their amounts are already inside `amountMinor`. */
+  children: z.array(CategoryRollupNodeSchema)
 });
 
 export const SpendMixQuerySchema = z.object({ range: DashboardRangeSchema });

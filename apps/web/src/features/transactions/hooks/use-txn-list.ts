@@ -22,6 +22,7 @@ function toQuery(
   return {
     accountId: filters.accountId,
     categoryId: filters.categoryId,
+    includeSubcategories: filters.includeSubcategories === true ? "true" : undefined,
     uncategorized: filters.uncategorized === true ? "true" : undefined,
     from: filters.from?.toISOString(),
     to: filters.to?.toISOString(),

@@ -1,51 +1,58 @@
-import type { Category } from "@treasury-ops/shared";
+import type { CategoryRollupNode } from "@treasury-ops/shared";
 import { describe, expect, it } from "vitest";
 
-import { rollupCategoryMeta } from "./rollup-category";
+import { rollupCategoryMeta, rootsWithSpend } from "./rollup-category";
 
-const groceries: Category = {
-  id: "507f1f77bcf86cd799439011",
-  userId: "u1",
+const bare: CategoryRollupNode = {
+  depth: 0,
   name: "Groceries",
-  kind: "expense",
-  icon: "🛒",
-  color: "#f97316",
   isArchived: false,
-  createdAt: new Date("2026-01-01T00:00:00.000Z"),
-  updatedAt: new Date("2026-01-01T00:00:00.000Z")
+  directSpentMinor: 100,
+  directIncomeMinor: 0,
+  directTxnCount: 1,
+  totalSpentMinor: 100,
+  totalIncomeMinor: 0,
+  totalTxnCount: 1
+};
+const groceries: CategoryRollupNode = {
+  ...bare,
+  categoryId: "00000000-0000-4000-8000-000000000001",
+  icon: "🛒",
+  color: "#f97316"
 };
 
 describe("rollupCategoryMeta", () => {
   it("treats an absent categoryId as the Uncategorized bucket", () => {
-    expect(rollupCategoryMeta(undefined, [groceries])).toEqual({
+    expect(rollupCategoryMeta({ ...bare, name: "Uncategorized" })).toEqual({
       name: "Uncategorized",
       icon: "∅",
       color: "#71817a"
     });
   });
 
-  it("resolves a known category's name, icon, and colour", () => {
-    expect(rollupCategoryMeta(groceries.id, [groceries])).toEqual({
+  it("uses the node's name, icon, and colour, including for an archived category", () => {
+    expect(rollupCategoryMeta({ ...groceries, isArchived: true })).toEqual({
       name: "Groceries",
       icon: "🛒",
       color: "#f97316"
     });
   });
 
-  it("falls back gracefully for a categoryId that no longer resolves", () => {
-    expect(rollupCategoryMeta("507f1f77bcf86cd799439099", [groceries])).toEqual({
-      name: "Unavailable category",
-      icon: "?",
-      color: "#71817a"
-    });
-  });
-
-  it("falls back to the first-letter glyph when a resolved category has no icon", () => {
-    const noIcon: Category = { ...groceries, icon: undefined, color: undefined };
-    expect(rollupCategoryMeta(noIcon.id, [noIcon])).toEqual({
+  it("falls back to the first-letter glyph and neutral colour", () => {
+    const { categoryId } = groceries;
+    if (categoryId === undefined) throw new Error("Fixture needs a category id.");
+    expect(rollupCategoryMeta({ ...bare, categoryId })).toEqual({
       name: "Groceries",
       icon: "G",
       color: "#71817a"
     });
+  });
+});
+
+describe("rootsWithSpend", () => {
+  it("keeps only depth-0 categories that spent money", () => {
+    const child = { ...groceries, depth: 1, name: "Blinkit" };
+    const income = { ...groceries, name: "Salary", totalSpentMinor: 0, directSpentMinor: 0 };
+    expect(rootsWithSpend([groceries, child, income])).toEqual([groceries]);
   });
 });

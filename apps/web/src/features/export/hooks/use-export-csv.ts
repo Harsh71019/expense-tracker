@@ -17,6 +17,9 @@ export function useExportCsv(): UseMutationResult<string, Error, ExportCsvQuery>
             query: {
               ...(query.accountId === undefined ? {} : { accountId: query.accountId }),
               ...(query.categoryId === undefined ? {} : { categoryId: query.categoryId }),
+              ...(query.includeSubcategories === true
+                ? { includeSubcategories: "true" as const }
+                : {}),
               ...(query.uncategorized === true ? { uncategorized: "true" as const } : {}),
               ...(query.from === undefined ? {} : { from: query.from.toISOString() }),
               ...(query.to === undefined ? {} : { to: query.to.toISOString() }),

@@ -53,6 +53,7 @@ function createService(
     archive: vi.fn().mockResolvedValue(BUDGET)
   };
   const categories = {
+    list: vi.fn().mockResolvedValue([]),
     findActiveById: vi
       .fn()
       .mockResolvedValue(options?.category === undefined ? CATEGORY : options.category)
@@ -136,6 +137,43 @@ describe("BudgetService", () => {
 
     expect(result.items[0]).toMatchObject({ spentMinor: 0 });
     expect(result.overview.spentInBudgetedCategoriesMinor).toBe(0);
+  });
+
+  describe("with nested categories", () => {
+    const PARENT_ID = CATEGORY_ID;
+    const CHILD_ID = "723e4567-e89b-42d3-a456-426614174000";
+    const parent = { budget: BUDGET, category: CATEGORY };
+    const child = {
+      budget: { ...BUDGET, id: "823e4567-e89b-42d3-a456-426614174000", categoryId: CHILD_ID },
+      category: { ...CATEGORY, id: CHILD_ID, name: "Snacks" }
+    };
+
+    it("attributes a child's daily history to a parent budget's pace", async () => {
+      const context = createService();
+      context.categories.list.mockResolvedValue([
+        { id: PARENT_ID },
+        { id: CHILD_ID, parentId: PARENT_ID }
+      ]);
+      context.budgets.listPage.mockResolvedValue({ items: [parent, child], hasMore: false });
+      context.budgets.listAllWithCategory.mockResolvedValue([parent, child]);
+      context.budgets.categorySpendForMonth.mockResolvedValue(new Map([[CHILD_ID, 1_000]]));
+      context.budgets.categoryDailySpendHistory.mockResolvedValue(
+        ["2026-04-10", "2026-05-10", "2026-06-10"].map((day) => ({
+          categoryId: CHILD_ID,
+          day,
+          spentMinor: 100
+        }))
+      );
+
+      const result = await context.service.list("u1", { includeArchived: false, limit: 50 }, NOW);
+
+      // The child appears in both subtrees but is only fetched once.
+      expect(context.budgets.categoryDailySpendHistory.mock.calls[0]?.[1]).toEqual([
+        PARENT_ID,
+        CHILD_ID
+      ]);
+      expect(result.items.map((item) => item.pace.historyMonths)).toEqual([3, 3]);
+    });
   });
 
   it("upserts through the public transaction wrapper", async () => {

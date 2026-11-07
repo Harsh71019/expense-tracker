@@ -1,3 +1,4 @@
+import { buildCategoryForest, collectSubtreeIds } from "@treasury-ops/shared";
 import type { HttpHandler } from "msw";
 
 import { applyBalanceDelta, findAccount, findTransaction } from "../data/store";
@@ -34,7 +35,7 @@ function matchesFilters(
   transaction: TransactionDto,
   filters: {
     accountId: string | null;
-    categoryId: string | null;
+    categoryIds: readonly string[] | null;
     from: string | null;
     to: string | null;
     q: string | null;
@@ -42,7 +43,12 @@ function matchesFilters(
   }
 ): boolean {
   if (filters.accountId !== null && transaction.accountId !== filters.accountId) return false;
-  if (filters.categoryId !== null && transaction.categoryId !== filters.categoryId) return false;
+  if (
+    filters.categoryIds !== null &&
+    (transaction.categoryId === undefined || !filters.categoryIds.includes(transaction.categoryId))
+  ) {
+    return false;
+  }
   if (
     filters.from !== null &&
     (transaction.occurredAt === null || transaction.occurredAt < filters.from)
@@ -158,11 +164,18 @@ export function transactionHandlers(http: MockHttp, store: MockStore): HttpHandl
       const limitRaw = query.get("limit");
       const limit = limitRaw === null ? 50 : Number(limitRaw);
       const cursor = query.get("cursor");
+      const categoryId = query.get("categoryId");
+      const categoryIds =
+        categoryId === null
+          ? null
+          : query.get("includeSubcategories") === "true"
+            ? collectSubtreeIds(buildCategoryForest(store.categories), categoryId)
+            : [categoryId];
       const matched = store.transactions
         .filter((transaction) =>
           matchesFilters(transaction, {
             accountId: query.get("accountId"),
-            categoryId: query.get("categoryId"),
+            categoryIds,
             from: query.get("from"),
             to: query.get("to"),
             q: query.get("q"),

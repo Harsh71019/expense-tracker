@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  buildCategoryRollupNodes,
   formatMinor,
   type BudgetProgress,
   type Category,
@@ -75,59 +76,20 @@ export function CategoryManager({
   const items = allItems.filter((item) => !item.isArchived);
   const archivedItems = allItems.filter((item) => item.isArchived);
 
-  // Map of categoryId -> direct monthly rollup metrics
-  const directRollupMap = useMemo(() => {
-    const map = new Map<string, { spentMinor: number; incomeMinor: number; txnCount: number }>();
-    if (monthlyRollup?.byCategory !== undefined) {
-      for (const entry of monthlyRollup.byCategory) {
-        if (entry.categoryId !== undefined) {
-          map.set(entry.categoryId, {
-            spentMinor: entry.spentMinor,
-            incomeMinor: entry.incomeMinor,
-            txnCount: entry.txnCount
-          });
-        }
-      }
-    }
-    return map;
-  }, [monthlyRollup]);
-
-  // Aggregate stats map (including subcategories recursive aggregation)
+  // Per-category totals including subcategories, from the shared cycle-safe rollup.
   const categoryStatsMap = useMemo(() => {
     const map = new Map<string, CategoryStats>();
-
-    function computeStats(catId: string): CategoryStats {
-      const existing = map.get(catId);
-      if (existing !== undefined) return existing;
-
-      const direct = directRollupMap.get(catId) ?? { spentMinor: 0, incomeMinor: 0, txnCount: 0 };
-      let totalSpent = direct.spentMinor;
-      let totalIncome = direct.incomeMinor;
-      let totalTxns = direct.txnCount;
-
-      const children = allItems.filter((c) => c.parentId === catId);
-      for (const child of children) {
-        const childStats = computeStats(child.id);
-        totalSpent += childStats.spentMinor;
-        totalIncome += childStats.incomeMinor;
-        totalTxns += childStats.txnCount;
-      }
-
-      const res: CategoryStats = {
-        spentMinor: totalSpent,
-        incomeMinor: totalIncome,
-        txnCount: totalTxns
-      };
-      map.set(catId, res);
-      return res;
+    const nodes = buildCategoryRollupNodes(allItems, monthlyRollup?.byCategory ?? []);
+    for (const node of nodes) {
+      if (node.categoryId === undefined) continue;
+      map.set(node.categoryId, {
+        spentMinor: node.totalSpentMinor,
+        incomeMinor: node.totalIncomeMinor,
+        txnCount: node.totalTxnCount
+      });
     }
-
-    for (const cat of allItems) {
-      computeStats(cat.id);
-    }
-
     return map;
-  }, [allItems, directRollupMap]);
+  }, [allItems, monthlyRollup]);
 
   // Budget map by category ID
   const budgetMap = useMemo(() => {

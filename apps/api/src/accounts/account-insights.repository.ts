@@ -1,12 +1,14 @@
 import { Inject, Injectable } from "@nestjs/common";
 import {
   AccountInsightsSchema,
+  buildCategoryRollupNodes,
+  groupCategoryRollupNodes,
   parseSafeIntegerMinor,
   sumMinorAmounts,
   type Account,
   type AccountInsights
 } from "@treasury-ops/shared";
-import { and, desc, eq, gte, isNull, lt, sql } from "drizzle-orm";
+import { and, eq, gte, isNull, lt, sql } from "drizzle-orm";
 
 import { isActiveAssetFunding } from "../common/db/asset-funding-active.js";
 import { DATABASE_CONNECTION } from "../common/db/db.module.js";
@@ -44,7 +46,7 @@ export class AccountInsightsRepository {
       lt(transactions.occurredAt, window.toExclusive)
     );
 
-    const [priorRows, summaryRows, movementRows, spendingRows] = await Promise.all([
+    const [priorRows, summaryRows, movementRows, spendingRows, hierarchy] = await Promise.all([
       this.db
         .select({
           deltaMinor: sql<string>`coalesce(sum(case when ${transactions.type} = 'income' then ${transactions.amountMinor} else -${transactions.amountMinor} end), 0)::bigint`
@@ -78,16 +80,10 @@ export class AccountInsightsRepository {
       this.db
         .select({
           categoryId: transactions.categoryId,
-          name: sql<string>`coalesce(${categories.name}, 'Uncategorized')`,
-          color: categories.color,
           amountMinor: sql<string>`sum(${transactions.amountMinor})::bigint`,
           transactionCount: sql<string>`count(*)::bigint`
         })
         .from(transactions)
-        .leftJoin(
-          categories,
-          and(eq(categories.id, transactions.categoryId), eq(categories.userId, userId))
-        )
         .leftJoin(
           assetFundings,
           and(
@@ -106,8 +102,18 @@ export class AccountInsightsRepository {
             isNull(assetFundings.id)
           )
         )
-        .groupBy(transactions.categoryId, categories.name, categories.color)
-        .orderBy(desc(sql`sum(${transactions.amountMinor})`), transactions.categoryId)
+        .groupBy(transactions.categoryId),
+      // Archived too: their historical spend must keep rolling up to a parent.
+      this.db
+        .select({
+          id: categories.id,
+          parentId: categories.parentId,
+          name: categories.name,
+          color: categories.color,
+          isArchived: categories.isArchived
+        })
+        .from(categories)
+        .where(eq(categories.userId, userId))
     ]);
 
     const priorDelta = parseSafeIntegerMinor(priorRows[0]?.deltaMinor ?? "0");
@@ -148,12 +154,24 @@ export class AccountInsightsRepository {
       },
       balanceSeries,
       cashflowSeries,
-      spendingByCategory: spendingRows.map((row) => ({
-        ...(row.categoryId === null ? {} : { categoryId: row.categoryId }),
-        name: row.name,
-        ...(row.color === null ? {} : { color: row.color }),
-        amountMinor: parseSafeIntegerMinor(row.amountMinor),
-        transactionCount: parseCount(row.transactionCount)
+      spendingByCategory: groupCategoryRollupNodes(
+        buildCategoryRollupNodes(
+          hierarchy,
+          spendingRows.map((row) => ({
+            categoryId: row.categoryId,
+            spentMinor: parseSafeIntegerMinor(row.amountMinor),
+            incomeMinor: 0,
+            txnCount: parseCount(row.transactionCount)
+          }))
+        )
+      ).map(({ root, descendants }) => ({
+        ...(root.categoryId === undefined ? {} : { categoryId: root.categoryId }),
+        name: root.name,
+        ...(root.color === undefined ? {} : { color: root.color }),
+        amountMinor: root.totalSpentMinor,
+        directAmountMinor: root.directSpentMinor,
+        transactionCount: root.totalTxnCount,
+        children: descendants
       }))
     });
   }

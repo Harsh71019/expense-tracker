@@ -344,8 +344,11 @@ describe("route shells", () => {
         name: "Groceries",
         icon: "shopping-cart",
         color: "#f97316",
+        isArchived: false,
         amountMinor: 18_420_00,
-        txnCount: 14
+        directAmountMinor: 18_420_00,
+        txnCount: 14,
+        children: []
       }
     ];
     mocks.recurringForecast = {

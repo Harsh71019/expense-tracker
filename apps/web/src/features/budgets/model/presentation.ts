@@ -56,6 +56,7 @@ export function budgetTransactionsHref(categoryId: string, month: string): strin
   const endInclusive = new Date(endExclusive.getTime() - 1);
   const params = new URLSearchParams({
     categoryId,
+    includeSubcategories: "true",
     from: start.toISOString(),
     to: endInclusive.toISOString()
   });

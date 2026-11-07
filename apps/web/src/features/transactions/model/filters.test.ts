@@ -173,4 +173,17 @@ describe("transaction URL filters", () => {
       expect(isSameISTDay(morning, undefined)).toBe(false);
     });
   });
+
+  it("round-trips includeSubcategories with its category", () => {
+    const categoryId = "3fa85f64-5717-4562-b3fc-2c963f66beef";
+    const filters = parseTransactionFilters({ categoryId, includeSubcategories: "true" });
+    expect(filters.includeSubcategories).toBe(true);
+    const serialized = new URLSearchParams(serializeTransactionFilters(filters));
+    expect(serialized.get("includeSubcategories")).toBe("true");
+    expect(
+      new URLSearchParams(serializeTransactionFilters({ limit: 50, categoryId })).has(
+        "includeSubcategories"
+      )
+    ).toBe(false);
+  });
 });

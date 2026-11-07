@@ -1,8 +1,13 @@
-import type {
-  CategorySpendSpikeEvidence,
-  OverallSpendSpikeEvidence,
-  SpendingWarningSeverity,
-  UnusuallyLargeExpenseEvidence
+import {
+  buildCategoryForest,
+  collectAncestorIds,
+  collectSubtreeIds,
+  type CategoryForest,
+  type CategorySpendSpikeEvidence,
+  type CategoryTreeInput,
+  type OverallSpendSpikeEvidence,
+  type SpendingWarningSeverity,
+  type UnusuallyLargeExpenseEvidence
 } from "@treasury-ops/shared";
 
 import {
@@ -17,7 +22,7 @@ import {
  * invalidate previously-computed fingerprints/evidence (plan §5). Folded
  * into every fingerprint and persisted on every warning/analysis-state row.
  */
-export const DETECTOR_VERSION = 1;
+export const DETECTOR_VERSION = 2;
 
 const OVERALL_WINDOW_DAYS = 7;
 const OVERALL_BASELINE_WINDOWS = 8;
@@ -189,12 +194,67 @@ export type CategoryEvaluation = Readonly<{
   findings: CategoryFinding[];
 }>;
 
-export function evaluateCategorySpikes(
+/** Adds each category's window totals to every ancestor. Uncategorized stays on its own. */
+function rollUpWindows(
   windows: readonly CategoryWindowSum[],
-  asOf: Date
-): CategoryEvaluation {
-  const byCategory = new Map<string, CategoryWindowSum[]>();
+  forest: CategoryForest
+): CategoryWindowSum[] {
+  const rolled = new Map<string, CategoryWindowSum>();
   for (const row of windows) {
+    const ids =
+      row.categoryId === null
+        ? [null]
+        : [row.categoryId, ...collectAncestorIds(forest, row.categoryId)];
+    for (const categoryId of ids) {
+      const key = `${categoryId ?? ""}:${row.windowIndex}`;
+      const existing = rolled.get(key);
+      rolled.set(key, {
+        categoryId,
+        windowIndex: row.windowIndex,
+        totalMinor: (existing?.totalMinor ?? 0) + row.totalMinor,
+        expenseCount: (existing?.expenseCount ?? 0) + row.expenseCount
+      });
+    }
+  }
+  return [...rolled.values()];
+}
+
+/**
+ * A parent's total contains its descendants', so a spike in Uber can also be a
+ * spike in Cab and Transportation. They describe the same money, so each line of
+ * descent keeps only its largest finding (`findings` is sorted largest first)
+ * and one spike cannot fill every result slot.
+ */
+function keepLargestPerLineage(
+  findings: readonly CategoryFinding[],
+  forest: CategoryForest
+): CategoryFinding[] {
+  const kept: CategoryFinding[] = [];
+  const covered = new Set<string>();
+  for (const finding of findings) {
+    if (finding.categoryId !== null) {
+      if (covered.has(finding.categoryId)) continue;
+      for (const id of collectSubtreeIds(forest, finding.categoryId)) covered.add(id);
+      for (const id of collectAncestorIds(forest, finding.categoryId)) covered.add(id);
+    }
+    kept.push(finding);
+  }
+  return kept;
+}
+
+/**
+ * Evaluates every category on its whole subtree, the same total a budget or
+ * report shows. `categories` must include archived ones so that their history
+ * keeps rolling up.
+ */
+export function evaluateCategorySpikes(
+  directWindows: readonly CategoryWindowSum[],
+  asOf: Date,
+  categories: readonly CategoryTreeInput[] = []
+): CategoryEvaluation {
+  const forest = buildCategoryForest(categories);
+  const byCategory = new Map<string, CategoryWindowSum[]>();
+  for (const row of rollUpWindows(directWindows, forest)) {
     const key = row.categoryId ?? "";
     const group = byCategory.get(key);
     if (group === undefined) byCategory.set(key, [row]);
@@ -261,8 +321,19 @@ export function evaluateCategorySpikes(
     });
   }
 
-  findings.sort((a, b) => b.deltaMinor - a.deltaMinor);
-  return { eligibleCategoryCount, findings: findings.slice(0, CATEGORY_MAX_RESULTS) };
+  // On a tie the deepest category wins: the same money, more specifically named.
+  const depth = (finding: CategoryFinding): number =>
+    finding.categoryId === null ? 0 : collectAncestorIds(forest, finding.categoryId).length;
+  findings.sort(
+    (a, b) =>
+      b.deltaMinor - a.deltaMinor ||
+      depth(b) - depth(a) ||
+      (a.categoryId ?? "").localeCompare(b.categoryId ?? "")
+  );
+  return {
+    eligibleCategoryCount,
+    findings: keepLargestPerLineage(findings, forest).slice(0, CATEGORY_MAX_RESULTS)
+  };
 }
 
 export function categoryFingerprint(
@@ -305,12 +376,26 @@ export type LargeExpenseEvaluation = Readonly<{
  * `rows` must already be bounded to the ~210-day (30 + 180) range the
  * repository fetches (plan §8) — every candidate's dynamic baseline window
  * is computed here, purely in memory, since it depends on the candidate's
- * own `occurredAt` rather than a fixed analysis-wide boundary.
+ * own `occurredAt` rather than a fixed analysis-wide boundary. The baseline
+ * is the candidate's category and its descendants: what that category's total
+ * is made of. `categories` must include archived ones.
  */
 export function evaluateLargeExpenses(
   rows: readonly CandidateExpenseRow[],
-  asOf: Date
+  asOf: Date,
+  categories: readonly CategoryTreeInput[] = []
 ): LargeExpenseEvaluation {
+  const forest = buildCategoryForest(categories);
+  const subtrees = new Map<string, ReadonlySet<string>>();
+  const isInBaselineCategory = (candidate: string | null, row: string | null): boolean => {
+    if (candidate === null || row === null) return candidate === row;
+    let subtree = subtrees.get(candidate);
+    if (subtree === undefined) {
+      subtree = new Set(collectSubtreeIds(forest, candidate));
+      subtrees.set(candidate, subtree);
+    }
+    return subtree.has(row);
+  };
   const windowEnd = istCalendarDateStartUtc(asOf);
   const candidateWindowStart = addDaysUtc(windowEnd, -LARGE_EXPENSE_CANDIDATE_WINDOW_DAYS);
   const candidates = rows.filter(
@@ -325,7 +410,7 @@ export function evaluateLargeExpenses(
     const baseline = rows.filter(
       (row) =>
         row.transactionId !== candidate.transactionId &&
-        row.categoryId === candidate.categoryId &&
+        isInBaselineCategory(candidate.categoryId, row.categoryId) &&
         row.occurredAt >= baselineStart &&
         row.occurredAt < candidate.occurredAt
     );

@@ -2,6 +2,7 @@ import { Inject, Injectable } from "@nestjs/common";
 import {
   SpendingWarningEligibleKindsSchema,
   SpendingWarningSchema,
+  type CategoryTreeInput,
   type ListSpendingWarningsQuery,
   type PageInfo,
   type SpendingWarning,
@@ -119,7 +120,10 @@ export class SpendingWarningsRepository {
     }));
   }
 
-  /** Same shape as {@link overallWindowSums}, grouped by 30-day windows and categoryId (null = Uncategorized). */
+  /**
+   * Same shape as {@link overallWindowSums}, grouped by 30-day windows and
+   * direct categoryId (null = Uncategorized). The detector rolls these up.
+   */
   async categoryWindowSums(userId: string, analysisBoundary: Date): Promise<CategoryWindowSum[]> {
     const rangeStart = new Date(analysisBoundary.getTime() - CATEGORY_LOOKBACK_DAYS * 86_400_000);
     const windowIndexExpr = sql<number>`floor(extract(epoch from (${analysisBoundary}::timestamptz - ${transactions.occurredAt})) / ${THIRTY_DAYS_SECONDS})::int`;
@@ -238,6 +242,14 @@ export class SpendingWarningsRepository {
         )
       );
     return row?.earliest === null || row?.earliest === undefined ? null : new Date(row.earliest);
+  }
+
+  /** Every category this user has, archived included: their history still rolls up. */
+  async categoryHierarchy(userId: string): Promise<CategoryTreeInput[]> {
+    return this.db
+      .select({ id: categories.id, parentId: categories.parentId })
+      .from(categories)
+      .where(eq(categories.userId, userId));
   }
 
   async categoryNamesByIds(

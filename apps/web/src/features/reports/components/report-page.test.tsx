@@ -1,12 +1,12 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { Account, Category, MonthlyRollup } from "@treasury-ops/shared";
+import type { Account, MonthlyReport } from "@treasury-ops/shared";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ReportPage } from "./report-page";
 
 const mocks = vi.hoisted(() => {
-  const rollupsByMonth = new Map<string, MonthlyRollup | null>();
+  const rollupsByMonth = new Map<string, MonthlyReport | null>();
   return { rollupsByMonth, isLoading: false, replace: vi.fn() };
 });
 
@@ -21,12 +21,8 @@ vi.mock("../hooks/use-monthly-rollup", () => ({
 vi.mock("@/features/accounts", (): { useAccounts: () => { data: Account[] } } => ({
   useAccounts: () => ({ data: [] })
 }));
-vi.mock("@/features/categories", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/features/categories")>();
-  return { ...actual, useCategories: () => ({ data: [] satisfies Category[] }) };
-});
 
-function rollup(month: string): MonthlyRollup {
+function rollup(month: string): MonthlyReport {
   return {
     userId: "u1",
     month,
@@ -38,6 +34,19 @@ function rollup(month: string): MonthlyRollup {
     totalConsumptionMinor: 100_000,
     totalAssetFundingMinor: 0,
     consumptionByCategory: [{ spentMinor: 100_000, incomeMinor: 0, txnCount: 3 }],
+    consumptionTree: [
+      {
+        depth: 0,
+        name: "Uncategorized",
+        isArchived: false,
+        directSpentMinor: 100_000,
+        directIncomeMinor: 0,
+        directTxnCount: 3,
+        totalSpentMinor: 100_000,
+        totalIncomeMinor: 0,
+        totalTxnCount: 3
+      }
+    ],
     formulaVersion: 2,
     computedAt: new Date("2026-07-01T02:15:00.000Z")
   };

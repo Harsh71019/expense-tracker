@@ -2,6 +2,9 @@ import { Inject, Injectable } from "@nestjs/common";
 import {
   TransactionInsightsSchema,
   TransactionSchema,
+  buildCategoryForest,
+  buildCategoryRollupNodes,
+  collectSubtreeIds,
   parseSafeIntegerMinor,
   type CreditCardBillId,
   type CreateTransaction,
@@ -162,13 +165,26 @@ export class TransactionRepository {
     return rows.map((row) => toTransaction(row.transaction));
   }
 
+  private async subtreeIds(userId: string, categoryId: string): Promise<string[]> {
+    const rows = await this.db
+      .select({ id: categories.id, parentId: categories.parentId })
+      .from(categories)
+      .where(eq(categories.userId, userId));
+    return collectSubtreeIds(buildCategoryForest(rows), categoryId);
+  }
+
   async findMany(userId: string, query: ListTransactionsQuery): Promise<TransactionPage> {
     const cursor = query.cursor === undefined ? null : decodeCursor(query.cursor);
     const sort = query.sort ?? "date_desc";
     const conditions = [eq(transactions.userId, userId)];
     if (query.accountId !== undefined) conditions.push(eq(transactions.accountId, query.accountId));
-    if (query.categoryId !== undefined)
-      conditions.push(eq(transactions.categoryId, query.categoryId));
+    if (query.categoryId !== undefined) {
+      conditions.push(
+        query.includeSubcategories === true
+          ? inArray(transactions.categoryId, await this.subtreeIds(userId, query.categoryId))
+          : eq(transactions.categoryId, query.categoryId)
+      );
+    }
     if (query.uncategorized === true) conditions.push(isNull(transactions.categoryId));
     if (query.from !== undefined) conditions.push(gte(transactions.occurredAt, query.from));
     if (query.to !== undefined) conditions.push(lte(transactions.occurredAt, query.to));
@@ -257,84 +273,96 @@ export class TransactionRepository {
     const istDay = sql<string>`to_char(${transactions.occurredAt} AT TIME ZONE ${IST_TIME_ZONE}, 'YYYY-MM-DD')`;
     const spentTotal = sql<string>`sum(${transactions.amountMinor})::bigint`;
 
-    const [monthlyRows, dailyRows, highestRows, topCategoryRows, lifetimeRows] = await Promise.all([
-      this.db
-        .select({
-          transactionCount: sql<string>`count(distinct ${logicalTransactionId})::bigint`
-        })
-        .from(transactions)
-        .where(monthlyWhere),
-      this.db
-        .select({
-          date: istDay,
-          transactionCount: sql<string>`count(distinct ${logicalTransactionId})::bigint`
-        })
-        .from(transactions)
-        .where(monthlyWhere)
-        .groupBy(sql`1`)
-        .orderBy(sql`1`),
-      this.db
-        .select({
-          id: transactions.id,
-          description: transactions.description,
-          amountMinor: transactions.amountMinor,
-          occurredAt: transactions.occurredAt
-        })
-        .from(transactions)
-        .leftJoin(
-          assetFundings,
-          and(
-            eq(assetFundings.userId, userId),
-            eq(assetFundings.transactionId, transactions.id),
-            isActiveAssetFunding()
+    const [monthlyRows, dailyRows, highestRows, categorySpendRows, categoryRows, lifetimeRows] =
+      await Promise.all([
+        this.db
+          .select({
+            transactionCount: sql<string>`count(distinct ${logicalTransactionId})::bigint`
+          })
+          .from(transactions)
+          .where(monthlyWhere),
+        this.db
+          .select({
+            date: istDay,
+            transactionCount: sql<string>`count(distinct ${logicalTransactionId})::bigint`
+          })
+          .from(transactions)
+          .where(monthlyWhere)
+          .groupBy(sql`1`)
+          .orderBy(sql`1`),
+        this.db
+          .select({
+            id: transactions.id,
+            description: transactions.description,
+            amountMinor: transactions.amountMinor,
+            occurredAt: transactions.occurredAt
+          })
+          .from(transactions)
+          .leftJoin(
+            assetFundings,
+            and(
+              eq(assetFundings.userId, userId),
+              eq(assetFundings.transactionId, transactions.id),
+              isActiveAssetFunding()
+            )
           )
-        )
-        .where(and(postedExpenseWhere, isNull(assetFundings.id)))
-        .orderBy(
-          desc(transactions.amountMinor),
-          desc(transactions.occurredAt),
-          desc(transactions.id)
-        )
-        .limit(1),
-      this.db
-        .select({
-          categoryId: transactions.categoryId,
-          name: categories.name,
-          color: categories.color,
-          icon: categories.icon,
-          amountMinor: spentTotal,
-          transactionCount: sql<string>`count(*)::bigint`
-        })
-        .from(transactions)
-        .leftJoin(
-          categories,
-          and(eq(categories.id, transactions.categoryId), eq(categories.userId, userId))
-        )
-        .leftJoin(
-          assetFundings,
-          and(
-            eq(assetFundings.userId, userId),
-            eq(assetFundings.transactionId, transactions.id),
-            isActiveAssetFunding()
+          .where(and(postedExpenseWhere, isNull(assetFundings.id)))
+          .orderBy(
+            desc(transactions.amountMinor),
+            desc(transactions.occurredAt),
+            desc(transactions.id)
           )
-        )
-        .where(and(postedExpenseWhere, isNull(assetFundings.id)))
-        .groupBy(transactions.categoryId, categories.name, categories.color, categories.icon)
-        .orderBy(desc(spentTotal), transactions.categoryId)
-        .limit(1),
-      this.db
-        .select({
-          transactionCount: sql<string>`count(distinct ${logicalTransactionId})::bigint`
-        })
-        .from(transactions)
-        .where(eq(transactions.userId, userId))
-    ]);
+          .limit(1),
+        this.db
+          .select({
+            categoryId: transactions.categoryId,
+            amountMinor: spentTotal,
+            transactionCount: sql<string>`count(*)::bigint`
+          })
+          .from(transactions)
+          .leftJoin(
+            assetFundings,
+            and(
+              eq(assetFundings.userId, userId),
+              eq(assetFundings.transactionId, transactions.id),
+              isActiveAssetFunding()
+            )
+          )
+          .where(and(postedExpenseWhere, isNull(assetFundings.id)))
+          .groupBy(transactions.categoryId),
+        // Archived too: their historical spend must keep rolling up to a parent.
+        this.db
+          .select({
+            id: categories.id,
+            parentId: categories.parentId,
+            name: categories.name,
+            color: categories.color,
+            icon: categories.icon,
+            isArchived: categories.isArchived
+          })
+          .from(categories)
+          .where(eq(categories.userId, userId)),
+        this.db
+          .select({
+            transactionCount: sql<string>`count(distinct ${logicalTransactionId})::bigint`
+          })
+          .from(transactions)
+          .where(eq(transactions.userId, userId))
+      ]);
 
     const dailyByDate = new Map(
       dailyRows.map((row) => [row.date, parseSafeIntegerMinor(row.transactionCount)])
     );
     const highest = highestRows[0];
-    const topCategory = topCategoryRows[0];
+    const topCategory = buildCategoryRollupNodes(
+      categoryRows,
+      categorySpendRows.map((row) => ({
+        categoryId: row.categoryId,
+        spentMinor: parseSafeIntegerMinor(row.amountMinor),
+        incomeMinor: 0,
+        txnCount: parseSafeIntegerMinor(row.transactionCount)
+      }))
+    ).find((node) => node.depth === 0);
 
     return TransactionInsightsSchema.parse({
       month,
@@ -356,12 +384,14 @@ export class TransactionRepository {
         topCategory === undefined
           ? null
           : {
-              ...(topCategory.categoryId === null ? {} : { categoryId: topCategory.categoryId }),
-              name: topCategory.name ?? "Uncategorized",
-              ...(topCategory.color === null ? {} : { color: topCategory.color }),
-              ...(topCategory.icon === null ? {} : { icon: topCategory.icon }),
-              amountMinor: parseSafeIntegerMinor(topCategory.amountMinor),
-              transactionCount: parseSafeIntegerMinor(topCategory.transactionCount)
+              ...(topCategory.categoryId === undefined
+                ? {}
+                : { categoryId: topCategory.categoryId }),
+              name: topCategory.name,
+              ...(topCategory.color === undefined ? {} : { color: topCategory.color }),
+              ...(topCategory.icon === undefined ? {} : { icon: topCategory.icon }),
+              amountMinor: topCategory.totalSpentMinor,
+              transactionCount: topCategory.totalTxnCount
             },
       lifetimeTransactionCount: parseSafeIntegerMinor(lifetimeRows[0]?.transactionCount ?? 0)
     });

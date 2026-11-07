@@ -1,4 +1,4 @@
-import type { Category, CategoryRollup, TopSpendingItem } from "@treasury-ops/shared";
+import type { CategoryRollup, CategoryRollupGroup, TopSpendingItem } from "@treasury-ops/shared";
 
 const UNCATEGORIZED_KEY = "__uncategorized__";
 
@@ -18,19 +18,18 @@ export function mergeCategoryRollups(rollups: readonly CategoryRollup[]): Catego
   return [...merged.values()];
 }
 
-/** Joins a spend total against category metadata for the top-spending panel. */
-export function enrichCategoryTotal(
-  rollup: CategoryRollup,
-  categoriesById: ReadonlyMap<string, Category>
-): TopSpendingItem {
-  const category =
-    rollup.categoryId === undefined ? undefined : categoriesById.get(rollup.categoryId);
+/** One top-spending item per root category, with its descendants' spend beneath it. */
+export function toTopSpendingItem(group: CategoryRollupGroup): TopSpendingItem {
+  const { root, descendants } = group;
   return {
-    ...(rollup.categoryId === undefined ? {} : { categoryId: rollup.categoryId }),
-    name: category?.name ?? "Uncategorized",
-    ...(category?.icon === undefined ? {} : { icon: category.icon }),
-    ...(category?.color === undefined ? {} : { color: category.color }),
-    amountMinor: rollup.spentMinor,
-    txnCount: rollup.txnCount
+    ...(root.categoryId === undefined ? {} : { categoryId: root.categoryId }),
+    name: root.name,
+    ...(root.icon === undefined ? {} : { icon: root.icon }),
+    ...(root.color === undefined ? {} : { color: root.color }),
+    isArchived: root.isArchived,
+    amountMinor: root.totalSpentMinor,
+    directAmountMinor: root.directSpentMinor,
+    txnCount: root.totalTxnCount,
+    children: descendants.filter((node) => node.totalSpentMinor > 0)
   };
 }

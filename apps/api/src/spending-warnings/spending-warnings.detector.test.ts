@@ -238,6 +238,110 @@ describe("evaluateCategorySpikes", () => {
   });
 });
 
+describe("evaluateCategorySpikes with nested categories", () => {
+  const baseline = [50_000, 50_000, 50_000, 50_000, 50_000, 50_000];
+  const hierarchy = [
+    { id: "transport" },
+    { id: "cab", parentId: "transport" },
+    { id: "uber", parentId: "cab" },
+    { id: "rent" }
+  ];
+
+  it("evaluates a parent on its descendants' spend even with none of its own", () => {
+    const windows = categoryWindows("uber", 300_000, 5, baseline);
+
+    const result = evaluateCategorySpikes(windows, ASOF, hierarchy);
+
+    expect(result.eligibleCategoryCount).toBe(3);
+    expect(result.findings).toHaveLength(1);
+    // Same money and same delta all the way up: the most specific category reports it.
+    expect(result.findings[0]?.categoryId).toBe("uber");
+    expect(result.findings[0]?.evidence).toMatchObject({
+      currentMinor: 300_000,
+      baselineMedianMinor: 50_000
+    });
+  });
+
+  it("sums window totals and counts across every descendant", () => {
+    const thin = [10_000, 10_000, 10_000, 10_000, 10_000, 10_000];
+    const windows = [
+      ...categoryWindows("transport", 100_000, 2, thin),
+      ...categoryWindows("uber", 200_000, 2, thin)
+    ];
+
+    const [finding] = evaluateCategorySpikes(windows, ASOF, hierarchy).findings;
+
+    // Neither has 3 current expenses alone; together they do.
+    expect(finding?.categoryId).toBe("transport");
+    expect(finding?.evidence).toMatchObject({
+      currentMinor: 300_000,
+      currentExpenseCount: 4,
+      baselineMedianMinor: 20_000,
+      baselineExpenseCount: 36
+    });
+  });
+
+  it("does not suppress unrelated lineages, and they keep their own result slots", () => {
+    const windows = [
+      ...categoryWindows("uber", 300_000, 5, baseline),
+      ...categoryWindows("rent", 300_000, 5, baseline),
+      ...categoryWindows(null, 300_000, 5, baseline)
+    ];
+
+    const result = evaluateCategorySpikes(windows, ASOF, hierarchy);
+
+    expect(result.findings.map((finding) => finding.categoryId).sort()).toEqual([
+      null,
+      "rent",
+      "uber"
+    ]);
+  });
+
+  it("keeps the child's finding when its parent's delta is smaller", () => {
+    // A sibling's fall hides most of Uber's rise at the Transportation level.
+    const windows = [
+      ...categoryWindows("uber", 400_000, 5, baseline),
+      ...categoryWindows(
+        "transport",
+        10_000,
+        5,
+        baseline.map(() => 200_000)
+      )
+    ];
+
+    const result = evaluateCategorySpikes(windows, ASOF, hierarchy);
+
+    expect(result.findings.map((finding) => finding.categoryId)).toEqual(["uber"]);
+  });
+
+  it("reports the parent when its delta is larger than any one child's", () => {
+    const windows = [
+      ...categoryWindows("uber", 300_000, 5, baseline),
+      ...categoryWindows(
+        "cab",
+        100_000,
+        2,
+        baseline.map(() => 0)
+      )
+    ];
+
+    const [finding] = evaluateCategorySpikes(windows, ASOF, hierarchy).findings;
+
+    expect(finding?.categoryId).toBe("cab");
+    expect(finding?.evidence).toMatchObject({ currentMinor: 400_000 });
+  });
+
+  it("does not hang or double count on a corrupt cycle", () => {
+    const windows = categoryWindows("a", 300_000, 5, baseline);
+    const result = evaluateCategorySpikes(windows, ASOF, [
+      { id: "a", parentId: "b" },
+      { id: "b", parentId: "a" }
+    ]);
+    expect(result.findings).toHaveLength(1);
+    expect(result.findings[0]?.evidence).toMatchObject({ currentMinor: 300_000 });
+  });
+});
+
 describe("categoryFingerprint", () => {
   it("is stable across an IST calendar month and distinguishes Uncategorized", () => {
     const early = new Date("2026-07-02T03:00:00.000Z");
@@ -283,6 +387,34 @@ describe("evaluateLargeExpenses", () => {
     const result = evaluateLargeExpenses(rows, ASOF);
     expect(result.eligibleCandidateCount).toBe(0);
     expect(result.findings).toHaveLength(0);
+  });
+
+  it("uses the candidate's category and its descendants as the baseline, not its parent", () => {
+    const hierarchy = [{ id: "parent" }, { id: "child", parentId: "parent" }];
+    const childBaseline = buildBaseline("child", 12, 10_000);
+
+    const onParent = evaluateLargeExpenses(
+      [...childBaseline, candidate("big", "parent", 5_000_000, daysBeforeAsOf(1))],
+      ASOF,
+      hierarchy
+    );
+    expect(onParent.findings[0]?.evidence).toMatchObject({ baselineExpenseCount: 12 });
+
+    const parentBaseline = buildBaseline("parent", 12, 10_000);
+    const onChild = evaluateLargeExpenses(
+      [...parentBaseline, candidate("big", "child", 5_000_000, daysBeforeAsOf(1))],
+      ASOF,
+      hierarchy
+    );
+    expect(onChild.eligibleCandidateCount).toBe(0);
+  });
+
+  it("keeps Uncategorized compared only with Uncategorized", () => {
+    const rows = [
+      ...buildBaseline("cat-a", 12, 10_000),
+      candidate("big", null, 5_000_000, daysBeforeAsOf(1))
+    ];
+    expect(evaluateLargeExpenses(rows, ASOF, [{ id: "cat-a" }]).eligibleCandidateCount).toBe(0);
   });
 
   it("excludes the candidate itself and anything later than it from its own baseline", () => {

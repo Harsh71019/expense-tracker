@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { AccountIdSchema } from "./account.js";
 import { CategoryIdSchema } from "./category.js";
+import { CategoryRollupNodeSchema } from "./category-tree.js";
 
 export const MONTHLY_ROLLUP_FORMULA_VERSION = 2;
 
@@ -36,7 +37,18 @@ export const MonthlyRollupSchema = z.object({
   computedAt: z.coerce.date()
 });
 
+/**
+ * The API response for a month. `byCategory`/`consumptionByCategory` stay the
+ * stored per-category direct amounts; `consumptionTree` is derived from them
+ * with the user's current hierarchy on every read, so it is never cached and
+ * moving a category needs no rollup recompute.
+ */
+export const MonthlyReportSchema = MonthlyRollupSchema.extend({
+  consumptionTree: z.array(CategoryRollupNodeSchema)
+});
+
 export type Month = z.infer<typeof MonthSchema>;
 export type CategoryRollup = z.infer<typeof CategoryRollupSchema>;
 export type AccountRollup = z.infer<typeof AccountRollupSchema>;
 export type MonthlyRollup = z.infer<typeof MonthlyRollupSchema>;
+export type MonthlyReport = z.infer<typeof MonthlyReportSchema>;

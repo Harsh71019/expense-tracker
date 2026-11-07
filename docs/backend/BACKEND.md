@@ -112,6 +112,15 @@ parent archives its active subtree atomically. Permanent deletion is allowed onl
 leaf with no transactions, budgets, category rules, recurring templates, staged import rows, or
 spending-warning references; linked historical data is never cascaded.
 
+Spend by category is stored and aggregated per direct category. Reports, dashboard breakdowns,
+budgets, budget alerts, spending warnings and account insights apply the hierarchy on read with
+`buildCategoryForest`/`buildCategoryRollupNodes` from `packages/shared/category-tree.ts`, so moving a
+category needs no recompute and `monthly_rollups` keeps its meaning. Only depth-0 nodes (or every
+node's `direct*` amounts) may be summed into a grand total. Archived categories stay in the tree so
+their history keeps rolling up, a parent outside the user's categories makes a category a root, and
+a cycle is broken at its smallest id. `categories.parent_id` has no database constraint, so readers
+must not assume the link is valid.
+
 #### `transactions` — the ledger (append-only)
 
 ```ts
@@ -375,16 +384,20 @@ goals achieved and writes one `goal_achieved` outbox notification.
 }
 ```
 
-Budgets are current-month-only and exact-category (no descendant rollup, no
+Budgets are current-month-only and cover their category's whole subtree (no
 overall/household budget yet). `spentMinor`/`remainingMinor`/`utilizationBps`
 are never cached on the row — `GET /v1/budgets` derives them live from one
-bounded aggregate over posted, non-transfer, exact-category expense
-transactions in the current IST month, deliberately not the nightly
+bounded per-category aggregate over posted, non-transfer expense transactions
+in the current IST month, rolled up through the user's hierarchy, deliberately
+not the nightly
 `monthly_rollups` cache (that cache doesn't exclude transfer legs; budget
 progress must not inherit that semantic). Archiving a category makes any
 budget attached to it "ineffective" (zeroed progress, no alerts) without
 touching the budget row itself, so restoring the category or re-pointing a
-new budget at it recovers cleanly.
+new budget at it recovers cleanly. An archived descendant's spend still counts
+toward an effective budget on an ancestor. Overview money totals use only the
+top-most effective budgets: their subtrees cannot overlap, and a budget nested
+under another is a sub-limit of the same money rather than more of it.
 
 `GET /v1/budgets` also returns an informational, read-only `pace` result for
 each item. It uses at most 12 completed Asia/Kolkata months and 100 categories

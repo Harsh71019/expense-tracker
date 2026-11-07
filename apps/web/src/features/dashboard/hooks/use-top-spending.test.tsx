@@ -15,7 +15,16 @@ const wrapper = ({ children }: Readonly<{ children: ReactNode }>): ReactNode => 
   </QueryClientProvider>
 );
 const response = new Response(null, { status: 200 });
-const items: TopSpendingItem[] = [{ name: "Groceries", amountMinor: 500, txnCount: 4 }];
+const items: TopSpendingItem[] = [
+  {
+    name: "Groceries",
+    isArchived: false,
+    amountMinor: 500,
+    directAmountMinor: 500,
+    txnCount: 4,
+    children: []
+  }
+];
 
 describe("useTopSpending", () => {
   beforeEach(() => {

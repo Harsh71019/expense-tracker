@@ -39,13 +39,32 @@ describe("account detail charts", () => {
             name: "Food",
             color: "#16A34A",
             amountMinor: 25_000,
-            transactionCount: 2
+            directAmountMinor: 5_000,
+            transactionCount: 2,
+            children: [
+              {
+                categoryId: "3fa85f64-5717-4562-b3fc-2c963f66bee0",
+                parentCategoryId: "3fa85f64-5717-4562-b3fc-2c963f66beef",
+                depth: 1,
+                name: "Blinkit",
+                isArchived: false,
+                directSpentMinor: 20_000,
+                directIncomeMinor: 0,
+                directTxnCount: 1,
+                totalSpentMinor: 20_000,
+                totalIncomeMinor: 0,
+                totalTxnCount: 1
+              }
+            ]
           }
         ]}
       />
     );
     expect(screen.getByText("Food")).toBeVisible();
     expect(screen.getByText(/100%/)).toBeVisible();
+    expect(screen.getByText("Blinkit")).toBeVisible();
+    expect(screen.getByText("₹200.00")).toBeVisible();
+    expect(screen.getByText("Food (direct)")).toBeVisible();
 
     rerender(<AccountSpendingBreakdown items={[]} />);
     expect(screen.getByText("No categorized spending")).toBeVisible();

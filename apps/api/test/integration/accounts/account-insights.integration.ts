@@ -162,7 +162,9 @@ describe("AccountInsightsRepository", () => {
         name: "Food",
         color: "#16A34A",
         amountMinor: 17_000,
-        transactionCount: 2
+        directAmountMinor: 17_000,
+        transactionCount: 2,
+        children: []
       }
     ]);
   });

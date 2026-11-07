@@ -125,7 +125,7 @@ import {
   UpdateDeclaredDebtSchema,
   UpsertProtectionSchema,
   MonthSchema,
-  MonthlyRollupSchema,
+  MonthlyReportSchema,
   CreateRecurringRuleSchema,
   CreateGoalSchema,
   CreateGoalContributionSchema,
@@ -287,7 +287,7 @@ const ProtectionState = ProtectionStateSchema.meta({ id: "ProtectionState" });
 const ProtectionSnapshot = ProtectionSnapshotSchema.meta({ id: "ProtectionSnapshot" });
 const DeclaredDebt = DeclaredDebtSchema.meta({ id: "DeclaredDebt" });
 const DeclaredDebtPage = DeclaredDebtPageSchema.meta({ id: "DeclaredDebtPage" });
-const MonthlyRollup = MonthlyRollupSchema.meta({ id: "MonthlyRollup" });
+const MonthlyReport = MonthlyReportSchema.meta({ id: "MonthlyReport" });
 const RecurringRule = RecurringRuleSchema.meta({ id: "RecurringRule" });
 const DetectedStreamPage = DetectedStreamPageSchema.meta({ id: "DetectedStreamPage" });
 const DetectedStreamReview = DetectedStreamReviewSchema.meta({ id: "DetectedStreamReview" });
@@ -1367,7 +1367,7 @@ registry.registerPath({
   security: secured,
   request: { params: month },
   responses: {
-    200: { description: "Monthly rollup", ...json(MonthlyRollup) },
+    200: { description: "Monthly report", ...json(MonthlyReport) },
     404: { description: "Not found", ...json(ProblemDetails) },
     ...problemResponses
   }

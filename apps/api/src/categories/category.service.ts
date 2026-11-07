@@ -1,10 +1,12 @@
 import { Injectable } from "@nestjs/common";
-import type {
-  Category,
-  CategoryId,
-  CreateCategory,
-  UpdateCategory,
-  UpdateCategoryGroup
+import {
+  buildCategoryForest,
+  collectSubtreeIds,
+  type Category,
+  type CategoryId,
+  type CreateCategory,
+  type UpdateCategory,
+  type UpdateCategoryGroup
 } from "@treasury-ops/shared";
 
 import type { DbTx } from "../common/db/db-txn.js";
@@ -42,7 +44,7 @@ export class CategoryService {
     if (!active.some((category) => category.id === categoryId)) {
       throw new EntityNotFoundError("Category");
     }
-    const subtreeIds = collectSubtreeIds(active, categoryId);
+    const subtreeIds = collectSubtreeIds(buildCategoryForest(active), categoryId);
     const archived = await this.categories.archive(userId, subtreeIds, tx);
     if (archived === 0) throw new EntityNotFoundError("Category");
   }
@@ -79,7 +81,7 @@ export class CategoryService {
         throw new CategoryHierarchyConflictError("The selected parent category is not active.");
       }
       if (parent.kind !== current.kind) throw new CategoryParentKindMismatchError();
-      if (collectSubtreeIds(all, categoryId).includes(parent.id)) {
+      if (collectSubtreeIds(buildCategoryForest(all), categoryId).includes(parent.id)) {
         throw new CategoryHierarchyConflictError(
           "A category cannot be moved beneath one of its descendants."
         );
@@ -160,20 +162,6 @@ export class CategoryService {
     if (updated === null) throw new EntityNotFoundError("Category");
     return updated;
   }
-}
-
-function collectSubtreeIds(categories: readonly Category[], rootId: CategoryId): CategoryId[] {
-  const ids: CategoryId[] = [];
-  const pending: CategoryId[] = [rootId];
-  while (pending.length > 0) {
-    const currentId = pending.shift();
-    if (currentId === undefined) break;
-    ids.push(currentId);
-    for (const category of categories) {
-      if (category.parentId === currentId) pending.push(category.id);
-    }
-  }
-  return ids;
 }
 
 function hasActiveNameCollision(

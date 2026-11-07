@@ -1,17 +1,32 @@
 "use client";
 
-import type { DashboardRange, TopSpendingItem } from "@treasury-ops/shared";
+import type { CategoryRollupNode, DashboardRange, TopSpendingItem } from "@treasury-ops/shared";
 import { useState } from "react";
 import type { ReactNode } from "react";
 
 import { Money } from "@/components/ui/money";
-import { IconGlyph } from "@/features/categories";
+import { CategoryRollupRows, IconGlyph } from "@/features/categories";
 
 import { useTopSpending } from "../hooks/use-top-spending";
 import { TOP_SPENDING_LIMIT } from "../model/defaults";
 import { RangeTabs } from "./range-tabs";
 
 const FALLBACK_COLOR = "#71817a";
+
+function rollupRootFor(item: TopSpendingItem): CategoryRollupNode {
+  return {
+    ...(item.categoryId === undefined ? {} : { categoryId: item.categoryId }),
+    depth: 0,
+    name: item.name,
+    isArchived: item.isArchived,
+    directSpentMinor: item.directAmountMinor,
+    directIncomeMinor: 0,
+    directTxnCount: 0,
+    totalSpentMinor: item.amountMinor,
+    totalIncomeMinor: 0,
+    totalTxnCount: item.txnCount
+  };
+}
 
 type TopSpendingPanelProps = Readonly<{
   initialItems: TopSpendingItem[];
@@ -70,6 +85,7 @@ export function TopSpendingPanel({ initialItems, initialRange }: TopSpendingPane
                     style={{ width: `${(item.amountMinor / max) * 100}%`, background: color }}
                   />
                 </div>
+                <CategoryRollupRows root={rollupRootFor(item)} descendants={item.children} />
               </div>
             );
           })}

@@ -150,7 +150,7 @@ export function evidenceFacts(warning: SpendingWarning): readonly EvidenceFact[]
 /**
  * Investigation link targets (plan §4 "Investigation links"), built only
  * from query params the transactions route already supports:
- * `from`/`to`/`categoryId` (apps/web/src/features/transactions/model/filters.ts)
+ * `from`/`to`/`categoryId`/`includeSubcategories` (apps/web/src/features/transactions/model/filters.ts)
  * and the `/transactions/{transactionId}` detail route.
  */
 export function investigationHref(warning: SpendingWarning): string {
@@ -163,6 +163,7 @@ export function investigationHref(warning: SpendingWarning): string {
   const params = new URLSearchParams();
   if (evidence.kind === "category_spend_spike" && evidence.categoryId !== undefined) {
     params.set("categoryId", evidence.categoryId);
+    params.set("includeSubcategories", "true");
   }
   params.set("from", evidence.windowStart.toISOString());
   params.set("to", evidence.windowEnd.toISOString());

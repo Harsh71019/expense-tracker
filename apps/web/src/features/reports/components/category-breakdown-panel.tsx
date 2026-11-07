@@ -1,34 +1,27 @@
-import { formatMinor, type Category, type MonthlyRollup } from "@treasury-ops/shared";
+import { formatMinor, groupCategoryRollupNodes, type MonthlyReport } from "@treasury-ops/shared";
 import type { CSSProperties, ReactNode } from "react";
 
-import { IconGlyph, tint } from "@/features/categories";
+import { CategoryRollupRows, IconGlyph, tint } from "@/features/categories";
 
 import { rollupCategoryMeta } from "../model/rollup-category";
 
-type CategoryBreakdownPanelProps = Readonly<{
-  rollup: MonthlyRollup;
-  categories: readonly Category[];
-}>;
+type CategoryBreakdownPanelProps = Readonly<{ rollup: MonthlyReport }>;
 
-export function CategoryBreakdownPanel({
-  rollup,
-  categories
-}: CategoryBreakdownPanelProps): ReactNode {
-  const ranked = rollup.consumptionByCategory
-    .filter((category) => category.spentMinor > 0)
-    .slice()
-    .sort((a, b) => b.spentMinor - a.spentMinor);
-  const maxSpent = Math.max(...ranked.map((category) => category.spentMinor), 1);
+export function CategoryBreakdownPanel({ rollup }: CategoryBreakdownPanelProps): ReactNode {
+  const ranked = groupCategoryRollupNodes(rollup.consumptionTree).filter(
+    ({ root }) => root.totalSpentMinor > 0
+  );
+  const maxSpent = Math.max(...ranked.map(({ root }) => root.totalSpentMinor), 1);
 
   return (
     <div className="rounded-[18px] border border-border bg-surface-elevated p-5.5">
       <p className="text-base font-bold tracking-tight text-foreground">Category breakdown</p>
       <div className="mt-4 flex flex-col gap-3.5">
-        {ranked.map((category, index) => {
-          const meta = rollupCategoryMeta(category.categoryId, categories);
+        {ranked.map(({ root, descendants }) => {
+          const meta = rollupCategoryMeta(root);
           const iconStyle: CSSProperties = { background: tint(meta.color, 0.14) };
           return (
-            <div key={category.categoryId ?? `uncategorized-${index}`}>
+            <div key={root.categoryId ?? "uncategorized"}>
               <div className="mb-1.5 flex items-center gap-2.5">
                 <span
                   style={iconStyle}
@@ -39,22 +32,23 @@ export function CategoryBreakdownPanel({
                 </span>
                 <span className="text-sm font-semibold text-foreground">{meta.name}</span>
                 <span className="rounded-[5px] bg-surface-muted px-1.5 py-0.5 font-mono text-2xs text-foreground-muted">
-                  {category.txnCount} txn{category.txnCount === 1 ? "" : "s"}
+                  {root.totalTxnCount} txn{root.totalTxnCount === 1 ? "" : "s"}
                 </span>
                 <div className="flex-1" />
                 <span className="font-mono text-sm font-semibold text-foreground">
-                  {formatMinor(category.spentMinor)}
+                  {formatMinor(root.totalSpentMinor)}
                 </span>
               </div>
               <div className="h-1.5 overflow-hidden rounded-full bg-surface-muted">
                 <div
                   style={{
-                    width: `${(category.spentMinor / maxSpent) * 100}%`,
+                    width: `${(root.totalSpentMinor / maxSpent) * 100}%`,
                     background: meta.color
                   }}
                   className="h-full origin-left rounded-full animate-fade-in"
                 />
               </div>
+              <CategoryRollupRows root={root} descendants={descendants} />
             </div>
           );
         })}

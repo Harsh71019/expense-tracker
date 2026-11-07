@@ -1,6 +1,6 @@
 import { Inject, Injectable, Optional } from "@nestjs/common";
 import { Cron } from "@nestjs/schedule";
-import type { Budget } from "@treasury-ops/shared";
+import { buildCategoryForest, rollUpMinorAmounts, type Budget } from "@treasury-ops/shared";
 import { Logger } from "nestjs-pino";
 
 import { CategoryRepository } from "../categories/category.repository.js";
@@ -90,7 +90,10 @@ export class BudgetAlertCron {
 
       const month = toISTMonth(now);
       const spendByCategory = await this.budgets.categorySpendForMonth(budget.userId, month, tx);
-      const spentMinor = spendByCategory.get(budget.categoryId) ?? 0;
+      // Same subtree total the budgets page shows, archived descendants included.
+      const hierarchy = await this.categories.list(budget.userId, true, tx);
+      const rolledUpSpend = rollUpMinorAmounts(buildCategoryForest(hierarchy), spendByCategory);
+      const spentMinor = rolledUpSpend.get(budget.categoryId) ?? 0;
       const utilizationBps = computeUtilizationBps(spentMinor, budget.limitMinor);
       const crossed = ALERT_THRESHOLDS_BPS.filter((threshold) => utilizationBps >= threshold);
       if (crossed.length === 0) return false;

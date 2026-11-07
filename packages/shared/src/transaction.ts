@@ -98,6 +98,12 @@ export const TransactionFiltersSchema = z
       .union([z.literal("true"), z.literal("false")])
       .transform((value) => (value === "true" ? true : undefined))
       .optional(),
+    // Widens `categoryId` to that category and all its descendants, matching
+    // how budgets and reports total a parent. Ignored without `categoryId`.
+    includeSubcategories: z
+      .union([z.literal("true"), z.literal("false")])
+      .transform((value) => (value === "true" ? true : undefined))
+      .optional(),
     from: z.coerce.date().optional(),
     to: z.coerce.date().optional(),
     amountMinor: z.coerce.number().int().min(1).max(Number.MAX_SAFE_INTEGER).optional(),

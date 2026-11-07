@@ -1,51 +1,52 @@
 import { render, screen } from "@testing-library/react";
-import type { Category, MonthlyRollup } from "@treasury-ops/shared";
+import { buildCategoryRollupNodes, type MonthlyReport } from "@treasury-ops/shared";
 import { describe, expect, it } from "vitest";
 
 import { SpendByCategoryPanel } from "./spend-by-category-panel";
 
-const groceries: Category = {
-  id: "507f1f77bcf86cd799439011",
-  userId: "u1",
-  name: "Groceries",
-  kind: "expense",
-  icon: "🛒",
-  color: "#f97316",
-  isArchived: false,
-  createdAt: new Date("2026-01-01T00:00:00.000Z"),
-  updatedAt: new Date("2026-01-01T00:00:00.000Z")
-};
+const GROCERIES = "00000000-0000-4000-8000-000000000001";
+const BLINKIT = "00000000-0000-4000-8000-000000000002";
+const IDLE = "00000000-0000-4000-8000-000000000003";
 
-const rollup: MonthlyRollup = {
+const consumptionByCategory = [
+  { categoryId: GROCERIES, spentMinor: 25_000, incomeMinor: 0, txnCount: 2 },
+  { categoryId: BLINKIT, spentMinor: 50_000, incomeMinor: 0, txnCount: 3 },
+  { spentMinor: 25_000, incomeMinor: 0, txnCount: 2 },
+  { categoryId: IDLE, spentMinor: 0, incomeMinor: 0, txnCount: 0 }
+];
+
+const rollup: MonthlyReport = {
   userId: "u1",
   month: "2026-06",
-  byCategory: [
-    { categoryId: groceries.id, spentMinor: 75_000, incomeMinor: 0, txnCount: 5 },
-    { spentMinor: 25_000, incomeMinor: 0, txnCount: 2 },
-    { categoryId: "507f1f77bcf86cd799439099", spentMinor: 0, incomeMinor: 0, txnCount: 0 }
-  ],
+  byCategory: consumptionByCategory,
   byAccount: [],
   totalExpenseMinor: 100_000,
   totalIncomeMinor: 0,
   totalCashOutflowMinor: 100_000,
   totalConsumptionMinor: 100_000,
   totalAssetFundingMinor: 0,
-  consumptionByCategory: [
-    { categoryId: groceries.id, spentMinor: 75_000, incomeMinor: 0, txnCount: 5 },
-    { spentMinor: 25_000, incomeMinor: 0, txnCount: 2 },
-    { categoryId: "507f1f77bcf86cd799439099", spentMinor: 0, incomeMinor: 0, txnCount: 0 }
-  ],
+  consumptionByCategory,
+  consumptionTree: buildCategoryRollupNodes(
+    [
+      { id: GROCERIES, name: "Groceries", icon: "G", color: "#f97316", isArchived: false },
+      { id: BLINKIT, parentId: GROCERIES, name: "Blinkit", isArchived: false },
+      { id: IDLE, name: "Idle", isArchived: false }
+    ],
+    consumptionByCategory
+  ),
   formulaVersion: 2,
   computedAt: new Date("2026-07-01T02:15:00.000Z")
 };
 
 describe("SpendByCategoryPanel", () => {
-  it("ranks categories in the legend by share of spend, excluding zero-spend buckets", () => {
-    render(<SpendByCategoryPanel rollup={rollup} categories={[groceries]} />);
+  it("shares spend across roots only, so the legend adds up to 100%", () => {
+    render(<SpendByCategoryPanel rollup={rollup} />);
 
     expect(screen.getByText("Groceries")).toBeVisible();
-    expect(screen.getByText("Uncategorized")).toBeVisible();
     expect(screen.getByText("75%")).toBeVisible();
+    expect(screen.getByText("Uncategorized")).toBeVisible();
     expect(screen.getByText("25%")).toBeVisible();
+    expect(screen.queryByText("Blinkit")).not.toBeInTheDocument();
+    expect(screen.queryByText("Idle")).not.toBeInTheDocument();
   });
 });

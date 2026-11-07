@@ -801,13 +801,37 @@ export type {
   RecurringOccurrenceStatus
 } from "./recurring-occurrence.js";
 export {
+  buildCategoryForest,
+  buildCategoryRollupNodes,
+  CategoryRollupNodeSchema,
+  collectAncestorIds,
+  collectSubtreeIds,
+  groupCategoryRollupNodes,
+  rollUpMinorAmounts
+} from "./category-tree.js";
+export type {
+  CategoryForest,
+  CategoryRollupGroup,
+  CategoryRollupMeta,
+  CategoryRollupNode,
+  CategoryTreeInput,
+  DirectCategoryAmounts
+} from "./category-tree.js";
+export {
   AccountRollupSchema,
   CategoryRollupSchema,
   MONTHLY_ROLLUP_FORMULA_VERSION,
+  MonthlyReportSchema,
   MonthlyRollupSchema,
   MonthSchema
 } from "./report.js";
-export type { AccountRollup, CategoryRollup, Month, MonthlyRollup } from "./report.js";
+export type {
+  AccountRollup,
+  CategoryRollup,
+  Month,
+  MonthlyReport,
+  MonthlyRollup
+} from "./report.js";
 export {
   BatchCategorizeTransactionsResultSchema,
   BatchCategorizeTransactionsSchema,

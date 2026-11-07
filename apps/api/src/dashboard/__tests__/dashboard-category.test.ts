@@ -1,7 +1,7 @@
-import type { Category, CategoryRollup } from "@treasury-ops/shared";
+import type { CategoryRollup, CategoryRollupNode } from "@treasury-ops/shared";
 import { describe, expect, it } from "vitest";
 
-import { enrichCategoryTotal, mergeCategoryRollups } from "../dashboard-category.js";
+import { mergeCategoryRollups, toTopSpendingItem } from "../dashboard-category.js";
 
 describe("mergeCategoryRollups", () => {
   it("sums rollups for the same category across multiple entries", () => {
@@ -33,53 +33,54 @@ describe("mergeCategoryRollups", () => {
   });
 });
 
-describe("enrichCategoryTotal", () => {
-  const category: Category = {
-    id: "food",
-    userId: "user-a",
+describe("toTopSpendingItem", () => {
+  const node = (overrides: Partial<CategoryRollupNode>): CategoryRollupNode => ({
+    depth: 0,
     name: "Food",
-    kind: "expense",
-    icon: "🍔",
-    color: "#ff0000",
     isArchived: false,
-    createdAt: new Date(),
-    updatedAt: new Date()
-  };
+    directSpentMinor: 0,
+    directIncomeMinor: 0,
+    directTxnCount: 0,
+    totalSpentMinor: 0,
+    totalIncomeMinor: 0,
+    totalTxnCount: 0,
+    ...overrides
+  });
 
-  it("joins a rollup against known category metadata", () => {
-    const rollup: CategoryRollup = {
-      categoryId: "food",
-      spentMinor: 500,
-      incomeMinor: 0,
-      txnCount: 3
-    };
-    const result = enrichCategoryTotal(rollup, new Map([["food", category]]));
+  it("uses the rolled-up total, keeps the direct amount and lists children with spend", () => {
+    const child = node({ depth: 1, name: "Snacks", directSpentMinor: 300, totalSpentMinor: 300 });
+    const incomeOnlyChild = node({ depth: 1, name: "Refunds", totalIncomeMinor: 40 });
+    const result = toTopSpendingItem({
+      root: node({
+        categoryId: "food",
+        icon: "🍔",
+        color: "#ff0000",
+        directSpentMinor: 200,
+        totalSpentMinor: 500,
+        totalTxnCount: 3
+      }),
+      descendants: [child, incomeOnlyChild]
+    });
     expect(result).toEqual({
       categoryId: "food",
       name: "Food",
       icon: "🍔",
       color: "#ff0000",
+      isArchived: false,
       amountMinor: 500,
-      txnCount: 3
+      directAmountMinor: 200,
+      txnCount: 3,
+      children: [child]
     });
   });
 
-  it("labels an uncategorized rollup without looking anything up", () => {
-    const rollup: CategoryRollup = { spentMinor: 100, incomeMinor: 0, txnCount: 1 };
-    const result = enrichCategoryTotal(rollup, new Map());
-    expect(result.name).toBe("Uncategorized");
+  it("omits the id and optional metadata for Uncategorized", () => {
+    const result = toTopSpendingItem({
+      root: node({ name: "Uncategorized", totalSpentMinor: 100 }),
+      descendants: []
+    });
     expect(result.categoryId).toBeUndefined();
-  });
-
-  it("falls back to Uncategorized if the categoryId no longer resolves to a known category", () => {
-    const rollup: CategoryRollup = {
-      categoryId: "deleted-id",
-      spentMinor: 100,
-      incomeMinor: 0,
-      txnCount: 1
-    };
-    const result = enrichCategoryTotal(rollup, new Map());
+    expect(result.icon).toBeUndefined();
     expect(result.name).toBe("Uncategorized");
-    expect(result.categoryId).toBe("deleted-id");
   });
 });

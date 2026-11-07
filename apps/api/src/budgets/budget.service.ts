@@ -1,10 +1,15 @@
 import { Inject, Injectable } from "@nestjs/common";
 import {
   BudgetPageSchema,
+  buildCategoryForest,
+  collectAncestorIds,
+  collectSubtreeIds,
+  rollUpMinorAmounts,
   type Budget,
   type BudgetId,
   type BudgetOverview,
   type BudgetPage,
+  type CategoryForest,
   type CategoryId,
   type ListBudgetsQuery,
   type UpsertBudget
@@ -41,18 +46,24 @@ export class BudgetService {
 
   async list(userId: string, query: ListBudgetsQuery, now: Date = new Date()): Promise<BudgetPage> {
     const month = toISTMonth(now);
-    const [page, all, spendByCategory] = await Promise.all([
+    const [page, all, spendByCategory, categories] = await Promise.all([
       this.budgets.listPage(userId, query),
       this.budgets.listAllWithCategory(userId),
-      this.budgets.categorySpendForMonth(userId, month, undefined, now)
+      this.budgets.categorySpendForMonth(userId, month, undefined, now),
+      // Archived too: an archived child's spend still counts toward its parent.
+      this.categories.list(userId, true)
     ]);
+    const forest = buildCategoryForest(categories);
+    const rolledUpSpend = rollUpMinorAmounts(forest, spendByCategory);
 
     const pacedCategoryIds = page.items
       .slice(0, BUDGET_PACE_MAX_CATEGORIES)
       .map((row) => row.category.id);
+    // One row per (direct category, day): overlapping subtrees are fetched once
+    // and attributed to each budget below.
     const history = await this.budgets.categoryDailySpendHistory(
       userId,
-      pacedCategoryIds,
+      [...new Set(pacedCategoryIds.flatMap((id) => collectSubtreeIds(forest, id)))],
       addMonthsInIST(now, -BUDGET_PACE_LOOKBACK_MONTHS),
       now
     );
@@ -63,9 +74,9 @@ export class BudgetService {
       month,
       computedAt: now,
       alertPolicy: { thresholdsBps: ALERT_THRESHOLDS_BPS },
-      overview: buildOverview(all, spendByCategory),
+      overview: buildOverview(all, spendByCategory, rolledUpSpend, forest),
       items: page.items.map((row, index) => {
-        const spentMinor = spendByCategory.get(row.category.id) ?? 0;
+        const spentMinor = rolledUpSpend.get(row.category.id) ?? 0;
         const effective = !row.budget.isArchived && !row.category.isArchived;
         const pace = buildBudgetPace({
           categoryId: row.category.id,
@@ -74,7 +85,7 @@ export class BudgetService {
           spentMinor,
           limitMinor: row.budget.limitMinor,
           effective,
-          rows: historyByCategory.get(row.category.id) ?? [],
+          rows: subtreeHistory(forest, historyByCategory, row.category.id),
           resourceLimited: resourceLimited || index >= BUDGET_PACE_MAX_CATEGORIES
         });
         return buildBudgetProgress(row.budget, row.category, spentMinor, pace);
@@ -136,20 +147,42 @@ function groupHistory(
   return grouped;
 }
 
+/** A budget's daily history is its whole subtree's, relabelled so pacing sees one category. */
+function subtreeHistory(
+  forest: CategoryForest,
+  historyByCategory: ReadonlyMap<string, readonly DailyCategorySpend[]>,
+  categoryId: string
+): DailyCategorySpend[] {
+  return collectSubtreeIds(forest, categoryId).flatMap((id) =>
+    (historyByCategory.get(id) ?? []).map((row) => ({ ...row, categoryId }))
+  );
+}
+
 /**
  * Effective = configuration active and its category still active (design
  * doc §4.4/§7) -- an archived category makes the budget ineffective without
- * deleting its history, so it drops out of the planned/spent totals but its
- * spend still shows up in unbudgetedSpentMinor below.
+ * deleting its history, so it drops out of the planned/spent totals. Its
+ * spend counts as budgeted only if an effective budget on an ancestor covers
+ * it, and otherwise shows up in unbudgetedSpentMinor below.
+ *
+ * Money totals come from only the top-most effective budgets: their subtrees
+ * cannot overlap, and a budget nested under another is a sub-limit of the same
+ * money, not more of it. A nested budget still counts in activeBudgetCount.
  */
 function buildOverview(
   all: readonly BudgetWithCategory[],
-  spendByCategory: ReadonlyMap<string | null, number>
+  spendByCategory: ReadonlyMap<string | null, number>,
+  rolledUpSpend: ReadonlyMap<string, number>,
+  forest: CategoryForest
 ): BudgetOverview {
   const effective = all.filter((row) => !row.budget.isArchived && !row.category.isArchived);
-  const plannedMinor = effective.reduce((sum, row) => sum + row.budget.limitMinor, 0);
-  const spentInBudgetedCategoriesMinor = effective.reduce(
-    (sum, row) => sum + (spendByCategory.get(row.category.id) ?? 0),
+  const effectiveIds = new Set(effective.map((row) => row.category.id));
+  const topMost = effective.filter(
+    (row) => !collectAncestorIds(forest, row.category.id).some((id) => effectiveIds.has(id))
+  );
+  const plannedMinor = topMost.reduce((sum, row) => sum + row.budget.limitMinor, 0);
+  const spentInBudgetedCategoriesMinor = topMost.reduce(
+    (sum, row) => sum + (rolledUpSpend.get(row.category.id) ?? 0),
     0
   );
   const totalExpenseMinor = [...spendByCategory.values()].reduce((sum, value) => sum + value, 0);

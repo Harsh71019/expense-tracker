@@ -2803,13 +2803,13 @@ export interface paths {
       };
       requestBody?: never;
       responses: {
-        /** @description Monthly rollup */
+        /** @description Monthly report */
         200: {
           headers: {
             [name: string]: unknown;
           };
           content: {
-            "application/json": components["schemas"]["MonthlyRollup"];
+            "application/json": components["schemas"]["MonthlyReport"];
           };
         };
         /** @description Unauthenticated */
@@ -2871,6 +2871,7 @@ export interface paths {
           accountId?: string;
           categoryId?: string;
           uncategorized?: "true" | "false";
+          includeSubcategories?: "true" | "false";
           from?: string | null;
           to?: string | null;
           amountMinor?: number;
@@ -9181,7 +9182,25 @@ export interface components {
         name: string;
         color?: string;
         amountMinor: number;
+        directAmountMinor: number;
         transactionCount: number;
+        children: {
+          /** Format: uuid */
+          categoryId?: string;
+          /** Format: uuid */
+          parentCategoryId?: string;
+          depth: number;
+          name: string;
+          icon?: string;
+          color?: string;
+          isArchived: boolean;
+          directSpentMinor: number;
+          directIncomeMinor: number;
+          directTxnCount: number;
+          totalSpentMinor: number;
+          totalIncomeMinor: number;
+          totalTxnCount: number;
+        }[];
       }[];
     };
     ImportBatch: {
@@ -10476,7 +10495,7 @@ export interface components {
         limit: number;
       };
     };
-    MonthlyRollup: {
+    MonthlyReport: {
       userId: string;
       month: string;
       byCategory: {
@@ -10506,6 +10525,23 @@ export interface components {
       formulaVersion: number;
       /** Format: date-time */
       computedAt: string | null;
+      consumptionTree: {
+        /** Format: uuid */
+        categoryId?: string;
+        /** Format: uuid */
+        parentCategoryId?: string;
+        depth: number;
+        name: string;
+        icon?: string;
+        color?: string;
+        isArchived: boolean;
+        directSpentMinor: number;
+        directIncomeMinor: number;
+        directTxnCount: number;
+        totalSpentMinor: number;
+        totalIncomeMinor: number;
+        totalTxnCount: number;
+      }[];
     };
     UserProfile: {
       userId: string;
@@ -11851,8 +11887,27 @@ export interface components {
       name: string;
       icon?: string;
       color?: string;
+      isArchived: boolean;
       amountMinor: number;
+      directAmountMinor: number;
       txnCount: number;
+      children: {
+        /** Format: uuid */
+        categoryId?: string;
+        /** Format: uuid */
+        parentCategoryId?: string;
+        depth: number;
+        name: string;
+        icon?: string;
+        color?: string;
+        isArchived: boolean;
+        directSpentMinor: number;
+        directIncomeMinor: number;
+        directTxnCount: number;
+        totalSpentMinor: number;
+        totalIncomeMinor: number;
+        totalTxnCount: number;
+      }[];
     };
     SpendMix: {
       /** @enum {string} */
@@ -13175,6 +13230,7 @@ export interface operations {
         accountId?: string;
         categoryId?: string;
         uncategorized?: "true" | "false";
+        includeSubcategories?: "true" | "false";
         from?: string | null;
         to?: string | null;
         amountMinor?: number;
@@ -16302,7 +16358,7 @@ export interface operations {
           quantityMicroUnits?: number;
           /**
            * Format: date-time
-           * @default 2026-09-27T04:07:15.418Z
+           * @default 2026-11-07T05:32:44.769Z
            */
           disposalDate?: string | null;
           quoteOverrideMicroRupeesPerUnit?: number;

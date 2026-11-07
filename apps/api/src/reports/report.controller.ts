@@ -1,14 +1,14 @@
 import { Controller, Get, Param } from "@nestjs/common";
-import { MonthSchema, type MonthlyRollup } from "@treasury-ops/shared";
+import { MonthSchema, type MonthlyReport } from "@treasury-ops/shared";
 
 import type { AuthenticatedUser } from "../auth/auth.guard.js";
 import { CurrentUser } from "../auth/current-user.decorator.js";
 import { EntityNotFoundError } from "../common/errors/entity-not-found.error.js";
-import { MonthlyRollupService } from "./monthly-rollup.service.js";
+import { MonthlyReportService } from "./monthly-report.service.js";
 
 @Controller("v1/reports")
 export class ReportController {
-  constructor(private readonly rollups: MonthlyRollupService) {}
+  constructor(private readonly reports: MonthlyReportService) {}
 
   /**
    * A month with no cached rollup yet is computed on demand (and cached
@@ -19,9 +19,9 @@ export class ReportController {
   async monthly(
     @CurrentUser() user: AuthenticatedUser,
     @Param("month") month: string
-  ): Promise<MonthlyRollup> {
-    const rollup = await this.rollups.getOrCompute(user.id, MonthSchema.parse(month));
-    if (rollup === null) throw new EntityNotFoundError("Monthly rollup");
-    return rollup;
+  ): Promise<MonthlyReport> {
+    const report = await this.reports.getReport(user.id, MonthSchema.parse(month));
+    if (report === null) throw new EntityNotFoundError("Monthly rollup");
+    return report;
   }
 }

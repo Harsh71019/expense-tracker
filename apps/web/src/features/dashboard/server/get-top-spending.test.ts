@@ -4,7 +4,14 @@ const mocks = vi.hoisted(() => ({ GET: vi.fn(), getServerApiClient: vi.fn(), api
 vi.mock("@/lib/api/server", () => ({ getServerApiClient: mocks.getServerApiClient }));
 vi.mock("@/lib/debug", () => ({ debug: { api: mocks.api } }));
 
-const item = { name: "Groceries", amountMinor: 500, txnCount: 4 };
+const item = {
+  name: "Groceries",
+  isArchived: false,
+  amountMinor: 500,
+  directAmountMinor: 500,
+  txnCount: 4,
+  children: []
+};
 
 describe("getTopSpending", () => {
   beforeEach(() => {

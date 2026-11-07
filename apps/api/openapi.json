@@ -358,12 +358,95 @@
                   "minimum": 1,
                   "maximum": 9007199254740991
                 },
+                "directAmountMinor": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
                 "transactionCount": {
                   "type": "integer",
                   "minimum": 1
+                },
+                "children": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "categoryId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "parentCategoryId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "depth": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "name": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "icon": {
+                        "type": "string"
+                      },
+                      "color": {
+                        "type": "string"
+                      },
+                      "isArchived": {
+                        "type": "boolean"
+                      },
+                      "directSpentMinor": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "directIncomeMinor": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "directTxnCount": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "totalSpentMinor": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "totalIncomeMinor": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "totalTxnCount": {
+                        "type": "integer",
+                        "minimum": 0
+                      }
+                    },
+                    "required": [
+                      "depth",
+                      "name",
+                      "isArchived",
+                      "directSpentMinor",
+                      "directIncomeMinor",
+                      "directTxnCount",
+                      "totalSpentMinor",
+                      "totalIncomeMinor",
+                      "totalTxnCount"
+                    ]
+                  }
                 }
               },
-              "required": ["name", "amountMinor", "transactionCount"]
+              "required": [
+                "name",
+                "amountMinor",
+                "directAmountMinor",
+                "transactionCount",
+                "children"
+              ]
             }
           }
         },
@@ -4187,7 +4270,7 @@
         },
         "required": ["items", "pageInfo"]
       },
-      "MonthlyRollup": {
+      "MonthlyReport": {
         "type": "object",
         "properties": {
           "userId": {
@@ -4291,6 +4374,78 @@
           "computedAt": {
             "type": ["string", "null"],
             "format": "date-time"
+          },
+          "consumptionTree": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "categoryId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "parentCategoryId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "depth": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "name": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "icon": {
+                  "type": "string"
+                },
+                "color": {
+                  "type": "string"
+                },
+                "isArchived": {
+                  "type": "boolean"
+                },
+                "directSpentMinor": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "directIncomeMinor": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "directTxnCount": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "totalSpentMinor": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "totalIncomeMinor": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "totalTxnCount": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "depth",
+                "name",
+                "isArchived",
+                "directSpentMinor",
+                "directIncomeMinor",
+                "directTxnCount",
+                "totalSpentMinor",
+                "totalIncomeMinor",
+                "totalTxnCount"
+              ]
+            }
           }
         },
         "required": [
@@ -4305,7 +4460,8 @@
           "totalAssetFundingMinor",
           "consumptionByCategory",
           "formulaVersion",
-          "computedAt"
+          "computedAt",
+          "consumptionTree"
         ]
       },
       "UserProfile": {
@@ -8569,16 +8725,102 @@
           "color": {
             "type": "string"
           },
+          "isArchived": {
+            "type": "boolean"
+          },
           "amountMinor": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "directAmountMinor": {
             "type": "integer",
             "minimum": 0
           },
           "txnCount": {
             "type": "integer",
             "minimum": 0
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "categoryId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "parentCategoryId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "depth": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "name": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "icon": {
+                  "type": "string"
+                },
+                "color": {
+                  "type": "string"
+                },
+                "isArchived": {
+                  "type": "boolean"
+                },
+                "directSpentMinor": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "directIncomeMinor": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "directTxnCount": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "totalSpentMinor": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "totalIncomeMinor": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "totalTxnCount": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "depth",
+                "name",
+                "isArchived",
+                "directSpentMinor",
+                "directIncomeMinor",
+                "directTxnCount",
+                "totalSpentMinor",
+                "totalIncomeMinor",
+                "totalTxnCount"
+              ]
+            }
           }
         },
-        "required": ["name", "amountMinor", "txnCount"]
+        "required": [
+          "name",
+          "isArchived",
+          "amountMinor",
+          "directAmountMinor",
+          "txnCount",
+          "children"
+        ]
       },
       "SpendMix": {
         "type": "object",
@@ -13367,6 +13609,23 @@
             },
             "required": false,
             "name": "uncategorized",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": ["true"]
+                },
+                {
+                  "type": "string",
+                  "enum": ["false"]
+                }
+              ]
+            },
+            "required": false,
+            "name": "includeSubcategories",
             "in": "query"
           },
           {
@@ -18819,11 +19078,11 @@
         ],
         "responses": {
           "200": {
-            "description": "Monthly rollup",
+            "description": "Monthly report",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/MonthlyRollup"
+                  "$ref": "#/components/schemas/MonthlyReport"
                 }
               }
             }
@@ -18912,6 +19171,23 @@
             },
             "required": false,
             "name": "uncategorized",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": ["true"]
+                },
+                {
+                  "type": "string",
+                  "enum": ["false"]
+                }
+              ]
+            },
+            "required": false,
+            "name": "includeSubcategories",
             "in": "query"
           },
           {
@@ -28134,7 +28410,7 @@
                   "disposalDate": {
                     "type": ["string", "null"],
                     "format": "date-time",
-                    "default": "2026-09-27T04:07:15.418Z"
+                    "default": "2026-11-07T05:32:44.769Z"
                   },
                   "quoteOverrideMicroRupeesPerUnit": {
                     "type": "integer",

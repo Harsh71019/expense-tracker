@@ -67,7 +67,9 @@ describe("AccountInsights schemas", () => {
           name: "Food",
           color: "#16A34A",
           amountMinor: 20_000,
-          transactionCount: 2
+          directAmountMinor: 20_000,
+          transactionCount: 2,
+          children: []
         }
       ]
     });

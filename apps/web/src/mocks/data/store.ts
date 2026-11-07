@@ -1,4 +1,8 @@
-import { formatMinorInput, MONTHLY_ROLLUP_FORMULA_VERSION } from "@treasury-ops/shared";
+import {
+  formatMinorInput,
+  MONTHLY_ROLLUP_FORMULA_VERSION,
+  type CategoryRollupNode
+} from "@treasury-ops/shared";
 
 import type { components } from "@/lib/api/generated/schema";
 import { MOCK_USER_ID } from "@/mocks/enabled";
@@ -13,7 +17,7 @@ export type AssetDto = components["schemas"]["Asset"];
 export type ValuationDto = components["schemas"]["Valuation"];
 export type ImportBatchDto = components["schemas"]["ImportBatch"];
 export type StagedRowDto = components["schemas"]["StagedRow"];
-export type MonthlyRollupDto = components["schemas"]["MonthlyRollup"];
+export type MonthlyRollupDto = Omit<components["schemas"]["MonthlyReport"], "consumptionTree">;
 export type UserProfileDto = components["schemas"]["UserProfile"];
 export type TransferDto = components["schemas"]["Transfer"];
 export type TransferReversalDto = components["schemas"]["TransferReversal"];
@@ -139,6 +143,19 @@ export function findTransaction(
 
 export function findImportBatch(store: MockStore, batchId: string): ImportBatchDto | undefined {
   return store.importBatches.find((batch) => batch.id === batchId);
+}
+
+/** Zod's optional keys allow `undefined`; the generated DTO's do not, so absent keys are dropped. */
+export function toCategoryRollupNodeDtos(
+  nodes: readonly CategoryRollupNode[]
+): components["schemas"]["MonthlyReport"]["consumptionTree"] {
+  return nodes.map(({ categoryId, parentCategoryId, icon, color, ...rest }) => ({
+    ...rest,
+    ...(categoryId === undefined ? {} : { categoryId }),
+    ...(parentCategoryId === undefined ? {} : { parentCategoryId }),
+    ...(icon === undefined ? {} : { icon }),
+    ...(color === undefined ? {} : { color })
+  }));
 }
 
 export function findMonthlyRollup(store: MockStore, month: string): MonthlyRollupDto | undefined {

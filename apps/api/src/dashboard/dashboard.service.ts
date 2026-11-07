@@ -1,6 +1,8 @@
 import { Injectable } from "@nestjs/common";
 import {
+  buildCategoryRollupNodes,
   computeNextOccurrence,
+  groupCategoryRollupNodes,
   type CashflowBucket,
   type CashflowResponse,
   type CategoryRollup,
@@ -33,7 +35,7 @@ import {
 import { MonthlyRollupService } from "../reports/monthly-rollup.service.js";
 import { RecurringRuleRepository } from "../recurring/recurring-rule.repository.js";
 import { TransactionRepository } from "../transactions/transaction.repository.js";
-import { enrichCategoryTotal, mergeCategoryRollups } from "./dashboard-category.js";
+import { mergeCategoryRollups, toTopSpendingItem } from "./dashboard-category.js";
 import {
   chunk,
   deltaPct,
@@ -240,11 +242,11 @@ export class DashboardService {
   ): Promise<TopSpendingItem[]> {
     const [totals, categories] = await Promise.all([
       this.categoryTotalsForRange(userId, range),
-      this.categories.list(userId)
+      // Archived too: their historical spend must keep rolling up to a parent.
+      this.categories.list(userId, true)
     ]);
-    const categoriesById = new Map(categories.map((category) => [category.id, category]));
-    return totals
-      .map((total) => enrichCategoryTotal(total, categoriesById))
+    return groupCategoryRollupNodes(buildCategoryRollupNodes(categories, totals))
+      .map(toTopSpendingItem)
       .sort((a, b) => b.amountMinor - a.amountMinor)
       .slice(0, limit);
   }

@@ -13,6 +13,7 @@ import { withTxn } from "../../../src/common/db/db-txn.js";
 import {
   auditLog,
   accounts as accountsTable,
+  categories as categoriesTable,
   idempotencyRecords,
   spendingWarningAnalysisState,
   spendingWarnings,
@@ -277,6 +278,64 @@ describe("SpendingWarningsService (integration)", () => {
       expect(categoryFindings[0]?.categoryId).toBeNull();
       const evidence = CategorySpendSpikeEvidenceSchema.parse(categoryFindings[0]?.evidence);
       expect(evidence.categoryName).toBeUndefined();
+    });
+
+    it("detects a spike on a parent from its child's spend, once per lineage, within the user", async () => {
+      const categoryRepo = new CategoryRepository(testDb.db);
+      const parent = await categoryRepo.create("user-a", { name: "Spike parent", kind: "expense" });
+      const child = await categoryRepo.create("user-a", {
+        name: "Spike child",
+        kind: "expense",
+        parentId: parent.id
+      });
+      // Another user's spend must never reach this user's parent.
+      const foreign = await categoryRepo.create("user-b", { name: "Foreign", kind: "expense" });
+      await testDb.db
+        .update(categoriesTable)
+        .set({ parentId: parent.id })
+        .where(eq(categoriesTable.id, foreign.id));
+      await insertSpreadExpenses(
+        "user-b",
+        otherAccountId,
+        daysBefore(30),
+        ASOF,
+        5,
+        900_000,
+        foreign.id
+      );
+
+      for (let monthsAgo = 1; monthsAgo <= 6; monthsAgo += 1) {
+        await insertSpreadExpenses(
+          "user-a",
+          accountId,
+          daysBefore(30 * (monthsAgo + 1)),
+          daysBefore(30 * monthsAgo),
+          4,
+          50_000,
+          child.id
+        );
+      }
+      await insertSpreadExpenses("user-a", accountId, daysBefore(30), ASOF, 5, 100_000, child.id);
+      // The parent's own spend makes its rolled-up rise the largest in the lineage.
+      await insertSpreadExpenses("user-a", accountId, daysBefore(30), ASOF, 1, 100_000, parent.id);
+
+      await service.analyzeUser("user-a", ASOF);
+
+      const findings = await testDb.db
+        .select()
+        .from(spendingWarnings)
+        .where(
+          and(
+            eq(spendingWarnings.userId, "user-a"),
+            eq(spendingWarnings.kind, "category_spend_spike")
+          )
+        );
+      expect(findings).toHaveLength(1);
+      expect(findings[0]?.categoryId).toBe(parent.id);
+      const evidence = CategorySpendSpikeEvidenceSchema.parse(findings[0]?.evidence);
+      expect(evidence.categoryName).toBe("Spike parent");
+      expect(evidence.currentMinor).toBe(600_000);
+      expect(evidence.baselineMedianMinor).toBe(200_000);
     });
 
     it("converges duplicate concurrent runs on exactly one row per fingerprint", async () => {

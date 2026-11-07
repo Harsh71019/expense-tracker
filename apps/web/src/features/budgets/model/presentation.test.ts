@@ -70,6 +70,7 @@ describe("budget presentation", () => {
 
     expect(url.pathname).toBe("/transactions");
     expect(url.searchParams.get("categoryId")).toBe(progress.category.id);
+    expect(url.searchParams.get("includeSubcategories")).toBe("true");
     expect(url.searchParams.get("from")).toBe("2026-06-30T18:30:00.000Z");
     expect(url.searchParams.get("to")).toBe("2026-07-31T18:29:59.999Z");
     expect(monthLabel("2026-07")).toBe("July 2026");

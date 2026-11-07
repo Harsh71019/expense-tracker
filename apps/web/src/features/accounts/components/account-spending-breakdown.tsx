@@ -4,6 +4,7 @@ import { formatMinor, sumMinorAmounts, type AccountSpendingCategory } from "@tre
 import type { CSSProperties, ReactNode } from "react";
 
 import { Money } from "@/components/ui/money";
+import { CategoryRollupRows } from "@/features/categories";
 
 export function AccountSpendingBreakdown({
   items
@@ -45,6 +46,21 @@ export function AccountSpendingBreakdown({
             <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-muted">
               <div className="h-full rounded-full" style={style} />
             </div>
+            <CategoryRollupRows
+              root={{
+                ...(item.categoryId === undefined ? {} : { categoryId: item.categoryId }),
+                depth: 0,
+                name: item.name,
+                isArchived: false,
+                directSpentMinor: item.directAmountMinor,
+                directIncomeMinor: 0,
+                directTxnCount: 0,
+                totalSpentMinor: item.amountMinor,
+                totalIncomeMinor: 0,
+                totalTxnCount: item.transactionCount
+              }}
+              descendants={item.children}
+            />
           </div>
         );
       })}

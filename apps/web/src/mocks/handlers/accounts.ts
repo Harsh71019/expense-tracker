@@ -1,6 +1,7 @@
+import { buildCategoryRollupNodes, groupCategoryRollupNodes } from "@treasury-ops/shared";
 import type { HttpHandler } from "msw";
 
-import { findAccount } from "../data/store";
+import { findAccount, toCategoryRollupNodeDtos } from "../data/store";
 import { mockProblem } from "../data/problem";
 import type { MockHttp, MockStore } from "./types";
 
@@ -92,37 +93,21 @@ export function accountHandlers(http: MockHttp, store: MockStore): HttpHandler[]
         runningBalance += point.incomeMinor - point.expenseMinor;
         return { period: point.period, balanceMinor: runningBalance };
       });
-      const spending = new Map<
-        string,
-        {
-          categoryId?: string;
-          name: string;
-          color?: string;
-          amountMinor: number;
-          transactionCount: number;
-        }
-      >();
-      for (const transaction of visible) {
-        if (
-          transaction.type !== "expense" ||
-          transaction.status !== "posted" ||
-          transaction.transferGroupId !== undefined ||
-          transaction.assetFunding !== undefined
-        )
-          continue;
-        const category = store.categories.find((item) => item.id === transaction.categoryId);
-        const key = transaction.categoryId ?? "uncategorized";
-        const total = spending.get(key) ?? {
-          ...(transaction.categoryId === undefined ? {} : { categoryId: transaction.categoryId }),
-          name: category?.name ?? "Uncategorized",
-          ...(category?.color === undefined ? {} : { color: category.color }),
-          amountMinor: 0,
-          transactionCount: 0
-        };
-        total.amountMinor += transaction.amountMinor;
-        total.transactionCount += 1;
-        spending.set(key, total);
-      }
+      const spending = visible.flatMap((transaction) =>
+        transaction.type !== "expense" ||
+        transaction.status !== "posted" ||
+        transaction.transferGroupId !== undefined ||
+        transaction.assetFunding !== undefined
+          ? []
+          : [
+              {
+                categoryId: transaction.categoryId,
+                spentMinor: transaction.amountMinor,
+                incomeMinor: 0,
+                txnCount: 1
+              }
+            ]
+      );
       const incomeMinor = visible.reduce(
         (sum, transaction) => sum + (transaction.type === "income" ? transaction.amountMinor : 0),
         0
@@ -145,9 +130,17 @@ export function accountHandlers(http: MockHttp, store: MockStore): HttpHandler[]
         },
         balanceSeries,
         cashflowSeries,
-        spendingByCategory: [...spending.values()].sort(
-          (left, right) => right.amountMinor - left.amountMinor
-        )
+        spendingByCategory: groupCategoryRollupNodes(
+          buildCategoryRollupNodes(store.categories, spending)
+        ).map(({ root, descendants }) => ({
+          ...(root.categoryId === undefined ? {} : { categoryId: root.categoryId }),
+          name: root.name,
+          ...(root.color === undefined ? {} : { color: root.color }),
+          amountMinor: root.totalSpentMinor,
+          directAmountMinor: root.directSpentMinor,
+          transactionCount: root.totalTxnCount,
+          children: toCategoryRollupNodeDtos(descendants)
+        }))
       });
     }),
 

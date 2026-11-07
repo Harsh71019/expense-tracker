@@ -54,16 +54,18 @@ export class SpendingWarningsService {
   async analyzeUser(userId: string, asOf: Date): Promise<AnalysisStateRow> {
     const analysisBoundary = istCalendarDateStartUtc(asOf);
 
-    const [overallWindows, categoryWindows, candidatePool, historyStart] = await Promise.all([
-      this.repository.overallWindowSums(userId, analysisBoundary),
-      this.repository.categoryWindowSums(userId, analysisBoundary),
-      this.repository.largeExpenseCandidatePool(userId, analysisBoundary),
-      this.repository.earliestEligibleExpenseAt(userId)
-    ]);
+    const [overallWindows, categoryWindows, candidatePool, historyStart, hierarchy] =
+      await Promise.all([
+        this.repository.overallWindowSums(userId, analysisBoundary),
+        this.repository.categoryWindowSums(userId, analysisBoundary),
+        this.repository.largeExpenseCandidatePool(userId, analysisBoundary),
+        this.repository.earliestEligibleExpenseAt(userId),
+        this.repository.categoryHierarchy(userId)
+      ]);
 
     const overallEval = evaluateOverallSpike(overallWindows, asOf);
-    const categoryEval = evaluateCategorySpikes(categoryWindows, asOf);
-    const largeExpenseEval = evaluateLargeExpenses(candidatePool, asOf);
+    const categoryEval = evaluateCategorySpikes(categoryWindows, asOf, hierarchy);
+    const largeExpenseEval = evaluateLargeExpenses(candidatePool, asOf, hierarchy);
 
     const categoryIds = new Set<string>();
     for (const finding of categoryEval.findings) {

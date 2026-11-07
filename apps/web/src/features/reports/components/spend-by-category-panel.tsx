@@ -1,25 +1,18 @@
-import type { Category, MonthlyRollup } from "@treasury-ops/shared";
+import type { MonthlyReport } from "@treasury-ops/shared";
 import type { ReactNode } from "react";
 
-import { rollupCategoryMeta } from "../model/rollup-category";
+import { rollupCategoryMeta, rootsWithSpend } from "../model/rollup-category";
 import { PieChart } from "./pie-chart";
 
-type SpendByCategoryPanelProps = Readonly<{
-  rollup: MonthlyRollup;
-  categories: readonly Category[];
-}>;
+type SpendByCategoryPanelProps = Readonly<{ rollup: MonthlyReport }>;
 
-export function SpendByCategoryPanel({ rollup, categories }: SpendByCategoryPanelProps): ReactNode {
-  const ranked = rollup.consumptionByCategory
-    .filter((category) => category.spentMinor > 0)
-    .slice()
-    .sort((a, b) => b.spentMinor - a.spentMinor);
+export function SpendByCategoryPanel({ rollup }: SpendByCategoryPanelProps): ReactNode {
   const total = rollup.totalConsumptionMinor || 1;
 
-  const rows = ranked.map((category, index) => ({
-    key: category.categoryId ?? `uncategorized-${index}`,
-    meta: rollupCategoryMeta(category.categoryId, categories),
-    spentMinor: category.spentMinor
+  const rows = rootsWithSpend(rollup.consumptionTree).map((node) => ({
+    key: node.categoryId ?? "uncategorized",
+    meta: rollupCategoryMeta(node),
+    spentMinor: node.totalSpentMinor
   }));
 
   return (

@@ -36,6 +36,8 @@ export function parseTransactionFilters(
   if (accountId !== undefined) raw.accountId = accountId;
   const categoryId = getSingleValue(searchParams, "categoryId");
   if (categoryId !== undefined) raw.categoryId = categoryId;
+  const includeSubcategories = getSingleValue(searchParams, "includeSubcategories");
+  if (includeSubcategories !== undefined) raw.includeSubcategories = includeSubcategories;
   const uncategorized = getSingleValue(searchParams, "uncategorized");
   if (uncategorized !== undefined) raw.uncategorized = uncategorized;
   const from = getSingleValue(searchParams, "from");
@@ -123,6 +125,9 @@ export function serializeTransactionFilters(filters: ListTransactionsQuery): str
   const params = new URLSearchParams();
   appendIfDefined(params, "accountId", filters.accountId);
   appendIfDefined(params, "categoryId", filters.categoryId);
+  if (filters.includeSubcategories === true) {
+    params.set("includeSubcategories", "true");
+  }
   if (filters.uncategorized === true) {
     params.set("uncategorized", "true");
   }

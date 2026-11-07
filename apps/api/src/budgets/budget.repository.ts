@@ -188,7 +188,8 @@ export class BudgetRepository {
    * MonthlyRollupRepository.recompute's rough-UTC-bound + exact-IST-`to_char`
    * approach. Deliberately excludes transferGroupId legs (the nightly rollup
    * does not, but budget progress must not inherit that semantic -- design
-   * doc §2).
+   * doc §2). Amounts are per direct category: callers roll them up through the
+   * hierarchy, because a budget covers its category's whole subtree.
    */
   async categorySpendForMonth(
     userId: string,

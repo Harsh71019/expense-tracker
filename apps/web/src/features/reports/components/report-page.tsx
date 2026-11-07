@@ -1,13 +1,12 @@
 "use client";
 
-import type { MonthlyRollup } from "@treasury-ops/shared";
+import type { MonthlyReport } from "@treasury-ops/shared";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { ReactNode } from "react";
 
 import { useAccounts } from "@/features/accounts";
-import { useCategories } from "@/features/categories";
 
 import { useMonthlyRollup } from "../hooks/use-monthly-rollup";
 import { currentMonthInIndia, recentMonths, shiftMonth } from "../model/month";
@@ -30,14 +29,13 @@ const computedAtFormatter = new Intl.DateTimeFormat("en-IN", {
   timeZone: "Asia/Kolkata"
 });
 
-type ReportPageProps = Readonly<{ initialMonth: string; initialRollup: MonthlyRollup | null }>;
+type ReportPageProps = Readonly<{ initialMonth: string; initialRollup: MonthlyReport | null }>;
 
 export function ReportPage({ initialMonth, initialRollup }: ReportPageProps): ReactNode {
   const router = useRouter();
   const [month, setMonth] = useState(initialMonth);
   const rollupQuery = useMonthlyRollup(month, month === initialMonth ? initialRollup : undefined);
   const accounts = useAccounts();
-  const categories = useCategories();
 
   const today = currentMonthInIndia();
   const months = recentMonths(today, MONTH_CHIP_COUNT);
@@ -104,9 +102,9 @@ export function ReportPage({ initialMonth, initialRollup }: ReportPageProps): Re
             </p>
             <ReportTotals rollup={rollup} />
             <div className="grid grid-cols-1 gap-4.5 lg:grid-cols-[340px_1fr]">
-              <SpendByCategoryPanel rollup={rollup} categories={categories.data ?? []} />
+              <SpendByCategoryPanel rollup={rollup} />
               <div className="flex flex-col gap-4.5">
-                <CategoryBreakdownPanel rollup={rollup} categories={categories.data ?? []} />
+                <CategoryBreakdownPanel rollup={rollup} />
                 <AccountFlowPanel rollup={rollup} accounts={accounts.data ?? []} />
               </div>
             </div>

@@ -183,6 +183,7 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
   function handleCategoryFilterChange(value: string): void {
     navigate({
       categoryId: value === "" || value === UNCATEGORIZED_FILTER_VALUE ? undefined : value,
+      includeSubcategories: undefined,
       uncategorized: value === UNCATEGORIZED_FILTER_VALUE ? true : undefined
     });
   }
@@ -729,10 +730,17 @@ export function TxnFilters({ filters }: Readonly<{ filters: ListTransactionsQuer
                   ? "Uncategorized"
                   : ((categories.data ?? []).find((c) => c.id === filters.categoryId)?.name ??
                     "Selected")}
+                {filters.includeSubcategories === true ? " + subcategories" : ""}
               </span>
               <button
                 type="button"
-                onClick={() => navigate({ categoryId: undefined, uncategorized: undefined })}
+                onClick={() =>
+                  navigate({
+                    categoryId: undefined,
+                    includeSubcategories: undefined,
+                    uncategorized: undefined
+                  })
+                }
                 className="hover:text-foreground focus-visible:outline-none"
                 aria-label="Remove category filter"
               >

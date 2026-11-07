@@ -1,6 +1,7 @@
+import { buildCategoryRollupNodes } from "@treasury-ops/shared";
 import type { HttpHandler } from "msw";
 
-import { findMonthlyRollup } from "../data/store";
+import { findMonthlyRollup, toCategoryRollupNodeDtos } from "../data/store";
 import { mockProblem } from "../data/problem";
 import type { MockHttp, MockStore } from "./types";
 
@@ -13,7 +14,12 @@ export function reportHandlers(http: MockHttp, store: MockStore): HttpHandler[] 
           mockProblem(404, "common.not_found", "Monthly rollup not found.")
         );
       }
-      return response(200).json(rollup);
+      return response(200).json({
+        ...rollup,
+        consumptionTree: toCategoryRollupNodeDtos(
+          buildCategoryRollupNodes(store.categories, rollup.consumptionByCategory)
+        )
+      });
     })
   ];
 }

@@ -3,6 +3,7 @@
 # (shared-postgres / shared-redis), reached over the pre-existing network
 # treasury-ops_treasury-ops-net. That network belongs to the old manual compose
 # project: never `docker compose down` that project, only `stop` it.
+# Port 3006 is the live address (the old manual stack must be stopped first).
 x-logging: &json_logging
   driver: json-file
   options:
@@ -13,6 +14,7 @@ services:
   # One-shot: runs drizzle-kit migrate, exits 0. Gates api and worker.
   migrate:
     image: ghcr.io/harsh71019/treasury-ops-api:${TOPS_IMAGE_TAG}
+    mem_limit: 512m
     command: ["node_modules/drizzle-kit/bin.cjs", "migrate"]
     env_file: .env
     restart: "no"
@@ -21,6 +23,7 @@ services:
 
   api:
     image: ghcr.io/harsh71019/treasury-ops-api:${TOPS_IMAGE_TAG}
+    mem_limit: 768m
     restart: unless-stopped
     env_file: .env
     environment:
@@ -47,6 +50,7 @@ services:
 
   worker:
     image: ghcr.io/harsh71019/treasury-ops-api:${TOPS_IMAGE_TAG}
+    mem_limit: 768m
     command: ["dist/worker.js"]
     restart: unless-stopped
     env_file: .env
@@ -67,6 +71,7 @@ services:
 
   web:
     image: ghcr.io/harsh71019/treasury-ops-web:${TOPS_IMAGE_TAG}
+    mem_limit: 512m
     restart: unless-stopped
     env_file: .env
     environment:
@@ -92,9 +97,10 @@ services:
   # The ONLY exposed container. /api/* -> NestJS, /* -> Next.js SSR.
   proxy:
     image: ghcr.io/harsh71019/treasury-ops-proxy:${TOPS_IMAGE_TAG}
+    mem_limit: 512m
     restart: unless-stopped
     ports:
-      - "3106:80"
+      - "3006:80"
     depends_on:
       web:
         condition: service_healthy

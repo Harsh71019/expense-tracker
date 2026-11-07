@@ -1,0 +1,118 @@
+# Coolify deployment (server ct102-apps). Same shape as docker-compose.yml, but
+# running images CI built for this commit. Postgres and Redis are shared infra
+# (shared-postgres / shared-redis), reached over the pre-existing network
+# treasury-ops_treasury-ops-net. That network belongs to the old manual compose
+# project: never `docker compose down` that project, only `stop` it.
+# Port 3006 is the live address (the old manual stack must be stopped first).
+x-logging: &json_logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: "3"
+
+services:
+  # One-shot: runs drizzle-kit migrate, exits 0. Gates api and worker.
+  migrate:
+    image: ghcr.io/harsh71019/treasury-ops-api:${TOPS_IMAGE_TAG}
+    mem_limit: 512m
+    command: ["node_modules/drizzle-kit/bin.cjs", "migrate"]
+    env_file: .env
+    restart: "no"
+    networks: [shared-db]
+    logging: *json_logging
+
+  api:
+    image: ghcr.io/harsh71019/treasury-ops-api:${TOPS_IMAGE_TAG}
+    mem_limit: 768m
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      SERVICE_ROLE: api
+      GIT_SHA: ${TOPS_IMAGE_TAG}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    networks: [app, shared-db]
+    logging: *json_logging
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/nodejs/bin/node",
+          "-e",
+          "require('http').get('http://localhost:4000/api/readyz', (response) => process.exit(response.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  worker:
+    image: ghcr.io/harsh71019/treasury-ops-api:${TOPS_IMAGE_TAG}
+    mem_limit: 768m
+    command: ["dist/worker.js"]
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      SERVICE_ROLE: worker
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    networks: [shared-db]
+    logging: *json_logging
+    healthcheck:
+      test: ["CMD", "/nodejs/bin/node", "dist/worker-health.js"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  web:
+    image: ghcr.io/harsh71019/treasury-ops-web:${TOPS_IMAGE_TAG}
+    mem_limit: 512m
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+    depends_on:
+      api:
+        condition: service_healthy
+    networks: [app]
+    logging: *json_logging
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/nodejs/bin/node",
+          "-e",
+          "require('http').get('http://localhost:3000/login', (response) => process.exit(response.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  # The ONLY exposed container. /api/* -> NestJS, /* -> Next.js SSR.
+  proxy:
+    image: ghcr.io/harsh71019/treasury-ops-proxy:${TOPS_IMAGE_TAG}
+    mem_limit: 512m
+    restart: unless-stopped
+    ports:
+      - "3006:80"
+    depends_on:
+      web:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+    networks: [app]
+    logging: *json_logging
+
+networks:
+  # Private to this stack, so "api"/"web" resolve only to these containers.
+  app:
+    driver: bridge
+  shared-db:
+    external: true
+    name: treasury-ops_treasury-ops-net
